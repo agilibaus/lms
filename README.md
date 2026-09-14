@@ -1,4 +1,4 @@
-<div style="width:250; margin:0 auto"><img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="250" height="250"></div>
+<p align="center"><img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="150" height="150"></p>
 
 # Pistacchio LMS
 
