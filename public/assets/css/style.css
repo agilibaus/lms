@@ -1,0 +1,403 @@
+/* ==========================================================
+   Vivere Mindfulness LMS — stylesheet
+   Design asciutto, moderno, ispirato a Frappe LMS. Mobile-first.
+   ========================================================== */
+
+:root {
+    --color-bg: #fafaf9;
+    --color-surface: #ffffff;
+    --color-border: #e7e5e4;
+    --color-text: #1c1c1a;
+    --color-text-muted: #78716c;
+    --color-primary: #5b8266;
+    --color-primary-hover: #47694f;
+    --color-primary-soft: #eaf1ec;
+    --color-danger: #b91c1c;
+    --color-danger-soft: #fef2f2;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --sidebar-width: 236px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+h1, h2, h3 {
+    margin: 0 0 0.4em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+h1 { font-size: 1.5rem; }
+h3 { font-size: 1.05rem; }
+
+/* ---------- App shell ---------- */
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1rem;
+}
+
+.sidebar-brand {
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 0 0.5rem 1.25rem;
+    color: var(--color-primary);
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex-grow: 1;
+}
+
+.nav-link {
+    padding: 0.55rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    color: var(--color-text);
+}
+
+.nav-link:hover {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-hover);
+}
+
+.sidebar-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 1.75rem 2rem;
+    max-width: 1080px;
+}
+
+/* Toggle mobile: nascosto su desktop */
+.nav-toggle-checkbox,
+.nav-toggle-btn,
+.nav-overlay {
+    display: none;
+}
+
+/* ---------- Page header ---------- */
+
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-block;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+    color: var(--color-primary);
+}
+
+/* ---------- Course grid / cards ---------- */
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.1rem;
+}
+
+.course-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.course-card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.course-card-cover {
+    aspect-ratio: 16 / 9;
+    background: var(--color-primary-soft);
+}
+
+.course-card-cover img,
+.course-card-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.course-card-body {
+    padding: 0.9rem 1rem 1.1rem;
+}
+
+.course-card-excerpt {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin: 0.25rem 0 0.6rem;
+    line-height: 1.4;
+}
+
+.course-description {
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    max-width: 62ch;
+}
+
+/* ---------- Progress bar ---------- */
+
+.progress-bar {
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 0.4rem;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+}
+
+.progress-label {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+}
+
+/* ---------- Badges / alerts ---------- */
+
+.badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    margin-top: 0.5rem;
+}
+
+.badge-muted {
+    background: var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.alert {
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+}
+
+.alert-error {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+.empty-state {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    padding: 2rem 0;
+    text-align: center;
+}
+
+/* ---------- Buttons / forms ---------- */
+
+.btn {
+    display: inline-block;
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-hover);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* ---------- Auth page ---------- */
+
+.auth-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1.5rem;
+}
+
+.auth-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 2rem 1.75rem;
+    width: 100%;
+    max-width: 360px;
+}
+
+.auth-title {
+    color: var(--color-primary);
+    font-size: 1.25rem;
+    text-align: center;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    margin: 0 0 1.4rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.auth-form label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-top: 0.6rem;
+}
+
+.auth-form input {
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    font-family: inherit;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.auth-form .btn {
+    margin-top: 1.2rem;
+}
+
+/* ==========================================================
+   Mobile (< 768px): sidebar diventa drawer, toggle via checkbox
+   ========================================================== */
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 30;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-toggle-checkbox:checked ~ .sidebar {
+        transform: translateX(0);
+    }
+
+    .nav-toggle-btn {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        position: fixed;
+        top: 0.9rem;
+        left: 1rem;
+        z-index: 40;
+        width: 38px;
+        height: 38px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        padding: 0 8px;
+    }
+
+    .nav-toggle-btn span {
+        display: block;
+        height: 2px;
+        background: var(--color-text);
+        border-radius: 2px;
+    }
+
+    .nav-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 20;
+    }
+
+    .nav-toggle-checkbox:checked ~ .nav-overlay {
+        display: block;
+    }
+
+    .main-content {
+        padding: 4rem 1.1rem 2rem;
+        max-width: 100%;
+    }
+
+    .course-grid {
+        grid-template-columns: 1fr;
+    }
+}
