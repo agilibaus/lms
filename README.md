@@ -18,6 +18,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 - **Certificati** di completamento generati in PDF, con codice di verifica pubblico
 - **Report/dashboard** su progressi utente/corso, risultati quiz, presenze alle sessioni live
 - **Ruoli utente**, con privilegi configurabili nella tabella `role_permissions` (nessun privilegio hardcodato nel codice):
+  
   | Ruolo | Ambito |
   |---|---|
   | `admin` | Gestione completa: corsi, utenti, gruppi, permessi, certificati |
