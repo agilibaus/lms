@@ -1,4 +1,5 @@
-<div style="margin:0 auto"><img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="250" height="250"></div>
+<div style="width:250px; margin:0 auto"><img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="250" height="250"></div>
+
 # Pistacchio LMS
 
 Learning Management System leggero e moderno in PHP puro + MySQL.
