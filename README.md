@@ -1,4 +1,4 @@
-# Pistacchio LMS
+![alt text](https://github.com/agilibaus/lms/pistacchio_icon.png "Logo Pistacchio LMS") # Pistacchio LMS
 
 Learning Management System leggero e moderno in PHP puro + MySQL.
 
