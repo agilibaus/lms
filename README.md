@@ -1,6 +1,8 @@
-# LMS
+<p align="center"><img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="150" height="150"></p>
 
-LMS leggero e moderno in PHP puro + MySQL.
+# Pistacchio LMS
+
+Learning Management System leggero e moderno in PHP puro + MySQL.
 
 ## Stack
 - PHP 8.1+ (nessun framework), PDO con prepared statements
