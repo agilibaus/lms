@@ -33,7 +33,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 In sviluppo iniziale.
 - ✅ Schema database (`database/schema.sql`)
 - ✅ Scaffold applicativo: router, autenticazione/sessioni, connessione PDO, layout responsive, lista/dettaglio corsi
-- ⏳ Moduli/lezioni con upload materiali ed embed video
+- ✅ Moduli/lezioni con upload materiali ed embed video (Bunny/Cloudflare Stream o self-hosted)
 - ⏳ Quiz, certificati PDF, report
 - ⏳ Gestione gruppi e permessi da pannello admin
 - ⏳ Integrazione Google Meet
@@ -102,6 +102,10 @@ In sviluppo iniziale.
    ```bash
    chmod -R 775 storage/
    ```
+   Se prevedi upload di materiali/video di dimensioni consistenti, alza anche i limiti PHP
+   (`php.ini` o `.htaccess`): `upload_max_filesize`, `post_max_size`, `max_execution_time`.
+   Per i video preferisci comunque Bunny/Cloudflare Stream: l'upload self-hosted è pensato
+   per file di piccole dimensioni e non per lo storage di produzione.
 
 7. **Crea il primo utente amministratore**
    Non c'è ancora un pannello di registrazione: per il primo admin, inserisci manualmente una riga in `users` con una password hashata:
@@ -124,10 +128,10 @@ In sviluppo iniziale.
   index.php           → front controller
   .htaccess           → rewrite verso index.php
 /app
-  /Controllers        → logica delle route (AuthController, CourseController...)
-  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, RolePermissionModel)
+  /Controllers        → logica delle route (AuthController, CourseController, ModuleController, LessonController...)
+  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel...)
   /Auth               → login, sessione, permessi per ruolo (Auth.php)
-  /Core               → Router minimale, Database (PDO), Env, View
+  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed
   /Views
     /partials          → layout condiviso (shell.php)
   routes.php

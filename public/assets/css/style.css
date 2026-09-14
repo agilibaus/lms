@@ -401,3 +401,216 @@ h3 { font-size: 1.05rem; }
         grid-template-columns: 1fr;
     }
 }
+
+/* ---------- Moduli / lezioni ---------- */
+
+.module-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.module-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+}
+
+.module-card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.module-card-actions {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.82rem;
+}
+
+.module-card-actions a {
+    color: var(--color-text-muted);
+}
+
+.module-card-actions a:hover {
+    color: var(--color-primary);
+}
+
+.module-card-actions form {
+    display: inline;
+}
+
+.lesson-list {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.lesson-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--radius-sm);
+}
+
+.lesson-list-item:hover {
+    background: var(--color-primary-soft);
+}
+
+.lesson-list-item a {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.lesson-check {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.badge-video {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-hover);
+}
+
+.empty-state-small {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+}
+
+/* ---------- Form pagine (moduli/lezioni) ---------- */
+
+.stacked-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    max-width: 520px;
+    margin-bottom: 1.5rem;
+}
+
+.stacked-form label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-top: 0.7rem;
+}
+
+.stacked-form input[type="text"],
+.stacked-form input[type="number"],
+.stacked-form input[type="file"],
+.stacked-form textarea,
+.stacked-form select {
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    font-family: inherit;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.stacked-form textarea {
+    resize: vertical;
+}
+
+.stacked-form .btn {
+    margin-top: 1.1rem;
+    align-self: flex-start;
+}
+
+.video-fieldset {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1rem 1.1rem;
+    margin-top: 1rem;
+}
+
+.video-fieldset legend {
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0 0.4rem;
+}
+
+.video-provider-fields {
+    margin-top: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.hint {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin: 0.2rem 0;
+}
+
+/* ---------- Materiali / video embed ---------- */
+
+.materials-section {
+    margin: 1.5rem 0;
+    max-width: 520px;
+}
+
+.material-list {
+    list-style: none;
+    margin: 0.5rem 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.material-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+}
+
+.material-list li form {
+    display: inline;
+}
+
+.material-size {
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.video-embed {
+    margin: 1rem 0 1.5rem;
+    max-width: 720px;
+}
+
+.video-embed iframe,
+.video-embed video {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none;
+    border-radius: var(--radius-md);
+    background: #000;
+}
+
+.video-embed-error {
+    color: var(--color-danger);
+    font-size: 0.85rem;
+}
+
+.lesson-content {
+    max-width: 68ch;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
