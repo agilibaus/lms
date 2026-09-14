@@ -124,8 +124,10 @@ In sviluppo iniziale.
   index.php           → front controller
   .htaccess           → rewrite verso index.php
 /app
-  /Controllers
-  /Core               → Router, Database (PDO), Auth, Env, View
+  /Controllers        → logica delle route (AuthController, CourseController...)
+  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, RolePermissionModel)
+  /Auth               → login, sessione, permessi per ruolo (Auth.php)
+  /Core               → Router minimale, Database (PDO), Env, View
   /Views
     /partials          → layout condiviso (shell.php)
   routes.php

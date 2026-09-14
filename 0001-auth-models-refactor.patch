@@ -1,0 +1,385 @@
+From 3553d1991c1aea5ba4d1c5f85a6ffa5ca5373927 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 14 Sep 2026 17:18:38 +0000
+Subject: [PATCH] Riorganizza Auth e introduce il layer Models
+
+- Sposta App\Core\Auth in App\Auth\Auth (login, sessione, permessi)
+- Aggiunge app/Models (UserModel, CourseModel, RolePermissionModel):
+  i Controller non eseguono piu' query PDO dirette
+- Aggiorna i riferimenti in Controllers/Views e la struttura nel README
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01VsY4uuSP9hVhAqdibuC58n
+---
+ README.md                            |  6 ++-
+ app/{Core => Auth}/Auth.php          | 22 ++++-----
+ app/Controllers/AuthController.php   |  2 +-
+ app/Controllers/CourseController.php | 25 ++--------
+ app/Models/CourseModel.php           | 59 ++++++++++++++++++++++
+ app/Models/RolePermissionModel.php   | 27 ++++++++++
+ app/Models/UserModel.php             | 74 ++++++++++++++++++++++++++++
+ app/Views/partials/shell.php         |  2 +-
+ composer.lock                        | 21 ++++++++
+ 9 files changed, 202 insertions(+), 36 deletions(-)
+ rename app/{Core => Auth}/Auth.php (79%)
+ create mode 100644 app/Models/CourseModel.php
+ create mode 100644 app/Models/RolePermissionModel.php
+ create mode 100644 app/Models/UserModel.php
+ create mode 100644 composer.lock
+
+diff --git a/README.md b/README.md
+index 1528e3a..53012f0 100644
+--- a/README.md
++++ b/README.md
+@@ -124,8 +124,10 @@ In sviluppo iniziale.
+   index.php           → front controller
+   .htaccess           → rewrite verso index.php
+ /app
+-  /Controllers
+-  /Core               → Router, Database (PDO), Auth, Env, View
++  /Controllers        → logica delle route (AuthController, CourseController...)
++  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, RolePermissionModel)
++  /Auth               → login, sessione, permessi per ruolo (Auth.php)
++  /Core               → Router minimale, Database (PDO), Env, View
+   /Views
+     /partials          → layout condiviso (shell.php)
+   routes.php
+diff --git a/app/Core/Auth.php b/app/Auth/Auth.php
+similarity index 79%
+rename from app/Core/Auth.php
+rename to app/Auth/Auth.php
+index 8f7b58d..adb377f 100644
+--- a/app/Core/Auth.php
++++ b/app/Auth/Auth.php
+@@ -2,20 +2,22 @@
+ 
+ declare(strict_types=1);
+ 
+-namespace App\Core;
++namespace App\Auth;
+ 
++use App\Models\RolePermissionModel;
++use App\Models\UserModel;
++
++/**
++ * Autenticazione, sessione utente e permessi per ruolo.
++ * L'accesso ai dati passa sempre dai Model (nessuna query diretta qui).
++ */
+ class Auth
+ {
+     public const ROLES = ['admin', 'tutor', 'assistente', 'studente'];
+ 
+     public static function attempt(string $email, string $password): bool
+     {
+-        $stmt = Database::connection()->prepare(
+-            'SELECT id, email, password_hash, full_name, role, is_active
+-             FROM users WHERE email = :email LIMIT 1'
+-        );
+-        $stmt->execute(['email' => $email]);
+-        $user = $stmt->fetch();
++        $user = UserModel::findByEmail($email);
+ 
+         if (!$user || !(bool) $user['is_active'] || !password_verify($password, $user['password_hash'])) {
+             return false;
+@@ -96,11 +98,7 @@ class Auth
+         $role = self::role();
+ 
+         if (!isset($cache[$role])) {
+-            $stmt = Database::connection()->prepare(
+-                'SELECT permission_key FROM role_permissions WHERE role = :role'
+-            );
+-            $stmt->execute(['role' => $role]);
+-            $cache[$role] = array_column($stmt->fetchAll(), 'permission_key');
++            $cache[$role] = RolePermissionModel::keysForRole($role);
+         }
+ 
+         return in_array($permissionKey, $cache[$role], true);
+diff --git a/app/Controllers/AuthController.php b/app/Controllers/AuthController.php
+index c89e567..9b93368 100644
+--- a/app/Controllers/AuthController.php
++++ b/app/Controllers/AuthController.php
+@@ -4,7 +4,7 @@ declare(strict_types=1);
+ 
+ namespace App\Controllers;
+ 
+-use App\Core\Auth;
++use App\Auth\Auth;
+ use App\Core\View;
+ 
+ class AuthController
+diff --git a/app/Controllers/CourseController.php b/app/Controllers/CourseController.php
+index 1e4b63b..2b8e2ef 100644
+--- a/app/Controllers/CourseController.php
++++ b/app/Controllers/CourseController.php
+@@ -4,9 +4,9 @@ declare(strict_types=1);
+ 
+ namespace App\Controllers;
+ 
+-use App\Core\Auth;
+-use App\Core\Database;
++use App\Auth\Auth;
+ use App\Core\View;
++use App\Models\CourseModel;
+ 
+ class CourseController
+ {
+@@ -14,25 +14,12 @@ class CourseController
+     {
+         Auth::requireLogin();
+ 
+-        $db = Database::connection();
+-
+         if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+             // Staff: vede tutti i corsi, pubblicati e in bozza.
+-            $courses = $db->query(
+-                'SELECT id, title, slug, description, cover_image, is_published
+-                 FROM courses ORDER BY created_at DESC'
+-            )->fetchAll();
++            $courses = CourseModel::allForStaff();
+         } else {
+             // Studente: solo i corsi a cui è iscritto, con progresso.
+-            $stmt = $db->prepare(
+-                'SELECT c.id, c.title, c.slug, c.description, c.cover_image, e.progress_pct
+-                 FROM courses c
+-                 INNER JOIN enrollments e ON e.course_id = c.id
+-                 WHERE e.user_id = :user_id
+-                 ORDER BY e.enrolled_at DESC'
+-            );
+-            $stmt->execute(['user_id' => Auth::id()]);
+-            $courses = $stmt->fetchAll();
++            $courses = CourseModel::enrolledForUser((int) Auth::id());
+         }
+ 
+         View::render('courses/index', [
+@@ -45,9 +32,7 @@ class CourseController
+     {
+         Auth::requireLogin();
+ 
+-        $stmt = Database::connection()->prepare('SELECT * FROM courses WHERE id = :id LIMIT 1');
+-        $stmt->execute(['id' => $params['id']]);
+-        $course = $stmt->fetch();
++        $course = CourseModel::find((int) $params['id']);
+ 
+         if (!$course) {
+             http_response_code(404);
+diff --git a/app/Models/CourseModel.php b/app/Models/CourseModel.php
+new file mode 100644
+index 0000000..01ba9b1
+--- /dev/null
++++ b/app/Models/CourseModel.php
+@@ -0,0 +1,59 @@
++<?php
++
++declare(strict_types=1);
++
++namespace App\Models;
++
++use App\Core\Database;
++
++/**
++ * Accesso dati per la tabella `courses` (e relative iscrizioni).
++ */
++class CourseModel
++{
++    /**
++     * Tutti i corsi, pubblicati e in bozza — per lo staff (admin/tutor/assistente).
++     */
++    public static function allForStaff(): array
++    {
++        return Database::connection()->query(
++            'SELECT id, title, slug, description, cover_image, is_published
++             FROM courses ORDER BY created_at DESC'
++        )->fetchAll();
++    }
++
++    /**
++     * Corsi a cui uno studente è iscritto, con percentuale di progresso.
++     */
++    public static function enrolledForUser(int $userId): array
++    {
++        $stmt = Database::connection()->prepare(
++            'SELECT c.id, c.title, c.slug, c.description, c.cover_image, e.progress_pct
++             FROM courses c
++             INNER JOIN enrollments e ON e.course_id = c.id
++             WHERE e.user_id = :user_id
++             ORDER BY e.enrolled_at DESC'
++        );
++        $stmt->execute(['user_id' => $userId]);
++
++        return $stmt->fetchAll();
++    }
++
++    public static function find(int $id): ?array
++    {
++        $stmt = Database::connection()->prepare('SELECT * FROM courses WHERE id = :id LIMIT 1');
++        $stmt->execute(['id' => $id]);
++        $course = $stmt->fetch();
++
++        return $course ?: null;
++    }
++
++    public static function findBySlug(string $slug): ?array
++    {
++        $stmt = Database::connection()->prepare('SELECT * FROM courses WHERE slug = :slug LIMIT 1');
++        $stmt->execute(['slug' => $slug]);
++        $course = $stmt->fetch();
++
++        return $course ?: null;
++    }
++}
+diff --git a/app/Models/RolePermissionModel.php b/app/Models/RolePermissionModel.php
+new file mode 100644
+index 0000000..7b88618
+--- /dev/null
++++ b/app/Models/RolePermissionModel.php
+@@ -0,0 +1,27 @@
++<?php
++
++declare(strict_types=1);
++
++namespace App\Models;
++
++use App\Core\Database;
++
++/**
++ * Accesso dati per la tabella `role_permissions`.
++ * I permessi sono configurabili a runtime (nessun privilegio hardcodato nel codice).
++ */
++class RolePermissionModel
++{
++    /**
++     * @return string[] elenco dei permission_key assegnati al ruolo indicato
++     */
++    public static function keysForRole(string $role): array
++    {
++        $stmt = Database::connection()->prepare(
++            'SELECT permission_key FROM role_permissions WHERE role = :role'
++        );
++        $stmt->execute(['role' => $role]);
++
++        return array_column($stmt->fetchAll(), 'permission_key');
++    }
++}
+diff --git a/app/Models/UserModel.php b/app/Models/UserModel.php
+new file mode 100644
+index 0000000..3212ec5
+--- /dev/null
++++ b/app/Models/UserModel.php
+@@ -0,0 +1,74 @@
++<?php
++
++declare(strict_types=1);
++
++namespace App\Models;
++
++use App\Core\Database;
++
++/**
++ * Accesso dati per la tabella `users`.
++ */
++class UserModel
++{
++    /**
++     * Recupera un utente (anche non attivo) a partire dall'email,
++     * includendo l'hash della password — usato solo dal layer Auth.
++     */
++    public static function findByEmail(string $email): ?array
++    {
++        $stmt = Database::connection()->prepare(
++            'SELECT id, email, password_hash, full_name, role, is_active
++             FROM users WHERE email = :email LIMIT 1'
++        );
++        $stmt->execute(['email' => $email]);
++        $user = $stmt->fetch();
++
++        return $user ?: null;
++    }
++
++    /**
++     * Recupera un utente per id, senza l'hash della password.
++     */
++    public static function find(int $id): ?array
++    {
++        $stmt = Database::connection()->prepare(
++            'SELECT id, email, full_name, role, supervising_tutor_id, is_active, created_at
++             FROM users WHERE id = :id LIMIT 1'
++        );
++        $stmt->execute(['id' => $id]);
++        $user = $stmt->fetch();
++
++        return $user ?: null;
++    }
++
++    /**
++     * Elenco utenti, ordinato per nome (per pannello admin/gestione utenti).
++     */
++    public static function all(): array
++    {
++        return Database::connection()->query(
++            'SELECT id, email, full_name, role, supervising_tutor_id, is_active, created_at
++             FROM users ORDER BY full_name'
++        )->fetchAll();
++    }
++
++    /**
++     * Crea un nuovo utente con password hashata (bcrypt via password_hash).
++     */
++    public static function create(string $email, string $password, string $fullName, string $role = 'studente'): int
++    {
++        $stmt = Database::connection()->prepare(
++            'INSERT INTO users (email, password_hash, full_name, role)
++             VALUES (:email, :password_hash, :full_name, :role)'
++        );
++        $stmt->execute([
++            'email' => $email,
++            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
++            'full_name' => $fullName,
++            'role' => $role,
++        ]);
++
++        return (int) Database::connection()->lastInsertId();
++    }
++}
+diff --git a/app/Views/partials/shell.php b/app/Views/partials/shell.php
+index e47ffc0..85609a9 100644
+--- a/app/Views/partials/shell.php
++++ b/app/Views/partials/shell.php
+@@ -2,7 +2,7 @@
+ 
+ declare(strict_types=1);
+ 
+-use App\Core\Auth;
++use App\Auth\Auth;
+ 
+ /** @var string $content */
+ /** @var string|null $pageTitle */
+diff --git a/composer.lock b/composer.lock
+new file mode 100644
+index 0000000..3fd1553
+--- /dev/null
++++ b/composer.lock
+@@ -0,0 +1,21 @@
++{
++    "_readme": [
++        "This file locks the dependencies of your project to a known state",
++        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
++        "This file is @generated automatically"
++    ],
++    "content-hash": "71fc988fd667aa9bae673c77ba5d279c",
++    "packages": [],
++    "packages-dev": [],
++    "aliases": [],
++    "minimum-stability": "stable",
++    "stability-flags": {},
++    "prefer-stable": false,
++    "prefer-lowest": false,
++    "platform": {
++        "php": ">=8.1",
++        "ext-pdo": "*"
++    },
++    "platform-dev": {},
++    "plugin-api-version": "2.6.0"
++}
+-- 
+2.43.0
+

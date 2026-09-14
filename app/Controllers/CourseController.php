@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Auth;
-use App\Core\Database;
+use App\Auth\Auth;
 use App\Core\View;
+use App\Models\CourseModel;
 
 class CourseController
 {
@@ -14,25 +14,12 @@ class CourseController
     {
         Auth::requireLogin();
 
-        $db = Database::connection();
-
         if (Auth::hasRole('admin', 'tutor', 'assistente')) {
             // Staff: vede tutti i corsi, pubblicati e in bozza.
-            $courses = $db->query(
-                'SELECT id, title, slug, description, cover_image, is_published
-                 FROM courses ORDER BY created_at DESC'
-            )->fetchAll();
+            $courses = CourseModel::allForStaff();
         } else {
             // Studente: solo i corsi a cui è iscritto, con progresso.
-            $stmt = $db->prepare(
-                'SELECT c.id, c.title, c.slug, c.description, c.cover_image, e.progress_pct
-                 FROM courses c
-                 INNER JOIN enrollments e ON e.course_id = c.id
-                 WHERE e.user_id = :user_id
-                 ORDER BY e.enrolled_at DESC'
-            );
-            $stmt->execute(['user_id' => Auth::id()]);
-            $courses = $stmt->fetchAll();
+            $courses = CourseModel::enrolledForUser((int) Auth::id());
         }
 
         View::render('courses/index', [
@@ -45,9 +32,7 @@ class CourseController
     {
         Auth::requireLogin();
 
-        $stmt = Database::connection()->prepare('SELECT * FROM courses WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $params['id']]);
-        $course = $stmt->fetch();
+        $course = CourseModel::find((int) $params['id']);
 
         if (!$course) {
             http_response_code(404);

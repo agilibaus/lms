@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Core\Auth;
+use App\Auth\Auth;
 
 /** @var string $content */
 /** @var string|null $pageTitle */

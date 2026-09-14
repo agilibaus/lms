@@ -2,20 +2,22 @@
 
 declare(strict_types=1);
 
-namespace App\Core;
+namespace App\Auth;
 
+use App\Models\RolePermissionModel;
+use App\Models\UserModel;
+
+/**
+ * Autenticazione, sessione utente e permessi per ruolo.
+ * L'accesso ai dati passa sempre dai Model (nessuna query diretta qui).
+ */
 class Auth
 {
     public const ROLES = ['admin', 'tutor', 'assistente', 'studente'];
 
     public static function attempt(string $email, string $password): bool
     {
-        $stmt = Database::connection()->prepare(
-            'SELECT id, email, password_hash, full_name, role, is_active
-             FROM users WHERE email = :email LIMIT 1'
-        );
-        $stmt->execute(['email' => $email]);
-        $user = $stmt->fetch();
+        $user = UserModel::findByEmail($email);
 
         if (!$user || !(bool) $user['is_active'] || !password_verify($password, $user['password_hash'])) {
             return false;
@@ -96,11 +98,7 @@ class Auth
         $role = self::role();
 
         if (!isset($cache[$role])) {
-            $stmt = Database::connection()->prepare(
-                'SELECT permission_key FROM role_permissions WHERE role = :role'
-            );
-            $stmt->execute(['role' => $role]);
-            $cache[$role] = array_column($stmt->fetchAll(), 'permission_key');
+            $cache[$role] = RolePermissionModel::keysForRole($role);
         }
 
         return in_array($permissionKey, $cache[$role], true);
