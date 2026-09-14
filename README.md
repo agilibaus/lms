@@ -1,6 +1,6 @@
 # Pistacchio LMS
 
-LMS leggero e moderno in PHP puro + MySQL.
+Learning Management System leggero e moderno in PHP puro + MySQL.
 
 ## Stack
 - PHP 8.1+ (nessun framework), PDO con prepared statements
