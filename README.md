@@ -1,6 +1,6 @@
-# LMS — Vivere Mindfulness
+# LearnPath
 
-LMS leggero e moderno in PHP puro + MySQL, pensato per sostituire Chamilo.
+LMS leggero e moderno in PHP puro + MySQL.
 
 ## Stack
 - PHP 8.1+ (nessun framework), PDO con prepared statements
