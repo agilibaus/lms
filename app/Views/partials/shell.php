@@ -12,7 +12,7 @@ use App\Core\Auth;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle ?? 'LearnPath') ?> · LearnPath</title>
+    <title><?= htmlspecialchars($pageTitle ?? 'LMS') ?> · LMS</title>
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
@@ -24,7 +24,7 @@ use App\Core\Auth;
     <label for="nav-toggle" class="nav-overlay" aria-hidden="true"></label>
 
     <aside class="sidebar">
-        <div class="sidebar-brand">LearnPath</div>
+        <div class="sidebar-brand">LMS</div>
 
         <nav class="sidebar-nav">
             <a href="/" class="nav-link">Corsi</a>

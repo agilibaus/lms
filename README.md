@@ -1,15 +1,13 @@
-<p align="center"><img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="150" height="150"></p>
+# LMS
 
-# Pistacchio LMS
-
-Learning Management System leggero e moderno in PHP puro + MySQL.
+LMS leggero e moderno in PHP puro + MySQL.
 
 ## Stack
 - PHP 8.1+ (nessun framework), PDO con prepared statements
 - MySQL/MariaDB
 - Composer solo per autoload PSR-4 + poche librerie mirate (PDF, in arrivo)
 - Frontend: CSS moderno (flexbox/grid, variabili CSS), nessuna dipendenza JS pesante
-- Design: asciutto, moderno, arioso, mobile-first (sidebar a drawer sotto i 768px, via checkbox CSS senza JS)
+- Design: asciutto, moderno, ispirato a Frappe LMS, mobile-first (sidebar a drawer sotto i 768px, via checkbox CSS senza JS)
 
 ## Funzionalità
 
@@ -18,7 +16,6 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 - **Certificati** di completamento generati in PDF, con codice di verifica pubblico
 - **Report/dashboard** su progressi utente/corso, risultati quiz, presenze alle sessioni live
 - **Ruoli utente**, con privilegi configurabili nella tabella `role_permissions` (nessun privilegio hardcodato nel codice):
-  
   | Ruolo | Ambito |
   |---|---|
   | `admin` | Gestione completa: corsi, utenti, gruppi, permessi, certificati |
