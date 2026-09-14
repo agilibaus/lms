@@ -1,4 +1,4 @@
-# ![alt text](https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png "Logo Pistacchio LMS") Pistacchio LMS
+# <img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="50" height="50"> Pistacchio LMS
 
 Learning Management System leggero e moderno in PHP puro + MySQL.
 
