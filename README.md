@@ -1,4 +1,4 @@
-# LearnPath
+# Pistacchio LMS
 
 LMS leggero e moderno in PHP puro + MySQL.
 
