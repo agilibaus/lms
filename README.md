@@ -7,7 +7,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 - MySQL/MariaDB
 - Composer solo per autoload PSR-4 + poche librerie mirate (PDF, in arrivo)
 - Frontend: CSS moderno (flexbox/grid, variabili CSS), nessuna dipendenza JS pesante
-- Design: asciutto, moderno, ispirato a Frappe LMS, mobile-first (sidebar a drawer sotto i 768px, via checkbox CSS senza JS)
+- Design: asciutto, moderno, arioso, mobile-first (sidebar a drawer sotto i 768px, via checkbox CSS senza JS)
 
 ## Funzionalità
 
