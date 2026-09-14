@@ -1,0 +1,12 @@
+/vendor/
+/storage/videos/*
+/storage/materials/*
+/storage/certificates/*
+!/storage/videos/.gitkeep
+!/storage/materials/.gitkeep
+!/storage/certificates/.gitkeep
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
