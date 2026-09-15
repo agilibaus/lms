@@ -2,6 +2,7 @@
 /storage/videos/*
 /storage/materials/*
 /storage/certificates/*
+/storage/installed.lock
 !/storage/videos/.gitkeep
 !/storage/materials/.gitkeep
 !/storage/certificates/.gitkeep

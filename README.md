@@ -40,6 +40,7 @@ In sviluppo iniziale.
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
 - ✅ Protezione CSRF su tutte le richieste POST
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
+- ✅ Procedura di installazione guidata dal browser
 
 ## Requisiti
 
@@ -52,49 +53,23 @@ In sviluppo iniziale.
 
 ## Installazione
 
-1. **Clona il repository**
+L'installazione si completa dal browser, con una procedura guidata: verifica dei requisiti,
+creazione del database, primo amministratore e impostazioni facoltative.
+
+1. **Metti i file sul server e installa le dipendenze**
    ```bash
    git clone https://github.com/agilibaus/lms.git
    cd lms
-   ```
-
-2. **Installa le dipendenze**
-   ```bash
    composer update
+   chmod -R 775 storage/
    ```
-   Installa l'autoload PSR-4 e **Dompdf** (certificati PDF). Usa `composer update` e non
-   `composer install`: `composer.lock` viene rigenerato includendo Dompdf, aggiunto in questa
-   fase. Dagli aggiornamenti successivi `composer install` è di nuovo sufficiente.
+   `composer update` (non `install`) installa l'autoload PSR-4 e **Dompdf**, usato per i
+   certificati PDF: rigenera `composer.lock` includendolo. Dagli aggiornamenti successivi
+   `composer install` è di nuovo sufficiente.
 
-3. **Configura l'ambiente**
-   ```bash
-   cp .env.example .env
-   ```
-   Modifica `.env` con le credenziali del tuo database:
-   ```
-   DB_HOST=127.0.0.1
-   DB_NAME=lms
-   DB_USER=il_tuo_utente
-   DB_PASS=la_tua_password
-   APP_DEBUG=0
-   APP_URL=https://lms.example.com
-   ```
-   `APP_URL` viene usato nel PDF del certificato per comporre il link di verifica pubblica.
-
-4. **Crea il database e importa lo schema**
-   ```bash
-   mysql -u il_tuo_utente -p -e "CREATE DATABASE lms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   mysql -u il_tuo_utente -p lms < database/schema.sql
-   ```
-
-   Se hai gia' un'installazione creata con una versione precedente dello schema, applica
-   invece le migrazioni incrementali presenti in `database/migrations/` (in ordine di data):
-   ```bash
-   mysql -u il_tuo_utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
-   ```
-
-5. **Imposta il document root sulla cartella `public/`**
-   L'applicazione deve essere servita con `public/` come document root (non la root del repo), così i file applicativi in `app/`, `config/`, `database/` restano fuori dall'accesso diretto via browser.
+2. **Imposta il document root sulla cartella `public/`**
+   L'applicazione va servita con `public/` come document root (non la root del repo), così i
+   file in `app/`, `config/`, `database/` restano fuori dall'accesso diretto via browser.
 
    Esempio Apache (VirtualHost):
    ```apache
@@ -107,39 +82,49 @@ In sviluppo iniziale.
        </Directory>
    </VirtualHost>
    ```
+   Servono `mod_rewrite` e `AllowOverride All`, altrimenti `.htaccess` viene ignorato e tutti
+   gli indirizzi diversi da `/` rispondono 404.
 
-   In alternativa, per un test rapido in locale senza Apache:
+   Per una prova rapida in locale, senza Apache:
    ```bash
    php -S localhost:8000 -t public
    ```
 
-6. **Permessi sulla cartella storage**
-   ```bash
-   chmod -R 775 storage/
-   ```
-   Se prevedi upload di materiali/video di dimensioni consistenti, alza anche i limiti PHP
-   (`php.ini` o `.htaccess`): `upload_max_filesize`, `post_max_size`, `max_execution_time`.
-   Per i video preferisci comunque Bunny/Cloudflare Stream: l'upload self-hosted è pensato
-   per file di piccole dimensioni e non per lo storage di produzione.
+3. **Apri il sito nel browser**
+   Finché manca il file `.env` vieni portato automaticamente su `/install`. Ti servono a
+   portata di mano i dati del database: host, nome, utente e password. Se il database non
+   esiste ancora, la procedura prova a crearlo con le stesse credenziali; se esiste, deve
+   essere vuoto.
 
-7. **Crea il primo utente amministratore**
-   Solo il primo admin va inserito a mano (da lì in poi si usa il pannello **Utenti**):
-   ```bash
-   php -r "echo password_hash('la-tua-password', PASSWORD_DEFAULT), PHP_EOL;"
-   ```
-   ```sql
-   INSERT INTO users (email, password_hash, full_name, role)
-   VALUES ('admin@example.com', '<hash generato sopra>', 'Nome Cognome', 'admin');
-   ```
+   I quattro passi sono: **requisiti** (versione PHP, estensioni, permessi di scrittura),
+   **database** (connessione e importazione dello schema), **amministratore** (il tuo account,
+   al posto di qualsiasi `INSERT` manuale) e **impostazioni** facoltative — indirizzo pubblico,
+   fuso orario, Bunny/Cloudflare Stream e Google Meet, tutte compilabili anche in seguito.
 
-8. **Verifica**
-   Apri l'URL configurato (es. `http://lms.local` o `http://localhost:8000`): dovresti vedere la pagina di login.
+4. **Al termine, elimina la cartella `public/install`**
+   La procedura si disattiva da sola — scrive `storage/installed.lock` e si rifiuta di
+   ripartire finché nel database ci sono utenti — ma rimuovere la cartella è la garanzia
+   definitiva. Controlla anche che in `.env` ci sia `APP_DEBUG=0`: in produzione gli errori
+   non devono finire sotto gli occhi degli utenti.
+
+Se la cartella del progetto non è scrivibile, l'installer non può salvare `.env`: in quel caso
+ti mostra il contenuto da creare a mano, e non scrive il file di lock finché la configurazione
+non è a posto.
+
+### Aggiornare un'installazione esistente
+La procedura guidata serve solo alla prima installazione. Per aggiornare, tira le modifiche,
+esegui `composer install` e applica le eventuali migrazioni in `database/migrations/` (in
+ordine di data), ad esempio:
+```bash
+mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
+```
 
 ## Struttura del progetto
 
 ```
 /public              → document root
   /assets/css         → stylesheet
+  /install            → procedura di installazione guidata (da eliminare dopo l'uso)
   index.php           → front controller
   .htaccess           → rewrite verso index.php
 /app

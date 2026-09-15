@@ -1,0 +1,4 @@
+# Solo index.php e' pensato per essere aperto dal browser.
+<FilesMatch "^Installer\.php$">
+    Require all denied
+</FilesMatch>
