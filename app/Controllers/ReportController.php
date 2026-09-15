@@ -9,6 +9,7 @@ use App\Core\Csv;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\GroupModel;
+use App\Models\LiveSessionAttendanceModel;
 use App\Models\QuizAttemptModel;
 use App\Models\ReportModel;
 use App\Models\UserModel;
@@ -133,6 +134,7 @@ class ReportController
             'student' => $student,
             'courses' => $courses,
             'quizzesByCourse' => $quizzesByCourse,
+            'liveAttendance' => LiveSessionAttendanceModel::summaryForUser((int) $student['id']),
         ]);
     }
 

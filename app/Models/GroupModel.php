@@ -15,7 +15,7 @@ class GroupModel
     {
         $stmt = Database::connection()->prepare(
             'SELECT g.*, u.full_name AS tutor_name
-             FROM groups g
+             FROM `groups` g
              LEFT JOIN users u ON u.id = g.tutor_id
              WHERE g.id = :id LIMIT 1'
         );
@@ -30,7 +30,7 @@ class GroupModel
         return Database::connection()->query(
             'SELECT g.id, g.name, g.tutor_id, u.full_name AS tutor_name,
                     (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id) AS member_count
-             FROM groups g
+             FROM `groups` g
              LEFT JOIN users u ON u.id = g.tutor_id
              ORDER BY g.name'
         )->fetchAll();
@@ -44,7 +44,7 @@ class GroupModel
         $stmt = Database::connection()->prepare(
             'SELECT g.id, g.name, g.tutor_id, u.full_name AS tutor_name,
                     (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id) AS member_count
-             FROM groups g
+             FROM `groups` g
              LEFT JOIN users u ON u.id = g.tutor_id
              WHERE g.tutor_id = :tutor_id
              ORDER BY g.name'
@@ -96,7 +96,7 @@ class GroupModel
         $stmt = Database::connection()->prepare(
             'SELECT DISTINCT gm.user_id
              FROM group_members gm
-             INNER JOIN groups g ON g.id = gm.group_id
+             INNER JOIN `groups` g ON g.id = gm.group_id
              WHERE g.tutor_id = :tutor_id'
         );
         $stmt->execute(['tutor_id' => $tutorId]);
@@ -113,7 +113,7 @@ class GroupModel
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO groups (name, description, tutor_id) VALUES (:name, :description, :tutor_id)'
+            'INSERT INTO `groups` (name, description, tutor_id) VALUES (:name, :description, :tutor_id)'
         );
         $stmt->execute(['name' => $name, 'description' => $description, 'tutor_id' => $tutorId]);
 
@@ -123,7 +123,7 @@ class GroupModel
     public static function update(int $id, string $name, ?string $description, ?int $tutorId): void
     {
         $stmt = Database::connection()->prepare(
-            'UPDATE groups SET name = :name, description = :description, tutor_id = :tutor_id WHERE id = :id'
+            'UPDATE `groups` SET name = :name, description = :description, tutor_id = :tutor_id WHERE id = :id'
         );
         $stmt->execute(['name' => $name, 'description' => $description, 'tutor_id' => $tutorId, 'id' => $id]);
     }
@@ -132,7 +132,7 @@ class GroupModel
     {
         // Membri e assegnazioni corso seguono via FK ON DELETE CASCADE;
         // le iscrizioni gia' create restano (il progresso non va perso).
-        $stmt = Database::connection()->prepare('DELETE FROM groups WHERE id = :id');
+        $stmt = Database::connection()->prepare('DELETE FROM `groups` WHERE id = :id');
         $stmt->execute(['id' => $id]);
     }
 

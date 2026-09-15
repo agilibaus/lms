@@ -39,7 +39,7 @@ In sviluppo iniziale.
 - ✅ Report per corso, studente e gruppo, con export CSV
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
 - ✅ Protezione CSRF su tutte le richieste POST
-- ⏳ Integrazione Google Meet
+- ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
 
 ## Requisiti
 
@@ -47,7 +47,8 @@ In sviluppo iniziale.
 - MySQL 8+ o MariaDB 10.6+
 - Server web con supporto al rewrite degli URL (Apache + `mod_rewrite`, oppure Nginx configurato in modo equivalente)
 - Composer (autoload PSR-4 e installazione di Dompdf: senza `composer install` i certificati non possono essere generati)
-- Per le sessioni live: un progetto Google Cloud con **Calendar API** abilitata e un account di servizio (o credenziali OAuth) con accesso al calendario da usare per generare i link Meet
+- Estensioni `openssl` e `curl` per l'integrazione Google (già presenti in quasi tutte le installazioni)
+- Per le sessioni live: un progetto Google Cloud con **Calendar API** abilitata e un account di servizio con delega a livello di dominio (vedi sotto). Senza, le sessioni restano utilizzabili con link Meet inseriti a mano
 
 ## Installazione
 
@@ -147,6 +148,7 @@ In sviluppo iniziale.
   /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
   /Auth               → login, sessione, permessi per ruolo (Auth.php)
   /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed, CourseAccess, CertificateService, Csv, Csrf
+    /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
   /Views
     /partials          → layout condiviso (shell.php)
   routes.php
@@ -159,6 +161,8 @@ In sviluppo iniziale.
 /database
   schema.sql
   /migrations         → migrazioni incrementali per installazioni gia' esistenti
+/tests
+  google_meet_test.php → test del client Google (senza rete né credenziali reali)
 ```
 
 ## Quiz, certificati e report
@@ -248,3 +252,67 @@ Ogni richiesta POST deve includere il token di sessione (`App\Core\Csrf`), verif
 Router prima di invocare il controller; una richiesta senza token valido riceve **419** e non
 produce alcun effetto. Nelle view il campo si inserisce con `<?= Csrf::field() ?>`. Il token
 viene rigenerato a ogni login e logout, insieme all'id di sessione.
+
+## Sessioni live (Google Meet)
+
+Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**: i
+partecipanti attesi sono gli iscritti al corso del modulo e i membri del gruppo. Le sessioni si
+gestiscono da `/live` (permesso `course.edit`: admin e tutor); gli studenti vedono solo quelle
+che li riguardano.
+
+### Come nasce il link Meet
+Alla creazione della sessione l'applicazione crea un evento su Google Calendar chiedendo
+contestualmente una conferenza Meet (`conferenceData.createRequest`, con
+`conferenceDataVersion=1`) e salva `google_event_id` e `meet_link`. Modificando la sessione
+l'evento viene allineato; eliminandola, l'evento viene rimosso dal calendario.
+
+**Se Google non è configurato o risponde con un errore, la sessione viene salvata lo stesso**:
+l'utente riceve un avviso e può incollare un link Meet creato a mano, oppure riprovare la
+sincronizzazione dalla scheda della sessione. Un link inserito manualmente ha la precedenza e
+scollega la sessione da Google.
+
+### Configurazione
+1. Nel progetto Google Cloud, abilita la **Google Calendar API** e crea un **account di
+   servizio**; scarica la chiave in formato JSON e mettila **fuori dal document root**.
+2. Nella Admin console di Google Workspace, sezione *Sicurezza → Controllo delle API →
+   Delega a livello di dominio*, autorizza il **Client ID** dell'account di servizio per lo
+   scope `https://www.googleapis.com/auth/calendar`.
+3. Compila le variabili in `.env`:
+   ```
+   GOOGLE_SERVICE_ACCOUNT_JSON=/percorso/protetto/credenziali.json
+   GOOGLE_IMPERSONATE_EMAIL=corsi@tuodominio.it
+   GOOGLE_CALENDAR_ID=primary
+   GOOGLE_CALENDAR_TIMEZONE=Europe/Rome
+   ```
+
+`GOOGLE_IMPERSONATE_EMAIL` è l'utente Workspace per conto del quale l'account di servizio
+crea gli eventi: **senza delega Google non genera il link Meet**, e l'evento verrebbe creato
+"nudo". Se lo scope non è autorizzato, Google risponde `403 Insufficient Permission`: il
+messaggio viene mostrato per intero nella scheda della sessione.
+
+Il client è scritto in casa (`app/Core/Google/`), senza dipendenze: firma una JWT RS256 con
+`openssl`, la scambia per un access token (flusso JWT bearer) e chiama le API REST con cURL.
+Il token viene riusato per tutta la durata della richiesta.
+
+### Presenze
+L'ingresso passa da un link interno (`/live/{id}/join`): la piattaforma registra `joined_at`
+e reindirizza al Meet. Il primo ingresso è quello che conta — riaprire il link non lo
+sovrascrive — e lo staff che entra non compare fra i presenti. Il tutor può correggere il
+registro dalla scheda della sessione, anche a sessione conclusa; l'origine del dato resta
+distinguibile (`platform` o `manual`). Il numero di sessioni seguite compare nel report del
+singolo studente.
+
+Nota: l'ingresso tracciato certifica l'apertura del link dalla piattaforma, non l'effettiva
+permanenza nella riunione. Per il dato reale di partecipazione servirebbe la Reports API di
+Google Workspace, che richiede scope aggiuntivi ed è disponibile solo a sessione conclusa.
+
+## Test
+
+```bash
+php tests/google_meet_test.php
+```
+
+Verifica il client Google senza rete e senza credenziali reali: genera una chiave RSA al volo,
+controlla che la JWT sia firmata correttamente (verifica con la chiave pubblica) e che la
+richiesta a Calendar contenga i parametri giusti, simulando le risposte di Google — compresi
+gli errori 403 e 404.

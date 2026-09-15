@@ -10,6 +10,7 @@ use App\Controllers\AuthController;
 use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
 use App\Controllers\LessonController;
+use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
 use App\Controllers\QuizController;
 use App\Controllers\ReportController;
@@ -102,3 +103,15 @@ $router->post('/admin/courses/{id}/enrollments/{userId}/delete', [AdminCourseCon
 
 $router->get('/admin/permissions', [AdminPermissionController::class, 'index']);
 $router->post('/admin/permissions', [AdminPermissionController::class, 'update']);
+
+// --- Sessioni live (Google Meet) --------------------------------------
+$router->get('/live', [LiveSessionController::class, 'index']);
+$router->get('/live/create', [LiveSessionController::class, 'createForm']);
+$router->post('/live', [LiveSessionController::class, 'store']);
+$router->get('/live/{id}/edit', [LiveSessionController::class, 'editForm']);
+$router->get('/live/{id}/join', [LiveSessionController::class, 'join']);
+$router->get('/live/{id}', [LiveSessionController::class, 'show']);
+$router->post('/live/{id}', [LiveSessionController::class, 'update']);
+$router->post('/live/{id}/delete', [LiveSessionController::class, 'destroy']);
+$router->post('/live/{id}/sync', [LiveSessionController::class, 'syncGoogle']);
+$router->post('/live/{id}/attendance/{userId}', [LiveSessionController::class, 'setAttendance']);

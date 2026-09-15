@@ -32,6 +32,7 @@ use App\Core\Csrf;
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
                 <a href="/reports" class="nav-link">Report</a>
             <?php endif; ?>
+            <a href="/live" class="nav-link">Sessioni live</a>
             <a href="/certificates" class="nav-link">Certificati</a>
 
             <?php if (Auth::canAny('user.manage', 'assistant.manage', 'group.manage', 'group.manage_own', 'course.create', 'course.edit', 'course.delete') || Auth::hasRole('admin')): ?>

@@ -46,7 +46,7 @@ INSERT INTO role_permissions (role, permission_key) VALUES
 -- ---------------------------------------------------
 -- Gruppi (classi/coorti + assegnazione corsi a gruppi)
 -- ---------------------------------------------------
-CREATE TABLE groups (
+CREATE TABLE `groups` (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name            VARCHAR(150) NOT NULL,
     description     TEXT,
@@ -61,7 +61,7 @@ CREATE TABLE group_members (
     user_id         INT UNSIGNED NOT NULL,
     joined_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_group_user (group_id, user_id),
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -72,7 +72,7 @@ CREATE TABLE group_course_access (
     course_id       INT UNSIGNED NOT NULL,
     granted_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_group_course (group_id, course_id),
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -262,7 +262,7 @@ CREATE TABLE live_sessions (
     created_by      INT UNSIGNED NOT NULL,       -- tutor/admin che ha creato la sessione
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -272,6 +272,8 @@ CREATE TABLE live_session_attendance (
     session_id      INT UNSIGNED NOT NULL,
     user_id         INT UNSIGNED NOT NULL,
     joined_at       DATETIME NULL,
+    -- 'platform': ingresso tracciato dal link interno; 'manual': segnato dal tutor
+    source          ENUM('platform','manual') NOT NULL DEFAULT 'platform',
     UNIQUE KEY uq_session_user (session_id, user_id),
     FOREIGN KEY (session_id) REFERENCES live_sessions(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

@@ -5,11 +5,17 @@ declare(strict_types=1);
 /** @var array $student */
 /** @var array $courses */
 /** @var array<int, array> $quizzesByCourse */
+/** @var array{attended: int, total: int} $liveAttendance */
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
     <h1><?= htmlspecialchars((string) $student['full_name']) ?></h1>
     <p class="page-subtitle"><?= htmlspecialchars((string) $student['email']) ?> · <?= htmlspecialchars((string) $student['role']) ?></p>
+    <?php if ($liveAttendance['total'] > 0): ?>
+        <p class="page-subtitle">
+            Sessioni live seguite: <?= (int) $liveAttendance['attended'] ?>/<?= (int) $liveAttendance['total'] ?>
+        </p>
+    <?php endif; ?>
     <p><a href="/reports/students/<?= (int) $student['id'] ?>/csv" class="btn btn-secondary">Esporta CSV</a></p>
 </div>
 

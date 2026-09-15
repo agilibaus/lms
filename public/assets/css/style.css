@@ -1091,3 +1091,13 @@ h3 { font-size: 1.05rem; }
 .form textarea {
     display: block;
 }
+
+/* ---------- Sessioni live ---------- */
+
+.row-past {
+    opacity: 0.6;
+}
+
+.data-table .cell-sub + .cell-sub {
+    margin-top: 0.1rem;
+}
