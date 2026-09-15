@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Core\CertificateService;
+use App\Core\CourseAccess;
 use App\Core\View;
+use App\Models\CertificateModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
 use App\Models\ModuleModel;
+use App\Models\QuizAttemptModel;
+use App\Models\QuizModel;
 
 class CourseController
 {
@@ -52,16 +57,38 @@ class CourseController
             }
         }
 
-        $modules = ModuleModel::forCourse((int) $course['id']);
+        $userId = (int) Auth::id();
+        $courseId = (int) $course['id'];
+        $isStudent = Auth::hasRole('studente');
+
+        $modules = ModuleModel::forCourse($courseId);
         $lessonsByModule = [];
+        $quizByModule = [];
+        $quizPassedByModule = [];
 
         foreach ($modules as $module) {
-            $lessonsByModule[$module['id']] = LessonModel::forModule((int) $module['id']);
+            $moduleId = (int) $module['id'];
+            $lessonsByModule[$moduleId] = LessonModel::forModule($moduleId);
+
+            $quiz = QuizModel::forModule($moduleId);
+            $quizByModule[$moduleId] = $quiz;
+            $quizPassedByModule[$moduleId] = $quiz !== null && $isStudent
+                && QuizAttemptModel::hasPassed($userId, (int) $quiz['id']);
         }
 
-        $completedLessonIds = Auth::hasRole('studente')
-            ? LessonProgressModel::completedLessonIdsForCourse((int) Auth::id(), (int) $course['id'])
+        $completedLessonIds = $isStudent
+            ? LessonProgressModel::completedLessonIdsForCourse($userId, $courseId)
             : [];
+
+        // Il certificato puo' maturare anche solo completando le lezioni (se il corso
+        // non ha quiz): la verifica qui copre quel caso, l'altro e' in QuizController.
+        if ($isStudent) {
+            try {
+                CertificateService::issueIfEligible($userId, $courseId);
+            } catch (\RuntimeException $e) {
+                error_log('[Certificati] ' . $e->getMessage());
+            }
+        }
 
         View::render('courses/show', [
             'pageTitle' => $course['title'],
@@ -69,6 +96,11 @@ class CourseController
             'modules' => $modules,
             'lessonsByModule' => $lessonsByModule,
             'completedLessonIds' => $completedLessonIds,
+            'quizByModule' => $quizByModule,
+            'quizPassedByModule' => $quizPassedByModule,
+            'lockedModuleIds' => $isStudent ? CourseAccess::lockedModuleIds($userId, $courseId) : [],
+            'certificate' => $isStudent ? CertificateModel::findForUserAndCourse($userId, $courseId) : null,
+            'eligibility' => $isStudent ? CertificateService::eligibility($userId, $courseId) : null,
         ]);
     }
 }

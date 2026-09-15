@@ -8,6 +8,13 @@ use App\Auth\Auth;
 /** @var array $modules */
 /** @var array<int, array> $lessonsByModule */
 /** @var int[] $completedLessonIds */
+/** @var array<int, array|null> $quizByModule */
+/** @var array<int, bool> $quizPassedByModule */
+/** @var int[] $lockedModuleIds */
+/** @var array|null $certificate */
+/** @var array|null $eligibility */
+
+$isStaff = Auth::hasRole('admin', 'tutor');
 ?>
 <div class="page-header">
     <a href="/" class="back-link">&larr; Tutti i corsi</a>
@@ -23,7 +30,19 @@ use App\Auth\Auth;
     <p class="course-description"><?= nl2br(htmlspecialchars($course['description'])) ?></p>
 <?php endif; ?>
 
-<?php if (Auth::hasRole('admin', 'tutor')): ?>
+<?php if ($certificate !== null && $certificate['revoked_at'] === null): ?>
+    <div class="alert alert-success">
+        Hai completato il corso: certificato <code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code> —
+        <a href="/certificates/<?= (int) $certificate['id'] ?>/download">scarica il PDF</a>.
+    </div>
+<?php elseif ($eligibility !== null && !$eligibility['eligible']): ?>
+    <p class="course-progress-hint">
+        Per ottenere il certificato: lezioni <?= (int) $eligibility['lessons_done'] ?>/<?= (int) $eligibility['lessons_total'] ?>,
+        quiz superati <?= (int) $eligibility['quizzes_passed'] ?>/<?= (int) $eligibility['quizzes_total'] ?>.
+    </p>
+<?php endif; ?>
+
+<?php if ($isStaff): ?>
     <p><a href="/courses/<?= (int) $course['id'] ?>/modules/create" class="btn btn-primary">+ Nuovo modulo</a></p>
 <?php endif; ?>
 
@@ -32,14 +51,31 @@ use App\Auth\Auth;
 <?php else: ?>
     <div class="module-list">
         <?php foreach ($modules as $module): ?>
-            <section class="module-card">
+            <?php
+            $moduleId = (int) $module['id'];
+            $quiz = $quizByModule[$moduleId] ?? null;
+            $isLocked = in_array($moduleId, $lockedModuleIds, true);
+            ?>
+            <section class="module-card <?= $isLocked ? 'module-locked' : '' ?>">
                 <div class="module-card-header">
-                    <h3><?= htmlspecialchars($module['title']) ?></h3>
-                    <?php if (Auth::hasRole('admin', 'tutor')): ?>
+                    <h3>
+                        <?= htmlspecialchars($module['title']) ?>
+                        <?php if ($isLocked): ?>
+                            <span class="badge badge-danger">bloccato</span>
+                        <?php elseif (!empty($module['quiz_required'])): ?>
+                            <span class="badge">quiz obbligatorio</span>
+                        <?php endif; ?>
+                    </h3>
+                    <?php if ($isStaff): ?>
                         <div class="module-card-actions">
-                            <a href="/modules/<?= (int) $module['id'] ?>/lessons/create">+ Lezione</a>
-                            <a href="/modules/<?= (int) $module['id'] ?>/edit">Modifica</a>
-                            <form action="/modules/<?= (int) $module['id'] ?>/delete" method="post"
+                            <a href="/modules/<?= $moduleId ?>/lessons/create">+ Lezione</a>
+                            <?php if ($quiz === null): ?>
+                                <a href="/modules/<?= $moduleId ?>/quiz/create">+ Quiz</a>
+                            <?php else: ?>
+                                <a href="/quizzes/<?= (int) $quiz['id'] ?>/edit">Quiz</a>
+                            <?php endif; ?>
+                            <a href="/modules/<?= $moduleId ?>/edit">Modifica</a>
+                            <form action="/modules/<?= $moduleId ?>/delete" method="post"
                                   onsubmit="return confirm('Eliminare questo modulo e tutte le sue lezioni?');">
                                 <button type="submit" class="link-btn">Elimina</button>
                             </form>
@@ -47,26 +83,43 @@ use App\Auth\Auth;
                     <?php endif; ?>
                 </div>
 
-                <?php $lessons = $lessonsByModule[$module['id']] ?? []; ?>
-
-                <?php if (empty($lessons)): ?>
-                    <p class="empty-state-small">Nessuna lezione in questo modulo.</p>
+                <?php if ($isLocked): ?>
+                    <p class="empty-state-small">
+                        Supera il quiz del modulo precedente per sbloccare questo modulo.
+                    </p>
                 <?php else: ?>
-                    <ul class="lesson-list">
-                        <?php foreach ($lessons as $lesson): ?>
-                            <li class="lesson-list-item">
-                                <a href="/lessons/<?= (int) $lesson['id'] ?>">
-                                    <?php if (in_array((int) $lesson['id'], $completedLessonIds, true)): ?>
-                                        <span class="lesson-check" title="Completata">&check;</span>
+                    <?php $lessons = $lessonsByModule[$moduleId] ?? []; ?>
+
+                    <?php if (empty($lessons)): ?>
+                        <p class="empty-state-small">Nessuna lezione in questo modulo.</p>
+                    <?php else: ?>
+                        <ul class="lesson-list">
+                            <?php foreach ($lessons as $lesson): ?>
+                                <li class="lesson-list-item">
+                                    <a href="/lessons/<?= (int) $lesson['id'] ?>">
+                                        <?php if (in_array((int) $lesson['id'], $completedLessonIds, true)): ?>
+                                            <span class="lesson-check" title="Completata">&check;</span>
+                                        <?php endif; ?>
+                                        <?= htmlspecialchars($lesson['title']) ?>
+                                    </a>
+                                    <?php if ($lesson['video_provider'] !== 'none'): ?>
+                                        <span class="badge badge-video">video</span>
                                     <?php endif; ?>
-                                    <?= htmlspecialchars($lesson['title']) ?>
-                                </a>
-                                <?php if ($lesson['video_provider'] !== 'none'): ?>
-                                    <span class="badge badge-video">video</span>
-                                <?php endif; ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+
+                    <?php if ($quiz !== null): ?>
+                        <p class="module-quiz-row">
+                            <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="quiz-link">
+                                Quiz: <?= htmlspecialchars((string) $quiz['title']) ?>
+                            </a>
+                            <?php if (!empty($quizPassedByModule[$moduleId])): ?>
+                                <span class="badge badge-success">superato</span>
+                            <?php endif; ?>
+                        </p>
+                    <?php endif; ?>
                 <?php endif; ?>
             </section>
         <?php endforeach; ?>

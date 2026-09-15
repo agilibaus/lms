@@ -100,6 +100,8 @@ CREATE TABLE modules (
     course_id       INT UNSIGNED NOT NULL,
     title           VARCHAR(200) NOT NULL,
     position        INT UNSIGNED NOT NULL DEFAULT 0,
+    -- se 1, i moduli successivi restano bloccati finche' il quiz di questo modulo non e' superato
+    quiz_required   TINYINT(1) NOT NULL DEFAULT 0,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     INDEX idx_course_position (course_id, position)
@@ -223,9 +225,13 @@ CREATE TABLE certificates (
     certificate_code VARCHAR(40) NOT NULL UNIQUE,   -- codice per verifica pubblica
     file_path       VARCHAR(255) NOT NULL,
     issued_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    issued_by       INT UNSIGNED NULL,               -- NULL = emissione automatica del sistema
+    revoked_at      DATETIME NULL,                   -- valorizzato = certificato revocato (non ri-emesso in automatico)
+    revoked_reason  VARCHAR(255) NULL,
     UNIQUE KEY uq_user_course_cert (user_id, course_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------

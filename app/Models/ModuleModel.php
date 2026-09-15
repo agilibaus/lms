@@ -14,7 +14,7 @@ class ModuleModel
     public static function forCourse(int $courseId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, course_id, title, position
+            'SELECT id, course_id, title, position, quiz_required
              FROM modules WHERE course_id = :course_id ORDER BY position, id'
         );
         $stmt->execute(['course_id' => $courseId]);
@@ -31,26 +31,30 @@ class ModuleModel
         return $module ?: null;
     }
 
-    public static function create(int $courseId, string $title): int
+    public static function create(int $courseId, string $title, bool $quizRequired = false): int
     {
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO modules (course_id, title, position) VALUES (:course_id, :title, :position)'
+            'INSERT INTO modules (course_id, title, position, quiz_required)
+             VALUES (:course_id, :title, :position, :quiz_required)'
         );
         $stmt->execute([
             'course_id' => $courseId,
             'title' => $title,
             'position' => self::nextPosition($courseId),
+            'quiz_required' => $quizRequired ? 1 : 0,
         ]);
 
         return (int) $db->lastInsertId();
     }
 
-    public static function update(int $id, string $title): void
+    public static function update(int $id, string $title, bool $quizRequired = false): void
     {
-        $stmt = Database::connection()->prepare('UPDATE modules SET title = :title WHERE id = :id');
-        $stmt->execute(['title' => $title, 'id' => $id]);
+        $stmt = Database::connection()->prepare(
+            'UPDATE modules SET title = :title, quiz_required = :quiz_required WHERE id = :id'
+        );
+        $stmt->execute(['title' => $title, 'quiz_required' => $quizRequired ? 1 : 0, 'id' => $id]);
     }
 
     public static function delete(int $id): void

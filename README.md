@@ -7,7 +7,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 ## Stack
 - PHP 8.1+ (nessun framework), PDO con prepared statements
 - MySQL/MariaDB
-- Composer solo per autoload PSR-4 + poche librerie mirate (PDF, in arrivo)
+- Composer per l'autoload PSR-4 + Dompdf (generazione dei certificati PDF)
 - Frontend: CSS moderno (flexbox/grid, variabili CSS), nessuna dipendenza JS pesante
 - Design: asciutto, moderno, ispirato a Frappe LMS, mobile-first (sidebar a drawer sotto i 768px, via checkbox CSS senza JS)
 
@@ -34,16 +34,18 @@ In sviluppo iniziale.
 - ✅ Schema database (`database/schema.sql`)
 - ✅ Scaffold applicativo: router, autenticazione/sessioni, connessione PDO, layout responsive, lista/dettaglio corsi
 - ✅ Moduli/lezioni con upload materiali ed embed video (Bunny/Cloudflare Stream o self-hosted)
-- ⏳ Quiz, certificati PDF, report
+- ✅ Quiz (scelta singola / vero-falso), tentativi illimitati, sblocco progressivo dei moduli
+- ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
+- ✅ Report per corso, studente e gruppo, con export CSV
 - ⏳ Gestione gruppi e permessi da pannello admin
 - ⏳ Integrazione Google Meet
 
 ## Requisiti
 
-- PHP **8.1 o superiore**, con estensioni `pdo_mysql`, `mbstring`
+- PHP **8.1 o superiore**, con estensioni `pdo_mysql`, `mbstring`, `dom`, `gd` (le ultime due richieste da Dompdf per i certificati)
 - MySQL 8+ o MariaDB 10.6+
 - Server web con supporto al rewrite degli URL (Apache + `mod_rewrite`, oppure Nginx configurato in modo equivalente)
-- Composer (per l'autoload PSR-4; nessuna dipendenza esterna obbligatoria per l'MVP attuale)
+- Composer (autoload PSR-4 e installazione di Dompdf: senza `composer install` i certificati non possono essere generati)
 - Per le sessioni live: un progetto Google Cloud con **Calendar API** abilitata e un account di servizio (o credenziali OAuth) con accesso al calendario da usare per generare i link Meet
 
 ## Installazione
@@ -56,8 +58,11 @@ In sviluppo iniziale.
 
 2. **Installa le dipendenze**
    ```bash
-   composer install
+   composer update
    ```
+   Installa l'autoload PSR-4 e **Dompdf** (certificati PDF). Usa `composer update` e non
+   `composer install`: `composer.lock` viene rigenerato includendo Dompdf, aggiunto in questa
+   fase. Dagli aggiornamenti successivi `composer install` è di nuovo sufficiente.
 
 3. **Configura l'ambiente**
    ```bash
@@ -70,12 +75,20 @@ In sviluppo iniziale.
    DB_USER=il_tuo_utente
    DB_PASS=la_tua_password
    APP_DEBUG=0
+   APP_URL=https://lms.example.com
    ```
+   `APP_URL` viene usato nel PDF del certificato per comporre il link di verifica pubblica.
 
 4. **Crea il database e importa lo schema**
    ```bash
    mysql -u il_tuo_utente -p -e "CREATE DATABASE lms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
    mysql -u il_tuo_utente -p lms < database/schema.sql
+   ```
+
+   Se hai gia' un'installazione creata con una versione precedente dello schema, applica
+   invece le migrazioni incrementali presenti in `database/migrations/` (in ordine di data):
+   ```bash
+   mysql -u il_tuo_utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
    ```
 
 5. **Imposta il document root sulla cartella `public/`**
@@ -128,10 +141,10 @@ In sviluppo iniziale.
   index.php           → front controller
   .htaccess           → rewrite verso index.php
 /app
-  /Controllers        → logica delle route (AuthController, CourseController, ModuleController, LessonController...)
-  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel...)
+  /Controllers        → logica delle route (AuthController, CourseController, ModuleController, LessonController, QuizController, CertificateController, ReportController)
+  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
   /Auth               → login, sessione, permessi per ruolo (Auth.php)
-  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed
+  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed, CourseAccess, CertificateService, Csv
   /Views
     /partials          → layout condiviso (shell.php)
   routes.php
@@ -143,4 +156,43 @@ In sviluppo iniziale.
   /certificates
 /database
   schema.sql
+  /migrations         → migrazioni incrementali per installazioni gia' esistenti
 ```
+
+## Quiz, certificati e report
+
+### Quiz
+Ogni modulo puo' avere **un quiz** (domande a scelta singola o vero/falso). Il tutor imposta
+la soglia di superamento in percentuale; i **tentativi sono illimitati** e allo studente vale
+sempre il punteggio migliore. Le risposte corrette non vengono mai inviate al browser durante
+lo svolgimento, e la correzione avviene lato server verificando che l'opzione scelta appartenga
+davvero alla domanda.
+
+### Sblocco progressivo dei moduli
+Se un modulo ha il flag **"quiz obbligatorio"**, tutti i moduli successivi restano bloccati
+(lezioni comprese) finche' lo studente non supera quel quiz. Lo staff non e' mai soggetto al
+blocco. Un modulo marcato come obbligatorio ma privo di quiz — o con un quiz senza domande —
+non blocca nulla, per evitare vicoli ciechi.
+
+### Certificati
+Il certificato viene emesso **automaticamente** quando lo studente ha completato tutte le
+lezioni del corso **e** superato tutti i quiz presenti. Il PDF (A4 orizzontale, generato con
+Dompdf) viene salvato in `storage/certificates/` e non e' mai raggiungibile direttamente da
+`public/`: il download passa da un endpoint autenticato. Ogni certificato ha un codice di
+verifica pubblico consultabile su `/verify/{codice}`, pagina che non richiede login e mostra
+solo intestatario, corso e data. Admin e tutor possono emettere un certificato manualmente
+(anche in deroga ai requisiti) o revocarlo: un certificato revocato non e' piu' scaricabile,
+risulta "revocato" nella verifica pubblica e non viene rigenerato dall'emissione automatica.
+
+### Report
+Disponibili in `/reports`, con export CSV di ogni vista:
+
+| Report | Contenuto |
+|---|---|
+| Per corso | Iscritti con progresso, lezioni completate, quiz superati, stato certificato |
+| Per studente | Tutti i corsi dello studente, con dettaglio tentativi e punteggi per quiz |
+| Per gruppo | Membri del gruppo incrociati con i corsi assegnati al gruppo |
+
+I permessi seguono `role_permissions`: `report.view` (admin, tutor) da' accesso completo,
+`report.view_assigned` (assistente) limita la vista agli studenti dei gruppi seguiti dal
+proprio tutor di riferimento (`supervising_tutor_id`).

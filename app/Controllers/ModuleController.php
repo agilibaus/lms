@@ -51,7 +51,7 @@ class ModuleController
             exit;
         }
 
-        ModuleModel::create($courseId, $title);
+        ModuleModel::create($courseId, $title, isset($_POST['quiz_required']));
 
         header('Location: /courses/' . $courseId);
         exit;
@@ -93,7 +93,7 @@ class ModuleController
         $title = trim($_POST['title'] ?? '');
 
         if ($title !== '') {
-            ModuleModel::update((int) $module['id'], $title);
+            ModuleModel::update((int) $module['id'], $title, isset($_POST['quiz_required']));
         }
 
         header('Location: /courses/' . $module['course_id']);

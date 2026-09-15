@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Core\CertificateService;
+use App\Core\CourseAccess;
 use App\Core\Upload;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -101,6 +103,12 @@ class LessonController
         if (!$this->canAccessCourse((int) $course['id'])) {
             http_response_code(403);
             echo 'Non sei iscritto a questo corso.';
+            return;
+        }
+
+        if ($this->isModuleLocked((int) $module['id'])) {
+            http_response_code(403);
+            echo 'Questo modulo è bloccato: supera prima il quiz del modulo precedente.';
             return;
         }
 
@@ -330,6 +338,12 @@ class LessonController
         $userId = (int) Auth::id();
         $courseId = (int) $module['course_id'];
 
+        if (!$this->canAccessCourse($courseId) || $this->isModuleLocked((int) $module['id'])) {
+            http_response_code(403);
+            echo 'Questa lezione non è accessibile.';
+            return;
+        }
+
         LessonProgressModel::markCompleted($userId, (int) $lesson['id']);
 
         $total = LessonModel::countForCourse($courseId);
@@ -337,6 +351,14 @@ class LessonController
         $pct = $total > 0 ? round(($done / $total) * 100, 2) : 0.0;
 
         EnrollmentModel::updateProgress($userId, $courseId, $pct);
+
+        // Completare l'ultima lezione puo' rendere lo studente idoneo al certificato.
+        try {
+            CertificateService::issueIfEligible($userId, $courseId);
+        } catch (\RuntimeException $e) {
+            error_log('[Certificati] ' . $e->getMessage());
+            $_SESSION['flash_error'] = $e->getMessage();
+        }
 
         header('Location: /lessons/' . $lesson['id']);
         exit;
@@ -356,6 +378,19 @@ class LessonController
         }
 
         return EnrollmentModel::find((int) Auth::id(), $courseId) !== null;
+    }
+
+    /**
+     * Moduli bloccati dallo sblocco progressivo (quiz obbligatorio del modulo
+     * precedente non ancora superato). Lo staff non e' mai bloccato.
+     */
+    private function isModuleLocked(int $moduleId): bool
+    {
+        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+            return false;
+        }
+
+        return CourseAccess::isModuleLocked((int) Auth::id(), $moduleId);
     }
 
     private function contentHtmlFromPost(): ?string

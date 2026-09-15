@@ -21,5 +21,10 @@ $action = $isEdit ? '/modules/' . $module['id'] : '/courses/' . $course['id'] . 
     <label for="title">Titolo del modulo</label>
     <input type="text" id="title" name="title" required value="<?= htmlspecialchars($module['title'] ?? '') ?>">
 
+    <label class="checkbox-label">
+        <input type="checkbox" name="quiz_required" value="1" <?= !empty($module['quiz_required']) ? 'checked' : '' ?>>
+        Quiz obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il quiz di questo modulo
+    </label>
+
     <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Salva' : 'Crea modulo' ?></button>
 </form>

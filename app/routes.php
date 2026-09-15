@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Controllers\AuthController;
+use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
 use App\Controllers\LessonController;
 use App\Controllers\ModuleController;
+use App\Controllers\QuizController;
+use App\Controllers\ReportController;
 
 /** @var App\Core\Router $router */
 
@@ -33,3 +36,33 @@ $router->post('/lessons/{id}/materials/{materialId}/delete', [LessonController::
 $router->get('/lessons/{id}/video', [LessonController::class, 'streamVideo']);
 $router->post('/lessons/{id}/complete', [LessonController::class, 'complete']);
 $router->get('/materials/{id}/download', [LessonController::class, 'downloadMaterial']);
+
+// --- Quiz -------------------------------------------------------------
+$router->get('/modules/{moduleId}/quiz/create', [QuizController::class, 'createForm']);
+$router->post('/modules/{moduleId}/quiz', [QuizController::class, 'store']);
+$router->get('/quizzes/{id}/edit', [QuizController::class, 'editForm']);
+$router->post('/quizzes/{id}', [QuizController::class, 'update']);
+$router->post('/quizzes/{id}/delete', [QuizController::class, 'destroy']);
+$router->post('/quizzes/{id}/questions', [QuizController::class, 'storeQuestion']);
+$router->get('/questions/{id}/edit', [QuizController::class, 'editQuestionForm']);
+$router->post('/questions/{id}', [QuizController::class, 'updateQuestion']);
+$router->post('/questions/{id}/delete', [QuizController::class, 'destroyQuestion']);
+$router->get('/quizzes/{id}', [QuizController::class, 'show']);
+$router->post('/quizzes/{id}/attempts', [QuizController::class, 'submit']);
+$router->get('/attempts/{id}', [QuizController::class, 'result']);
+
+// --- Certificati ------------------------------------------------------
+$router->get('/certificates', [CertificateController::class, 'index']);
+$router->get('/certificates/{id}/download', [CertificateController::class, 'download']);
+$router->post('/certificates/issue', [CertificateController::class, 'issue']);
+$router->post('/certificates/{id}/revoke', [CertificateController::class, 'revoke']);
+$router->get('/verify/{code}', [CertificateController::class, 'verify']);
+
+// --- Report -----------------------------------------------------------
+$router->get('/reports', [ReportController::class, 'index']);
+$router->get('/reports/courses/{id}', [ReportController::class, 'course']);
+$router->get('/reports/courses/{id}/csv', [ReportController::class, 'courseCsv']);
+$router->get('/reports/students/{id}', [ReportController::class, 'student']);
+$router->get('/reports/students/{id}/csv', [ReportController::class, 'studentCsv']);
+$router->get('/reports/groups/{id}', [ReportController::class, 'group']);
+$router->get('/reports/groups/{id}/csv', [ReportController::class, 'groupCsv']);
