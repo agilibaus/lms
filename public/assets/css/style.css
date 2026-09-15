@@ -1030,3 +1030,64 @@ h3 { font-size: 1.05rem; }
     color: var(--color-text-muted);
     margin-top: 0.8rem;
 }
+
+/* =====================================================
+   Pannello di amministrazione
+   ===================================================== */
+
+.nav-section {
+    display: block;
+    margin: 1.1rem 0.75rem 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.assign-list {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+.assign-list li {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    margin-bottom: 0.4rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.permission-matrix th,
+.permission-matrix td {
+    white-space: nowrap;
+}
+
+.permission-matrix td:first-child,
+.permission-matrix th:first-child {
+    white-space: normal;
+    min-width: 260px;
+}
+
+.permission-cell {
+    text-align: center;
+}
+
+.danger-heading {
+    color: var(--color-danger);
+}
+
+.form select,
+.form textarea {
+    display: block;
+}

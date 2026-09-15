@@ -8,8 +8,6 @@ use App\Core\Database;
 
 /**
  * Accesso dati per `groups`, `group_members` e `group_course_access`.
- * In questa fase e' in sola lettura: serve ai report per gruppo/coorte
- * (la gestione CRUD dei gruppi arrivera' con il pannello di amministrazione).
  */
 class GroupModel
 {
@@ -104,5 +102,97 @@ class GroupModel
         $stmt->execute(['tutor_id' => $tutorId]);
 
         return array_map('intval', array_column($stmt->fetchAll(), 'user_id'));
+    }
+
+    // -----------------------------------------------------------------
+    // Scrittura (pannello di amministrazione)
+    // -----------------------------------------------------------------
+
+    public static function create(string $name, ?string $description, ?int $tutorId): int
+    {
+        $db = Database::connection();
+
+        $stmt = $db->prepare(
+            'INSERT INTO groups (name, description, tutor_id) VALUES (:name, :description, :tutor_id)'
+        );
+        $stmt->execute(['name' => $name, 'description' => $description, 'tutor_id' => $tutorId]);
+
+        return (int) $db->lastInsertId();
+    }
+
+    public static function update(int $id, string $name, ?string $description, ?int $tutorId): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE groups SET name = :name, description = :description, tutor_id = :tutor_id WHERE id = :id'
+        );
+        $stmt->execute(['name' => $name, 'description' => $description, 'tutor_id' => $tutorId, 'id' => $id]);
+    }
+
+    public static function delete(int $id): void
+    {
+        // Membri e assegnazioni corso seguono via FK ON DELETE CASCADE;
+        // le iscrizioni gia' create restano (il progresso non va perso).
+        $stmt = Database::connection()->prepare('DELETE FROM groups WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+    }
+
+    public static function addMember(int $groupId, int $userId): void
+    {
+        $stmt = Database::connection()->prepare(
+            'INSERT IGNORE INTO group_members (group_id, user_id) VALUES (:group_id, :user_id)'
+        );
+        $stmt->execute(['group_id' => $groupId, 'user_id' => $userId]);
+    }
+
+    public static function removeMember(int $groupId, int $userId): void
+    {
+        // Le iscrizioni ai corsi restano: toglierle cancellerebbe progresso e
+        // tentativi quiz gia' registrati.
+        $stmt = Database::connection()->prepare(
+            'DELETE FROM group_members WHERE group_id = :group_id AND user_id = :user_id'
+        );
+        $stmt->execute(['group_id' => $groupId, 'user_id' => $userId]);
+    }
+
+    public static function addCourse(int $groupId, int $courseId): void
+    {
+        $stmt = Database::connection()->prepare(
+            'INSERT IGNORE INTO group_course_access (group_id, course_id) VALUES (:group_id, :course_id)'
+        );
+        $stmt->execute(['group_id' => $groupId, 'course_id' => $courseId]);
+    }
+
+    public static function removeCourse(int $groupId, int $courseId): void
+    {
+        $stmt = Database::connection()->prepare(
+            'DELETE FROM group_course_access WHERE group_id = :group_id AND course_id = :course_id'
+        );
+        $stmt->execute(['group_id' => $groupId, 'course_id' => $courseId]);
+    }
+
+    /**
+     * @return int[] id degli utenti membri del gruppo
+     */
+    public static function memberIds(int $groupId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT user_id FROM group_members WHERE group_id = :group_id'
+        );
+        $stmt->execute(['group_id' => $groupId]);
+
+        return array_map('intval', array_column($stmt->fetchAll(), 'user_id'));
+    }
+
+    /**
+     * @return int[] id dei corsi assegnati al gruppo
+     */
+    public static function courseIds(int $groupId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT course_id FROM group_course_access WHERE group_id = :group_id'
+        );
+        $stmt->execute(['group_id' => $groupId]);
+
+        return array_map('intval', array_column($stmt->fetchAll(), 'course_id'));
     }
 }

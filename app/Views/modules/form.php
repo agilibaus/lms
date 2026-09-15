@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\Csrf;
+
 /** @var array $course */
 /** @var array|null $module */
 $isEdit = $module !== null;
@@ -18,6 +20,7 @@ $action = $isEdit ? '/modules/' . $module['id'] : '/courses/' . $course['id'] . 
 <?php endif; ?>
 
 <form action="<?= htmlspecialchars($action) ?>" method="post" class="stacked-form">
+    <?= Csrf::field() ?>
     <label for="title">Titolo del modulo</label>
     <input type="text" id="title" name="title" required value="<?= htmlspecialchars($module['title'] ?? '') ?>">
 

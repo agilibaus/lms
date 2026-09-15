@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\Csrf;
+
 /** @var array $module */
 /** @var array|null $course */
 /** @var array|null $quiz */
@@ -22,6 +24,7 @@ $action = $quiz === null
 <?php endif; ?>
 
 <form action="<?= $action ?>" method="post" class="form">
+    <?= Csrf::field() ?>
     <label for="title">Titolo del quiz</label>
     <input type="text" id="title" name="title" maxlength="200" required
            value="<?= htmlspecialchars($quiz['title'] ?? '') ?>">

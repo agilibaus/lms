@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\Csrf;
+
 /** @var string|null $error */
 ?>
 <!DOCTYPE html>
@@ -22,6 +24,7 @@ declare(strict_types=1);
         <?php endif; ?>
 
         <form action="/login" method="post" class="auth-form">
+    <?= Csrf::field() ?>
             <label for="email">Email</label>
             <input type="email" id="email" name="email" required autofocus autocomplete="username">
 

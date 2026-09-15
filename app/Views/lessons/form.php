@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\Csrf;
+
 /** @var array $module */
 /** @var array|null $lesson */
 /** @var array $materials */
@@ -20,6 +22,7 @@ $provider = $lesson['video_provider'] ?? 'none';
 <?php endif; ?>
 
 <form action="<?= htmlspecialchars($action) ?>" method="post" enctype="multipart/form-data" class="stacked-form">
+    <?= Csrf::field() ?>
     <label for="title">Titolo</label>
     <input type="text" id="title" name="title" required value="<?= htmlspecialchars($lesson['title'] ?? '') ?>">
 
@@ -81,6 +84,7 @@ $provider = $lesson['video_provider'] ?? 'none';
                         <span class="material-size"><?= round($material['file_size_bytes'] / 1024) ?>&nbsp;KB</span>
                         <form action="/lessons/<?= (int) $lesson['id'] ?>/materials/<?= (int) $material['id'] ?>/delete"
                               method="post" onsubmit="return confirm('Eliminare questo materiale?');">
+                            <?= Csrf::field() ?>
                             <button type="submit" class="link-btn">Elimina</button>
                         </form>
                     </li>
@@ -89,6 +93,7 @@ $provider = $lesson['video_provider'] ?? 'none';
         <?php endif; ?>
 
         <form action="/lessons/<?= (int) $lesson['id'] ?>/materials" method="post" enctype="multipart/form-data" class="stacked-form">
+            <?= Csrf::field() ?>
             <label for="materials">Aggiungi materiali (PDF, audio, doc, zip &mdash; max 50&nbsp;MB ciascuno)</label>
             <input type="file" id="materials" name="materials[]" multiple>
             <button type="submit" class="btn btn-primary">Carica</button>
@@ -97,6 +102,7 @@ $provider = $lesson['video_provider'] ?? 'none';
 
     <form action="/lessons/<?= (int) $lesson['id'] ?>/delete" method="post"
           onsubmit="return confirm('Eliminare definitivamente questa lezione e i suoi materiali?');">
+        <?= Csrf::field() ?>
         <button type="submit" class="link-btn">Elimina lezione</button>
     </form>
 <?php endif; ?>

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\Csrf;
+
 /** @var array $question */
 /** @var array $options */
 /** @var array|null $quiz */
@@ -18,6 +20,7 @@ declare(strict_types=1);
 <?php endif; ?>
 
 <form action="/questions/<?= (int) $question['id'] ?>" method="post" class="form" data-question-form>
+    <?= Csrf::field() ?>
     <?php
     $formId = 'edit-question';
     require __DIR__ . '/_question_fields.php';

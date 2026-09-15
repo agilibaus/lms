@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\Csrf;
 
 /** @var array $course */
 /** @var array $modules */
@@ -77,6 +78,7 @@ $isStaff = Auth::hasRole('admin', 'tutor');
                             <a href="/modules/<?= $moduleId ?>/edit">Modifica</a>
                             <form action="/modules/<?= $moduleId ?>/delete" method="post"
                                   onsubmit="return confirm('Eliminare questo modulo e tutte le sue lezioni?');">
+                                <?= Csrf::field() ?>
                                 <button type="submit" class="link-btn">Elimina</button>
                             </form>
                         </div>

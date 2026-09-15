@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\Csrf;
 
 /** @var array $course */
 /** @var array $rows */
@@ -67,8 +68,9 @@ use App\Auth\Auth;
                     <?php endif; ?>
                 </td>
                 <td class="row-actions">
-                    <?php if (Auth::hasRole('admin', 'tutor') && empty($row['certificate_code'])): ?>
+                    <?php if (Auth::can('certificate.issue') && empty($row['certificate_code'])): ?>
                         <form action="/certificates/issue" method="post">
+    <?= Csrf::field() ?>
                             <input type="hidden" name="user_id" value="<?= (int) $row['user_id'] ?>">
                             <input type="hidden" name="course_id" value="<?= (int) $course['id'] ?>">
                             <input type="hidden" name="redirect_to" value="/reports/courses/<?= (int) $course['id'] ?>">

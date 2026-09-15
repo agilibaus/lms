@@ -56,4 +56,84 @@ class CourseModel
 
         return $course ?: null;
     }
+
+    // -----------------------------------------------------------------
+    // Scrittura (pannello di amministrazione)
+    // -----------------------------------------------------------------
+
+    public static function create(
+        string $title,
+        string $slug,
+        ?string $description,
+        bool $isPublished,
+        int $createdBy
+    ): int {
+        $db = Database::connection();
+
+        $stmt = $db->prepare(
+            'INSERT INTO courses (title, slug, description, is_published, created_by)
+             VALUES (:title, :slug, :description, :is_published, :created_by)'
+        );
+        $stmt->execute([
+            'title' => $title,
+            'slug' => $slug,
+            'description' => $description,
+            'is_published' => $isPublished ? 1 : 0,
+            'created_by' => $createdBy,
+        ]);
+
+        return (int) $db->lastInsertId();
+    }
+
+    public static function update(int $id, string $title, string $slug, ?string $description, bool $isPublished): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE courses
+             SET title = :title, slug = :slug, description = :description, is_published = :is_published
+             WHERE id = :id'
+        );
+        $stmt->execute([
+            'title' => $title,
+            'slug' => $slug,
+            'description' => $description,
+            'is_published' => $isPublished ? 1 : 0,
+            'id' => $id,
+        ]);
+    }
+
+    public static function delete(int $id): void
+    {
+        // Moduli, lezioni, iscrizioni e certificati seguono via FK ON DELETE CASCADE.
+        $stmt = Database::connection()->prepare('DELETE FROM courses WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Genera uno slug univoco a partire dal titolo (o da uno slug proposto).
+     */
+    public static function uniqueSlug(string $source, ?int $exceptId = null): string
+    {
+        $base = strtolower(trim($source));
+        $base = preg_replace('/[^a-z0-9]+/u', '-', $base) ?? '';
+        $base = trim($base, '-') ?: 'corso';
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (self::slugTaken($slug, $exceptId)) {
+            $slug = $base . '-' . $suffix++;
+        }
+
+        return $slug;
+    }
+
+    private static function slugTaken(string $slug, ?int $exceptId): bool
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT 1 FROM courses WHERE slug = :slug AND (:except_id IS NULL OR id <> :except_id2) LIMIT 1'
+        );
+        $stmt->execute(['slug' => $slug, 'except_id' => $exceptId, 'except_id2' => $exceptId ?? 0]);
+
+        return (bool) $stmt->fetchColumn();
+    }
 }

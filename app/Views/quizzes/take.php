@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\Csrf;
 
 /** @var array $quiz */
 /** @var array $module */
@@ -38,6 +39,7 @@ use App\Auth\Auth;
     <p class="empty-state">Questo quiz non ha ancora domande.</p>
 <?php else: ?>
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/attempts" method="post" class="quiz-form">
+        <?= Csrf::field() ?>
         <ol class="quiz-question-list">
             <?php foreach ($questions as $question): ?>
                 <li class="quiz-question">

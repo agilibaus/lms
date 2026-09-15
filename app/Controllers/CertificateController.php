@@ -72,11 +72,12 @@ class CertificateController
     }
 
     /**
-     * Emissione manuale (admin/tutor), anche in deroga ai requisiti automatici.
+     * Emissione manuale (permesso `certificate.issue`), anche in deroga ai
+     * requisiti automatici.
      */
     public function issue(array $params = []): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requirePermission('certificate.issue');
 
         $userId = (int) ($_POST['user_id'] ?? 0);
         $courseId = (int) ($_POST['course_id'] ?? 0);
@@ -99,7 +100,7 @@ class CertificateController
 
     public function revoke(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requirePermission('certificate.issue');
 
         $certificate = CertificateModel::find((int) $params['id']);
         $redirectTo = $this->safeRedirectTarget($_POST['redirect_to'] ?? '/certificates');

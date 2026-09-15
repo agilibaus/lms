@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\Csrf;
 use App\Core\VideoEmbed;
 
 /** @var array $lesson */
@@ -50,6 +51,7 @@ use App\Core\VideoEmbed;
         <p class="badge badge-muted">&check; Lezione completata</p>
     <?php else: ?>
         <form action="/lessons/<?= (int) $lesson['id'] ?>/complete" method="post">
+            <?= Csrf::field() ?>
             <button type="submit" class="btn btn-primary">Segna come completata</button>
         </form>
     <?php endif; ?>

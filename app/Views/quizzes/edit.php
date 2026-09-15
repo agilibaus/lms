@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\Csrf;
+
 /** @var array $quiz */
 /** @var array $module */
 /** @var array|null $course */
@@ -36,6 +38,7 @@ declare(strict_types=1);
 <section class="card">
     <h2>Impostazioni</h2>
     <form action="/quizzes/<?= (int) $quiz['id'] ?>" method="post" class="form form-inline">
+        <?= Csrf::field() ?>
         <input type="text" name="title" maxlength="200" required value="<?= htmlspecialchars($quiz['title']) ?>"
                aria-label="Titolo del quiz">
         <input type="number" name="passing_score_pct" min="1" max="100"
@@ -45,6 +48,7 @@ declare(strict_types=1);
 
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/delete" method="post" class="danger-zone"
           onsubmit="return confirm('Eliminare il quiz, le sue domande e tutti i tentativi degli studenti?');">
+        <?= Csrf::field() ?>
         <button type="submit" class="link-btn link-btn-danger">Elimina quiz</button>
     </form>
 </section>
@@ -74,6 +78,7 @@ declare(strict_types=1);
                         <a href="/questions/<?= (int) $question['id'] ?>/edit">Modifica</a>
                         <form action="/questions/<?= (int) $question['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare questa domanda?');">
+                            <?= Csrf::field() ?>
                             <button type="submit" class="link-btn">Elimina</button>
                         </form>
                     </div>
@@ -86,6 +91,7 @@ declare(strict_types=1);
 <section class="card">
     <h2>Nuova domanda</h2>
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/questions" method="post" class="form" data-question-form>
+        <?= Csrf::field() ?>
         <?php
         $formId = 'new-question';
         $question = null;

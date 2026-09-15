@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Controllers\Admin\CourseController as AdminCourseController;
+use App\Controllers\Admin\GroupController as AdminGroupController;
+use App\Controllers\Admin\PermissionController as AdminPermissionController;
+use App\Controllers\Admin\UserController as AdminUserController;
 use App\Controllers\AuthController;
 use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
@@ -66,3 +70,35 @@ $router->get('/reports/students/{id}', [ReportController::class, 'student']);
 $router->get('/reports/students/{id}/csv', [ReportController::class, 'studentCsv']);
 $router->get('/reports/groups/{id}', [ReportController::class, 'group']);
 $router->get('/reports/groups/{id}/csv', [ReportController::class, 'groupCsv']);
+
+// --- Pannello di amministrazione --------------------------------------
+$router->get('/admin/users', [AdminUserController::class, 'index']);
+$router->get('/admin/users/create', [AdminUserController::class, 'createForm']);
+$router->post('/admin/users', [AdminUserController::class, 'store']);
+$router->get('/admin/users/{id}/edit', [AdminUserController::class, 'editForm']);
+$router->post('/admin/users/{id}', [AdminUserController::class, 'update']);
+$router->post('/admin/users/{id}/password', [AdminUserController::class, 'resetPassword']);
+$router->post('/admin/users/{id}/delete', [AdminUserController::class, 'destroy']);
+
+$router->get('/admin/groups', [AdminGroupController::class, 'index']);
+$router->get('/admin/groups/create', [AdminGroupController::class, 'createForm']);
+$router->post('/admin/groups', [AdminGroupController::class, 'store']);
+$router->get('/admin/groups/{id}/edit', [AdminGroupController::class, 'editForm']);
+$router->post('/admin/groups/{id}', [AdminGroupController::class, 'update']);
+$router->post('/admin/groups/{id}/delete', [AdminGroupController::class, 'destroy']);
+$router->post('/admin/groups/{id}/members', [AdminGroupController::class, 'addMember']);
+$router->post('/admin/groups/{id}/members/{userId}/delete', [AdminGroupController::class, 'removeMember']);
+$router->post('/admin/groups/{id}/courses', [AdminGroupController::class, 'addCourse']);
+$router->post('/admin/groups/{id}/courses/{courseId}/delete', [AdminGroupController::class, 'removeCourse']);
+
+$router->get('/admin/courses', [AdminCourseController::class, 'index']);
+$router->get('/admin/courses/create', [AdminCourseController::class, 'createForm']);
+$router->post('/admin/courses', [AdminCourseController::class, 'store']);
+$router->get('/admin/courses/{id}/edit', [AdminCourseController::class, 'editForm']);
+$router->post('/admin/courses/{id}', [AdminCourseController::class, 'update']);
+$router->post('/admin/courses/{id}/delete', [AdminCourseController::class, 'destroy']);
+$router->post('/admin/courses/{id}/enrollments', [AdminCourseController::class, 'enroll']);
+$router->post('/admin/courses/{id}/enrollments/{userId}/delete', [AdminCourseController::class, 'unenroll']);
+
+$router->get('/admin/permissions', [AdminPermissionController::class, 'index']);
+$router->post('/admin/permissions', [AdminPermissionController::class, 'update']);

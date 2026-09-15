@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\Csrf;
 
 /** @var bool $isStaff */
 /** @var array $certificates */
@@ -70,9 +71,10 @@ use App\Auth\Auth;
                         <a href="/certificates/<?= (int) $certificate['id'] ?>/download">PDF</a>
                     <?php endif; ?>
                     <a href="/verify/<?= urlencode((string) $certificate['certificate_code']) ?>">Verifica</a>
-                    <?php if (!$revoked && Auth::hasRole('admin', 'tutor')): ?>
+                    <?php if (!$revoked && Auth::can('certificate.issue')): ?>
                         <form action="/certificates/<?= (int) $certificate['id'] ?>/revoke" method="post"
                               onsubmit="return confirm('Revocare questo certificato?');">
+                            <?= Csrf::field() ?>
                             <input type="hidden" name="redirect_to" value="/certificates">
                             <button type="submit" class="link-btn link-btn-danger">Revoca</button>
                         </form>

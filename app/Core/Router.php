@@ -46,6 +46,15 @@ class Router
             }
 
             if (preg_match($route['regex'], $path, $matches) === 1) {
+                if ($method === 'POST' && !Csrf::isValid($_POST[Csrf::FIELD] ?? null)) {
+                    // Token assente o non valido: la richiesta non proviene da un
+                    // form dell'applicazione (o la sessione e' scaduta).
+                    http_response_code(419);
+                    echo 'Sessione scaduta o richiesta non valida. Ricarica la pagina e riprova.';
+
+                    return;
+                }
+
                 $params = array_filter(
                     $matches,
                     static fn ($key) => is_string($key),

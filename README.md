@@ -37,7 +37,8 @@ In sviluppo iniziale.
 - ✅ Quiz (scelta singola / vero-falso), tentativi illimitati, sblocco progressivo dei moduli
 - ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
 - ✅ Report per corso, studente e gruppo, con export CSV
-- ⏳ Gestione gruppi e permessi da pannello admin
+- ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
+- ✅ Protezione CSRF su tutte le richieste POST
 - ⏳ Integrazione Google Meet
 
 ## Requisiti
@@ -121,7 +122,7 @@ In sviluppo iniziale.
    per file di piccole dimensioni e non per lo storage di produzione.
 
 7. **Crea il primo utente amministratore**
-   Non c'è ancora un pannello di registrazione: per il primo admin, inserisci manualmente una riga in `users` con una password hashata:
+   Solo il primo admin va inserito a mano (da lì in poi si usa il pannello **Utenti**):
    ```bash
    php -r "echo password_hash('la-tua-password', PASSWORD_DEFAULT), PHP_EOL;"
    ```
@@ -142,9 +143,10 @@ In sviluppo iniziale.
   .htaccess           → rewrite verso index.php
 /app
   /Controllers        → logica delle route (AuthController, CourseController, ModuleController, LessonController, QuizController, CertificateController, ReportController)
+    /Admin             → pannello di amministrazione (UserController, GroupController, CourseController, PermissionController)
   /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
   /Auth               → login, sessione, permessi per ruolo (Auth.php)
-  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed, CourseAccess, CertificateService, Csv
+  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed, CourseAccess, CertificateService, Csv, Csrf
   /Views
     /partials          → layout condiviso (shell.php)
   routes.php
@@ -196,3 +198,53 @@ Disponibili in `/reports`, con export CSV di ogni vista:
 I permessi seguono `role_permissions`: `report.view` (admin, tutor) da' accesso completo,
 `report.view_assigned` (assistente) limita la vista agli studenti dei gruppi seguiti dal
 proprio tutor di riferimento (`supervising_tutor_id`).
+
+## Pannello di amministrazione
+
+Raggiungibile dalla sezione **Amministrazione** della sidebar, che mostra solo le voci
+consentite dai permessi dell'utente.
+
+### Utenti (`/admin/users`)
+Creazione utenti con ruolo, stato attivo/disattivo e password iniziale (minimo 8 caratteri),
+modifica e reimpostazione password. Serve `user.manage`; chi ha solo `assistant.manage`
+(il tutor) vede e gestisce esclusivamente i propri assistenti e non può assegnare altri ruoli.
+
+Alcune protezioni sono deliberatamente rigide, per non restare chiusi fuori:
+un amministratore non può cambiare il proprio ruolo, disattivarsi o eliminarsi; deve sempre
+restare almeno un admin attivo; un utente che risulta autore di corsi non è eliminabile
+(`courses.created_by` è `ON DELETE RESTRICT`) e va semmai disattivato. L'eliminazione di un
+utente rimuove a cascata iscrizioni, progressi, tentativi e certificati: per conservare lo
+storico è preferibile disattivarlo.
+
+### Gruppi (`/admin/groups`)
+Classi/coorti con tutor responsabile, membri e corsi assegnati. Serve `group.manage` (tutti i
+gruppi) oppure `group.manage_own` (solo quelli di cui si è tutor; chi crea un gruppo ne diventa
+responsabile e non può cederlo).
+
+**Assegnare un corso al gruppo iscrive i membri al corso**, e chi entra nel gruppo in un secondo
+momento viene iscritto ai corsi già assegnati. L'operazione è idempotente: riassegnare un corso
+non azzera il progresso di chi era già iscritto. Le operazioni inverse — togliere un membro dal
+gruppo o un corso dal gruppo — **non** cancellano le iscrizioni, perché con esse sparirebbero
+progresso, tentativi quiz e certificati; per rimuoverle davvero si usa la scheda del corso.
+
+### Corsi e iscrizioni (`/admin/courses`)
+Creazione (`course.create`), modifica e iscrizioni (`course.edit`), eliminazione
+(`course.delete`). Lo slug è generato dal titolo e reso univoco in automatico. I contenuti
+(moduli, lezioni, quiz) restano nella scheda del corso. La rimozione di un'iscrizione cancella
+progresso e certificato di quel corso: viene chiesta conferma.
+
+### Permessi (`/admin/permissions`)
+Matrice ruoli × permessi su `role_permissions`, con le chiavi effettivamente controllate dal
+codice (`RolePermissionModel::catalog()`). Le modifiche hanno effetto immediato.
+
+Questa pagina è l'unica riservata al **ruolo** `admin` anziché a un permesso: un permesso
+revocabile da qui potrebbe lasciare la piattaforma senza nessuno in grado di ripristinarlo.
+Per lo stesso motivo `user.manage` viene sempre mantenuto al ruolo admin. Eventuali chiavi
+personalizzate inserite a mano in tabella non vengono toccate dal salvataggio.
+
+## Sicurezza dei form (CSRF)
+
+Ogni richiesta POST deve includere il token di sessione (`App\Core\Csrf`), verificato dal
+Router prima di invocare il controller; una richiesta senza token valido riceve **419** e non
+produce alcun effetto. Nelle view il campo si inserisce con `<?= Csrf::field() ?>`. Il token
+viene rigenerato a ogni login e logout, insieme all'id di sessione.
