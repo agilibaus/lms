@@ -14,6 +14,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 ## Funzionalità
 
 - **Corsi** strutturati in Moduli → Lezioni, con video (Bunny/Cloudflare Stream o self-hosted) e materiali scaricabili
+- **Editor di testo ricco** (TinyMCE incluso nel progetto) per il contenuto della lezione: formattazione, elenchi, tabelle, immagini caricate e video incorporati da YouTube/Vimeo
 - **Quiz** a scelta multipla/vero-falso con verifica automatica del punteggio
 - **Certificati** di completamento generati in PDF, con codice di verifica pubblico
 - **Report/dashboard** su progressi utente/corso, risultati quiz, presenze alle sessioni live
@@ -42,6 +43,7 @@ In sviluppo iniziale.
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
 - ✅ Procedura di installazione guidata dal browser
 - ✅ Registrazione autonoma con verifica email, recupero password, catalogo e auto-iscrizione
+- ✅ Editor ricco nella lezione, immagini caricate e materiali ordinabili
 
 ## Requisiti
 
@@ -119,12 +121,14 @@ ordine di data), ad esempio:
 ```bash
 mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
+L'ultima migrazione è `2026_09_16_materiali_lezione.sql` (colonna `position` sui materiali).
 
 ## Struttura del progetto
 
 ```
 /public              → document root
   /assets/css         → stylesheet
+  /assets/vendor/tinymce → editor di testo ricco (vedi README-pistacchio.md nella cartella)
   /install            → procedura di installazione guidata (da eliminare dopo l'uso)
   index.php           → front controller
   .htaccess           → rewrite verso index.php
@@ -133,7 +137,7 @@ mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
     /Admin             → pannello di amministrazione (UserController, GroupController, CourseController, PermissionController)
   /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
   /Auth               → login, sessione, permessi per ruolo (Auth.php)
-  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed, CourseAccess, CertificateService, Csv, Csrf
+  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed, CourseAccess, CertificateService, Csv, Csrf, HtmlSanitizer, FileType
     /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
   /Views
     /partials          → layout condiviso (shell.php)
@@ -143,12 +147,14 @@ mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 /storage
   /videos
   /materials
+  /lesson-images       → immagini inserite nel testo delle lezioni
   /certificates
 /database
   schema.sql
   /migrations         → migrazioni incrementali per installazioni gia' esistenti
 /tests
-  google_meet_test.php → test del client Google (senza rete né credenziali reali)
+  google_meet_test.php  → test del client Google (senza rete né credenziali reali)
+  html_sanitizer_test.php → test del sanificatore HTML dell'editor
 ```
 
 ## Quiz, certificati e report
@@ -296,12 +302,39 @@ Google Workspace, che richiede scope aggiuntivi ed è disponibile solo a session
 
 ```bash
 php tests/google_meet_test.php
+php tests/html_sanitizer_test.php
 ```
 
 Verifica il client Google senza rete e senza credenziali reali: genera una chiave RSA al volo,
 controlla che la JWT sia firmata correttamente (verifica con la chiave pubblica) e che la
 richiesta a Calendar contenga i parametri giusti, simulando le risposte di Google — compresi
 gli errori 403 e 404.
+
+`html_sanitizer_test.php` verifica che l'HTML salvato dall'editor non possa contenere codice
+eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host non previsti.
+
+## Contenuto delle lezioni
+
+Il campo **Contenuto della lezione** usa **TinyMCE**, incluso nel progetto sotto
+`public/assets/vendor/tinymce` (nessuna chiamata al cloud di TinyMCE, nessuna chiave API;
+licenza GPL, vedi il `README-pistacchio.md` in quella cartella).
+
+- **Immagini**: si caricano dalla finestra *Inserisci immagine → Carica*, oppure trascinandole
+  o incollandole nell'editor. Il file finisce in `storage/lesson-images/{lezione}/`, quindi
+  **fuori dal document root**: viene servito da `/lessons/{id}/images/{file}` solo a chi è
+  iscritto al corso, come già avviene per i video. Formati: jpg, png, gif, webp — max 8 MB.
+  Le immagini si caricano solo dopo aver creato la lezione (prima non esiste una cartella).
+- **Video incorporati**: *Inserisci → Media* con un link YouTube o Vimeo. Gli iframe di altri
+  host vengono scartati al salvataggio.
+- **PDF e altri documenti** non vanno dentro al testo: si caricano tra i **materiali
+  scaricabili**, in fondo alla pagina di modifica. Ogni materiale mostra icona del formato,
+  tipo e dimensione, e si può spostare su e giù: l'ordine dell'elenco è quello che vedono
+  gli studenti.
+
+L'HTML dell'editor viene stampato nella pagina della lezione **senza escape** — è l'unico modo
+di rendere la formattazione — quindi passa da `HtmlSanitizer` **in scrittura**: sopravvive solo
+ciò che è in lista consentita (testo formattato, titoli, elenchi, tabelle, link, immagini e
+iframe YouTube/Vimeo). Tutto il resto, gestori di eventi compresi, viene rimosso.
 
 ## Registrazione e iscrizione degli studenti
 

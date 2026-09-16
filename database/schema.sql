@@ -138,8 +138,10 @@ CREATE TABLE lesson_materials (
     file_path       VARCHAR(255) NOT NULL,
     file_type       VARCHAR(50),
     file_size_bytes INT UNSIGNED,
+    position        SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    INDEX idx_lesson_materials_order (lesson_id, position)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------

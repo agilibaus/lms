@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\FileType;
 use App\Core\VideoEmbed;
 
 /** @var array $lesson */
@@ -37,9 +38,20 @@ use App\Core\VideoEmbed;
         <h3>Materiali</h3>
         <ul class="material-list">
             <?php foreach ($materials as $material): ?>
+                <?php $extension = pathinfo((string) $material['file_name'], PATHINFO_EXTENSION); ?>
                 <li>
-                    <a href="/materials/<?= (int) $material['id'] ?>/download"><?= htmlspecialchars($material['file_name']) ?></a>
-                    <span class="material-size"><?= round($material['file_size_bytes'] / 1024) ?>&nbsp;KB</span>
+                    <span class="file-icon file-icon-<?= FileType::family($extension) ?>" aria-hidden="true">
+                        <?= htmlspecialchars(FileType::badge($extension)) ?>
+                    </span>
+                    <span class="material-info">
+                        <a class="material-name" href="/materials/<?= (int) $material['id'] ?>/download">
+                            <?= htmlspecialchars($material['file_name']) ?>
+                        </a>
+                        <span class="material-meta">
+                            <?= htmlspecialchars(FileType::label($extension)) ?> ·
+                            <?= FileType::humanSize((int) $material['file_size_bytes']) ?>
+                        </span>
+                    </span>
                 </li>
             <?php endforeach; ?>
         </ul>

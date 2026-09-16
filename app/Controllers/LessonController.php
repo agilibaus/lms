@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
+use App\Core\HtmlSanitizer;
 use App\Core\Upload;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -23,6 +24,14 @@ class LessonController
 
     private const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v'];
     private const VIDEO_MAX_BYTES = 500 * 1024 * 1024; // 500 MB — per file più grandi preferire Bunny/Cloudflare Stream
+
+    /** Immagini inserite nel testo dall'editor. */
+    private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    private const IMAGE_MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+    private const IMAGE_MIME = [
+        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp',
+    ];
 
     public function createForm(array $params): void
     {
@@ -205,6 +214,8 @@ class LessonController
             @unlink(Upload::absolutePath($material['file_path']));
         }
 
+        $this->deleteImageDirectory((int) $lesson['id']);
+
         LessonModel::delete((int) $lesson['id']);
 
         header('Location: /courses/' . ($module['course_id'] ?? ''));
@@ -231,6 +242,140 @@ class LessonController
         }
 
         header('Location: /lessons/' . $lessonId . '/edit');
+        exit;
+    }
+
+    /**
+     * Sposta un materiale su o giu' nell'elenco.
+     */
+    public function moveMaterial(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+
+        $material = LessonMaterialModel::find((int) $params['materialId']);
+
+        if (!$material) {
+            http_response_code(404);
+            echo 'Materiale non trovato.';
+            return;
+        }
+
+        $direction = ($_POST['direction'] ?? '') === 'up' ? 'up' : 'down';
+        LessonMaterialModel::move((int) $material['id'], $direction);
+
+        header('Location: /lessons/' . $material['lesson_id'] . '/edit#materiali');
+        exit;
+    }
+
+    /**
+     * Carica un'immagine inserita nel testo dall'editor.
+     *
+     * Risponde in JSON perche' e' TinyMCE a chiamarla, non un form: in caso di
+     * errore il messaggio finisce nella finestrella dell'editor.
+     */
+    public function uploadImage(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+
+        header('Content-Type: application/json; charset=utf-8');
+
+        $lessonId = (int) $params['id'];
+
+        if (!LessonModel::find($lessonId)) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Lezione non trovata.']);
+            return;
+        }
+
+        $file = $_FILES['file'] ?? null;
+
+        if (!is_array($file)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Nessun file ricevuto.']);
+            return;
+        }
+
+        try {
+            // Estensione giusta ma contenuto qualsiasi: getimagesize apre davvero
+            // il file e fallisce se non e' un'immagine.
+            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK
+                && is_uploaded_file($file['tmp_name'])
+                && getimagesize($file['tmp_name']) === false
+            ) {
+                throw new \RuntimeException('Il file non è un\'immagine valida.');
+            }
+
+            $stored = Upload::store(
+                $file,
+                'lesson-images/' . $lessonId,
+                self::IMAGE_EXTENSIONS,
+                self::IMAGE_MAX_BYTES
+            );
+        } catch (\RuntimeException $e) {
+            http_response_code(422);
+            echo json_encode(['error' => $e->getMessage()]);
+            return;
+        }
+
+        echo json_encode([
+            'location' => '/lessons/' . $lessonId . '/images/' . basename($stored['stored_path']),
+        ]);
+    }
+
+    /**
+     * Serve un'immagine del testo della lezione.
+     *
+     * Le immagini stanno in /storage, fuori dal document root: passano da qui
+     * proprio perche' l'iscrizione al corso venga verificata come per i video.
+     */
+    public function showImage(array $params): void
+    {
+        Auth::requireLogin();
+
+        $lessonId = (int) $params['id'];
+        $lesson = LessonModel::find($lessonId);
+
+        if (!$lesson) {
+            http_response_code(404);
+            echo 'Lezione non trovata.';
+            return;
+        }
+
+        $module = ModuleModel::find((int) $lesson['module_id']);
+
+        if (!$this->canAccessCourse((int) $module['course_id'])) {
+            http_response_code(403);
+            echo 'Non sei iscritto a questo corso.';
+            return;
+        }
+
+        // Il nome e' quello generato da Upload::store: 32 cifre esadecimali piu'
+        // l'estensione. Verificarlo chiude la porta a qualunque "../".
+        $name = (string) ($params['file'] ?? '');
+
+        if (preg_match('/^[0-9a-f]{32}\.([a-z0-9]+)$/', $name, $matches) !== 1
+            || !isset(self::IMAGE_MIME[$matches[1]])
+        ) {
+            http_response_code(404);
+            echo 'Immagine non trovata.';
+            return;
+        }
+
+        $absolute = Upload::absolutePath('lesson-images/' . $lessonId . '/' . $name);
+
+        if (!is_file($absolute)) {
+            http_response_code(404);
+            echo 'Immagine non trovata.';
+            return;
+        }
+
+        header('Content-Type: ' . self::IMAGE_MIME[$matches[1]]);
+        header('Content-Length: ' . filesize($absolute));
+        header('X-Content-Type-Options: nosniff');
+        // Privata: l'immagine e' visibile solo agli iscritti, quindi non deve
+        // finire nella cache di un proxy condiviso.
+        header('Cache-Control: private, max-age=86400');
+        readfile($absolute);
         exit;
     }
 
@@ -393,11 +538,14 @@ class LessonController
         return CourseAccess::isModuleLocked((int) Auth::id(), $moduleId);
     }
 
+    /**
+     * Il contenuto arriva come HTML dall'editor e viene stampato senza escape
+     * nella pagina della lezione: qui passa dal sanificatore, una volta sola,
+     * in scrittura.
+     */
     private function contentHtmlFromPost(): ?string
     {
-        $content = trim($_POST['content_html'] ?? '');
-
-        return $content === '' ? null : $content;
+        return HtmlSanitizer::clean($_POST['content_html'] ?? null);
     }
 
     private function videoProviderFromPost(): string
@@ -468,6 +616,24 @@ class LessonController
                 $stored['size']
             );
         }
+    }
+
+    /**
+     * Ripulisce le immagini inserite nel testo quando la lezione viene eliminata.
+     */
+    private function deleteImageDirectory(int $lessonId): void
+    {
+        $directory = Upload::absolutePath('lesson-images/' . $lessonId);
+
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        foreach (glob($directory . '/*') ?: [] as $file) {
+            @unlink($file);
+        }
+
+        @rmdir($directory);
     }
 
     private function streamFileWithRangeSupport(string $absolutePath): void

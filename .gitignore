@@ -1,12 +1,14 @@
 /vendor/
 /storage/videos/*
 /storage/materials/*
+/storage/lesson-images/*
 /storage/certificates/*
 /storage/installed.lock
 /storage/mail/*
 !/storage/mail/.gitkeep
 !/storage/videos/.gitkeep
 !/storage/materials/.gitkeep
+!/storage/lesson-images/.gitkeep
 !/storage/certificates/.gitkeep
 .env
 .env.local
