@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Core\Upload;
 use App\Core\View;
 use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
@@ -212,6 +213,13 @@ class UserController extends AdminController
                 'Questo utente risulta autore di uno o più corsi e non può essere eliminato: disattivalo.',
                 '/admin/users'
             );
+        }
+
+        // L'immagine del profilo sta su disco: la cascata del database non la
+        // tocca, quindi va rimossa qui.
+        if (!empty($user['avatar_path'])) {
+            @unlink(Upload::absolutePath((string) $user['avatar_path']));
+            @rmdir(Upload::absolutePath('avatars/' . $id));
         }
 
         // Iscrizioni, progressi, tentativi e certificati vengono eliminati a

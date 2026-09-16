@@ -2,6 +2,7 @@
 /storage/videos/*
 /storage/materials/*
 /storage/lesson-images/*
+/storage/avatars/*
 /storage/certificates/*
 /storage/installed.lock
 /storage/mail/*
@@ -9,6 +10,7 @@
 !/storage/videos/.gitkeep
 !/storage/materials/.gitkeep
 !/storage/lesson-images/.gitkeep
+!/storage/avatars/.gitkeep
 !/storage/certificates/.gitkeep
 .env
 .env.local

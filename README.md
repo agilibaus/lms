@@ -26,6 +26,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   | `tutor` | Modifica corsi assegnati, corregge quiz, segue gruppi/coorti, gestisce i propri assistenti |
   | `assistente` | Affianca un tutor specifico (`supervising_tutor_id`), non l'admin: correzioni e report solo sugli ambiti assegnati |
   | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge quiz, scarica i propri certificati |
+- **Profilo personale**: ogni utente compila i propri dati e carica un'immagine, che compare tonda accanto al suo nome
 - **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
 - **Sessioni live** integrate con **Google Meet**, tramite Google Calendar API (`conferenceData`) — richiede un account di servizio Google con accesso al Calendar
 
@@ -44,6 +45,7 @@ In sviluppo iniziale.
 - ✅ Procedura di installazione guidata dal browser
 - ✅ Registrazione autonoma con verifica email, recupero password, catalogo e auto-iscrizione
 - ✅ Editor ricco nella lezione, immagini caricate e materiali ordinabili
+- ✅ Profilo personale con immagine
 
 ## Requisiti
 
@@ -121,7 +123,8 @@ ordine di data), ad esempio:
 ```bash
 mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
-L'ultima migrazione è `2026_09_16_materiali_lezione.sql` (colonna `position` sui materiali).
+Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position` sui materiali) e
+`2026_09_16_profilo_utente.sql` (campi del profilo e immagine).
 
 ## Struttura del progetto
 
@@ -148,6 +151,7 @@ L'ultima migrazione è `2026_09_16_materiali_lezione.sql` (colonna `position` su
   /videos
   /materials
   /lesson-images       → immagini inserite nel testo delle lezioni
+  /avatars             → immagini del profilo
   /certificates
 /database
   schema.sql
@@ -341,6 +345,23 @@ L'HTML dell'editor viene stampato nella pagina della lezione **senza escape** �
 di rendere la formattazione — quindi passa da `HtmlSanitizer` **in scrittura**: sopravvive solo
 ciò che è in lista consentita (testo formattato, titoli, elenchi, tabelle, link, immagini e
 iframe YouTube/Vimeo). Tutto il resto, gestori di eventi compresi, viene rimosso.
+
+## Profilo dell'utente
+
+Da **Profilo** (`/profilo`), voce sempre presente nella barra laterale, chiunque abbia fatto
+accesso compila i propri dati — nome, città, telefono, una breve presentazione — e carica
+un'immagine. L'email non si cambia da qui: è la credenziale di accesso e cambiarla richiederebbe
+una nuova verifica, quindi resta al pannello utenti.
+
+L'immagine viene **ritagliata quadrata al centro e ridotta a 512 pixel** (GD, qualità 85): chi
+carica la foto della fotocamera non deve prepararla, e il server non si ritrova a spedire 4 MB
+a ogni pagina. Senza l'estensione GD il file viene salvato così com'è. Come le altre immagini
+del progetto sta in `storage/avatars/`, fuori dal document root, e passa da
+`/utenti/{id}/immagine`, che richiede l'accesso. Il nome del file cambia a ogni caricamento,
+quindi la cache del browser non mostra mai quella vecchia, e il file precedente viene eliminato.
+
+La miniatura tonda compare accanto al nome in fondo alla barra laterale, in ogni pagina, e
+porta al profilo; chi non ha ancora caricato nulla vede l'iniziale del proprio nome.
 
 ## Registrazione e iscrizione degli studenti
 

@@ -33,13 +33,40 @@ class UserModel
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, full_name, role, supervising_tutor_id, is_active, email_verified_at, created_at
+            'SELECT id, email, full_name, role, supervising_tutor_id, is_active, email_verified_at,
+                    bio, phone, city, avatar_path, created_at
              FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);
         $user = $stmt->fetch();
 
         return $user ?: null;
+    }
+
+    /**
+     * Dati del profilo compilati dall'utente stesso.
+     */
+    public static function updateProfile(int $id, string $fullName, ?string $bio, ?string $phone, ?string $city): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE users SET full_name = :full_name, bio = :bio, phone = :phone, city = :city WHERE id = :id'
+        );
+        $stmt->execute([
+            'full_name' => $fullName,
+            'bio' => $bio,
+            'phone' => $phone,
+            'city' => $city,
+            'id' => $id,
+        ]);
+    }
+
+    /**
+     * @param string|null $path percorso relativo a /storage, null per togliere l'immagine
+     */
+    public static function updateAvatar(int $id, ?string $path): void
+    {
+        $stmt = Database::connection()->prepare('UPDATE users SET avatar_path = :path WHERE id = :id');
+        $stmt->execute(['path' => $path, 'id' => $id]);
     }
 
     /**

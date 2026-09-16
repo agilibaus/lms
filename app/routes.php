@@ -14,6 +14,7 @@ use App\Controllers\LessonController;
 use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
 use App\Controllers\PasswordResetController;
+use App\Controllers\ProfileController;
 use App\Controllers\QuizController;
 use App\Controllers\RegistrationController;
 use App\Controllers\ReportController;
@@ -41,6 +42,13 @@ $router->post('/password/reimposta/{token}', [PasswordResetController::class, 'r
 // --- Catalogo e auto-iscrizione ---------------------------------------
 $router->get('/catalogo', [CatalogController::class, 'index']);
 $router->post('/catalogo/{id}/iscrizione', [CatalogController::class, 'enroll']);
+
+// --- Profilo dell'utente ----------------------------------------------
+$router->get('/profilo', [ProfileController::class, 'show']);
+$router->post('/profilo', [ProfileController::class, 'update']);
+$router->post('/profilo/immagine', [ProfileController::class, 'updateAvatar']);
+$router->post('/profilo/immagine/elimina', [ProfileController::class, 'deleteAvatar']);
+$router->get('/utenti/{id}/immagine', [ProfileController::class, 'avatar']);
 
 $router->get('/', [CourseController::class, 'index']);
 $router->get('/courses/{id}', [CourseController::class, 'show']);

@@ -101,6 +101,36 @@ class Auth
         return $_SESSION['user_email'] ?? null;
     }
 
+    /**
+     * Percorso dell'immagine del profilo (relativo a /storage), oppure null.
+     *
+     * Tenuto in sessione perche' la barra laterale lo chiede a ogni pagina:
+     * viene letto dal database una volta sola, alla prima richiesta della
+     * sessione, cosi' anche le sessioni aperte prima di questa funzione
+     * trovano l'immagine.
+     */
+    public static function avatar(): ?string
+    {
+        if (!self::check()) {
+            return null;
+        }
+
+        if (!array_key_exists('user_avatar', $_SESSION)) {
+            $user = UserModel::find((int) self::id());
+            $_SESSION['user_avatar'] = $user['avatar_path'] ?? null;
+        }
+
+        return $_SESSION['user_avatar'];
+    }
+
+    /**
+     * Allinea la sessione dopo che l'utente ha cambiato la propria immagine.
+     */
+    public static function setAvatar(?string $path): void
+    {
+        $_SESSION['user_avatar'] = $path;
+    }
+
     public static function hasRole(string ...$roles): bool
     {
         return in_array(self::role(), $roles, true);

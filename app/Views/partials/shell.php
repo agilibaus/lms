@@ -37,6 +37,7 @@ use App\Core\Csrf;
             <?php endif; ?>
             <a href="/live" class="nav-link">Sessioni live</a>
             <a href="/certificates" class="nav-link">Certificati</a>
+            <a href="/profilo" class="nav-link">Profilo</a>
 
             <?php if (Auth::canAny('user.manage', 'assistant.manage', 'group.manage', 'group.manage_own', 'course.create', 'course.edit', 'course.delete') || Auth::hasRole('admin')): ?>
                 <span class="nav-section">Amministrazione</span>
@@ -57,7 +58,16 @@ use App\Core\Csrf;
         </nav>
 
         <div class="sidebar-footer">
-            <span class="user-name"><?= htmlspecialchars(Auth::name() ?? '') ?></span>
+            <a class="sidebar-user" href="/profilo">
+                <?php if (Auth::avatar() !== null): ?>
+                    <img class="avatar avatar-sm" src="/utenti/<?= (int) Auth::id() ?>/immagine" alt="">
+                <?php else: ?>
+                    <span class="avatar avatar-sm avatar-placeholder" aria-hidden="true">
+                        <?= htmlspecialchars(mb_strtoupper(mb_substr(Auth::name() ?? '?', 0, 1))) ?>
+                    </span>
+                <?php endif; ?>
+                <span class="user-name"><?= htmlspecialchars(Auth::name() ?? '') ?></span>
+            </a>
             <form action="/logout" method="post">
     <?= Csrf::field() ?>
                 <button type="submit" class="link-btn">Esci</button>

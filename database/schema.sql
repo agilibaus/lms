@@ -21,6 +21,12 @@ CREATE TABLE users (
     -- NULL = indirizzo non ancora confermato: l'utente non puo' accedere
     -- (gli account creati da admin/tutor e dall'installer nascono gia' verificati)
     email_verified_at DATETIME NULL,
+    -- Profilo compilato dall'utente
+    bio             TEXT NULL,
+    phone           VARCHAR(40) NULL,
+    city            VARCHAR(120) NULL,
+    -- Percorso relativo a /storage (mai un URL pubblico)
+    avatar_path     VARCHAR(255) NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (supervising_tutor_id) REFERENCES users(id) ON DELETE SET NULL
