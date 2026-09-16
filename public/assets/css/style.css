@@ -284,13 +284,26 @@ h3 { font-size: 1.05rem; }
     display: block;
 }
 
-/* Copertina nelle schede del catalogo: piu' bassa, perche' li' sotto c'e' gia'
-   la descrizione per esteso e il form di iscrizione. */
+/* Le schede del catalogo seguono la stessa griglia dell'elenco dei corsi:
+   senza, essendo <section class="card"> una alla volta, occupavano tutta la
+   larghezza e la copertina si allargava a fascia. Colonne un po' piu' larghe
+   perche' qui la scheda contiene anche il form di iscrizione. */
+.catalog-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.1rem;
+}
+
+/* La scheda del catalogo e' una .card: il margine sotto lo gestisce la
+   griglia con gap, altrimenti si sommano. */
+.catalog-card {
+    margin-bottom: 0;
+}
+
+/* Copertina nelle schede del catalogo: stesso rapporto delle card dei corsi,
+   cosi' le due pagine si somigliano. */
 .catalog-card-cover {
-    /* Altezza fissa, non aspect-ratio: con un rapporto, limitare l'altezza
-       restringerebbe anche la larghezza, lasciando la fascia a meta' scheda.
-       L'immagine e' comunque 16:9 e viene ritagliata da object-fit. */
-    height: 170px;
+    aspect-ratio: 16 / 9;
     margin: -1.1rem -1.25rem 0.9rem;
     /* La scheda ha gli angoli arrotondati ma non ritaglia: senza questo
        l'immagine a filo dei bordi li squadrerebbe. */
@@ -565,7 +578,8 @@ h3 { font-size: 1.05rem; }
         max-width: 100%;
     }
 
-    .course-grid {
+    .course-grid,
+    .catalog-list {
         grid-template-columns: 1fr;
     }
 }
