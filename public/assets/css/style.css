@@ -1035,12 +1035,21 @@ h3 { font-size: 1.05rem; }
     font-size: 0.78rem;
 }
 
-.row-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    align-items: center;
+/* Le azioni di riga stanno sempre in un <td>. Niente display:flex qui: un
+   <td> dichiarato flex smette di essere una cella di tabella, non partecipa
+   piu' al calcolo dell'altezza della riga e il suo bordo inferiore si ferma
+   all'altezza del proprio contenuto — la linea grigia risulta sfalsata
+   rispetto alle altre colonne. Gli elementi si allineano quindi in linea. */
+.row-actions > * {
+    display: inline-block;
+    vertical-align: middle;
+    /* Il singolo elemento non si spezza; la fila nel suo insieme puo' andare
+       a capo se le azioni sono tante. */
     white-space: nowrap;
+}
+
+.row-actions > * + * {
+    margin-left: 0.5rem;
 }
 
 /* ---------- Form generici ---------- */
