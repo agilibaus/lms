@@ -286,11 +286,14 @@ h3 { font-size: 1.05rem; }
 
 /* Le schede del catalogo seguono la stessa griglia dell'elenco dei corsi:
    senza, essendo <section class="card"> una alla volta, occupavano tutta la
-   larghezza e la copertina si allargava a fascia. Colonne un po' piu' larghe
-   perche' qui la scheda contiene anche il form di iscrizione. */
+   larghezza e la copertina si allargava a fascia.
+   La soglia di colonna e' la stessa di .course-grid, non piu' larga: con due
+   valori diversi le due pagine cambiano numero di colonne in punti diversi, e
+   a certe larghezze le schede finiscono di misure molto lontane. Il campo
+   "due righe su di te" ci sta lo stesso, in poco meno di 200 px. */
 .catalog-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1.1rem;
 }
 
