@@ -5,6 +5,9 @@
 
 :root {
     --color-bg: #fafaf9;
+    /* Sfondo caldo delle pagine pubbliche (accesso, registrazione, password),
+       ripreso dal sito Mindfulness in Voce */
+    --color-auth-bg: #f6f1eb;
     --color-surface: #ffffff;
     --color-border: #e7e5e4;
     --color-text: #1c1c1a;
@@ -277,6 +280,7 @@ h3 { font-size: 1.05rem; }
 /* ---------- Auth page ---------- */
 
 .auth-body {
+    background: var(--color-auth-bg);
     display: flex;
     align-items: center;
     justify-content: center;
