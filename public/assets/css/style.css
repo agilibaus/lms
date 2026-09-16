@@ -1244,6 +1244,11 @@ h3 { font-size: 1.05rem; }
     margin-bottom: 0.4rem;
 }
 
+/* Voce su due righe: nome sopra, dettagli sotto (tutor, corsi, data). */
+.assign-info {
+    min-width: 0;
+}
+
 .table-scroll {
     overflow-x: auto;
 }

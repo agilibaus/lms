@@ -86,6 +86,25 @@ class GroupModel
     }
 
     /**
+     * Gruppi di cui un utente e' membro, con il tutor e quanti corsi porta con se'.
+     */
+    public static function forUser(int $userId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT g.id, g.name, g.tutor_id, u.full_name AS tutor_name, gm.joined_at,
+                    (SELECT COUNT(*) FROM group_course_access gca WHERE gca.group_id = g.id) AS course_count
+             FROM group_members gm
+             INNER JOIN `groups` g ON g.id = gm.group_id
+             LEFT JOIN users u ON u.id = g.tutor_id
+             WHERE gm.user_id = :user_id
+             ORDER BY g.name'
+        );
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Id degli utenti che appartengono ad almeno un gruppo del tutor indicato —
      * definisce il perimetro visibile all'assistente assegnato a quel tutor.
      *

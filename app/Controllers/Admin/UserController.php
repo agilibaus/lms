@@ -6,6 +6,8 @@ namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
 use App\Core\View;
+use App\Models\EnrollmentModel;
+use App\Models\GroupModel;
 use App\Models\UserModel;
 
 /**
@@ -88,12 +90,23 @@ class UserController extends AdminController
             return;
         }
 
+        $groups = GroupModel::forUser((int) $user['id']);
+        $currentIds = array_map(static fn (array $g): int => (int) $g['id'], $groups);
+
         View::render('admin/users/form', [
             'pageTitle' => 'Modifica utente',
             'user' => $user,
             'tutors' => UserModel::byRoles(['tutor']),
             'roles' => $this->assignableRoles(),
             'minPasswordLength' => self::MIN_PASSWORD_LENGTH,
+            'groups' => $groups,
+            'canManageGroups' => Auth::canAny('group.manage', 'group.manage_own'),
+            // Solo i gruppi in cui questo utente puo' essere messo da chi guarda:
+            // un tutor con `group.manage_own` vede soltanto i propri.
+            'availableGroups' => array_values(array_filter(
+                $this->manageableGroups(),
+                static fn (array $g): bool => !in_array((int) $g['id'], $currentIds, true)
+            )),
         ]);
     }
 
@@ -209,6 +222,70 @@ class UserController extends AdminController
     }
 
     // ---------------------------------------------------------------
+    // Gruppi dell'utente
+    // ---------------------------------------------------------------
+    // Le stesse azioni esistono sulla scheda del gruppo: qui si parte
+    // dall'utente, perche' e' da li' che si guarda quando ci si chiede a quali
+    // gruppi appartiene.
+
+    public function addGroup(array $params): void
+    {
+        $this->requireUserAccess();
+
+        $user = $this->findManageableUser((int) $params['id']);
+
+        if ($user === null) {
+            return;
+        }
+
+        $userId = (int) $user['id'];
+        $redirect = '/admin/users/' . $userId . '/edit';
+        $group = $this->findManageableGroup((int) ($_POST['group_id'] ?? 0));
+
+        if ($group === null) {
+            $this->fail('Gruppo non disponibile.', $redirect);
+        }
+
+        $groupId = (int) $group['id'];
+        GroupModel::addMember($groupId, $userId);
+
+        // Come dalla scheda del gruppo: chi entra eredita i corsi assegnati.
+        $created = EnrollmentModel::enrollMany([$userId], GroupModel::courseIds($groupId));
+
+        $this->success(
+            $created > 0
+                ? 'Utente aggiunto al gruppo e iscritto a ' . $created . ' corsi.'
+                : 'Utente aggiunto al gruppo.',
+            $redirect
+        );
+    }
+
+    public function removeGroup(array $params): void
+    {
+        $this->requireUserAccess();
+
+        $user = $this->findManageableUser((int) $params['id']);
+
+        if ($user === null) {
+            return;
+        }
+
+        $redirect = '/admin/users/' . (int) $user['id'] . '/edit';
+        $group = $this->findManageableGroup((int) $params['groupId']);
+
+        if ($group === null) {
+            $this->fail('Gruppo non disponibile.', $redirect);
+        }
+
+        GroupModel::removeMember((int) $group['id'], (int) $user['id']);
+
+        $this->success(
+            'Utente rimosso dal gruppo. Le iscrizioni ai corsi restano attive: rimuovile dalla scheda del corso se necessario.',
+            $redirect
+        );
+    }
+
+    // ---------------------------------------------------------------
 
     private function requireUserAccess(): void
     {
@@ -249,6 +326,38 @@ class UserController extends AdminController
         }
 
         return $user;
+    }
+
+    /**
+     * Gruppi su cui chi guarda ha potere: tutti con `group.manage`, i propri
+     * con `group.manage_own`, nessuno altrimenti.
+     */
+    private function manageableGroups(): array
+    {
+        if (Auth::can('group.manage')) {
+            return GroupModel::all();
+        }
+
+        if (Auth::can('group.manage_own')) {
+            return GroupModel::forTutor((int) Auth::id());
+        }
+
+        return [];
+    }
+
+    private function findManageableGroup(int $groupId): ?array
+    {
+        if ($groupId <= 0) {
+            return null;
+        }
+
+        foreach ($this->manageableGroups() as $group) {
+            if ((int) $group['id'] === $groupId) {
+                return $group;
+            }
+        }
+
+        return null;
     }
 
     /**

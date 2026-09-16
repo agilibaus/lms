@@ -8,6 +8,9 @@ use App\Core\Csrf;
 /** @var array $tutors */
 /** @var string[] $roles */
 /** @var int $minPasswordLength */
+/** @var array $groups */
+/** @var array $availableGroups */
+/** @var bool $canManageGroups */
 
 $isEdit = $user !== null;
 $action = $isEdit ? '/admin/users/' . (int) $user['id'] : '/admin/users';
@@ -74,6 +77,61 @@ $currentRole = $user['role'] ?? 'studente';
 </form>
 
 <?php if ($isEdit): ?>
+    <section class="card">
+        <h2>Gruppi</h2>
+        <p class="card-meta">
+            I gruppi a cui l'utente partecipa. Entrando in un gruppo viene iscritto ai suoi corsi;
+            uscendo, le iscrizioni già create restano attive.
+        </p>
+
+        <?php if ($groups === []): ?>
+            <p class="empty-state-small">Non partecipa a nessun gruppo.</p>
+        <?php else: ?>
+            <ul class="assign-list">
+                <?php foreach ($groups as $group): ?>
+                    <li>
+                        <span class="assign-info">
+                            <?php if ($canManageGroups): ?>
+                                <a href="/admin/groups/<?= (int) $group['id'] ?>/edit"><?= htmlspecialchars((string) $group['name']) ?></a>
+                            <?php else: ?>
+                                <?= htmlspecialchars((string) $group['name']) ?>
+                            <?php endif; ?>
+                            <span class="cell-sub">
+                                <?= $group['tutor_name'] !== null
+                                    ? 'tutor: ' . htmlspecialchars((string) $group['tutor_name'])
+                                    : 'nessun tutor' ?>
+                                · <?= (int) $group['course_count'] === 1 ? '1 corso' : (int) $group['course_count'] . ' corsi' ?>
+                                · dal <?= date('d/m/Y', strtotime((string) $group['joined_at'])) ?>
+                            </span>
+                        </span>
+                        <?php if ($canManageGroups): ?>
+                            <form action="/admin/users/<?= (int) $user['id'] ?>/groups/<?= (int) $group['id'] ?>/delete"
+                                  method="post"
+                                  onsubmit="return confirm('Togliere l’utente dal gruppo? Le iscrizioni ai corsi restano attive.');">
+                                <?= Csrf::field() ?>
+                                <button type="submit" class="link-btn">Rimuovi</button>
+                            </form>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <?php if ($canManageGroups && $availableGroups !== []): ?>
+            <form action="/admin/users/<?= (int) $user['id'] ?>/groups" method="post" class="form form-inline">
+                <?= Csrf::field() ?>
+                <select name="group_id" aria-label="Gruppo a cui aggiungere l'utente">
+                    <?php foreach ($availableGroups as $group): ?>
+                        <option value="<?= (int) $group['id'] ?>"><?= htmlspecialchars((string) $group['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="btn btn-secondary">Aggiungi al gruppo</button>
+            </form>
+        <?php elseif ($canManageGroups): ?>
+            <p class="form-hint">Non ci sono altri gruppi a cui aggiungerlo.</p>
+        <?php endif; ?>
+    </section>
+
     <section class="card">
         <h2>Reimposta password</h2>
         <form action="/admin/users/<?= (int) $user['id'] ?>/password" method="post" class="form form-inline">

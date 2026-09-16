@@ -212,6 +212,12 @@ restare almeno un admin attivo; un utente che risulta autore di corsi non è eli
 utente rimuove a cascata iscrizioni, progressi, tentativi e certificati: per conservare lo
 storico è preferibile disattivarlo.
 
+La scheda dell'utente mostra anche **i gruppi a cui partecipa** (tutor e numero di corsi del
+gruppo), e permette di aggiungerlo o toglierlo da lì: le stesse azioni della scheda del gruppo,
+con gli stessi effetti sulle iscrizioni. L'elenco a tendina contiene solo i gruppi che chi
+guarda può gestire — tutti con `group.manage`, i propri con `group.manage_own`, nessuno senza
+quei permessi (in quel caso i gruppi si vedono ma non si modificano).
+
 ### Gruppi (`/admin/groups`)
 Classi/coorti con tutor responsabile, membri e corsi assegnati. Serve `group.manage` (tutti i
 gruppi) oppure `group.manage_own` (solo quelli di cui si è tutor; chi crea un gruppo ne diventa

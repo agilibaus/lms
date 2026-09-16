@@ -104,6 +104,8 @@ $router->get('/admin/users/{id}/edit', [AdminUserController::class, 'editForm'])
 $router->post('/admin/users/{id}', [AdminUserController::class, 'update']);
 $router->post('/admin/users/{id}/password', [AdminUserController::class, 'resetPassword']);
 $router->post('/admin/users/{id}/delete', [AdminUserController::class, 'destroy']);
+$router->post('/admin/users/{id}/groups', [AdminUserController::class, 'addGroup']);
+$router->post('/admin/users/{id}/groups/{groupId}/delete', [AdminUserController::class, 'removeGroup']);
 
 $router->get('/admin/groups', [AdminGroupController::class, 'index']);
 $router->get('/admin/groups/create', [AdminGroupController::class, 'createForm']);
