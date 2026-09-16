@@ -6,8 +6,11 @@
 :root {
     --color-bg: #fafaf9;
     /* Sfondo caldo delle pagine pubbliche (accesso, registrazione, password),
-       ripreso dal sito Mindfulness in Voce */
+       ripreso dal sito Mindfulness in Voce: crema con tre cerchi traslucidi */
     --color-auth-bg: #f6f1eb;
+    --color-auth-orb-sage: rgba(122, 140, 110, 0.08);
+    --color-auth-orb-terracotta: rgba(217, 166, 121, 0.10);
+    --color-auth-orb-white: rgba(255, 255, 255, 0.6);
     --color-surface: #ffffff;
     --color-border: #e7e5e4;
     --color-text: #1c1c1a;
@@ -280,7 +283,19 @@ h3 { font-size: 1.05rem; }
 /* ---------- Auth page ---------- */
 
 .auth-body {
-    background: var(--color-auth-bg);
+    /* I tre cerchi sono gradienti radiali con stop quasi netti: stessa resa
+       dei cerchi sfocati dell'originale, senza elementi aggiuntivi nel markup.
+       background-attachment: fixed li tiene fermi quando la pagina scorre. */
+    background-color: var(--color-auth-bg);
+    background-image:
+        radial-gradient(circle 400px at 50% calc(100% - 280px),
+            var(--color-auth-orb-white) 0%, var(--color-auth-orb-white) 86%, transparent 100%),
+        radial-gradient(circle 260px at calc(100% - 148px) calc(18% + 260px),
+            var(--color-auth-orb-terracotta) 0%, var(--color-auth-orb-terracotta) 97%, transparent 100%),
+        radial-gradient(circle 210px at 114px 114px,
+            var(--color-auth-orb-sage) 0%, var(--color-auth-orb-sage) 97%, transparent 100%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     display: flex;
     align-items: center;
     justify-content: center;
