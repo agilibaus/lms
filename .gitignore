@@ -3,6 +3,7 @@
 /storage/materials/*
 /storage/lesson-images/*
 /storage/avatars/*
+/storage/course-covers/*
 /storage/certificates/*
 /storage/installed.lock
 /storage/mail/*
@@ -11,6 +12,7 @@
 !/storage/materials/.gitkeep
 !/storage/lesson-images/.gitkeep
 !/storage/avatars/.gitkeep
+!/storage/course-covers/.gitkeep
 !/storage/certificates/.gitkeep
 .env
 .env.local

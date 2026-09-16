@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Core\CourseCover;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
 use App\Core\View;
@@ -140,6 +141,77 @@ class CourseController extends AdminController
         CourseModel::delete((int) $course['id']);
 
         $this->success('Corso eliminato.', '/admin/courses');
+    }
+
+    // ---------------------------------------------------------------
+    // Copertina
+    // ---------------------------------------------------------------
+
+    /**
+     * Salva testo alternativo e, se ne e' stata scelta una, la nuova immagine.
+     *
+     * Il testo si puo' correggere senza ricaricare l'immagine: e' il caso piu'
+     * frequente, visto che l'immagine si sceglie una volta sola.
+     */
+    public function updateCover(array $params): void
+    {
+        Auth::requirePermission('course.edit');
+
+        $course = CourseModel::find((int) $params['id']);
+
+        if ($course === null) {
+            $this->notFound('Corso non trovato.');
+            return;
+        }
+
+        $id = (int) $course['id'];
+        $redirect = '/admin/courses/' . $id . '/edit';
+        $current = $course['cover_image'] !== null && $course['cover_image'] !== '' ? (string) $course['cover_image'] : null;
+        $alt = CourseCover::normalizeAlt($_POST['cover_alt'] ?? null);
+        $uploaded = !empty($_FILES['cover']['name']);
+
+        if (!$uploaded) {
+            if ($current === null && $alt !== null) {
+                $this->fail('Il testo alternativo descrive la copertina: carica prima un\'immagine.', $redirect);
+            }
+
+            CourseModel::updateCover($id, $current, $alt);
+
+            $this->success('Testo alternativo aggiornato.', $redirect);
+        }
+
+        try {
+            $path = CourseCover::store($_FILES['cover'], $id);
+        } catch (\RuntimeException $e) {
+            $this->fail($e->getMessage(), $redirect);
+        }
+
+        // Prima si scrive in tabella, poi si cancella il file vecchio: al
+        // contrario, un errore in mezzo lascerebbe la riga che punta al nulla.
+        CourseModel::updateCover($id, $path, $alt);
+        CourseCover::delete($current);
+
+        $this->success('Copertina aggiornata.', $redirect);
+    }
+
+    public function deleteCover(array $params): void
+    {
+        Auth::requirePermission('course.edit');
+
+        $course = CourseModel::find((int) $params['id']);
+
+        if ($course === null) {
+            $this->notFound('Corso non trovato.');
+            return;
+        }
+
+        $id = (int) $course['id'];
+        $current = $course['cover_image'] !== null && $course['cover_image'] !== '' ? (string) $course['cover_image'] : null;
+
+        CourseModel::updateCover($id, null, null);
+        CourseCover::delete($current);
+
+        $this->success('Copertina rimossa.', '/admin/courses/' . $id . '/edit');
     }
 
     // ---------------------------------------------------------------

@@ -50,6 +50,10 @@ $router->post('/profilo/immagine', [ProfileController::class, 'updateAvatar']);
 $router->post('/profilo/immagine/elimina', [ProfileController::class, 'deleteAvatar']);
 $router->get('/utenti/{id}/immagine', [ProfileController::class, 'avatar']);
 
+// --- Copertina del corso (file in /storage, servito dall'applicazione) --
+$router->get('/corsi/{id}/copertina', [CourseController::class, 'cover']);
+$router->get('/corsi/{id}/copertina/{size}', [CourseController::class, 'cover']);
+
 $router->get('/', [CourseController::class, 'index']);
 $router->get('/courses/{id}', [CourseController::class, 'show']);
 
@@ -132,6 +136,8 @@ $router->post('/admin/courses', [AdminCourseController::class, 'store']);
 $router->get('/admin/courses/{id}/edit', [AdminCourseController::class, 'editForm']);
 $router->post('/admin/courses/{id}', [AdminCourseController::class, 'update']);
 $router->post('/admin/courses/{id}/delete', [AdminCourseController::class, 'destroy']);
+$router->post('/admin/courses/{id}/copertina', [AdminCourseController::class, 'updateCover']);
+$router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::class, 'deleteCover']);
 $router->post('/admin/courses/{id}/enrollments', [AdminCourseController::class, 'enroll']);
 $router->post('/admin/courses/{id}/enrollments/{userId}/delete', [AdminCourseController::class, 'unenroll']);
 $router->post('/admin/requests/{requestId}', [AdminCourseController::class, 'decideRequest']);

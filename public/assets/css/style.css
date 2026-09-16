@@ -250,6 +250,86 @@ h3 { font-size: 1.05rem; }
     display: block;
 }
 
+/* Riquadro con le iniziali quando la copertina manca: la tinta arriva da
+   --cover-hue, calcolata sull'id del corso, cosi' due card vicine non sono
+   quasi mai dello stesso colore. */
+.course-card-cover-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--cover-hue, 90) 34% 90%);
+}
+
+.course-card-cover-placeholder span {
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: hsl(var(--cover-hue, 90) 40% 32%);
+}
+
+/* Copertina in cima alla pagina del corso. */
+.course-hero {
+    aspect-ratio: 16 / 9;
+    max-height: 320px;
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-primary-soft);
+}
+
+.course-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Copertina nelle schede del catalogo: piu' bassa, perche' li' sotto c'e' gia'
+   la descrizione per esteso e il form di iscrizione. */
+.catalog-card-cover {
+    /* Altezza fissa, non aspect-ratio: con un rapporto, limitare l'altezza
+       restringerebbe anche la larghezza, lasciando la fascia a meta' scheda.
+       L'immagine e' comunque 16:9 e viene ritagliata da object-fit. */
+    height: 170px;
+    margin: -1.1rem -1.25rem 0.9rem;
+    /* La scheda ha gli angoli arrotondati ma non ritaglia: senza questo
+       l'immagine a filo dei bordi li squadrerebbe. */
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    overflow: hidden;
+    background: var(--color-primary-soft);
+}
+
+.catalog-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Niente display:block qui: il riquadro delle iniziali centra col flex. */
+.catalog-card-cover .course-card-cover-placeholder {
+    width: 100%;
+    height: 100%;
+}
+
+/* Anteprima nel pannello di amministrazione. */
+.cover-preview {
+    aspect-ratio: 16 / 9;
+    max-width: 420px;
+    margin-bottom: 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-primary-soft);
+}
+
+.cover-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .course-card-body {
     padding: 0.9rem 1rem 1.1rem;
 }

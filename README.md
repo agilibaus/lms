@@ -123,8 +123,9 @@ ordine di data), ad esempio:
 ```bash
 mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
-Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position` sui materiali) e
-`2026_09_16_profilo_utente.sql` (campi del profilo e immagine).
+Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position` sui materiali),
+`2026_09_16_profilo_utente.sql` (campi del profilo e immagine) e
+`2026_09_17_copertina_corso.sql` (testo alternativo della copertina del corso).
 
 ## Struttura del progetto
 
@@ -159,6 +160,7 @@ Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position`
 /tests
   google_meet_test.php  → test del client Google (senza rete né credenziali reali)
   html_sanitizer_test.php → test del sanificatore HTML dell'editor
+  course_cover_test.php   → test della copertina del corso (ritaglio, misure, testo alternativo)
 ```
 
 ## Quiz, certificati e report
@@ -313,6 +315,7 @@ Google Workspace, che richiede scope aggiuntivi ed è disponibile solo a session
 ```bash
 php tests/google_meet_test.php
 php tests/html_sanitizer_test.php
+php tests/course_cover_test.php
 ```
 
 Verifica il client Google senza rete e senza credenziali reali: genera una chiave RSA al volo,
@@ -322,6 +325,33 @@ gli errori 403 e 404.
 
 `html_sanitizer_test.php` verifica che l'HTML salvato dall'editor non possa contenere codice
 eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host non previsti.
+
+`course_cover_test.php` verifica il ritaglio 16:9 e le due misure della copertina, la scelta
+del file da servire, l'eliminazione di entrambe le misure, la normalizzazione del testo
+alternativo e le iniziali mostrate quando la copertina manca. Richiede l'estensione GD.
+
+## Copertina del corso
+
+Ogni corso puo' avere una copertina, caricata da **Gestione corsi → il corso → Copertina**.
+Compare nell'elenco dei corsi, nel catalogo e in cima alla pagina del corso.
+
+L'immagine viene **ritagliata al centro in 16:9** e salvata in due misure (1280 px per la
+testata, 640 px per le card), convertita in JPEG. I file stanno in `storage/course-covers/`,
+fuori dal document root, e sono serviti da `/corsi/{id}/copertina` (misura grande) e
+`/corsi/{id}/copertina/piccola`: serve aver fatto accesso, ma **non** essere iscritti, perche'
+la copertina compare anche nel catalogo. Sostituendo o rimuovendo l'immagine i file precedenti
+vengono eliminati.
+
+Il **testo alternativo** e' un campo a parte: lo leggono i lettori di schermo e compare se
+l'immagine non si carica. Se resta vuoto, la vista usa il titolo del corso. Si puo' correggere
+senza ricaricare l'immagine.
+
+Un corso senza copertina non mostra un riquadro vuoto ma le sue iniziali, su una tinta
+derivata dall'identificativo.
+
+La colonna `cover_image` esisteva gia' nello schema, pensata per un URL esterno: un valore che
+comincia per `http://` o `https://` continua a essere usato come indirizzo, senza passare da
+`/storage`.
 
 ## Contenuto delle lezioni
 

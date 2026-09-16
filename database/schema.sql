@@ -93,7 +93,12 @@ CREATE TABLE courses (
     title           VARCHAR(200) NOT NULL,
     slug            VARCHAR(220) NOT NULL UNIQUE,
     description     TEXT,
+    -- Percorso relativo a /storage della copertina (misura grande); accanto sta
+    -- la misura piccola con lo stesso nome piu' "-card". Un valore http(s)://
+    -- viene invece usato come indirizzo esterno.
     cover_image     VARCHAR(255),
+    -- Testo alternativo dell'immagine; se vuoto la vista usa il titolo.
+    cover_alt       VARCHAR(255),
     is_published    TINYINT(1) NOT NULL DEFAULT 0,
     -- come ci si iscrive: 'open' iscrizione immediata dal catalogo,
     -- 'request' richiesta da approvare, 'closed' solo admin/tutor o gruppi

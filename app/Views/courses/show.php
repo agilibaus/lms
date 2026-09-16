@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\CourseCover;
 use App\Core\Csrf;
 
 /** @var array $course */
@@ -21,6 +22,14 @@ $isStaff = Auth::hasRole('admin', 'tutor');
     <a href="/" class="back-link">&larr; Tutti i corsi</a>
     <h1><?= htmlspecialchars($course['title']) ?></h1>
 </div>
+
+<?php $cover = CourseCover::url($course, false); ?>
+<?php if ($cover !== null): ?>
+    <div class="course-hero">
+        <img src="<?= htmlspecialchars($cover) ?>" alt="<?= htmlspecialchars(CourseCover::altFor($course)) ?>">
+    </div>
+<?php endif; ?>
+
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
     <div class="alert alert-error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>

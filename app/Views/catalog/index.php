@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\CourseCover;
 use App\Core\Csrf;
 
 /** @var array $courses */
@@ -27,6 +28,15 @@ use App\Core\Csrf;
             $rejected = ($course['request_status'] ?? null) === 'rejected';
             ?>
             <section class="card catalog-card">
+                <?php $cover = CourseCover::url($course); ?>
+                <div class="catalog-card-cover">
+                    <?php if ($cover !== null): ?>
+                        <img src="<?= htmlspecialchars($cover) ?>" alt="<?= htmlspecialchars(CourseCover::altFor($course)) ?>" loading="lazy">
+                    <?php else: ?>
+                        <?php require __DIR__ . '/../courses/_cover_placeholder.php'; ?>
+                    <?php endif; ?>
+                </div>
+
                 <div class="card-head">
                     <h2><?= htmlspecialchars((string) $course['title']) ?></h2>
                     <span class="badge <?= $course['enrollment_mode'] === 'open' ? 'badge-success' : '' ?>">

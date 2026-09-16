@@ -7,6 +7,8 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
+use App\Core\CourseCover;
+use App\Core\Upload;
 use App\Core\View;
 use App\Models\CertificateModel;
 use App\Models\CourseModel;
@@ -35,6 +37,48 @@ class CourseController
             'pageTitle' => 'Corsi',
             'courses' => $courses,
         ]);
+    }
+
+    /**
+     * Serve la copertina. Sta in /storage come ogni altro file caricato, quindi
+     * passa di qui invece che da Apache.
+     *
+     * A differenza delle immagini di lezione non si controlla l'iscrizione: la
+     * copertina compare nel catalogo, cioe' davanti a chi ancora iscritto non e'.
+     * Serve comunque aver fatto accesso, come per l'immagine del profilo.
+     */
+    public function cover(array $params): void
+    {
+        Auth::requireLogin();
+
+        $course = CourseModel::find((int) $params['id']);
+        $stored = (string) ($course['cover_image'] ?? '');
+
+        if ($course === null || $stored === '' || CourseCover::isExternalUrl($stored)) {
+            http_response_code(404);
+            echo 'Copertina non impostata.';
+            return;
+        }
+
+        $path = CourseCover::pathFor($stored, ($params['size'] ?? '') === 'piccola');
+
+        if ($path === null) {
+            http_response_code(404);
+            echo 'Copertina non trovata.';
+            return;
+        }
+
+        $absolute = Upload::absolutePath($path);
+
+        header('Content-Type: ' . CourseCover::mimeFor($path));
+        header('Content-Length: ' . filesize($absolute));
+        header('X-Content-Type-Options: nosniff');
+        // Il nome del file cambia a ogni caricamento, quindi tenerla in cache a
+        // lungo non fa mai vedere la copertina vecchia. Serve: nel catalogo
+        // queste immagini sono molte per pagina.
+        header('Cache-Control: private, max-age=604800');
+        readfile($absolute);
+        exit;
     }
 
     public function show(array $params): void

@@ -35,6 +35,8 @@ $courseId = (int) $course['id'];
     </form>
 </section>
 
+<?php require __DIR__ . '/_cover.php'; ?>
+
 <?php if ($requests !== []): ?>
     <section class="card">
         <h2>Richieste di iscrizione <span class="badge badge-danger"><?= count($requests) ?></span></h2>

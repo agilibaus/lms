@@ -17,7 +17,7 @@ class CourseModel
     public static function allForStaff(): array
     {
         return Database::connection()->query(
-            'SELECT id, title, slug, description, cover_image, is_published, enrollment_mode
+            'SELECT id, title, slug, description, cover_image, cover_alt, is_published, enrollment_mode
              FROM courses ORDER BY created_at DESC'
         )->fetchAll();
     }
@@ -28,7 +28,7 @@ class CourseModel
     public static function enrolledForUser(int $userId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT c.id, c.title, c.slug, c.description, c.cover_image, e.progress_pct
+            'SELECT c.id, c.title, c.slug, c.description, c.cover_image, c.cover_alt, e.progress_pct
              FROM courses c
              INNER JOIN enrollments e ON e.course_id = c.id
              WHERE e.user_id = :user_id
@@ -112,6 +112,23 @@ class CourseModel
     }
 
     /**
+     * Copertina e testo alternativo. Separati da update() perche' il form dei
+     * dati del corso non porta l'immagine: se passassero di li', salvare il
+     * titolo cancellerebbe la copertina.
+     */
+    public static function updateCover(int $id, ?string $coverImage, ?string $coverAlt): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE courses SET cover_image = :cover_image, cover_alt = :cover_alt WHERE id = :id'
+        );
+        $stmt->execute([
+            'cover_image' => $coverImage,
+            'cover_alt' => $coverAlt,
+            'id' => $id,
+        ]);
+    }
+
+    /**
      * Catalogo: corsi pubblicati ad iscrizione aperta o su richiesta, esclusi
      * quelli a cui l'utente e' gia' iscritto, con lo stato dell'eventuale
      * richiesta gia' inviata.
@@ -119,7 +136,7 @@ class CourseModel
     public static function catalogForUser(int $userId): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT c.id, c.title, c.description, c.enrollment_mode,
+            "SELECT c.id, c.title, c.description, c.cover_image, c.cover_alt, c.enrollment_mode,
                     r.status AS request_status,
                     (SELECT COUNT(*) FROM lessons l
                        INNER JOIN modules m ON m.id = l.module_id

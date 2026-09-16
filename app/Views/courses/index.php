@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\CourseCover;
+
 /** @var array $courses */
 ?>
 <div class="page-header">
@@ -15,10 +17,11 @@ declare(strict_types=1);
         <?php foreach ($courses as $course): ?>
             <a href="/courses/<?= (int) $course['id'] ?>" class="course-card">
                 <div class="course-card-cover">
-                    <?php if (!empty($course['cover_image'])): ?>
-                        <img src="<?= htmlspecialchars($course['cover_image']) ?>" alt="">
+                    <?php $cover = CourseCover::url($course); ?>
+                    <?php if ($cover !== null): ?>
+                        <img src="<?= htmlspecialchars($cover) ?>" alt="<?= htmlspecialchars(CourseCover::altFor($course)) ?>" loading="lazy">
                     <?php else: ?>
-                        <div class="course-card-cover-placeholder"></div>
+                        <?php require __DIR__ . '/_cover_placeholder.php'; ?>
                     <?php endif; ?>
                 </div>
                 <div class="course-card-body">
