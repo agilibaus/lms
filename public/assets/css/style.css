@@ -10,7 +10,9 @@
     --color-auth-bg: #f6f1eb;
     --color-auth-orb-sage: rgba(122, 140, 110, 0.08);
     --color-auth-orb-terracotta: rgba(217, 166, 121, 0.10);
-    --color-auth-orb-white: rgba(255, 255, 255, 0.6);
+    /* Piu' tenue dell'originale (0.6): li' la scheda ha un'ombra che la stacca,
+       qui l'alone le arrivava dietro e la scheda bianca ci si confondeva. */
+    --color-auth-orb-white: rgba(255, 255, 255, 0.22);
     --color-surface: #ffffff;
     --color-border: #e7e5e4;
     --color-text: #1c1c1a;
