@@ -1101,3 +1101,21 @@ h3 { font-size: 1.05rem; }
 .data-table .cell-sub + .cell-sub {
     margin-top: 0.1rem;
 }
+
+/* ---------- Catalogo corsi e pagine di accesso ---------- */
+
+.catalog-card .card-head {
+    margin-bottom: 0.5rem;
+}
+
+.catalog-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.auth-links {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.86rem;
+    color: var(--color-text-muted);
+}

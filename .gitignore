@@ -3,6 +3,8 @@
 /storage/materials/*
 /storage/certificates/*
 /storage/installed.lock
+/storage/mail/*
+!/storage/mail/.gitkeep
 !/storage/videos/.gitkeep
 !/storage/materials/.gitkeep
 !/storage/certificates/.gitkeep

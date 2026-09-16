@@ -24,3 +24,20 @@ declare(strict_types=1);
     <input type="checkbox" name="is_published" value="1" <?= !empty($course['is_published']) ? 'checked' : '' ?>>
     Pubblicato (una bozza resta visibile solo allo staff)
 </label>
+
+<label for="enrollment_mode">Come ci si iscrive</label>
+<?php $mode = $course['enrollment_mode'] ?? 'closed'; ?>
+<select id="enrollment_mode" name="enrollment_mode">
+    <option value="closed" <?= $mode === 'closed' ? 'selected' : '' ?>>
+        Chiusa — iscrive solo lo staff, o l'assegnazione a un gruppo
+    </option>
+    <option value="request" <?= $mode === 'request' ? 'selected' : '' ?>>
+        Su richiesta — lo studente chiede, un tutor approva
+    </option>
+    <option value="open" <?= $mode === 'open' ? 'selected' : '' ?>>
+        Aperta — lo studente si iscrive da solo dal catalogo
+    </option>
+</select>
+<p class="form-hint">
+    Le ultime due modalità mostrano il corso nel catalogo, ma solo se è pubblicato.
+</p>

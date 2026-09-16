@@ -24,7 +24,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   | `admin` | Gestione completa: corsi, utenti, gruppi, permessi, certificati |
   | `tutor` | Modifica corsi assegnati, corregge quiz, segue gruppi/coorti, gestisce i propri assistenti |
   | `assistente` | Affianca un tutor specifico (`supervising_tutor_id`), non l'admin: correzioni e report solo sugli ambiti assegnati |
-  | `studente` | Visualizza corsi iscritti, svolge quiz, scarica i propri certificati |
+  | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge quiz, scarica i propri certificati |
 - **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
 - **Sessioni live** integrate con **Google Meet**, tramite Google Calendar API (`conferenceData`) — richiede un account di servizio Google con accesso al Calendar
 
@@ -41,6 +41,7 @@ In sviluppo iniziale.
 - ✅ Protezione CSRF su tutte le richieste POST
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
 - ✅ Procedura di installazione guidata dal browser
+- ✅ Registrazione autonoma con verifica email, recupero password, catalogo e auto-iscrizione
 
 ## Requisiti
 
@@ -301,3 +302,56 @@ Verifica il client Google senza rete e senza credenziali reali: genera una chiav
 controlla che la JWT sia firmata correttamente (verifica con la chiave pubblica) e che la
 richiesta a Calendar contenga i parametri giusti, simulando le risposte di Google — compresi
 gli errori 403 e 404.
+
+## Registrazione e iscrizione degli studenti
+
+### Registrazione
+Chiunque può creare un account dalla pagina `/register`: il ruolo assegnato è sempre
+`studente`, gli altri restano appannaggio del pannello. L'account nasce **non verificato** e il
+login viene rifiutato finché l'indirizzo non è confermato con il link ricevuto per email, valido
+24 ore e utilizzabile una sola volta.
+
+Se l'indirizzo è già registrato, la pagina di esito è identica a quella di una registrazione
+riuscita e non viene inviata alcuna email: la registrazione non deve diventare un modo per
+scoprire chi è iscritto alla piattaforma. Stesso criterio per il recupero password, che risponde
+sempre allo stesso modo. Entrambi i flussi accettano al massimo 5 richieste all'ora per account.
+
+Gli account creati dallo staff e quello dell'amministratore creato dall'installer nascono già
+verificati: l'indirizzo lo ha scelto chi li ha creati.
+
+### Modalità di iscrizione di un corso
+Ogni corso ha un campo `enrollment_mode`, impostabile dalla sua scheda in *Gestione corsi*:
+
+| Modalità | Cosa comporta |
+|---|---|
+| `closed` (predefinita) | Iscrive solo lo staff, oppure l'assegnazione del corso a un gruppo. Il corso non compare nel catalogo |
+| `request` | Lo studente chiede di iscriversi, admin e tutor ricevono un'email e decidono dalla scheda del corso |
+| `open` | Lo studente si iscrive da solo dal catalogo, senza attese |
+
+Il catalogo (`/catalogo`, voce *Esplora corsi*) elenca solo corsi **pubblicati** in modalità
+`open` o `request`, escludendo quelli a cui lo studente è già iscritto. Una richiesta in attesa
+**non** dà accesso al corso: le richieste vivono in una tabella separata e l'iscrizione vera
+nasce solo con l'approvazione.
+
+### Email inviate
+Conferma dell'indirizzo, recupero password, conferma di iscrizione allo studente, avviso ad
+admin e tutor per le richieste da valutare, esito negativo di una richiesta. Tutte in testo
+semplice.
+
+## Configurazione dell'invio email
+
+`MAIL_TRANSPORT` sceglie come vengono recapitate:
+
+- **`log`** (predefinito) — i messaggi vengono salvati come file `.eml` in `storage/mail` e non
+  spediti. È il modo di lavorare in locale: il link di verifica si legge aprendo il file.
+- **`smtp`** — server SMTP esterno, con `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
+  `MAIL_PASSWORD` e `MAIL_ENCRYPTION` (`tls` per la porta 587, `ssl` per la 465, `none`).
+- **`mail`** — la funzione `mail()` di PHP, che richiede un MTA configurato sul server.
+
+Il client SMTP è scritto in casa (`app/Core/Mail`), senza dipendenze: apre la connessione, fa
+EHLO, eventualmente STARTTLS, si autentica con AUTH LOGIN e invia il messaggio.
+
+Un invio che fallisce non blocca mai l'operazione che lo ha generato, con un'eccezione: se non
+parte l'email di verifica in fase di registrazione, l'utente resterebbe con un account
+inaccessibile, quindi il problema gli viene detto (e con `APP_DEBUG=1` viene mostrato anche il
+link, utile in sviluppo).

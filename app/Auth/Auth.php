@@ -19,11 +19,35 @@ class Auth
     /** @var array<string, string[]> cache dei permessi per ruolo, valida per la singola richiesta */
     private static array $permissionCache = [];
 
+    /** Motivo dell'ultimo tentativo di accesso fallito (per un messaggio utile). */
+    private static ?string $failureReason = null;
+
+    public const FAILURE_CREDENTIALS = 'credentials';
+    public const FAILURE_UNVERIFIED = 'unverified';
+    public const FAILURE_INACTIVE = 'inactive';
+
     public static function attempt(string $email, string $password): bool
     {
         $user = UserModel::findByEmail($email);
+        self::$failureReason = null;
 
-        if (!$user || !(bool) $user['is_active'] || !password_verify($password, $user['password_hash'])) {
+        if (!$user || !password_verify($password, $user['password_hash'])) {
+            self::$failureReason = self::FAILURE_CREDENTIALS;
+
+            return false;
+        }
+
+        // Le credenziali sono giuste: da qui i motivi del rifiuto si possono
+        // dire senza rivelare nulla a chi sta tirando a indovinare.
+        if (!(bool) $user['is_active']) {
+            self::$failureReason = self::FAILURE_INACTIVE;
+
+            return false;
+        }
+
+        if (($user['email_verified_at'] ?? null) === null) {
+            self::$failureReason = self::FAILURE_UNVERIFIED;
+
             return false;
         }
 
@@ -32,8 +56,14 @@ class Auth
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_name'] = $user['full_name'];
+        $_SESSION['user_email'] = $user['email'];
 
         return true;
+    }
+
+    public static function failureReason(): ?string
+    {
+        return self::$failureReason;
     }
 
     public static function logout(): void
@@ -64,6 +94,11 @@ class Auth
     public static function name(): ?string
     {
         return $_SESSION['user_name'] ?? null;
+    }
+
+    public static function email(): ?string
+    {
+        return $_SESSION['user_email'] ?? null;
     }
 
     public static function hasRole(string ...$roles): bool

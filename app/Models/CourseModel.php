@@ -17,7 +17,7 @@ class CourseModel
     public static function allForStaff(): array
     {
         return Database::connection()->query(
-            'SELECT id, title, slug, description, cover_image, is_published
+            'SELECT id, title, slug, description, cover_image, is_published, enrollment_mode
              FROM courses ORDER BY created_at DESC'
         )->fetchAll();
     }
@@ -66,30 +66,39 @@ class CourseModel
         string $slug,
         ?string $description,
         bool $isPublished,
-        int $createdBy
+        int $createdBy,
+        string $enrollmentMode = 'closed'
     ): int {
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO courses (title, slug, description, is_published, created_by)
-             VALUES (:title, :slug, :description, :is_published, :created_by)'
+            'INSERT INTO courses (title, slug, description, is_published, enrollment_mode, created_by)
+             VALUES (:title, :slug, :description, :is_published, :enrollment_mode, :created_by)'
         );
         $stmt->execute([
             'title' => $title,
             'slug' => $slug,
             'description' => $description,
             'is_published' => $isPublished ? 1 : 0,
+            'enrollment_mode' => $enrollmentMode,
             'created_by' => $createdBy,
         ]);
 
         return (int) $db->lastInsertId();
     }
 
-    public static function update(int $id, string $title, string $slug, ?string $description, bool $isPublished): void
-    {
+    public static function update(
+        int $id,
+        string $title,
+        string $slug,
+        ?string $description,
+        bool $isPublished,
+        string $enrollmentMode = 'closed'
+    ): void {
         $stmt = Database::connection()->prepare(
             'UPDATE courses
-             SET title = :title, slug = :slug, description = :description, is_published = :is_published
+             SET title = :title, slug = :slug, description = :description,
+                 is_published = :is_published, enrollment_mode = :enrollment_mode
              WHERE id = :id'
         );
         $stmt->execute([
@@ -97,8 +106,37 @@ class CourseModel
             'slug' => $slug,
             'description' => $description,
             'is_published' => $isPublished ? 1 : 0,
+            'enrollment_mode' => $enrollmentMode,
             'id' => $id,
         ]);
+    }
+
+    /**
+     * Catalogo: corsi pubblicati ad iscrizione aperta o su richiesta, esclusi
+     * quelli a cui l'utente e' gia' iscritto, con lo stato dell'eventuale
+     * richiesta gia' inviata.
+     */
+    public static function catalogForUser(int $userId): array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT c.id, c.title, c.description, c.enrollment_mode,
+                    r.status AS request_status,
+                    (SELECT COUNT(*) FROM lessons l
+                       INNER JOIN modules m ON m.id = l.module_id
+                      WHERE m.course_id = c.id) AS lesson_count
+             FROM courses c
+             LEFT JOIN enrollment_requests r ON r.course_id = c.id AND r.user_id = :user_id_request
+             WHERE c.is_published = 1
+               AND c.enrollment_mode IN ('open','request')
+               AND NOT EXISTS (
+                   SELECT 1 FROM enrollments e
+                   WHERE e.course_id = c.id AND e.user_id = :user_id_enrolled
+               )
+             ORDER BY c.title"
+        );
+        $stmt->execute(['user_id_request' => $userId, 'user_id_enrolled' => $userId]);
+
+        return $stmt->fetchAll();
     }
 
     public static function delete(int $id): void

@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Core\Mail\Mailer;
+use App\Core\Url;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
+use App\Models\EnrollmentRequestModel;
 use App\Models\UserModel;
 
 /**
@@ -27,6 +30,7 @@ class CourseController extends AdminController
             'courses' => CourseModel::allForStaff(),
             'canCreate' => Auth::can('course.create'),
             'canDelete' => Auth::can('course.delete'),
+            'pendingRequests' => EnrollmentRequestModel::countPending(),
         ]);
     }
 
@@ -55,7 +59,8 @@ class CourseController extends AdminController
             CourseModel::uniqueSlug($data['slug'] !== '' ? $data['slug'] : $data['title']),
             $data['description'],
             $data['is_published'],
-            (int) Auth::id()
+            (int) Auth::id(),
+            $data['enrollment_mode']
         );
 
         $this->success('Corso creato.', '/admin/courses/' . $courseId . '/edit');
@@ -78,6 +83,7 @@ class CourseController extends AdminController
         View::render('admin/courses/edit', [
             'pageTitle' => $course['title'],
             'course' => $course,
+            'requests' => EnrollmentRequestModel::pendingForCourse((int) $course['id']),
             'enrollments' => $enrolled,
             'availableStudents' => array_values(array_filter(
                 UserModel::byRoles(['studente']),
@@ -111,7 +117,8 @@ class CourseController extends AdminController
             $data['title'],
             CourseModel::uniqueSlug($data['slug'] !== '' ? $data['slug'] : $data['title'], $id),
             $data['description'],
-            $data['is_published']
+            $data['is_published'],
+            $data['enrollment_mode']
         );
 
         $this->success('Corso aggiornato.', $redirect);
@@ -182,19 +189,69 @@ class CourseController extends AdminController
     }
 
     // ---------------------------------------------------------------
+    // Richieste di iscrizione
+    // ---------------------------------------------------------------
+
+    public function decideRequest(array $params): void
+    {
+        Auth::requirePermission('course.edit');
+
+        $request = EnrollmentRequestModel::findById((int) $params['requestId']);
+
+        if ($request === null) {
+            $this->notFound('Richiesta non trovata.');
+            return;
+        }
+
+        $courseId = (int) $request['course_id'];
+        $userId = (int) $request['user_id'];
+        $redirect = '/admin/courses/' . $courseId . '/edit';
+        $approve = ($_POST['decision'] ?? '') === 'approve';
+
+        if ($request['status'] !== 'pending') {
+            $this->fail('Questa richiesta è già stata valutata.', $redirect);
+        }
+
+        EnrollmentRequestModel::decide((int) $request['id'], $approve ? 'approved' : 'rejected', (int) Auth::id());
+
+        if ($approve) {
+            EnrollmentModel::enroll($userId, $courseId);
+
+            Mailer::sendQuietly(Mailer::enrollmentConfirmed(
+                (string) $request['email'],
+                (string) $request['full_name'],
+                (string) $request['course_title'],
+                Url::to('/courses/' . $courseId)
+            ));
+
+            $this->success('Richiesta approvata: lo studente è iscritto ed è stato avvisato.', $redirect);
+        }
+
+        Mailer::sendQuietly(Mailer::enrollmentRejected(
+            (string) $request['email'],
+            (string) $request['full_name'],
+            (string) $request['course_title']
+        ));
+
+        $this->success('Richiesta rifiutata: lo studente è stato avvisato.', $redirect);
+    }
+
+    // ---------------------------------------------------------------
 
     /**
-     * @return array{title: string, slug: string, description: string|null, is_published: bool}
+     * @return array{title: string, slug: string, description: string|null, is_published: bool, enrollment_mode: string}
      */
     private function dataFromPost(): array
     {
         $description = trim((string) ($_POST['description'] ?? ''));
+        $mode = (string) ($_POST['enrollment_mode'] ?? 'closed');
 
         return [
             'title' => trim((string) ($_POST['title'] ?? '')),
             'slug' => trim((string) ($_POST['slug'] ?? '')),
             'description' => $description === '' ? null : $description,
             'is_published' => isset($_POST['is_published']),
+            'enrollment_mode' => in_array($mode, ['open', 'request', 'closed'], true) ? $mode : 'closed',
         ];
     }
 }

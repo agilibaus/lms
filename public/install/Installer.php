@@ -368,8 +368,8 @@ class Installer
     public function createAdmin(\PDO $pdo, string $email, string $password, string $fullName): void
     {
         $stmt = $pdo->prepare(
-            'INSERT INTO users (email, password_hash, full_name, role, is_active)
-             VALUES (:email, :password_hash, :full_name, \'admin\', 1)'
+            'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at)
+             VALUES (:email, :password_hash, :full_name, \'admin\', 1, NOW())'
         );
         $stmt->execute([
             'email' => $email,
@@ -400,6 +400,17 @@ class Installer
             '# Video: necessarie solo con provider bunny o cloudflare',
             'BUNNY_LIBRARY_ID=' . ($values['BUNNY_LIBRARY_ID'] ?? ''),
             'CLOUDFLARE_STREAM_CUSTOMER_CODE=' . ($values['CLOUDFLARE_STREAM_CUSTOMER_CODE'] ?? ''),
+            '',
+            '# Invio email (verifica indirizzo, recupero password, iscrizioni)',
+            '# log = salva i messaggi in storage/mail | smtp = server esterno | mail = funzione mail() di PHP',
+            'MAIL_TRANSPORT=' . ($values['MAIL_TRANSPORT'] ?? 'log'),
+            'MAIL_HOST=' . ($values['MAIL_HOST'] ?? ''),
+            'MAIL_PORT=' . ($values['MAIL_PORT'] ?? '587'),
+            'MAIL_USERNAME=' . ($values['MAIL_USERNAME'] ?? ''),
+            'MAIL_PASSWORD=' . ($values['MAIL_PASSWORD'] ?? ''),
+            'MAIL_ENCRYPTION=' . ($values['MAIL_ENCRYPTION'] ?? 'tls'),
+            'MAIL_FROM_ADDRESS=' . ($values['MAIL_FROM_ADDRESS'] ?? ''),
+            'MAIL_FROM_NAME=' . ($values['MAIL_FROM_NAME'] ?? 'Pistacchio LMS'),
             '',
             '# Sessioni live su Google Meet: senza queste variabili il link Meet si inserisce a mano',
             'GOOGLE_SERVICE_ACCOUNT_JSON=' . ($values['GOOGLE_SERVICE_ACCOUNT_JSON'] ?? ''),

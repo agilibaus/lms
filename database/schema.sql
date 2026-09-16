@@ -18,6 +18,9 @@ CREATE TABLE users (
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)
     supervising_tutor_id INT UNSIGNED NULL,
     is_active       TINYINT(1) NOT NULL DEFAULT 1,
+    -- NULL = indirizzo non ancora confermato: l'utente non puo' accedere
+    -- (gli account creati da admin/tutor e dall'installer nascono gia' verificati)
+    email_verified_at DATETIME NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (supervising_tutor_id) REFERENCES users(id) ON DELETE SET NULL
@@ -86,6 +89,9 @@ CREATE TABLE courses (
     description     TEXT,
     cover_image     VARCHAR(255),
     is_published    TINYINT(1) NOT NULL DEFAULT 0,
+    -- come ci si iscrive: 'open' iscrizione immediata dal catalogo,
+    -- 'request' richiesta da approvare, 'closed' solo admin/tutor o gruppi
+    enrollment_mode ENUM('open','request','closed') NOT NULL DEFAULT 'closed',
     created_by      INT UNSIGNED NOT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -232,6 +238,42 @@ CREATE TABLE certificates (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------
+-- Token monouso: verifica indirizzo email e reset password
+-- ---------------------------------------------------
+CREATE TABLE user_tokens (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id         INT UNSIGNED NOT NULL,
+    purpose         ENUM('email_verification','password_reset') NOT NULL,
+    -- in tabella finisce solo l'hash: chi legge il database non puo' usare i token
+    token_hash      CHAR(64) NOT NULL,
+    expires_at      DATETIME NOT NULL,
+    used_at         DATETIME NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_token_hash (token_hash),
+    INDEX idx_user_purpose (user_id, purpose),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------
+-- Richieste di iscrizione (corsi con enrollment_mode = 'request')
+-- ---------------------------------------------------
+CREATE TABLE enrollment_requests (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id         INT UNSIGNED NOT NULL,
+    course_id       INT UNSIGNED NOT NULL,
+    status          ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    message         VARCHAR(500) NULL,             -- due righe di presentazione dello studente
+    requested_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    decided_at      DATETIME NULL,
+    decided_by      INT UNSIGNED NULL,
+    UNIQUE KEY uq_user_course_request (user_id, course_id),
+    INDEX idx_course_status (course_id, status),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (decided_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------

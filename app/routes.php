@@ -7,12 +7,15 @@ use App\Controllers\Admin\GroupController as AdminGroupController;
 use App\Controllers\Admin\PermissionController as AdminPermissionController;
 use App\Controllers\Admin\UserController as AdminUserController;
 use App\Controllers\AuthController;
+use App\Controllers\CatalogController;
 use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
 use App\Controllers\LessonController;
 use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
+use App\Controllers\PasswordResetController;
 use App\Controllers\QuizController;
+use App\Controllers\RegistrationController;
 use App\Controllers\ReportController;
 
 /** @var App\Core\Router $router */
@@ -20,6 +23,24 @@ use App\Controllers\ReportController;
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/logout', [AuthController::class, 'logout']);
+
+// --- Registrazione e verifica dell'indirizzo --------------------------
+$router->get('/register', [RegistrationController::class, 'showForm']);
+$router->post('/register', [RegistrationController::class, 'register']);
+$router->get('/register/verifica-inviata', [RegistrationController::class, 'pending']);
+$router->get('/register/rinvia', [RegistrationController::class, 'resendForm']);
+$router->post('/register/rinvia', [RegistrationController::class, 'resend']);
+$router->get('/verifica-email/{token}', [RegistrationController::class, 'verify']);
+
+// --- Recupero password ------------------------------------------------
+$router->get('/password/dimenticata', [PasswordResetController::class, 'requestForm']);
+$router->post('/password/dimenticata', [PasswordResetController::class, 'sendLink']);
+$router->get('/password/reimposta/{token}', [PasswordResetController::class, 'resetForm']);
+$router->post('/password/reimposta/{token}', [PasswordResetController::class, 'reset']);
+
+// --- Catalogo e auto-iscrizione ---------------------------------------
+$router->get('/catalogo', [CatalogController::class, 'index']);
+$router->post('/catalogo/{id}/iscrizione', [CatalogController::class, 'enroll']);
 
 $router->get('/', [CourseController::class, 'index']);
 $router->get('/courses/{id}', [CourseController::class, 'show']);
@@ -100,6 +121,7 @@ $router->post('/admin/courses/{id}', [AdminCourseController::class, 'update']);
 $router->post('/admin/courses/{id}/delete', [AdminCourseController::class, 'destroy']);
 $router->post('/admin/courses/{id}/enrollments', [AdminCourseController::class, 'enroll']);
 $router->post('/admin/courses/{id}/enrollments/{userId}/delete', [AdminCourseController::class, 'unenroll']);
+$router->post('/admin/requests/{requestId}', [AdminCourseController::class, 'decideRequest']);
 
 $router->get('/admin/permissions', [AdminPermissionController::class, 'index']);
 $router->post('/admin/permissions', [AdminPermissionController::class, 'update']);

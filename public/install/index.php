@@ -114,6 +114,14 @@ switch ($step) {
                 'GOOGLE_SERVICE_ACCOUNT_JSON' => 'google_json',
                 'GOOGLE_IMPERSONATE_EMAIL' => 'google_impersonate',
                 'GOOGLE_CALENDAR_ID' => 'google_calendar_id',
+                'MAIL_TRANSPORT' => 'mail_transport',
+                'MAIL_HOST' => 'mail_host',
+                'MAIL_PORT' => 'mail_port',
+                'MAIL_USERNAME' => 'mail_username',
+                'MAIL_PASSWORD' => 'mail_password',
+                'MAIL_ENCRYPTION' => 'mail_encryption',
+                'MAIL_FROM_ADDRESS' => 'mail_from_address',
+                'MAIL_FROM_NAME' => 'mail_from_name',
             ] as $envKey => $field) {
                 $data[$envKey] = trim((string) ($_POST[$field] ?? ''));
             }

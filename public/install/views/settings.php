@@ -50,6 +50,52 @@ $current = $data['APP_TIMEZONE'] ?? 'Europe/Rome';
     <input type="text" id="cloudflare_customer_code" name="cloudflare_customer_code"
            value="<?= htmlspecialchars($data['CLOUDFLARE_STREAM_CUSTOMER_CODE'] ?? '') ?>">
 
+    <h2>Invio email</h2>
+    <p class="form-hint">
+        Serve per la conferma dell'indirizzo in fase di registrazione e per il recupero password.
+        Lasciando "salva su file" la piattaforma funziona lo stesso: i messaggi finiscono in
+        <code>storage/mail</code> e si leggono da lì — comodo in locale, da cambiare in produzione.
+    </p>
+
+    <label for="mail_transport">Modalità di invio</label>
+    <?php $transport = $data['MAIL_TRANSPORT'] ?? 'log'; ?>
+    <select id="mail_transport" name="mail_transport">
+        <option value="log" <?= $transport === 'log' ? 'selected' : '' ?>>Salva su file (nessun invio)</option>
+        <option value="smtp" <?= $transport === 'smtp' ? 'selected' : '' ?>>Server SMTP</option>
+        <option value="mail" <?= $transport === 'mail' ? 'selected' : '' ?>>Funzione mail() di PHP</option>
+    </select>
+
+    <label for="mail_from_address">Indirizzo mittente</label>
+    <input type="email" id="mail_from_address" name="mail_from_address" placeholder="no-reply@tuodominio.it"
+           value="<?= htmlspecialchars($data['MAIL_FROM_ADDRESS'] ?? '') ?>">
+
+    <label for="mail_from_name">Nome mittente</label>
+    <input type="text" id="mail_from_name" name="mail_from_name"
+           value="<?= htmlspecialchars($data['MAIL_FROM_NAME'] ?? 'Pistacchio LMS') ?>">
+
+    <label for="mail_host">Server SMTP</label>
+    <input type="text" id="mail_host" name="mail_host" placeholder="smtp.tuoprovider.it"
+           value="<?= htmlspecialchars($data['MAIL_HOST'] ?? '') ?>">
+
+    <label for="mail_port">Porta</label>
+    <input type="number" id="mail_port" name="mail_port" value="<?= htmlspecialchars($data['MAIL_PORT'] ?? '587') ?>">
+
+    <label for="mail_encryption">Cifratura</label>
+    <?php $encryption = $data['MAIL_ENCRYPTION'] ?? 'tls'; ?>
+    <select id="mail_encryption" name="mail_encryption">
+        <option value="tls" <?= $encryption === 'tls' ? 'selected' : '' ?>>STARTTLS (porta 587)</option>
+        <option value="ssl" <?= $encryption === 'ssl' ? 'selected' : '' ?>>SSL (porta 465)</option>
+        <option value="none" <?= $encryption === 'none' ? 'selected' : '' ?>>Nessuna</option>
+    </select>
+
+    <label for="mail_username">Utente SMTP</label>
+    <input type="text" id="mail_username" name="mail_username" autocomplete="off"
+           value="<?= htmlspecialchars($data['MAIL_USERNAME'] ?? '') ?>">
+
+    <label for="mail_password">Password SMTP</label>
+    <input type="password" id="mail_password" name="mail_password" autocomplete="new-password"
+           value="<?= htmlspecialchars($data['MAIL_PASSWORD'] ?? '') ?>">
+
     <h2>Sessioni live su Google Meet</h2>
     <p class="form-hint">
         Senza queste impostazioni le sessioni live funzionano lo stesso, con il link Meet inserito a mano.

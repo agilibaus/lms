@@ -18,7 +18,7 @@ class UserModel
     public static function findByEmail(string $email): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, password_hash, full_name, role, is_active
+            'SELECT id, email, password_hash, full_name, role, is_active, email_verified_at
              FROM users WHERE email = :email LIMIT 1'
         );
         $stmt->execute(['email' => $email]);
@@ -33,7 +33,7 @@ class UserModel
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, full_name, role, supervising_tutor_id, is_active, created_at
+            'SELECT id, email, full_name, role, supervising_tutor_id, is_active, email_verified_at, created_at
              FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);
@@ -189,11 +189,13 @@ class UserModel
         string $fullName,
         string $role = 'studente',
         ?int $supervisingTutorId = null,
-        bool $isActive = true
+        bool $isActive = true,
+        bool $emailVerified = true
     ): int {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO users (email, password_hash, full_name, role, supervising_tutor_id, is_active)
-             VALUES (:email, :password_hash, :full_name, :role, :supervising_tutor_id, :is_active)'
+            'INSERT INTO users (email, password_hash, full_name, role, supervising_tutor_id, is_active, email_verified_at)
+             VALUES (:email, :password_hash, :full_name, :role, :supervising_tutor_id, :is_active,
+                     CASE WHEN :email_verified = 1 THEN NOW() ELSE NULL END)'
         );
         $stmt->execute([
             'email' => $email,
@@ -202,8 +204,31 @@ class UserModel
             'role' => $role,
             'supervising_tutor_id' => $role === 'assistente' ? $supervisingTutorId : null,
             'is_active' => $isActive ? 1 : 0,
+            // Un account creato dallo staff ha un indirizzo gia' noto: chiedere
+            // una conferma avrebbe senso solo per chi si registra da solo.
+            'email_verified' => $emailVerified ? 1 : 0,
         ]);
 
         return (int) Database::connection()->lastInsertId();
+    }
+
+    public static function markEmailVerified(int $id): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE users SET email_verified_at = NOW() WHERE id = :id AND email_verified_at IS NULL'
+        );
+        $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Amministratori e tutor da avvisare quando arriva una richiesta di iscrizione.
+     */
+    public static function staffForNotifications(): array
+    {
+        return Database::connection()->query(
+            "SELECT id, email, full_name FROM users
+             WHERE role IN ('admin','tutor') AND is_active = 1
+             ORDER BY full_name"
+        )->fetchAll();
     }
 }

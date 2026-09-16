@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Csrf;
 
 /** @var array $course */
+/** @var array $requests */
 /** @var array $enrollments */
 /** @var array $availableStudents */
 /** @var bool $canDelete */
@@ -33,6 +34,46 @@ $courseId = (int) $course['id'];
         </div>
     </form>
 </section>
+
+<?php if ($requests !== []): ?>
+    <section class="card">
+        <h2>Richieste di iscrizione <span class="badge badge-danger"><?= count($requests) ?></span></h2>
+        <p class="card-meta">
+            Approvando, lo studente viene iscritto e riceve un'email; rifiutando, riceve un avviso.
+        </p>
+
+        <table class="data-table">
+            <thead>
+            <tr><th>Studente</th><th>Messaggio</th><th>Richiesta del</th><th></th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($requests as $request): ?>
+                <tr>
+                    <td>
+                        <?= htmlspecialchars((string) $request['full_name']) ?>
+                        <span class="cell-sub"><?= htmlspecialchars((string) $request['email']) ?></span>
+                    </td>
+                    <td><?= $request['message'] !== null ? nl2br(htmlspecialchars((string) $request['message'])) : '—' ?></td>
+                    <td><?= htmlspecialchars((string) $request['requested_at']) ?></td>
+                    <td class="row-actions">
+                        <form action="/admin/requests/<?= (int) $request['id'] ?>" method="post">
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="decision" value="approve">
+                            <button type="submit" class="link-btn">Approva</button>
+                        </form>
+                        <form action="/admin/requests/<?= (int) $request['id'] ?>" method="post"
+                              onsubmit="return confirm('Rifiutare la richiesta? Lo studente riceverà un avviso.');">
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="decision" value="reject">
+                            <button type="submit" class="link-btn link-btn-danger">Rifiuta</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
+<?php endif; ?>
 
 <section class="card">
     <h2>Iscritti</h2>

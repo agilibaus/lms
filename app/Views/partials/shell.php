@@ -29,6 +29,9 @@ use App\Core\Csrf;
 
         <nav class="sidebar-nav">
             <a href="/" class="nav-link">Corsi</a>
+            <?php if (!Auth::hasRole('admin', 'tutor', 'assistente')): ?>
+                <a href="/catalogo" class="nav-link">Esplora corsi</a>
+            <?php endif; ?>
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
                 <a href="/reports" class="nav-link">Report</a>
             <?php endif; ?>

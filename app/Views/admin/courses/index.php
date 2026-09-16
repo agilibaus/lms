@@ -7,6 +7,7 @@ use App\Core\Csrf;
 /** @var array $courses */
 /** @var bool $canCreate */
 /** @var bool $canDelete */
+/** @var int $pendingRequests */
 ?>
 <div class="page-header">
     <h1>Gestione corsi</h1>
@@ -17,6 +18,12 @@ use App\Core\Csrf;
 </div>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
+
+<?php if ($pendingRequests > 0): ?>
+    <div class="alert alert-warning">
+        Ci sono <?= (int) $pendingRequests ?> richieste di iscrizione in attesa: le trovi nella scheda dei corsi interessati.
+    </div>
+<?php endif; ?>
 
 <?php if ($courses === []): ?>
     <p class="empty-state">Nessun corso.</p>
@@ -37,6 +44,9 @@ use App\Core\Csrf;
                         <span class="badge badge-success">pubblicato</span>
                     <?php else: ?>
                         <span class="badge">bozza</span>
+                    <?php endif; ?>
+                    <?php if (($course['enrollment_mode'] ?? 'closed') !== 'closed'): ?>
+                        <span class="badge"><?= $course['enrollment_mode'] === 'open' ? 'iscrizione libera' : 'su richiesta' ?></span>
                     <?php endif; ?>
                 </td>
                 <td class="row-actions">
