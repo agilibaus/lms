@@ -19,7 +19,7 @@ use App\Core\Csrf;
 $isStaff = Auth::hasRole('admin', 'tutor');
 ?>
 <div class="page-header">
-    <a href="/" class="back-link">&larr; Tutti i corsi</a>
+    <a href="/" class="back-link">&larr; <?= Auth::hasRole('admin', 'tutor', 'assistente') ? 'Tutti i corsi' : 'I miei corsi' ?></a>
     <h1><?= htmlspecialchars($course['title']) ?></h1>
 </div>
 

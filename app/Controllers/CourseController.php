@@ -25,7 +25,9 @@ class CourseController
     {
         Auth::requireLogin();
 
-        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+        $isStaff = Auth::hasRole('admin', 'tutor', 'assistente');
+
+        if ($isStaff) {
             // Staff: vede tutti i corsi, pubblicati e in bozza.
             $courses = CourseModel::allForStaff();
         } else {
@@ -33,8 +35,15 @@ class CourseController
             $courses = CourseModel::enrolledForUser((int) Auth::id());
         }
 
+        // Il titolo segue il contenuto: per lo staff qui c'è tutto il
+        // catalogo, per lo studente solo le sue iscrizioni — e "Corsi"
+        // accanto a "Esplora corsi" non diceva quale fosse quale.
+        $title = $isStaff ? 'Corsi' : 'I miei corsi';
+
         View::render('courses/index', [
-            'pageTitle' => 'Corsi',
+            'pageTitle' => $title,
+            'heading' => $title,
+            'isStaff' => $isStaff,
             'courses' => $courses,
         ]);
     }

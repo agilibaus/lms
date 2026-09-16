@@ -5,13 +5,21 @@ declare(strict_types=1);
 use App\Core\CourseCover;
 
 /** @var array $courses */
+/** @var string $heading */
+/** @var bool $isStaff */
 ?>
 <div class="page-header">
-    <h1>Corsi</h1>
+    <h1><?= htmlspecialchars($heading) ?></h1>
 </div>
 
 <?php if (empty($courses)): ?>
-    <p class="empty-state">Nessun corso disponibile al momento.</p>
+    <?php if ($isStaff): ?>
+        <p class="empty-state">Nessun corso disponibile al momento.</p>
+    <?php else: ?>
+        <p class="empty-state">
+            Non sei iscritto a nessun corso. Guarda in <a href="/catalogo">Esplora corsi</a>.
+        </p>
+    <?php endif; ?>
 <?php else: ?>
     <div class="course-grid">
         <?php foreach ($courses as $course): ?>

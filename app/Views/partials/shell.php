@@ -28,8 +28,10 @@ use App\Core\Csrf;
         <div class="sidebar-brand">LMS</div>
 
         <nav class="sidebar-nav">
-            <a href="/" class="nav-link">Corsi</a>
-            <?php if (!Auth::hasRole('admin', 'tutor', 'assistente')): ?>
+            <?php if (Auth::hasRole('admin', 'tutor', 'assistente')): ?>
+                <a href="/" class="nav-link">Corsi</a>
+            <?php else: ?>
+                <a href="/" class="nav-link">I miei corsi</a>
                 <a href="/catalogo" class="nav-link">Esplora corsi</a>
             <?php endif; ?>
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
