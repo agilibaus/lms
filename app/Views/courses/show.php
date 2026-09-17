@@ -31,6 +31,11 @@ $isStaff = Auth::hasRole('admin', 'tutor');
 <?php endif; ?>
 
 
+<?php if (!empty($_SESSION['flash_success'])): ?>
+    <div class="alert alert-success"><?= htmlspecialchars($_SESSION['flash_success']) ?></div>
+    <?php unset($_SESSION['flash_success']); ?>
+<?php endif; ?>
+
 <?php if (!empty($_SESSION['flash_error'])): ?>
     <div class="alert alert-error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
     <?php unset($_SESSION['flash_error']); ?>

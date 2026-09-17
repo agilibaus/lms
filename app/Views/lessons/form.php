@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\LessonController;
 use App\Core\Csrf;
 use App\Core\FileType;
+use App\Core\OrphanFiles;
 use App\Core\Upload;
 
 /** @var array $module */
@@ -18,6 +19,16 @@ $provider = $lesson['video_provider'] ?? 'none';
     <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link">&larr; Torna al corso</a>
     <h1><?= $isEdit ? 'Modifica lezione' : 'Nuova lezione' ?> &mdash; <?= htmlspecialchars($module['title']) ?></h1>
 </div>
+
+<?php if (!empty($_SESSION['flash_info'])): ?>
+    <div class="alert alert-info"><?= htmlspecialchars($_SESSION['flash_info']) ?></div>
+    <?php unset($_SESSION['flash_info']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['flash_success'])): ?>
+    <div class="alert alert-success"><?= htmlspecialchars($_SESSION['flash_success']) ?></div>
+    <?php unset($_SESSION['flash_success']); ?>
+<?php endif; ?>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
     <div class="alert alert-error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
@@ -71,7 +82,10 @@ $provider = $lesson['video_provider'] ?? 'none';
         <div class="video-provider-fields" data-provider="self_hosted" <?= $provider !== 'self_hosted' ? 'hidden' : '' ?>>
             <p class="hint">Sconsigliato in produzione: preferisci Bunny/Cloudflare Stream per non appesantire il server.</p>
             <?php if ($isEdit && $provider === 'self_hosted' && !empty($lesson['video_ref'])): ?>
-                <p class="hint">Video attuale: <code><?= htmlspecialchars($lesson['video_ref']) ?></code></p>
+                <p class="hint">
+                    Video attuale: <code><?= htmlspecialchars($lesson['video_ref']) ?></code> —
+                    per toglierlo vedi "Video caricato sul server", sotto il pulsante Salva.
+                </p>
             <?php endif; ?>
             <?php
             // Il limite vero e' il piu' basso fra quello della piattaforma e
@@ -98,6 +112,29 @@ $provider = $lesson['video_provider'] ?? 'none';
 
     <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Salva' : 'Crea lezione' ?></button>
 </form>
+
+<?php if ($isEdit && $provider === 'self_hosted' && !empty($lesson['video_ref'])): ?>
+    <?php /* Moduli a parte, non pulsanti dentro quello principale: li' il
+             primo pulsante di invio sarebbe stato uno di questi, e premere
+             Invio in un campo di testo avrebbe tolto il video invece di
+             salvare. */ ?>
+    <section class="card video-actions">
+        <h3>Video caricato sul server</h3>
+
+        <form action="/lessons/<?= (int) $lesson['id'] ?>/video/detach" method="post" class="inline-form">
+            <?= Csrf::field() ?>
+            <button type="submit" class="link-btn">Rimuovi dalla lezione</button>
+            <span class="form-hint">Il file resta sul server e si può ricaricare in un'altra lezione.</span>
+        </form>
+
+        <form action="/lessons/<?= (int) $lesson['id'] ?>/video/delete" method="post" class="inline-form"
+              onsubmit="return confirm('Eliminare il file dal server? Questa operazione non si può annullare.');">
+            <?= Csrf::field() ?>
+            <button type="submit" class="link-btn link-btn-danger">Rimuovi dalla lezione e dal server</button>
+            <span class="form-hint">Il file viene cancellato dal disco: non si torna indietro.</span>
+        </form>
+    </section>
+<?php endif; ?>
 
 <?php if ($isEdit): ?>
     <section class="materials-section lesson-form" id="materiali">
@@ -154,8 +191,18 @@ $provider = $lesson['video_provider'] ?? 'none';
         </form>
     </section>
 
+    <?php $scollegati = OrphanFiles::forLesson((int) $lesson['id'], $lesson); ?>
+    <?php if ($scollegati['count'] > 0): ?>
+        <p class="hint">
+            In questa lezione ci sono <?= (int) $scollegati['count'] ?> file caricati che nessun
+            contenuto usa più, per <?= htmlspecialchars(OrphanFiles::humanSize($scollegati['bytes'])) ?>
+            (<?= htmlspecialchars(implode(', ', $scollegati['folders'])) ?>).
+            Il riepilogo di tutta la piattaforma è in fondo a Gestione corsi.
+        </p>
+    <?php endif; ?>
+
     <form action="/lessons/<?= (int) $lesson['id'] ?>/delete" method="post"
-          onsubmit="return confirm('Eliminare definitivamente questa lezione e i suoi materiali?');">
+          onsubmit="return confirm('Eliminare definitivamente questa lezione? I file caricati (video, materiali, immagini) restano sul server e non saranno più collegati a nessuna lezione.');">
         <?= Csrf::field() ?>
         <button type="submit" class="link-btn">Elimina lezione</button>
     </form>

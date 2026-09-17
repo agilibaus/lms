@@ -8,6 +8,7 @@ use App\Auth\Auth;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\HtmlSanitizer;
+use App\Core\OrphanFiles;
 use App\Core\Upload;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -188,6 +189,20 @@ class LessonController
             $_SESSION['flash_error'] = $e->getMessage();
         }
 
+        // Un file scelto mentre la tendina dice altro veniva ignorato senza
+        // un fiato: chi carica resta a guardare una lezione senza video,
+        // convinto di aver sbagliato qualcos'altro.
+        if (!empty($_FILES['video_file']['name']) && $this->videoProviderFromPost() !== 'self_hosted') {
+            $_SESSION['flash_error'] = 'Il file non e\' stato caricato: per usarlo scegli '
+                . '"Video caricato sul server" nella tendina del provider.';
+        }
+
+        // Nessuna cancellazione automatica: caricando un sostituto o
+        // cambiando provider il file di prima resta sul server, e si toglie
+        // solo con il comando apposito. In cambio si avvisa, altrimenti un
+        // video sparito dalla lezione sembrerebbe perso.
+        $this->warnIfVideoDetached($lesson, (int) $lesson['id']);
+
         header('Location: /lessons/' . $lesson['id'] . '/edit');
         exit;
     }
@@ -206,19 +221,23 @@ class LessonController
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
-        // Ripulisce i file fisici (video + materiali) prima di eliminare la riga
-        // (i record collegati in DB seguono via FK ON DELETE CASCADE).
-        if ($lesson['video_provider'] === 'self_hosted' && !empty($lesson['video_ref'])) {
-            @unlink(Upload::absolutePath($lesson['video_ref']));
-        }
-
-        foreach (LessonMaterialModel::forLesson((int) $lesson['id']) as $material) {
-            @unlink(Upload::absolutePath($material['file_path']));
-        }
-
-        $this->deleteImageDirectory((int) $lesson['id']);
+        // I file caricati (video, materiali, immagini) restano sul server: qui
+        // si eliminano solo le righe, che seguono via FK ON DELETE CASCADE.
+        // Chi elimina viene avvisato che quei file rimangono, perche' da quel
+        // momento nessuna pagina li nomina piu'.
+        $files = OrphanFiles::forLesson((int) $lesson['id'], $lesson, true);
 
         LessonModel::delete((int) $lesson['id']);
+
+        $_SESSION['flash_success'] = match (true) {
+            $files['count'] === 0 => 'Lezione eliminata.',
+            $files['count'] === 1 => 'Lezione eliminata. Il file caricato ('
+                . OrphanFiles::humanSize($files['bytes']) . ') resta sul server in '
+                . implode(', ', $files['folders']) . ' e non e\' piu\' collegato a nessuna lezione.',
+            default => 'Lezione eliminata. I ' . $files['count'] . ' file caricati ('
+                . OrphanFiles::humanSize($files['bytes']) . ') restano sul server in '
+                . implode(', ', $files['folders']) . ' e non sono piu\' collegati a nessuna lezione.',
+        };
 
         header('Location: /courses/' . ($module['course_id'] ?? ''));
         exit;
@@ -578,6 +597,107 @@ class LessonController
     private function durationFromPost(): int
     {
         return max(0, (int) ($_POST['duration_seconds'] ?? 0));
+    }
+
+    /**
+     * Toglie il video caricato sul server: file dal disco, riferimento dalla
+     * lezione. Serve un comando esplicito — cambiare la tendina su "Nessuno"
+     * lo faceva gia', ma nessuno poteva indovinarlo.
+     */
+    /**
+     * Toglie il video dalla lezione. Con `/video/detach` il file resta sul
+     * server, con `/video/delete` viene anche cancellato: due comandi distinti
+     * perche' la seconda cosa non si disfa.
+     */
+    public function detachVideo(array $params): void
+    {
+        $this->removeVideo((int) $params['id'], false);
+    }
+
+    public function deleteVideo(array $params): void
+    {
+        $this->removeVideo((int) $params['id'], true);
+    }
+
+    private function removeVideo(int $lessonId, bool $deleteFile): void
+    {
+        Auth::requireRole('admin', 'tutor');
+
+        $lesson = LessonModel::find($lessonId);
+
+        if (!$lesson) {
+            http_response_code(404);
+            echo 'Lezione non trovata.';
+            return;
+        }
+
+        $destination = '/lessons/' . $lessonId . '/edit';
+
+        if ($lesson['video_provider'] !== 'self_hosted' || empty($lesson['video_ref'])) {
+            $_SESSION['flash_error'] = 'Questa lezione non ha un video caricato sul server.';
+            header('Location: ' . $destination);
+            exit;
+        }
+
+        $reference = (string) $lesson['video_ref'];
+
+        LessonModel::update(
+            $lessonId,
+            (string) $lesson['title'],
+            $lesson['content_html'],
+            'none',
+            null,
+            (int) $lesson['duration_seconds']
+        );
+
+        if (!$deleteFile) {
+            $_SESSION['flash_success'] = 'Video tolto dalla lezione. Il file resta sul server, '
+                . 'in ' . dirname($reference) . ', ma nessuna lezione lo usa piu\'.';
+            header('Location: ' . $destination);
+            exit;
+        }
+
+        $absolute = Upload::absolutePath($reference);
+        $removed = is_file($absolute) ? @unlink($absolute) : true;
+
+        $_SESSION['flash_success'] = $removed
+            ? 'Video rimosso dalla lezione ed eliminato dal server.'
+            : 'Video rimosso dalla lezione, ma il file non si e\' potuto eliminare dal disco: '
+                . 'controlla i permessi di ' . dirname($reference) . '.';
+
+        header('Location: ' . $destination);
+        exit;
+    }
+
+    /**
+     * Avvisa quando un video caricato smette di essere collegato alla lezione:
+     * cambiando provider, o caricandone un altro al suo posto. Il file resta
+     * sul server, ma nessuna pagina lo nomina piu', quindi conviene dirlo.
+     *
+     * Si rilegge la riga invece di fidarsi di quello che credevamo di aver
+     * scritto: fra la modifica e qui passano il salvataggio e l'eventuale
+     * caricamento del sostituto.
+     */
+    private function warnIfVideoDetached(array $previous, int $lessonId): void
+    {
+        if ($previous['video_provider'] !== 'self_hosted' || empty($previous['video_ref'])) {
+            return;
+        }
+
+        $current = LessonModel::find($lessonId);
+
+        if ($current !== null && ($current['video_ref'] ?? null) === $previous['video_ref']) {
+            return;
+        }
+
+        // Un errore gia' segnalato conta di piu' di questo avviso.
+        if (!empty($_SESSION['flash_error'])) {
+            return;
+        }
+
+        $_SESSION['flash_info'] = 'Il video ' . basename((string) $previous['video_ref'])
+            . ' non e\' piu\' collegato a questa lezione. Il file resta sul server: '
+            . 'per toglierlo davvero usa "Rimuovi dalla lezione e dal server".';
     }
 
     private function handleVideoUpload(int $lessonId): void

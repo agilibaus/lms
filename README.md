@@ -333,6 +333,42 @@ eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host n
 del file da servire, l'eliminazione di entrambe le misure, la normalizzazione del testo
 alternativo e le iniziali mostrate quando la copertina manca. Richiede l'estensione GD.
 
+## File caricati: la piattaforma non cancella mai da sola
+
+**Nessun file caricato viene eliminato automaticamente.** Né sostituendo un video, né cambiando
+provider, né eliminando una lezione: restano tutti sul server, e si tolgono solo con un comando
+esplicito. La scelta è voluta — un file cancellato non si recupera — e il prezzo è che i file
+scollegati vanno tenuti d'occhio.
+
+Sotto il pulsante Salva, quando la lezione ha un video caricato, ci sono due comandi:
+
+- **Rimuovi dalla lezione**: toglie il riferimento, il file resta sul server;
+- **Rimuovi dalla lezione e dal server**: toglie il riferimento e cancella il file, con conferma.
+
+Sono moduli a sé e non pulsanti dentro quello principale: lì sarebbero stati il primo pulsante
+di invio, e premere Invio in un campo di testo avrebbe tolto il video invece di salvare.
+
+Quando un video smette di essere collegato per altra via — sostituendone uno, o cambiando
+provider — compare un avviso che dice dov'è rimasto il file. Eliminando una lezione, la
+conferma avverte che i file restano, e il messaggio finale dice quanti sono e quanto occupano.
+
+Il file video viene preso in considerazione **solo** se la tendina del provider è su
+"Self-hosted": sceglierlo con la tendina su altro non caricava niente e non diceva niente, ora
+compare un avviso. I campi dei provider non scelti ora spariscono davvero: la regola CSS
+`display: flex` vinceva sull'attributo `hidden`, così il campo "carica file video" si vedeva
+anche con la tendina su "Nessuno".
+
+### Dove si vedono i file scollegati
+
+- **In fondo a Gestione corsi**: riepilogo di tutta la piattaforma, per cartella, con numero di
+  file e spazio occupato (`App\Core\OrphanFiles::summary()`).
+- **Nella pagina di modifica della lezione**: una riga con i soli file di quella lezione, che
+  costa una lettura di tre cartelle invece di tutte.
+
+Si contano confrontando il disco con i riferimenti nel database: `lessons.video_ref`,
+`lesson_materials.file_path` e — per le immagini, che non hanno una tabella — i nomi citati
+dentro `content_html`. Vanno cancellati a mano: nessuna pagina può sapere se servono ancora.
+
 ## Limiti di caricamento (video e materiali)
 
 La piattaforma accetta video fino a 500 MB, ma **il limite vero lo impone PHP**: valgono

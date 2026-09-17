@@ -76,6 +76,8 @@ $router->post('/lessons/{id}/materials/{materialId}/move', [LessonController::cl
 $router->post('/lessons/{id}/images', [LessonController::class, 'uploadImage']);
 $router->get('/lessons/{id}/images/{file}', [LessonController::class, 'showImage']);
 $router->get('/lessons/{id}/video', [LessonController::class, 'streamVideo']);
+$router->post('/lessons/{id}/video/detach', [LessonController::class, 'detachVideo']);
+$router->post('/lessons/{id}/video/delete', [LessonController::class, 'deleteVideo']);
 $router->post('/lessons/{id}/complete', [LessonController::class, 'complete']);
 $router->get('/materials/{id}/download', [LessonController::class, 'downloadMaterial']);
 

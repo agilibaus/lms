@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\OrphanFiles;
 
 /** @var array $courses */
 /** @var bool $canCreate */
@@ -65,3 +66,44 @@ use App\Core\Csrf;
         </tbody>
     </table>
 <?php endif; ?>
+
+<?php
+// Riepilogo dei file caricati che nessuna lezione usa piu'. Sta qui, in un
+// punto solo del pannello, perche' il calcolo legge le cartelle di /storage
+// e ripeterlo a ogni pagina sarebbe spreco.
+$scollegati = OrphanFiles::summary();
+?>
+<section class="card orphan-summary">
+    <h2>File sul server non collegati a nessuna lezione</h2>
+
+    <?php if ($scollegati['total']['count'] === 0): ?>
+        <p class="card-meta">Nessuno: ogni file caricato è usato da una lezione.</p>
+    <?php else: ?>
+        <p class="card-meta">
+            Restano <strong><?= (int) $scollegati['total']['count'] ?></strong> file per
+            <strong><?= htmlspecialchars(OrphanFiles::humanSize($scollegati['total']['bytes'])) ?></strong>.
+            Nascono togliendo un video dalla lezione senza eliminarlo, sostituendone uno, o
+            eliminando una lezione: la piattaforma non cancella mai da sola i file caricati.
+        </p>
+
+        <table class="data-table">
+            <thead>
+            <tr><th>Cartella</th><th>File</th><th>Spazio</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($scollegati['folders'] as $nome => $dati): ?>
+                <?php if ($dati['count'] === 0) { continue; } ?>
+                <tr>
+                    <td><code>storage/<?= htmlspecialchars((string) $nome) ?></code></td>
+                    <td><?= (int) $dati['count'] ?></td>
+                    <td><?= htmlspecialchars(OrphanFiles::humanSize($dati['bytes'])) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <p class="form-hint">
+            Vanno cancellati a mano dal server: nessuna pagina può sapere se ti servono ancora.
+        </p>
+    <?php endif; ?>
+</section>

@@ -760,6 +760,13 @@ h3 { font-size: 1.05rem; }
     gap: 0.3rem;
 }
 
+/* display:flex vince sulla regola del browser per l'attributo hidden: senza
+   questa riga i campi di tutti i provider restano visibili insieme, e il
+   campo "carica file video" si vede anche con la tendina su "Nessuno". */
+.video-provider-fields[hidden] {
+    display: none;
+}
+
 .hint {
     font-size: 0.8rem;
     color: var(--color-text-muted);
@@ -1439,6 +1446,22 @@ body.has-focus-video {
 .alert-warning {
     background: #fdf6e3;
     color: #8a6d1f;
+}
+
+/* Informazioni che non sono ne' un esito positivo ne' un errore: per esempio
+   un file rimasto sul server dopo essere stato scollegato. */
+.alert-info {
+    background: #eef2f7;
+    color: #3d4b5c;
+}
+
+/* I due comandi per togliere il video, uno sotto l'altro con la loro
+   spiegazione accanto. */
+.video-actions .inline-form {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
 }
 
 .badge-success {
