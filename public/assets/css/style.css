@@ -72,10 +72,20 @@ h3 { font-size: 1.05rem; }
 }
 
 .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 700;
     font-size: 1.05rem;
     padding: 0 0.5rem 1.25rem;
     color: var(--color-primary);
+}
+
+.brand-icon {
+    width: 26px;
+    height: 26px;
+    display: block;
+    flex-shrink: 0;
 }
 
 .sidebar-nav {
@@ -555,6 +565,12 @@ h3 { font-size: 1.05rem; }
         border-radius: var(--radius-sm);
         cursor: pointer;
         padding: 0 8px;
+    }
+
+    /* Il pulsante del menu e' fisso in alto a sinistra e passerebbe sopra al
+       marchio quando il cassetto e' aperto: il marchio gli lascia il posto. */
+    .sidebar-brand {
+        padding-left: 3.3rem;
     }
 
     .nav-toggle-btn span {

@@ -25,7 +25,12 @@ use App\Core\Csrf;
     <label for="nav-toggle" class="nav-overlay" aria-hidden="true"></label>
 
     <aside class="sidebar">
-        <div class="sidebar-brand">LMS</div>
+        <div class="sidebar-brand">
+            <?php /* alt vuoto: il nome sta gia' scritto accanto, e un lettore
+                     di schermo lo direbbe due volte. */ ?>
+            <img src="/assets/img/pistacchio.png" alt="" width="26" height="26" class="brand-icon">
+            LMS
+        </div>
 
         <nav class="sidebar-nav">
             <?php if (Auth::hasRole('admin', 'tutor', 'assistente')): ?>
