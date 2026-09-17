@@ -333,6 +333,27 @@ eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host n
 del file da servire, l'eliminazione di entrambe le misure, la normalizzazione del testo
 alternativo e le iniziali mostrate quando la copertina manca. Richiede l'estensione GD.
 
+## Incontri dal vivo nella pagina della lezione
+
+Sotto il video, la lezione mostra gli incontri **del proprio modulo** ancora da fare o in
+corso; quelli passati non compaiono. Il pulsante "Entra nella riunione" si attiva da un quarto
+d'ora prima dell'inizio fino alla fine, e prima di allora resta la sola data. Chi non ha ancora
+il link Meet vede scritto che non è disponibile.
+
+Le finestre temporali sono calcolate in SQL (`LiveSessionModel::upcomingForModule`), non in
+PHP: server web e database possono trovarsi su fusi diversi.
+
+Il link è un `<a>` normale, senza `target`: la riunione si apre nella stessa scheda, su
+qualunque dispositivo, così il tasto Indietro riporta alla lezione. Da una scheda nuova si
+tornerebbe indietro solo dal selettore delle schede, scomodo su telefono. Se il telefono
+dirotta il link sull'app Meet, la lezione resta dov'era nel browser. Niente JavaScript: un solo
+comportamento da spiegare e da provare.
+
+Google Meet **non si può incorporare** in un iframe dentro la piattaforma: `meet.google.com`
+vieta di essere incorniciato da altri siti e il browser rifiuta di disegnarlo. Per avere la
+videoconferenza dentro la pagina servirebbe un provider nato per essere incorporato (Jitsi,
+Whereby, Daily), cioè lasciare Meet.
+
 ## Modalità senza distrazioni
 
 Nella lezione, sotto il video, un pulsante **Senza distrazioni** allarga il player a tutto lo

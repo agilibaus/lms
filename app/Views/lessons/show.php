@@ -12,6 +12,7 @@ use App\Core\VideoEmbed;
 /** @var array $course */
 /** @var array $materials */
 /** @var bool $completed */
+/** @var array $liveSessions */
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $course['id'] ?>" class="back-link">
@@ -42,6 +43,51 @@ use App\Core\VideoEmbed;
             &times; Torna alla lezione
         </button>
     </div>
+<?php endif; ?>
+
+<?php if (!empty($liveSessions)): ?>
+    <section class="live-sessions-box">
+        <h3>Incontri dal vivo di questo modulo</h3>
+
+        <ul class="live-session-list">
+            <?php foreach ($liveSessions as $session): ?>
+                <?php
+                $inizio = new DateTimeImmutable((string) $session['starts_at']);
+                $fine = new DateTimeImmutable((string) $session['ends_at']);
+                // Calcolato dal database, non qui: server e MySQL possono
+                // stare su fusi diversi.
+                $apribile = (bool) $session['joinable'];
+                $iniziato = (bool) $session['started'];
+                $link = (string) ($session['meet_link'] ?? '');
+                ?>
+                <li>
+                    <span class="live-session-info">
+                        <span class="live-session-title"><?= htmlspecialchars((string) $session['title']) ?></span>
+                        <span class="live-session-when">
+                            <?= htmlspecialchars($inizio->format('d/m/Y')) ?>,
+                            <?= htmlspecialchars($inizio->format('H:i')) ?>–<?= htmlspecialchars($fine->format('H:i')) ?>
+                            <?= $iniziato ? ' · in corso' : ($apribile ? ' · si può entrare' : '') ?>
+                        </span>
+                    </span>
+
+                    <?php if ($link === ''): ?>
+                        <span class="live-session-note">Link non ancora disponibile</span>
+                    <?php elseif ($apribile): ?>
+                        <?php /* Nessun target="_blank": la riunione si apre in questa
+                                 scheda, cosi' il tasto Indietro riporta alla lezione su
+                                 qualunque dispositivo. Da una scheda nuova si tornerebbe
+                                 solo dal selettore delle schede, che su telefono e'
+                                 scomodo; e se il telefono dirotta il link sull'app Meet,
+                                 la lezione resta dov'era nel browser. */ ?>
+                        <a class="btn btn-primary live-session-join"
+                           href="<?= htmlspecialchars($link) ?>">Entra nella riunione</a>
+                    <?php else: ?>
+                        <span class="live-session-note">Si entra da 15 minuti prima</span>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
 <?php endif; ?>
 
 <?php if (!empty($lesson['content_html'])): ?>

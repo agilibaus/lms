@@ -894,6 +894,58 @@ h3 { font-size: 1.05rem; }
     background: #000;
 }
 
+/* ---------- Incontri dal vivo nella lezione ---------- */
+
+.live-sessions-box {
+    max-width: 720px;
+    margin: 0 0 1.5rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.live-sessions-box h3 {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+}
+
+.live-session-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.live-session-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.live-session-list li:first-child {
+    border-top: none;
+}
+
+.live-session-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.live-session-title {
+    font-weight: 600;
+}
+
+.live-session-when,
+.live-session-note {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
 /* ---------- Modalità senza distrazioni ---------- */
 
 .lesson-video-actions {

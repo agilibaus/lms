@@ -15,6 +15,7 @@ use App\Models\EnrollmentModel;
 use App\Models\LessonMaterialModel;
 use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
+use App\Models\LiveSessionModel;
 use App\Models\ModuleModel;
 
 class LessonController
@@ -128,6 +129,7 @@ class LessonController
             'course' => $course,
             'materials' => LessonMaterialModel::forLesson((int) $lesson['id']),
             'completed' => LessonProgressModel::isCompleted((int) Auth::id(), (int) $lesson['id']),
+            'liveSessions' => LiveSessionModel::upcomingForModule((int) $module['id']),
         ]);
     }
 

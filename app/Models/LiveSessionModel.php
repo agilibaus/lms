@@ -67,6 +67,37 @@ class LiveSessionModel
     }
 
     /**
+     * Sessioni di un modulo ancora da fare o in corso, per la pagina della
+     * lezione. Le passate non compaiono: il link a una riunione finita e'
+     * solo rumore in mezzo al contenuto.
+     *
+     * `joinable` dice se il pulsante va reso attivo: da un quarto d'ora prima
+     * dell'inizio fino alla fine. `started` dice se l'incontro e' davvero
+     * cominciato, che non e' la stessa cosa: si entra anche prima. Entrambi
+     * sono calcolati in SQL e non in PHP, perche' le due macchine possono
+     * trovarsi su fusi diversi.
+     */
+    public static function upcomingForModule(int $moduleId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT ls.*,
+                    m.title AS module_title, m.course_id,
+                    c.title AS course_title,
+                    (NOW() >= DATE_SUB(ls.starts_at, INTERVAL 15 MINUTE) AND NOW() <= ls.ends_at) AS joinable,
+                    (NOW() >= ls.starts_at AND NOW() <= ls.ends_at) AS started
+             FROM live_sessions ls
+             LEFT JOIN modules m ON m.id = ls.module_id
+             LEFT JOIN courses c ON c.id = m.course_id
+             WHERE ls.module_id = :module_id
+               AND ls.ends_at >= NOW()
+             ORDER BY ls.starts_at'
+        );
+        $stmt->execute(['module_id' => $moduleId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Sessioni di un corso (per la scheda corso), dalla piu' imminente.
      */
     public static function forCourse(int $courseId): array
