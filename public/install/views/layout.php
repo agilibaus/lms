@@ -28,6 +28,9 @@ $currentIndex = array_search($view, array_keys($steps), true);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Installazione · Pistacchio LMS</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/img/pistacchio-32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/assets/img/pistacchio-180.png">
     <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         .install-page { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }

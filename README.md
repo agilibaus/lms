@@ -410,6 +410,16 @@ vieta di essere incorniciato da altri siti e il browser rifiuta di disegnarlo. P
 videoconferenza dentro la pagina servirebbe un provider nato per essere incorporato (Jitsi,
 Whereby, Daily), cioè lasciare Meet.
 
+## Icona nella scheda del browser
+
+`public/favicon.ico` contiene l'icona di Pistacchio in quattro misure (16, 32, 48 e 64 px), più
+`assets/img/pistacchio-32.png` per i browser moderni e `pistacchio-180.png` per la schermata
+iniziale su telefono. I tag stanno in tutte le pagine che hanno una `<head>` propria: il layout
+principale, le pagine di accesso, la verifica pubblica del certificato e l'installer.
+
+Le immagini sono ricavate da `pistacchio_icon.png` **ritagliando sul contenuto**: l'originale ha
+margini trasparenti che, ridotti a 16 px, lasciavano la forma minuscola in mezzo al nulla.
+
 ## Logo del gruppo
 
 Nel modulo di creazione e in quello di modifica di un gruppo si può caricare un logo o simbolo.
