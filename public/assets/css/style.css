@@ -1062,10 +1062,12 @@ h3 { font-size: 1.05rem; }
     padding: 0.25rem 0.85rem;
 }
 
-/* Finché la copertina è lì, l'iframe non è caricato e il suo riquadro vuoto
-   non deve occupare spazio. Il player dentro <noscript> non è toccato: lì la
-   copertina non esiste. */
-.lesson-video.is-solo-video .video-start:not([hidden]) + .video-embed {
+/* Finché la copertina è lì il player resta nascosto: un iframe senza
+   indirizzo, o un video non ancora avviato, occuperebbero un rettangolo vuoto
+   sotto l'immagine. La classe la mette il JavaScript, quindi senza JavaScript
+   il player si vede da subito. Il <noscript> non è toccato: lì la copertina
+   non compare. */
+.lesson-video.has-facade .video-embed {
     display: none;
 }
 

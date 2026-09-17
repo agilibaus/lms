@@ -13,13 +13,12 @@ namespace App\Core;
 class VideoEmbed
 {
     /**
-     * @param bool $deferred true mette l'indirizzo in data-src invece che in
-     *                       src: l'iframe non viene caricato finche' qualcuno
-     *                       non preme il pulsante di avvio. Serve alle lezioni
-     *                       di solo video, dove l'avvio va rilevato senza
-     *                       dipendere dal protocollo del player esterno — e
-     *                       come effetto la pagina non contatta Bunny o
-     *                       Cloudflare finche' nessuno guarda.
+     * @param bool $deferred il player non parte da solo: davanti c'e' una
+     *                       copertina con il pulsante di avvio. Per i provider
+     *                       esterni l'indirizzo va in data-src, cosi' l'iframe
+     *                       non viene caricato e la pagina non contatta Bunny
+     *                       o Cloudflare finche' nessuno guarda; per i video
+     *                       sul nostro server basta non precaricarli.
      */
     public static function render(string $provider, ?string $videoRef, int $lessonId, bool $deferred = false): string
     {
@@ -30,7 +29,7 @@ class VideoEmbed
         return match ($provider) {
             'bunny' => self::bunny($videoRef, $deferred),
             'cloudflare' => self::cloudflare($videoRef, $deferred),
-            'self_hosted' => self::selfHosted($lessonId),
+            'self_hosted' => self::selfHosted($lessonId, $deferred),
             default => '',
         };
     }
@@ -78,15 +77,18 @@ class VideoEmbed
         return self::iframe($src, $deferred);
     }
 
-    private static function selfHosted(int $lessonId): string
+    private static function selfHosted(int $lessonId, bool $deferred = false): string
     {
         // Il file fisico non è mai esposto sotto /public: l'src passa da un
         // endpoint autenticato che verifica l'iscrizione al corso e supporta
         // le richieste Range per consentire il seek nel player.
         $src = '/lessons/' . $lessonId . '/video';
 
+        // Con la copertina davanti non si scarica niente finche' non si preme
+        // play: preload="none" invece di "metadata".
         return sprintf(
-            '<div class="video-embed"><video controls preload="metadata" src="%s"></video></div>',
+            '<div class="video-embed"><video controls preload="%s" src="%s"></video></div>',
+            $deferred ? 'none' : 'metadata',
             htmlspecialchars($src)
         );
     }

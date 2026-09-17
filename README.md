@@ -429,17 +429,32 @@ più a nessuno, a differenza di un video di lezione.
 
 Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 
-## Lezioni di solo video: avvio prima del completamento
+## Copertina di avvio e completamento delle lezioni di solo video
+
+Sono due cose distinte, tenute separate di proposito: la copertina è **presentazione** e vale
+per ogni video; lo sblocco del pulsante è una **regola didattica** e riguarda solo certe
+lezioni. Legarle significherebbe che cambiare idea sull'una tocca l'altra.
+
+### La copertina, per ogni video
+
+Davanti a ogni video, qualunque sia il provider, c'è una copertina con il pulsante "Guarda la
+lezione". Prima era solo sui video Bunny e Cloudflare, per una ragione tecnica, e due lezioni
+affiancate avevano un aspetto diverso senza che lo studente potesse capire perché.
+
+Finché la copertina è lì il player non viene caricato: l'iframe non ha indirizzo e il video
+sul nostro server ha `preload="none"`. La pagina quindi non contatta Bunny o Cloudflare, e non
+scarica nulla dal nostro server, finché nessuno guarda.
+
+La copertina è nascosta nell'HTML e la scopre `public/assets/js/lesson-video.js`: senza
+JavaScript resta invisibile e il player si comporta come ha sempre fatto. Per i soli provider
+esterni c'è in più un `<noscript>` con il player già caricato, altrimenti lì l'iframe
+resterebbe senza indirizzo.
+
+### Lo sblocco, per le lezioni di solo video
 
 In una lezione che contiene **solo** un video — niente testo, niente materiali — il pulsante
-"Segna come completata" resta disabilitato finché lo studente non avvia il video.
-
-L'avvio non viene chiesto al player. Con i video sul nostro server basta l'evento `play`
-dell'elemento `<video>`. Con Bunny e Cloudflare, che stanno dentro un iframe di un altro sito,
-**l'iframe non viene caricato affatto** finché non si preme il pulsante di avvio: quel clic è
-il segnale, e carica il video con `autoplay` così resta un clic solo. Ne guadagna anche il
-caricamento della pagina, che non contatta i server esterni finché nessuno guarda, e non
-serve nessuno script di terze parti.
+"Segna come completata" resta disabilitato finché lo studente non avvia il video. Il clic sulla
+copertina è il segnale, e per i video sul nostro server vale anche l'evento `play` del player.
 
 Il pulsante è **abilitato nell'HTML** e lo disabilita `public/assets/js/lesson-start.js`: senza
 JavaScript, o se qualcosa va storto, lo studente può comunque concludere la lezione. Sempre per

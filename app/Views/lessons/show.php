@@ -27,48 +27,50 @@ use App\Core\VideoEmbed;
 <?php endif; ?>
 
 <?php
-// Lezione di solo video: nient'altro da leggere o scaricare. Solo qui il
-// pulsante "segna come completata" aspetta che il video venga avviato —
-// altrove c'e' del testo, e bloccare il pulsante non avrebbe senso.
-$soloVideo = $lesson['video_provider'] !== 'none'
+// La copertina e' il modo normale di presentare un video, qualunque sia il
+// provider: senza, due lezioni affiancate avrebbero un aspetto diverso per
+// una ragione tecnica che allo studente non dice niente.
+$conVideo = $lesson['video_provider'] !== 'none';
+
+// Lo sblocco del pulsante "completata" e' un'altra cosa: riguarda solo le
+// lezioni che non hanno nient'altro da leggere o scaricare. Tenere separate
+// presentazione e regola didattica evita che cambiare idea sull'una tocchi
+// l'altra.
+$soloVideo = $conVideo
     && trim(strip_tags((string) ($lesson['content_html'] ?? ''))) === ''
     && $materials === [];
 
-$iframeDifferito = $soloVideo && VideoEmbed::isIframeProvider((string) $lesson['video_provider']);
-$embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id'], $iframeDifferito);
+$iframe = VideoEmbed::isIframeProvider((string) $lesson['video_provider']);
+$embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id'], $conVideo);
 ?>
 <?php if ($embed !== ''): ?>
-    <div class="lesson-video<?= $soloVideo ? ' is-solo-video' : '' ?>" id="lesson-video"
+    <div class="lesson-video" id="lesson-video"
          data-lesson="<?= (int) $lesson['id'] ?>"
          <?= $soloVideo ? 'data-attende-avvio' : '' ?>>
-        <?php if ($iframeDifferito): ?>
-            <?php /* L'iframe non e' ancora caricato: qui sopra sta la copertina
-                     con il pulsante di avvio. Il clic fa due cose in una,
-                     carica il video con avvio automatico e registra che lo
-                     studente l'ha avviato. */ ?>
-            <div class="video-start" data-avvio>
-                <?= VideoPoster::svg((int) $lesson['id'], (string) $lesson['title']) ?>
-                <button type="button" class="video-start-button" data-avvia>
-                    <span class="video-start-icon" aria-hidden="true">&#9654;</span>
-                    <span class="video-start-label">Guarda la lezione</span>
-                </button>
-            </div>
-        <?php endif; ?>
+
+        <?php /* Nascosta nell'HTML e scoperta dal JavaScript: senza, la
+                 copertina resterebbe li' davanti a un player che nessuno puo'
+                 avviare. */ ?>
+        <div class="video-start" data-avvio hidden>
+            <?= VideoPoster::svg((int) $lesson['id'], (string) $lesson['title']) ?>
+            <button type="button" class="video-start-button" data-avvia>
+                <span class="video-start-icon" aria-hidden="true">&#9654;</span>
+                <span class="video-start-label">Guarda la lezione</span>
+            </button>
+        </div>
 
         <?= $embed ?>
 
-        <?php if ($iframeDifferito): ?>
-            <?php /* Senza JavaScript l'iframe qui sopra resterebbe senza
-                     indirizzo e il video non si vedrebbe: qui c'e' lo stesso
-                     player, caricato subito e senza copertina. */ ?>
+        <?php if ($iframe): ?>
+            <?php /* Senza JavaScript l'iframe qui sopra resta senza indirizzo:
+                     qui c'e' lo stesso player, caricato subito. I video sul
+                     nostro server non ne hanno bisogno, il loro src c'e'
+                     sempre. */ ?>
             <noscript>
                 <?= VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id']) ?>
             </noscript>
         <?php endif; ?>
 
-        <?php /* Nascosti nell'HTML: senza JavaScript restano nascosti e la
-                 pagina e' quella di sempre, invece di mostrare un pulsante
-                 che non fa niente. */ ?>
         <p class="lesson-video-actions">
             <button type="button" class="btn btn-secondary" data-focus-enter hidden>
                 Senza distrazioni
@@ -181,6 +183,6 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
     <script src="/assets/js/lesson-focus.js"></script>
 <?php endif; ?>
 
-<?php if ($embed !== '' && $soloVideo && Auth::hasRole('studente')): ?>
-    <script src="/assets/js/lesson-start.js"></script>
+<?php if ($embed !== ''): ?>
+    <script src="/assets/js/lesson-video.js"></script>
 <?php endif; ?>
