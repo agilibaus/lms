@@ -15,7 +15,7 @@ use App\Core\Csrf;
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
-<form action="/admin/groups" method="post" class="form">
+<form action="/admin/groups" method="post" class="form" enctype="multipart/form-data">
     <?= Csrf::field() ?>
     <?php require __DIR__ . '/_fields.php'; ?>
 

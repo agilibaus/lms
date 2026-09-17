@@ -961,6 +961,42 @@ h3 { font-size: 1.05rem; }
     cursor: not-allowed;
 }
 
+/* ---------- Logo del gruppo ---------- */
+
+.group-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.group-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    flex-shrink: 0;
+    /* Un logo trasparente su fondo chiaro: niente riquadro pieno dietro. */
+    background: transparent;
+}
+
+.group-logo-lg {
+    width: 96px;
+    height: 96px;
+}
+
+/* Riquadro con le iniziali quando il logo manca: tinta dall'identificativo,
+   come per le copertine dei corsi. */
+.group-logo-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--logo-hue, 90) 34% 90%);
+    color: hsl(var(--logo-hue, 90) 40% 32%);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
 /* ---------- Copertina di avvio (lezioni di solo video) ---------- */
 
 .video-start {

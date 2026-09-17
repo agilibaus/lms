@@ -73,6 +73,9 @@ CREATE TABLE `groups` (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name            VARCHAR(150) NOT NULL,
     description     TEXT,
+    -- Logo del gruppo: PNG quadrato in /storage/group-logos, servito da
+    -- /admin/groups/{id}/logo. NULL = riquadro con le iniziali.
+    logo_path       VARCHAR(255),
     tutor_id        INT UNSIGNED NULL,          -- tutor responsabile del gruppo/coorte
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tutor_id) REFERENCES users(id) ON DELETE SET NULL

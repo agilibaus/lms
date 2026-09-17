@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\GroupLogo;
 
 /** @var array $groups */
 /** @var bool $canManageAll */
@@ -29,7 +30,20 @@ use App\Core\Csrf;
         <tbody>
         <?php foreach ($groups as $group): ?>
             <tr>
-                <td><a href="/admin/groups/<?= (int) $group['id'] ?>/edit"><?= htmlspecialchars((string) $group['name']) ?></a></td>
+                <td>
+                    <a href="/admin/groups/<?= (int) $group['id'] ?>/edit" class="group-name">
+                        <?php $logo = GroupLogo::url($group); ?>
+                        <?php if ($logo !== null): ?>
+                            <img src="<?= htmlspecialchars($logo) ?>" alt="" class="group-logo" loading="lazy">
+                        <?php else: ?>
+                            <span class="group-logo group-logo-placeholder"
+                                  style="--logo-hue: <?= GroupLogo::hue((int) $group['id']) ?>;" aria-hidden="true">
+                                <?= htmlspecialchars(GroupLogo::initials((string) $group['name'])) ?>
+                            </span>
+                        <?php endif; ?>
+                        <?= htmlspecialchars((string) $group['name']) ?>
+                    </a>
+                </td>
                 <td><?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?></td>
                 <td><?= (int) $group['member_count'] ?></td>
                 <td class="row-actions">

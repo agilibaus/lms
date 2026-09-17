@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\GroupLogo;
 
 /** @var array $group */
 /** @var array $tutors */
@@ -27,13 +28,24 @@ $groupId = (int) $group['id'];
 
 <section class="card">
     <h2>Dati del gruppo</h2>
-    <form action="/admin/groups/<?= $groupId ?>" method="post" class="form">
+    <form action="/admin/groups/<?= $groupId ?>" method="post" class="form" enctype="multipart/form-data">
         <?= Csrf::field() ?>
         <?php require __DIR__ . '/_fields.php'; ?>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva</button>
         </div>
     </form>
+
+    <?php if (GroupLogo::url($group) !== null): ?>
+        <?php /* Modulo a se': dentro quello dei dati sarebbe stato il primo
+                 pulsante di invio, e premere Invio nel nome del gruppo
+                 avrebbe rimosso l'immagine invece di salvare. */ ?>
+        <form action="/admin/groups/<?= $groupId ?>/logo/elimina" method="post"
+              onsubmit="return confirm('Rimuovere l\'immagine di questo gruppo?');">
+            <?= Csrf::field() ?>
+            <button type="submit" class="link-btn link-btn-danger">Rimuovi immagine</button>
+        </form>
+    <?php endif; ?>
 </section>
 
 <section class="card">

@@ -410,6 +410,25 @@ vieta di essere incorniciato da altri siti e il browser rifiuta di disegnarlo. P
 videoconferenza dentro la pagina servirebbe un provider nato per essere incorporato (Jitsi,
 Whereby, Daily), cioè lasciare Meet.
 
+## Logo del gruppo
+
+Nel modulo di creazione e in quello di modifica di un gruppo si può caricare un logo o simbolo.
+Compare accanto al nome nell'elenco dei gruppi; senza immagine il gruppo mostra le proprie
+iniziali su una tinta derivata dall'identificativo.
+
+Il file viene ritagliato al centro in quadrato e ridotto a 256 px, e — a differenza delle
+copertine dei corsi, che diventano JPEG — **salvato in PNG**, per conservare la trasparenza: un
+logo appiattito su fondo bianco si vedrebbe come una toppa sopra lo sfondo caldo delle pagine.
+I file stanno in `storage/group-logos/`, fuori dal document root, serviti da
+`/admin/groups/{id}/logo` a chi ha fatto accesso.
+
+Creando un gruppo l'immagine viene salvata **dopo** la riga, perché il percorso contiene
+l'identificativo, che prima non esiste. Sostituendo o rimuovendo l'immagine il file precedente
+viene eliminato: qui la cancellazione automatica ha senso, perché un logo sostituito non serve
+più a nessuno, a differenza di un video di lezione.
+
+Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
+
 ## Lezioni di solo video: avvio prima del completamento
 
 In una lezione che contiene **solo** un video — niente testo, niente materiali — il pulsante

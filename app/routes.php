@@ -127,6 +127,8 @@ $router->get('/admin/groups/create', [AdminGroupController::class, 'createForm']
 $router->post('/admin/groups', [AdminGroupController::class, 'store']);
 $router->get('/admin/groups/{id}/edit', [AdminGroupController::class, 'editForm']);
 $router->post('/admin/groups/{id}', [AdminGroupController::class, 'update']);
+$router->get('/admin/groups/{id}/logo', [AdminGroupController::class, 'logo']);
+$router->post('/admin/groups/{id}/logo/elimina', [AdminGroupController::class, 'deleteLogo']);
 $router->post('/admin/groups/{id}/delete', [AdminGroupController::class, 'destroy']);
 $router->post('/admin/groups/{id}/members', [AdminGroupController::class, 'addMember']);
 $router->post('/admin/groups/{id}/members/{userId}/delete', [AdminGroupController::class, 'removeMember']);

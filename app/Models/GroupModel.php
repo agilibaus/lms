@@ -28,7 +28,7 @@ class GroupModel
     public static function all(): array
     {
         return Database::connection()->query(
-            'SELECT g.id, g.name, g.tutor_id, u.full_name AS tutor_name,
+            'SELECT g.id, g.name, g.logo_path, g.tutor_id, u.full_name AS tutor_name,
                     (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id) AS member_count
              FROM `groups` g
              LEFT JOIN users u ON u.id = g.tutor_id
@@ -42,7 +42,7 @@ class GroupModel
     public static function forTutor(int $tutorId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT g.id, g.name, g.tutor_id, u.full_name AS tutor_name,
+            'SELECT g.id, g.name, g.logo_path, g.tutor_id, u.full_name AS tutor_name,
                     (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id) AS member_count
              FROM `groups` g
              LEFT JOIN users u ON u.id = g.tutor_id
@@ -91,7 +91,7 @@ class GroupModel
     public static function forUser(int $userId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT g.id, g.name, g.tutor_id, u.full_name AS tutor_name, gm.joined_at,
+            'SELECT g.id, g.name, g.logo_path, g.tutor_id, u.full_name AS tutor_name, gm.joined_at,
                     (SELECT COUNT(*) FROM group_course_access gca WHERE gca.group_id = g.id) AS course_count
              FROM group_members gm
              INNER JOIN `groups` g ON g.id = gm.group_id
@@ -145,6 +145,16 @@ class GroupModel
             'UPDATE `groups` SET name = :name, description = :description, tutor_id = :tutor_id WHERE id = :id'
         );
         $stmt->execute(['name' => $name, 'description' => $description, 'tutor_id' => $tutorId, 'id' => $id]);
+    }
+
+    /**
+     * Logo: aggiornato a parte perche' il modulo dei dati non porta il file,
+     * e salvare il nome del gruppo non deve cancellarne l'immagine.
+     */
+    public static function updateLogo(int $id, ?string $logoPath): void
+    {
+        $stmt = Database::connection()->prepare('UPDATE `groups` SET logo_path = :logo WHERE id = :id');
+        $stmt->execute(['logo' => $logoPath, 'id' => $id]);
     }
 
     public static function delete(int $id): void

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Core\GroupLogo;
+use App\Core\Upload;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
@@ -54,6 +56,15 @@ class GroupController extends AdminController
         }
 
         $groupId = GroupModel::create($data['name'], $data['description'], $data['tutor_id']);
+
+        // Il logo si salva dopo la creazione: il percorso contiene l'id, che
+        // prima di questo momento non esiste.
+        $errore = $this->storeLogo($groupId, null);
+
+        if ($errore !== null) {
+            $this->fail('Gruppo creato, ma l\'immagine non è stata caricata: ' . $errore,
+                '/admin/groups/' . $groupId . '/edit');
+        }
 
         $this->success('Gruppo creato.', '/admin/groups/' . $groupId . '/edit');
     }
@@ -112,7 +123,92 @@ class GroupController extends AdminController
 
         GroupModel::update((int) $group['id'], $data['name'], $data['description'], $tutorId);
 
+        $errore = $this->storeLogo((int) $group['id'], $group['logo_path'] ?? null);
+
+        if ($errore !== null) {
+            $this->fail('Gruppo aggiornato, ma l\'immagine non è stata caricata: ' . $errore, $redirect);
+        }
+
         $this->success('Gruppo aggiornato.', $redirect);
+    }
+
+    /**
+     * Serve il logo. Sta in /storage come ogni altro file caricato, quindi
+     * passa di qui invece che da Apache. Basta aver fatto accesso: il logo
+     * compare accanto al nome anche a chi il gruppo non lo gestisce.
+     */
+    public function logo(array $params): void
+    {
+        Auth::requireLogin();
+
+        $group = GroupModel::find((int) $params['id']);
+        $stored = (string) ($group['logo_path'] ?? '');
+
+        if ($group === null || $stored === '') {
+            http_response_code(404);
+            echo 'Nessun logo per questo gruppo.';
+            return;
+        }
+
+        $absolute = Upload::absolutePath($stored);
+
+        if (!is_file($absolute)) {
+            http_response_code(404);
+            echo 'Logo non trovato.';
+            return;
+        }
+
+        header('Content-Type: ' . GroupLogo::mimeFor($stored));
+        header('Content-Length: ' . filesize($absolute));
+        header('X-Content-Type-Options: nosniff');
+        // Il nome del file cambia a ogni caricamento, quindi la cache lunga
+        // non fa mai vedere il logo vecchio.
+        header('Cache-Control: private, max-age=604800');
+        readfile($absolute);
+        exit;
+    }
+
+    public function deleteLogo(array $params): void
+    {
+        $this->requireGroupAccess();
+
+        $group = $this->findManageableGroup((int) $params['id']);
+
+        if ($group === null) {
+            return;
+        }
+
+        $current = (string) ($group['logo_path'] ?? '');
+
+        GroupModel::updateLogo((int) $group['id'], null);
+        GroupLogo::delete($current === '' ? null : $current);
+
+        $this->success('Immagine rimossa.', '/admin/groups/' . (int) $group['id'] . '/edit');
+    }
+
+    /**
+     * Salva l'immagine se ne e' stata scelta una, eliminando la precedente.
+     *
+     * @return string|null il messaggio d'errore, oppure null se e' andata
+     */
+    private function storeLogo(int $groupId, ?string $previous): ?string
+    {
+        if (empty($_FILES['logo']['name'])) {
+            return null;
+        }
+
+        try {
+            $path = GroupLogo::store($_FILES['logo'], $groupId);
+        } catch (\RuntimeException $e) {
+            return $e->getMessage();
+        }
+
+        // Prima la riga, poi il file vecchio: al contrario, un errore in mezzo
+        // lascerebbe il gruppo a puntare a un file che non c'e' piu'.
+        GroupModel::updateLogo($groupId, $path);
+        GroupLogo::delete($previous);
+
+        return null;
     }
 
     public function destroy(array $params): void

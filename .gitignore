@@ -5,6 +5,7 @@
 /storage/avatars/*
 /storage/course-covers/*
 /storage/google/*
+/storage/group-logos/*
 /storage/certificates/*
 /storage/installed.lock
 /storage/mail/*
@@ -15,6 +16,7 @@
 !/storage/avatars/.gitkeep
 !/storage/course-covers/.gitkeep
 !/storage/google/.gitkeep
+!/storage/group-logos/.gitkeep
 !/storage/certificates/.gitkeep
 .env
 .env.local
