@@ -333,6 +333,23 @@ eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host n
 del file da servire, l'eliminazione di entrambe le misure, la normalizzazione del testo
 alternativo e le iniziali mostrate quando la copertina manca. Richiede l'estensione GD.
 
+## Modalità senza distrazioni
+
+Nella lezione, sotto il video, un pulsante **Senza distrazioni** allarga il player a tutto lo
+schermo scurendo il resto della pagina. La sceglie lo studente: non si attiva mai da sola.
+
+Il pulsante **Torna alla lezione** resta fisso in alto a destra per tutto il tempo — niente
+comparsa al passaggio del mouse, che su uno schermo tattile non esiste — e anche Esc riporta
+indietro.
+
+Il riquadro del video non viene mai spostato nell'albero del documento: cambiano solo le
+classi (`public/assets/js/lesson-focus.js`). Un iframe spostato si ricarica e il video
+ripartirebbe da capo; così invece la riproduzione prosegue senza interruzione, sia con i
+player Bunny e Cloudflare sia con i video self-hosted.
+
+I due pulsanti stanno nell'HTML con l'attributo `hidden` e li scopre il JavaScript: senza
+JavaScript la pagina resta esattamente quella di prima.
+
 ## Configurazione dal pannello
 
 **Amministrazione → Posta elettronica** e **Amministrazione → Google Meet** permettono di

@@ -878,6 +878,77 @@ h3 { font-size: 1.05rem; }
     background: #000;
 }
 
+/* ---------- Modalità senza distrazioni ---------- */
+
+.lesson-video-actions {
+    margin: -0.75rem 0 1.5rem;
+}
+
+/* .btn porta display:inline-block, che vince sulla regola del browser per
+   l'attributo hidden: senza questa riga il pulsante di uscita si vedrebbe
+   anche fuori dalla modalità. */
+.lesson-video [hidden] {
+    display: none;
+}
+
+/* Il riquadro non cambia posto nell'albero: diventa un pannello fisso sopra
+   la pagina. Spostare un iframe lo ricarica, e il video ripartirebbe da capo. */
+.lesson-video.is-focus {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    margin: 0;
+    background: #0d0d0d;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Spazio in alto per il pulsante di uscita, che non deve mai finire
+       sopra al video. */
+    padding: 4.5rem 1.5rem 2rem;
+    overflow-y: auto;
+}
+
+.lesson-video.is-focus .video-embed {
+    width: 100%;
+    max-width: min(1280px, 100%);
+    margin: 0 auto;
+}
+
+.lesson-video.is-focus .video-embed iframe,
+.lesson-video.is-focus .video-embed video {
+    max-height: calc(100vh - 7rem);
+    border-radius: var(--radius-md);
+}
+
+/* Sempre visibile finché la modalità è attiva: niente comparsa al passaggio
+   del mouse, che su un touch screen non esiste. */
+.lesson-focus-exit {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 210;
+    background: rgba(255, 255, 255, 0.92);
+    color: #1c1c1c;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.lesson-focus-exit:hover,
+.lesson-focus-exit:focus {
+    background: #fff;
+    color: #000;
+}
+
+/* La pagina sotto non deve scorrere mentre il pannello è aperto. */
+body.has-focus-video {
+    overflow: hidden;
+}
+
+@media (max-width: 640px) {
+    .lesson-video.is-focus {
+        padding: 4rem 0.75rem 1.5rem;
+    }
+}
+
 .video-embed-error {
     color: var(--color-danger);
     font-size: 0.85rem;

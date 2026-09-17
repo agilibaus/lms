@@ -26,7 +26,22 @@ use App\Core\VideoEmbed;
 
 <?php $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id']); ?>
 <?php if ($embed !== ''): ?>
-    <?= $embed ?>
+    <div class="lesson-video" id="lesson-video">
+        <?= $embed ?>
+
+        <?php /* Nascosti nell'HTML: senza JavaScript restano nascosti e la
+                 pagina e' quella di sempre, invece di mostrare un pulsante
+                 che non fa niente. */ ?>
+        <p class="lesson-video-actions">
+            <button type="button" class="btn btn-secondary" data-focus-enter hidden>
+                Senza distrazioni
+            </button>
+        </p>
+
+        <button type="button" class="btn lesson-focus-exit" data-focus-exit hidden>
+            &times; Torna alla lezione
+        </button>
+    </div>
 <?php endif; ?>
 
 <?php if (!empty($lesson['content_html'])): ?>
@@ -67,4 +82,8 @@ use App\Core\VideoEmbed;
             <button type="submit" class="btn btn-primary">Segna come completata</button>
         </form>
     <?php endif; ?>
+<?php endif; ?>
+
+<?php if ($embed !== ''): ?>
+    <script src="/assets/js/lesson-focus.js"></script>
 <?php endif; ?>
