@@ -47,6 +47,7 @@ INSERT INTO role_permissions (role, permission_key) VALUES
     ('admin','course.create'), ('admin','course.edit'), ('admin','course.delete'),
     ('admin','user.manage'), ('admin','group.manage'), ('admin','quiz.grade'),
     ('admin','report.view'), ('admin','certificate.issue'),
+    ('admin','settings.manage'),
     ('tutor','course.edit'), ('tutor','quiz.grade'), ('tutor','report.view'),
     ('tutor','group.manage_own'), ('tutor','assistant.manage'),
     ('assistente','quiz.grade_assigned'), ('assistente','report.view_assigned'),
@@ -55,6 +56,19 @@ INSERT INTO role_permissions (role, permission_key) VALUES
 -- ---------------------------------------------------
 -- Gruppi (classi/coorti + assegnazione corsi a gruppi)
 -- ---------------------------------------------------
+-- ---------------------------------------------------
+-- Impostazioni modificabili dal pannello
+-- ---------------------------------------------------
+-- Chiavi con gli stessi nomi delle variabili del .env: se manca la riga,
+-- vale il file. Svuotare un valore dal pannello restituisce il comando al .env.
+CREATE TABLE settings (
+    setting_key     VARCHAR(100) NOT NULL PRIMARY KEY,
+    setting_value   TEXT NULL,
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by      INT UNSIGNED NULL,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `groups` (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name            VARCHAR(150) NOT NULL,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Google;
 
-use App\Core\Env;
+use App\Core\Settings;
 
 /**
  * Client minimale per le API Google con account di servizio.
@@ -45,7 +45,7 @@ class ServiceAccountClient
      */
     public static function fromEnv(?HttpTransport $transport = null): ?self
     {
-        $keyFile = (string) Env::get('GOOGLE_SERVICE_ACCOUNT_JSON', '');
+        $keyFile = (string) Settings::get('GOOGLE_SERVICE_ACCOUNT_JSON', '');
 
         if ($keyFile === '' || !is_file($keyFile)) {
             return null;
@@ -59,7 +59,7 @@ class ServiceAccountClient
             return null;
         }
 
-        $impersonate = (string) Env::get('GOOGLE_IMPERSONATE_EMAIL', '');
+        $impersonate = (string) Settings::get('GOOGLE_IMPERSONATE_EMAIL', '');
 
         return new self(
             (string) $credentials['client_email'],

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Google;
 
-use App\Core\Env;
+use App\Core\Settings;
 
 /**
  * Creazione e gestione di eventi Google Calendar con link Meet.
@@ -39,8 +39,8 @@ class MeetCalendar
 
         return new self(
             $client,
-            (string) Env::get('GOOGLE_CALENDAR_ID', 'primary'),
-            (string) Env::get('GOOGLE_CALENDAR_TIMEZONE', date_default_timezone_get())
+            (string) Settings::get('GOOGLE_CALENDAR_ID', 'primary'),
+            (string) Settings::get('GOOGLE_CALENDAR_TIMEZONE', date_default_timezone_get())
         );
     }
 
@@ -56,6 +56,25 @@ class MeetCalendar
      * @return array{event_id: string, meet_link: string|null, html_link: string|null}
      * @throws GoogleException
      */
+    /**
+     * Prova di connessione: legge il calendario configurato senza scrivere
+     * niente. Un GET basta a verificare in un colpo solo le credenziali, la
+     * delega a livello di dominio e il fatto che quel calendario sia visibile
+     * all'utente impersonato — cioe' i tre punti in cui la configurazione
+     * sbaglia quasi sempre.
+     *
+     * @return array<string, mixed> la risorsa calendario restituita da Google
+     * @throws GoogleException
+     */
+    public function checkAccess(): array
+    {
+        return $this->client->requestJson(
+            'GET',
+            self::API_BASE . rawurlencode($this->calendarId),
+            self::SCOPE
+        );
+    }
+
     public function createEvent(
         string $title,
         ?string $description,

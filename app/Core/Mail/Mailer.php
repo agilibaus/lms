@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Mail;
 
-use App\Core\Env;
+use App\Core\Settings;
 
 /**
  * Punto unico di invio: sceglie il trasporto in base a `MAIL_TRANSPORT`
@@ -24,16 +24,16 @@ class Mailer
             return self::$transport;
         }
 
-        $from = (string) Env::get('MAIL_FROM_ADDRESS', 'no-reply@localhost');
-        $fromName = (string) Env::get('MAIL_FROM_NAME', 'Pistacchio LMS');
+        $from = (string) Settings::get('MAIL_FROM_ADDRESS', 'no-reply@localhost');
+        $fromName = (string) Settings::get('MAIL_FROM_NAME', 'Pistacchio LMS');
 
-        self::$transport = match (strtolower((string) Env::get('MAIL_TRANSPORT', 'log'))) {
+        self::$transport = match (strtolower((string) Settings::get('MAIL_TRANSPORT', 'log'))) {
             'smtp' => new SmtpTransport(
-                (string) Env::get('MAIL_HOST', 'localhost'),
-                (int) Env::get('MAIL_PORT', '587'),
-                (string) Env::get('MAIL_USERNAME', ''),
-                (string) Env::get('MAIL_PASSWORD', ''),
-                strtolower((string) Env::get('MAIL_ENCRYPTION', 'tls')),
+                (string) Settings::get('MAIL_HOST', 'localhost'),
+                (int) Settings::get('MAIL_PORT', '587'),
+                (string) Settings::get('MAIL_USERNAME', ''),
+                (string) Settings::get('MAIL_PASSWORD', ''),
+                strtolower((string) Settings::get('MAIL_ENCRYPTION', 'tls')),
                 $from,
                 $fromName
             ),
@@ -79,7 +79,7 @@ class Mailer
 
     public static function isLogTransport(): bool
     {
-        return strtolower((string) Env::get('MAIL_TRANSPORT', 'log')) === 'log';
+        return strtolower((string) Settings::get('MAIL_TRANSPORT', 'log')) === 'log';
     }
 
     // ---------------------------------------------------------------

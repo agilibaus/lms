@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\Admin\CourseController as AdminCourseController;
 use App\Controllers\Admin\GroupController as AdminGroupController;
 use App\Controllers\Admin\PermissionController as AdminPermissionController;
+use App\Controllers\Admin\SettingsController;
 use App\Controllers\Admin\UserController as AdminUserController;
 use App\Controllers\AuthController;
 use App\Controllers\CatalogController;
@@ -138,6 +139,15 @@ $router->post('/admin/courses/{id}', [AdminCourseController::class, 'update']);
 $router->post('/admin/courses/{id}/delete', [AdminCourseController::class, 'destroy']);
 $router->post('/admin/courses/{id}/copertina', [AdminCourseController::class, 'updateCover']);
 $router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::class, 'deleteCover']);
+
+// --- Configurazione: posta elettronica e Google Meet ---
+$router->get('/admin/settings/posta', [SettingsController::class, 'mail']);
+$router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']);
+$router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);
+$router->get('/admin/settings/meet', [SettingsController::class, 'meet']);
+$router->post('/admin/settings/meet', [SettingsController::class, 'updateMeet']);
+$router->post('/admin/settings/meet/chiave/elimina', [SettingsController::class, 'deleteMeetKey']);
+$router->post('/admin/settings/meet/prova', [SettingsController::class, 'testMeet']);
 $router->post('/admin/courses/{id}/enrollments', [AdminCourseController::class, 'enroll']);
 $router->post('/admin/courses/{id}/enrollments/{userId}/delete', [AdminCourseController::class, 'unenroll']);
 $router->post('/admin/requests/{requestId}', [AdminCourseController::class, 'decideRequest']);

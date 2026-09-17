@@ -41,7 +41,7 @@ use App\Core\Csrf;
             <a href="/certificates" class="nav-link">Certificati</a>
             <a href="/profilo" class="nav-link">Profilo</a>
 
-            <?php if (Auth::canAny('user.manage', 'assistant.manage', 'group.manage', 'group.manage_own', 'course.create', 'course.edit', 'course.delete') || Auth::hasRole('admin')): ?>
+            <?php if (Auth::canAny('user.manage', 'assistant.manage', 'group.manage', 'group.manage_own', 'course.create', 'course.edit', 'course.delete', 'settings.manage') || Auth::hasRole('admin')): ?>
                 <span class="nav-section">Amministrazione</span>
 
                 <?php if (Auth::canAny('course.create', 'course.edit', 'course.delete')): ?>
@@ -52,6 +52,10 @@ use App\Core\Csrf;
                 <?php endif; ?>
                 <?php if (Auth::canAny('user.manage', 'assistant.manage')): ?>
                     <a href="/admin/users" class="nav-link">Utenti</a>
+                <?php endif; ?>
+                <?php if (Auth::can('settings.manage')): ?>
+                    <a href="/admin/settings/posta" class="nav-link">Posta elettronica</a>
+                    <a href="/admin/settings/meet" class="nav-link">Google Meet</a>
                 <?php endif; ?>
                 <?php if (Auth::hasRole('admin')): ?>
                     <a href="/admin/permissions" class="nav-link">Permessi</a>

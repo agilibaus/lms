@@ -40,6 +40,9 @@ class RolePermissionModel
                 'group.manage' => 'Gestire tutti i gruppi',
                 'group.manage_own' => 'Gestire i gruppi di cui si è tutor',
             ],
+            'Configurazione' => [
+                'settings.manage' => 'Configurare posta elettronica e Google Meet',
+            ],
             'Report e certificati' => [
                 'report.view' => 'Consultare tutti i report',
                 'report.view_assigned' => 'Consultare i report degli studenti seguiti',

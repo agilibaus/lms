@@ -125,7 +125,8 @@ mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
 Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position` sui materiali),
 `2026_09_16_profilo_utente.sql` (campi del profilo e immagine) e
-`2026_09_17_copertina_corso.sql` (testo alternativo della copertina del corso).
+`2026_09_17_copertina_corso.sql` (testo alternativo della copertina del corso) e
+`2026_09_17_impostazioni.sql` (tabella `settings` e permesso `settings.manage`).
 
 ## Struttura del progetto
 
@@ -161,6 +162,7 @@ Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position`
   google_meet_test.php  → test del client Google (senza rete né credenziali reali)
   html_sanitizer_test.php → test del sanificatore HTML dell'editor
   course_cover_test.php   → test della copertina del corso (ritaglio, misure, testo alternativo)
+  settings_test.php       → test delle impostazioni salvate in tabella (richiede il database)
 ```
 
 ## Quiz, certificati e report
@@ -316,6 +318,7 @@ Google Workspace, che richiede scope aggiuntivi ed è disponibile solo a session
 php tests/google_meet_test.php
 php tests/html_sanitizer_test.php
 php tests/course_cover_test.php
+php tests/settings_test.php
 ```
 
 Verifica il client Google senza rete e senza credenziali reali: genera una chiave RSA al volo,
@@ -329,6 +332,27 @@ eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host n
 `course_cover_test.php` verifica il ritaglio 16:9 e le due misure della copertina, la scelta
 del file da servire, l'eliminazione di entrambe le misure, la normalizzazione del testo
 alternativo e le iniziali mostrate quando la copertina manca. Richiede l'estensione GD.
+
+## Configurazione dal pannello
+
+**Amministrazione → Posta elettronica** e **Amministrazione → Google Meet** permettono di
+cambiare la configurazione senza aprire il `.env`. Le due pagine richiedono il permesso
+`settings.manage`, assegnato all'admin e spostabile dalla matrice dei permessi.
+
+I valori finiscono nella tabella `settings`, con chiavi che hanno gli stessi nomi delle
+variabili d'ambiente, e **hanno la precedenza sul `.env`**. Svuotare un campo cancella la riga
+e restituisce il comando al file. Il `.env` non viene mai riscritto da una pagina web: contiene
+anche le credenziali del database.
+
+La password SMTP non torna mai al browser: la pagina dice solo se è impostata, e salvando con
+il campo vuoto resta quella di prima. La chiave dell'account di servizio Google non va in
+tabella ma in `storage/google/`, fuori dal document root e con permessi 0600; in tabella resta
+il percorso. Sostituendo o rimuovendo la chiave, il file precedente viene eliminato — ma solo
+se l'avevamo caricato noi, non se il percorso arriva dal `.env`.
+
+Ogni pagina ha una prova: l'invio di un messaggio al proprio indirizzo, e una lettura del
+calendario configurato che verifica in un colpo solo credenziali, delega a livello di dominio
+e visibilità del calendario, senza creare né modificare eventi.
 
 ## Copertina del corso
 
