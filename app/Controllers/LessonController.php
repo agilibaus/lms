@@ -24,7 +24,7 @@ class LessonController
     private const MATERIAL_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 
     private const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v'];
-    private const VIDEO_MAX_BYTES = 500 * 1024 * 1024; // 500 MB — per file più grandi preferire Bunny/Cloudflare Stream
+    public const VIDEO_MAX_BYTES = 500 * 1024 * 1024; // 500 MB — per file più grandi preferire Bunny/Cloudflare Stream
 
     /** Immagini inserite nel testo dall'editor. */
     private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];

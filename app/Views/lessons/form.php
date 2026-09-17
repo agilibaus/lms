@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Controllers\LessonController;
 use App\Core\Csrf;
 use App\Core\FileType;
+use App\Core\Upload;
 
 /** @var array $module */
 /** @var array|null $lesson */
@@ -71,8 +73,26 @@ $provider = $lesson['video_provider'] ?? 'none';
             <?php if ($isEdit && $provider === 'self_hosted' && !empty($lesson['video_ref'])): ?>
                 <p class="hint">Video attuale: <code><?= htmlspecialchars($lesson['video_ref']) ?></code></p>
             <?php endif; ?>
-            <label for="video_file">Carica file video (mp4/webm/mov/m4v, max 500&nbsp;MB)</label>
+            <?php
+            // Il limite vero e' il piu' basso fra quello della piattaforma e
+            // quello del php.ini: annunciarne 500 MB su un server che ne
+            // accetta 8 significa far perdere tempo a chi carica.
+            $limiteIni = Upload::iniLimitBytes();
+            $limiteApp = LessonController::VIDEO_MAX_BYTES;
+            $limite = min($limiteIni, $limiteApp);
+            ?>
+            <label for="video_file">
+                Carica file video (mp4/webm/mov/m4v, max <?= htmlspecialchars(FileType::humanSize($limite)) ?>)
+            </label>
             <input type="file" id="video_file" name="video_file" accept="video/*">
+            <?php if ($limiteIni < $limiteApp): ?>
+                <p class="hint">
+                    Il limite lo impone la configurazione di PHP
+                    (<code>upload_max_filesize</code> e <code>post_max_size</code> nel php.ini),
+                    non la piattaforma, che accetterebbe fino a
+                    <?= htmlspecialchars(FileType::humanSize($limiteApp)) ?>.
+                </p>
+            <?php endif; ?>
         </div>
     </fieldset>
 

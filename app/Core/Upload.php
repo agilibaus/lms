@@ -26,7 +26,7 @@ class Upload
         $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
 
         if ($error !== UPLOAD_ERR_OK) {
-            throw new \RuntimeException('Caricamento file non riuscito (errore #' . $error . ').');
+            throw new \RuntimeException(self::errorMessage($error));
         }
 
         if (!is_uploaded_file($file['tmp_name'])) {
@@ -79,6 +79,75 @@ class Upload
      * Percorso assoluto sul filesystem a partire da un path relativo salvato in DB
      * (es. "materials/12/ab12....pdf").
      */
+    /**
+     * Messaggio leggibile per i codici di $_FILES.
+     *
+     * "errore #1" e' esatto e inservibile: chi carica un video non sa cosa
+     * sia upload_max_filesize, e chi amministra il server non era in ascolto.
+     */
+    public static function errorMessage(int $error): string
+    {
+        return match ($error) {
+            UPLOAD_ERR_INI_SIZE => 'Il file supera il limite del server, attualmente '
+                . self::humanIniLimit() . '. Per alzarlo si modificano upload_max_filesize e '
+                . 'post_max_size nel php.ini, oppure si usa un provider di streaming.',
+            UPLOAD_ERR_FORM_SIZE => 'Il file supera il limite indicato dal modulo.',
+            UPLOAD_ERR_PARTIAL => 'Il caricamento si è interrotto a metà: riprova.',
+            UPLOAD_ERR_NO_FILE => 'Nessun file selezionato.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Manca la cartella temporanea sul server.',
+            UPLOAD_ERR_CANT_WRITE => 'Il server non è riuscito a scrivere il file sul disco.',
+            UPLOAD_ERR_EXTENSION => 'Un\'estensione di PHP ha interrotto il caricamento.',
+            default => 'Caricamento non riuscito (errore #' . $error . ').',
+        };
+    }
+
+    /**
+     * Limite effettivo per un singolo file: il piu' basso fra
+     * upload_max_filesize e post_max_size, perche' basta superarne uno.
+     */
+    public static function iniLimitBytes(): int
+    {
+        $upload = self::iniBytes((string) ini_get('upload_max_filesize'));
+        $post = self::iniBytes((string) ini_get('post_max_size'));
+
+        // post_max_size a 0 significa "nessun limite".
+        if ($post === 0) {
+            return $upload;
+        }
+
+        return min($upload, $post);
+    }
+
+    public static function humanIniLimit(): string
+    {
+        $bytes = self::iniLimitBytes();
+
+        return $bytes >= 1024 * 1024
+            ? round($bytes / (1024 * 1024)) . ' MB'
+            : round($bytes / 1024) . ' kB';
+    }
+
+    /**
+     * Converte i valori del php.ini ("8M", "512K", "1G") in byte.
+     */
+    public static function iniBytes(string $value): int
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return 0;
+        }
+
+        $number = (int) $value;
+
+        return match (strtolower(substr($value, -1))) {
+            'g' => $number * 1024 * 1024 * 1024,
+            'm' => $number * 1024 * 1024,
+            'k' => $number * 1024,
+            default => $number,
+        };
+    }
+
     public static function absolutePath(string $relativePath): string
     {
         return self::STORAGE_ROOT . '/' . ltrim($relativePath, '/');

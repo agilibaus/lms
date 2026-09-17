@@ -333,6 +333,26 @@ eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host n
 del file da servire, l'eliminazione di entrambe le misure, la normalizzazione del testo
 alternativo e le iniziali mostrate quando la copertina manca. Richiede l'estensione GD.
 
+## Limiti di caricamento (video e materiali)
+
+La piattaforma accetta video fino a 500 MB, ma **il limite vero lo impone PHP**: valgono
+`upload_max_filesize` e `post_max_size` nel `php.ini`, e basta superarne uno. Su Laragon i
+valori predefiniti sono bassi, quindi per caricare video vanno alzati entrambi (più
+`max_execution_time` e `max_input_time`, se la connessione è lenta) e Apache va riavviato.
+
+Due modi diversi di fallire, ora distinti:
+
+- file oltre `upload_max_filesize` ma richiesta sotto `post_max_size`: PHP consegna la
+  richiesta con un codice d'errore, e il messaggio dice qual è il limite attuale;
+- richiesta oltre `post_max_size`: PHP **scarta l'intero corpo** prima che il codice parta,
+  quindi spariscono anche `$_POST` e il token CSRF. Senza un controllo apposta il router
+  risponderebbe «Sessione scaduta o richiesta non valida», mandando a cercare un problema di
+  login dove c'è solo un file troppo grande. Il Router riconosce il caso (corpo vuoto ma
+  `CONTENT_LENGTH` maggiore di zero) e risponde 413 dicendo il limite.
+
+Il modulo della lezione annuncia il limite effettivo, cioè il più basso fra quello della
+piattaforma e quello del `php.ini`.
+
 ## Incontri dal vivo nella pagina della lezione
 
 Sotto il video, la lezione mostra gli incontri **del proprio modulo** ancora da fare o in

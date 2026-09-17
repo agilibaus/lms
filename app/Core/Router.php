@@ -46,6 +46,21 @@ class Router
             }
 
             if (preg_match($route['regex'], $path, $matches) === 1) {
+                // Un corpo piu' grande di post_max_size viene scartato da PHP
+                // prima che il codice parta: $_POST e $_FILES arrivano vuoti,
+                // quindi manca anche il token e il controllo qui sotto
+                // direbbe "sessione scaduta" a chi ha solo caricato un file
+                // troppo grande. Va riconosciuto prima.
+                if ($method === 'POST' && $_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+                    http_response_code(413);
+                    echo 'Il file inviato supera il limite del server, attualmente '
+                        . htmlspecialchars(Upload::humanIniLimit())
+                        . '. Scegli un file piu\' piccolo, oppure chiedi a chi amministra il server '
+                        . 'di alzare upload_max_filesize e post_max_size nel php.ini.';
+
+                    return;
+                }
+
                 if ($method === 'POST' && !Csrf::isValid($_POST[Csrf::FIELD] ?? null)) {
                     // Token assente o non valido: la richiesta non proviene da un
                     // form dell'applicazione (o la sessione e' scaduta).
