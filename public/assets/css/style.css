@@ -953,6 +953,86 @@ h3 { font-size: 1.05rem; }
     color: var(--color-text-muted);
 }
 
+/* Un pulsante disabilitato deve sembrarlo, altrimenti chi lo preme senza
+   effetto pensa che la pagina sia rotta. */
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ---------- Copertina di avvio (lezioni di solo video) ---------- */
+
+.video-start {
+    position: relative;
+    max-width: 720px;
+    aspect-ratio: 16 / 9;
+    margin: 1rem 0 1.5rem;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.video-start[hidden] {
+    display: none;
+}
+
+.video-poster {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Il pulsante copre tutta la copertina: su un telefono si prende il video
+   intero come bersaglio, non un cerchietto da centrare. */
+.video-start-button {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    color: #2f3a2c;
+}
+
+.video-start-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 76px;
+    height: 76px;
+    padding-left: 6px; /* il triangolo pesa a sinistra: si ricentra a occhio */
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    font-size: 1.9rem;
+    transition: transform 0.15s ease;
+}
+
+.video-start-button:hover .video-start-icon,
+.video-start-button:focus-visible .video-start-icon {
+    transform: scale(1.06);
+}
+
+.video-start-label {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: 999px;
+    padding: 0.25rem 0.85rem;
+}
+
+/* Finché la copertina è lì, l'iframe non è caricato e il suo riquadro vuoto
+   non deve occupare spazio. Il player dentro <noscript> non è toccato: lì la
+   copertina non esiste. */
+.lesson-video.is-solo-video .video-start:not([hidden]) + .video-embed {
+    display: none;
+}
+
 /* ---------- Modalità senza distrazioni ---------- */
 
 .lesson-video-actions {

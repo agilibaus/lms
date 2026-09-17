@@ -410,6 +410,31 @@ vieta di essere incorniciato da altri siti e il browser rifiuta di disegnarlo. P
 videoconferenza dentro la pagina servirebbe un provider nato per essere incorporato (Jitsi,
 Whereby, Daily), cioè lasciare Meet.
 
+## Lezioni di solo video: avvio prima del completamento
+
+In una lezione che contiene **solo** un video — niente testo, niente materiali — il pulsante
+"Segna come completata" resta disabilitato finché lo studente non avvia il video.
+
+L'avvio non viene chiesto al player. Con i video sul nostro server basta l'evento `play`
+dell'elemento `<video>`. Con Bunny e Cloudflare, che stanno dentro un iframe di un altro sito,
+**l'iframe non viene caricato affatto** finché non si preme il pulsante di avvio: quel clic è
+il segnale, e carica il video con `autoplay` così resta un clic solo. Ne guadagna anche il
+caricamento della pagina, che non contatta i server esterni finché nessuno guarda, e non
+serve nessuno script di terze parti.
+
+Il pulsante è **abilitato nell'HTML** e lo disabilita `public/assets/js/lesson-start.js`: senza
+JavaScript, o se qualcosa va storto, lo studente può comunque concludere la lezione. Sempre per
+questo, un `<noscript>` contiene lo stesso player caricato subito, altrimenti senza JavaScript
+l'iframe resterebbe senza indirizzo e il video non si vedrebbe.
+
+Il ricordo dell'avvio sta in `sessionStorage`, quindi ricaricando la pagina il pulsante resta
+sbloccato. Non segue lo studente su un altro dispositivo, e non è un controllo: chi vuole può
+premere play e segnare subito. Serve a evitare la distrazione, non la furbizia.
+
+La copertina del riquadro di avvio è disegnata da `App\Core\VideoPoster`: un SVG in toni
+pastello con tinte e composizione derivate dall'identificativo della lezione, così ogni video ha
+la sua senza che nessuno debba preparare un'immagine.
+
 ## Modalità senza distrazioni
 
 Nella lezione, sotto il video, un pulsante **Senza distrazioni** allarga il player a tutto lo

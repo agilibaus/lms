@@ -12,21 +12,39 @@ namespace App\Core;
  */
 class VideoEmbed
 {
-    public static function render(string $provider, ?string $videoRef, int $lessonId): string
+    /**
+     * @param bool $deferred true mette l'indirizzo in data-src invece che in
+     *                       src: l'iframe non viene caricato finche' qualcuno
+     *                       non preme il pulsante di avvio. Serve alle lezioni
+     *                       di solo video, dove l'avvio va rilevato senza
+     *                       dipendere dal protocollo del player esterno — e
+     *                       come effetto la pagina non contatta Bunny o
+     *                       Cloudflare finche' nessuno guarda.
+     */
+    public static function render(string $provider, ?string $videoRef, int $lessonId, bool $deferred = false): string
     {
         if ($provider === 'none' || $videoRef === null || $videoRef === '') {
             return '';
         }
 
         return match ($provider) {
-            'bunny' => self::bunny($videoRef),
-            'cloudflare' => self::cloudflare($videoRef),
+            'bunny' => self::bunny($videoRef, $deferred),
+            'cloudflare' => self::cloudflare($videoRef, $deferred),
             'self_hosted' => self::selfHosted($lessonId),
             default => '',
         };
     }
 
-    private static function bunny(string $videoId): string
+    /**
+     * I provider che vivono dentro un iframe: di loro non sappiamo cosa
+     * succede, quindi l'avvio si rileva dal pulsante nostro.
+     */
+    public static function isIframeProvider(string $provider): bool
+    {
+        return $provider === 'bunny' || $provider === 'cloudflare';
+    }
+
+    private static function bunny(string $videoId, bool $deferred = false): string
     {
         $libraryId = Env::get('BUNNY_LIBRARY_ID', '');
 
@@ -40,10 +58,10 @@ class VideoEmbed
             rawurlencode($videoId)
         );
 
-        return self::iframe($src);
+        return self::iframe($src, $deferred);
     }
 
-    private static function cloudflare(string $videoId): string
+    private static function cloudflare(string $videoId, bool $deferred = false): string
     {
         $customerCode = Env::get('CLOUDFLARE_STREAM_CUSTOMER_CODE', '');
 
@@ -57,7 +75,7 @@ class VideoEmbed
             rawurlencode($videoId)
         );
 
-        return self::iframe($src);
+        return self::iframe($src, $deferred);
     }
 
     private static function selfHosted(int $lessonId): string
@@ -73,8 +91,19 @@ class VideoEmbed
         );
     }
 
-    private static function iframe(string $src): string
+    private static function iframe(string $src, bool $deferred = false): string
     {
+        if ($deferred) {
+            // L'avvio automatico serve perche' il clic sul pulsante nostro
+            // valga anche come clic sul play: altrimenti sarebbero due.
+            $separator = str_contains($src, '?') ? '&' : '?';
+
+            return sprintf(
+                '<div class="video-embed"><iframe data-src="%s" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe></div>',
+                htmlspecialchars($src . $separator . 'autoplay=true')
+            );
+        }
+
         return sprintf(
             '<div class="video-embed"><iframe src="%s" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe></div>',
             htmlspecialchars($src)

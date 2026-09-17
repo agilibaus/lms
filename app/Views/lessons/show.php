@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\VideoPoster;
 use App\Core\FileType;
 use App\Core\VideoEmbed;
 
@@ -25,10 +26,45 @@ use App\Core\VideoEmbed;
     <p><a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="btn btn-primary">Modifica lezione</a></p>
 <?php endif; ?>
 
-<?php $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id']); ?>
+<?php
+// Lezione di solo video: nient'altro da leggere o scaricare. Solo qui il
+// pulsante "segna come completata" aspetta che il video venga avviato —
+// altrove c'e' del testo, e bloccare il pulsante non avrebbe senso.
+$soloVideo = $lesson['video_provider'] !== 'none'
+    && trim(strip_tags((string) ($lesson['content_html'] ?? ''))) === ''
+    && $materials === [];
+
+$iframeDifferito = $soloVideo && VideoEmbed::isIframeProvider((string) $lesson['video_provider']);
+$embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id'], $iframeDifferito);
+?>
 <?php if ($embed !== ''): ?>
-    <div class="lesson-video" id="lesson-video">
+    <div class="lesson-video<?= $soloVideo ? ' is-solo-video' : '' ?>" id="lesson-video"
+         data-lesson="<?= (int) $lesson['id'] ?>"
+         <?= $soloVideo ? 'data-attende-avvio' : '' ?>>
+        <?php if ($iframeDifferito): ?>
+            <?php /* L'iframe non e' ancora caricato: qui sopra sta la copertina
+                     con il pulsante di avvio. Il clic fa due cose in una,
+                     carica il video con avvio automatico e registra che lo
+                     studente l'ha avviato. */ ?>
+            <div class="video-start" data-avvio>
+                <?= VideoPoster::svg((int) $lesson['id'], (string) $lesson['title']) ?>
+                <button type="button" class="video-start-button" data-avvia>
+                    <span class="video-start-icon" aria-hidden="true">&#9654;</span>
+                    <span class="video-start-label">Guarda la lezione</span>
+                </button>
+            </div>
+        <?php endif; ?>
+
         <?= $embed ?>
+
+        <?php if ($iframeDifferito): ?>
+            <?php /* Senza JavaScript l'iframe qui sopra resterebbe senza
+                     indirizzo e il video non si vedrebbe: qui c'e' lo stesso
+                     player, caricato subito e senza copertina. */ ?>
+            <noscript>
+                <?= VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id']) ?>
+            </noscript>
+        <?php endif; ?>
 
         <?php /* Nascosti nell'HTML: senza JavaScript restano nascosti e la
                  pagina e' quella di sempre, invece di mostrare un pulsante
@@ -123,13 +159,28 @@ use App\Core\VideoEmbed;
     <?php if ($completed): ?>
         <p class="badge badge-muted">&check; Lezione completata</p>
     <?php else: ?>
-        <form action="/lessons/<?= (int) $lesson['id'] ?>/complete" method="post">
+        <?php /* Il pulsante e' abilitato nell'HTML e lo disabilita il
+                 JavaScript: se il JavaScript non c'e' o qualcosa va storto,
+                 lo studente puo' comunque concludere la lezione. Uno bloccato
+                 e' un danno vero; uno che segna senza aver premuto play e'
+                 un fastidio. */ ?>
+        <form action="/lessons/<?= (int) $lesson['id'] ?>/complete" method="post"
+              <?= $soloVideo ? 'data-attende-avvio-form' : '' ?>>
             <?= Csrf::field() ?>
-            <button type="submit" class="btn btn-primary">Segna come completata</button>
+            <button type="submit" class="btn btn-primary" data-completa>Segna come completata</button>
+            <?php if ($soloVideo): ?>
+                <span class="form-hint" data-avviso-avvio hidden>
+                    Avvia il video per poter segnare la lezione come completata.
+                </span>
+            <?php endif; ?>
         </form>
     <?php endif; ?>
 <?php endif; ?>
 
 <?php if ($embed !== ''): ?>
     <script src="/assets/js/lesson-focus.js"></script>
+<?php endif; ?>
+
+<?php if ($embed !== '' && $soloVideo && Auth::hasRole('studente')): ?>
+    <script src="/assets/js/lesson-start.js"></script>
 <?php endif; ?>
