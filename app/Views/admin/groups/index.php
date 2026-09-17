@@ -11,8 +11,8 @@ use App\Core\Csrf;
     <h1>Gruppi</h1>
     <p class="page-subtitle">
         <?= $canManageAll
-            ? 'Classi e coorti: membri e corsi assegnati all’intero gruppo.'
-            : 'I gruppi di cui sei tutor.' ?>
+            ? 'Classi e coorti: membri e corsi assegnati all’intero gruppo. Clicca sul nome del gruppo per visualizzare i dettagli.'
+            : 'I gruppi di cui sei tutor. Clicca sul nome del gruppo per visualizzare i dettagli.' ?>
     </p>
     <p><a href="/admin/groups/create" class="btn btn-primary">+ Nuovo gruppo</a></p>
 </div>
