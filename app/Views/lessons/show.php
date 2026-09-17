@@ -180,9 +180,9 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
 <?php endif; ?>
 
 <?php if ($embed !== ''): ?>
-    <script src="/assets/js/lesson-focus.js"></script>
-<?php endif; ?>
-
-<?php if ($embed !== ''): ?>
+    <?php /* Prima quello del video: e' lui a sapere se davanti c'e' la
+             copertina, e il secondo se ne serve per decidere quando mostrare
+             il pulsante della modalita' senza distrazioni. */ ?>
     <script src="/assets/js/lesson-video.js"></script>
+    <script src="/assets/js/lesson-focus.js"></script>
 <?php endif; ?>

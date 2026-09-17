@@ -460,6 +460,11 @@ JavaScript resta invisibile e il player si comporta come ha sempre fatto. Per i 
 esterni c'è in più un `<noscript>` con il player già caricato, altrimenti lì l'iframe
 resterebbe senza indirizzo.
 
+Il pulsante "Senza distrazioni" compare **solo dopo l'avvio del video**: finché c'è la
+copertina il player è nascosto, e allargarlo darebbe una pagina nera attorno a un riquadro
+vuoto. `lesson-video.js` annuncia l'avvio con un evento e `lesson-focus.js` lo ascolta, per cui
+il primo va caricato prima del secondo.
+
 ### Lo sblocco, per le lezioni di solo video
 
 In una lezione che contiene **solo** un video — niente testo, niente materiali — il pulsante

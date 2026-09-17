@@ -28,7 +28,17 @@
 
     // I pulsanti stanno nell'HTML nascosti: senza JavaScript la pagina resta
     // quella di prima, invece di mostrare comandi che non fanno niente.
-    enter.hidden = false;
+    //
+    // Se davanti al video c'è ancora la copertina, il player è nascosto e
+    // allargarlo non mostrerebbe niente: il pulsante compare quando il video
+    // parte. La classe la mette lesson-video.js, caricato prima di questo.
+    if (wrapper.classList.contains('has-facade')) {
+        wrapper.addEventListener('lezione:video-avviato', function () {
+            enter.hidden = false;
+        }, { once: true });
+    } else {
+        enter.hidden = false;
+    }
 
     function open() {
         wrapper.classList.add('is-focus');

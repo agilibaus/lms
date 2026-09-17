@@ -74,6 +74,11 @@
     function started() {
         remember();
         unlock();
+
+        // Lo sa anche chi si occupa della modalità senza distrazioni: prima
+        // dell'avvio il player è nascosto dietro la copertina, e allargarlo
+        // darebbe una pagina nera attorno a un riquadro che non c'è.
+        box.dispatchEvent(new CustomEvent('lezione:video-avviato'));
     }
 
     // --- copertina ---------------------------------------------------
