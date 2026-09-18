@@ -107,6 +107,12 @@ h3 { font-size: 1.05rem; }
     color: var(--color-primary-hover);
 }
 
+/* La voce della pagina aperta. Il grassetto allarga la parola, ma qui le voci
+   sono incolonnate in una barra di larghezza fissa: nessuna si sposta. */
+.nav-link-active {
+    font-weight: 700;
+}
+
 .sidebar-footer {
     display: flex;
     align-items: center;
