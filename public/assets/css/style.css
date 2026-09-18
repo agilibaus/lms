@@ -1392,6 +1392,20 @@ body.has-focus-video {
     font-size: 0.78rem;
 }
 
+/* Un'etichetta dentro una cella non deve spostare la riga di testo.
+   Il `.badge` generico porta `margin-top: 0.5rem`, che serve nelle schede,
+   dove l'etichetta sta sotto a qualcos'altro. In una tabella quel margine
+   gonfia la riga di testo della cella e trascina in basso tutto quello che
+   le sta accanto: la data scritta prima dell'etichetta finiva dieci pixel
+   sotto al titolo della colonna di fianco, e le colonne sembravano
+   disallineate. La stessa cosa faceva l'altezza di riga ereditata, che
+   rendeva l'etichetta piu' alta della riga che la contiene. */
+.data-table .badge {
+    margin-top: 0;
+    line-height: 1;
+    vertical-align: middle;
+}
+
 /* Le azioni di riga stanno sempre in un <td>. Niente display:flex qui: un
    <td> dichiarato flex smette di essere una cella di tabella, non partecipa
    piu' al calcolo dell'altezza della riga e il suo bordo inferiore si ferma
