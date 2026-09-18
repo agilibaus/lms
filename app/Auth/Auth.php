@@ -16,6 +16,26 @@ class Auth
 {
     public const ROLES = ['admin', 'tutor', 'assistente', 'studente'];
 
+    /**
+     * Come il ruolo si scrive quando lo legge una persona.
+     *
+     * In tabella e nel codice i ruoli restano minuscoli: sono valori, non
+     * testo. Le maiuscole servono solo alle pagine, e stanno qui perche'
+     * cinque viste le stampavano ognuna a modo suo.
+     */
+    public static function roleLabel(?string $role): string
+    {
+        return match ($role) {
+            'admin' => 'Admin',
+            'tutor' => 'Tutor',
+            'assistente' => 'Assistente',
+            'studente' => 'Studente',
+            // Un ruolo aggiunto in futuro non resta minuscolo per dimenticanza.
+            null, '' => '',
+            default => mb_strtoupper(mb_substr($role, 0, 1)) . mb_substr($role, 1),
+        };
+    }
+
     /** @var array<string, string[]> cache dei permessi per ruolo, valida per la singola richiesta */
     private static array $permissionCache = [];
 

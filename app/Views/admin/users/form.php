@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
 use App\Core\Csrf;
 
 /** @var array|null $user */
@@ -37,8 +38,10 @@ $currentRole = $user['role'] ?? 'studente';
     <label for="role">Ruolo</label>
     <select id="role" name="role" data-role-select>
         <?php foreach ($roles as $role): ?>
+            <?php /* Il valore inviato resta minuscolo: e' quello che sta in
+                     tabella. Cambia solo come lo si legge. */ ?>
             <option value="<?= htmlspecialchars($role) ?>" <?= $currentRole === $role ? 'selected' : '' ?>>
-                <?= htmlspecialchars($role) ?>
+                <?= htmlspecialchars(Auth::roleLabel($role)) ?>
             </option>
         <?php endforeach; ?>
     </select>

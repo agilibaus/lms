@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
+
 /** @var array $student */
 /** @var array $courses */
 /** @var array<int, array> $quizzesByCourse */
@@ -10,7 +12,7 @@ declare(strict_types=1);
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
     <h1><?= htmlspecialchars((string) $student['full_name']) ?></h1>
-    <p class="page-subtitle"><?= htmlspecialchars((string) $student['email']) ?> · <?= htmlspecialchars((string) $student['role']) ?></p>
+    <p class="page-subtitle"><?= htmlspecialchars((string) $student['email']) ?> · <?= htmlspecialchars(Auth::roleLabel((string) $student['role'])) ?></p>
     <?php if ($liveAttendance['total'] > 0): ?>
         <p class="page-subtitle">
             Sessioni live seguite: <?= (int) $liveAttendance['attended'] ?>/<?= (int) $liveAttendance['total'] ?>

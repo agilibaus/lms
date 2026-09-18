@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\GroupLogo;
 
@@ -15,7 +16,7 @@ $hasAvatar = !empty($user['avatar_path']);
 <div class="page-header">
     <h1>Il mio profilo</h1>
     <p class="page-subtitle">
-        <?= htmlspecialchars((string) $user['role']) ?> ·
+        <?= htmlspecialchars(Auth::roleLabel((string) $user['role'])) ?> ·
         iscritto dal <?= date('d/m/Y', strtotime((string) $user['created_at'])) ?>
     </p>
 </div>

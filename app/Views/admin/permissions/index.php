@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
 use App\Core\Csrf;
 
 /** @var array<string, array<string, string>> $catalog */
@@ -31,7 +32,7 @@ use App\Core\Csrf;
                     <tr>
                         <th>Permesso</th>
                         <?php foreach ($roles as $role): ?>
-                            <th><?= htmlspecialchars($role) ?></th>
+                            <th><?= htmlspecialchars(Auth::roleLabel($role)) ?></th>
                         <?php endforeach; ?>
                     </tr>
                     </thead>
@@ -47,7 +48,7 @@ use App\Core\Csrf;
                                     <input type="checkbox"
                                            name="permissions[<?= htmlspecialchars($role) ?>][]"
                                            value="<?= htmlspecialchars($key) ?>"
-                                           aria-label="<?= htmlspecialchars($key . ' per ' . $role) ?>"
+                                           aria-label="<?= htmlspecialchars($key . ' per ' . Auth::roleLabel($role)) ?>"
                                         <?= in_array($key, $matrix[$role] ?? [], true) ? 'checked' : '' ?>>
                                 </td>
                             <?php endforeach; ?>

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
 use App\Core\Csrf;
 
 /** @var array $users */
@@ -31,7 +32,7 @@ use App\Core\Csrf;
             <tr>
                 <td><?= htmlspecialchars((string) $user['full_name']) ?></td>
                 <td><?= htmlspecialchars((string) $user['email']) ?></td>
-                <td><?= htmlspecialchars((string) ($user['role'] ?? 'assistente')) ?></td>
+                <td><?= htmlspecialchars(Auth::roleLabel($user['role'] ?? 'assistente')) ?></td>
                 <td><?= htmlspecialchars((string) ($user['supervising_tutor_name'] ?? '—')) ?></td>
                 <td>
                     <?php if ((int) $user['is_active'] === 1): ?>
