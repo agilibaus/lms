@@ -42,6 +42,20 @@ class Settings
         'MAIL_ENCRYPTION',
     ];
 
+    /**
+     * Oggetto e testo delle email delle sessioni live. Svuotare un campo qui
+     * non restituisce il comando al .env — quei testi nel file non ci sono
+     * mai stati — ma al testo predefinito in LiveSessionMail.
+     */
+    public const LIVE_MAIL_KEYS = [
+        'LIVE_INVITE_SUBJECT',
+        'LIVE_INVITE_BODY',
+        'LIVE_UPDATE_SUBJECT',
+        'LIVE_UPDATE_BODY',
+        'LIVE_CANCEL_SUBJECT',
+        'LIVE_CANCEL_BODY',
+    ];
+
     public const GOOGLE_KEYS = [
         'GOOGLE_SERVICE_ACCOUNT_JSON',
         'GOOGLE_IMPERSONATE_EMAIL',
@@ -56,7 +70,9 @@ class Settings
 
     public static function isWritable(string $key): bool
     {
-        return in_array($key, self::MAIL_KEYS, true) || in_array($key, self::GOOGLE_KEYS, true);
+        return in_array($key, self::MAIL_KEYS, true)
+            || in_array($key, self::GOOGLE_KEYS, true)
+            || in_array($key, self::LIVE_MAIL_KEYS, true);
     }
 
     public static function isSecret(string $key): bool

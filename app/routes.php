@@ -154,6 +154,8 @@ $router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::c
 $router->get('/admin/settings/posta', [SettingsController::class, 'mail']);
 $router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']);
 $router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);
+$router->get('/admin/settings/inviti', [SettingsController::class, 'liveMail']);
+$router->post('/admin/settings/inviti', [SettingsController::class, 'updateLiveMail']);
 $router->get('/admin/settings/meet', [SettingsController::class, 'meet']);
 $router->post('/admin/settings/meet', [SettingsController::class, 'updateMeet']);
 $router->post('/admin/settings/meet/chiave/elimina', [SettingsController::class, 'deleteMeetKey']);
@@ -175,4 +177,5 @@ $router->get('/live/{id}', [LiveSessionController::class, 'show']);
 $router->post('/live/{id}', [LiveSessionController::class, 'update']);
 $router->post('/live/{id}/delete', [LiveSessionController::class, 'destroy']);
 $router->post('/live/{id}/sync', [LiveSessionController::class, 'syncGoogle']);
+$router->post('/live/{id}/inviti', [LiveSessionController::class, 'invite']);
 $router->post('/live/{id}/attendance/{userId}', [LiveSessionController::class, 'setAttendance']);

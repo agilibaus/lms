@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
+use App\Core\Mail\LiveSessionNotifier;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
@@ -160,6 +161,12 @@ class LiveSessionController
             $this->fail($error, $redirect);
         }
 
+        // Gli orari di prima servono dopo, per dire nell'avviso da dove si
+        // sposta l'incontro: vanno letti finche' la riga e' ancora quella.
+        $primaInizio = (string) $session['starts_at'];
+        $primaFine = (string) $session['ends_at'];
+        $orarioCambiato = $data['starts_at'] !== $primaInizio || $data['ends_at'] !== $primaFine;
+
         LiveSessionModel::update(
             $id,
             $data['module_id'],
@@ -171,18 +178,27 @@ class LiveSessionController
         );
 
         // Il link incollato a mano ha la precedenza e stacca la sessione da Google.
-        if ($data['meet_link'] !== null && $data['meet_link'] !== $session['meet_link']) {
+        $linkManuale = $data['meet_link'] !== null && $data['meet_link'] !== $session['meet_link'];
+
+        if ($linkManuale) {
             LiveSessionModel::updateGoogleReferences($id, null, $data['meet_link']);
-            $this->success('Sessione aggiornata con il link inserito manualmente.', '/live/' . $id);
         }
 
-        $warning = $this->syncGoogleEvent($session, $data);
+        $warning = $linkManuale ? null : $this->syncGoogleEvent($session, $data);
 
         if ($warning !== null) {
             $_SESSION['flash_error'] = $warning;
         }
 
-        $this->success('Sessione aggiornata.', '/live/' . $id);
+        $messaggio = $linkManuale
+            ? 'Sessione aggiornata con il link inserito manualmente.'
+            : 'Sessione aggiornata.';
+
+        if ($orarioCambiato) {
+            $messaggio .= ' ' . $this->notifyChange($id, $primaInizio, $primaFine);
+        }
+
+        $this->success($messaggio, '/live/' . $id);
     }
 
     public function destroy(array $params): void
@@ -209,13 +225,54 @@ class LiveSessionController
             }
         }
 
+        // I destinatari vanno letti prima della cancellazione: dopo, la riga
+        // non c'e' piu' e la lista tornerebbe vuota. Di un incontro gia'
+        // concluso non si avvisa nessuno: non c'e' piu' niente da disdire.
+        $daAvvisare = $this->isOver($session) ? [] : LiveSessionModel::participants((int) $session['id']);
+
         LiveSessionModel::delete((int) $session['id']);
 
         if ($warning !== null) {
             $_SESSION['flash_error'] = $warning;
         }
 
-        $this->success('Sessione eliminata.', '/live');
+        $messaggio = 'Sessione eliminata.';
+
+        if ($daAvvisare !== []) {
+            $messaggio .= ' ' . LiveSessionNotifier::summary(
+                LiveSessionNotifier::cancellation($session, $daAvvisare),
+                'Avvisi di annullamento'
+            );
+        }
+
+        $this->success($messaggio, '/live');
+    }
+
+    /**
+     * Manda (o rimanda) l'invito ai partecipanti attesi.
+     */
+    public function invite(array $params): void
+    {
+        $this->requireManage();
+
+        $session = LiveSessionModel::find((int) $params['id']);
+
+        if ($session === null) {
+            $this->notFound('Sessione non trovata.');
+            return;
+        }
+
+        $id = (int) $session['id'];
+
+        if (empty($session['meet_link'])) {
+            $this->fail('Questa sessione non ha ancora un link Meet: un invito senza collegamento non serve a niente.', '/live/' . $id);
+        }
+
+        if ($this->isOver($session)) {
+            $this->fail('La sessione è già conclusa.', '/live/' . $id);
+        }
+
+        $this->success(LiveSessionNotifier::summary(LiveSessionNotifier::invite($session)), '/live/' . $id);
     }
 
     /**
@@ -495,6 +552,38 @@ class LiveSessionController
         }
 
         return null;
+    }
+
+    /**
+     * Avvisa del cambio di orario e restituisce la frase da aggiungere al
+     * messaggio di conferma.
+     *
+     * La sessione viene riletta: l'avviso deve riportare il link e i dati
+     * aggiornati, non quelli con cui la pagina era stata aperta.
+     */
+    private function notifyChange(int $id, string $previousStart, string $previousEnd): string
+    {
+        $session = LiveSessionModel::find($id);
+
+        if ($session === null || empty($session['meet_link']) || $this->isOver($session)) {
+            return '';
+        }
+
+        return LiveSessionNotifier::summary(
+            LiveSessionNotifier::change(
+                $session,
+                ['starts_at' => $previousStart, 'ends_at' => $previousEnd]
+            ),
+            'Avvisi del cambio di orario'
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $session
+     */
+    private function isOver(array $session): bool
+    {
+        return strtotime((string) $session['ends_at']) < time();
     }
 
     /**

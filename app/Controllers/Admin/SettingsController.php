@@ -8,6 +8,7 @@ use App\Auth\Auth;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Google\ServiceAccountClient;
+use App\Core\Mail\LiveSessionMail;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\Mail\Message;
@@ -27,6 +28,7 @@ class SettingsController extends AdminController
 {
     private const MAIL_PAGE = '/admin/settings/posta';
     private const MEET_PAGE = '/admin/settings/meet';
+    private const LIVE_MAIL_PAGE = '/admin/settings/inviti';
 
     /** Dove finisce la chiave dell'account di servizio, fuori dal document root. */
     private const KEY_DIR = __DIR__ . '/../../../storage/google';
@@ -153,6 +155,54 @@ class SettingsController extends AdminController
         }
 
         $this->success('Messaggio di prova inviato a ' . $to . '. Controlla la casella.', self::MAIL_PAGE);
+    }
+
+    // ---------------------------------------------------------------
+    // Inviti alle sessioni live
+    // ---------------------------------------------------------------
+
+    public function liveMail(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $values = [];
+
+        foreach (Settings::LIVE_MAIL_KEYS as $key) {
+            // Nel campo si mette quello che e' stato scritto qui, non il
+            // predefinito: cosi' un campo vuoto si legge come "vale quello
+            // di fabbrica", che e' esattamente quello che significa.
+            $values[$key] = (string) (Settings::stored($key) ?? '');
+        }
+
+        View::render('admin/settings/live_mail', [
+            'pageTitle' => 'Inviti alle sessioni live',
+            'values' => $values,
+            'defaults' => LiveSessionMail::DEFAULTS,
+            'placeholders' => LiveSessionMail::placeholders(),
+            'lastUpdate' => Settings::lastUpdate(Settings::LIVE_MAIL_KEYS),
+            'logTransport' => Mailer::isLogTransport(),
+        ]);
+    }
+
+    public function updateLiveMail(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $userId = Auth::id();
+
+        foreach (Settings::LIVE_MAIL_KEYS as $key) {
+            $value = trim(str_replace("\r\n", "\n", (string) ($_POST[$key] ?? '')));
+
+            // Un oggetto su piu' righe spezzerebbe l'intestazione del
+            // messaggio: si rifiuta qui, dove si puo' ancora correggere.
+            if (in_array($key, LiveSessionMail::SUBJECT_KEYS, true) && str_contains($value, "\n")) {
+                $this->fail('L\'oggetto deve stare su una riga sola.', self::LIVE_MAIL_PAGE);
+            }
+
+            Settings::set($key, $value, $userId);
+        }
+
+        $this->success('Testi degli inviti salvati.', self::LIVE_MAIL_PAGE);
     }
 
     // ---------------------------------------------------------------

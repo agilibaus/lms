@@ -20,17 +20,20 @@ class NativeMailTransport implements Transport
 
     public function send(Message $message): void
     {
-        $headers = [
-            'From: ' . (($this->fromName !== '' ? Message::encodeHeader($this->fromName) . ' ' : '') . '<' . $this->fromEmail . '>'),
-            'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=UTF-8',
-            'Content-Transfer-Encoding: 8bit',
-        ];
+        $headers = array_merge(
+            [
+                'From: ' . (($this->fromName !== '' ? Message::encodeHeader($this->fromName) . ' ' : '') . '<' . $this->fromEmail . '>'),
+                'MIME-Version: 1.0',
+            ],
+            // Con un allegato qui passa l'involucro multipart, e il corpo
+            // contiene gia' le parti: mail() non deve saperne nulla.
+            $message->contentHeaders()
+        );
 
         $sent = mail(
             $message->recipient(),
             Message::encodeHeader($message->subject),
-            $message->normalizeBody(),
+            $message->mimeBody(),
             implode("\r\n", $headers)
         );
 

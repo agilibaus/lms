@@ -86,6 +86,7 @@ use App\Core\Csrf;
                 <?php endif; ?>
                 <?php if (Auth::can('settings.manage')): ?>
                     <a href="/admin/settings/posta" class="nav-link<?= $voce('/admin/settings/posta') ?>">Posta elettronica</a>
+                    <a href="/admin/settings/inviti" class="nav-link<?= $voce('/admin/settings/inviti') ?>">Inviti sessioni live</a>
                     <a href="/admin/settings/meet" class="nav-link<?= $voce('/admin/settings/meet') ?>">Google Meet</a>
                 <?php endif; ?>
                 <?php if (Auth::hasRole('admin')): ?>
