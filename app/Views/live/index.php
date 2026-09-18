@@ -56,10 +56,10 @@ $now = new DateTimeImmutable('now');
                 <td><a href="/live/<?= (int) $session['id'] ?>"><?= htmlspecialchars((string) $session['title']) ?></a></td>
                 <td>
                     <?php if (!empty($session['course_title'])): ?>
-                        <span class="cell-sub"><?= htmlspecialchars((string) $session['course_title']) ?> · <?= htmlspecialchars((string) $session['module_title']) ?></span>
+                        <span class="cell-line"><?= htmlspecialchars((string) $session['course_title']) ?> · <?= htmlspecialchars((string) $session['module_title']) ?></span>
                     <?php endif; ?>
                     <?php if (!empty($session['group_name'])): ?>
-                        <span class="cell-sub">Gruppo: <?= htmlspecialchars((string) $session['group_name']) ?></span>
+                        <span class="cell-line">Gruppo: <?= htmlspecialchars((string) $session['group_name']) ?></span>
                     <?php endif; ?>
                 </td>
                 <td>

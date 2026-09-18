@@ -1386,10 +1386,22 @@ body.has-focus-video {
     font-size: 0.82rem;
 }
 
+/* Riga secondaria dentro una cella: sta SOTTO a una riga principale — l'email
+   sotto al nome, lo slug sotto al titolo — ed e' piu' piccola e attenuata
+   proprio perche' e' in secondo piano rispetto a qualcosa.
+   Non va usata da sola: una cella fatta di sola `.cell-sub` e' un sottotitolo
+   senza titolo, e diventa la colonna meno leggibile della tabella pur essendo
+   l'unica cosa che quella colonna ha da dire. In quel caso serve `.cell-line`. */
 .cell-sub {
     display: block;
     color: var(--color-text-muted);
     font-size: 0.78rem;
+}
+
+/* Riga a se' dentro una cella, con il testo normale: manda a capo senza
+   declassare. Per le colonne che hanno piu' valori, tutti di pari livello. */
+.cell-line {
+    display: block;
 }
 
 /* Un'etichetta dentro una cella non deve spostare la riga di testo.
@@ -1830,7 +1842,8 @@ body.has-focus-video {
     opacity: 0.6;
 }
 
-.data-table .cell-sub + .cell-sub {
+.data-table .cell-sub + .cell-sub,
+.data-table .cell-line + .cell-line {
     margin-top: 0.1rem;
 }
 
