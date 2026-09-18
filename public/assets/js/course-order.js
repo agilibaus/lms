@@ -1,40 +1,53 @@
 /**
- * Riordino delle schede corso con il trascinamento.
+ * Riordino delle schede corso trascinandole.
  *
- * È un'aggiunta, non l'unico modo: le frecce sulla scheda restano sempre, e
- * sono la via che funziona senza JavaScript, da tastiera e su un touch screen,
- * dove trascinare in una griglia è scomodo. Qui si migliora l'esperienza di
- * chi ha un mouse, senza togliere niente agli altri.
+ * Non usa il trascinamento nativo dell'HTML: le schede sono collegamenti, e
+ * il browser li tratta come tali, avviando il proprio trascinamento del link
+ * invece del nostro. Qui si seguono gli eventi del puntatore, che si
+ * comportano allo stesso modo ovunque.
  *
- * L'ordine nuovo si manda al server senza ricaricare la pagina: dopo un
- * trascinamento le schede sono già al loro posto, e un ricaricamento le
- * farebbe sobbalzare sotto le mani di chi sta lavorando.
+ * Solo con il mouse: su un touch screen bloccare lo scorrimento della pagina
+ * per permettere il trascinamento renderebbe la pagina difficile da leggere,
+ * che e' quello che si fa piu' spesso.
  */
 (function () {
     'use strict';
 
     var grid = document.querySelector('[data-riordinabile]');
 
-    if (grid === null) {
+    if (grid === null || typeof window.PointerEvent === 'undefined') {
         return;
     }
 
     var token = grid.getAttribute('data-csrf') || '';
-    var cards = [].slice.call(grid.querySelectorAll('[data-corso]'));
     var dragged = null;
+    var moved = false;
+    var startX = 0;
+    var startY = 0;
 
-    // La maniglia dice che si può trascinare: senza, nessuno lo scoprirebbe.
-    [].forEach.call(grid.querySelectorAll('.course-drag-handle'), function (handle) {
-        handle.hidden = false;
-    });
+    function cards() {
+        return [].slice.call(grid.querySelectorAll('[data-corso]'));
+    }
+
+    function ordineAttuale() {
+        return cards().map(function (card) {
+            return card.getAttribute('data-corso');
+        }).join(',');
+    }
+
+    var ordineSalvato = ordineAttuale();
 
     function salva() {
-        var ids = [].slice.call(grid.querySelectorAll('[data-corso]')).map(function (card) {
-            return card.getAttribute('data-corso');
-        });
+        var adesso = ordineAttuale();
+
+        if (adesso === ordineSalvato) {
+            return;
+        }
+
+        ordineSalvato = adesso;
 
         var body = new URLSearchParams();
-        body.set('ids', ids.join(','));
+        body.set('ids', adesso);
         body.set('_token', token);
 
         fetch('/admin/courses/ordine', {
@@ -42,79 +55,99 @@
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: body.toString(),
             credentials: 'same-origin'
-        }).then(function (response) {
-            if (!response.ok) {
-                throw new Error('risposta ' + response.status);
-            }
-
-            avvisa('Ordine salvato.');
         }).catch(function () {
-            // Non si finge che sia andata: chi ha spostato le schede deve
-            // sapere che ricaricando le ritroverà com'erano.
-            avvisa('Ordine non salvato: ricarica la pagina e riprova.', true);
+            // Il salvataggio e' silenzioso: qui non si mostra niente.
         });
     }
 
-    var notice = null;
-
-    function avvisa(testo, errore) {
-        if (notice === null) {
-            notice = document.createElement('p');
-            notice.className = 'order-notice';
-            notice.setAttribute('role', 'status');
-            grid.parentNode.insertBefore(notice, grid);
+    grid.addEventListener('pointerdown', function (event) {
+        if (event.pointerType !== 'mouse' || event.button !== 0) {
+            return;
         }
 
-        notice.textContent = testo;
-        notice.classList.toggle('order-notice-error', errore === true);
-    }
+        var card = event.target.closest('[data-corso]');
 
-    cards.forEach(function (card) {
-        card.setAttribute('draggable', 'true');
+        if (card === null) {
+            return;
+        }
 
-        card.addEventListener('dragstart', function (event) {
-            dragged = card;
-            card.classList.add('is-dragging');
-            event.dataTransfer.effectAllowed = 'move';
-            // Firefox non avvia il trascinamento senza dati impostati.
-            event.dataTransfer.setData('text/plain', card.getAttribute('data-corso'));
-        });
+        dragged = card;
+        moved = false;
+        startX = event.clientX;
+        startY = event.clientY;
+        // La cattura del puntatore si prende solo quando il trascinamento
+        // comincia davvero: presa qui, il clic finirebbe alla griglia invece
+        // che alla scheda, e un clic semplice non aprirebbe piu' il corso.
+    });
 
-        card.addEventListener('dragend', function () {
-            card.classList.remove('is-dragging');
+    grid.addEventListener('pointermove', function (event) {
+        if (dragged === null) {
+            return;
+        }
 
-            if (dragged !== null) {
-                dragged = null;
-                salva();
-            }
-        });
-
-        card.addEventListener('dragover', function (event) {
-            if (dragged === null || dragged === card) {
+        // Soglia: un clic non perfettamente fermo non deve diventare un
+        // trascinamento, altrimenti aprire un corso diventa difficile.
+        if (!moved) {
+            if (Math.abs(event.clientX - startX) < 6 && Math.abs(event.clientY - startY) < 6) {
                 return;
             }
 
-            // Serve a permettere il rilascio.
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
+            moved = true;
+            dragged.classList.add('is-dragging');
+            grid.setPointerCapture(event.pointerId);
+        }
 
-            // Prima o dopo, secondo da che parte si sta entrando: così la
-            // scheda trascinata segue il puntatore invece di saltare.
-            var box = card.getBoundingClientRect();
-            var dopo = (event.clientX - box.left) > box.width / 2;
+        event.preventDefault();
 
-            grid.insertBefore(dragged, dopo ? card.nextSibling : card);
-        });
+        // La scheda sotto il puntatore: quella trascinata e' semitrasparente
+        // ma sta ancora nel flusso, quindi si ignora.
+        var sotto = document.elementFromPoint(event.clientX, event.clientY);
+        var target = sotto === null ? null : sotto.closest('[data-corso]');
 
-        card.addEventListener('drop', function (event) {
-            event.preventDefault();
-        });
+        if (target === null || target === dragged) {
+            return;
+        }
 
-        // Un clic sulla scheda apre il corso: dopo un trascinamento no.
-        card.addEventListener('click', function (event) {
-            if (card.classList.contains('is-dragging')) {
-                event.preventDefault();
-            }
-        });
+        var box = target.getBoundingClientRect();
+        var dopo = (event.clientX - box.left) > box.width / 2;
+
+        grid.insertBefore(dragged, dopo ? target.nextSibling : target);
+    });
+
+    function fine(event) {
+        if (dragged === null) {
+            return;
+        }
+
+        var eraTrascinata = moved;
+        dragged.classList.remove('is-dragging');
+        dragged = null;
+
+        if (grid.hasPointerCapture && grid.hasPointerCapture(event.pointerId)) {
+            grid.releasePointerCapture(event.pointerId);
+        }
+
+        if (eraTrascinata) {
+            salva();
+
+            // Il clic arriva dopo il rilascio: senza questo, finito il
+            // trascinamento si aprirebbe il corso.
+            grid.addEventListener('click', function blocca(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                grid.removeEventListener('click', blocca, true);
+            }, true);
+        }
+
+        moved = false;
+    }
+
+    grid.addEventListener('pointerup', fine);
+    grid.addEventListener('pointercancel', fine);
+
+    // Il trascinamento nativo del link darebbe un'immagine fantasma e
+    // confonderebbe il nostro.
+    grid.addEventListener('dragstart', function (event) {
+        event.preventDefault();
     });
 }());

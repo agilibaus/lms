@@ -443,9 +443,15 @@ Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 ## Ordine dei corsi
 
 Nella pagina **Corsi**, chi può modificarli riordina le schede **trascinandole**, e l'ordine si
-salva da solo senza ricaricare la pagina — dopo un trascinamento le schede sono già al loro
-posto, e un ricaricamento le farebbe sobbalzare. Se il salvataggio fallisce lo dice, invece di
-far credere che sia andato a buon fine.
+salva da solo, in silenzio, senza ricaricare la pagina.
+
+Il trascinamento non usa quello nativo dell'HTML: le schede sono collegamenti, e il browser
+avvia il proprio trascinamento del link invece del nostro. `course-order.js` segue gli eventi
+del puntatore, con una soglia di 6 px perché un clic non perfettamente fermo non diventi un
+trascinamento, e la cattura del puntatore si prende **solo quando il trascinamento comincia
+davvero**: presa prima, il clic finisce alla griglia e un clic semplice non apre più il corso.
+Vale solo con il mouse: su un touch screen bloccare lo scorrimento della pagina per permettere
+il trascinamento renderebbe la pagina difficile da leggere.
 
 L'ordine vale ovunque: elenco dei corsi, Gestione corsi e **catalogo degli studenti**.
 

@@ -984,34 +984,14 @@ h3 { font-size: 1.05rem; }
     font-weight: 700;
 }
 
-/* Riordino delle schede corso: frecce sempre presenti, maniglia di
-   trascinamento solo dove il JavaScript la scopre. */
-.course-order {
-    display: flex;
-    justify-content: center;
-    padding: 0.35rem 0.5rem 0;
-}
-
-.course-drag-handle {
-    color: var(--color-text-muted);
+/* Riordino delle schede corso: si trascinano con il mouse. */
+.course-grid[data-riordinabile] .course-card {
     cursor: grab;
-    letter-spacing: -0.25em;
-    padding-right: 0.25em;
 }
 
 .course-card.is-dragging {
     opacity: 0.45;
     cursor: grabbing;
-}
-
-.order-notice {
-    margin: 0 0 0.75rem;
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-}
-
-.order-notice-error {
-    color: var(--color-danger);
 }
 
 /* Frecce per riordinare moduli e lezioni: i due moduli stanno affiancati e

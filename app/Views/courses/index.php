@@ -25,16 +25,6 @@ use App\Core\Csrf;
     <div class="course-grid"<?= $isStaff ? ' data-riordinabile data-csrf="' . htmlspecialchars(Csrf::token()) . '"' : '' ?>>
         <?php foreach ($courses as $courseIndex => $course): ?>
             <a href="/courses/<?= (int) $course['id'] ?>" class="course-card" data-corso="<?= (int) $course['id'] ?>">
-                <?php if ($isStaff): ?>
-                    <?php /* La maniglia sta nell'HTML nascosta e la scopre il
-                             JavaScript: senza, annuncerebbe un trascinamento
-                             che non funziona. */ ?>
-                    <div class="course-order">
-                        <span class="course-drag-handle" aria-hidden="true"
-                              title="Trascina per riordinare" hidden>&#8942;&#8942;</span>
-                    </div>
-                <?php endif; ?>
-
                 <div class="course-card-cover">
                     <?php $cover = CourseCover::url($course); ?>
                     <?php if ($cover !== null): ?>
