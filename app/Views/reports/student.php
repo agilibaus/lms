@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Controllers\ReportController;
 
 /** @var array $student */
 /** @var array $courses */
 /** @var array<int, array> $quizzesByCourse */
 /** @var array{attended: int, total: int} $liveAttendance */
+/** @var array $liveSessions */
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
@@ -81,4 +83,47 @@ use App\Auth\Auth;
             <?php endif; ?>
         </section>
     <?php endforeach; ?>
+<?php endif; ?>
+
+<?php if ($liveSessions !== []): ?>
+    <section class="card">
+        <h2>Incontri dal vivo</h2>
+        <p class="card-meta">
+            Gli incontri a cui questo studente era atteso. L’ingresso è quello registrato quando
+            ha aperto la riunione da Pistacchio; quanto sia rimasto in riunione non lo sappiamo,
+            perché l’uscita avviene dentro Google Meet.
+        </p>
+
+        <table class="data-table">
+            <thead>
+            <tr><th>Incontro</th><th>Quando</th><th>Corso o gruppo</th><th>Presenza</th><th>Ingresso</th><th>Ritardo</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($liveSessions as $incontro): ?>
+                <?php
+                $presente = $incontro['joined_at'] !== null;
+                $ritardo = ReportController::delayLabel($incontro);
+                ?>
+                <tr>
+                    <td><a href="/reports/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></td>
+                    <td><?= htmlspecialchars(ReportController::dateTimeLabel((string) $incontro['starts_at'])) ?></td>
+                    <td><?= htmlspecialchars((string) ($incontro['course_title'] ?? $incontro['group_name'] ?? '—')) ?></td>
+                    <td>
+                        <?php if ($presente): ?>
+                            <span class="badge badge-success">presente</span>
+                        <?php else: ?>
+                            <span class="badge badge-danger">assente</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($incontro['joined_at'])) : '—' ?></td>
+                    <td>
+                        <?= $presente && $ritardo !== '' && $ritardo !== '0'
+                            ? htmlspecialchars($ritardo) . ' min'
+                            : ($presente ? 'in orario' : '—') ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
 <?php endif; ?>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 /** @var array $courses */
 /** @var array $students */
 /** @var array $groups */
+/** @var array $liveSessions */
 /** @var bool $restricted */
 ?>
 <div class="page-header">
@@ -70,6 +71,36 @@ declare(strict_types=1);
                     <td class="row-actions">
                         <a href="/reports/students/<?= (int) $student['id'] ?>">Dettaglio</a>
                         <a href="/reports/students/<?= (int) $student['id'] ?>/csv">CSV</a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+</section>
+
+<section class="card">
+    <h2>Per incontro dal vivo</h2>
+    <?php if ($liveSessions === []): ?>
+        <p class="empty-state-small">Nessun incontro.</p>
+    <?php else: ?>
+        <table class="data-table">
+            <thead>
+            <tr><th>Incontro</th><th>Quando</th><th>Corso o gruppo</th><th>Presenti</th><th></th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($liveSessions as $sessione): ?>
+                <?php $inizio = strtotime((string) $sessione['starts_at']); ?>
+                <tr>
+                    <td><?= htmlspecialchars((string) $sessione['title']) ?></td>
+                    <td><?= $inizio === false ? '—' : htmlspecialchars(date('d/m/Y H:i', $inizio)) ?></td>
+                    <td>
+                        <?= htmlspecialchars((string) ($sessione['course_title'] ?? $sessione['group_name'] ?? '—')) ?>
+                    </td>
+                    <td><?= (int) $sessione['attended'] ?>/<?= (int) $sessione['expected'] ?></td>
+                    <td class="row-actions">
+                        <a href="/reports/live/<?= (int) $sessione['id'] ?>">Dettaglio</a>
+                        <a href="/reports/live/<?= (int) $sessione['id'] ?>/csv">CSV</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

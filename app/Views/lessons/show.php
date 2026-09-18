@@ -121,15 +121,18 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                     <?php if ($link === ''): ?>
                         <span class="live-session-note">Link non ancora disponibile</span>
                     <?php elseif ($apribile): ?>
-                        <?php /* La riunione si apre in una seconda scheda: chiudendo
+                        <?php /* Si passa da /live/{id}/join, non dritti a Meet: e' li'
+                                 che l'ingresso viene registrato fra le presenze. Da qui
+                                 si entrava senza lasciare traccia, e chi seguiva gli
+                                 incontri dalla lezione risultava sempre assente.
+
+                                 La riunione si apre in una seconda scheda: chiudendo
                                  Meet la lezione e' ancora li' dov'era. Nella stessa
-                                 scheda il ritorno dipenderebbe dal tasto Indietro, e
-                                 Google non rimanda indietro chi esce dalla riunione.
-                                 Su telefono la scheda in piu' costa un passaggio per
-                                 il selettore, ma se il link viene dirottato sull'app
-                                 Meet la lezione resta comunque dov'era. */ ?>
+                                 scheda il ritorno dipenderebbe dal tasto Indietro, che
+                                 rimanderebbe dentro la riunione passando di nuovo per
+                                 il reindirizzo. */ ?>
                         <a class="btn btn-primary live-session-join"
-                           href="<?= htmlspecialchars($link) ?>"
+                           href="/live/<?= (int) $session['id'] ?>/join"
                            target="_blank" rel="noopener">Entra nella riunione</a>
                     <?php else: ?>
                         <span class="live-session-note">Si entra da 15 minuti prima</span>

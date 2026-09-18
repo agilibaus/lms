@@ -10,6 +10,7 @@ use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\GroupModel;
 use App\Models\LiveSessionAttendanceModel;
+use App\Models\LiveSessionModel;
 use App\Models\QuizAttemptModel;
 use App\Models\ReportModel;
 use App\Models\UserModel;
@@ -42,8 +43,65 @@ class ReportController
             'courses' => ReportModel::coursesOverview(),
             'students' => $students,
             'groups' => $this->visibleGroups(),
+            'liveSessions' => LiveSessionModel::overview(),
             'restricted' => $allowed !== null,
         ]);
+    }
+
+    // ---------------------------------------------------------------
+    // Report per incontro dal vivo
+    // ---------------------------------------------------------------
+
+    public function liveSession(array $params): void
+    {
+        $this->requireReportAccess();
+
+        $session = LiveSessionModel::find((int) $params['id']);
+
+        if ($session === null) {
+            http_response_code(404);
+            echo 'Incontro non trovato.';
+            return;
+        }
+
+        View::render('reports/live_session', [
+            'pageTitle' => 'Report · ' . $session['title'],
+            'session' => $session,
+            'rows' => $this->liveSessionRows((int) $session['id']),
+            'restricted' => $this->allowedStudentIds() !== null,
+        ]);
+    }
+
+    public function liveSessionCsv(array $params): void
+    {
+        $this->requireReportAccess();
+
+        $session = LiveSessionModel::find((int) $params['id']);
+
+        if ($session === null) {
+            http_response_code(404);
+            echo 'Incontro non trovato.';
+            return;
+        }
+
+        $rows = [];
+
+        foreach ($this->liveSessionRows((int) $session['id']) as $row) {
+            $rows[] = [
+                $row['full_name'],
+                $row['email'],
+                $row['joined_at'] === null ? 'assente' : 'presente',
+                self::dateTimeLabel($row['joined_at']),
+                self::delayLabel($row),
+                self::sourceLabel($row['source']),
+            ];
+        }
+
+        Csv::send(
+            'report-incontro-' . Csv::slug((string) $session['title']) . '.csv',
+            ['Partecipante', 'Email', 'Presenza', 'Ingresso', 'Ritardo (minuti)', 'Origine'],
+            $rows
+        );
     }
 
     // ---------------------------------------------------------------
@@ -135,6 +193,7 @@ class ReportController
             'courses' => $courses,
             'quizzesByCourse' => $quizzesByCourse,
             'liveAttendance' => LiveSessionAttendanceModel::summaryForUser((int) $student['id']),
+            'liveSessions' => LiveSessionModel::forUserWithAttendance((int) $student['id']),
         ]);
     }
 
@@ -160,6 +219,28 @@ class ReportController
                 $row['completed_at'] ?? '',
                 $this->certificateLabel($row),
             ];
+        }
+
+        // Gli incontri dal vivo hanno colonne diverse dai corsi: invece di
+        // allargare la tabella con campi che per i corsi resterebbero vuoti,
+        // si aggiungono in fondo, dopo una riga bianca e una loro intestazione.
+        // Un foglio di calcolo li legge come un secondo blocco.
+        $sessions = LiveSessionModel::forUserWithAttendance((int) $student['id']);
+
+        if ($sessions !== []) {
+            $rows[] = [];
+            $rows[] = ['Incontro dal vivo', 'Quando', 'Corso o gruppo', 'Presenza', 'Ingresso', 'Ritardo (minuti)'];
+
+            foreach ($sessions as $session) {
+                $rows[] = [
+                    $session['title'],
+                    self::dateTimeLabel($session['starts_at']),
+                    $session['course_title'] ?? $session['group_name'] ?? '',
+                    $session['joined_at'] === null ? 'assente' : 'presente',
+                    self::dateTimeLabel($session['joined_at']),
+                    self::delayLabel($session),
+                ];
+            }
         }
 
         Csv::send(
@@ -326,6 +407,63 @@ class ReportController
         }
 
         return $group;
+    }
+
+    /**
+     * Partecipanti di un incontro, ristretti al perimetro di chi guarda:
+     * l'assistente vede solo gli studenti dei gruppi del proprio tutor, come
+     * gia' avviene per le righe del report di corso.
+     */
+    private function liveSessionRows(int $sessionId): array
+    {
+        $rows = LiveSessionModel::participantsWithAttendance($sessionId);
+        $allowed = $this->allowedStudentIds();
+
+        if ($allowed === null) {
+            return $rows;
+        }
+
+        return array_values(array_filter(
+            $rows,
+            static fn (array $row): bool => in_array((int) $row['id'], $allowed, true)
+        ));
+    }
+
+    /**
+     * Ritardo in minuti rispetto all'inizio: solo se positivo, perche' entrare
+     * cinque minuti prima non e' un ritardo di meno cinque.
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function delayLabel(array $row): string
+    {
+        if ($row['joined_at'] === null || $row['delay_minutes'] === null) {
+            return '';
+        }
+
+        $minutes = (int) $row['delay_minutes'];
+
+        return $minutes > 0 ? (string) $minutes : '0';
+    }
+
+    public static function dateTimeLabel(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $moment = strtotime($value);
+
+        return $moment === false ? '' : date('d/m/Y H:i', $moment);
+    }
+
+    public static function sourceLabel(?string $source): string
+    {
+        return match ($source) {
+            'platform' => 'piattaforma',
+            'manual' => 'segnata dal tutor',
+            default => '',
+        };
     }
 
     private function certificateLabel(array $row): string

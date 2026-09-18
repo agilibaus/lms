@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Test degli inviti alle sessioni live: file .ics, allegati nelle email e
- * testi con segnaposto.
+ * Test degli inviti alle sessioni live: file .ics, allegati nelle email,
+ * testi con segnaposto ed etichette del report delle presenze.
  *
  * Esecuzione:  php tests/live_session_mail_test.php
  *
@@ -16,6 +16,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config/config.php';  // come l'applicazione: fuso orario Europe/Rome
 
+use App\Controllers\ReportController;
 use App\Core\Env;
 use App\Core\Ics;
 use App\Core\Mail\LiveSessionMail;
@@ -227,6 +228,34 @@ check('una descrizione assente non lascia righe bianche in fila', $vuoto === "Pr
 check('il predefinito dell’invito nomina il titolo', str_contains(LiveSessionMail::DEFAULTS['LIVE_INVITE_SUBJECT'], '{titolo}'));
 check('il predefinito del cambio nomina l’orario di prima', str_contains(LiveSessionMail::DEFAULTS['LIVE_UPDATE_BODY'], '{data_precedente}'));
 check('i segnaposto documentati sono quelli usati davvero', array_key_exists('{link_sessione}', LiveSessionMail::placeholders()));
+
+// ---------------------------------------------------------------
+echo PHP_EOL . 'Etichette del report delle presenze' . PHP_EOL;
+
+check(
+    'chi non si è presentato non ha ritardo',
+    ReportController::delayLabel(['joined_at' => null, 'delay_minutes' => null]) === ''
+);
+check(
+    'entrare in anticipo non è un ritardo negativo',
+    ReportController::delayLabel(['joined_at' => '2026-10-02 18:25:00', 'delay_minutes' => -5]) === '0'
+);
+check(
+    'entrare in orario dà zero',
+    ReportController::delayLabel(['joined_at' => '2026-10-02 18:30:00', 'delay_minutes' => 0]) === '0'
+);
+check(
+    'sette minuti dopo l’inizio sono sette',
+    ReportController::delayLabel(['joined_at' => '2026-10-02 18:37:00', 'delay_minutes' => 7]) === '7'
+);
+check('una data vuota resta vuota', ReportController::dateTimeLabel(null) === '');
+check(
+    'la data si legge in formato italiano',
+    ReportController::dateTimeLabel('2026-10-02 18:37:00') === '02/10/2026 18:37'
+);
+check('l’origine "platform" si legge "piattaforma"', ReportController::sourceLabel('platform') === 'piattaforma');
+check('l’origine "manual" dice chi l’ha segnata', ReportController::sourceLabel('manual') === 'segnata dal tutor');
+check('senza origine non si inventa niente', ReportController::sourceLabel(null) === '');
 
 // ---------------------------------------------------------------
 echo PHP_EOL . 'Messaggi completi' . PHP_EOL;
