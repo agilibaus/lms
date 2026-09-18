@@ -445,8 +445,10 @@ Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 Nella pagina **Corsi**, chi può modificarli riordina le schede **trascinandole**, e l'ordine si
 salva da solo, in silenzio, senza ricaricare la pagina.
 
-Durante il trascinamento la scheda **segue il puntatore** con una trasformazione, sta sopra le
-altre ed è trasparente al puntatore — altrimenti, seguendo il cursore, sarebbe lei stessa
+Durante il trascinamento la scheda **segue il puntatore**: lo spostamento si ricava ogni volta
+da dove la scheda si trova adesso, meno lo spostamento che le è già stato dato, invece di
+tenere il conto di un'origine — tenendolo, dopo ogni scambio il conto si perdeva e la scheda
+rimbalzava avanti e indietro. Sta sopra le altre ed è trasparente al puntatore — altrimenti, seguendo il cursore, sarebbe lei stessa
 l'elemento puntato e non si saprebbe mai su quale scheda si sta passando. Le altre **scorrono**
 verso la nuova posizione in 160 ms invece di saltarci: si misura dove sono prima, si cambia
 l'ordine, si misura dove sono finite, e ognuna viene riportata otticamente indietro e lasciata

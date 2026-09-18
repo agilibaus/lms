@@ -2,13 +2,12 @@
  * Riordino delle schede corso trascinandole.
  *
  * Non usa il trascinamento nativo dell'HTML: le schede sono collegamenti, e
- * il browser li tratta come tali, avviando il proprio trascinamento del link
- * invece del nostro. Qui si seguono gli eventi del puntatore, che si
- * comportano allo stesso modo ovunque.
+ * il browser avvia il proprio trascinamento del link invece del nostro. Qui
+ * si seguono gli eventi del puntatore.
  *
  * Solo con il mouse: su un touch screen bloccare lo scorrimento della pagina
- * per permettere il trascinamento renderebbe la pagina difficile da leggere,
- * che e' quello che si fa piu' spesso.
+ * per permettere il trascinamento renderebbe scomodo leggere, che e' quello
+ * che si fa piu' spesso.
  */
 (function () {
     'use strict';
@@ -20,24 +19,31 @@
     }
 
     var token = grid.getAttribute('data-csrf') || '';
+
+    /** Durata dello scivolamento delle altre schede. */
+    var DURATA = 160;
+
+    var animazioniRidotte = window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     var dragged = null;
     var moved = false;
     var startX = 0;
     var startY = 0;
 
-    // Durata dello scorrimento delle altre schede. Chi ha chiesto meno
-    // animazioni nelle impostazioni del sistema non ne vede nessuna.
-    var DURATA = 160;
-    var animazioniRidotte = window.matchMedia
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Dove si e' afferrata la scheda, rispetto al suo angolo: serve a tenerla
+    // sotto il puntatore nello stesso punto in cui e' stata presa.
+    var grabX = 0;
+    var grabY = 0;
 
-    var offsetX = 0;
-    var offsetY = 0;
+    // Spostamento attuale della scheda rispetto al posto che occupa nel
+    // flusso. Si tiene qui perche' e' l'unico modo di risalire alla posizione
+    // "vera" dopo che il trasform l'ha spostata.
+    var tx = 0;
+    var ty = 0;
 
-    /** Porta la scheda trascinata sotto il puntatore. */
-    function segui() {
-        dragged.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px)';
-    }
+    var lastX = 0;
+    var lastY = 0;
 
     function cards() {
         return [].slice.call(grid.querySelectorAll('[data-corso]'));
@@ -50,6 +56,72 @@
     }
 
     var ordineSalvato = ordineAttuale();
+
+    /**
+     * Rimette la scheda sotto il puntatore.
+     *
+     * La posizione di partenza si ricava ogni volta da dove la scheda si
+     * trova adesso, meno lo spostamento che le abbiamo dato: cosi' dopo uno
+     * scambio il conto e' gia' giusto, senza tenere il segno di niente. La
+     * versione precedente aggiornava un'origine memorizzata e, perdendo per
+     * strada lo spostamento accumulato, faceva rimbalzare la scheda.
+     */
+    function segui() {
+        var box = dragged.getBoundingClientRect();
+        var sinistra = box.left - tx;
+        var alto = box.top - ty;
+
+        tx = lastX - grabX - sinistra;
+        ty = lastY - grabY - alto;
+
+        dragged.style.transform = 'translate(' + tx + 'px, ' + ty + 'px)';
+    }
+
+    /**
+     * Sposta la scheda trascinata prima dell'elemento indicato, facendo
+     * scivolare le altre invece di farle saltare: si misura dove sono prima,
+     * si cambia l'ordine, si misura dove sono finite, e ognuna viene
+     * riportata otticamente indietro e lasciata scorrere.
+     */
+    function sposta(riferimento) {
+        var elenco = cards();
+        var prima = elenco.map(function (card) {
+            return card.getBoundingClientRect();
+        });
+
+        grid.insertBefore(dragged, riferimento);
+        segui();
+
+        if (animazioniRidotte) {
+            return;
+        }
+
+        elenco.forEach(function (card, indice) {
+            if (card === dragged) {
+                return;
+            }
+
+            var adesso = card.getBoundingClientRect();
+            var dx = prima[indice].left - adesso.left;
+            var dy = prima[indice].top - adesso.top;
+
+            if (dx === 0 && dy === 0) {
+                return;
+            }
+
+            card.style.transition = 'none';
+            card.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+
+            // Due fotogrammi: con uno solo il browser accorpa partenza e
+            // arrivo, e l'animazione non si vede.
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    card.style.transition = 'transform ' + DURATA + 'ms ease';
+                    card.style.transform = '';
+                });
+            });
+        });
+    }
 
     function salva() {
         var adesso = ordineAttuale();
@@ -70,7 +142,7 @@
             body: body.toString(),
             credentials: 'same-origin'
         }).catch(function () {
-            // Il salvataggio e' silenzioso: qui non si mostra niente.
+            // Salvataggio silenzioso: qui non si mostra niente.
         });
     }
 
@@ -89,9 +161,10 @@
         moved = false;
         startX = event.clientX;
         startY = event.clientY;
-        // La cattura del puntatore si prende solo quando il trascinamento
-        // comincia davvero: presa qui, il clic finirebbe alla griglia invece
-        // che alla scheda, e un clic semplice non aprirebbe piu' il corso.
+        lastX = event.clientX;
+        lastY = event.clientY;
+        tx = 0;
+        ty = 0;
     });
 
     grid.addEventListener('pointermove', function (event) {
@@ -99,27 +172,35 @@
             return;
         }
 
+        lastX = event.clientX;
+        lastY = event.clientY;
+
         // Soglia: un clic non perfettamente fermo non deve diventare un
         // trascinamento, altrimenti aprire un corso diventa difficile.
         if (!moved) {
-            if (Math.abs(event.clientX - startX) < 6 && Math.abs(event.clientY - startY) < 6) {
+            if (Math.abs(lastX - startX) < 6 && Math.abs(lastY - startY) < 6) {
                 return;
             }
 
             moved = true;
+
+            var box = dragged.getBoundingClientRect();
+            grabX = startX - box.left;
+            grabY = startY - box.top;
+
             dragged.classList.add('is-dragging');
+            // La cattura si prende ora e non alla pressione: presa prima, il
+            // clic finirebbe alla griglia e un clic semplice non aprirebbe
+            // piu' il corso.
             grid.setPointerCapture(event.pointerId);
         }
 
         event.preventDefault();
-
-        offsetX = event.clientX - startX;
-        offsetY = event.clientY - startY;
         segui();
 
-        // La scheda sotto il puntatore: quella trascinata e' semitrasparente
-        // ma sta ancora nel flusso, quindi si ignora.
-        var sotto = document.elementFromPoint(event.clientX, event.clientY);
+        // La scheda trascinata e' trasparente al puntatore (vedi il CSS),
+        // quindi qui sotto si trova sempre una delle altre.
+        var sotto = document.elementFromPoint(lastX, lastY);
         var target = sotto === null ? null : sotto.closest('[data-corso]');
 
         if (target === null || target === dragged) {
@@ -127,68 +208,17 @@
         }
 
         var box = target.getBoundingClientRect();
-        var dopo = (event.clientX - box.left) > box.width / 2;
+        var dopo = (lastX - box.left) > box.width / 2;
+        var riferimento = dopo ? target.nextSibling : target;
 
-        sposta(dopo ? target.nextSibling : target);
-    });
-
-    /**
-     * Sposta la scheda trascinata prima dell'elemento indicato, facendo
-     * scorrere le altre invece di farle saltare.
-     *
-     * Si misura dove sono prima, si cambia l'ordine, si misura dove sono
-     * finite: ogni scheda viene riportata otticamente al punto di partenza e
-     * poi lasciata scivolare a zero. La scheda trascinata e' l'eccezione —
-     * quella deve restare sotto il puntatore, non scorrere.
-     */
-    function sposta(riferimento) {
-        var elenco = cards();
-        var prima = elenco.map(function (card) {
-            return card.getBoundingClientRect();
-        });
-        var primaTrascinata = dragged.getBoundingClientRect();
-
-        grid.insertBefore(dragged, riferimento);
-
-        // La scheda trascinata ha cambiato posto nel flusso: si sposta
-        // l'origine del calcolo, cosi' visivamente non si muove di un pixel.
-        var dopoTrascinata = dragged.getBoundingClientRect();
-        startX += dopoTrascinata.left - primaTrascinata.left + offsetX;
-        startY += dopoTrascinata.top - primaTrascinata.top + offsetY;
-        offsetX = 0;
-        offsetY = 0;
-        segui();
-
-        if (animazioniRidotte) {
+        // Gia' al suo posto: senza questo controllo si riscriverebbe lo stesso
+        // ordine a ogni movimento del mouse, con un'animazione a ogni giro.
+        if (riferimento === dragged || (riferimento === null && dragged === grid.lastElementChild)) {
             return;
         }
 
-        elenco.forEach(function (card, indice) {
-            if (card === dragged) {
-                return;
-            }
-
-            var dx = prima[indice].left - card.getBoundingClientRect().left;
-            var dy = prima[indice].top - card.getBoundingClientRect().top;
-
-            if (dx === 0 && dy === 0) {
-                return;
-            }
-
-            card.style.transition = 'none';
-            card.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
-
-            // Due fotogrammi: il primo applica la posizione di partenza, il
-            // secondo fa partire lo scorrimento. Con uno solo il browser
-            // accorpa le due cose e l'animazione non si vede.
-            requestAnimationFrame(function () {
-                requestAnimationFrame(function () {
-                    card.style.transition = 'transform ' + DURATA + 'ms ease';
-                    card.style.transform = '';
-                });
-            });
-        });
-    }
+        sposta(riferimento);
+    });
 
     function fine(event) {
         if (dragged === null) {
@@ -196,17 +226,20 @@
         }
 
         var eraTrascinata = moved;
-        dragged.classList.remove('is-dragging');
+        var card = dragged;
 
-        // Torna al suo posto scivolando, invece di scattarci.
+        dragged = null;
+        moved = false;
+        card.classList.remove('is-dragging');
+
         if (eraTrascinata && !animazioniRidotte) {
-            dragged.style.transition = 'transform ' + DURATA + 'ms ease';
+            // Torna al suo posto scivolando, invece di scattarci.
+            card.style.transition = 'transform ' + DURATA + 'ms ease';
         }
 
-        dragged.style.transform = '';
-        offsetX = 0;
-        offsetY = 0;
-        dragged = null;
+        card.style.transform = '';
+        tx = 0;
+        ty = 0;
 
         if (grid.hasPointerCapture && grid.hasPointerCapture(event.pointerId)) {
             grid.releasePointerCapture(event.pointerId);
@@ -223,8 +256,6 @@
                 grid.removeEventListener('click', blocca, true);
             }, true);
         }
-
-        moved = false;
     }
 
     grid.addEventListener('pointerup', fine);
