@@ -445,6 +445,13 @@ Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 Nella pagina **Corsi**, chi può modificarli riordina le schede **trascinandole**, e l'ordine si
 salva da solo, in silenzio, senza ricaricare la pagina.
 
+Durante il trascinamento la scheda **segue il puntatore** con una trasformazione, sta sopra le
+altre ed è trasparente al puntatore — altrimenti, seguendo il cursore, sarebbe lei stessa
+l'elemento puntato e non si saprebbe mai su quale scheda si sta passando. Le altre **scorrono**
+verso la nuova posizione in 160 ms invece di saltarci: si misura dove sono prima, si cambia
+l'ordine, si misura dove sono finite, e ognuna viene riportata otticamente indietro e lasciata
+scivolare. Chi ha chiesto meno animazioni nelle impostazioni del sistema non ne vede nessuna.
+
 Il trascinamento non usa quello nativo dell'HTML: le schede sono collegamenti, e il browser
 avvia il proprio trascinamento del link invece del nostro. `course-order.js` segue gli eventi
 del puntatore, con una soglia di 6 px perché un clic non perfettamente fermo non diventi un

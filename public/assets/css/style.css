@@ -989,9 +989,18 @@ h3 { font-size: 1.05rem; }
     cursor: grab;
 }
 
+/* La scheda trascinata segue il puntatore: sta sopra le altre e non deve
+   avere transizioni proprie, altrimenti insegue con un ritardo. */
 .course-card.is-dragging {
-    opacity: 0.45;
+    position: relative;
+    z-index: 3;
     cursor: grabbing;
+    opacity: 0.9;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+    transition: none;
+    /* Trasparente al puntatore: seguendo il cursore sarebbe lei l'elemento
+       puntato, e non si saprebbe mai su quale scheda si sta passando. */
+    pointer-events: none;
 }
 
 /* Frecce per riordinare moduli e lezioni: i due moduli stanno affiancati e
