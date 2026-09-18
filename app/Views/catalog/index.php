@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\CourseCover;
 use App\Core\Csrf;
+use App\Models\CourseModel;
 
 /** @var array $courses */
 ?>
@@ -40,7 +41,7 @@ use App\Core\Csrf;
                 <div class="card-head">
                     <h2><?= htmlspecialchars((string) $course['title']) ?></h2>
                     <span class="badge <?= $course['enrollment_mode'] === 'open' ? 'badge-success' : '' ?>">
-                        <?= $course['enrollment_mode'] === 'open' ? 'iscrizione libera' : 'su richiesta' ?>
+                        <?= htmlspecialchars(CourseModel::enrollmentLabel($course['enrollment_mode'])) ?>
                     </span>
                 </div>
 

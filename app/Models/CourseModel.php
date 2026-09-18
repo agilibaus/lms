@@ -286,4 +286,20 @@ class CourseModel
         }
     }
 
+    /**
+     * Come si legge la modalita' di iscrizione.
+     *
+     * Sta qui e non nelle viste perche' due pagine la scrivevano ognuna a
+     * modo suo, e una terza modalita' non comparirebbe da nessuna parte per
+     * dimenticanza.
+     */
+    public static function enrollmentLabel(?string $mode): string
+    {
+        return match ($mode) {
+            'open' => 'iscrizione libera',
+            'request' => 'iscrizione su richiesta',
+            default => 'iscrizione chiusa',
+        };
+    }
+
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\Csrf;
 use App\Core\OrphanFiles;
+use App\Models\CourseModel;
 
 /** @var array $courses */
 /** @var bool $canCreate */
@@ -46,9 +47,15 @@ use App\Core\OrphanFiles;
                     <?php else: ?>
                         <span class="badge">bozza</span>
                     <?php endif; ?>
-                    <?php if (($course['enrollment_mode'] ?? 'closed') !== 'closed'): ?>
-                        <span class="badge"><?= $course['enrollment_mode'] === 'open' ? 'iscrizione libera' : 'su richiesta' ?></span>
-                    <?php endif; ?>
+                    <?php /* Anche l'iscrizione chiusa ha la sua etichetta: prima la
+                             riga taceva, e un corso pubblicato ma chiuso sembrava
+                             disponibile agli studenti mentre nel catalogo non
+                             compare affatto. */ ?>
+                    <?php $mode = $course['enrollment_mode'] ?? 'closed'; ?>
+                    <span class="badge"
+                          title="<?= $mode === 'closed' ? 'Non compare nel catalogo: iscrive solo lo staff, o l\'assegnazione a un gruppo' : 'Compare nel catalogo degli studenti' ?>">
+                        <?= htmlspecialchars(CourseModel::enrollmentLabel($mode)) ?>
+                    </span>
                 </td>
                 <td class="row-actions">
                     <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
