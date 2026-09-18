@@ -48,7 +48,16 @@ $isPast = $endsAt < $now;
         <?php if ($isPast): ?>
             <p class="empty-state-small">La sessione è conclusa.</p>
         <?php else: ?>
-            <p><a href="/live/<?= $id ?>/join" class="btn btn-primary">Entra nella sessione</a></p>
+            <?php /* La riunione si apre in una seconda scheda: chiudendo Meet si
+                     ritrova Pistacchio dov'era, senza dover tornare indietro.
+                     Google non offre un modo per rimandare al mittente chi esce
+                     dalla riunione, quindi la scheda separata e' l'unico ritorno
+                     che non dipende da un gesto dell'utente. */ ?>
+            <p>
+                <a href="/live/<?= $id ?>/join" class="btn btn-primary"
+                   target="_blank" rel="noopener">Entra nella sessione</a>
+            </p>
+            <p class="form-hint">Si apre in una nuova scheda: questa pagina resta aperta.</p>
         <?php endif; ?>
         <?php if ($hasJoined): ?>
             <p class="form-hint">Il tuo ingresso è stato registrato.</p>
@@ -64,6 +73,24 @@ $isPast = $endsAt < $now;
         <?php endif; ?>
     <?php endif; ?>
 </section>
+
+<?php if ($canManage && !empty($session['meet_link']) && !$isPast): ?>
+    <section class="card">
+        <h2>Inviti</h2>
+        <p class="card-meta">
+            Manda ai partecipanti attesi<?= $participants !== [] ? ' (' . count($participants) . ')' : '' ?>
+            un’email con data, ora e collegamento, e il file da aggiungere al calendario.
+            Puoi ripetere l’invio più tardi, per esempio dopo nuove iscrizioni:
+            chi l’ha già ricevuto si ritrova la stessa voce aggiornata, non una seconda.
+        </p>
+
+        <form action="/live/<?= $id ?>/inviti" method="post"
+              onsubmit="return confirm('Inviare l’invito a tutti i partecipanti attesi?');">
+            <?= Csrf::field() ?>
+            <button type="submit" class="btn btn-secondary">Invia inviti</button>
+        </form>
+    </section>
+<?php endif; ?>
 
 <?php if ($canManage): ?>
     <section class="card">

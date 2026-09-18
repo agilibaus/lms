@@ -75,7 +75,8 @@ $now = new DateTimeImmutable('now');
                 </td>
                 <td class="row-actions">
                     <?php if (!empty($session['meet_link']) && !$isPast): ?>
-                        <a href="/live/<?= (int) $session['id'] ?>/join">Entra</a>
+                        <a href="/live/<?= (int) $session['id'] ?>/join"
+                           target="_blank" rel="noopener">Entra</a>
                     <?php endif; ?>
                     <?php if ($canManage): ?>
                         <a href="/live/<?= (int) $session['id'] ?>/edit">Modifica</a>

@@ -121,14 +121,16 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                     <?php if ($link === ''): ?>
                         <span class="live-session-note">Link non ancora disponibile</span>
                     <?php elseif ($apribile): ?>
-                        <?php /* Nessun target="_blank": la riunione si apre in questa
-                                 scheda, cosi' il tasto Indietro riporta alla lezione su
-                                 qualunque dispositivo. Da una scheda nuova si tornerebbe
-                                 solo dal selettore delle schede, che su telefono e'
-                                 scomodo; e se il telefono dirotta il link sull'app Meet,
-                                 la lezione resta dov'era nel browser. */ ?>
+                        <?php /* La riunione si apre in una seconda scheda: chiudendo
+                                 Meet la lezione e' ancora li' dov'era. Nella stessa
+                                 scheda il ritorno dipenderebbe dal tasto Indietro, e
+                                 Google non rimanda indietro chi esce dalla riunione.
+                                 Su telefono la scheda in piu' costa un passaggio per
+                                 il selettore, ma se il link viene dirottato sull'app
+                                 Meet la lezione resta comunque dov'era. */ ?>
                         <a class="btn btn-primary live-session-join"
-                           href="<?= htmlspecialchars($link) ?>">Entra nella riunione</a>
+                           href="<?= htmlspecialchars($link) ?>"
+                           target="_blank" rel="noopener">Entra nella riunione</a>
                     <?php else: ?>
                         <span class="live-session-note">Si entra da 15 minuti prima</span>
                     <?php endif; ?>
