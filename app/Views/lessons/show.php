@@ -19,7 +19,15 @@ use App\Core\VideoEmbed;
     <a href="/courses/<?= (int) $course['id'] ?>" class="back-link">
         &larr; <?= htmlspecialchars($course['title']) ?> &mdash; <?= htmlspecialchars($module['title']) ?>
     </a>
-    <h1><?= htmlspecialchars($lesson['title']) ?></h1>
+    <h1 class="lesson-title">
+        <?= htmlspecialchars($lesson['title']) ?>
+        <?php /* Lo stato sta accanto al titolo, dove si guarda per prima cosa;
+                 il pulsante per segnarla resta in fondo, perche' e' un'azione
+                 che si compie dopo aver letto o guardato. */ ?>
+        <?php if (Auth::hasRole('studente') && $completed): ?>
+            <span class="badge badge-muted lesson-done">&check; Lezione completata</span>
+        <?php endif; ?>
+    </h1>
 </div>
 
 <?php if (Auth::hasRole('admin', 'tutor')): ?>
@@ -157,26 +165,21 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
     </section>
 <?php endif; ?>
 
-<?php if (Auth::hasRole('studente')): ?>
-    <?php if ($completed): ?>
-        <p class="badge badge-muted">&check; Lezione completata</p>
-    <?php else: ?>
-        <?php /* Il pulsante e' abilitato nell'HTML e lo disabilita il
-                 JavaScript: se il JavaScript non c'e' o qualcosa va storto,
-                 lo studente puo' comunque concludere la lezione. Uno bloccato
-                 e' un danno vero; uno che segna senza aver premuto play e'
-                 un fastidio. */ ?>
-        <form action="/lessons/<?= (int) $lesson['id'] ?>/complete" method="post"
-              <?= $soloVideo ? 'data-attende-avvio-form' : '' ?>>
-            <?= Csrf::field() ?>
-            <button type="submit" class="btn btn-primary" data-completa>Segna come completata</button>
-            <?php if ($soloVideo): ?>
-                <span class="form-hint" data-avviso-avvio hidden>
-                    Avvia il video per poter segnare la lezione come completata.
-                </span>
-            <?php endif; ?>
-        </form>
-    <?php endif; ?>
+<?php if (Auth::hasRole('studente') && !$completed): ?>
+    <?php /* Il pulsante e' abilitato nell'HTML e lo disabilita il JavaScript:
+             se il JavaScript non c'e' o qualcosa va storto, lo studente puo'
+             comunque concludere la lezione. Uno bloccato e' un danno vero;
+             uno che segna senza aver premuto play e' un fastidio. */ ?>
+    <form action="/lessons/<?= (int) $lesson['id'] ?>/complete" method="post"
+          <?= $soloVideo ? 'data-attende-avvio-form' : '' ?>>
+        <?= Csrf::field() ?>
+        <button type="submit" class="btn btn-primary" data-completa>Segna come completata</button>
+        <?php if ($soloVideo): ?>
+            <span class="form-hint" data-avviso-avvio hidden>
+                Avvia il video per poter segnare la lezione come completata.
+            </span>
+        <?php endif; ?>
+    </form>
 <?php endif; ?>
 
 <?php if ($embed !== ''): ?>

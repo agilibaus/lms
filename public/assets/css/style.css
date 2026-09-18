@@ -961,6 +961,22 @@ h3 { font-size: 1.05rem; }
     cursor: not-allowed;
 }
 
+/* Lo stato della lezione accanto al titolo: allineato al testo, non alla
+   riga, così su titoli lunghi che vanno a capo resta accanto all'ultima
+   parola invece di volare in alto. */
+.lesson-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.lesson-done {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 /* ---------- Logo del gruppo ---------- */
 
 .group-name {
