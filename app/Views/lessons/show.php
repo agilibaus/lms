@@ -25,7 +25,9 @@ use App\Core\VideoEmbed;
                  il pulsante per segnarla resta in fondo, perche' e' un'azione
                  che si compie dopo aver letto o guardato. */ ?>
         <?php if (Auth::hasRole('studente') && $completed): ?>
-            <span class="badge badge-muted lesson-done">&check; Lezione completata</span>
+            <span class="badge badge-muted lesson-done">
+                <span class="lesson-done-check" aria-hidden="true">&check;</span> Lezione completata
+            </span>
         <?php endif; ?>
     </h1>
 </div>

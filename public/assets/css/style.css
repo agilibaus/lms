@@ -977,6 +977,13 @@ h3 { font-size: 1.05rem; }
     white-space: nowrap;
 }
 
+/* Solo la spunta e' verde: l'etichetta resta in grigio, cosi' il segno si
+   nota senza che lo stato gridi piu' del titolo a cui sta accanto. */
+.lesson-done-check {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
 /* ---------- Logo del gruppo ---------- */
 
 .group-name {
