@@ -440,6 +440,27 @@ più a nessuno, a differenza di un video di lezione.
 
 Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 
+## Ordine dei corsi
+
+Nella pagina **Corsi**, chi può modificarli riordina le schede **trascinandole**, e l'ordine si
+salva da solo senza ricaricare la pagina — dopo un trascinamento le schede sono già al loro
+posto, e un ricaricamento le farebbe sobbalzare. Se il salvataggio fallisce lo dice, invece di
+far credere che sia andato a buon fine.
+
+Accanto alla maniglia ci sono **sempre due frecce**: sono la via che funziona senza JavaScript,
+da tastiera, e su un touch screen, dove trascinare in una griglia è scomodo. Il trascinamento
+migliora l'esperienza di chi ha un mouse senza togliere niente agli altri.
+
+L'ordine vale ovunque: elenco dei corsi, Gestione corsi e **catalogo degli studenti**.
+
+Migrazione `2026_09_18_ordine_corsi.sql` (colonna `position`, inizializzata con l'ordine che le
+righe avevano finora, dal più recente: altrimenti sarebbero tutte a zero e il primo
+caricamento sembrerebbe casuale).
+
+`CourseModel::reorder()` ignora gli id sconosciuti e lascia in coda i corsi non nominati: la
+pagina di chi trascina potrebbe essere vecchia di qualche minuto, e un corso creato nel
+frattempo non deve sparire né bloccare il salvataggio.
+
 ## Ordine di moduli e lezioni
 
 Nella pagina del corso, chi può modificarlo trova accanto a ogni modulo e a ogni lezione due

@@ -17,8 +17,8 @@ class CourseModel
     public static function allForStaff(): array
     {
         return Database::connection()->query(
-            'SELECT id, title, slug, description, cover_image, cover_alt, is_published, enrollment_mode
-             FROM courses ORDER BY created_at DESC'
+            'SELECT id, title, slug, description, cover_image, cover_alt, is_published, enrollment_mode, position
+             FROM courses ORDER BY position, id'
         )->fetchAll();
     }
 
@@ -149,7 +149,7 @@ class CourseModel
                    SELECT 1 FROM enrollments e
                    WHERE e.course_id = c.id AND e.user_id = :user_id_enrolled
                )
-             ORDER BY c.title"
+             ORDER BY c.position, c.id"
         );
         $stmt->execute(['user_id_request' => $userId, 'user_id_enrolled' => $userId]);
 
@@ -191,4 +191,99 @@ class CourseModel
 
         return (bool) $stmt->fetchColumn();
     }
+    /**
+     * Sposta il corso di un posto nell'ordine, scambiando la posizione con il
+     * vicino. Stesso meccanismo di moduli, lezioni e materiali.
+     */
+    public static function move(int $id, string $direction): void
+    {
+        $course = self::find($id);
+
+        if ($course === null) {
+            return;
+        }
+
+        $db = Database::connection();
+        $comparison = $direction === 'up' ? '<' : '>';
+        $order = $direction === 'up' ? 'DESC' : 'ASC';
+
+        $stmt = $db->prepare(
+            'SELECT id, position FROM courses
+             WHERE (position, id) ' . $comparison . ' (:position, :id)
+             ORDER BY position ' . $order . ', id ' . $order . ' LIMIT 1'
+        );
+        $stmt->execute(['position' => (int) $course['position'], 'id' => $id]);
+        $neighbour = $stmt->fetch();
+
+        if (!$neighbour) {
+            return; // gia' in cima o in fondo
+        }
+
+        if ((int) $neighbour['position'] === (int) $course['position']) {
+            self::renumber();
+            $course = self::find($id);
+            $neighbour = self::find((int) $neighbour['id']);
+        }
+
+        $update = $db->prepare('UPDATE courses SET position = :position WHERE id = :id');
+        $update->execute(['position' => (int) $neighbour['position'], 'id' => $id]);
+        $update->execute(['position' => (int) $course['position'], 'id' => (int) $neighbour['id']]);
+    }
+
+    /**
+     * Ordine completo, come arriva dal trascinamento.
+     *
+     * Gli id sconosciuti vengono ignorati e i corsi non nominati restano in
+     * coda nell'ordine di prima: la pagina di chi trascina potrebbe essere
+     * vecchia di qualche minuto, e un corso creato nel frattempo non deve
+     * sparire in fondo per caso ne' bloccare il salvataggio.
+     *
+     * @param int[] $ids
+     */
+    public static function reorder(array $ids): void
+    {
+        $db = Database::connection();
+        $existing = [];
+
+        foreach ($db->query('SELECT id FROM courses ORDER BY position, id')->fetchAll() as $row) {
+            $existing[(int) $row['id']] = true;
+        }
+
+        $ordered = [];
+
+        foreach ($ids as $id) {
+            $id = (int) $id;
+
+            if (isset($existing[$id]) && !in_array($id, $ordered, true)) {
+                $ordered[] = $id;
+                unset($existing[$id]);
+            }
+        }
+
+        foreach (array_keys($existing) as $id) {
+            $ordered[] = $id;
+        }
+
+        $update = $db->prepare('UPDATE courses SET position = :position WHERE id = :id');
+        $position = 0;
+
+        foreach ($ordered as $id) {
+            $update->execute(['position' => $position++, 'id' => $id]);
+        }
+    }
+
+    /**
+     * Riassegna posizioni consecutive a partire da 0, mantenendo l'ordine attuale.
+     */
+    private static function renumber(): void
+    {
+        $db = Database::connection();
+        $update = $db->prepare('UPDATE courses SET position = :position WHERE id = :id');
+        $position = 0;
+
+        foreach ($db->query('SELECT id FROM courses ORDER BY position, id')->fetchAll() as $row) {
+            $update->execute(['position' => $position++, 'id' => (int) $row['id']]);
+        }
+    }
+
 }

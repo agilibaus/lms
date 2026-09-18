@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\CourseCover;
+use App\Core\Csrf;
 
 /** @var array $courses */
 /** @var string $heading */
@@ -21,9 +22,32 @@ use App\Core\CourseCover;
         </p>
     <?php endif; ?>
 <?php else: ?>
-    <div class="course-grid">
-        <?php foreach ($courses as $course): ?>
-            <a href="/courses/<?= (int) $course['id'] ?>" class="course-card">
+    <div class="course-grid"<?= $isStaff ? ' data-riordinabile data-csrf="' . htmlspecialchars(Csrf::token()) . '"' : '' ?>>
+        <?php foreach ($courses as $courseIndex => $course): ?>
+            <a href="/courses/<?= (int) $course['id'] ?>" class="course-card" data-corso="<?= (int) $course['id'] ?>">
+                <?php if ($isStaff): ?>
+                    <?php /* Le frecce ci sono sempre, anche con il trascinamento
+                             attivo: sono la via da tastiera e quella che funziona
+                             senza JavaScript. */ ?>
+                    <div class="course-order">
+                        <form action="/admin/courses/<?= (int) $course['id'] ?>/move" method="post">
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="direction" value="up">
+                            <button type="submit" class="icon-btn" title="Sposta prima"
+                                    aria-label="Sposta <?= htmlspecialchars((string) $course['title']) ?> prima"
+                                    <?= $courseIndex === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                        </form>
+                        <span class="course-drag-handle" aria-hidden="true" title="Trascina per riordinare" hidden>&#8942;&#8942;</span>
+                        <form action="/admin/courses/<?= (int) $course['id'] ?>/move" method="post">
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="direction" value="down">
+                            <button type="submit" class="icon-btn" title="Sposta dopo"
+                                    aria-label="Sposta <?= htmlspecialchars((string) $course['title']) ?> dopo"
+                                    <?= $courseIndex === count($courses) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
+
                 <div class="course-card-cover">
                     <?php $cover = CourseCover::url($course); ?>
                     <?php if ($cover !== null): ?>
@@ -52,4 +76,8 @@ use App\Core\CourseCover;
             </a>
         <?php endforeach; ?>
     </div>
+<?php endif; ?>
+
+<?php if ($isStaff): ?>
+    <script src="/assets/js/course-order.js"></script>
 <?php endif; ?>

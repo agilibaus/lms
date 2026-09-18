@@ -141,8 +141,12 @@ $router->get('/admin/courses', [AdminCourseController::class, 'index']);
 $router->get('/admin/courses/create', [AdminCourseController::class, 'createForm']);
 $router->post('/admin/courses', [AdminCourseController::class, 'store']);
 $router->get('/admin/courses/{id}/edit', [AdminCourseController::class, 'editForm']);
+// Prima della rotta generica qui sotto: {id} cattura qualunque segmento,
+// quindi registrata dopo, "ordine" verrebbe presa per un identificativo.
+$router->post('/admin/courses/ordine', [AdminCourseController::class, 'reorder']);
 $router->post('/admin/courses/{id}', [AdminCourseController::class, 'update']);
 $router->post('/admin/courses/{id}/delete', [AdminCourseController::class, 'destroy']);
+$router->post('/admin/courses/{id}/move', [AdminCourseController::class, 'move']);
 $router->post('/admin/courses/{id}/copertina', [AdminCourseController::class, 'updateCover']);
 $router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::class, 'deleteCover']);
 

@@ -144,6 +144,69 @@ class CourseController extends AdminController
     }
 
     // ---------------------------------------------------------------
+    // Ordine
+    // ---------------------------------------------------------------
+
+    /**
+     * Sposta un corso di un posto: e' la via che funziona senza JavaScript,
+     * ed e' anche quella raggiungibile da tastiera.
+     */
+    public function move(array $params): void
+    {
+        Auth::requirePermission('course.edit');
+
+        $course = CourseModel::find((int) $params['id']);
+
+        if ($course === null) {
+            $this->notFound('Corso non trovato.');
+            return;
+        }
+
+        CourseModel::move((int) $course['id'], ($_POST['direction'] ?? '') === 'up' ? 'up' : 'down');
+
+        $this->redirectBackToCourses();
+    }
+
+    /**
+     * Ordine completo, come arriva dal trascinamento.
+     *
+     * Risponde JSON perche' la chiamata parte dalla pagina senza ricaricarla:
+     * dopo un trascinamento le schede sono gia' al loro posto, e ricaricare
+     * farebbe sobbalzare la pagina sotto le mani di chi sta lavorando.
+     */
+    public function reorder(array $params = []): void
+    {
+        Auth::requirePermission('course.edit');
+
+        $ids = $_POST['ids'] ?? '';
+        $ids = is_string($ids) ? array_filter(explode(',', $ids), 'is_numeric') : [];
+
+        if ($ids === []) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Nessun ordine ricevuto.']);
+            return;
+        }
+
+        CourseModel::reorder(array_map('intval', $ids));
+
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => true]);
+    }
+
+    /**
+     * Le frecce compaiono in due pagine: si torna da dove si e' partiti.
+     */
+    private function redirectBackToCourses(): void
+    {
+        $from = (string) ($_POST['from'] ?? '');
+        $destination = $from === 'admin' ? '/admin/courses' : '/';
+
+        header('Location: ' . $destination);
+        exit;
+    }
+
+    // ---------------------------------------------------------------
     // Copertina
     // ---------------------------------------------------------------
 

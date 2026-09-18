@@ -120,6 +120,9 @@ CREATE TABLE courses (
     -- come ci si iscrive: 'open' iscrizione immediata dal catalogo,
     -- 'request' richiesta da approvare, 'closed' solo admin/tutor o gruppi
     enrollment_mode ENUM('open','request','closed') NOT NULL DEFAULT 'closed',
+    -- Ordine deciso da chi amministra: vale nell'elenco dei corsi, in Gestione
+    -- corsi e nel catalogo degli studenti.
+    position        SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_by      INT UNSIGNED NOT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
