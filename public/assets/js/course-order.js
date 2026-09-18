@@ -117,6 +117,7 @@
 
             card.style.transition = 'none';
             card.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            card.classList.add('is-sliding');
             inMovimento++;
 
             // Due fotogrammi: con uno solo il browser accorpa partenza e
@@ -131,6 +132,7 @@
             window.setTimeout(function () {
                 inMovimento--;
                 card.style.transition = '';
+                card.classList.remove('is-sliding');
             }, DURATA + 20);
         });
     }
@@ -249,8 +251,15 @@
         card.classList.remove('is-dragging');
 
         if (eraTrascinata && !animazioniRidotte) {
-            // Torna al suo posto scivolando, invece di scattarci.
+            // Torna al suo posto scivolando, invece di scattarci. La
+            // transizione va tolta appena finita: lasciata li', la scheda
+            // resterebbe con uno stile addosso e — con la vecchia regola che
+            // guardava l'attributo style — diventava inafferrabile per sempre.
             card.style.transition = 'transform ' + DURATA + 'ms ease';
+
+            window.setTimeout(function () {
+                card.style.transition = '';
+            }, DURATA + 20);
         }
 
         card.style.transform = '';

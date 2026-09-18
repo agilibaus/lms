@@ -991,9 +991,12 @@ h3 { font-size: 1.05rem; }
 
 /* La scheda trascinata segue il puntatore: sta sopra le altre e non deve
    avere transizioni proprie, altrimenti insegue con un ritardo. */
-/* Mentre scivolano non devono nemmeno rispondere al puntatore: un
-   rilevamento su una scheda a meta' volo darebbe uno scambio sbagliato. */
-.course-grid[data-riordinabile] .course-card[style*="transition"] {
+/* Mentre scivolano non devono rispondere al puntatore: un rilevamento su una
+   scheda a meta' volo darebbe uno scambio sbagliato. La classe la mette e la
+   toglie il JavaScript; la versione precedente guardava l'attributo style, e
+   una transizione rimasta scritta li' rendeva la scheda inafferrabile per
+   sempre. */
+.course-card.is-sliding {
     pointer-events: none;
 }
 
