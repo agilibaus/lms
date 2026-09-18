@@ -991,6 +991,12 @@ h3 { font-size: 1.05rem; }
 
 /* La scheda trascinata segue il puntatore: sta sopra le altre e non deve
    avere transizioni proprie, altrimenti insegue con un ritardo. */
+/* Mentre scivolano non devono nemmeno rispondere al puntatore: un
+   rilevamento su una scheda a meta' volo darebbe uno scambio sbagliato. */
+.course-grid[data-riordinabile] .course-card[style*="transition"] {
+    pointer-events: none;
+}
+
 .course-card.is-dragging {
     position: relative;
     z-index: 3;

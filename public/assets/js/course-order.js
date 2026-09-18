@@ -45,6 +45,12 @@
     var lastX = 0;
     var lastY = 0;
 
+    // Quante schede stanno ancora scivolando. Finche' e' maggiore di zero non
+    // si scambia niente: a meta' volo la posizione misurata di una scheda e'
+    // quella dell'animazione, non quella vera, e il confronto con il confine
+    // darebbe scambi incoerenti che si annullano subito dopo.
+    var inMovimento = 0;
+
     function cards() {
         return [].slice.call(grid.querySelectorAll('[data-corso]'));
     }
@@ -111,6 +117,7 @@
 
             card.style.transition = 'none';
             card.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            inMovimento++;
 
             // Due fotogrammi: con uno solo il browser accorpa partenza e
             // arrivo, e l'animazione non si vede.
@@ -120,6 +127,11 @@
                     card.style.transform = '';
                 });
             });
+
+            window.setTimeout(function () {
+                inMovimento--;
+                card.style.transition = '';
+            }, DURATA + 20);
         });
     }
 
@@ -197,6 +209,10 @@
 
         event.preventDefault();
         segui();
+
+        if (inMovimento > 0) {
+            return;
+        }
 
         // La scheda trascinata e' trasparente al puntatore (vedi il CSS),
         // quindi qui sotto si trova sempre una delle altre.

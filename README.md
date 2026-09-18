@@ -449,8 +449,10 @@ Durante il trascinamento la scheda **segue il puntatore**: lo spostamento si ric
 da dove la scheda si trova adesso, meno lo spostamento che le è già stato dato, invece di
 tenere il conto di un'origine — tenendolo, dopo ogni scambio il conto si perdeva e la scheda
 rimbalzava avanti e indietro. Sta sopra le altre ed è trasparente al puntatore — altrimenti, seguendo il cursore, sarebbe lei stessa
-l'elemento puntato e non si saprebbe mai su quale scheda si sta passando. Le altre **scorrono**
-verso la nuova posizione in 160 ms invece di saltarci: si misura dove sono prima, si cambia
+l'elemento puntato e non si saprebbe mai su quale scheda si sta passando. Finché una scheda sta scivolando non si scambia niente: a metà volo la sua posizione misurata è
+quella dell'animazione e non quella vera, e il confronto con il confine darebbe scambi
+incoerenti, annullati subito dopo — è il residuo di irregolarità che restava dopo la prima
+correzione. Le altre **scorrono** verso la nuova posizione in 160 ms invece di saltarci: si misura dove sono prima, si cambia
 l'ordine, si misura dove sono finite, e ognuna viene riportata otticamente indietro e lasciata
 scivolare. Chi ha chiesto meno animazioni nelle impostazioni del sistema non ne vede nessuna.
 
