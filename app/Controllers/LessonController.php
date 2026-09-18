@@ -207,6 +207,29 @@ class LessonController
         exit;
     }
 
+    /**
+     * Sposta la lezione di un posto su o giu' dentro il suo modulo.
+     */
+    public function move(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+
+        $lesson = LessonModel::find((int) $params['id']);
+
+        if (!$lesson) {
+            http_response_code(404);
+            echo 'Lezione non trovata.';
+            return;
+        }
+
+        LessonModel::move((int) $lesson['id'], ($_POST['direction'] ?? '') === 'up' ? 'up' : 'down');
+
+        $module = ModuleModel::find((int) $lesson['module_id']);
+
+        header('Location: /courses/' . ($module['course_id'] ?? '') . '#modulo-' . (int) $lesson['module_id']);
+        exit;
+    }
+
     public function destroy(array $params): void
     {
         Auth::requireRole('admin', 'tutor');

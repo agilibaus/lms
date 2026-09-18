@@ -65,13 +65,13 @@ $isStaff = Auth::hasRole('admin', 'tutor');
     <p class="empty-state">Nessun modulo ancora disponibile per questo corso.</p>
 <?php else: ?>
     <div class="module-list">
-        <?php foreach ($modules as $module): ?>
+        <?php foreach ($modules as $moduleIndex => $module): ?>
             <?php
             $moduleId = (int) $module['id'];
             $quiz = $quizByModule[$moduleId] ?? null;
             $isLocked = in_array($moduleId, $lockedModuleIds, true);
             ?>
-            <section class="module-card <?= $isLocked ? 'module-locked' : '' ?>">
+            <section class="module-card <?= $isLocked ? 'module-locked' : '' ?>" id="modulo-<?= $moduleId ?>">
                 <div class="module-card-header">
                     <h3>
                         <?= htmlspecialchars($module['title']) ?>
@@ -83,6 +83,25 @@ $isStaff = Auth::hasRole('admin', 'tutor');
                     </h3>
                     <?php if ($isStaff): ?>
                         <div class="module-card-actions">
+                            <?php /* Le frecce stanno per prime: sono l'azione che si
+                                     ripete, e cercarle ogni volta in fondo a un elenco
+                                     di comandi diversi rallenta chi sta riordinando. */ ?>
+                            <span class="order-actions">
+                                <form action="/modules/<?= $moduleId ?>/move" method="post">
+                                    <?= Csrf::field() ?>
+                                    <input type="hidden" name="direction" value="up">
+                                    <button type="submit" class="icon-btn" title="Sposta il modulo su"
+                                            aria-label="Sposta il modulo <?= htmlspecialchars($module['title']) ?> su"
+                                            <?= $moduleIndex === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                                </form>
+                                <form action="/modules/<?= $moduleId ?>/move" method="post">
+                                    <?= Csrf::field() ?>
+                                    <input type="hidden" name="direction" value="down">
+                                    <button type="submit" class="icon-btn" title="Sposta il modulo giù"
+                                            aria-label="Sposta il modulo <?= htmlspecialchars($module['title']) ?> giù"
+                                            <?= $moduleIndex === count($modules) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                                </form>
+                            </span>
                             <a href="/modules/<?= $moduleId ?>/lessons/create">+ Lezione</a>
                             <?php if ($quiz === null): ?>
                                 <a href="/modules/<?= $moduleId ?>/quiz/create">+ Quiz</a>
@@ -110,8 +129,26 @@ $isStaff = Auth::hasRole('admin', 'tutor');
                         <p class="empty-state-small">Nessuna lezione in questo modulo.</p>
                     <?php else: ?>
                         <ul class="lesson-list">
-                            <?php foreach ($lessons as $lesson): ?>
+                            <?php foreach ($lessons as $lessonIndex => $lesson): ?>
                                 <li class="lesson-list-item">
+                                    <?php if ($isStaff): ?>
+                                        <span class="order-actions">
+                                            <form action="/lessons/<?= (int) $lesson['id'] ?>/move" method="post">
+                                                <?= Csrf::field() ?>
+                                                <input type="hidden" name="direction" value="up">
+                                                <button type="submit" class="icon-btn" title="Sposta la lezione su"
+                                                        aria-label="Sposta la lezione <?= htmlspecialchars($lesson['title']) ?> su"
+                                                        <?= $lessonIndex === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                                            </form>
+                                            <form action="/lessons/<?= (int) $lesson['id'] ?>/move" method="post">
+                                                <?= Csrf::field() ?>
+                                                <input type="hidden" name="direction" value="down">
+                                                <button type="submit" class="icon-btn" title="Sposta la lezione giù"
+                                                        aria-label="Sposta la lezione <?= htmlspecialchars($lesson['title']) ?> giù"
+                                                        <?= $lessonIndex === count($lessons) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                                            </form>
+                                        </span>
+                                    <?php endif; ?>
                                     <a href="/lessons/<?= (int) $lesson['id'] ?>">
                                         <?php if (in_array((int) $lesson['id'], $completedLessonIds, true)): ?>
                                             <span class="lesson-check" title="Completata">&check;</span>

@@ -100,6 +100,30 @@ class ModuleController
         exit;
     }
 
+    /**
+     * Sposta il modulo di un posto su o giu' nell'ordine del corso.
+     */
+    public function move(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+
+        $module = ModuleModel::find((int) $params['id']);
+
+        if (!$module) {
+            http_response_code(404);
+            echo 'Modulo non trovato.';
+            return;
+        }
+
+        ModuleModel::move((int) $module['id'], ($_POST['direction'] ?? '') === 'up' ? 'up' : 'down');
+
+        // L'ancora riporta al modulo appena spostato invece che in cima alla
+        // pagina: in un corso lungo, altrimenti, dopo ogni clic si perde il
+        // segno e bisogna ritrovare il punto.
+        header('Location: /courses/' . $module['course_id'] . '#modulo-' . (int) $module['id']);
+        exit;
+    }
+
     public function destroy(array $params): void
     {
         Auth::requireRole('admin', 'tutor');

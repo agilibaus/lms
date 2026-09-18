@@ -440,6 +440,19 @@ più a nessuno, a differenza di un video di lezione.
 
 Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 
+## Ordine di moduli e lezioni
+
+Nella pagina del corso, chi può modificarlo trova accanto a ogni modulo e a ogni lezione due
+frecce che le spostano di un posto su o giù. Le frecce agli estremi sono disabilitate, e dopo
+lo spostamento la pagina torna al modulo su cui si stava lavorando, invece che in cima: in un
+corso lungo, altrimenti, dopo ogni clic si perde il segno.
+
+Funziona senza JavaScript: sono moduli POST, come il riordino dei materiali della lezione, di
+cui `ModuleModel::move()` e `LessonModel::move()` ricalcano il meccanismo. Il vicino con cui si
+scambia la posizione è la riga **adiacente nell'ordine di visualizzazione**, non quella con
+`position ± 1`: dopo un'eliminazione le posizioni hanno dei buchi, e righe importate potrebbero
+condividere lo zero — in quel caso si rinumera prima di scambiare.
+
 ## Copertina di avvio e completamento delle lezioni di solo video
 
 Sono due cose distinte, tenute separate di proposito: la copertina è **presentazione** e vale

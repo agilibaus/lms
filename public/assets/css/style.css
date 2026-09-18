@@ -984,6 +984,25 @@ h3 { font-size: 1.05rem; }
     font-weight: 700;
 }
 
+/* Frecce per riordinare moduli e lezioni: i due moduli stanno affiancati e
+   restano insieme, invece di andare a capo uno per volta. */
+.order-actions {
+    display: inline-flex;
+    gap: 0.15rem;
+    flex-shrink: 0;
+}
+
+.lesson-list-item .order-actions {
+    margin-right: 0.35rem;
+}
+
+/* Il titolo prende lo spazio che resta: la riga distanzia gli elementi alle
+   estremita', e con le frecce a sinistra il titolo finiva spinto in mezzo
+   alla riga, lontano da entrambe. */
+.lesson-list-item a {
+    flex: 1 1 auto;
+}
+
 /* ---------- Logo del gruppo ---------- */
 
 .group-name {
