@@ -429,8 +429,9 @@ iniziali su una tinta derivata dall'identificativo.
 Il file viene ritagliato al centro in quadrato e ridotto a 256 px, e — a differenza delle
 copertine dei corsi, che diventano JPEG — **salvato in PNG**, per conservare la trasparenza: un
 logo appiattito su fondo bianco si vedrebbe come una toppa sopra lo sfondo caldo delle pagine.
-I file stanno in `storage/group-logos/`, fuori dal document root, serviti da
-`/admin/groups/{id}/logo` a chi ha fatto accesso.
+Compare anche in **I miei gruppi**, nel profilo dello studente. I file stanno in
+`storage/group-logos/`, fuori dal document root, serviti da `/gruppi/{id}/immagine` a chi ha
+fatto accesso: l'indirizzo non sta sotto `/admin` proprio perché lo carica anche lo studente.
 
 Creando un gruppo l'immagine viene salvata **dopo** la riga, perché il percorso contiene
 l'identificativo, che prima non esiste. Sostituendo o rimuovendo l'immagine il file precedente

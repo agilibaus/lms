@@ -1700,6 +1700,10 @@ body.has-focus-video {
 /* Voce su due righe: nome sopra, dettagli sotto (tutor, corsi, data). */
 .assign-info {
     min-width: 0;
+    /* Prende lo spazio che resta: con l'immagine del gruppo a sinistra e un
+       pulsante a destra, space-between altrimenti spingerebbe il nome in
+       mezzo al vuoto. */
+    flex: 1 1 auto;
 }
 
 .table-scroll {

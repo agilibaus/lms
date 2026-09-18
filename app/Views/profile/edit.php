@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\GroupLogo;
 
 /** @var array $user */
 /** @var array $groups */
@@ -95,6 +96,16 @@ $hasAvatar = !empty($user['avatar_path']);
         <ul class="assign-list">
             <?php foreach ($groups as $group): ?>
                 <li>
+                    <?php $logo = GroupLogo::url($group); ?>
+                    <?php if ($logo !== null): ?>
+                        <img src="<?= htmlspecialchars($logo) ?>" alt="" class="group-logo" loading="lazy">
+                    <?php else: ?>
+                        <span class="group-logo group-logo-placeholder"
+                              style="--logo-hue: <?= GroupLogo::hue((int) $group['id']) ?>;" aria-hidden="true">
+                            <?= htmlspecialchars(GroupLogo::initials((string) $group['name'])) ?>
+                        </span>
+                    <?php endif; ?>
+
                     <span class="assign-info">
                         <?= htmlspecialchars((string) $group['name']) ?>
                         <span class="cell-sub">

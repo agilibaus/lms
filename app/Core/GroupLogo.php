@@ -136,7 +136,9 @@ class GroupLogo
     {
         $stored = (string) ($group['logo_path'] ?? '');
 
-        return $stored === '' ? null : '/admin/groups/' . (int) $group['id'] . '/logo';
+        // Indirizzo neutro e non sotto /admin: questa immagine la carica anche
+        // lo studente, nella pagina dei suoi gruppi.
+        return $stored === '' ? null : '/gruppi/' . (int) $group['id'] . '/immagine';
     }
 
     /**
