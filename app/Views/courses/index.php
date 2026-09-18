@@ -26,25 +26,12 @@ use App\Core\Csrf;
         <?php foreach ($courses as $courseIndex => $course): ?>
             <a href="/courses/<?= (int) $course['id'] ?>" class="course-card" data-corso="<?= (int) $course['id'] ?>">
                 <?php if ($isStaff): ?>
-                    <?php /* Le frecce ci sono sempre, anche con il trascinamento
-                             attivo: sono la via da tastiera e quella che funziona
-                             senza JavaScript. */ ?>
+                    <?php /* La maniglia sta nell'HTML nascosta e la scopre il
+                             JavaScript: senza, annuncerebbe un trascinamento
+                             che non funziona. */ ?>
                     <div class="course-order">
-                        <form action="/admin/courses/<?= (int) $course['id'] ?>/move" method="post">
-                            <?= Csrf::field() ?>
-                            <input type="hidden" name="direction" value="up">
-                            <button type="submit" class="icon-btn" title="Sposta prima"
-                                    aria-label="Sposta <?= htmlspecialchars((string) $course['title']) ?> prima"
-                                    <?= $courseIndex === 0 ? 'disabled' : '' ?>>&uarr;</button>
-                        </form>
-                        <span class="course-drag-handle" aria-hidden="true" title="Trascina per riordinare" hidden>&#8942;&#8942;</span>
-                        <form action="/admin/courses/<?= (int) $course['id'] ?>/move" method="post">
-                            <?= Csrf::field() ?>
-                            <input type="hidden" name="direction" value="down">
-                            <button type="submit" class="icon-btn" title="Sposta dopo"
-                                    aria-label="Sposta <?= htmlspecialchars((string) $course['title']) ?> dopo"
-                                    <?= $courseIndex === count($courses) - 1 ? 'disabled' : '' ?>>&darr;</button>
-                        </form>
+                        <span class="course-drag-handle" aria-hidden="true"
+                              title="Trascina per riordinare" hidden>&#8942;&#8942;</span>
                     </div>
                 <?php endif; ?>
 

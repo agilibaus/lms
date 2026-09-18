@@ -447,10 +447,6 @@ salva da solo senza ricaricare la pagina — dopo un trascinamento le schede son
 posto, e un ricaricamento le farebbe sobbalzare. Se il salvataggio fallisce lo dice, invece di
 far credere che sia andato a buon fine.
 
-Accanto alla maniglia ci sono **sempre due frecce**: sono la via che funziona senza JavaScript,
-da tastiera, e su un touch screen, dove trascinare in una griglia è scomodo. Il trascinamento
-migliora l'esperienza di chi ha un mouse senza togliere niente agli altri.
-
 L'ordine vale ovunque: elenco dei corsi, Gestione corsi e **catalogo degli studenti**.
 
 Migrazione `2026_09_18_ordine_corsi.sql` (colonna `position`, inizializzata con l'ordine che le
