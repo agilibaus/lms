@@ -23,7 +23,7 @@ use App\Core\GroupLogo;
 <?php if ($groups === []): ?>
     <p class="empty-state">Nessun gruppo.</p>
 <?php else: ?>
-    <table class="data-table">
+    <table class="data-table data-table-media">
         <thead>
         <tr><th>Gruppo</th><th>Tutor</th><th>Membri</th><th></th></tr>
         </thead>

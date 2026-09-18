@@ -1404,6 +1404,17 @@ body.has-focus-video {
     display: block;
 }
 
+/* Tabelle in cui la prima colonna porta un'immagine — il logo del gruppo, alto
+   32 px contro i 19 di una riga di testo. E' l'immagine a dare l'altezza alla
+   riga, e il nome che le sta accanto e' centrato su di lei; le altre celle,
+   allineate in alto come da regola generale, restavano appese nove pixel piu'
+   su. Qui si centrano anche loro: l'immagine e' l'ancora visiva della riga.
+   Si applica solo dove serve, perche' in una tabella di testo il centraggio
+   fa l'opposto — sposta le celle di una riga sola rispetto a quelle su due. */
+.data-table-media td {
+    vertical-align: middle;
+}
+
 /* Un'etichetta dentro una cella non deve spostare la riga di testo.
    Il `.badge` generico porta `margin-top: 0.5rem`, che serve nelle schede,
    dove l'etichetta sta sotto a qualcos'altro. In una tabella quel margine
