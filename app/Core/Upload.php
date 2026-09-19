@@ -23,7 +23,7 @@ class Upload
      */
     public static function store(array $file, string $subDir, array $allowedExtensions, int $maxBytes): array
     {
-        $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        $error = $file['error'];
 
         if ($error !== UPLOAD_ERR_OK) {
             throw new \RuntimeException(self::errorMessage($error));

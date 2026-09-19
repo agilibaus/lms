@@ -16,7 +16,7 @@ use App\Core\GroupLogo;
 <input type="text" id="name" name="name" maxlength="150" required
        value="<?= htmlspecialchars((string) ($group['name'] ?? '')) ?>">
 
-<?php $logo = isset($group) && $group !== null ? GroupLogo::url($group) : null; ?>
+<?php $logo = isset($group) ? GroupLogo::url($group) : null; ?>
 <?php if ($logo !== null): ?>
     <p class="hint">Immagine attuale:</p>
     <p><img src="<?= htmlspecialchars($logo) ?>" alt="" class="group-logo group-logo-lg"></p>

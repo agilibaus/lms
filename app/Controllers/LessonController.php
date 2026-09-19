@@ -763,24 +763,6 @@ class LessonController
         }
     }
 
-    /**
-     * Ripulisce le immagini inserite nel testo quando la lezione viene eliminata.
-     */
-    private function deleteImageDirectory(int $lessonId): void
-    {
-        $directory = Upload::absolutePath('lesson-images/' . $lessonId);
-
-        if (!is_dir($directory)) {
-            return;
-        }
-
-        foreach (glob($directory . '/*') ?: [] as $file) {
-            @unlink($file);
-        }
-
-        @rmdir($directory);
-    }
-
     private function streamFileWithRangeSupport(string $absolutePath): void
     {
         $size = filesize($absolutePath);

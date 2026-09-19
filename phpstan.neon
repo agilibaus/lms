@@ -1,0 +1,32 @@
+#
+# Analisi statica del codice.  Esecuzione:  phpstan analyse
+#
+# Cartelle analizzate: tutto il PHP scritto in casa. Restano fuori `vendor`
+# (non e' codice nostro), `database` (solo .sql) e `storage` (solo file
+# caricati). Le viste ci sono: i blocchi `@var` in cima a ciascuna dichiarano
+# le variabili che arrivano dal controller, quindi non producono rumore.
+#
+# Non serve `bootstrapFiles`: PHPStan legge composer.json e usa l'autoload
+# PSR-4 del progetto, cosi' trova sia App\ sia Dompdf.
+#
+# Livello 5. Il 6 pretende il tipo del contenuto di ogni array, e qui le righe
+# del database girano come array associativi: sarebbe un lavoro a se', da
+# decidere, non una spunta da mettere.
+#
+parameters:
+    level: 5
+
+    paths:
+        - app
+        - config
+        - public
+        - tests
+
+    ignoreErrors:
+        # I test contano gli errori in una variabile globale che check()
+        # modifica a ogni asserzione. PHPStan non segue quella scrittura e
+        # crede che $fail resti a zero, quindi legge l'ultima riga di ogni
+        # test — exit($fail === 0 ? 0 : 1) — come un confronto sempre vero.
+        -
+            identifier: identical.alwaysTrue
+            path: tests/*

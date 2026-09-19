@@ -470,7 +470,7 @@ class QuizController
         echo $message;
     }
 
-    private function redirect(string $location): void
+    private function redirect(string $location): never
     {
         header('Location: ' . $location);
         exit;

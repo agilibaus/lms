@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @var string $formId  prefisso per gli id, evita collisioni quando i form coesistono
  */
 $question = $question ?? null;
-$options = $options ?? [];
 $type = $question['question_type'] ?? 'single_choice';
 $isTrueFalse = $type === 'true_false';
 

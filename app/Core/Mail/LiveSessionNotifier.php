@@ -105,7 +105,7 @@ class LiveSessionNotifier
         $failed = 0;
 
         foreach ($recipients as $person) {
-            $email = trim((string) ($person['email'] ?? ''));
+            $email = trim($person['email']);
 
             // Un indirizzo malformato in tabella non deve interrompere il giro
             // degli altri: si conta come non partito e si tira avanti.

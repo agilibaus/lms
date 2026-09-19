@@ -29,9 +29,9 @@ class AvatarImage
      */
     public static function store(array $file, int $userId): string
     {
-        $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        $error = $file['error'];
 
-        if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'] ?? '')) {
+        if ($error !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
             throw new \RuntimeException('Caricamento dell\'immagine non riuscito.');
         }
 
