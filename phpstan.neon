@@ -9,12 +9,13 @@
 # Non serve `bootstrapFiles`: PHPStan legge composer.json e usa l'autoload
 # PSR-4 del progetto, cosi' trova sia App\ sia Dompdf.
 #
-# Livello 5. Il 6 pretende il tipo del contenuto di ogni array, e qui le righe
-# del database girano come array associativi: sarebbe un lavoro a se', da
-# decidere, non una spunta da mettere.
+# Livello 8 (dal 29/09, pistacchio-lms.md §8.1): e' il livello che segnala le
+# righe lette dal database senza controllare che esistano — `$module = find()`
+# seguito da `$module['course_id']`. Tre famiglie di rilievi restano escluse,
+# ciascuna per un motivo preciso, qui sotto.
 #
 parameters:
-    level: 5
+    level: 8
 
     paths:
         - app
@@ -23,6 +24,24 @@ parameters:
         - tests
 
     ignoreErrors:
+        # Il tipo del contenuto di ogni array: le righe del database girano
+        # come array associativi, e annotarle tutte sarebbe un lavoro a se',
+        # da decidere, non una spunta da mettere.
+        -
+            identifier: missingType.iterableValue
+
+        # Argomenti di tipo piu' largo di quanto la funzione dichiara (per
+        # esempio un int|string dove si aspetta un int). Non sono difetti: il
+        # codice li converte dove servono.
+        -
+            identifier: argument.type
+
+        # query() e prepare() "potrebbero" restituire false, ma la connessione
+        # e' aperta con PDO::ERRMODE_EXCEPTION (Core/Database.php): se una
+        # query fallisce PDO lancia un'eccezione, e false non arriva mai.
+        -
+            message: '#^Cannot call method \w+\(\) on PDOStatement\|false\.$#'
+
         # I test contano gli errori in una variabile globale che check()
         # modifica a ogni asserzione. PHPStan non segue quella scrittura e
         # crede che $fail resti a zero, quindi legge l'ultima riga di ogni

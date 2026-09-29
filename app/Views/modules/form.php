@@ -7,7 +7,10 @@ use App\Core\Csrf;
 /** @var array $course */
 /** @var array|null $module */
 $isEdit = $module !== null;
-$action = $isEdit ? '/modules/' . $module['id'] : '/courses/' . $course['id'] . '/modules';
+// L'id del modulo, 0 quando si sta creando: la vista serve a entrambe le cose,
+// e la riga esiste solo nel secondo caso.
+$moduleId = (int) ($module['id'] ?? 0);
+$action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/modules';
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $course['id'] ?>" class="back-link">&larr; <?= htmlspecialchars($course['title']) ?></a>

@@ -78,7 +78,8 @@ check('scope calendar', $claims['scope'] === MeetCalendar::SCOPE);
 check('exp = iat + 3600', $claims['exp'] - $claims['iat'] === 3600);
 
 // La firma deve verificare con la chiave pubblica corrispondente.
-$publicKey = openssl_pkey_get_details(openssl_pkey_get_private($credentials['private_key']))['key'];
+$details = openssl_pkey_get_details(openssl_pkey_get_private($credentials['private_key']));
+$publicKey = is_array($details) ? $details['key'] : '';
 $verified = openssl_verify(
     $h . '.' . $p,
     base64_decode(strtr($s, '-_', '+/') . str_repeat('=', (4 - strlen($s) % 4) % 4)),

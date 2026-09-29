@@ -126,7 +126,15 @@ class CertificateService
             CertificateModel::create($userId, $courseId, $code, $filePath, $issuedBy);
         }
 
-        return CertificateModel::findForUserAndCourse($userId, $courseId);
+        $certificate = CertificateModel::findForUserAndCourse($userId, $courseId);
+
+        // Appena scritto, non puo' mancare: se manca e' un guasto del database,
+        // e va detto come tale invece di restituire un "certificato" vuoto.
+        if ($certificate === null) {
+            throw new \RuntimeException('Certificato non salvato: la riga appena scritta non si rilegge.');
+        }
+
+        return $certificate;
     }
 
     /**

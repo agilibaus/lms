@@ -108,6 +108,17 @@ class LessonMaterialModel
             $neighbour = self::find((int) $neighbour['id']);
         }
 
+        // Le righe si rileggono dopo la rinumerazione: se nel frattempo una e'
+
+        // stata eliminata, non c'e' piu' niente da scambiare.
+
+        if ($material === null || $neighbour === null) {
+
+            return;
+
+        }
+
+
         $update = $db->prepare('UPDATE lesson_materials SET position = :position WHERE id = :id');
         $update->execute(['position' => (int) $neighbour['position'], 'id' => $id]);
         $update->execute(['position' => (int) $material['position'], 'id' => (int) $neighbour['id']]);

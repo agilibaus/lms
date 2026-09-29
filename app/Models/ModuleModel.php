@@ -118,6 +118,17 @@ class ModuleModel
             $neighbour = self::find((int) $neighbour['id']);
         }
 
+        // Le righe si rileggono dopo la rinumerazione: se nel frattempo una e'
+
+        // stata eliminata, non c'e' piu' niente da scambiare.
+
+        if ($row === null || $neighbour === null) {
+
+            return;
+
+        }
+
+
         $update = $db->prepare('UPDATE modules SET position = :position WHERE id = :id');
         $update->execute(['position' => (int) $neighbour['position'], 'id' => $id]);
         $update->execute(['position' => (int) $row['position'], 'id' => (int) $neighbour['id']]);

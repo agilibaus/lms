@@ -10,7 +10,10 @@ use App\Core\Csrf;
 /** @var bool $googleConfigured */
 
 $isEdit = $session !== null;
-$action = $isEdit ? '/live/' . (int) $session['id'] : '/live';
+// L'id dell'incontro, 0 quando si sta creando: la vista serve a entrambe le cose,
+// e la riga esiste solo nel secondo caso.
+$sessionId = (int) ($session['id'] ?? 0);
+$action = $isEdit ? '/live/' . $sessionId : '/live';
 
 $toInput = static function (?string $value): string {
     return $value === null || $value === ''

@@ -14,7 +14,10 @@ use App\Core\Csrf;
 /** @var bool $canManageGroups */
 
 $isEdit = $user !== null;
-$action = $isEdit ? '/admin/users/' . (int) $user['id'] : '/admin/users';
+// L'id dell'utente, 0 quando si sta creando: la vista serve a entrambe le cose,
+// e la riga esiste solo nel secondo caso.
+$userId = (int) ($user['id'] ?? 0);
+$action = $isEdit ? '/admin/users/' . $userId : '/admin/users';
 $currentRole = $user['role'] ?? 'studente';
 ?>
 <div class="page-header">
@@ -69,7 +72,7 @@ $currentRole = $user['role'] ?? 'studente';
     <?php endif; ?>
 
     <label class="checkbox-label">
-        <input type="checkbox" name="is_active" value="1" <?= !$isEdit || (int) $user['is_active'] === 1 ? 'checked' : '' ?>>
+        <input type="checkbox" name="is_active" value="1" <?= (int) ($user['is_active'] ?? 1) === 1 ? 'checked' : '' ?>>
         Account attivo (un account disattivato non può accedere)
     </label>
 
@@ -115,7 +118,7 @@ $currentRole = $user['role'] ?? 'studente';
                             </span>
                         </span>
                         <?php if ($canManageGroups): ?>
-                            <form action="/admin/users/<?= (int) $user['id'] ?>/groups/<?= (int) $group['id'] ?>/delete"
+                            <form action="/admin/users/<?= $userId ?>/groups/<?= (int) $group['id'] ?>/delete"
                                   method="post"
                                   onsubmit="return confirm('Togliere l’utente dal gruppo? Le iscrizioni ai corsi restano attive.');">
                                 <?= Csrf::field() ?>
@@ -128,7 +131,7 @@ $currentRole = $user['role'] ?? 'studente';
         <?php endif; ?>
 
         <?php if ($canManageGroups && $availableGroups !== []): ?>
-            <form action="/admin/users/<?= (int) $user['id'] ?>/groups" method="post" class="form form-inline">
+            <form action="/admin/users/<?= $userId ?>/groups" method="post" class="form form-inline">
                 <?= Csrf::field() ?>
                 <select name="group_id" aria-label="Gruppo a cui aggiungere l'utente">
                     <?php foreach ($availableGroups as $group): ?>
@@ -144,7 +147,7 @@ $currentRole = $user['role'] ?? 'studente';
 
     <section class="card">
         <h2>Reimposta password</h2>
-        <form action="/admin/users/<?= (int) $user['id'] ?>/password" method="post" class="form form-inline">
+        <form action="/admin/users/<?= $userId ?>/password" method="post" class="form form-inline">
             <?= Csrf::field() ?>
             <input type="password" name="password" required minlength="<?= (int) $minPasswordLength ?>"
                    placeholder="Nuova password" autocomplete="new-password" aria-label="Nuova password">

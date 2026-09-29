@@ -169,7 +169,17 @@ class Upload
 
         if (!is_array($filesField['name'])) {
             // Campo singolo (non multiplo): normalizziamo comunque in lista di 1.
-            return $filesField['error'] === UPLOAD_ERR_NO_FILE ? [] : [$filesField];
+            if ((int) $filesField['error'] === UPLOAD_ERR_NO_FILE) {
+                return [];
+            }
+
+            return [[
+                'name' => (string) $filesField['name'],
+                'type' => (string) ($filesField['type'] ?? ''),
+                'tmp_name' => (string) ($filesField['tmp_name'] ?? ''),
+                'error' => (int) $filesField['error'],
+                'size' => (int) ($filesField['size'] ?? 0),
+            ]];
         }
 
         $items = [];
@@ -180,11 +190,11 @@ class Upload
             }
 
             $items[] = [
-                'name' => $filesField['name'][$i],
-                'type' => $filesField['type'][$i],
-                'tmp_name' => $filesField['tmp_name'][$i],
-                'error' => $filesField['error'][$i],
-                'size' => $filesField['size'][$i],
+                'name' => (string) $filesField['name'][$i],
+                'type' => (string) $filesField['type'][$i],
+                'tmp_name' => (string) $filesField['tmp_name'][$i],
+                'error' => (int) $filesField['error'][$i],
+                'size' => (int) $filesField['size'][$i],
             ];
         }
 

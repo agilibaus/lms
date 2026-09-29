@@ -112,7 +112,19 @@ class LessonController
         }
 
         $module = ModuleModel::find((int) $lesson['module_id']);
+
+        if ($module === null) {
+            http_response_code(404);
+            echo 'Lezione non trovata.';
+            return;
+        }
         $course = CourseModel::find((int) $module['course_id']);
+
+        if ($course === null) {
+            http_response_code(404);
+            echo 'Lezione non trovata.';
+            return;
+        }
 
         if (!$this->canAccessCourse((int) $course['id'])) {
             http_response_code(403);
@@ -397,6 +409,12 @@ class LessonController
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
+        if ($module === null) {
+            http_response_code(404);
+            echo 'Lezione non trovata.';
+            return;
+        }
+
         if (!$this->canAccessCourse((int) $module['course_id'])) {
             http_response_code(403);
             echo 'Non sei iscritto a questo corso.';
@@ -466,7 +484,19 @@ class LessonController
         }
 
         $lesson = LessonModel::find((int) $material['lesson_id']);
+
+        if ($lesson === null) {
+            http_response_code(404);
+            echo 'Materiale non trovato.';
+            return;
+        }
         $module = ModuleModel::find((int) $lesson['module_id']);
+
+        if ($module === null) {
+            http_response_code(404);
+            echo 'Materiale non trovato.';
+            return;
+        }
 
         if (!$this->canAccessCourse((int) $module['course_id'])) {
             http_response_code(403);
@@ -505,6 +535,12 @@ class LessonController
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
+        if ($module === null) {
+            http_response_code(404);
+            echo 'Video non disponibile.';
+            return;
+        }
+
         if (!$this->canAccessCourse((int) $module['course_id'])) {
             http_response_code(403);
             echo 'Non sei iscritto a questo corso.';
@@ -535,6 +571,12 @@ class LessonController
         }
 
         $module = ModuleModel::find((int) $lesson['module_id']);
+
+        if ($module === null) {
+            http_response_code(404);
+            echo 'Lezione non trovata.';
+            return;
+        }
         $userId = (int) Auth::id();
         $courseId = (int) $module['course_id'];
 

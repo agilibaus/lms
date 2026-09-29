@@ -97,6 +97,11 @@ class QuizController
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
+
+        if ($module === null) {
+            $this->notFound('Quiz non trovato.');
+            return;
+        }
         $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
         $optionsByQuestion = [];
 
@@ -263,6 +268,11 @@ class QuizController
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
+
+        if ($module === null) {
+            $this->notFound('Quiz non trovato.');
+            return;
+        }
         $course = CourseModel::find((int) $module['course_id']);
 
         if (!$this->guardQuizAccess($module)) {
@@ -301,6 +311,11 @@ class QuizController
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
+
+        if ($module === null) {
+            $this->notFound('Quiz non trovato.');
+            return;
+        }
 
         if (!$this->guardQuizAccess($module)) {
             return;
@@ -371,7 +386,17 @@ class QuizController
         }
 
         $quiz = QuizModel::find((int) $attempt['quiz_id']);
+
+        if ($quiz === null) {
+            $this->notFound('Tentativo non trovato.');
+            return;
+        }
         $module = ModuleModel::find((int) $quiz['module_id']);
+
+        if ($module === null) {
+            $this->notFound('Tentativo non trovato.');
+            return;
+        }
 
         View::render('quizzes/result', [
             'pageTitle' => 'Esito quiz',

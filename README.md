@@ -440,6 +440,21 @@ più a nessuno, a differenza di un video di lezione.
 
 Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 
+## Righe collegate che mancano: 404, non una pagina rotta
+
+Quando una pagina si apre partendo da una riga — una lezione, un materiale, un quiz, un
+tentativo — e la riga a cui è collegata non esiste più, la risposta è un **404** con la stessa
+frase che il controller usa già per il proprio 404 ("Lezione non trovata.", "Quiz non
+trovato."...). Prima la pagina si apriva lo stesso, con gli avvisi di PHP stampati sopra e un 403
+fuorviante, o addirittura a 200 e sgangherata. Succede con dati importati male o cancellati a
+mano, perché le chiavi esterne del database lo impedirebbero.
+
+PHPStan è al **livello 8**, che è quello che segnala proprio le righe lette senza controllare
+che esistano. Tre famiglie di rilievi restano escluse in `phpstan.neon`, ciascuna con il motivo
+scritto accanto: i tipi del contenuto degli array, gli argomenti di tipo largo, e le chiamate a
+`query()` che "potrebbero" restituire `false` — non può succedere, perché la connessione è
+aperta con `PDO::ERRMODE_EXCEPTION`.
+
 ## Chi modifica cosa: tutor e assistenti
 
 Regola decisa il 28/09 (`pistacchio-lms.md` §8.0), tutta in `App\Auth\CourseRights`:

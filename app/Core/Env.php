@@ -26,6 +26,12 @@ class Env
 
         $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
+        // Esiste ma non si legge (permessi): come se non ci fosse, e valgono
+        // le variabili d'ambiente del server.
+        if ($lines === false) {
+            return;
+        }
+
         foreach ($lines as $line) {
             $line = trim($line);
 

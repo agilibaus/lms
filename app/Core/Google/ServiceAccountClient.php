@@ -29,13 +29,16 @@ class ServiceAccountClient
     private ?string $accessToken = null;
     private int $accessTokenExpiresAt = 0;
 
+    /** Sempre presente: se non viene passato, si usa quello vero (cURL). */
+    private HttpTransport $transport;
+
     public function __construct(
         private string $clientEmail,
         private string $privateKey,
         private ?string $impersonateEmail = null,
-        private ?HttpTransport $transport = null,
+        ?HttpTransport $transport = null,
     ) {
-        $this->transport ??= new CurlTransport();
+        $this->transport = $transport ?? new CurlTransport();
     }
 
     /**

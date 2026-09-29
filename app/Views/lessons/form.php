@@ -12,7 +12,10 @@ use App\Core\Upload;
 /** @var array|null $lesson */
 /** @var array $materials */
 $isEdit = $lesson !== null;
-$action = $isEdit ? '/lessons/' . $lesson['id'] : '/modules/' . $module['id'] . '/lessons';
+// L'id della lezione, 0 quando si sta creando: la vista serve a entrambe le cose,
+// e la riga esiste solo nel secondo caso.
+$lessonId = (int) ($lesson['id'] ?? 0);
+$action = $isEdit ? '/lessons/' . $lessonId : '/modules/' . $module['id'] . '/lessons';
 $provider = $lesson['video_provider'] ?? 'none';
 ?>
 <div class="page-header">
@@ -121,13 +124,13 @@ $provider = $lesson['video_provider'] ?? 'none';
     <section class="card video-actions">
         <h3>Video caricato sul server</h3>
 
-        <form action="/lessons/<?= (int) $lesson['id'] ?>/video/detach" method="post" class="inline-form">
+        <form action="/lessons/<?= $lessonId ?>/video/detach" method="post" class="inline-form">
             <?= Csrf::field() ?>
             <button type="submit" class="link-btn">Rimuovi dalla lezione</button>
             <span class="form-hint">Il file resta sul server e si può ricaricare in un'altra lezione.</span>
         </form>
 
-        <form action="/lessons/<?= (int) $lesson['id'] ?>/video/delete" method="post" class="inline-form"
+        <form action="/lessons/<?= $lessonId ?>/video/delete" method="post" class="inline-form"
               onsubmit="return confirm('Eliminare il file dal server? Questa operazione non si può annullare.');">
             <?= Csrf::field() ?>
             <button type="submit" class="link-btn link-btn-danger">Rimuovi dalla lezione e dal server</button>
@@ -160,19 +163,19 @@ $provider = $lesson['video_provider'] ?? 'none';
                             </span>
                         </span>
                         <span class="material-actions">
-                            <form action="/lessons/<?= (int) $lesson['id'] ?>/materials/<?= (int) $material['id'] ?>/move" method="post">
+                            <form action="/lessons/<?= $lessonId ?>/materials/<?= (int) $material['id'] ?>/move" method="post">
                                 <?= Csrf::field() ?>
                                 <input type="hidden" name="direction" value="up">
                                 <button type="submit" class="icon-btn" title="Sposta su"
                                         aria-label="Sposta su" <?= $index === 0 ? 'disabled' : '' ?>>&uarr;</button>
                             </form>
-                            <form action="/lessons/<?= (int) $lesson['id'] ?>/materials/<?= (int) $material['id'] ?>/move" method="post">
+                            <form action="/lessons/<?= $lessonId ?>/materials/<?= (int) $material['id'] ?>/move" method="post">
                                 <?= Csrf::field() ?>
                                 <input type="hidden" name="direction" value="down">
                                 <button type="submit" class="icon-btn" title="Sposta giù"
                                         aria-label="Sposta giù" <?= $index === count($materials) - 1 ? 'disabled' : '' ?>>&darr;</button>
                             </form>
-                            <form action="/lessons/<?= (int) $lesson['id'] ?>/materials/<?= (int) $material['id'] ?>/delete"
+                            <form action="/lessons/<?= $lessonId ?>/materials/<?= (int) $material['id'] ?>/delete"
                                   method="post" onsubmit="return confirm('Eliminare questo materiale?');">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="link-btn link-btn-danger">Elimina</button>
@@ -183,7 +186,7 @@ $provider = $lesson['video_provider'] ?? 'none';
             </ul>
         <?php endif; ?>
 
-        <form action="/lessons/<?= (int) $lesson['id'] ?>/materials" method="post" enctype="multipart/form-data" class="stacked-form">
+        <form action="/lessons/<?= $lessonId ?>/materials" method="post" enctype="multipart/form-data" class="stacked-form">
             <?= Csrf::field() ?>
             <label for="materials">Aggiungi materiali</label>
             <input type="file" id="materials" name="materials[]" multiple>
@@ -191,7 +194,7 @@ $provider = $lesson['video_provider'] ?? 'none';
         </form>
     </section>
 
-    <?php $scollegati = OrphanFiles::forLesson((int) $lesson['id'], $lesson); ?>
+    <?php $scollegati = OrphanFiles::forLesson($lessonId, $lesson); ?>
     <?php if ($scollegati['count'] > 0): ?>
         <p class="hint">
             In questa lezione ci sono <?= (int) $scollegati['count'] ?> file caricati che nessun
@@ -201,7 +204,7 @@ $provider = $lesson['video_provider'] ?? 'none';
         </p>
     <?php endif; ?>
 
-    <form action="/lessons/<?= (int) $lesson['id'] ?>/delete" method="post"
+    <form action="/lessons/<?= $lessonId ?>/delete" method="post"
           onsubmit="return confirm('Eliminare definitivamente questa lezione? I file caricati (video, materiali, immagini) restano sul server e non saranno più collegati a nessuna lezione.');">
         <?= Csrf::field() ?>
         <button type="submit" class="link-btn">Elimina lezione</button>
@@ -241,7 +244,7 @@ $provider = $lesson['video_provider'] ?? 'none';
                 data.append('file', blobInfo.blob(), blobInfo.filename());
                 data.append('<?= App\Core\Csrf::FIELD ?>', '<?= htmlspecialchars(App\Core\Csrf::token(), ENT_QUOTES) ?>');
 
-                fetch('/lessons/<?= (int) $lesson['id'] ?>/images', { method: 'POST', body: data, credentials: 'same-origin' })
+                fetch('/lessons/<?= $lessonId ?>/images', { method: 'POST', body: data, credentials: 'same-origin' })
                     .then(function (response) {
                         return response.json().then(function (body) {
                             if (!response.ok || !body.location) {
