@@ -14,6 +14,23 @@ use App\Core\Database;
 class RolePermissionModel
 {
     /**
+     * Combinazioni ruolo/permesso vietate per regola, non per scelta: la
+     * matrice non le mostra attivabili e il salvataggio le rifiuta anche se
+     * arrivano da una richiesta costruita a mano.
+     *
+     * Gli assistenti li assegna solo l'admin (deciso il 28/09): il tutor non
+     * deve poter gestire assistenti, nemmeno se qualcuno glielo ridesse.
+     */
+    public const FORBIDDEN = [
+        'tutor' => ['assistant.manage'],
+    ];
+
+    public static function isForbidden(string $role, string $key): bool
+    {
+        return in_array($key, self::FORBIDDEN[$role] ?? [], true);
+    }
+
+    /**
      * Catalogo delle chiavi riconosciute dall'applicazione, con descrizione,
      * raggruppate per area. Il pannello admin costruisce la matrice da qui:
      * cosi' l'elenco resta allineato a cio' che il codice controlla davvero.

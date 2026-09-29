@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\CourseRights;
 use App\Auth\Auth;
 use App\Core\CourseCover;
 use App\Core\Csrf;
@@ -16,7 +17,9 @@ use App\Core\Csrf;
 /** @var array|null $certificate */
 /** @var array|null $eligibility */
 
-$isStaff = Auth::hasRole('admin', 'tutor');
+// Chi puo' modificare questo corso: l'admin sempre, il tutor solo se il corso e'
+// assegnato a uno dei suoi gruppi. Gli altri tutor lo vedono in sola lettura.
+$isStaff = CourseRights::canEdit((int) $course['id']);
 ?>
 <div class="page-header">
     <a href="/" class="back-link">&larr; <?= Auth::hasRole('admin', 'tutor', 'assistente') ? 'Tutti i corsi' : 'I miei corsi' ?></a>

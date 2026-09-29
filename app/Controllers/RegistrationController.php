@@ -78,7 +78,7 @@ class RegistrationController
         $existing = UserModel::findByEmail($email);
 
         if ($existing === null) {
-            $userId = UserModel::create($email, $password, $fullName, 'studente', null, true, false);
+            $userId = UserModel::create($email, $password, $fullName, 'studente', true, false);
             $this->sendVerification($userId, $email, $fullName);
         } elseif (($existing['email_verified_at'] ?? null) === null) {
             // Registrazione ripetuta di un account mai confermato: nuovo link.

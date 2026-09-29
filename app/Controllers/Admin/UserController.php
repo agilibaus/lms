@@ -69,14 +69,14 @@ class UserController extends AdminController
             $this->fail('La password deve avere almeno ' . self::MIN_PASSWORD_LENGTH . ' caratteri.', '/admin/users/create');
         }
 
-        UserModel::create(
+        $newId = UserModel::create(
             $data['email'],
             $password,
             $data['full_name'],
             $data['role'],
-            $data['supervising_tutor_id'],
             $data['is_active']
         );
+        UserModel::setAssistantTutors($newId, $data['role'], $data['tutor_ids']);
 
         $this->success('Utente creato.', '/admin/users');
     }
@@ -98,6 +98,7 @@ class UserController extends AdminController
             'pageTitle' => 'Modifica utente',
             'user' => $user,
             'tutors' => UserModel::byRoles(['tutor']),
+            'assistantTutorIds' => UserModel::tutorIdsForAssistant((int) $user['id']),
             'roles' => $this->assignableRoles(),
             'minPasswordLength' => self::MIN_PASSWORD_LENGTH,
             'groups' => $groups,
@@ -156,9 +157,9 @@ class UserController extends AdminController
             $data['email'],
             $data['full_name'],
             $data['role'],
-            $data['supervising_tutor_id'],
             $data['is_active']
         );
+        UserModel::setAssistantTutors($id, $data['role'], $data['tutor_ids']);
 
         $this->success('Utente aggiornato.', '/admin/users');
     }
@@ -323,7 +324,7 @@ class UserController extends AdminController
 
         if (!Auth::can('user.manage')) {
             $isOwnAssistant = $user['role'] === 'assistente'
-                && (int) ($user['supervising_tutor_id'] ?? 0) === (int) Auth::id();
+                && in_array((int) Auth::id(), UserModel::tutorIdsForAssistant((int) $user['id']), true);
 
             if (!$isOwnAssistant) {
                 http_response_code(403);
@@ -377,7 +378,7 @@ class UserController extends AdminController
     }
 
     /**
-     * @return array{email: string, full_name: string, role: string, supervising_tutor_id: int|null, is_active: bool}
+     * @return array{email: string, full_name: string, role: string, tutor_ids: int[], is_active: bool}
      */
     private function dataFromPost(): array
     {
@@ -388,18 +389,23 @@ class UserController extends AdminController
             $role = $roles[0];
         }
 
-        $tutorId = (int) ($_POST['supervising_tutor_id'] ?? 0);
+        // Un assistente puo' affiancare piu' tutor: arrivano come elenco di caselle.
+        $tutorIds = array_values(array_filter(
+            array_map('intval', (array) ($_POST['tutor_ids'] ?? [])),
+            static fn (int $v): bool => $v > 0
+        ));
 
-        // Un tutor che gestisce i propri assistenti li tiene necessariamente sotto di se'.
+        // Chi non ha user.manage non sceglie i tutor: se mai qualcuno gestisse
+        // assistenti con il solo assistant.manage, li terrebbe sotto di se'.
         if (!Auth::can('user.manage')) {
-            $tutorId = (int) Auth::id();
+            $tutorIds = [(int) Auth::id()];
         }
 
         return [
             'email' => trim((string) ($_POST['email'] ?? '')),
             'full_name' => trim((string) ($_POST['full_name'] ?? '')),
             'role' => $role,
-            'supervising_tutor_id' => $tutorId > 0 ? $tutorId : null,
+            'tutor_ids' => $tutorIds,
             'is_active' => isset($_POST['is_active']),
         ];
     }

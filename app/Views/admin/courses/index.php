@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\CourseRights;
 use App\Core\Csrf;
 use App\Core\OrphanFiles;
 use App\Models\CourseModel;
@@ -38,7 +39,13 @@ use App\Models\CourseModel;
         <?php foreach ($courses as $course): ?>
             <tr>
                 <td>
-                    <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
+                    <?php if (CourseRights::canEdit((int) $course['id'])): ?>
+                        <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
+                    <?php else: ?>
+                        <?php /* Corso non assegnato ai gruppi del tutor: lo vede, non lo modifica. */ ?>
+                        <?= htmlspecialchars((string) $course['title']) ?>
+                        <span class="badge">sola lettura</span>
+                    <?php endif; ?>
                     <span class="cell-sub">/<?= htmlspecialchars((string) $course['slug']) ?></span>
                 </td>
                 <td>
@@ -59,7 +66,9 @@ use App\Models\CourseModel;
                 </td>
                 <td class="row-actions">
                     <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
-                    <a href="/reports/courses/<?= (int) $course['id'] ?>">Report</a>
+                    <?php if (CourseRights::canEdit((int) $course['id'])): ?>
+                        <a href="/reports/courses/<?= (int) $course['id'] ?>">Report</a>
+                    <?php endif; ?>
                     <?php if ($canDelete): ?>
                         <form action="/admin/courses/<?= (int) $course['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare il corso con moduli, lezioni, quiz, iscrizioni e certificati?');">

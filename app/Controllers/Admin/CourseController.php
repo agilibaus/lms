@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Auth\CourseRights;
 use App\Core\CourseCover;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
@@ -70,6 +71,7 @@ class CourseController extends AdminController
     public function editForm(array $params): void
     {
         Auth::requirePermission('course.edit');
+        CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -97,6 +99,7 @@ class CourseController extends AdminController
     public function update(array $params): void
     {
         Auth::requirePermission('course.edit');
+        CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -154,6 +157,10 @@ class CourseController extends AdminController
     public function move(array $params): void
     {
         Auth::requirePermission('course.edit');
+        // L'ordine dei corsi e' uno solo, per tutta la piattaforma e per il
+        // catalogo di ogni studente: lo decide l'admin, che e' anche chi crea i
+        // corsi. Un tutor con due corsi su sette non riordina gli altri cinque.
+        Auth::requireRole('admin');
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -177,6 +184,10 @@ class CourseController extends AdminController
     public function reorder(array $params = []): void
     {
         Auth::requirePermission('course.edit');
+        // L'ordine dei corsi e' uno solo, per tutta la piattaforma e per il
+        // catalogo di ogni studente: lo decide l'admin, che e' anche chi crea i
+        // corsi. Un tutor con due corsi su sette non riordina gli altri cinque.
+        Auth::requireRole('admin');
 
         $ids = $_POST['ids'] ?? '';
         $ids = is_string($ids) ? array_filter(explode(',', $ids), 'is_numeric') : [];
@@ -219,6 +230,7 @@ class CourseController extends AdminController
     public function updateCover(array $params): void
     {
         Auth::requirePermission('course.edit');
+        CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -260,6 +272,7 @@ class CourseController extends AdminController
     public function deleteCover(array $params): void
     {
         Auth::requirePermission('course.edit');
+        CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -284,6 +297,7 @@ class CourseController extends AdminController
     public function enroll(array $params): void
     {
         Auth::requirePermission('course.edit');
+        CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -307,6 +321,7 @@ class CourseController extends AdminController
     public function unenroll(array $params): void
     {
         Auth::requirePermission('course.edit');
+        CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -339,6 +354,7 @@ class CourseController extends AdminController
         }
 
         $courseId = (int) $request['course_id'];
+        CourseRights::requireEdit($courseId);
         $userId = (int) $request['user_id'];
         $redirect = '/admin/courses/' . $courseId . '/edit';
         $approve = ($_POST['decision'] ?? '') === 'approve';

@@ -48,16 +48,23 @@ $currentRole = $user['role'] ?? 'studente';
 
     <?php if (count($roles) > 1): ?>
         <div data-tutor-field <?= $currentRole === 'assistente' ? '' : 'hidden' ?>>
-            <label for="supervising_tutor_id">Tutor di riferimento (solo per gli assistenti)</label>
-            <select id="supervising_tutor_id" name="supervising_tutor_id">
-                <option value="0">— nessuno —</option>
+            <?php /* Caselle e non una tendina: un assistente puo' affiancare piu'
+                     tutor insieme, e una tendina a scelta multipla si usa male. */ ?>
+            <fieldset class="checkbox-group">
+                <legend>Tutor che affianca (solo per gli assistenti)</legend>
+                <?php $scelti = $assistantTutorIds ?? []; ?>
+                <?php if ($tutors === []): ?>
+                    <p class="form-hint">Non c'è ancora nessun tutor: crealo prima, poi collega l'assistente.</p>
+                <?php endif; ?>
                 <?php foreach ($tutors as $tutor): ?>
-                    <option value="<?= (int) $tutor['id'] ?>"
-                        <?= (int) ($user['supervising_tutor_id'] ?? 0) === (int) $tutor['id'] ? 'selected' : '' ?>>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="tutor_ids[]" value="<?= (int) $tutor['id'] ?>"
+                            <?= in_array((int) $tutor['id'], $scelti, true) ? 'checked' : '' ?>>
                         <?= htmlspecialchars((string) $tutor['full_name']) ?>
-                    </option>
+                    </label>
                 <?php endforeach; ?>
-            </select>
+                <p class="form-hint">Vede i report degli studenti dei gruppi di tutti i tutor selezionati.</p>
+            </fieldset>
         </div>
     <?php endif; ?>
 

@@ -46,6 +46,12 @@ class PermissionController extends AdminController
             $keys = array_values(array_intersect($keys, $catalogKeys));
             $extra = array_values(array_diff($stored[$role] ?? [], $catalogKeys));
 
+            // I permessi vietati per regola non passano, qualunque cosa arrivi.
+            $keys = array_values(array_filter(
+                $keys,
+                static fn (string $k): bool => !RolePermissionModel::isForbidden($role, $k)
+            ));
+
             RolePermissionModel::setForRole($role, array_merge($keys, $extra));
         }
 

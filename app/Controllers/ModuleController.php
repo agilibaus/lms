@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Auth\CourseRights;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\ModuleModel;
@@ -14,6 +15,7 @@ class ModuleController
     public function createForm(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEdit((int) $params['courseId']);
 
         $course = CourseModel::find((int) $params['courseId']);
 
@@ -33,6 +35,7 @@ class ModuleController
     public function store(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEdit((int) $params['courseId']);
 
         $courseId = (int) $params['courseId'];
         $course = CourseModel::find($courseId);
@@ -60,6 +63,7 @@ class ModuleController
     public function editForm(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);
 
@@ -81,6 +85,7 @@ class ModuleController
     public function update(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);
 
@@ -106,6 +111,7 @@ class ModuleController
     public function move(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);
 
@@ -127,6 +133,7 @@ class ModuleController
     public function destroy(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);
 

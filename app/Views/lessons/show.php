@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\CourseRights;
 use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\VideoPoster;
@@ -32,7 +33,7 @@ use App\Core\VideoEmbed;
     </h1>
 </div>
 
-<?php if (Auth::hasRole('admin', 'tutor')): ?>
+<?php if (CourseRights::canEdit((int) $course['id'])): ?>
     <p><a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="btn btn-primary">Modifica lezione</a></p>
 <?php endif; ?>
 

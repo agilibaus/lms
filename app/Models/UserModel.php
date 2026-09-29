@@ -33,7 +33,7 @@ class UserModel
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, full_name, role, supervising_tutor_id, is_active, email_verified_at,
+            'SELECT id, email, full_name, role, is_active, email_verified_at,
                     bio, phone, city, avatar_path, created_at
              FROM users WHERE id = :id LIMIT 1'
         );
@@ -76,10 +76,12 @@ class UserModel
     public static function all(): array
     {
         return Database::connection()->query(
-            'SELECT u.id, u.email, u.full_name, u.role, u.supervising_tutor_id, u.is_active, u.created_at,
-                    t.full_name AS supervising_tutor_name
+            'SELECT u.id, u.email, u.full_name, u.role, u.is_active, u.created_at,
+                    GROUP_CONCAT(t.full_name ORDER BY t.full_name SEPARATOR \', \') AS supervising_tutor_name
              FROM users u
-             LEFT JOIN users t ON t.id = u.supervising_tutor_id
+             LEFT JOIN assistant_tutors at ON at.assistant_id = u.id
+             LEFT JOIN users t ON t.id = at.tutor_id
+             GROUP BY u.id
              ORDER BY u.full_name'
         )->fetchAll();
     }
@@ -106,17 +108,65 @@ class UserModel
     }
 
     /**
-     * Assistenti assegnati a un tutor (supervising_tutor_id).
+     * Assistenti che affiancano un tutor.
      */
     public static function assistantsForTutor(int $tutorId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, full_name, is_active
-             FROM users WHERE role = \'assistente\' AND supervising_tutor_id = :tutor_id ORDER BY full_name'
+            'SELECT u.id, u.email, u.full_name, u.is_active
+             FROM assistant_tutors at
+             INNER JOIN users u ON u.id = at.assistant_id AND u.role = \'assistente\'
+             WHERE at.tutor_id = :tutor_id
+             ORDER BY u.full_name'
         );
         $stmt->execute(['tutor_id' => $tutorId]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Tutor che un assistente affianca: possono essere piu' d'uno.
+     *
+     * @return int[]
+     */
+    public static function tutorIdsForAssistant(int $assistantId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT at.tutor_id
+             FROM assistant_tutors at
+             INNER JOIN users t ON t.id = at.tutor_id AND t.role = \'tutor\'
+             WHERE at.assistant_id = :id
+             ORDER BY at.tutor_id'
+        );
+        $stmt->execute(['id' => $assistantId]);
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Riscrive i tutor di un assistente. Chi non e' assistente non ne ha: se
+     * l'utente cambia ruolo, i legami vecchi spariscono invece di restare
+     * appesi a un utente che non affianca piu' nessuno.
+     *
+     * @param int[] $tutorIds
+     */
+    public static function setAssistantTutors(int $userId, string $role, array $tutorIds): void
+    {
+        $db = Database::connection();
+        $db->prepare('DELETE FROM assistant_tutors WHERE assistant_id = :id')->execute(['id' => $userId]);
+
+        if ($role !== 'assistente') {
+            return;
+        }
+
+        $insert = $db->prepare(
+            'INSERT IGNORE INTO assistant_tutors (assistant_id, tutor_id)
+             SELECT :assistant, id FROM users WHERE id = :tutor AND role = \'tutor\''
+        );
+
+        foreach (array_unique(array_map('intval', $tutorIds)) as $tutorId) {
+            $insert->execute(['assistant' => $userId, 'tutor' => $tutorId]);
+        }
     }
 
     public static function emailExists(string $email, ?int $exceptId = null): bool
@@ -138,21 +188,18 @@ class UserModel
         string $email,
         string $fullName,
         string $role,
-        ?int $supervisingTutorId,
         bool $isActive
     ): void {
+        // I tutor di un assistente non stanno piu' qui: vedi setAssistantTutors().
         $stmt = Database::connection()->prepare(
             'UPDATE users
-             SET email = :email, full_name = :full_name, role = :role,
-                 supervising_tutor_id = :supervising_tutor_id, is_active = :is_active
+             SET email = :email, full_name = :full_name, role = :role, is_active = :is_active
              WHERE id = :id'
         );
         $stmt->execute([
             'email' => $email,
             'full_name' => $fullName,
             'role' => $role,
-            // Il tutor supervisore ha senso solo per gli assistenti.
-            'supervising_tutor_id' => $role === 'assistente' ? $supervisingTutorId : null,
             'is_active' => $isActive ? 1 : 0,
             'id' => $id,
         ]);
@@ -215,13 +262,12 @@ class UserModel
         string $password,
         string $fullName,
         string $role = 'studente',
-        ?int $supervisingTutorId = null,
         bool $isActive = true,
         bool $emailVerified = true
     ): int {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO users (email, password_hash, full_name, role, supervising_tutor_id, is_active, email_verified_at)
-             VALUES (:email, :password_hash, :full_name, :role, :supervising_tutor_id, :is_active,
+            'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at)
+             VALUES (:email, :password_hash, :full_name, :role, :is_active,
                      CASE WHEN :email_verified = 1 THEN NOW() ELSE NULL END)'
         );
         $stmt->execute([
@@ -229,7 +275,6 @@ class UserModel
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'full_name' => $fullName,
             'role' => $role,
-            'supervising_tutor_id' => $role === 'assistente' ? $supervisingTutorId : null,
             'is_active' => $isActive ? 1 : 0,
             // Un account creato dallo staff ha un indirizzo gia' noto: chiedere
             // una conferma avrebbe senso solo per chi si registra da solo.

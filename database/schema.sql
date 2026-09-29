@@ -16,7 +16,6 @@ CREATE TABLE users (
     full_name       VARCHAR(150) NOT NULL,
     role            ENUM('admin','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)
-    supervising_tutor_id INT UNSIGNED NULL,
     is_active       TINYINT(1) NOT NULL DEFAULT 1,
     -- NULL = indirizzo non ancora confermato: l'utente non puo' accedere
     -- (gli account creati da admin/tutor e dall'installer nascono gia' verificati)
@@ -28,8 +27,7 @@ CREATE TABLE users (
     -- Percorso relativo a /storage (mai un URL pubblico)
     avatar_path     VARCHAR(255) NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (supervising_tutor_id) REFERENCES users(id) ON DELETE SET NULL
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------
@@ -49,7 +47,7 @@ INSERT INTO role_permissions (role, permission_key) VALUES
     ('admin','report.view'), ('admin','certificate.issue'),
     ('admin','settings.manage'),
     ('tutor','course.edit'), ('tutor','quiz.grade'), ('tutor','report.view'),
-    ('tutor','group.manage_own'), ('tutor','assistant.manage'),
+    ('tutor','group.manage_own'),
     ('assistente','quiz.grade_assigned'), ('assistente','report.view_assigned'),
     ('studente','course.view'), ('studente','quiz.take'), ('studente','certificate.view_own');
 
@@ -67,6 +65,18 @@ CREATE TABLE settings (
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      INT UNSIGNED NULL,
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Assistenti e tutor che affiancano: un assistente puo' affiancare piu' tutor.
+-- Li assegna solo l'admin.
+CREATE TABLE assistant_tutors (
+    assistant_id    INT UNSIGNED NOT NULL,
+    tutor_id        INT UNSIGNED NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (assistant_id, tutor_id),
+    INDEX idx_assistant_tutors_tutor (tutor_id),
+    FOREIGN KEY (assistant_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (tutor_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `groups` (

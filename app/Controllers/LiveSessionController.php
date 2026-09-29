@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Auth\CourseRights;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Mail\LiveSessionNotifier;
@@ -34,7 +35,9 @@ class LiveSessionController
 
         View::render('live/index', [
             'pageTitle' => 'Sessioni live',
-            'sessions' => $isStaff ? LiveSessionModel::all() : LiveSessionModel::forUser((int) Auth::id()),
+            'sessions' => $isStaff
+                ? array_values(array_filter(LiveSessionModel::all(), fn (array $s): bool => $this->inScope($s)))
+                : LiveSessionModel::forUser((int) Auth::id()),
             'canManage' => $isStaff,
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
@@ -57,7 +60,8 @@ class LiveSessionController
             return;
         }
 
-        $canManage = $this->canManage();
+        // Presenze e partecipanti solo per le sessioni del proprio perimetro.
+        $canManage = $this->canManage() && $this->inScope($session);
 
         View::render('live/show', [
             'pageTitle' => $session['title'],
@@ -77,7 +81,7 @@ class LiveSessionController
             'pageTitle' => 'Nuova sessione live',
             'session' => null,
             'modules' => $this->moduleOptions(),
-            'groups' => GroupModel::all(),
+            'groups' => $this->groupOptions(),
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
     }
@@ -126,6 +130,7 @@ class LiveSessionController
         $this->requireManage();
 
         $session = LiveSessionModel::find((int) $params['id']);
+        $this->requireInScope($session);
 
         if ($session === null) {
             $this->notFound('Sessione non trovata.');
@@ -136,7 +141,7 @@ class LiveSessionController
             'pageTitle' => 'Modifica sessione',
             'session' => $session,
             'modules' => $this->moduleOptions(),
-            'groups' => GroupModel::all(),
+            'groups' => $this->groupOptions(),
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
     }
@@ -146,6 +151,7 @@ class LiveSessionController
         $this->requireManage();
 
         $session = LiveSessionModel::find((int) $params['id']);
+        $this->requireInScope($session);
 
         if ($session === null) {
             $this->notFound('Sessione non trovata.');
@@ -206,6 +212,7 @@ class LiveSessionController
         $this->requireManage();
 
         $session = LiveSessionModel::find((int) $params['id']);
+        $this->requireInScope($session);
 
         if ($session === null) {
             $this->notFound('Sessione non trovata.');
@@ -256,6 +263,7 @@ class LiveSessionController
         $this->requireManage();
 
         $session = LiveSessionModel::find((int) $params['id']);
+        $this->requireInScope($session);
 
         if ($session === null) {
             $this->notFound('Sessione non trovata.');
@@ -316,6 +324,7 @@ class LiveSessionController
         $this->requireManage();
 
         $session = LiveSessionModel::find((int) $params['id']);
+        $this->requireInScope($session);
 
         if ($session === null) {
             $this->notFound('Sessione non trovata.');
@@ -344,6 +353,7 @@ class LiveSessionController
         $this->requireManage();
 
         $session = LiveSessionModel::find((int) $params['id']);
+        $this->requireInScope($session);
 
         if ($session === null) {
             $this->notFound('Sessione non trovata.');
@@ -389,6 +399,50 @@ class LiveSessionController
     /**
      * La gestione delle sessioni segue `course.edit` (admin e tutor).
      */
+    /**
+     * La sessione rientra nel perimetro dell'utente? L'admin le vede tutte; il
+     * tutor quelle dei moduli dei corsi assegnati ai suoi gruppi, e quelle
+     * rivolte direttamente a un suo gruppo.
+     */
+    private function inScope(array $session): bool
+    {
+        if (Auth::hasRole('admin')) {
+            return true;
+        }
+
+        if (!empty($session['module_id']) && isset($session['course_id'])
+            && CourseRights::canEdit((int) $session['course_id'])) {
+            return true;
+        }
+
+        return !empty($session['group_id']) && $this->isMyGroup((int) $session['group_id']);
+    }
+
+    private function requireInScope(?array $session): void
+    {
+        // Una sessione che non esiste la lascia al 404 del chiamante.
+        if ($session !== null && !$this->inScope($session)) {
+            http_response_code(403);
+            exit('Accesso negato: questo incontro non riguarda i tuoi corsi o i tuoi gruppi.');
+        }
+    }
+
+    private function isMyGroup(int $groupId): bool
+    {
+        if (Auth::hasRole('admin')) {
+            return true;
+        }
+
+        $group = GroupModel::find($groupId);
+
+        return $group !== null && (int) ($group['tutor_id'] ?? 0) === (int) Auth::id();
+    }
+
+    private function groupOptions(): array
+    {
+        return Auth::hasRole('admin') ? GroupModel::all() : GroupModel::forTutor((int) Auth::id());
+    }
+
     private function canManage(): bool
     {
         return Auth::can('course.edit');
@@ -457,6 +511,23 @@ class LiveSessionController
 
         if ($data['group_id'] !== null && GroupModel::find($data['group_id']) === null) {
             return 'Gruppo non trovato.';
+        }
+
+        // Un tutor programma incontri solo per i moduli dei suoi corsi o per i
+        // suoi gruppi: la tendina mostra gia' solo quelli, ma una richiesta
+        // costruita a mano non passa dalla tendina.
+        if (!Auth::hasRole('admin')) {
+            if ($data['module_id'] !== null) {
+                $module = ModuleModel::find($data['module_id']);
+
+                if ($module !== null && !CourseRights::canEdit((int) $module['course_id'])) {
+                    return 'Il modulo scelto appartiene a un corso non assegnato ai tuoi gruppi.';
+                }
+            }
+
+            if ($data['group_id'] !== null && !$this->isMyGroup($data['group_id'])) {
+                return 'Il gruppo scelto non è uno dei tuoi.';
+            }
         }
 
         if ($data['meet_link'] !== null && !filter_var($data['meet_link'], FILTER_VALIDATE_URL)) {
@@ -629,6 +700,11 @@ class LiveSessionController
         $options = [];
 
         foreach (CourseModel::allForStaff() as $course) {
+            // Il tutor programma incontri solo nei corsi dei suoi gruppi.
+            if (!CourseRights::canEdit((int) $course['id'])) {
+                continue;
+            }
+
             foreach (ModuleModel::forCourse((int) $course['id']) as $module) {
                 $options[] = [
                     'id' => (int) $module['id'],

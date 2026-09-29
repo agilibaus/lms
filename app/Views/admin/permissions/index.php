@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\RolePermissionModel;
 use App\Auth\Auth;
 use App\Core\Csrf;
 
@@ -45,11 +46,18 @@ use App\Core\Csrf;
                             </td>
                             <?php foreach ($roles as $role): ?>
                                 <td class="permission-cell">
+                                    <?php if (RolePermissionModel::isForbidden($role, $key)): ?>
+                                        <?php /* Vietato per regola: non e' una scelta della matrice. */ ?>
+                                        <input type="checkbox" disabled
+                                               aria-label="<?= htmlspecialchars($key . ' per ' . Auth::roleLabel($role) . ': non assegnabile') ?>"
+                                               title="Non assegnabile: gli assistenti li gestisce solo l'admin">
+                                    <?php else: ?>
                                     <input type="checkbox"
                                            name="permissions[<?= htmlspecialchars($role) ?>][]"
                                            value="<?= htmlspecialchars($key) ?>"
                                            aria-label="<?= htmlspecialchars($key . ' per ' . Auth::roleLabel($role)) ?>"
                                         <?= in_array($key, $matrix[$role] ?? [], true) ? 'checked' : '' ?>>
+                                    <?php endif; ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>

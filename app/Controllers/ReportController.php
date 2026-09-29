@@ -40,10 +40,10 @@ class ReportController
 
         View::render('reports/index', [
             'pageTitle' => 'Report',
-            'courses' => ReportModel::coursesOverview(),
+            'courses' => $this->filterCourses(ReportModel::coursesOverview()),
             'students' => $students,
             'groups' => $this->visibleGroups(),
-            'liveSessions' => LiveSessionModel::overview(),
+            'liveSessions' => $this->filterSessions(LiveSessionModel::overview()),
             'restricted' => $allowed !== null,
         ]);
     }
@@ -57,6 +57,11 @@ class ReportController
         $this->requireReportAccess();
 
         $session = LiveSessionModel::find((int) $params['id']);
+
+        if ($session !== null && !$this->sessionVisible($session)) {
+            http_response_code(403);
+            exit('Accesso negato: questo incontro non riguarda i corsi o i gruppi che segui.');
+        }
 
         if ($session === null) {
             http_response_code(404);
@@ -77,6 +82,11 @@ class ReportController
         $this->requireReportAccess();
 
         $session = LiveSessionModel::find((int) $params['id']);
+
+        if ($session !== null && !$this->sessionVisible($session)) {
+            http_response_code(403);
+            exit('Accesso negato: questo incontro non riguarda i corsi o i gruppi che segui.');
+        }
 
         if ($session === null) {
             http_response_code(404);
@@ -114,6 +124,10 @@ class ReportController
 
         $course = CourseModel::find((int) $params['id']);
 
+        if ($course) {
+            $this->requireVisibleCourse((int) $course['id']);
+        }
+
         if (!$course) {
             http_response_code(404);
             echo 'Corso non trovato.';
@@ -133,6 +147,10 @@ class ReportController
         $this->requireReportAccess();
 
         $course = CourseModel::find((int) $params['id']);
+
+        if ($course) {
+            $this->requireVisibleCourse((int) $course['id']);
+        }
 
         if (!$course) {
             http_response_code(404);
@@ -319,33 +337,160 @@ class ReportController
     }
 
     /**
-     * Perimetro visibile: null = nessuna restrizione (admin/tutor),
-     * altrimenti gli id degli studenti dei gruppi del tutor supervisore.
+     * I tutor di cui l'utente vede il lavoro: null per l'admin (tutto), il
+     * tutor stesso per un tutor, i suoi tutor — anche piu' d'uno — per un
+     * assistente. E' da qui che derivano studenti, gruppi e corsi visibili.
+     *
+     * @return int[]|null
+     */
+    private function scopeTutorIds(): ?array
+    {
+        if (Auth::hasRole('admin')) {
+            return null;
+        }
+
+        if (Auth::hasRole('tutor')) {
+            return [(int) Auth::id()];
+        }
+
+        return UserModel::tutorIdsForAssistant((int) Auth::id());
+    }
+
+    /**
+     * Perimetro visibile: null = nessuna restrizione (admin), altrimenti gli
+     * id degli studenti dei gruppi dei tutor del perimetro.
      *
      * @return int[]|null
      */
     private function allowedStudentIds(): ?array
     {
-        if (Auth::can('report.view')) {
+        $tutors = $this->scopeTutorIds();
+
+        if ($tutors === null) {
             return null;
         }
 
-        $me = UserModel::find((int) Auth::id());
-        $tutorId = (int) ($me['supervising_tutor_id'] ?? 0);
+        $ids = [];
 
-        return $tutorId > 0 ? GroupModel::memberIdsForTutor($tutorId) : [];
+        foreach ($tutors as $tutorId) {
+            $ids = array_merge($ids, GroupModel::memberIdsForTutor($tutorId));
+        }
+
+        return array_values(array_unique($ids));
     }
 
     private function visibleGroups(): array
     {
-        if (Auth::can('report.view')) {
+        $tutors = $this->scopeTutorIds();
+
+        if ($tutors === null) {
             return GroupModel::all();
         }
 
-        $me = UserModel::find((int) Auth::id());
-        $tutorId = (int) ($me['supervising_tutor_id'] ?? 0);
+        $groups = [];
 
-        return $tutorId > 0 ? GroupModel::forTutor($tutorId) : [];
+        foreach ($tutors as $tutorId) {
+            foreach (GroupModel::forTutor($tutorId) as $group) {
+                $groups[(int) $group['id']] = $group;
+            }
+        }
+
+        return array_values($groups);
+    }
+
+    /**
+     * Corsi del perimetro: quelli assegnati ai gruppi dei tutor del perimetro.
+     * null = tutti.
+     *
+     * @return int[]|null
+     */
+    private function visibleCourseIds(): ?array
+    {
+        if ($this->scopeTutorIds() === null) {
+            return null;
+        }
+
+        $ids = [];
+
+        foreach ($this->visibleGroups() as $group) {
+            foreach (GroupModel::courses((int) $group['id']) as $course) {
+                $ids[] = (int) $course['id'];
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Ferma chi apre a mano il report di un corso fuori dal suo perimetro.
+     */
+    private function requireVisibleCourse(int $courseId): void
+    {
+        $visible = $this->visibleCourseIds();
+
+        if ($visible !== null && !in_array($courseId, $visible, true)) {
+            http_response_code(403);
+            exit('Accesso negato: questo corso non è assegnato ai gruppi che segui.');
+        }
+    }
+
+    /**
+     * Una sessione e' visibile se riguarda un corso del perimetro, attraverso
+     * il suo modulo, oppure uno dei gruppi del perimetro.
+     */
+    private function sessionVisible(array $session): bool
+    {
+        $courses = $this->visibleCourseIds();
+
+        if ($courses === null) {
+            return true;
+        }
+
+        if (!empty($session['course_id']) && in_array((int) $session['course_id'], $courses, true)) {
+            return true;
+        }
+
+        $groups = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
+
+        return !empty($session['group_id']) && in_array((int) $session['group_id'], $groups, true);
+    }
+
+    /**
+     * La panoramica non porta modulo e gruppo: gli id visibili si ricavano
+     * dall'elenco completo, che li ha.
+     */
+    private function filterSessions(array $overview): array
+    {
+        if ($this->visibleCourseIds() === null) {
+            return $overview;
+        }
+
+        $visibili = [];
+
+        foreach (LiveSessionModel::all() as $session) {
+            if ($this->sessionVisible($session)) {
+                $visibili[(int) $session['id']] = true;
+            }
+        }
+
+        return array_values(array_filter(
+            $overview,
+            static fn (array $row): bool => isset($visibili[(int) $row['id']])
+        ));
+    }
+
+    private function filterCourses(array $courses): array
+    {
+        $visible = $this->visibleCourseIds();
+
+        if ($visible === null) {
+            return $courses;
+        }
+
+        return array_values(array_filter(
+            $courses,
+            static fn (array $c): bool => in_array((int) $c['id'], $visible, true)
+        ));
     }
 
     private function courseRows(int $courseId): array

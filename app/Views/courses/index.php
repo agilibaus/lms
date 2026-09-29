@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
 use App\Core\CourseCover;
 use App\Core\Csrf;
 
@@ -22,7 +23,9 @@ use App\Core\Csrf;
         </p>
     <?php endif; ?>
 <?php else: ?>
-    <div class="course-grid"<?= $isStaff ? ' data-riordinabile data-csrf="' . htmlspecialchars(Csrf::token()) . '"' : '' ?>>
+    <?php /* L'ordine dei corsi vale per tutta la piattaforma: lo decide l'admin. */ ?>
+    <?php $riordinabile = Auth::hasRole('admin'); ?>
+    <div class="course-grid"<?= $riordinabile ? ' data-riordinabile data-csrf="' . htmlspecialchars(Csrf::token()) . '"' : '' ?>>
         <?php foreach ($courses as $courseIndex => $course): ?>
             <a href="/courses/<?= (int) $course['id'] ?>" class="course-card" data-corso="<?= (int) $course['id'] ?>">
                 <div class="course-card-cover">
@@ -55,6 +58,6 @@ use App\Core\Csrf;
     </div>
 <?php endif; ?>
 
-<?php if ($isStaff): ?>
+<?php if ($riordinabile ?? false): ?>
     <script src="/assets/js/course-order.js"></script>
 <?php endif; ?>

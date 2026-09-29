@@ -440,6 +440,31 @@ più a nessuno, a differenza di un video di lezione.
 
 Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 
+## Chi modifica cosa: tutor e assistenti
+
+Regola decisa il 28/09 (`pistacchio-lms.md` §8.0), tutta in `App\Auth\CourseRights`:
+
+- l'**admin** modifica tutti i corsi, ed è il solo a crearli, a riordinarli e ad assegnare
+  tutor e assistenti;
+- il **tutor** modifica solo i corsi assegnati ai **suoi** gruppi. Gli altri li vede in sola
+  lettura: nessun comando di modifica, e in Gestione corsi l'etichetta "sola lettura";
+- la stessa regola vale per **report** e **sessioni live**: il tutor vede i suoi corsi, i suoi
+  gruppi e i loro studenti;
+- l'**assistente** può affiancare **più tutor** (tabella `assistant_tutors`) e vede i report
+  degli studenti dei gruppi di tutti.
+
+Prima ogni azione su moduli, lezioni e quiz controllava solo il ruolo, in una quarantina di
+punti: ora passano tutti da `CourseRights::requireEdit*()`, che ferma con un 403 anche chi
+scrive a mano l'indirizzo di un corso altrui.
+
+Il permesso `assistant.manage` al tutor è **vietato per regola**, non per scelta: la matrice dei
+permessi lo mostra bloccato, e il salvataggio lo rifiuta anche se arriva da una richiesta
+costruita a mano (`RolePermissionModel::FORBIDDEN`).
+
+Migrazione `2026_09_29_tutor_assistenti.sql`: crea `assistant_tutors`, vi trasferisce i legami
+esistenti di `users.supervising_tutor_id` — che nelle installazioni esistenti resta ma non viene
+più letta — e toglie il permesso al tutor. Si può rieseguire senza danni.
+
 ## Ordine dei corsi
 
 Nella pagina **Corsi**, chi può modificarli riordina le schede **trascinandole**, e l'ordine si
