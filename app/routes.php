@@ -121,6 +121,11 @@ $router->get('/reports/students/{id}', [ReportController::class, 'student']);
 $router->get('/reports/students/{id}/csv', [ReportController::class, 'studentCsv']);
 $router->get('/reports/live/{id}', [ReportController::class, 'liveSession']);
 $router->get('/reports/live/{id}/csv', [ReportController::class, 'liveSessionCsv']);
+// Fruizione dei video, per corso. Le rotte specifiche prima di quelle con
+// {id} non serve qui perche' il segmento fisso e' il primo, ma la coppia
+// pagina/scarico segue lo stesso ordine delle altre.
+$router->get('/reports/fruizione/{id}', [ReportController::class, 'videoCourse']);
+$router->get('/reports/fruizione/{id}/{formato}', [ReportController::class, 'videoCourseDownload']);
 $router->get('/reports/groups/{id}', [ReportController::class, 'group']);
 $router->get('/reports/groups/{id}/csv', [ReportController::class, 'groupCsv']);
 

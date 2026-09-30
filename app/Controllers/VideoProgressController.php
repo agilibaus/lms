@@ -270,7 +270,6 @@ class VideoProgressController
     private function reportData(int $lessonId): array
     {
         Auth::requireRole('admin', 'tutor', 'assistente');
-        CourseRights::requireEditLesson($lessonId);
 
         $lesson = LessonModel::find($lessonId);
 
@@ -291,6 +290,25 @@ class VideoProgressController
         if ($course === null) {
             http_response_code(404);
             exit('Corso non trovato.');
+        }
+
+        /*
+         * Due strade per arrivare qui, e vanno bene tutte e due: chi puo'
+         * modificare il corso (ci si arriva da Modifica lezione) e chi puo'
+         * consultare i report di tutti (ci si arriva da Report → Fruizione
+         * dei video).
+         *
+         * `report.view_assigned` **non** basta: questa pagina mostra tutti
+         * gli iscritti al corso, mentre chi ha quel permesso puo' vedere
+         * solo gli studenti dei gruppi del proprio tutor. La matrice per
+         * corso dentro Report e' gia' ristretta a quel perimetro, e da li'
+         * il titolo della lezione non porta un collegamento a chi non puo'
+         * aprirlo.
+         */
+        if (!CourseRights::canEdit((int) $course['id']) && !Auth::can('report.view')) {
+            http_response_code(403);
+            exit('Accesso negato: questa lezione non è fra quelle che puoi gestire, '
+                . 'e non hai i permessi per consultare i report di tutti gli studenti.');
         }
 
         $durata = (int) ($lesson['duration_seconds'] ?? 0);

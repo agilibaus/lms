@@ -298,6 +298,194 @@ class VideoProgressModel
     }
 
     /**
+     * I corsi che hanno almeno una lezione con video, con quanti sono i
+     * video e quanti studenti ne hanno aperto almeno uno. Serve all'elenco
+     * dentro Report: un corso senza video non ha niente da mostrare li'.
+     *
+     * @return list<array{id: int, title: string, is_published: int, lezioni_video: int, iscritti: int, avviati: int}>
+     */
+    public static function coursesWithVideo(): array
+    {
+        $righe = Database::connection()->query(
+            "SELECT c.id, c.title, c.is_published,
+                    COUNT(DISTINCT l.id) AS lezioni_video,
+                    (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS iscritti,
+                    COUNT(DISTINCT p.user_id) AS avviati
+             FROM courses c
+             INNER JOIN modules m ON m.course_id = c.id
+             INNER JOIN lessons l ON l.module_id = m.id AND l.video_provider <> 'none'
+             LEFT JOIN lesson_video_progress p ON p.lesson_id = l.id
+             GROUP BY c.id, c.title, c.is_published
+             ORDER BY c.title"
+        )->fetchAll();
+
+        $elenco = [];
+
+        foreach ($righe as $riga) {
+            $elenco[] = [
+                'id' => (int) $riga['id'],
+                'title' => (string) $riga['title'],
+                'is_published' => (int) $riga['is_published'],
+                'lezioni_video' => (int) $riga['lezioni_video'],
+                'iscritti' => (int) $riga['iscritti'],
+                'avviati' => (int) $riga['avviati'],
+            ];
+        }
+
+        return $elenco;
+    }
+
+    /**
+     * Le lezioni con video di un corso, in ordine di modulo e posizione.
+     *
+     * @return list<array{id: int, title: string, module_title: string, duration_seconds: int|null}>
+     */
+    public static function videoLessonsForCourse(int $courseId): array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT l.id, l.title, l.duration_seconds, m.title AS module_title
+             FROM lessons l
+             INNER JOIN modules m ON m.id = l.module_id
+             WHERE m.course_id = :course_id AND l.video_provider <> 'none'
+             ORDER BY m.position, l.position, l.id"
+        );
+        $stmt->execute(['course_id' => $courseId]);
+
+        $lezioni = [];
+
+        foreach ($stmt->fetchAll() as $riga) {
+            $durata = (int) ($riga['duration_seconds'] ?? 0);
+
+            $lezioni[] = [
+                'id' => (int) $riga['id'],
+                'title' => (string) $riga['title'],
+                'module_title' => (string) $riga['module_title'],
+                'duration_seconds' => $durata > 0 ? $durata : null,
+            ];
+        }
+
+        return $lezioni;
+    }
+
+    /**
+     * Il rendiconto di un corso intero: una riga per studente iscritto, e
+     * per ciascuno la percentuale vista di ogni lezione con video.
+     *
+     * E' la forma che serve a rendicontare — quanto ha seguito una persona,
+     * lezione per lezione — mentre la pagina della singola lezione serve a
+     * guardare una lezione alla volta. Stessi dati, due tagli.
+     *
+     * @param  list<array{id: int, title: string, module_title: string, duration_seconds: int|null}> $lezioni
+     * @return list<array{
+     *     user_id: int, full_name: string, email: string,
+     *     per_lezione: array<int, array{percentuale: int|null, secondi: int}>,
+     *     secondi_totali: int, percentuale_media: int|null, lezioni_avviate: int
+     * }>
+     */
+    public static function courseMatrix(int $courseId, array $lezioni): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.id AS user_id, u.full_name, u.email
+             FROM enrollments e
+             INNER JOIN users u ON u.id = e.user_id
+             WHERE e.course_id = :course_id
+             ORDER BY u.full_name'
+        );
+        $stmt->execute(['course_id' => $courseId]);
+
+        $studenti = $stmt->fetchAll();
+
+        if ($studenti === [] || $lezioni === []) {
+            return [];
+        }
+
+        // Intervalli e durate dichiarate di tutte le lezioni del corso in due
+        // query, non due per studente: con cinquecento iscritti e venti
+        // lezioni sarebbero ventimila query per aprire una pagina.
+        $perLezione = [];
+        $durateDichiarate = [];
+
+        foreach ($lezioni as $lezione) {
+            $perLezione[$lezione['id']] = self::intervalsForLesson($lezione['id']);
+            $durateDichiarate[$lezione['id']] = self::declaredDurations($lezione['id']);
+        }
+
+        $righe = [];
+
+        foreach ($studenti as $studente) {
+            $userId = (int) $studente['user_id'];
+            $celle = [];
+            $totale = 0;
+            $somma = 0;
+            $conteggio = 0;
+            $avviate = 0;
+
+            foreach ($lezioni as $lezione) {
+                $suoi = $perLezione[$lezione['id']][$userId] ?? [];
+                $secondi = WatchIntervals::total($suoi);
+
+                // La durata che il player ha dichiarato per quello studente
+                // se c'e', altrimenti quella scritta sulla lezione.
+                $durata = $durateDichiarate[$lezione['id']][$userId] ?? $lezione['duration_seconds'];
+                $percentuale = WatchIntervals::percentage($suoi, $durata);
+
+                $celle[$lezione['id']] = ['percentuale' => $percentuale, 'secondi' => $secondi];
+
+                $totale += $secondi;
+
+                if ($secondi > 0) {
+                    $avviate++;
+                }
+
+                // La media e' su tutte le lezioni con video del corso, non
+                // solo su quelle aperte: chi non ha mai aperto una lezione
+                // ha guardato zero di quella lezione, non "niente da dire".
+                if ($percentuale !== null) {
+                    $somma += $percentuale;
+                    $conteggio++;
+                } elseif ($lezione['duration_seconds'] !== null) {
+                    $conteggio++;
+                }
+            }
+
+            $righe[] = [
+                'user_id' => $userId,
+                'full_name' => (string) $studente['full_name'],
+                'email' => (string) $studente['email'],
+                'per_lezione' => $celle,
+                'secondi_totali' => $totale,
+                'percentuale_media' => $conteggio > 0 ? (int) round($somma / $conteggio) : null,
+                'lezioni_avviate' => $avviate,
+            ];
+        }
+
+        return $righe;
+    }
+
+    /**
+     * Le durate che il player ha dichiarato per una lezione, per studente.
+     *
+     * @return array<int, int>
+     */
+    public static function declaredDurations(int $lessonId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT user_id, duration_seconds
+             FROM lesson_video_progress
+             WHERE lesson_id = :lesson_id AND duration_seconds IS NOT NULL'
+        );
+        $stmt->execute(['lesson_id' => $lessonId]);
+
+        $durate = [];
+
+        foreach ($stmt->fetchAll() as $riga) {
+            $durate[(int) $riga['user_id']] = (int) $riga['duration_seconds'];
+        }
+
+        return $durate;
+    }
+
+    /**
      * Tutti gli intervalli di una lezione, raccolti per studente.
      *
      * @return array<int, list<array{0: int, 1: int}>>

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Auth\CourseRights;
 use App\Core\Csv;
 use App\Core\View;
+use App\Core\Xlsx;
 use App\Models\CourseModel;
 use App\Models\GroupModel;
 use App\Models\LiveSessionAttendanceModel;
@@ -14,6 +16,7 @@ use App\Models\LiveSessionModel;
 use App\Models\QuizAttemptModel;
 use App\Models\ReportModel;
 use App\Models\UserModel;
+use App\Models\VideoProgressModel;
 
 /**
  * Report di avanzamento: per corso, per studente, per gruppo — con export CSV.
@@ -44,6 +47,7 @@ class ReportController
             'students' => $students,
             'groups' => $this->visibleGroups(),
             'liveSessions' => $this->filterSessions(LiveSessionModel::overview()),
+            'corsiConVideo' => $this->filterCourses(VideoProgressModel::coursesWithVideo()),
             'restricted' => $allowed !== null,
         ]);
     }
@@ -179,6 +183,129 @@ class ReportController
             ['Studente', 'Email', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Quiz superati', 'Completato il', 'Certificato'],
             $rows
         );
+    }
+
+    // ---------------------------------------------------------------
+    // Fruizione dei video
+    // ---------------------------------------------------------------
+
+    /**
+     * GET /reports/fruizione/{id} — quanto ha guardato ciascuno studente di
+     * ogni lezione con video del corso.
+     *
+     * E' il taglio che serve a rendicontare: una persona per riga, tutte le
+     * lezioni in fila. La pagina della singola lezione
+     * (`/lessons/{id}/fruizione`) guarda invece una lezione alla volta —
+     * stessi dati, due letture.
+     */
+    public function videoCourse(array $params): void
+    {
+        [$course, $lezioni, $righe] = $this->videoCourseData((int) $params['id']);
+
+        View::render('reports/fruizione', [
+            'pageTitle' => 'Fruizione video · ' . $course['title'],
+            'course' => $course,
+            'lezioni' => $lezioni,
+            'righe' => $righe,
+            // Il dettaglio di una lezione mostra *tutti* gli iscritti al
+            // corso: chi vede solo gli studenti del proprio tutor non ci
+            // puo' entrare, e il titolo resta senza collegamento invece di
+            // portare a un 403.
+            'dettaglioApribile' => CourseRights::canEdit((int) $course['id']) || Auth::can('report.view'),
+        ]);
+    }
+
+    /**
+     * GET /reports/fruizione/{id}/csv e .../xlsx.
+     */
+    public function videoCourseDownload(array $params): void
+    {
+        [$course, $lezioni, $righe] = $this->videoCourseData((int) $params['id']);
+
+        $xlsx = (string) ($params['formato'] ?? 'csv') === 'xlsx';
+
+        if ($xlsx && !Xlsx::disponibile()) {
+            http_response_code(500);
+            exit('Il formato XLSX richiede l\'estensione zip di PHP, che qui non c\'è. Scarica il CSV.');
+        }
+
+        $intestazioni = ['Studente', 'Email', 'Corso'];
+        $tipi = [];
+
+        foreach ($lezioni as $lezione) {
+            $intestazioni[] = $lezione['title'] . ' (%)';
+            $tipi[count($intestazioni) - 1] = 'numero';
+        }
+
+        $intestazioni[] = 'Media sulle lezioni con video (%)';
+        $tipi[count($intestazioni) - 1] = 'numero';
+        $intestazioni[] = 'Tempo guardato in totale (minuti)';
+        $tipi[count($intestazioni) - 1] = 'numero';
+        $intestazioni[] = 'Lezioni avviate';
+        $tipi[count($intestazioni) - 1] = 'numero';
+
+        $dati = [];
+
+        foreach ($righe as $riga) {
+            $cella = [$riga['full_name'], $riga['email'], $course['title']];
+
+            foreach ($lezioni as $lezione) {
+                $valore = $riga['per_lezione'][$lezione['id']]['percentuale'] ?? null;
+                $cella[] = $valore === null ? '' : $valore;
+            }
+
+            $cella[] = $riga['percentuale_media'] === null ? '' : $riga['percentuale_media'];
+            // Numero vero nel foglio di calcolo, testo con la virgola nel CSV:
+            // Excel in italiano legge «12.5» come una data.
+            $cella[] = VideoProgressController::minuti((int) $riga['secondi_totali'], $xlsx);
+            $cella[] = (int) $riga['lezioni_avviate'];
+
+            $dati[] = $cella;
+        }
+
+        $nome = 'fruizione-video-' . Csv::slug((string) $course['title']) . '-' . date('Y-m-d');
+
+        if ($xlsx) {
+            Xlsx::send($nome . '.xlsx', $intestazioni, $dati, $tipi, 'Fruizione');
+            return;
+        }
+
+        Csv::send($nome . '.csv', $intestazioni, $dati);
+    }
+
+    /**
+     * Corso, lezioni con video e matrice, con i controlli di sempre: accesso
+     * ai report, corso dentro il perimetro, righe ristrette agli studenti
+     * che chi guarda puo' vedere.
+     *
+     * @return array{0: array, 1: list<array<string, mixed>>, 2: list<array<string, mixed>>}
+     */
+    private function videoCourseData(int $courseId): array
+    {
+        $this->requireReportAccess();
+
+        $course = CourseModel::find($courseId);
+
+        if ($course === null) {
+            http_response_code(404);
+            exit('Corso non trovato.');
+        }
+
+        $this->requireVisibleCourse($courseId);
+
+        $lezioni = VideoProgressModel::videoLessonsForCourse($courseId);
+        $righe = VideoProgressModel::courseMatrix($courseId, $lezioni);
+
+        $allowed = $this->allowedStudentIds();
+
+        if ($allowed !== null) {
+            $righe = array_values(array_filter(
+                $righe,
+                static fn (array $r): bool => in_array((int) $r['user_id'], $allowed, true)
+            ));
+        }
+
+        return [$course, $lezioni, $righe];
     }
 
     // ---------------------------------------------------------------

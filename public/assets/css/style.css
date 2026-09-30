@@ -2480,3 +2480,45 @@ fieldset.checkbox-group legend {
     margin: 0.6rem 0 0;
     color: var(--color-text-muted);
 }
+
+/* La matrice della fruizione ha una colonna per lezione: con molte lezioni
+   diventa più larga dello schermo. Meglio farla scorrere che stringere le
+   colonne fino a renderle illeggibili. */
+.tabella-larga {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.tabella-larga .data-table {
+    min-width: 100%;
+    width: auto;
+}
+
+/* Il titolo della lezione nell'intestazione è un collegamento, quindi un
+   bersaglio: da solo sarebbe alto quanto il suo testo, 14px, sotto il
+   minimo di 24. Lo spazio si mette dentro il collegamento e non attorno,
+   come si è fatto per i comandi dentro le celle. */
+.tabella-larga .data-table thead a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+}
+
+/* Il nome dello studente è l'intestazione della sua riga (th scope="row"):
+   giusto per chi usa un lettore di schermo, che così sa di che riga parla
+   ogni cella. All'occhio però deve restare un nome, non un'etichetta di
+   colonna: qui si annullano maiuscoletto, spaziatura e colore smorzato
+   delle intestazioni. */
+.data-table th.cella-studente {
+    font-size: 0.95rem;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--color-text);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.data-table th.cella-studente .riga-secondaria {
+    text-transform: none;
+    letter-spacing: normal;
+}

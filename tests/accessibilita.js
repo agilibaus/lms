@@ -379,6 +379,7 @@ const PAGINE_INTERNE = [
     // Pagina di una lezione, quindi dipende dai dati: se la lezione 1 non
     // c'è, la si salta invece di far fallire tutto (vedi `apri`).
     ['/lessons/1/fruizione', 'Fruizione del video'],
+    ['/reports/fruizione/1', 'Fruizione per corso'],
 ];
 
 async function entra(page) {
