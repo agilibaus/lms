@@ -74,9 +74,21 @@ class Settings
         'AUTH_SPLIT_TEXT',
     ];
 
+    /**
+     * Bunny Stream: libreria, chiave di firma degli embed e durata del token.
+     * `BUNNY_LIBRARY_ID` esisteva gia' nel .env e continua a funzionare da li'
+     * se in tabella non c'e' niente.
+     */
+    public const BUNNY_KEYS = [
+        'BUNNY_LIBRARY_ID',
+        'BUNNY_TOKEN_KEY',
+        'BUNNY_TOKEN_TTL_HOURS',
+    ];
+
     /** Chiavi da non rimandare mai al browser. */
     public const SECRET_KEYS = [
         'MAIL_PASSWORD',
+        'BUNNY_TOKEN_KEY',
     ];
 
     public static function isWritable(string $key): bool
@@ -84,7 +96,8 @@ class Settings
         return in_array($key, self::MAIL_KEYS, true)
             || in_array($key, self::GOOGLE_KEYS, true)
             || in_array($key, self::LIVE_MAIL_KEYS, true)
-            || in_array($key, self::APPEARANCE_KEYS, true);
+            || in_array($key, self::APPEARANCE_KEYS, true)
+            || in_array($key, self::BUNNY_KEYS, true);
     }
 
     public static function isSecret(string $key): bool

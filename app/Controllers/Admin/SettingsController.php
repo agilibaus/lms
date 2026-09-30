@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
 use App\Core\AuthLayout;
+use App\Core\BunnyToken;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Google\ServiceAccountClient;
@@ -31,6 +32,7 @@ class SettingsController extends AdminController
     private const MEET_PAGE = '/admin/settings/meet';
     private const LIVE_MAIL_PAGE = '/admin/settings/inviti';
     private const APPEARANCE_PAGE = '/admin/settings/aspetto';
+    private const BUNNY_PAGE = '/admin/settings/bunny';
 
     /** Dove finisce la chiave dell'account di servizio, fuori dal document root. */
     private const KEY_DIR = __DIR__ . '/../../../storage/google';
@@ -286,6 +288,57 @@ class SettingsController extends AdminController
         Settings::set('AUTH_SPLIT_TEXT', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TEXT'] ?? ''))), $userId);
 
         $this->success('Aspetto salvato.', self::APPEARANCE_PAGE);
+    }
+
+    // ---------------------------------------------------------------
+    // Bunny Stream
+    // ---------------------------------------------------------------
+
+    public function bunny(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        View::render('admin/settings/bunny', [
+            'pageTitle' => 'Bunny Stream',
+            'libraryId' => (string) Settings::get('BUNNY_LIBRARY_ID', ''),
+            // La chiave non torna mai al browser: si dice solo se c'e'.
+            'hasKey' => (string) Settings::get('BUNNY_TOKEN_KEY', '') !== '',
+            'ttlHours' => BunnyToken::ttlHours(),
+            'minTtl' => BunnyToken::MIN_TTL_HOURS,
+            'maxTtl' => BunnyToken::MAX_TTL_HOURS,
+            'signing' => BunnyToken::isConfigured(),
+            'sources' => self::sourcesFor(Settings::BUNNY_KEYS),
+            'lastUpdate' => Settings::lastUpdate(Settings::BUNNY_KEYS),
+        ]);
+    }
+
+    public function updateBunny(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $userId = Auth::id();
+        $ore = (int) ($_POST['BUNNY_TOKEN_TTL_HOURS'] ?? BunnyToken::DEFAULT_TTL_HOURS);
+
+        if ($ore < BunnyToken::MIN_TTL_HOURS || $ore > BunnyToken::MAX_TTL_HOURS) {
+            $this->fail(
+                'La durata del token deve stare fra ' . BunnyToken::MIN_TTL_HOURS
+                . ' e ' . BunnyToken::MAX_TTL_HOURS . ' ore.',
+                self::BUNNY_PAGE
+            );
+        }
+
+        Settings::set('BUNNY_LIBRARY_ID', trim((string) ($_POST['BUNNY_LIBRARY_ID'] ?? '')), $userId);
+        Settings::set('BUNNY_TOKEN_TTL_HOURS', (string) $ore, $userId);
+
+        // La chiave si tocca solo se e' stato scritto qualcosa: aprire la
+        // pagina e salvare non deve cancellarla.
+        if (($_POST['clear_key'] ?? '') === '1') {
+            Settings::set('BUNNY_TOKEN_KEY', null, $userId);
+        } elseif (trim((string) ($_POST['BUNNY_TOKEN_KEY'] ?? '')) !== '') {
+            Settings::set('BUNNY_TOKEN_KEY', trim((string) $_POST['BUNNY_TOKEN_KEY']), $userId);
+        }
+
+        $this->success('Impostazioni di Bunny Stream salvate.', self::BUNNY_PAGE);
     }
 
     // ---------------------------------------------------------------

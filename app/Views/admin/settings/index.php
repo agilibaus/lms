@@ -26,6 +26,12 @@ $sezioni = [
         'visibile' => $canSettings,
     ],
     [
+        'titolo' => 'Bunny Stream',
+        'href' => '/admin/settings/bunny',
+        'testo' => 'Dove stanno i video dei corsi, e la firma che impedisce di guardarli senza essere iscritti.',
+        'visibile' => $canSettings,
+    ],
+    [
         'titolo' => 'Google Meet',
         'href' => '/admin/settings/meet',
         'testo' => 'Account di servizio e calendario con cui vengono creati gli incontri dal vivo.',

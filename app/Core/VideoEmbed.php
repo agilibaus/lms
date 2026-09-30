@@ -45,19 +45,15 @@ class VideoEmbed
 
     private static function bunny(string $videoId, bool $deferred = false): string
     {
-        $libraryId = Env::get('BUNNY_LIBRARY_ID', '');
-
-        if ($libraryId === '') {
-            return '<p class="video-embed-error">Video Bunny Stream non configurato (manca BUNNY_LIBRARY_ID nel .env).</p>';
+        if (BunnyToken::libraryId() === '') {
+            return '<p class="video-embed-error">Video Bunny Stream non configurato: manca l\'identificativo della libreria (Impostazioni → Bunny Stream).</p>';
         }
 
-        $src = sprintf(
-            'https://iframe.mediadelivery.net/embed/%s/%s',
-            rawurlencode($libraryId),
-            rawurlencode($videoId)
-        );
-
-        return self::iframe($src, $deferred);
+        // L'indirizzo esce firmato se la chiave e' configurata, nudo se non lo
+        // e': cosi' mettere la chiave e attivare la Token Authentication su
+        // Bunny sono due passi che si possono fare in quest'ordine senza mai
+        // spegnere i video.
+        return self::iframe(BunnyToken::embedUrl($videoId), $deferred);
     }
 
     private static function cloudflare(string $videoId, bool $deferred = false): string
