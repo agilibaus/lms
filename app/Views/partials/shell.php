@@ -126,14 +126,19 @@ use App\Core\Csrf;
                 <?php if (Auth::canAny('user.manage', 'assistant.manage')): ?>
                     <a href="/admin/users" class="nav-link<?= $voce('/admin/users') ?>">Utenti</a>
                 <?php endif; ?>
-                <?php if (Auth::can('settings.manage')): ?>
-                    <a href="/admin/settings/posta" class="nav-link<?= $voce('/admin/settings/posta') ?>">Posta elettronica</a>
-                    <a href="/admin/settings/inviti" class="nav-link<?= $voce('/admin/settings/inviti') ?>">Inviti sessioni live</a>
-                    <a href="/admin/settings/meet" class="nav-link<?= $voce('/admin/settings/meet') ?>">Google Meet</a>
-                    <a href="/admin/settings/aspetto" class="nav-link<?= $voce('/admin/settings/aspetto') ?>">Aspetto</a>
-                <?php endif; ?>
-                <?php if (Auth::hasRole('admin')): ?>
-                    <a href="/admin/permissions" class="nav-link<?= $voce('/admin/permissions') ?>">Permessi</a>
+                <?php /* Cinque pagine di configurazione sotto una voce sola: si
+                         toccano una volta e poi quasi mai, e una voce si guadagna
+                         il posto nel menu solo se e' un luogo dove si torna in
+                         giorni diversi (Sezione 4). Corsi, gruppi e utenti restano
+                         fuori: quelli sono il lavoro quotidiano.
+
+                         L'evidenziazione e' per prefisso, quindi la voce resta
+                         accesa dentro ogni /admin/settings/... ; la pagina dei
+                         permessi vive altrove e va aggiunta a mano. */ ?>
+                <?php if (Auth::can('settings.manage') || Auth::hasRole('admin')): ?>
+                    <?php $inImpostazioni = $voce('/admin/settings') !== '' || $voce('/admin/permissions') !== ''; ?>
+                    <a href="/admin/settings"
+                       class="nav-link<?= $inImpostazioni ? ' nav-link-active" aria-current="page' : '' ?>">Impostazioni</a>
                 <?php endif; ?>
             <?php endif; ?>
         </nav>

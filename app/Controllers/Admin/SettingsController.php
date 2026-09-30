@@ -36,6 +36,40 @@ class SettingsController extends AdminController
     private const KEY_DIR = __DIR__ . '/../../../storage/google';
 
     // ---------------------------------------------------------------
+    // Raccolta delle impostazioni
+    // ---------------------------------------------------------------
+
+    /**
+     * Pagina di raccolta: una scheda per sezione.
+     *
+     * Non un sottomenu che si apre nella barra laterale: una pagina funziona
+     * senza JavaScript (Sezione 4) e puo' dire a cosa serve ciascuna sezione,
+     * cosa che dai soli nomi non e' ovvia — "Posta elettronica" e "Inviti
+     * sessioni live" sembrano la stessa cosa e non lo sono.
+     */
+    public function index(array $params = []): void
+    {
+        // Le schede non hanno tutte lo stesso permesso: quattro chiedono
+        // `settings.manage`, i permessi solo il ruolo admin. La pagina si apre
+        // a chi ha almeno una delle due cose, e mostra solo cio' che puo'
+        // davvero aprire.
+        // Prima il login, come ogni altra pagina interna: senza, chi non e'
+        // collegato riceverebbe un 403 invece di essere portato all'accesso.
+        Auth::requireLogin();
+
+        if (!Auth::can('settings.manage') && !Auth::hasRole('admin')) {
+            http_response_code(403);
+            exit('Accesso negato: permessi insufficienti per questa pagina.');
+        }
+
+        View::render('admin/settings/index', [
+            'pageTitle' => 'Impostazioni',
+            'canSettings' => Auth::can('settings.manage'),
+            'canPermissions' => Auth::hasRole('admin'),
+        ]);
+    }
+
+    // ---------------------------------------------------------------
     // Posta elettronica
     // ---------------------------------------------------------------
 

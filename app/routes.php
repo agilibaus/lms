@@ -159,6 +159,7 @@ $router->post('/admin/courses/{id}/copertina', [AdminCourseController::class, 'u
 $router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::class, 'deleteCover']);
 
 // --- Configurazione: posta elettronica e Google Meet ---
+$router->get('/admin/settings', [SettingsController::class, 'index']);
 $router->get('/admin/settings/posta', [SettingsController::class, 'mail']);
 $router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']);
 $router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);

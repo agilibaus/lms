@@ -13,6 +13,7 @@ use App\Core\Csrf;
  */
 ?>
 <div class="page-header">
+    <a href="/admin/settings" class="back-link">← Impostazioni</a>
     <h1>Aspetto</h1>
     <p class="page-subtitle">
         Come si presentano le pagine pubbliche: accesso, registrazione, recupero password,

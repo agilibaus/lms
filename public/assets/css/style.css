@@ -576,6 +576,49 @@ h3 { font-size: 1.05rem; }
     padding: 1.5rem;
 }
 
+/* ---------- Raccolta delle impostazioni ----------
+   Schede al posto di un elenco di collegamenti: c'e' spazio per dire a cosa
+   serve ciascuna sezione, che dai soli nomi non si capisce. */
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.9rem;
+}
+
+.settings-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.settings-card:hover,
+.settings-card:focus-visible {
+    border-color: var(--color-primary);
+}
+
+.settings-card-title {
+    font-weight: 600;
+    font-size: 0.98rem;
+}
+
+.settings-card:hover .settings-card-title,
+.settings-card:focus-visible .settings-card-title {
+    color: var(--color-primary);
+}
+
+.settings-card-text {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+}
+
 /* ---------- Pagine pubbliche: aspetto "affiancato" ----------
    Presentazione a sinistra, modulo a destra. Le stesse pagine del guscio,
    con intorno una cornice diversa: il contenuto non e' scritto due volte.
