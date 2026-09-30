@@ -206,10 +206,13 @@ h3 { font-size: 1.05rem; }
     max-width: 1080px;
 }
 
-/* Toggle mobile: nascosto su desktop */
+/* I comandi del menu sono nascosti per difetto: ciascuno ricompare nella
+   misura di schermo che lo riguarda. */
 .nav-toggle-checkbox,
 .nav-toggle-btn,
-.nav-overlay {
+.nav-overlay,
+.nav-collapse-checkbox,
+.nav-collapse-btn {
     display: none;
 }
 
@@ -606,6 +609,99 @@ h3 { font-size: 1.05rem; }
     .course-grid,
     .catalog-list {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================
+   Desktop (>= 769px): la barra laterale si puo' chiudere
+   ==========================================================
+
+   Stesso meccanismo del telefono — una casella di spunta e il CSS — ma con
+   una casella propria: su telefono "spuntato" vuol dire cassetto aperto, qui
+   vuol dire barra nascosta, e una casella sola rovescerebbe lo stato al
+   cambio di misura.
+
+   La casella e' il comando vero: trasparente, sovrapposta al disegno del
+   pulsante, larga quanto lui. Cosi' funziona anche senza JavaScript e si
+   raggiunge con il tabulatore, cosa che il pulsante del telefono (una
+   `<label>`, che non prende il fuoco) oggi non permette.
+   ========================================================== */
+
+@media (min-width: 769px) {
+    .nav-collapse-checkbox {
+        display: block;
+        position: fixed;
+        top: 0.9rem;
+        left: 1rem;
+        z-index: 41;
+        width: 38px;
+        height: 38px;
+        margin: 0;
+        padding: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .nav-collapse-btn {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        position: fixed;
+        top: 0.9rem;
+        left: 1rem;
+        z-index: 40;
+        width: 38px;
+        height: 38px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: 0 8px;
+    }
+
+    .nav-collapse-btn span {
+        display: block;
+        height: 2px;
+        background: var(--color-text);
+        border-radius: 2px;
+    }
+
+    /* Il contorno del fuoco va disegnato sul pulsante: la casella e'
+       trasparente e il suo contorno non si vedrebbe. */
+    .nav-collapse-checkbox:focus-visible ~ .nav-collapse-btn {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    /* Il pulsante e' fisso in alto a sinistra e passerebbe sopra al marchio:
+       il marchio gli lascia il posto, come sul telefono. */
+    .sidebar-brand {
+        padding-left: 3.3rem;
+    }
+
+    /* `display: none` e non una traslazione: cosi' i collegamenti del menu
+       chiuso escono anche dall'ordine di tabulazione. */
+    .nav-collapse-checkbox:checked ~ .sidebar {
+        display: none;
+    }
+
+    /* Chiudere il menu senza allargare niente lascerebbe solo piu' margine
+       vuoto: l'area centrale cresce dei 236px liberati e resta centrata, con
+       un rientro a sinistra che tiene il testo lontano dal pulsante fisso. */
+    .nav-collapse-checkbox:checked ~ .main-content {
+        max-width: 1316px;
+        margin: 0 auto;
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    /* Il video si allarga; il testo della lezione no, resta a 68 caratteri
+       perche' righe piu' lunghe si leggono peggio. La copertina di avvio si
+       allarga con lui: sono la stessa cosa vista prima e dopo il clic, e se
+       crescesse solo il player il video salterebbe di misura all'avvio. */
+    .nav-collapse-checkbox:checked ~ .main-content .video-embed,
+    .nav-collapse-checkbox:checked ~ .main-content .video-start {
+        max-width: 960px;
     }
 }
 

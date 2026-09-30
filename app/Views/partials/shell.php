@@ -21,11 +21,53 @@ use App\Core\Csrf;
 </head>
 <body>
 <div class="app-shell">
+    <?php /* Due comandi distinti per due comportamenti distinti, non uno solo:
+             su telefono "spuntato" vuol dire cassetto aperto, su desktop vuol
+             dire menu nascosto. Con una casella sola lo stato si rovescerebbe
+             passando da una misura all'altra, e la preferenza ricordata
+             arriverebbe al telefono con il significato opposto. */ ?>
     <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox">
     <label for="nav-toggle" class="nav-toggle-btn" aria-label="Apri menu">
         <span></span><span></span><span></span>
     </label>
     <label for="nav-toggle" class="nav-overlay" aria-hidden="true"></label>
+
+    <?php /* Su desktop il comando e' la casella stessa, trasparente e sovrapposta
+             al disegno del pulsante: cosi' si raggiunge con il tabulatore e si
+             attiva con la barra spaziatrice, senza JavaScript. Lo stato lo dice
+             la casella («spuntato» = menu nascosto): `aria-expanded` non e'
+             previsto su una casella di spunta e non viene usato. */ ?>
+    <input type="checkbox" id="nav-collapse" class="nav-collapse-checkbox"
+           aria-label="Nascondi il menu di navigazione">
+    <span class="nav-collapse-btn" aria-hidden="true">
+        <span></span><span></span><span></span>
+    </span>
+    <script>
+        /* Il ripristino sta qui, subito dopo la casella, e non in fondo alla
+           pagina: uno script in fondo farebbe vedere il menu aperto per un
+           istante prima di richiuderlo. Senza JavaScript il menu parte aperto
+           a ogni pagina, come deciso. */
+        (function () {
+            var chiave = 'pistacchio-nav-collapsed';
+            var casella = document.getElementById('nav-collapse');
+
+            try {
+                if (localStorage.getItem(chiave) === '1') {
+                    casella.checked = true;
+                }
+            } catch (e) {
+                /* Navigazione privata o archiviazione negata: si prosegue
+                   senza ricordare nulla. */
+            }
+
+            casella.addEventListener('change', function () {
+                try {
+                    localStorage.setItem(chiave, casella.checked ? '1' : '0');
+                } catch (e) {
+                }
+            });
+        })();
+    </script>
 
     <aside class="sidebar">
         <div class="sidebar-brand">
