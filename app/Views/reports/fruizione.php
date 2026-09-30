@@ -57,7 +57,7 @@ use App\Core\Xlsx;
                         </th>
                     <?php endforeach; ?>
                     <th scope="col">Media</th>
-                    <th scope="col">Tempo totale</th>
+                    <th scope="col">Tempo totale (secondi)</th>
                 </tr>
             </thead>
             <tbody>
@@ -82,7 +82,7 @@ use App\Core\Xlsx;
                                 ? '<span class="valore-assente">—</span>'
                                 : (int) $riga['percentuale_media'] . '%' ?>
                         </td>
-                        <td><?= VideoProgressController::secondi((int) $riga['secondi_totali']) ?>&nbsp;s</td>
+                        <td><?= VideoProgressController::secondi((int) $riga['secondi_totali']) ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

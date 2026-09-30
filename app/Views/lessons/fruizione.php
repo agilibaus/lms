@@ -101,7 +101,7 @@ $quando = static function (?string $data): string {
             <tr>
                 <th scope="col">Studente</th>
                 <th scope="col">Vista</th>
-                <th scope="col">Tempo guardato</th>
+                <th scope="col">Tempo guardato (secondi)</th>
                 <th scope="col">Ultima posizione</th>
                 <th scope="col">Ultima visita</th>
                 <th scope="col">Completata</th>
@@ -127,7 +127,7 @@ $quando = static function (?string $data): string {
                             <?= (int) $riga['percentage'] ?>%
                         <?php endif; ?>
                     </td>
-                    <td><?= VideoProgressController::secondi((int) $riga['watched_seconds']) ?>&nbsp;s</td>
+                    <td><?= VideoProgressController::secondi((int) $riga['watched_seconds']) ?></td>
                     <td><?= htmlspecialchars($minutoSecondo(
                         $riga['position_seconds'] === null ? null : (int) $riga['position_seconds']
                     )) ?></td>
