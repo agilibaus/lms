@@ -70,15 +70,19 @@ $provider = $lesson['video_provider'] ?? 'none';
             <option value="self_hosted" <?= $provider === 'self_hosted' ? 'selected' : '' ?>>Self-hosted (upload)</option>
         </select>
 
+        <?php /* Un nome diverso per ciascun provider. Con lo stesso nome i due
+                 campi partivano tutti e due — `hidden` nasconde, non esclude
+                 dall'invio — e vinceva l'ultimo, cioe' quello vuoto: l'ID
+                 scritto qui sopra non arrivava mai al salvataggio. */ ?>
         <div class="video-provider-fields" data-provider="bunny" <?= $provider !== 'bunny' ? 'hidden' : '' ?>>
             <label for="video_ref_bunny">ID video Bunny Stream</label>
-            <input type="text" id="video_ref_bunny" name="video_ref"
+            <input type="text" id="video_ref_bunny" name="video_ref_bunny"
                    value="<?= $provider === 'bunny' ? htmlspecialchars($lesson['video_ref'] ?? '') : '' ?>">
         </div>
 
         <div class="video-provider-fields" data-provider="cloudflare" <?= $provider !== 'cloudflare' ? 'hidden' : '' ?>>
             <label for="video_ref_cf">ID video Cloudflare Stream</label>
-            <input type="text" id="video_ref_cf" name="video_ref"
+            <input type="text" id="video_ref_cf" name="video_ref_cloudflare"
                    value="<?= $provider === 'cloudflare' ? htmlspecialchars($lesson['video_ref'] ?? '') : '' ?>">
         </div>
 

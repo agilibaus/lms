@@ -11,6 +11,7 @@ use App\Core\CourseAccess;
 use App\Core\HtmlSanitizer;
 use App\Core\OrphanFiles;
 use App\Core\Upload;
+use App\Core\VideoEmbed;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
@@ -85,7 +86,7 @@ class LessonController
             $title,
             $this->contentHtmlFromPost(),
             $provider,
-            $provider === 'self_hosted' ? null : $this->externalVideoRefFromPost(),
+            $provider === 'self_hosted' ? null : $this->externalVideoRefFromPost($provider),
             $this->durationFromPost()
         );
 
@@ -94,6 +95,9 @@ class LessonController
         } catch (\RuntimeException $e) {
             $_SESSION['flash_error'] = $e->getMessage();
         }
+
+        $_SESSION['flash_success'] = 'Lezione creata.';
+        $this->warnMissingVideoRef($provider);
 
         header('Location: /lessons/' . $lessonId . '/edit');
         exit;
@@ -186,19 +190,27 @@ class LessonController
         }
 
         $title = trim($_POST['title'] ?? '');
+        $provider = $this->videoProviderFromPost();
 
-        if ($title !== '') {
-            $provider = $this->videoProviderFromPost();
-
-            LessonModel::update(
-                (int) $lesson['id'],
-                $title,
-                $this->contentHtmlFromPost(),
-                $provider,
-                $this->resolveVideoRefForUpdate($lesson, $provider),
-                $this->durationFromPost()
-            );
+        if ($title === '') {
+            // Prima non succedeva niente e non lo diceva nessuno: la pagina
+            // tornava identica e sembrava salvata.
+            $_SESSION['flash_error'] = 'Il titolo della lezione è obbligatorio: non ho salvato niente.';
+            header('Location: /lessons/' . $lesson['id'] . '/edit');
+            exit;
         }
+
+        LessonModel::update(
+            (int) $lesson['id'],
+            $title,
+            $this->contentHtmlFromPost(),
+            $provider,
+            $this->resolveVideoRefForUpdate($lesson, $provider),
+            $this->durationFromPost()
+        );
+
+        $_SESSION['flash_success'] = 'Lezione salvata.';
+        $this->warnMissingVideoRef($provider);
 
         try {
             $this->handleVideoUpload((int) $lesson['id']);
@@ -652,17 +664,42 @@ class LessonController
         return in_array($provider, ['bunny', 'cloudflare', 'self_hosted', 'none'], true) ? $provider : 'none';
     }
 
-    private function externalVideoRefFromPost(): ?string
+    /**
+     * Ogni provider esterno ha il suo campo: `video_ref_bunny`,
+     * `video_ref_cloudflare`. Un nome solo per tutti e due non funzionava —
+     * i campi nascosti vengono inviati lo stesso, e l'ultimo cancellava il
+     * primo (Sezione 5 del promemoria).
+     */
+    private function externalVideoRefFromPost(string $provider): ?string
     {
-        $ref = trim($_POST['video_ref'] ?? '');
+        $ref = trim($_POST['video_ref_' . $provider] ?? '');
 
         return $ref === '' ? null : $ref;
+    }
+
+    /**
+     * Provider esterno scelto ma casella dell'ID vuota: la lezione si salva
+     * lo stesso, ma nella pagina non comparirebbe nessun video e nessuno
+     * spiegherebbe perche'.
+     */
+    private function warnMissingVideoRef(string $provider): void
+    {
+        if (!VideoEmbed::isIframeProvider($provider)) {
+            return;
+        }
+
+        if ($this->externalVideoRefFromPost($provider) !== null) {
+            return;
+        }
+
+        $_SESSION['flash_error'] = 'Manca l\'ID del video: la lezione è salvata, '
+            . 'ma finché la casella resta vuota il video non compare.';
     }
 
     private function resolveVideoRefForUpdate(array $lesson, string $newProvider): ?string
     {
         return match ($newProvider) {
-            'bunny', 'cloudflare' => $this->externalVideoRefFromPost(),
+            'bunny', 'cloudflare' => $this->externalVideoRefFromPost($newProvider),
             // Mantiene il file già caricato finché non ne arriva uno nuovo
             // (handleVideoUpload lo sovrascrive dopo, se presente).
             'self_hosted' => $lesson['video_provider'] === 'self_hosted' ? $lesson['video_ref'] : null,
