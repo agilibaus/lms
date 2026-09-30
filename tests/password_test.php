@@ -19,6 +19,7 @@ require __DIR__ . '/../config/config.php';
 use App\Core\Database;
 use App\Core\Mail\Mailer;
 use App\Core\PasswordGenerator;
+use App\Core\PasswordPolicy;
 use App\Models\UserModel;
 
 $ok = 0;
@@ -72,6 +73,35 @@ for ($i = 0; $i < 200; $i++) {
 }
 
 check('200 password tutte diverse', count(array_unique($generate)) === 200);
+
+check('ogni password generata soddisfa la regola', (function (): bool {
+    for ($i = 0; $i < 300; $i++) {
+        if (PasswordPolicy::problem(PasswordGenerator::genera()) !== null) {
+            return false;
+        }
+    }
+
+    return true;
+})());
+
+// Una lunghezza sotto il minimo renderebbe la regola impossibile da
+// soddisfare, e il generatore girerebbe all'infinito.
+check('una lunghezza troppo corta viene alzata al minimo',
+    strlen(PasswordGenerator::genera(3)) === PasswordPolicy::MIN_LENGTH);
+
+echo PHP_EOL . '--- Regola delle password' . PHP_EOL;
+
+check('sette caratteri non bastano', PasswordPolicy::problem('Abcde12') !== null);
+check('otto con lettera e cifra vanno bene', PasswordPolicy::problem('Abcdef12') === null);
+check('solo lettere non basta', PasswordPolicy::problem('Abcdefghij') !== null);
+check('solo cifre non basta', PasswordPolicy::problem('1234567890') !== null);
+check('solo simboli non basta', PasswordPolicy::problem('!!!!!!!!!!') !== null);
+check('i simboli restano ammessi in piu\'', PasswordPolicy::problem('Abcde12!@#') === null);
+check('vuota non basta', PasswordPolicy::problem('') !== null);
+
+// La frase mostrata e la regola applicata devono restare la stessa cosa.
+check('la frase mostrata parla di caratteri alfanumerici', str_contains(PasswordPolicy::HINT, 'alfanumerici'));
+check('la frase mostrata dice la lunghezza minima', str_contains(PasswordPolicy::HINT, (string) PasswordPolicy::MIN_LENGTH));
 
 echo PHP_EOL . '--- Testo delle email' . PHP_EOL;
 

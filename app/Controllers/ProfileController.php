@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Core\AvatarImage;
 use App\Core\Mail\Mailer;
+use App\Core\PasswordPolicy;
 use App\Core\Upload;
 use App\Core\Url;
 use App\Core\View;
@@ -170,7 +171,8 @@ class ProfileController
         View::render('profile/password', [
             'pageTitle' => 'Cambia password',
             'obbligato' => $obbligato,
-            'minPassword' => Auth::MIN_PASSWORD_LENGTH,
+            'minPassword' => PasswordPolicy::MIN_LENGTH,
+            'passwordHint' => PasswordPolicy::HINT,
             'error' => $this->takeFlash('flash_error'),
         ], !$obbligato);
     }
@@ -197,8 +199,10 @@ class ProfileController
             $this->failPassword('La password attuale non è corretta.');
         }
 
-        if (strlen($nuova) < Auth::MIN_PASSWORD_LENGTH) {
-            $this->failPassword('La nuova password deve avere almeno ' . Auth::MIN_PASSWORD_LENGTH . ' caratteri.');
+        $problema = PasswordPolicy::problem($nuova);
+
+        if ($problema !== null) {
+            $this->failPassword($problema);
         }
 
         if ($nuova !== $conferma) {

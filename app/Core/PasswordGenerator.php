@@ -25,15 +25,26 @@ class PasswordGenerator
     /**
      * I caratteri sono presi con `random_int`, che attinge al generatore
      * crittografico del sistema: `rand()` e `mt_rand()` sono prevedibili.
+     *
+     * La password generata deve soddisfare la stessa regola chiesta alle
+     * persone (`PasswordPolicy`): pescando a caso da questo alfabeto, circa
+     * una password su dieci uscirebbe senza nemmeno una cifra. Quelle si
+     * buttano e si ripesca — ripescare non introduce alcuna preferenza fra
+     * le password che restano, mentre aggiustare a mano un carattere
+     * renderebbe prevedibile la posizione della cifra.
      */
     public static function genera(int $lunghezza = self::LUNGHEZZA): string
     {
+        $lunghezza = max($lunghezza, PasswordPolicy::MIN_LENGTH);
         $ultimo = strlen(self::ALFABETO) - 1;
-        $password = '';
 
-        for ($i = 0; $i < $lunghezza; $i++) {
-            $password .= self::ALFABETO[random_int(0, $ultimo)];
-        }
+        do {
+            $password = '';
+
+            for ($i = 0; $i < $lunghezza; $i++) {
+                $password .= self::ALFABETO[random_int(0, $ultimo)];
+            }
+        } while (PasswordPolicy::problem($password) !== null);
 
         return $password;
     }

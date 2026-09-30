@@ -8,6 +8,7 @@ use App\Core\Csrf;
 /** @var string $pageTitle */
 /** @var bool $obbligato */
 /** @var int $minPassword */
+/** @var string $passwordHint */
 /** @var string|null $error */
 
 /*
@@ -65,8 +66,9 @@ ob_start();
 </form>
 
 <p class="form-hint">
-    Almeno <?= (int) $minPassword ?> caratteri. Cambiando la password, le altre sessioni aperte
-    con quella precedente vengono chiuse; questo browser resta collegato.
+    <?= htmlspecialchars($passwordHint) ?>
+    Cambiando la password, le altre sessioni aperte con quella precedente vengono chiuse;
+    questo browser resta collegato.
 </p>
 
 <?php if ($obbligato): ?>

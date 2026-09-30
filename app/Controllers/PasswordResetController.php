@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Core\Env;
+use App\Core\PasswordPolicy;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
@@ -22,8 +23,6 @@ use App\Models\UserTokenModel;
  */
 class PasswordResetController
 {
-    /** Unica definizione della lunghezza minima: sta in Auth (Sezione 4). */
-    private const MIN_PASSWORD = Auth::MIN_PASSWORD_LENGTH;
     private const TOKEN_LIFETIME = 3600;
     private const MAX_TOKENS_PER_HOUR = 5;
 
@@ -75,7 +74,8 @@ class PasswordResetController
             'token' => $token,
             'valid' => UserTokenModel::findValid($token, UserTokenModel::PURPOSE_RESET) !== null,
             'error' => $this->takeFlash('reset_error'),
-            'minPassword' => self::MIN_PASSWORD,
+            'minPassword' => PasswordPolicy::MIN_LENGTH,
+            'passwordHint' => PasswordPolicy::HINT,
         ], false);
     }
 
@@ -93,8 +93,10 @@ class PasswordResetController
         $password = (string) ($_POST['password'] ?? '');
         $confirm = (string) ($_POST['password_confirm'] ?? '');
 
-        if (strlen($password) < self::MIN_PASSWORD) {
-            $this->failReset('La password deve avere almeno ' . self::MIN_PASSWORD . ' caratteri.', $token);
+        $problema = PasswordPolicy::problem($password);
+
+        if ($problema !== null) {
+            $this->failReset($problema, $token);
         }
 
         if ($password !== $confirm) {

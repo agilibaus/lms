@@ -22,9 +22,6 @@ class Auth
     /** L'unica pagina interna raggiungibile con una password temporanea. */
     public const PASSWORD_PAGE = '/profilo/password';
 
-    /** Lunghezza minima di una password, uguale ovunque la si chieda. */
-    public const MIN_PASSWORD_LENGTH = 8;
-
     /**
      * Come il ruolo si scrive quando lo legge una persona.
      *

@@ -8,6 +8,7 @@ use App\Core\Csrf;
 /** @var bool $valid */
 /** @var string|null $error */
 /** @var int $minPassword */
+/** @var string $passwordHint */
 
 ob_start();
 ?>
@@ -34,6 +35,8 @@ ob_start();
 
         <button type="submit" class="btn btn-primary btn-block">Salva e accedi</button>
     </form>
+
+    <p class="form-hint"><?= htmlspecialchars($passwordHint) ?></p>
 <?php endif; ?>
 <?php
 $cardContent = ob_get_clean();

@@ -6,6 +6,8 @@ use App\Core\Csrf;
 
 /** @var string|null $error */
 /** @var array $old */
+/** @var int $minPassword */
+/** @var string $passwordHint */
 
 ob_start();
 ?>
@@ -27,11 +29,13 @@ ob_start();
            value="<?= htmlspecialchars((string) ($old['email'] ?? '')) ?>">
 
     <label for="password">Password</label>
-    <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
+    <input type="password" id="password" name="password" required
+           minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
 
     <label for="password_confirm">Conferma password</label>
-    <input type="password" id="password_confirm" name="password_confirm" required minlength="8"
-           autocomplete="new-password">
+    <input type="password" id="password_confirm" name="password_confirm" required
+           minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+    <p class="form-hint"><?= htmlspecialchars($passwordHint) ?></p>
 
     <button type="submit" class="btn btn-primary btn-block">Registrati</button>
 </form>

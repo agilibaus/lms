@@ -8,6 +8,7 @@ use App\Auth\Auth;
 use App\Core\Env;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
+use App\Core\PasswordPolicy;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\UserModel;
@@ -22,7 +23,6 @@ use App\Models\UserTokenModel;
  */
 class RegistrationController
 {
-    private const MIN_PASSWORD = 8;
     private const TOKEN_LIFETIME = 86400;          // 24 ore
 
     /** Non più di 5 link di verifica all'ora per lo stesso account. */
@@ -38,6 +38,8 @@ class RegistrationController
             'pageTitle' => 'Registrati',
             'error' => $this->takeFlash('register_error'),
             'old' => $_SESSION['register_old'] ?? [],
+            'minPassword' => PasswordPolicy::MIN_LENGTH,
+            'passwordHint' => PasswordPolicy::HINT,
         ], false);
 
         unset($_SESSION['register_old']);
@@ -64,8 +66,10 @@ class RegistrationController
             $this->fail('Indirizzo email non valido.');
         }
 
-        if (strlen($password) < self::MIN_PASSWORD) {
-            $this->fail('La password deve avere almeno ' . self::MIN_PASSWORD . ' caratteri.');
+        $problema = PasswordPolicy::problem($password);
+
+        if ($problema !== null) {
+            $this->fail($problema);
         }
 
         if ($password !== $confirm) {
