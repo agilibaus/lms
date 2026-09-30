@@ -332,22 +332,31 @@ class UserModel
     /**
      * Crea un nuovo utente con password hashata (bcrypt via password_hash).
      */
+    /**
+     * @param bool $mustChangePassword vero per una password generata da un
+     *                                 admin: l'utente dovra' sceglierne una
+     *                                 sua al primo accesso.
+     */
     public static function create(
         string $email,
         string $password,
         string $fullName,
         string $role = 'studente',
         bool $isActive = true,
-        bool $emailVerified = true
+        bool $emailVerified = true,
+        bool $mustChangePassword = false
     ): int {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at)
-             VALUES (:email, :password_hash, :full_name, :role, :is_active,
+            'INSERT INTO users (email, password_hash, password_changed_at, must_change_password,
+                                full_name, role, is_active, email_verified_at)
+             VALUES (:email, :password_hash, NOW(), :must_change,
+                     :full_name, :role, :is_active,
                      CASE WHEN :email_verified = 1 THEN NOW() ELSE NULL END)'
         );
         $stmt->execute([
             'email' => $email,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            'must_change' => $mustChangePassword ? 1 : 0,
             'full_name' => $fullName,
             'role' => $role,
             'is_active' => $isActive ? 1 : 0,

@@ -8,7 +8,6 @@ use App\Core\Csrf;
 /** @var array|null $user */
 /** @var array $tutors */
 /** @var string[] $roles */
-/** @var int $minPasswordLength */
 /** @var array $groups */
 /** @var array $availableGroups */
 /** @var bool $canManageGroups */
@@ -77,10 +76,11 @@ $currentRole = $user['role'] ?? 'studente';
     </label>
 
     <?php if (!$isEdit): ?>
-        <label for="password">Password iniziale</label>
-        <input type="password" id="password" name="password" required minlength="<?= (int) $minPasswordLength ?>"
-               autocomplete="new-password">
-        <p class="form-hint">Almeno <?= (int) $minPasswordLength ?> caratteri. Comunicala all'utente: non viene inviata alcuna email.</p>
+        <p class="form-hint">
+            La password iniziale la genera la piattaforma e la manda per email all'utente:
+            non la scegli tu e non la conosce nessun altro. Al primo accesso dovrà
+            sceglierne una sua.
+        </p>
     <?php endif; ?>
 
     <div class="form-actions">

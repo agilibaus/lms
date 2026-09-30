@@ -26,9 +26,6 @@ use App\Models\UserModel;
  */
 class UserController extends AdminController
 {
-    /** Unica definizione della lunghezza minima: sta in Auth (Sezione 4). */
-    private const MIN_PASSWORD_LENGTH = Auth::MIN_PASSWORD_LENGTH;
-
     public function index(array $params = []): void
     {
         $this->requireUserAccess();
@@ -52,7 +49,6 @@ class UserController extends AdminController
             'user' => null,
             'tutors' => UserModel::byRoles(['tutor']),
             'roles' => $this->assignableRoles(),
-            'minPasswordLength' => self::MIN_PASSWORD_LENGTH,
         ]);
     }
 
@@ -61,7 +57,6 @@ class UserController extends AdminController
         $this->requireUserAccess();
 
         $data = $this->dataFromPost();
-        $password = (string) ($_POST['password'] ?? '');
 
         if ($data['email'] === '' || $data['full_name'] === '') {
             $this->fail('Nome ed email sono obbligatori.', '/admin/users/create');
@@ -75,20 +70,51 @@ class UserController extends AdminController
             $this->fail('Esiste già un utente con questa email.', '/admin/users/create');
         }
 
-        if (strlen($password) < self::MIN_PASSWORD_LENGTH) {
-            $this->fail('La password deve avere almeno ' . self::MIN_PASSWORD_LENGTH . ' caratteri.', '/admin/users/create');
-        }
+        // La password iniziale la genera la piattaforma e la manda all'utente,
+        // come la temporanea di un account esistente: l'admin non la sceglie e
+        // non la vede, e chi entra deve sceglierne una sua.
+        $password = PasswordGenerator::genera();
 
         $newId = UserModel::create(
             $data['email'],
             $password,
             $data['full_name'],
             $data['role'],
-            $data['is_active']
+            $data['is_active'],
+            true,
+            true
         );
         UserModel::setAssistantTutors($newId, $data['role'], $data['tutor_ids']);
 
-        $this->success('Utente creato.', '/admin/users');
+        // Qui l'ordine e' rovesciato rispetto alla password temporanea di un
+        // account esistente, e per un motivo: li' un invio fallito avrebbe
+        // bruciato una password funzionante, qui non c'e' niente da rovinare.
+        // Perdere l'utente appena compilato per un'email non partita sarebbe
+        // solo un fastidio: l'account resta, e l'invio si ripete dalla sua
+        // scheda.
+        try {
+            Mailer::send(Mailer::temporaryPassword(
+                $data['email'],
+                $data['full_name'],
+                $password,
+                Url::to('/login')
+            ));
+        } catch (MailException $e) {
+            error_log('[Mail] ' . $e->getMessage());
+
+            $this->fail(
+                'Utente creato, ma l\'email con la password non e\' partita: cosi\' com\'e\' '
+                . 'non puo\' ancora entrare. Controlla la configurazione della posta e usa '
+                . '"Genera e invia password temporanea" dalla sua scheda.',
+                '/admin/users/' . $newId . '/edit'
+            );
+        }
+
+        $this->success(
+            'Utente creato. La password iniziale e\' stata inviata a ' . $data['email']
+            . ', e al primo accesso dovra\' sceglierne una sua.',
+            '/admin/users'
+        );
     }
 
     public function editForm(array $params): void
@@ -110,7 +136,6 @@ class UserController extends AdminController
             'tutors' => UserModel::byRoles(['tutor']),
             'assistantTutorIds' => UserModel::tutorIdsForAssistant((int) $user['id']),
             'roles' => $this->assignableRoles(),
-            'minPasswordLength' => self::MIN_PASSWORD_LENGTH,
             'groups' => $groups,
             'canManageGroups' => Auth::canAny('group.manage', 'group.manage_own'),
             // Solo i gruppi in cui questo utente puo' essere messo da chi guarda:
