@@ -222,6 +222,95 @@ h3 { font-size: 1.05rem; }
     margin-bottom: 1.5rem;
 }
 
+/* La riga dei comandi in cima a una pagina. Non e' un paragrafo: dentro ci
+   vanno anche elementi di blocco, come la tendina qui sotto, che in un <p>
+   non sarebbero validi. */
+.page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+/* ---------- Tendina (details/summary) ---------- */
+
+/* Il comando e' un <summary>: si apre e si chiude senza JavaScript e prende
+   il fuoco da tastiera come un pulsante. Il pannello e' in posizione assoluta
+   e non sposta niente aprendosi. */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    /* Il triangolino predefinito del browser va tolto in due modi: `list-style`
+       per i browser moderni e lo pseudo-elemento per i WebKit piu' vecchi. */
+    list-style: none;
+    user-select: none;
+}
+
+.dropdown > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Freccia disegnata con i bordi: nessun file e nessun carattere speciale da
+   caricare, e segue il colore del testo del pulsante. */
+.dropdown > summary::after {
+    content: "";
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+}
+
+.dropdown[open] > summary::after {
+    transform: rotate(180deg);
+}
+
+/* Stessa famiglia della trappola di `hidden` (Sezione 5 del promemoria): il
+   browser tiene chiuso un `details` con una sua regola di `display`, e il
+   `display: flex` qui sotto, essendo dell'autore, la batte — il pannello
+   resterebbe visibile a tendina chiusa. Trovato misurando, non guardando. */
+.dropdown:not([open]) > .dropdown-menu {
+    display: none;
+}
+
+.dropdown-menu {
+    position: absolute;
+    z-index: 15;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    min-width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.dropdown-menu a {
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu a:focus-visible {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
 .back-link {
     display: inline-block;
     font-size: 0.85rem;

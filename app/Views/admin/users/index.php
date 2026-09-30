@@ -16,15 +16,26 @@ use App\Core\Csrf;
             ? 'Creazione utenti, ruoli, tutor di riferimento e password.'
             : 'Gli assistenti assegnati a te.' ?>
     </p>
-    <p>
+    <div class="page-actions">
         <a href="/admin/users/create" class="btn btn-primary">+ Nuovo utente</a>
+
         <?php if ($canManageAll): ?>
-            <a href="/admin/users/csv" class="btn">Scarica CSV</a>
-            <?php if ($canExportXlsx): ?>
-                <a href="/admin/users/xlsx" class="btn">Scarica XLSX</a>
-            <?php endif; ?>
+            <?php /* `details`/`summary`: la tendina si apre e si chiude da sola,
+                     senza JavaScript, e si usa da tastiera come qualunque
+                     pulsante. Lo script aggiunge solo la chiusura con Esc e
+                     con un clic fuori — toglie, non abilita (Sezione 4 del
+                     promemoria). */ ?>
+            <details class="dropdown">
+                <summary class="btn btn-secondary">Scarica dati</summary>
+                <div class="dropdown-menu">
+                    <a href="/admin/users/csv">CSV</a>
+                    <?php if ($canExportXlsx): ?>
+                        <a href="/admin/users/xlsx">XLSX</a>
+                    <?php endif; ?>
+                </div>
+            </details>
         <?php endif; ?>
-    </p>
+    </div>
 </div>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
@@ -62,4 +73,8 @@ use App\Core\Csrf;
         <?php endforeach; ?>
         </tbody>
     </table>
+<?php endif; ?>
+
+<?php if ($canManageAll): ?>
+    <script src="/assets/js/dropdown.js"></script>
 <?php endif; ?>
