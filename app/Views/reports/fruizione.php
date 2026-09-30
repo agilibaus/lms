@@ -82,7 +82,7 @@ use App\Core\Xlsx;
                                 ? '<span class="valore-assente">—</span>'
                                 : (int) $riga['percentuale_media'] . '%' ?>
                         </td>
-                        <td><?= htmlspecialchars(VideoProgressController::minuti((int) $riga['secondi_totali'])) ?> min</td>
+                        <td><?= VideoProgressController::secondi((int) $riga['secondi_totali']) ?>&nbsp;s</td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

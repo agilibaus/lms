@@ -211,8 +211,8 @@ class VideoProgressController
 
         $intestazioni = [
             'Studente', 'Email', 'Corso', 'Lezione',
-            'Percentuale vista', 'Tempo guardato (minuti)', 'Durata video (minuti)',
-            'Ultima posizione (minuti)', 'Prima visita', 'Ultima visita', 'Completata il',
+            'Percentuale vista', 'Tempo guardato (secondi)', 'Durata video (secondi)',
+            'Ultima posizione (secondi)', 'Prima visita', 'Ultima visita', 'Completata il',
         ];
 
         $xlsx = $formato === 'xlsx';
@@ -224,12 +224,11 @@ class VideoProgressController
         }
 
         /*
-         * I numeri escono diversi nei due formati, e non e' una svista.
-         * Nell'XLSX sono numeri veri, cosi' chi apre il rendiconto puo'
-         * sommarli e filtrarli. Nel CSV sono testo con la virgola decimale,
-         * perche' Excel in italiano legge «12.5» come una data e «12,5»
-         * come un numero: mettere il punto li' vorrebbe dire consegnare alla
-         * Regione una colonna di date.
+         * Tutti i tempi sono in secondi, quindi numeri interi: escono
+         * uguali nei due formati. Erano minuti con un decimale, e li'
+         * i due formati dovevano divergere, perche' Excel in italiano
+         * legge «12.5» come una data. Con gli interi il problema non si
+         * pone piu'.
          */
         $dati = [];
 
@@ -240,9 +239,9 @@ class VideoProgressController
                 $course['title'],
                 $lesson['title'],
                 $riga['percentage'] === null ? '' : $riga['percentage'],
-                self::minuti($riga['watched_seconds'], $xlsx),
-                $riga['duration_seconds'] === null ? '' : self::minuti($riga['duration_seconds'], $xlsx),
-                $riga['position_seconds'] === null ? '' : self::minuti($riga['position_seconds'], $xlsx),
+                self::secondi($riga['watched_seconds']),
+                $riga['duration_seconds'] === null ? '' : self::secondi($riga['duration_seconds']),
+                $riga['position_seconds'] === null ? '' : self::secondi($riga['position_seconds']),
                 self::data($riga['first_seen_at']),
                 self::data($riga['updated_at']),
                 self::data($riga['completed_at']),
@@ -362,15 +361,17 @@ class VideoProgressController
     }
 
     /**
-     * Minuti con un decimale: i secondi in un rendiconto non li legge
-     * nessuno. Numero vero per il foglio di calcolo, testo con la virgola
-     * per il CSV e per la pagina — vedi il commento in `download()`.
+     * I tempi si mostrano in **secondi**, non in minuti: sono la misura in
+     * cui il dato nasce, e i minuti con un decimale costringevano a
+     * riconvertirli per confrontarli con la durata del video. Scelta di
+     * Elena il 30/09, su video che durano in media 45 minuti.
+     *
+     * Restano un numero intero in ogni formato, quindi qui non serve
+     * distinguere fra foglio di calcolo e CSV come per i decimali.
      */
-    public static function minuti(int $secondi, bool $comeNumero = false): string|float
+    public static function secondi(int $secondi): int
     {
-        $minuti = round($secondi / 60, 1);
-
-        return $comeNumero ? $minuti : number_format($minuti, 1, ',', '');
+        return max(0, $secondi);
     }
 
     private static function data(?string $quando): string

@@ -1555,32 +1555,38 @@ h3 { font-size: 1.05rem; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
 }
 
-.video-start-choices .video-start-button {
-    position: static;
-    inset: auto;
-}
-
-/* "Guarda da capo" è la scelta secondaria: sta sotto, in piccolo, e non
-   compete con la ripresa — che è quello che nove volte su dieci si vuole. */
-.video-start-again {
+/* Le due scelte hanno la stessa forma perché sono la stessa azione — far
+   partire il video — e cambia solo da dove. Niente cerchio del play qui:
+   accanto a due pillole sembrerebbe un terzo comando. */
+.video-start-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.45rem 1.1rem;
     border: none;
-    background: rgba(255, 255, 255, 0.82);
     border-radius: 999px;
-    padding: 0.3rem 0.85rem;
-    min-height: var(--tap-target);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
     font: inherit;
-    font-size: 0.9rem;
+    font-weight: 600;
     color: #2f3a2c;
     cursor: pointer;
-    text-decoration: underline;
+    transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
-.video-start-again:hover,
-.video-start-again:focus-visible {
+.video-start-pill:hover,
+.video-start-pill:focus-visible {
     background: #fff;
+    transform: scale(1.03);
+}
+
+.video-start-pill-icon {
+    font-size: 0.85em;
+    line-height: 1;
 }
 
 /* Finché la copertina è lì il player resta nascosto: un iframe senza

@@ -78,13 +78,20 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                      Compaiono in coppia solo se c'e' davvero qualcosa da
                      riprendere — la decisione la prende il server, non questa
                      vista. */ ?>
+            <?php /* Con due scelte niente cerchio del play: e' un pulsante
+                     solo insieme all'etichetta, ma all'occhio ne sembrano due,
+                     e accanto a "Guarda da capo" faceva tre comandi per due
+                     azioni. Qui le due scelte hanno la stessa forma, perche'
+                     sono la stessa cosa — far partire il video — e cambia
+                     solo da dove. */ ?>
             <?php if ($riprendiDa !== null): ?>
                 <div class="video-start-choices">
-                    <button type="button" class="video-start-button" data-avvia data-da="<?= (int) $riprendiDa ?>">
-                        <span class="video-start-icon" aria-hidden="true">&#9654;</span>
-                        <span class="video-start-label">Riprendi da <?= htmlspecialchars($minutoSecondo($riprendiDa)) ?></span>
+                    <button type="button" class="video-start-pill" data-avvia data-da="<?= (int) $riprendiDa ?>">
+                        <span class="video-start-pill-icon" aria-hidden="true">&#9654;</span>
+                        Riprendi da <?= htmlspecialchars($minutoSecondo($riprendiDa)) ?>
                     </button>
-                    <button type="button" class="video-start-again" data-avvia data-da="0">
+                    <button type="button" class="video-start-pill" data-avvia data-da="0">
+                        <span class="video-start-pill-icon" aria-hidden="true">&#9654;</span>
                         Guarda da capo
                     </button>
                 </div>

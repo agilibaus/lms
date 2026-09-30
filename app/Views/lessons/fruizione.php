@@ -127,7 +127,7 @@ $quando = static function (?string $data): string {
                             <?= (int) $riga['percentage'] ?>%
                         <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars(VideoProgressController::minuti((int) $riga['watched_seconds'])) ?> min</td>
+                    <td><?= VideoProgressController::secondi((int) $riga['watched_seconds']) ?>&nbsp;s</td>
                     <td><?= htmlspecialchars($minutoSecondo(
                         $riga['position_seconds'] === null ? null : (int) $riga['position_seconds']
                     )) ?></td>

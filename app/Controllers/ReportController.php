@@ -239,7 +239,7 @@ class ReportController
 
         $intestazioni[] = 'Media sulle lezioni con video (%)';
         $tipi[count($intestazioni) - 1] = 'numero';
-        $intestazioni[] = 'Tempo guardato in totale (minuti)';
+        $intestazioni[] = 'Tempo guardato in totale (secondi)';
         $tipi[count($intestazioni) - 1] = 'numero';
         $intestazioni[] = 'Lezioni avviate';
         $tipi[count($intestazioni) - 1] = 'numero';
@@ -255,9 +255,8 @@ class ReportController
             }
 
             $cella[] = $riga['percentuale_media'] === null ? '' : $riga['percentuale_media'];
-            // Numero vero nel foglio di calcolo, testo con la virgola nel CSV:
-            // Excel in italiano legge «12.5» come una data.
-            $cella[] = VideoProgressController::minuti((int) $riga['secondi_totali'], $xlsx);
+            // Secondi, quindi un intero: esce uguale nei due formati.
+            $cella[] = VideoProgressController::secondi((int) $riga['secondi_totali']);
             $cella[] = (int) $riga['lezioni_avviate'];
 
             $dati[] = $cella;
