@@ -923,6 +923,21 @@ h3 { font-size: 1.05rem; }
    ========================================================== */
 
 @media (min-width: 769px) {
+    /* La barra laterale non scorre con la pagina: resta ferma e, se le sue
+       voci non ci stanno, scorre per conto suo.
+       `align-self: flex-start` serve perche' `sticky` funzioni: senza, la
+       barra e' un elemento flessibile stirato all'altezza di tutta la pagina,
+       e una cosa alta quanto la pagina non ha margine per restare ferma.
+       Cosi' il marchio non scorre piu' via da sotto il pulsante fisso, che
+       prima finiva a coprire la prima voce del menu. */
+    .sidebar {
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
     .nav-collapse-checkbox {
         display: block;
         position: fixed;
