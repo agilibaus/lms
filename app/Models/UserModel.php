@@ -87,6 +87,28 @@ class UserModel
     }
 
     /**
+     * Elenco completo per l'export, ordinato per nome: i dati della
+     * registrazione e quelli che l'utente ha aggiunto al profilo.
+     *
+     * La bio resta fuori di proposito (deciso il 30/09): e' testo libero
+     * lungo e renderebbe il foglio scomodo da leggere. Dell'immagine si porta
+     * solo se c'e', non il percorso, che fuori da Pistacchio non serve.
+     */
+    public static function allForExport(): array
+    {
+        return Database::connection()->query(
+            'SELECT u.id, u.full_name, u.email, u.role, u.is_active, u.email_verified_at,
+                    u.phone, u.city, u.avatar_path, u.created_at, u.updated_at,
+                    GROUP_CONCAT(t.full_name ORDER BY t.full_name SEPARATOR \', \') AS supervising_tutor_name
+             FROM users u
+             LEFT JOIN assistant_tutors at ON at.assistant_id = u.id
+             LEFT JOIN users t ON t.id = at.tutor_id
+             GROUP BY u.id
+             ORDER BY u.full_name'
+        )->fetchAll();
+    }
+
+    /**
      * Utenti di uno o piu' ruoli (es. elenco tutor per la tendina, studenti da iscrivere).
      *
      * @param string[] $roles

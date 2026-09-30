@@ -8,6 +8,9 @@
         "ext-pdo": "*",
         "dompdf/dompdf": "^3.0"
     },
+    "suggest": {
+        "ext-zip": "Serve solo per l'elenco utenti in XLSX. Non e' fra i requisiti perche' un hosting che non ce l'ha deve poter installare lo stesso il resto: senza, il pulsante XLSX non compare e resta il CSV."
+    },
     "autoload": {
         "psr-4": {
             "App\\": "app/"

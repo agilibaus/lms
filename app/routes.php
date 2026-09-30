@@ -117,6 +117,10 @@ $router->get('/reports/groups/{id}/csv', [ReportController::class, 'groupCsv']);
 
 // --- Pannello di amministrazione --------------------------------------
 $router->get('/admin/users', [AdminUserController::class, 'index']);
+// Prima delle rotte con {id}: una rotta con segnaposto cattura qualunque
+// segmento, e 'csv' verrebbe preso per un identificativo.
+$router->get('/admin/users/csv', [AdminUserController::class, 'exportCsv']);
+$router->get('/admin/users/xlsx', [AdminUserController::class, 'exportXlsx']);
 $router->get('/admin/users/create', [AdminUserController::class, 'createForm']);
 $router->post('/admin/users', [AdminUserController::class, 'store']);
 $router->get('/admin/users/{id}/edit', [AdminUserController::class, 'editForm']);

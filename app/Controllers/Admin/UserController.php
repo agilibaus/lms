@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Core\Csv;
 use App\Core\Upload;
 use App\Core\View;
+use App\Core\Xlsx;
 use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
 use App\Models\UserModel;
@@ -30,6 +32,9 @@ class UserController extends AdminController
             'pageTitle' => 'Utenti',
             'users' => $this->visibleUsers(),
             'canManageAll' => Auth::can('user.manage'),
+            // Il pulsante XLSX non compare dove il server non puo' produrlo:
+            // meglio non offrirlo che offrirlo e fallire.
+            'canExportXlsx' => Xlsx::disponibile(),
         ]);
     }
 
@@ -292,6 +297,93 @@ class UserController extends AdminController
             'Utente rimosso dal gruppo. Le iscrizioni ai corsi restano attive: rimuovile dalla scheda del corso se necessario.',
             $redirect
         );
+    }
+
+    // ---------------------------------------------------------------
+    // Elenco scaricabile
+    // ---------------------------------------------------------------
+
+    /**
+     * Solo `user.manage`, non `assistant.manage`: un tutor che gestisce i
+     * propri assistenti non scarica l'anagrafica di tutta la piattaforma.
+     */
+    public function exportCsv(array $params = []): void
+    {
+        Auth::requirePermission('user.manage');
+
+        [$intestazione, $righe, $tipi] = $this->exportTable();
+
+        // Nel CSV le date diventano testo leggibile: non c'e' un tipo "data"
+        // da dichiarare, e la forma ISO del database si legge male. Nel foglio
+        // di calcolo restano date vere, cosi' l'ordinamento funziona.
+        foreach ($righe as $indice => $riga) {
+            foreach ($tipi as $colonna => $tipo) {
+                if ($tipo === 'data' && ($riga[$colonna] ?? null) !== null) {
+                    $righe[$indice][$colonna] = date('d/m/Y H:i', (int) strtotime((string) $riga[$colonna]));
+                }
+            }
+        }
+
+        Csv::send('utenti-' . date('Y-m-d') . '.csv', $intestazione, $righe);
+    }
+
+    public function exportXlsx(array $params = []): void
+    {
+        Auth::requirePermission('user.manage');
+
+        if (!Xlsx::disponibile()) {
+            $this->fail(
+                'Il foglio di calcolo richiede l\'estensione zip di PHP, che su questo server non e\' attiva. L\'elenco in CSV funziona comunque.',
+                '/admin/users'
+            );
+        }
+
+        [$intestazione, $righe, $tipi] = $this->exportTable();
+
+        Xlsx::send('utenti-' . date('Y-m-d') . '.xlsx', $intestazione, $righe, $tipi, 'Utenti');
+    }
+
+    /**
+     * Una sola descrizione delle colonne per tutti e due i formati: due
+     * elenchi separati finirebbero per divergere, come e' successo fra
+     * pannello e catalogo (pistacchio-lms.md Sezione 4).
+     *
+     * @return array{0: string[], 1: array<int, array<int, string|int|null>>, 2: array<int, string>}
+     */
+    private function exportTable(): array
+    {
+        $intestazione = [
+            'ID', 'Nome', 'Email', 'Ruolo', 'Stato', 'Email verificata',
+            'Tutor affiancati', 'Telefono', 'Citta', 'Immagine',
+            'Registrato il', 'Ultima modifica',
+        ];
+
+        $tipi = [
+            'numero', 'testo', 'testo', 'testo', 'testo', 'data',
+            'testo', 'testo', 'testo', 'testo',
+            'data', 'data',
+        ];
+
+        $righe = [];
+
+        foreach (UserModel::allForExport() as $utente) {
+            $righe[] = [
+                (int) $utente['id'],
+                (string) $utente['full_name'],
+                (string) $utente['email'],
+                Auth::roleLabel($utente['role'] ?? null),
+                (int) $utente['is_active'] === 1 ? 'attivo' : 'disattivato',
+                $utente['email_verified_at'],
+                (string) ($utente['supervising_tutor_name'] ?? ''),
+                (string) ($utente['phone'] ?? ''),
+                (string) ($utente['city'] ?? ''),
+                ($utente['avatar_path'] ?? null) === null ? 'no' : 'si',
+                $utente['created_at'],
+                $utente['updated_at'],
+            ];
+        }
+
+        return [$intestazione, $righe, $tipi];
     }
 
     // ---------------------------------------------------------------

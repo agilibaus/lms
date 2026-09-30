@@ -7,6 +7,7 @@ use App\Core\Csrf;
 
 /** @var array $users */
 /** @var bool $canManageAll */
+/** @var bool $canExportXlsx */
 ?>
 <div class="page-header">
     <h1>Utenti</h1>
@@ -15,7 +16,15 @@ use App\Core\Csrf;
             ? 'Creazione utenti, ruoli, tutor di riferimento e password.'
             : 'Gli assistenti assegnati a te.' ?>
     </p>
-    <p><a href="/admin/users/create" class="btn btn-primary">+ Nuovo utente</a></p>
+    <p>
+        <a href="/admin/users/create" class="btn btn-primary">+ Nuovo utente</a>
+        <?php if ($canManageAll): ?>
+            <a href="/admin/users/csv" class="btn">Scarica CSV</a>
+            <?php if ($canExportXlsx): ?>
+                <a href="/admin/users/xlsx" class="btn">Scarica XLSX</a>
+            <?php endif; ?>
+        <?php endif; ?>
+    </p>
 </div>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
