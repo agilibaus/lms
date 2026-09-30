@@ -218,6 +218,40 @@ CREATE TABLE lesson_progress (
     FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Da dove riprende lo studente. Una riga per studente e lezione, sovrascritta:
+-- sta in tabella e non nel browser perche' la ripresa deve funzionare anche
+-- cambiando dispositivo.
+CREATE TABLE lesson_video_progress (
+    user_id          INT UNSIGNED NOT NULL,
+    lesson_id        INT UNSIGNED NOT NULL,
+    position_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+    duration_seconds INT UNSIGNED NULL,       -- durata dichiarata dal player
+    first_seen_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, lesson_id),
+    INDEX idx_lezione (lesson_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Quali parti del video ha guardato. Gli intervalli arrivano gia' uniti:
+-- chi guarda una lezione intera lascia una riga, non una al minuto. Da qui
+-- escono la percentuale vista e il tempo guardato del rendiconto.
+-- `end_seconds` e' escluso, cosi' due intervalli che si toccano si uniscono
+-- senza contare due volte il secondo di confine.
+CREATE TABLE lesson_video_intervals (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT UNSIGNED NOT NULL,
+    lesson_id     INT UNSIGNED NOT NULL,
+    start_seconds INT UNSIGNED NOT NULL,
+    end_seconds   INT UNSIGNED NOT NULL,
+    recorded_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_studente_lezione (user_id, lesson_id, start_seconds),
+    INDEX idx_lezione (lesson_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ---------------------------------------------------
 -- Quiz
 -- ---------------------------------------------------

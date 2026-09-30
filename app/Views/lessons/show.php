@@ -15,6 +15,15 @@ use App\Core\VideoEmbed;
 /** @var array $materials */
 /** @var bool $completed */
 /** @var array $liveSessions */
+/** @var int|null $riprendiDa secondo da cui riprendere, null se non c'e' niente da riprendere */
+
+/**
+ * «12:04» invece di «724 secondi»: e' il numero che si legge sulla barra del
+ * player, ed e' l'unico che aiuta a decidere se riprendere.
+ */
+$minutoSecondo = static function (int $secondi): string {
+    return sprintf('%d:%02d', intdiv($secondi, 60), $secondi % 60);
+};
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $course['id'] ?>" class="back-link">
@@ -64,10 +73,27 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                  avviare. */ ?>
         <div class="video-start" data-avvio hidden>
             <?= VideoPoster::svg((int) $lesson['id'], (string) $lesson['title']) ?>
-            <button type="button" class="video-start-button" data-avvia>
-                <span class="video-start-icon" aria-hidden="true">&#9654;</span>
-                <span class="video-start-label">Guarda la lezione</span>
-            </button>
+            <?php /* I due pulsanti stanno sulla copertina che c'e' gia': niente
+                     interfaccia nuova, e nessun salto a sorpresa dentro il video.
+                     Compaiono in coppia solo se c'e' davvero qualcosa da
+                     riprendere — la decisione la prende il server, non questa
+                     vista. */ ?>
+            <?php if ($riprendiDa !== null): ?>
+                <div class="video-start-choices">
+                    <button type="button" class="video-start-button" data-avvia data-da="<?= (int) $riprendiDa ?>">
+                        <span class="video-start-icon" aria-hidden="true">&#9654;</span>
+                        <span class="video-start-label">Riprendi da <?= htmlspecialchars($minutoSecondo($riprendiDa)) ?></span>
+                    </button>
+                    <button type="button" class="video-start-again" data-avvia data-da="0">
+                        Guarda da capo
+                    </button>
+                </div>
+            <?php else: ?>
+                <button type="button" class="video-start-button" data-avvia data-da="0">
+                    <span class="video-start-icon" aria-hidden="true">&#9654;</span>
+                    <span class="video-start-label">Guarda la lezione</span>
+                </button>
+            <?php endif; ?>
         </div>
 
         <?= $embed ?>
@@ -196,4 +222,16 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
              il pulsante della modalita' senza distrazioni. */ ?>
     <script src="/assets/js/lesson-video.js"></script>
     <script src="/assets/js/lesson-focus.js"></script>
+
+    <?php /* La tracciatura riguarda solo chi sta seguendo il corso: lo staff
+             guarda i video per lavoro, e quel tempo non e' didattica di
+             nessuno. Il controller lo rifiuterebbe comunque, ma non c'e'
+             ragione di far partire lo script e le sue richieste. */ ?>
+    <?php if (Auth::hasRole('studente')): ?>
+        <script src="/assets/vendor/playerjs/player.min.js"></script>
+        <script src="/assets/js/lesson-tracking.js"
+                data-lezione="<?= (int) $lesson['id'] ?>"
+                data-token="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES) ?>"
+                data-durata="<?= (int) ($lesson['duration_seconds'] ?? 0) ?>"></script>
+    <?php endif; ?>
 <?php endif; ?>

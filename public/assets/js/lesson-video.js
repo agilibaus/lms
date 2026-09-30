@@ -23,7 +23,9 @@
     }
 
     var facade = box.querySelector('[data-avvio]');
-    var startButton = box.querySelector('[data-avvia]');
+    // Possono essere due: "Riprendi da 12:04" e "Guarda da capo". Ciascuno
+    // porta in data-da il secondo da cui far partire il video.
+    var startButtons = box.querySelectorAll('[data-avvia]');
     var embed = box.querySelector('.video-embed');
     var video = box.querySelector('video');
     var iframe = box.querySelector('iframe[data-src]');
@@ -72,6 +74,8 @@
     }
 
     function started() {
+        // Riprendere dal minuto 7 conta come avvio: chi torna su una lezione
+        // gia' cominciata non deve rifarla da capo per sbloccare il pulsante.
         remember();
         unlock();
 
@@ -88,16 +92,39 @@
         box.classList.add('has-facade');
     }
 
-    function play() {
+    function play(from) {
+        var start = Math.max(0, parseInt(from, 10) || 0);
+
         facade.hidden = true;
         box.classList.remove('has-facade');
 
         if (iframe !== null) {
+            var src = iframe.getAttribute('data-src');
+
+            // Il punto di partenza si passa nell'indirizzo con "t=", cioè
+            // prima che il player esista: è il modo che non dipende
+            // dall'API. Se poi l'API risponde, lesson-tracking.js la userà
+            // per i salti successivi; se non risponde, la ripresa funziona
+            // lo stesso — è la regola di questo lavoro, il peggio che può
+            // succedere è il comportamento di prima.
+            if (start > 0) {
+                src += (src.indexOf('?') === -1 ? '?' : '&') + 't=' + start;
+            }
+
             // L'avvio automatico serve perché il clic sulla copertina valga
             // anche come clic sul play: altrimenti sarebbero due.
-            iframe.setAttribute('src', iframe.getAttribute('data-src'));
+            iframe.setAttribute('src', src);
             iframe.removeAttribute('data-src');
         } else if (video !== null) {
+            if (start > 0) {
+                try {
+                    video.currentTime = start;
+                } catch (e) {
+                    // Metadati non ancora pronti: riparte da capo, che è il
+                    // comportamento di prima.
+                }
+            }
+
             var attempt = video.play();
 
             // Se il browser rifiuta l'avvio automatico resta il player con i
@@ -110,9 +137,14 @@
         started();
     }
 
-    if (facade !== null && startButton !== null && embed !== null && (iframe !== null || video !== null)) {
+    if (facade !== null && startButtons.length > 0 && embed !== null && (iframe !== null || video !== null)) {
         reveal();
-        startButton.addEventListener('click', play);
+
+        Array.prototype.forEach.call(startButtons, function (btn) {
+            btn.addEventListener('click', function () {
+                play(btn.getAttribute('data-da'));
+            });
+        });
     }
 
     // Il video sul nostro server può essere avviato anche dai comandi del

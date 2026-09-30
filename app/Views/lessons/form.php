@@ -120,6 +120,15 @@ $provider = $lesson['video_provider'] ?? 'none';
     <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Salva' : 'Crea lezione' ?></button>
 </form>
 
+<?php if ($isEdit && $provider !== 'none'): ?>
+    <?php /* Il rendiconto si raggiunge da qui e non dal menu: riguarda una
+             lezione, e la lezione è questa. */ ?>
+    <p class="hint">
+        <a href="/lessons/<?= $lessonId ?>/fruizione">Fruizione del video</a> &mdash;
+        quanta parte del video ha guardato ciascuno studente, con lo scarico in CSV e XLSX.
+    </p>
+<?php endif; ?>
+
 <?php if ($isEdit && $provider === 'self_hosted' && !empty($lesson['video_ref'])): ?>
     <?php /* Moduli a parte, non pulsanti dentro quello principale: li' il
              primo pulsante di invio sarebbe stato uno di questi, e premere

@@ -20,6 +20,7 @@ use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
 use App\Models\LiveSessionModel;
 use App\Models\ModuleModel;
+use App\Models\VideoProgressModel;
 
 class LessonController
 {
@@ -150,7 +151,48 @@ class LessonController
             'materials' => LessonMaterialModel::forLesson((int) $lesson['id']),
             'completed' => LessonProgressModel::isCompleted((int) Auth::id(), (int) $lesson['id']),
             'liveSessions' => LiveSessionModel::upcomingForModule((int) $module['id']),
+            // Il secondo da cui riprendere, o null se non c'e' niente da
+            // riprendere. Lo calcola il server: cosi' il pulsante e' gia'
+            // nell'HTML con il suo minuto scritto dentro, e non compare a
+            // sorpresa un istante dopo che la pagina si e' aperta.
+            'riprendiDa' => $this->resumePoint((int) Auth::id(), $lesson),
         ]);
+    }
+
+    /**
+     * Da dove riprendere il video di questa lezione, o null.
+     *
+     * Null in tre casi: non c'e' una posizione salvata; e' troppo vicina
+     * all'inizio (tornare al secondo 12 non e' riprendere); e' troppo vicina
+     * alla fine (chi e' arrivato in fondo vuole rivederlo da capo). Le due
+     * soglie stanno sul controller della fruizione, con il resto delle
+     * costanti di quel lavoro.
+     */
+    private function resumePoint(int $userId, array $lesson): ?int
+    {
+        if ($lesson['video_provider'] === 'none') {
+            return null;
+        }
+
+        $salvata = VideoProgressModel::position($userId, (int) $lesson['id']);
+
+        if ($salvata === null) {
+            return null;
+        }
+
+        $posizione = $salvata['position_seconds'];
+
+        if ($posizione < VideoProgressController::RESUME_MIN_SECONDS) {
+            return null;
+        }
+
+        $durata = $salvata['duration_seconds'] ?? (int) ($lesson['duration_seconds'] ?? 0);
+
+        if ($durata > 0 && $posizione > $durata - VideoProgressController::RESUME_TAIL_SECONDS) {
+            return null;
+        }
+
+        return $posizione;
     }
 
     public function editForm(array $params): void

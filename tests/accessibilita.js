@@ -376,6 +376,9 @@ const PAGINE_INTERNE = [
     ['/admin/settings/posta', 'Posta elettronica'],
     ['/admin/settings/aspetto', 'Aspetto'],
     ['/admin/permissions', 'Permessi'],
+    // Pagina di una lezione, quindi dipende dai dati: se la lezione 1 non
+    // c'è, la si salta invece di far fallire tutto (vedi `apri`).
+    ['/lessons/1/fruizione', 'Fruizione del video'],
 ];
 
 async function entra(page) {
@@ -388,6 +391,15 @@ async function entra(page) {
 
 async function esamina(page, url, nome, minimoBersaglio) {
     const risposta = await page.goto(BASE + url);
+
+    if (risposta && risposta.status() === 404) {
+        // Una pagina che dipende dai dati (quella di una lezione, per
+        // esempio) può non esserci in questa installazione. Saltarla è
+        // giusto; far fallire i controlli di accessibilità perché manca una
+        // riga nel database non lo è.
+        console.log('  --   ' + nome + ': non presente in questa installazione, saltata');
+        return;
+    }
 
     if (risposta && risposta.status() >= 400) {
         check(nome + ': la pagina risponde', false, ['stato ' + risposta.status()]);

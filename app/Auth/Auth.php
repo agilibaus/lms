@@ -273,6 +273,42 @@ class Auth
     }
 
     /**
+     * Gli stessi controlli di `guardSession()`, ma come risposta invece che
+     * come rimando.
+     *
+     * Serve alle richieste che non sono navigazioni: un `fetch` che riceve
+     * un 302 verso `/login` segue il rimando e si ritrova in mano la pagina
+     * di accesso, senza capire che la sessione e' scaduta. Cosi' chi chiama
+     * puo' rispondere 401 e lasciare che sia lo script a decidere.
+     *
+     * Non e' una scorciatoia intorno a `guardSession()`: chiede le stesse
+     * cose — l'utente esiste ancora, la sessione non e' stata aperta con una
+     * password poi cambiata, non c'e' un cambio password obbligatorio in
+     * sospeso — e per le pagine vale sempre `requireLogin()`.
+     */
+    public static function sessionIsCurrent(): bool
+    {
+        if (!self::check()) {
+            return false;
+        }
+
+        $stato = self::passwordState();
+
+        if ($stato === null) {
+            return false;
+        }
+
+        if (
+            array_key_exists(self::SESSION_PASSWORD_STAMP, $_SESSION)
+            && $_SESSION[self::SESSION_PASSWORD_STAMP] !== $stato['password_changed_at']
+        ) {
+            return false;
+        }
+
+        return (int) $stato['must_change_password'] !== 1;
+    }
+
+    /**
      * Allinea la sessione dopo che l'utente ha cambiato la propria password,
      * cosi' il browser da cui l'ha cambiata non viene chiuso insieme agli altri.
      */

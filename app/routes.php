@@ -19,6 +19,7 @@ use App\Controllers\ProfileController;
 use App\Controllers\QuizController;
 use App\Controllers\RegistrationController;
 use App\Controllers\ReportController;
+use App\Controllers\VideoProgressController;
 
 /** @var App\Core\Router $router */
 
@@ -83,6 +84,12 @@ $router->get('/lessons/{id}/video', [LessonController::class, 'streamVideo']);
 $router->post('/lessons/{id}/video/detach', [LessonController::class, 'detachVideo']);
 $router->post('/lessons/{id}/video/delete', [LessonController::class, 'deleteVideo']);
 $router->post('/lessons/{id}/complete', [LessonController::class, 'complete']);
+
+// Fruizione dei video: lo script del player scrive sulla POST, staff e
+// tutor leggono il rendiconto sulle GET.
+$router->post('/lessons/{id}/fruizione', [VideoProgressController::class, 'store']);
+$router->get('/lessons/{id}/fruizione', [VideoProgressController::class, 'report']);
+$router->get('/lessons/{id}/fruizione/{formato}', [VideoProgressController::class, 'download']);
 $router->get('/materials/{id}/download', [LessonController::class, 'downloadMaterial']);
 
 // --- Quiz -------------------------------------------------------------

@@ -1544,6 +1544,45 @@ h3 { font-size: 1.05rem; }
     padding: 0.25rem 0.85rem;
 }
 
+/* Quando c'è qualcosa da riprendere i pulsanti sono due, e l'overlay che
+   copriva tutta la copertina passa da "Guarda la lezione" a questo
+   contenitore: altrimenti i due si sovrapporrebbero, perché ciascuno
+   pretende inset: 0. */
+.video-start-choices {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.video-start-choices .video-start-button {
+    position: static;
+    inset: auto;
+}
+
+/* "Guarda da capo" è la scelta secondaria: sta sotto, in piccolo, e non
+   compete con la ripresa — che è quello che nove volte su dieci si vuole. */
+.video-start-again {
+    border: none;
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    min-height: var(--tap-target);
+    font: inherit;
+    font-size: 0.9rem;
+    color: #2f3a2c;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.video-start-again:hover,
+.video-start-again:focus-visible {
+    background: #fff;
+}
+
 /* Finché la copertina è lì il player resta nascosto: un iframe senza
    indirizzo, o un video non ancora avviato, occuperebbero un rettangolo vuoto
    sotto l'immagine. La classe la mette il JavaScript, quindi senza JavaScript
@@ -2340,4 +2379,104 @@ fieldset.checkbox-group legend {
     margin-bottom: 0.4rem;
     font-weight: 600;
     font-size: 0.9rem;
+}
+
+/* ---------- Fruizione del video ---------- */
+
+/* Testo destinato ai lettori di schermo e non all'occhio: resta nel flusso
+   del documento (niente display:none, che lo toglierebbe anche a loro) ma
+   non occupa spazio. Serve alla didascalia della tabella, che ripeterebbe
+   il titolo della pagina a chi la vede. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* I quattro numeri in cima: sono medie sugli iscritti, non su chi ha
+   guardato. */
+.riepilogo-fruizione {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+}
+
+.riepilogo-fruizione > div {
+    flex: 1 1 10rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.riepilogo-fruizione dt {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+
+.riepilogo-fruizione dd {
+    margin: 0.15rem 0 0;
+    font-size: 1.45rem;
+    font-weight: 600;
+}
+
+/* L'email sotto il nome, nella stessa cella: due colonne per due dati che si
+   leggono sempre insieme allargherebbero la tabella senza aggiungere niente. */
+.riga-secondaria {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+
+.valore-assente {
+    color: var(--color-text-muted);
+}
+
+/* La barra è un di più: accanto c'è sempre il numero, perché il colore da
+   solo non basta a chi non lo distingue. Per questo è aria-hidden. */
+.barra-vista {
+    display: inline-block;
+    width: 4.5rem;
+    height: 0.5rem;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+    border-radius: 999px;
+    background: var(--color-border);
+    overflow: hidden;
+}
+
+.barra-vista-piena {
+    display: block;
+    height: 100%;
+    background: var(--color-primary);
+}
+
+.nota-metodo {
+    margin: 2rem 0 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-size: 0.9rem;
+}
+
+.nota-metodo summary {
+    cursor: pointer;
+    font-weight: 600;
+    min-height: var(--tap-target);
+    display: flex;
+    align-items: center;
+}
+
+.nota-metodo p {
+    margin: 0.6rem 0 0;
+    color: var(--color-text-muted);
 }
