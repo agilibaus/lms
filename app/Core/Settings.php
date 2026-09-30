@@ -63,6 +63,17 @@ class Settings
         'GOOGLE_CALENDAR_TIMEZONE',
     ];
 
+    /**
+     * Aspetto delle pagine pubbliche. `AUTH_LAYOUT` sceglie la struttura; i
+     * due testi servono solo all'aspetto affiancato e, svuotati, tornano ai
+     * predefiniti in AuthLayout::DEFAULTS, non al .env.
+     */
+    public const APPEARANCE_KEYS = [
+        'AUTH_LAYOUT',
+        'AUTH_SPLIT_TITLE',
+        'AUTH_SPLIT_TEXT',
+    ];
+
     /** Chiavi da non rimandare mai al browser. */
     public const SECRET_KEYS = [
         'MAIL_PASSWORD',
@@ -72,7 +83,8 @@ class Settings
     {
         return in_array($key, self::MAIL_KEYS, true)
             || in_array($key, self::GOOGLE_KEYS, true)
-            || in_array($key, self::LIVE_MAIL_KEYS, true);
+            || in_array($key, self::LIVE_MAIL_KEYS, true)
+            || in_array($key, self::APPEARANCE_KEYS, true);
     }
 
     public static function isSecret(string $key): bool

@@ -164,6 +164,8 @@ $router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']
 $router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);
 $router->get('/admin/settings/inviti', [SettingsController::class, 'liveMail']);
 $router->post('/admin/settings/inviti', [SettingsController::class, 'updateLiveMail']);
+$router->get('/admin/settings/aspetto', [SettingsController::class, 'appearance']);
+$router->post('/admin/settings/aspetto', [SettingsController::class, 'updateAppearance']);
 $router->get('/admin/settings/meet', [SettingsController::class, 'meet']);
 $router->post('/admin/settings/meet', [SettingsController::class, 'updateMeet']);
 $router->post('/admin/settings/meet/chiave/elimina', [SettingsController::class, 'deleteMeetKey']);

@@ -576,6 +576,143 @@ h3 { font-size: 1.05rem; }
     padding: 1.5rem;
 }
 
+/* ---------- Pagine pubbliche: aspetto "affiancato" ----------
+   Presentazione a sinistra, modulo a destra. Le stesse pagine del guscio,
+   con intorno una cornice diversa: il contenuto non e' scritto due volte.
+   Su schermo stretto le due sezioni si impilano — e' la stessa
+   impaginazione che si ripiega, non una seconda da mantenere. */
+
+.auth-body-split {
+    margin: 0;
+    background: var(--color-surface);
+}
+
+.auth-split {
+    display: flex;
+    min-height: 100vh;
+}
+
+.auth-scene {
+    flex: 1 1 52%;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-auth-bg);
+    /* Gli stessi tre cerchi del guscio, disposti perche' il testo scuro non
+       finisca mai sopra al piu' carico dei tre: il terracotta sta in alto,
+       sopra alla fascia della frase. Gli altri due sono piu' chiari dello
+       sfondo e possono passarci dietro. */
+    background-image:
+        radial-gradient(circle 200px at 52% 74%,
+            rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.30) 88%, transparent 100%),
+        radial-gradient(circle 155px at 54% 21%,
+            rgba(217, 166, 121, 0.11) 0%, rgba(217, 166, 121, 0.11) 96%, transparent 100%),
+        radial-gradient(circle 110px at 74% 52%,
+            rgba(122, 140, 110, 0.09) 0%, rgba(122, 140, 110, 0.09) 96%, transparent 100%);
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 2.6rem 3.5rem;
+}
+
+.scene-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.scene-mark {
+    display: block;
+    width: 34px;
+    height: 34px;
+}
+
+/* Centrato nello spazio che resta sotto al marchio. */
+.scene-claim {
+    max-width: 26rem;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.scene-claim h2 {
+    margin: 0 0 0.9rem;
+    font-size: 1.85rem;
+    line-height: 1.25;
+    font-weight: 700;
+    color: #2f3a2c;
+}
+
+.scene-claim p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #5f6b59;
+}
+
+.auth-panel {
+    flex: 1 1 48%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    background: var(--color-surface);
+}
+
+.auth-panel-inner {
+    width: 100%;
+    max-width: 360px;
+}
+
+.auth-panel-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.35rem;
+}
+
+/* Nel guscio il sottotitolo sta sotto al marchio ed e' centrato; qui segue
+   il titolo della pagina e resta allineato a sinistra con il modulo. */
+.auth-panel-inner .auth-subtitle {
+    text-align: left;
+    margin: 0 0 1.6rem;
+}
+
+@media (max-width: 860px) {
+    .auth-split {
+        flex-direction: column;
+    }
+
+    .auth-scene {
+        flex: 0 0 auto;
+        padding: 1.6rem 1.4rem 1.8rem;
+        background-image:
+            radial-gradient(circle 130px at 86% 34%,
+                rgba(217, 166, 121, 0.12) 0%, rgba(217, 166, 121, 0.12) 96%, transparent 100%),
+            radial-gradient(circle 100px at 20% 82%,
+                rgba(122, 140, 110, 0.10) 0%, rgba(122, 140, 110, 0.10) 96%, transparent 100%);
+    }
+
+    .scene-claim {
+        margin-top: 1.2rem;
+        margin-bottom: 0;
+    }
+
+    .scene-claim h2 {
+        font-size: 1.35rem;
+    }
+
+    .scene-claim p {
+        font-size: 0.9rem;
+    }
+
+    .auth-panel {
+        flex: 1 1 auto;
+        align-items: flex-start;
+        padding: 2rem 1.4rem 2.5rem;
+    }
+}
+
 .auth-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);

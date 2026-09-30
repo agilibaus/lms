@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Core\AuthLayout;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Google\ServiceAccountClient;
@@ -29,6 +30,7 @@ class SettingsController extends AdminController
     private const MAIL_PAGE = '/admin/settings/posta';
     private const MEET_PAGE = '/admin/settings/meet';
     private const LIVE_MAIL_PAGE = '/admin/settings/inviti';
+    private const APPEARANCE_PAGE = '/admin/settings/aspetto';
 
     /** Dove finisce la chiave dell'account di servizio, fuori dal document root. */
     private const KEY_DIR = __DIR__ . '/../../../storage/google';
@@ -203,6 +205,53 @@ class SettingsController extends AdminController
         }
 
         $this->success('Testi degli inviti salvati.', self::LIVE_MAIL_PAGE);
+    }
+
+    // ---------------------------------------------------------------
+    // Aspetto delle pagine pubbliche
+    // ---------------------------------------------------------------
+
+    public function appearance(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $values = [];
+
+        foreach (['AUTH_SPLIT_TITLE', 'AUTH_SPLIT_TEXT'] as $key) {
+            // Nel campo si mette quello che e' stato scritto qui, non il
+            // predefinito: un campo vuoto si legge come "vale quello di
+            // fabbrica", che e' esattamente quello che significa.
+            $values[$key] = (string) (Settings::stored($key) ?? '');
+        }
+
+        View::render('admin/settings/aspetto', [
+            'pageTitle' => 'Aspetto',
+            'layout' => AuthLayout::current(),
+            'choices' => AuthLayout::CHOICES,
+            'values' => $values,
+            'defaults' => AuthLayout::DEFAULTS,
+            'lastUpdate' => Settings::lastUpdate(Settings::APPEARANCE_KEYS),
+        ]);
+    }
+
+    public function updateAppearance(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $userId = Auth::id();
+        $layout = (string) ($_POST['AUTH_LAYOUT'] ?? '');
+
+        // Elenco chiuso: un POST costruito a mano non deve poter scrivere un
+        // aspetto che non esiste e lasciare le pagine pubbliche senza vestito.
+        if (!array_key_exists($layout, AuthLayout::CHOICES)) {
+            $this->fail('Aspetto non valido.', self::APPEARANCE_PAGE);
+        }
+
+        Settings::set('AUTH_LAYOUT', $layout, $userId);
+        Settings::set('AUTH_SPLIT_TITLE', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TITLE'] ?? ''))), $userId);
+        Settings::set('AUTH_SPLIT_TEXT', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TEXT'] ?? ''))), $userId);
+
+        $this->success('Aspetto salvato.', self::APPEARANCE_PAGE);
     }
 
     // ---------------------------------------------------------------
