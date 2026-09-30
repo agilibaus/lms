@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\Auth;
 use App\Core\Env;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
@@ -21,7 +22,8 @@ use App\Models\UserTokenModel;
  */
 class PasswordResetController
 {
-    private const MIN_PASSWORD = 8;
+    /** Unica definizione della lunghezza minima: sta in Auth (Sezione 4). */
+    private const MIN_PASSWORD = Auth::MIN_PASSWORD_LENGTH;
     private const TOKEN_LIFETIME = 3600;
     private const MAX_TOKENS_PER_HOUR = 5;
 

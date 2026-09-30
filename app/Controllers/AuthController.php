@@ -21,6 +21,17 @@ class AuthController
         $unverified = ($_SESSION['login_unverified'] ?? false) === true;
         unset($_SESSION['login_error'], $_SESSION['login_notice'], $_SESSION['login_unverified']);
 
+        // Chi arriva qui perche' la sua sessione e' stata chiusa non puo'
+        // essere avvisato con un messaggio in sessione: la sessione non c'e'
+        // piu'. Il motivo viaggia quindi nell'indirizzo, e qui diventa una
+        // frase scelta fra queste, mai il testo ricevuto: cosi' nessuno puo'
+        // far scrivere quello che vuole nella pagina di accesso.
+        $notice ??= match ($_GET['motivo'] ?? null) {
+            'password' => 'La password di questo account è stata cambiata. Entra con quella nuova.',
+            'sessione' => 'La sessione non è più valida. Entra di nuovo.',
+            default => null,
+        };
+
         View::render('auth/login', [
             'pageTitle' => 'Accedi',
             'error' => $error,

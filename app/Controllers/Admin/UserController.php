@@ -6,7 +6,11 @@ namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
 use App\Core\Csv;
+use App\Core\Mail\MailException;
+use App\Core\Mail\Mailer;
+use App\Core\PasswordGenerator;
 use App\Core\Upload;
+use App\Core\Url;
 use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\EnrollmentModel;
@@ -22,7 +26,8 @@ use App\Models\UserModel;
  */
 class UserController extends AdminController
 {
-    private const MIN_PASSWORD_LENGTH = 8;
+    /** Unica definizione della lunghezza minima: sta in Auth (Sezione 4). */
+    private const MIN_PASSWORD_LENGTH = Auth::MIN_PASSWORD_LENGTH;
 
     public function index(array $params = []): void
     {
@@ -172,7 +177,19 @@ class UserController extends AdminController
     /**
      * Reimpostazione password da parte dello staff.
      */
-    public function resetPassword(array $params): void
+    /**
+     * Genera una password temporanea e la manda all'utente.
+     *
+     * L'admin non la sceglie e non la vede: l'unica copia e' quella
+     * nell'email, e in piattaforma resta solo la sua impronta. Chi entra con
+     * questa password deve sceglierne una sua prima di fare altro.
+     *
+     * **L'ordine conta.** Prima si manda l'email, poi si scrive nel database:
+     * se la posta non parte, la password vecchia resta valida. Al contrario,
+     * un'email mai arrivata lascerebbe l'utente fuori dal proprio account
+     * senza che nessuno se ne accorga.
+     */
+    public function generateTemporaryPassword(array $params): void
     {
         $this->requireUserAccess();
 
@@ -182,16 +199,34 @@ class UserController extends AdminController
             return;
         }
 
-        $password = (string) ($_POST['password'] ?? '');
         $redirect = '/admin/users/' . (int) $user['id'] . '/edit';
+        $password = PasswordGenerator::genera();
 
-        if (strlen($password) < self::MIN_PASSWORD_LENGTH) {
-            $this->fail('La password deve avere almeno ' . self::MIN_PASSWORD_LENGTH . ' caratteri.', $redirect);
+        try {
+            Mailer::send(Mailer::temporaryPassword(
+                (string) $user['email'],
+                (string) $user['full_name'],
+                $password,
+                Url::to('/login')
+            ));
+        } catch (MailException $e) {
+            error_log('[Mail] ' . $e->getMessage());
+
+            $this->fail(
+                'Invio dell\'email non riuscito: la password non e\' stata cambiata e quella '
+                . 'attuale resta valida. Controlla la configurazione della posta e riprova.',
+                $redirect
+            );
         }
 
-        UserModel::updatePassword((int) $user['id'], $password);
+        UserModel::updatePassword((int) $user['id'], $password, true);
 
-        $this->success('Password aggiornata.', $redirect);
+        $this->success(
+            'Password temporanea inviata a ' . $user['email'] . '. Le sessioni aperte di '
+            . 'questo utente sono state chiuse, e al primo accesso dovra\' scegliere una '
+            . 'password sua.',
+            $redirect
+        );
     }
 
     public function destroy(array $params): void

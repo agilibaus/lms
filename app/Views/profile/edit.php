@@ -91,6 +91,17 @@ $hasAvatar = !empty($user['avatar_path']);
     </form>
 </section>
 
+<section class="card">
+    <h2>Password</h2>
+    <p class="form-hint" style="margin-top: 0;">
+        Per cambiarla ti verrà chiesta quella attuale. Le altre sessioni aperte con la
+        password precedente vengono chiuse.
+    </p>
+    <p>
+        <a href="<?= Auth::PASSWORD_PAGE ?>" class="btn btn-secondary">Cambia password</a>
+    </p>
+</section>
+
 <?php if ($groups !== []): ?>
     <section class="card">
         <h2>I miei gruppi</h2>

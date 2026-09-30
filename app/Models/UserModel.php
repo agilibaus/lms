@@ -18,7 +18,8 @@ class UserModel
     public static function findByEmail(string $email): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, password_hash, full_name, role, is_active, email_verified_at
+            'SELECT id, email, password_hash, password_changed_at, full_name, role,
+                    is_active, email_verified_at
              FROM users WHERE email = :email LIMIT 1'
         );
         $stmt->execute(['email' => $email]);
@@ -227,15 +228,67 @@ class UserModel
         ]);
     }
 
-    public static function updatePassword(int $id, string $password): void
+    /**
+     * Impronta della password, per confrontarla con quella digitata.
+     *
+     * Sta in un metodo suo e non fra i campi di `find()`: l'impronta serve in
+     * un punto solo, e tenerla fuori dalla riga che gira per controller e
+     * viste evita che finisca stampata da qualche parte per distrazione.
+     */
+    public static function passwordHash(int $id): ?string
+    {
+        $stmt = Database::connection()->prepare('SELECT password_hash FROM users WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $hash = $stmt->fetchColumn();
+
+        return is_string($hash) ? $hash : null;
+    }
+
+    /**
+     * Cambia la password e segna l'istante del cambio.
+     *
+     * `password_changed_at` e' quello che fa cadere le altre sessioni: la
+     * sessione ne tiene una copia presa all'accesso, e al primo confronto che
+     * non torna viene chiusa. L'istante lo calcola MySQL con `NOW()` e non
+     * PHP, perche' server e database possono stare su fusi diversi
+     * (pistacchio-lms.md Sezione 5).
+     *
+     * @param bool $mustChange vero per una password generata da un admin:
+     *                         l'utente dovra' sceglierne una sua al primo accesso.
+     */
+    public static function updatePassword(int $id, string $password, bool $mustChange = false): void
     {
         $stmt = Database::connection()->prepare(
-            'UPDATE users SET password_hash = :password_hash WHERE id = :id'
+            'UPDATE users
+                SET password_hash = :password_hash,
+                    password_changed_at = NOW(),
+                    must_change_password = :must_change
+              WHERE id = :id'
         );
         $stmt->execute([
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            'must_change' => $mustChange ? 1 : 0,
             'id' => $id,
         ]);
+    }
+
+    /**
+     * Le due sole colonne che servono a ogni richiesta per decidere se la
+     * sessione e' ancora buona e se l'utente deve cambiare la password.
+     *
+     * Query minima di proposito: gira su ogni pagina di chi e' collegato.
+     *
+     * @return array{password_changed_at: ?string, must_change_password: int}|null
+     */
+    public static function passwordState(int $id): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT password_changed_at, must_change_password FROM users WHERE id = :id LIMIT 1'
+        );
+        $stmt->execute(['id' => $id]);
+        $stato = $stmt->fetch();
+
+        return $stato ?: null;
     }
 
     public static function setActive(int $id, bool $isActive): void

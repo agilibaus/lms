@@ -47,6 +47,8 @@ $router->post('/catalogo/{id}/iscrizione', [CatalogController::class, 'enroll'])
 // --- Profilo dell'utente ----------------------------------------------
 $router->get('/profilo', [ProfileController::class, 'show']);
 $router->post('/profilo', [ProfileController::class, 'update']);
+$router->get('/profilo/password', [ProfileController::class, 'passwordForm']);
+$router->post('/profilo/password', [ProfileController::class, 'changePassword']);
 $router->post('/profilo/immagine', [ProfileController::class, 'updateAvatar']);
 $router->post('/profilo/immagine/elimina', [ProfileController::class, 'deleteAvatar']);
 $router->get('/utenti/{id}/immagine', [ProfileController::class, 'avatar']);
@@ -125,7 +127,7 @@ $router->get('/admin/users/create', [AdminUserController::class, 'createForm']);
 $router->post('/admin/users', [AdminUserController::class, 'store']);
 $router->get('/admin/users/{id}/edit', [AdminUserController::class, 'editForm']);
 $router->post('/admin/users/{id}', [AdminUserController::class, 'update']);
-$router->post('/admin/users/{id}/password', [AdminUserController::class, 'resetPassword']);
+$router->post('/admin/users/{id}/password', [AdminUserController::class, 'generateTemporaryPassword']);
 $router->post('/admin/users/{id}/delete', [AdminUserController::class, 'destroy']);
 $router->post('/admin/users/{id}/groups', [AdminUserController::class, 'addGroup']);
 $router->post('/admin/users/{id}/groups/{groupId}/delete', [AdminUserController::class, 'removeGroup']);

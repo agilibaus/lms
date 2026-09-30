@@ -116,6 +116,56 @@ class Mailer
         );
     }
 
+    /**
+     * Password temporanea generata da un amministratore.
+     *
+     * L'unica copia della password e' questa: l'admin la genera ma non la
+     * vede, e in piattaforma resta solo la sua impronta.
+     */
+    public static function temporaryPassword(
+        string $email,
+        string $name,
+        string $password,
+        string $link
+    ): Message {
+        return new Message(
+            $email,
+            $name,
+            'Password temporanea per il tuo account',
+            "Ciao {$name},\n\n"
+            . "chi amministra Pistacchio LMS ha generato una password temporanea per il tuo\n"
+            . "account. La password precedente non funziona più, e le sessioni eventualmente\n"
+            . "aperte sono state chiuse.\n\n"
+            . "Password temporanea: {$password}\n\n"
+            . "Entra da qui:\n\n"
+            . "{$link}\n\n"
+            . "Al primo accesso ti verrà chiesto di sceglierne una tua: fino ad allora non\n"
+            . "potrai usare il resto della piattaforma. Non rispondere a questo messaggio\n"
+            . "lasciando la password nel testo.\n"
+        );
+    }
+
+    /**
+     * Avviso all'utente che la sua password e' cambiata. Non contiene la
+     * password: serve solo a far accorgere di un cambio non voluto.
+     */
+    public static function passwordChanged(string $email, string $name, string $link): Message
+    {
+        return new Message(
+            $email,
+            $name,
+            'La password del tuo account è stata cambiata',
+            "Ciao {$name},\n\n"
+            . "la password del tuo account Pistacchio LMS è appena stata cambiata, e le altre\n"
+            . "sessioni aperte sono state chiuse.\n\n"
+            . "Se sei stato tu, non devi fare nulla.\n\n"
+            . "Se non sei stato tu, qualcuno conosce la tua password: reimpostala subito da\n"
+            . "\"Password dimenticata\" nella pagina di accesso, e avvisa chi amministra la\n"
+            . "piattaforma.\n\n"
+            . "{$link}\n"
+        );
+    }
+
     public static function enrollmentConfirmed(string $email, string $name, string $courseTitle, string $link): Message
     {
         return new Message(

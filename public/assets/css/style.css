@@ -1642,7 +1642,13 @@ body.has-focus-video {
     font-weight: 600;
 }
 
+/* `password` ed `email` mancavano dall'elenco, e i campi di quei due tipi
+   restavano alla larghezza predefinita del browser — stretti accanto agli
+   altri. Si vedeva gia' nell'email del profilo e nella password iniziale
+   della scheda utente. */
 .form input[type="text"],
+.form input[type="password"],
+.form input[type="email"],
 .form input[type="number"],
 .form select,
 .form textarea {

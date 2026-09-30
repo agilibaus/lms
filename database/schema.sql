@@ -13,6 +13,13 @@ CREATE TABLE users (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     email           VARCHAR(190) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
+    -- Quando la password e' stata cambiata l'ultima volta. La sessione ne
+    -- tiene una copia presa all'accesso: se le due non combaciano piu', la
+    -- sessione e' stata aperta con la password vecchia e viene chiusa.
+    password_changed_at DATETIME NULL,
+    -- 1 quando la password l'ha generata un admin: finche' resta 1 l'utente
+    -- vede solo la pagina di cambio password.
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0,
     full_name       VARCHAR(150) NOT NULL,
     role            ENUM('admin','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)

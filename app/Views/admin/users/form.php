@@ -146,12 +146,16 @@ $currentRole = $user['role'] ?? 'studente';
     </section>
 
     <section class="card">
-        <h2>Reimposta password</h2>
-        <form action="/admin/users/<?= $userId ?>/password" method="post" class="form form-inline">
+        <h2>Password temporanea</h2>
+        <p class="form-hint" style="margin-top: 0;">
+            La password la genera la piattaforma e la manda per email all'utente: non compare
+            qui e non la conosce nessun altro. Le sue sessioni aperte vengono chiuse, e al
+            primo accesso dovrà sceglierne una sua.
+            Se l'invio dell'email non riesce, la password attuale resta valida.
+        </p>
+        <form action="/admin/users/<?= $userId ?>/password" method="post" class="form">
             <?= Csrf::field() ?>
-            <input type="password" name="password" required minlength="<?= (int) $minPasswordLength ?>"
-                   placeholder="Nuova password" autocomplete="new-password" aria-label="Nuova password">
-            <button type="submit" class="btn btn-secondary">Aggiorna password</button>
+            <button type="submit" class="btn btn-secondary">Genera e invia password temporanea</button>
         </form>
     </section>
 <?php endif; ?>

@@ -16,6 +16,15 @@ class Auth
 {
     public const ROLES = ['admin', 'tutor', 'assistente', 'studente'];
 
+    /** Chiave di sessione con la copia di `users.password_changed_at`. */
+    private const SESSION_PASSWORD_STAMP = 'password_changed_at';
+
+    /** L'unica pagina interna raggiungibile con una password temporanea. */
+    public const PASSWORD_PAGE = '/profilo/password';
+
+    /** Lunghezza minima di una password, uguale ovunque la si chieda. */
+    public const MIN_PASSWORD_LENGTH = 8;
+
     /**
      * Come il ruolo si scrive quando lo legge una persona.
      *
@@ -41,6 +50,14 @@ class Auth
 
     /** Motivo dell'ultimo tentativo di accesso fallito (per un messaggio utile). */
     private static ?string $failureReason = null;
+
+    /**
+     * Stato della password per la richiesta in corso: `false` finche' non e'
+     * stato letto, poi la riga oppure null se l'utente non esiste piu'.
+     *
+     * @var array{password_changed_at: ?string, must_change_password: int}|null|false
+     */
+    private static array|null|false $passwordState = false;
 
     public const FAILURE_CREDENTIALS = 'credentials';
     public const FAILURE_UNVERIFIED = 'unverified';
@@ -77,6 +94,10 @@ class Auth
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_name'] = $user['full_name'];
         $_SESSION['user_email'] = $user['email'];
+        // Copia dell'istante dell'ultimo cambio password: e' il riferimento
+        // con cui `guardSession()` riconosce una sessione aperta con una
+        // password che nel frattempo e' stata cambiata.
+        $_SESSION[self::SESSION_PASSWORD_STAMP] = $user['password_changed_at'] ?? null;
 
         return true;
     }
@@ -161,6 +182,110 @@ class Auth
         if (!self::check()) {
             header('Location: /login');
             exit;
+        }
+
+        self::guardSession();
+    }
+
+    /**
+     * Due controlli che valgono su ogni pagina di chi e' collegato.
+     *
+     * 1. **La sessione e' ancora buona?** Cambiare la password aggiorna
+     *    `users.password_changed_at`; la sessione ne porta la copia presa
+     *    all'accesso. Se le due non combaciano, quella sessione e' stata
+     *    aperta con la password vecchia e viene chiusa. E' cosi' che le altre
+     *    sessioni dello stesso utente cadono: senza, chi fosse gia' dentro da
+     *    un altro browser ci resterebbe, e cambiare la password in fretta non
+     *    servirebbe a niente.
+     *
+     * 2. **La password va cambiata?** Con `must_change_password` a 1 l'unica
+     *    pagina raggiungibile e' quella di cambio password. L'uscita resta
+     *    sempre aperta: senza, chi entra per sbaglio con un account altrui non
+     *    potrebbe nemmeno andarsene.
+     *
+     * Costa una query per richiesta, deliberatamente ristretta a due colonne.
+     */
+    private static function guardSession(): void
+    {
+        $stato = self::passwordState();
+
+        if ($stato === null) {
+            // L'utente non esiste piu': la sessione non ha piu' un titolare.
+            self::logout();
+            header('Location: /login?motivo=sessione');
+            exit;
+        }
+
+        if (array_key_exists(self::SESSION_PASSWORD_STAMP, $_SESSION)) {
+            if ($_SESSION[self::SESSION_PASSWORD_STAMP] !== $stato['password_changed_at']) {
+                self::logout();
+                header('Location: /login?motivo=password');
+                exit;
+            }
+        } else {
+            // Sessione aperta prima che questa funzione esistesse: si allinea
+            // invece di buttare fuori tutti al momento dell'aggiornamento.
+            $_SESSION[self::SESSION_PASSWORD_STAMP] = $stato['password_changed_at'];
+        }
+
+        if ((int) $stato['must_change_password'] === 1 && !self::onPasswordPage()) {
+            header('Location: ' . self::PASSWORD_PAGE);
+            exit;
+        }
+    }
+
+    /**
+     * Le sole pagine raggiungibili da chi deve cambiare la password.
+     */
+    private static function onPasswordPage(): bool
+    {
+        $percorso = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+
+        return $percorso === self::PASSWORD_PAGE || $percorso === '/logout';
+    }
+
+    /**
+     * Vero se l'utente sta usando una password generata da un admin e deve
+     * ancora sceglierne una sua. Serve alla pagina di cambio password per
+     * spiegare perche' l'utente e' finito li'.
+     */
+    public static function mustChangePassword(): bool
+    {
+        if (!self::check()) {
+            return false;
+        }
+
+        $stato = self::passwordState();
+
+        return $stato !== null && (int) $stato['must_change_password'] === 1;
+    }
+
+    /**
+     * Stato della password, letto una volta sola per richiesta: la stessa
+     * pagina lo chiede al controllo della sessione e poi alla vista.
+     *
+     * @return array{password_changed_at: ?string, must_change_password: int}|null
+     */
+    private static function passwordState(): ?array
+    {
+        if (self::$passwordState === false) {
+            self::$passwordState = UserModel::passwordState((int) self::id());
+        }
+
+        return self::$passwordState;
+    }
+
+    /**
+     * Allinea la sessione dopo che l'utente ha cambiato la propria password,
+     * cosi' il browser da cui l'ha cambiata non viene chiuso insieme agli altri.
+     */
+    public static function refreshPasswordStamp(): void
+    {
+        self::$passwordState = false;
+        $stato = self::passwordState();
+
+        if ($stato !== null) {
+            $_SESSION[self::SESSION_PASSWORD_STAMP] = $stato['password_changed_at'];
         }
     }
 

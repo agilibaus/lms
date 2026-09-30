@@ -6,7 +6,9 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Core\AvatarImage;
+use App\Core\Mail\Mailer;
 use App\Core\Upload;
+use App\Core\Url;
 use App\Core\View;
 use App\Models\GroupModel;
 use App\Models\UserModel;
@@ -148,6 +150,98 @@ class ProfileController
     }
 
     // ---------------------------------------------------------------
+
+    // ---------------------------------------------------------------
+    // Cambio password
+    // ---------------------------------------------------------------
+
+    /**
+     * Pagina a sé e non un riquadro dentro il profilo, perché è anche
+     * l'unica pagina raggiungibile da chi ha una password temporanea: in quel
+     * caso va mostrata da sola, senza la barra laterale, i cui collegamenti
+     * riporterebbero comunque qui.
+     */
+    public function passwordForm(array $params = []): void
+    {
+        Auth::requireLogin();
+
+        $obbligato = Auth::mustChangePassword();
+
+        View::render('profile/password', [
+            'pageTitle' => 'Cambia password',
+            'obbligato' => $obbligato,
+            'minPassword' => Auth::MIN_PASSWORD_LENGTH,
+            'error' => $this->takeFlash('flash_error'),
+        ], !$obbligato);
+    }
+
+    public function changePassword(array $params = []): void
+    {
+        Auth::requireLogin();
+
+        $user = UserModel::find((int) Auth::id());
+
+        if ($user === null) {
+            Auth::logout();
+            header('Location: /login');
+            exit;
+        }
+
+        $attuale = (string) ($_POST['current_password'] ?? '');
+        $nuova = (string) ($_POST['new_password'] ?? '');
+        $conferma = (string) ($_POST['confirm_password'] ?? '');
+
+        // La password attuale è ciò che impedisce a chi trovi una sessione
+        // aperta di prendersi l'account cambiandola.
+        if (!password_verify($attuale, (string) UserModel::passwordHash((int) $user['id']))) {
+            $this->failPassword('La password attuale non è corretta.');
+        }
+
+        if (strlen($nuova) < Auth::MIN_PASSWORD_LENGTH) {
+            $this->failPassword('La nuova password deve avere almeno ' . Auth::MIN_PASSWORD_LENGTH . ' caratteri.');
+        }
+
+        if ($nuova !== $conferma) {
+            $this->failPassword('Le due password non coincidono.');
+        }
+
+        if ($nuova === $attuale) {
+            $this->failPassword('La nuova password deve essere diversa da quella attuale.');
+        }
+
+        UserModel::updatePassword((int) $user['id'], $nuova);
+
+        // Il browser da cui si sta cambiando non deve cadere insieme agli
+        // altri: la sua copia dell'istante va riallineata subito.
+        Auth::refreshPasswordStamp();
+
+        // L'avviso non deve poter impedire il cambio: se la posta non parte,
+        // la password è cambiata lo stesso e l'errore finisce nel log.
+        Mailer::sendQuietly(Mailer::passwordChanged(
+            (string) $user['email'],
+            (string) $user['full_name'],
+            Url::to('/login')
+        ));
+
+        $_SESSION['flash_success'] = 'Password aggiornata. Le altre sessioni aperte con la password precedente sono state chiuse.';
+        header('Location: /profilo');
+        exit;
+    }
+
+    private function failPassword(string $message): never
+    {
+        $_SESSION['flash_error'] = $message;
+        header('Location: ' . Auth::PASSWORD_PAGE);
+        exit;
+    }
+
+    private function takeFlash(string $key): ?string
+    {
+        $value = $_SESSION[$key] ?? null;
+        unset($_SESSION[$key]);
+
+        return is_string($value) ? $value : null;
+    }
 
     private function optional(string $field, int $maxLength): ?string
     {
