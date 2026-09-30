@@ -37,7 +37,10 @@ use App\Core\Csrf;
                     <?php endif; ?>
                 </div>
                 <div class="course-card-body">
-                    <h3><?= htmlspecialchars($course['title']) ?></h3>
+                    <?php /* h2 e non h3: sotto l'h1 della pagina non c'e' nessun h2,
+                             e saltare un livello disorienta chi naviga per titoli
+                             con un lettore di schermo. */ ?>
+                    <h2><?= htmlspecialchars($course['title']) ?></h2>
                     <?php if (!empty($course['description'])): ?>
                         <p class="course-card-excerpt">
                             <?= htmlspecialchars(mb_strimwidth($course['description'], 0, 90, '…')) ?>

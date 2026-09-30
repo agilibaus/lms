@@ -277,7 +277,12 @@ function raccogli(minimoBersaglio) {
         // un bersaglio a se' e la regola non lo riguarda.
         if (el.tagName === 'A' && el.closest('p, li, td') && getComputedStyle(el).display === 'inline') continue;
 
-        const r = el.getBoundingClientRect();
+        // Una casella dentro un'etichetta si preme anche toccando l'etichetta:
+        // il bersaglio e' quello, non il quadratino. Misurare il quadratino
+        // segnalerebbe un difetto che non c'e'.
+        const etichetta = (el.tagName === 'INPUT' && el.closest('label')) || null;
+        const bersaglio = etichetta || el;
+        const r = bersaglio.getBoundingClientRect();
 
         if (r.width < minimoBersaglio || r.height < minimoBersaglio) {
             bersagli.push({
