@@ -1548,13 +1548,18 @@ h3 { font-size: 1.05rem; }
    copriva tutta la copertina passa da "Guarda la lezione" a questo
    contenitore: altrimenti i due si sovrapporrebbero, perché ciascuno
    pretende inset: 0. */
+/* Griglia e non flex: con una sola colonna automatica la traccia prende la
+   larghezza del pulsante piu' largo, e `justify-items: stretch` fa arrivare
+   anche l'altro fin li'. Due scelte della stessa importanza devono avere lo
+   stesso ingombro, altrimenti la piu' lunga sembra la principale. */
 .video-start-choices {
     position: absolute;
     inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: grid;
+    grid-auto-rows: min-content;
+    align-content: center;
     justify-content: center;
+    justify-items: stretch;
     gap: 0.6rem;
 }
 
@@ -1564,6 +1569,9 @@ h3 { font-size: 1.05rem; }
 .video-start-pill {
     display: inline-flex;
     align-items: center;
+    /* Il contenuto resta centrato anche quando il pulsante viene allargato
+       alla misura del piu' largo. */
+    justify-content: center;
     gap: 0.5rem;
     min-height: 44px;
     padding: 0.45rem 1.1rem;

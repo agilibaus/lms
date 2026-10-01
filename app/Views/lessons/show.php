@@ -80,7 +80,7 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                      vista. */ ?>
             <?php /* Con due scelte niente cerchio del play: e' un pulsante
                      solo insieme all'etichetta, ma all'occhio ne sembrano due,
-                     e accanto a "Guarda da capo" faceva tre comandi per due
+                     e accanto a "Guarda dall'inizio" faceva tre comandi per due
                      azioni. Qui le due scelte hanno la stessa forma, perche'
                      sono la stessa cosa — far partire il video — e cambia
                      solo da dove. */ ?>
@@ -92,7 +92,7 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                     </button>
                     <button type="button" class="video-start-pill" data-avvia data-da="0">
                         <span class="video-start-pill-icon" aria-hidden="true">&#9654;</span>
-                        Guarda da capo
+                        Guarda dall'inizio
                     </button>
                 </div>
             <?php else: ?>
