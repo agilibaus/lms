@@ -2577,3 +2577,116 @@ fieldset.checkbox-group legend {
     white-space: nowrap;
     text-align: right;
 }
+
+/* Quando lo spazio non basta, le tabelle di Report diventano schede.
+
+   **Query di contenitore e non di schermo**, e la differenza qui si vede.
+   Una soglia sulla larghezza della finestra sbaglia in tutta la fascia in
+   cui la barra laterale e' tornata visibile: a 780 px di finestra il
+   contenuto ne ha poco piu' di 540, e la tabella usciva di 214 px pur
+   essendo «sopra la soglia da telefono». La tabella non ha bisogno di
+   sapere quanto e' grande lo schermo, ma quanto spazio le e' rimasto.
+
+   Sotto i 50 rem di contenitore ogni riga diventa una scheda e ogni valore
+   si porta davanti l'etichetta della sua colonna, presa da `data-label` —
+   la stessa stringa dell'intestazione, perche' la vista le genera tutte e
+   due dallo stesso elenco di colonne e non possono divergere.
+
+   Dove `@container` non e' supportato non succede niente e resta la tabella
+   di prima: un browser vecchio vede quello che vedeva ieri, non una pagina
+   rotta.
+
+   L'intestazione sparisce dalla vista ma non dal documento: resta leggibile
+   da un lettore di schermo, che insieme ai `role` espliciti nel markup
+   continua ad annunciare righe e colonne anche con il `display` cambiato. */
+.reports-index {
+    container-type: inline-size;
+    container-name: report;
+}
+
+/* La soglia e' 50 rem perche' la tabella piu' larga — quella degli studenti,
+   con le email — ne misura 768 px di contenuto. Ma una soglia tarata sui
+   dati di oggi invecchia: basta un'email piu' lunga. Per questo i valori
+   possono anche andare a capo quando la tabella c'e'. Fra le due cose, la
+   soglia sceglie l'impaginazione giusta e il ritorno a capo evita che una
+   riga inattesa faccia scorrere la pagina. */
+.reports-index .data-table td {
+    overflow-wrap: anywhere;
+}
+
+@container report (max-width: 50rem) {
+    .reports-index .data-table,
+    .reports-index .data-table tbody,
+    .reports-index .data-table tr,
+    .reports-index .data-table td {
+        display: block;
+        width: auto;
+    }
+
+    /* Non `display: none`: toglierebbe le intestazioni anche a chi legge con
+       un lettore di schermo, e sono loro a dare un nome alle colonne. */
+    .reports-index .data-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .reports-index .data-table tr {
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .reports-index .data-table tr:last-child {
+        border-bottom: 0;
+    }
+
+    /* La riga non disegna piu' il proprio bordo: lo disegna la scheda. Senza
+       questo si vedrebbero due righine per ogni valore. */
+    .reports-index .data-table td {
+        border-bottom: 0;
+        padding: 0.15rem 0;
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        /* Un valore lungo — un'email, il titolo di un corso — va a capo
+           invece di allargare la scheda. */
+        overflow-wrap: anywhere;
+    }
+
+    /* L'etichetta puo' stringersi ma non sparire: una misura fissa faceva
+       uscire la riga di diciassette pixel sui telefoni piu' stretti. */
+    .reports-index .data-table td::before {
+        content: attr(data-label);
+        flex: 0 1 8rem;
+        min-width: 6rem;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-text-muted);
+    }
+
+    /* La cella delle azioni non ha etichetta da mostrare — «Azioni» davanti
+       a due comandi non dice niente — e torna a sinistra: la colonna
+       allineata a destra serviva a far combaciare tabelle affiancate in
+       verticale, qui i comandi stanno in fondo alla propria scheda. */
+    .reports-index .data-table td.row-actions {
+        justify-content: flex-start;
+        text-align: left;
+        gap: 0.75rem;
+        padding-top: 0.5rem;
+    }
+
+    .reports-index .data-table td.row-actions::before {
+        content: none;
+    }
+
+    /* Il pannello della tendina torna a sinistra: qui il comando sta a
+       sinistra, e ancorarlo a destra lo porterebbe fuori scheda. */
+    .reports-index .dropdown-riga > .dropdown-menu {
+        left: 0;
+        right: auto;
+    }
+}
