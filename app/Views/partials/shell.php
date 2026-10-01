@@ -27,6 +27,15 @@ use App\Core\Csrf;
              passando da una misura all'altra, e la preferenza ricordata
              arriverebbe al telefono con il significato opposto. */ ?>
     <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox">
+    <?php /* La striscia dietro al pulsante del menu, solo sotto i 768 px.
+             Il pulsante e' fermo in alto a sinistra e la pagina gli scorre
+             sotto: da solo e' un quadratino di 38 px che si confonde con
+             qualunque cosa passi sotto, e che copre cio' che ci finisce
+             dietro. Con la striscia il contenuto scorre sotto una fascia
+             piena larga quanto lo schermo, come in qualsiasi applicazione
+             con l'intestazione fissa. Non ha contenuto ne' ruolo: e'
+             decorazione, quindi `aria-hidden`. */ ?>
+    <div class="nav-bar" aria-hidden="true"></div>
     <label for="nav-toggle" class="nav-toggle-btn" aria-label="Apri menu">
         <span></span><span></span><span></span>
     </label>

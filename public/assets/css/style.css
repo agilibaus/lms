@@ -234,6 +234,7 @@ h3 { font-size: 1.05rem; }
 /* I comandi del menu sono nascosti per difetto: ciascuno ricompare nella
    misura di schermo che lo riguarda. */
 .nav-toggle-checkbox,
+.nav-bar,
 .nav-toggle-btn,
 .nav-overlay,
 .nav-collapse-checkbox,
@@ -861,6 +862,39 @@ h3 { font-size: 1.05rem; }
         transform: translateX(0);
     }
 
+    /* La striscia dietro al pulsante del menu.
+
+       Il pulsante e' fermo in alto a sinistra mentre la pagina scorre. Da
+       solo e' un quadratino di 38 px sopra a contenuto qualunque: diventa
+       poco leggibile quando sotto passa qualcosa di scuro o fitto, e copre
+       quel che ci finisce dietro — nella modifica di una lezione, a
+       scorrimento ~200 px, il primo comando della barra dell'editor.
+
+       La striscia toglie tutt'e due i problemi in una volta: il contenuto
+       scorre sotto una fascia piena larga quanto lo schermo, non dietro un
+       quadratino. L'altezza, 3.9rem, finisce appena sopra l'inizio
+       dell'area principale (`padding-top: 4rem`), quindi non si perde
+       spazio ne' si lascia una fessura da cui spunti il testo.
+
+       Niente JavaScript e nessun ascolto dello scorrimento: e' una fascia
+       ferma, funziona anche a JS spento, e non ha un comportamento che
+       cambia mentre si legge.
+
+       Sotto al pulsante (40) e sotto al cassetto (30): quando il cassetto
+       e' aperto dev'essere il cassetto a stare davanti. Sopra alla velatura
+       (20), perche' la fascia non va oscurata insieme alla pagina. */
+    .nav-bar {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3.9rem;
+        z-index: 25;
+        background: var(--color-bg);
+        border-bottom: 1px solid var(--color-border);
+    }
+
     .nav-toggle-btn {
         display: flex;
         flex-direction: column;
@@ -877,6 +911,13 @@ h3 { font-size: 1.05rem; }
         border-radius: var(--radius-sm);
         cursor: pointer;
         padding: 0 8px;
+    }
+
+    /* Col cassetto aperto la fascia non serve — davanti c'e' il menu — e
+       sulla parte scoperta resterebbe una striscia chiara sopra la
+       velatura. */
+    .nav-toggle-checkbox:checked ~ .nav-bar {
+        display: none;
     }
 
     /* Il pulsante del menu e' fisso in alto a sinistra e passerebbe sopra al
