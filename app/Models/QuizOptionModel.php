@@ -62,13 +62,38 @@ class QuizOptionModel
     }
 
     /**
+     * Gli id di **tutte** le opzioni corrette di una domanda.
+     *
+     * `correctOptionId()` qui sopra ne restituisce una sola, e per la scelta
+     * singola va benissimo. La scelta multipla ne ha piu' d'una, e con
+     * quella funzione prenderebbe la prima: il confronto «tutto o niente»
+     * direbbe sbagliato a chi ha risposto bene.
+     *
+     * @return list<int>
+     */
+    public static function correctIdsForQuestion(int $questionId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id FROM quiz_options
+             WHERE question_id = :question_id AND is_correct = 1
+             ORDER BY position, id'
+        );
+        $stmt->execute(['question_id' => $questionId]);
+
+        return array_values(array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN)));
+    }
+
+    /**
      * Allinea le opzioni di una domanda a quelle inviate dal form.
      *
      * Le righe esistenti vengono aggiornate in posizione invece di essere
-     * ricreate: `quiz_attempt_answers` ha una FK ON DELETE CASCADE verso
-     * `quiz_options`, quindi cancellare e reinserire farebbe sparire il
-     * dettaglio delle risposte gia' date dagli studenti. Vengono eliminate
-     * solo le opzioni eccedenti quando il numero di risposte diminuisce.
+     * ricreate: `quiz_attempt_answers` punta a `quiz_options`, e cancellare
+     * e reinserire farebbe perdere il collegamento fra le risposte gia' date
+     * dagli studenti e il testo che avevano scelto. Dal 01/10 quella chiave
+     * e' ON DELETE SET NULL invece di CASCADE, quindi la riga della risposta
+     * sopravvive comunque, ma resterebbe senza testo: aggiornare in
+     * posizione continua a essere la cosa giusta. Vengono eliminate solo le
+     * opzioni eccedenti quando il numero di risposte diminuisce.
      *
      * @param array<int, array{text: string, is_correct: bool}> $options
      */
@@ -124,13 +149,21 @@ class QuizOptionModel
      */
     public static function countQuestionsWithoutCorrectOption(int $quizId): int
     {
+        /*
+         * Le domande aperte sono escluse: non hanno opzioni per costruzione,
+         * e senza questa esclusione ognuna verrebbe contata come «senza
+         * risposta corretta». La pagina del quiz avviserebbe di un difetto
+         * che non c'e', e un avviso che grida al lupo smette di essere
+         * letto.
+         */
         $stmt = Database::connection()->prepare(
-            'SELECT COUNT(*) FROM quiz_questions qq
+            "SELECT COUNT(*) FROM quiz_questions qq
              WHERE qq.quiz_id = :quiz_id
+               AND qq.question_type <> 'open'
                AND NOT EXISTS (
                    SELECT 1 FROM quiz_options qo
                    WHERE qo.question_id = qq.id AND qo.is_correct = 1
-               )'
+               )"
         );
         $stmt->execute(['quiz_id' => $quizId]);
 

@@ -2736,3 +2736,103 @@ fieldset.checkbox-group legend {
     align-items: center;
     min-height: var(--tap-target);
 }
+
+/* ---------- Quiz: tipi di domanda ---------- */
+
+/* Il gruppo di una domanda: `fieldset` perché le opzioni vanno annunciate
+   insieme al testo della domanda, non come caselle sciolte. Il bordo del
+   browser non serve, la scheda lo dà già. */
+.quiz-question-group {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+/* «Seleziona 2 risposte» accanto alla domanda: senza, «tutto o niente»
+   diventa un indovinello. Va a capo da solo sugli schermi stretti. */
+.quiz-question-hint {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.quiz-open-answer {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+/* Le risposte aperte nell'esito: la domanda sopra, la risposta sotto e
+   rientrata, perché una accanto all'altra su un telefono non ci stanno. */
+.risposte-aperte {
+    margin: 0;
+}
+
+.risposte-aperte > div + div {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.risposte-aperte dt {
+    font-weight: 600;
+}
+
+.risposte-aperte dd {
+    margin: 0.3rem 0 0;
+    padding-left: 0.9rem;
+    border-left: 3px solid var(--color-border);
+    color: var(--color-text-muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Tre bersagli del percorso quiz che restavano sotto i 24 px. Lo spazio si
+   mette dentro il comando, non attorno, come già fatto altrove: così la
+   riga non cresce di altrettanto. */
+
+/* Il collegamento al quiz nell'elenco di un corso. */
+.quiz-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+}
+
+/* «Modifica» e «Elimina» accanto a ogni domanda. */
+.question-item-actions a,
+.question-item-actions button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+}
+
+/* Il pallino o la casella accanto a ogni opzione nel modulo della domanda.
+   Il quadratino disegnato resta di 13 px — ingrandirlo lo renderebbe
+   sgraziato — ma l'area che lo attiva arriva a 24, perché è quella che un
+   dito deve colpire. */
+.option-row input[type="radio"],
+.option-row input[type="checkbox"] {
+    width: var(--tap-target);
+    height: var(--tap-target);
+    flex: 0 0 var(--tap-target);
+    margin: 0;
+}
+
+/* Il numero della domanda è scritto nella legenda, quindi il segnalino della
+   lista va tolto: un `fieldset` non lo mette accanto alla domanda ma a metà
+   del blocco, perché la legenda non fa parte del flusso normale. */
+.quiz-question-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.quiz-question-numero {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+}

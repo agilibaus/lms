@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\QuizScoring;
 
 /** @var array $quiz */
 /** @var array $module */
@@ -60,21 +61,48 @@ use App\Core\Csrf;
         <p class="empty-state-small">Nessuna domanda.</p>
     <?php else: ?>
         <ol class="question-list">
-            <?php foreach ($questions as $question): ?>
+            <?php foreach ($questions as $indice => $question): ?>
+                <?php $tipo = (string) $question['question_type']; ?>
                 <li class="question-item">
                     <div class="question-item-head">
                         <span class="question-text"><?= htmlspecialchars($question['question_text']) ?></span>
-                        <span class="badge"><?= $question['question_type'] === 'true_false' ? 'V/F' : 'scelta singola' ?></span>
+                        <span class="badge"><?= htmlspecialchars(QuizScoring::etichetta($tipo)) ?></span>
                     </div>
-                    <ul class="option-preview">
-                        <?php foreach ($optionsByQuestion[$question['id']] ?? [] as $option): ?>
-                            <li class="<?= (int) $option['is_correct'] === 1 ? 'is-correct' : '' ?>">
-                                <?= htmlspecialchars($option['option_text']) ?>
-                                <?= (int) $option['is_correct'] === 1 ? ' &check;' : '' ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
+
+                    <?php if ($tipo === 'open'): ?>
+                        <p class="hint">La risposta la scrive lo studente. Non fa punteggio.</p>
+                    <?php else: ?>
+                        <ul class="option-preview">
+                            <?php foreach ($optionsByQuestion[$question['id']] ?? [] as $option): ?>
+                                <li class="<?= (int) $option['is_correct'] === 1 ? 'is-correct' : '' ?>">
+                                    <?= htmlspecialchars($option['option_text']) ?>
+                                    <?= (int) $option['is_correct'] === 1 ? ' &check;' : '' ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+
                     <div class="question-item-actions">
+                        <?php /* Frecce come nelle lezioni e nei materiali: due
+                                 moduli, nessun trascinamento, funziona senza
+                                 JavaScript. Il primo e l'ultimo hanno la
+                                 freccia disabilitata invece che assente, così
+                                 la fila di comandi non si sposta di riga in
+                                 riga. */ ?>
+                        <form action="/questions/<?= (int) $question['id'] ?>/move" method="post">
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="direction" value="up">
+                            <button type="submit" class="icon-btn" title="Sposta su"
+                                    aria-label="Sposta su la domanda: <?= htmlspecialchars($question['question_text']) ?>"
+                                    <?= $indice === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                        </form>
+                        <form action="/questions/<?= (int) $question['id'] ?>/move" method="post">
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="direction" value="down">
+                            <button type="submit" class="icon-btn" title="Sposta giù"
+                                    aria-label="Sposta giù la domanda: <?= htmlspecialchars($question['question_text']) ?>"
+                                    <?= $indice === count($questions) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                        </form>
                         <a href="/questions/<?= (int) $question['id'] ?>/edit">Modifica</a>
                         <form action="/questions/<?= (int) $question['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare questa domanda?');">

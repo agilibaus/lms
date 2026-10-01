@@ -101,6 +101,7 @@ $router->post('/quizzes/{id}/delete', [QuizController::class, 'destroy']);
 $router->post('/quizzes/{id}/questions', [QuizController::class, 'storeQuestion']);
 $router->get('/questions/{id}/edit', [QuizController::class, 'editQuestionForm']);
 $router->post('/questions/{id}', [QuizController::class, 'updateQuestion']);
+$router->post('/questions/{id}/move', [QuizController::class, 'moveQuestion']);
 $router->post('/questions/{id}/delete', [QuizController::class, 'destroyQuestion']);
 $router->get('/quizzes/{id}', [QuizController::class, 'show']);
 $router->post('/quizzes/{id}/attempts', [QuizController::class, 'submit']);

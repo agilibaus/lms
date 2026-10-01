@@ -64,6 +64,73 @@ class QuizQuestionModel
         $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * Sposta una domanda di un posto su o giu' dentro il suo quiz.
+     *
+     * Stesso schema di `LessonModel::move()`, e per le stesse ragioni: il
+     * vicino e' la riga adiacente **nell'ordine di visualizzazione**, non
+     * quella con posizione +/- 1, perche' dopo un'eliminazione le posizioni
+     * hanno dei buchi; e se due righe condividono la stessa posizione si
+     * rinumera, altrimenti lo scambio non si vedrebbe.
+     */
+    public static function move(int $id, string $direction): void
+    {
+        $riga = self::find($id);
+
+        if ($riga === null) {
+            return;
+        }
+
+        $db = Database::connection();
+
+        $confronto = $direction === 'up' ? '<' : '>';
+        $ordine = $direction === 'up' ? 'DESC' : 'ASC';
+
+        $stmt = $db->prepare(
+            'SELECT id, position FROM quiz_questions
+             WHERE quiz_id = :quiz_id AND (position, id) ' . $confronto . ' (:position, :id)
+             ORDER BY position ' . $ordine . ', id ' . $ordine . ' LIMIT 1'
+        );
+        $stmt->execute([
+            'quiz_id' => (int) $riga['quiz_id'],
+            'position' => (int) $riga['position'],
+            'id' => $id,
+        ]);
+        $vicino = $stmt->fetch();
+
+        if (!$vicino) {
+            return; // gia' in cima o in fondo
+        }
+
+        if ((int) $vicino['position'] === (int) $riga['position']) {
+            self::renumber((int) $riga['quiz_id']);
+            $riga = self::find($id);
+            $vicino = self::find((int) $vicino['id']);
+        }
+
+        // Rilette dopo la rinumerazione: se nel frattempo una e' stata
+        // eliminata non c'e' piu' niente da scambiare.
+        if ($riga === null || $vicino === null) {
+            return;
+        }
+
+        $update = $db->prepare('UPDATE quiz_questions SET position = :position WHERE id = :id');
+        $update->execute(['position' => (int) $vicino['position'], 'id' => $id]);
+        $update->execute(['position' => (int) $riga['position'], 'id' => (int) $vicino['id']]);
+    }
+
+    /** Posizioni consecutive da 0, mantenendo l'ordine attuale. */
+    private static function renumber(int $quizId): void
+    {
+        $db = Database::connection();
+        $update = $db->prepare('UPDATE quiz_questions SET position = :position WHERE id = :id');
+        $position = 0;
+
+        foreach (self::forQuiz($quizId) as $riga) {
+            $update->execute(['position' => $position++, 'id' => (int) $riga['id']]);
+        }
+    }
+
     private static function nextPosition(int $quizId): int
     {
         $stmt = Database::connection()->prepare(

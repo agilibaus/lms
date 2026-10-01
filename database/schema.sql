@@ -268,7 +268,9 @@ CREATE TABLE quiz_questions (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     quiz_id         INT UNSIGNED NOT NULL,
     question_text   TEXT NOT NULL,
-    question_type   ENUM('single_choice','true_false') NOT NULL DEFAULT 'single_choice',
+    -- multiple_choice: piu' risposte corrette, vale «tutto o niente».
+    -- open: risposta scritta, raccolta ma non valutata (vedi §8 del promemoria).
+    question_type   ENUM('single_choice','true_false','multiple_choice','open') NOT NULL DEFAULT 'single_choice',
     position        INT UNSIGNED NOT NULL DEFAULT 0,
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -294,15 +296,22 @@ CREATE TABLE quiz_attempts (
     INDEX idx_user_quiz (user_id, quiz_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Una riga per opzione scelta: la domanda a risposta multipla ne produce
+-- piu' d'una per la stessa domanda. La risposta aperta non punta a nessuna
+-- opzione e porta il proprio testo in `answer_text`.
+--
+-- `ON DELETE SET NULL` sull'opzione e non CASCADE: correggere un'opzione di
+-- una domanda non deve cancellare le risposte gia' date dagli studenti.
 CREATE TABLE quiz_attempt_answers (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     attempt_id      INT UNSIGNED NOT NULL,
     question_id     INT UNSIGNED NOT NULL,
-    selected_option_id INT UNSIGNED NOT NULL,
+    selected_option_id INT UNSIGNED NULL,
+    answer_text     TEXT NULL,
     is_correct      TINYINT(1) NOT NULL,
     FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE,
-    FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id) ON DELETE CASCADE
+    FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------

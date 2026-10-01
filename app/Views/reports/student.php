@@ -68,18 +68,28 @@ use App\Controllers\ReportController;
             <?php $quizzes = $quizzesByCourse[$course['course_id']] ?? []; ?>
 
             <?php if ($quizzes !== []): ?>
-                <table class="data-table">
-                    <thead>
-                    <tr><th>Quiz</th><th>Modulo</th><th>Tentativi</th><th>Miglior punteggio</th><th>Esito</th><th>Ultimo tentativo</th></tr>
+                <?php /* Sei colonne: sotto i 50 rem di spazio diventa un
+                         elenco di schede (vedi `.tabella-schede`). */ ?>
+                <div class="tabella-schede">
+                <table class="data-table" role="table">
+                    <thead role="rowgroup">
+                    <tr role="row">
+                        <th scope="col" role="columnheader">Quiz</th>
+                        <th scope="col" role="columnheader">Modulo</th>
+                        <th scope="col" role="columnheader">Tentativi</th>
+                        <th scope="col" role="columnheader">Miglior punteggio</th>
+                        <th scope="col" role="columnheader">Esito</th>
+                        <th scope="col" role="columnheader">Ultimo tentativo</th>
+                    </tr>
                     </thead>
-                    <tbody>
+                    <tbody role="rowgroup">
                     <?php foreach ($quizzes as $quiz): ?>
-                        <tr>
-                            <td><?= htmlspecialchars((string) $quiz['quiz_title']) ?></td>
-                            <td><?= htmlspecialchars((string) $quiz['module_title']) ?></td>
-                            <td><?= (int) $quiz['attempts'] ?></td>
-                            <td><?= $quiz['best_score_pct'] === null ? '—' : number_format((float) $quiz['best_score_pct'], 0) . '%' ?></td>
-                            <td>
+                        <tr role="row">
+                            <td role="cell" data-label="Quiz"><?= htmlspecialchars((string) $quiz['quiz_title']) ?></td>
+                            <td role="cell" data-label="Modulo"><?= htmlspecialchars((string) $quiz['module_title']) ?></td>
+                            <td role="cell" data-label="Tentativi"><?= (int) $quiz['attempts'] ?></td>
+                            <td role="cell" data-label="Miglior punteggio"><?= $quiz['best_score_pct'] === null ? '—' : number_format((float) $quiz['best_score_pct'], 0) . '%' ?></td>
+                            <td role="cell" data-label="Esito">
                                 <?php if ((int) $quiz['attempts'] === 0): ?>
                                     <span class="badge">non svolto</span>
                                 <?php elseif ((int) $quiz['passed'] === 1): ?>
@@ -88,11 +98,24 @@ use App\Controllers\ReportController;
                                     <span class="badge badge-danger">non superato</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?= htmlspecialchars((string) ($quiz['last_attempt_at'] ?? '—')) ?></td>
+                            <td role="cell" data-label="Ultimo tentativo">
+                                <?php /* Il collegamento all'ultimo tentativo e'
+                                         l'unico modo per arrivare alle risposte
+                                         aperte, che nessuno puo' correggere a
+                                         macchina e qualcuno deve leggere. */ ?>
+                                <?php if (!empty($quiz['last_attempt_id'])): ?>
+                                    <a href="/attempts/<?= (int) $quiz['last_attempt_id'] ?>">
+                                        <?= htmlspecialchars((string) ($quiz['last_attempt_at'] ?? '—')) ?>
+                                    </a>
+                                <?php else: ?>
+                                    —
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             <?php endif; ?>
         </section>
     <?php endforeach; ?>
@@ -107,29 +130,39 @@ use App\Controllers\ReportController;
             perché l’uscita avviene dentro Google Meet.
         </p>
 
-        <table class="data-table">
-            <thead>
-            <tr><th>Incontro</th><th>Quando</th><th>Corso o gruppo</th><th>Presenza</th><th>Ingresso</th><th>Ritardo</th></tr>
+        <?php /* Sei colonne anche qui: stesso trattamento della tabella dei
+                 quiz qui sopra. */ ?>
+        <div class="tabella-schede">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
+                <th scope="col" role="columnheader">Incontro</th>
+                <th scope="col" role="columnheader">Quando</th>
+                <th scope="col" role="columnheader">Corso o gruppo</th>
+                <th scope="col" role="columnheader">Presenza</th>
+                <th scope="col" role="columnheader">Ingresso</th>
+                <th scope="col" role="columnheader">Ritardo</th>
+            </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
             <?php foreach ($liveSessions as $incontro): ?>
                 <?php
                 $presente = $incontro['joined_at'] !== null;
                 $ritardo = ReportController::delayLabel($incontro);
                 ?>
-                <tr>
-                    <td><a href="/reports/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></td>
-                    <td><?= htmlspecialchars(ReportController::dateTimeLabel((string) $incontro['starts_at'])) ?></td>
-                    <td><?= htmlspecialchars((string) ($incontro['course_title'] ?? $incontro['group_name'] ?? '—')) ?></td>
-                    <td>
+                <tr role="row">
+                    <td role="cell" data-label="Incontro"><a href="/reports/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></td>
+                    <td role="cell" data-label="Quando"><?= htmlspecialchars(ReportController::dateTimeLabel((string) $incontro['starts_at'])) ?></td>
+                    <td role="cell" data-label="Corso o gruppo"><?= htmlspecialchars((string) ($incontro['course_title'] ?? $incontro['group_name'] ?? '—')) ?></td>
+                    <td role="cell" data-label="Presenza">
                         <?php if ($presente): ?>
                             <span class="badge badge-success">presente</span>
                         <?php else: ?>
                             <span class="badge badge-danger">assente</span>
                         <?php endif; ?>
                     </td>
-                    <td><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($incontro['joined_at'])) : '—' ?></td>
-                    <td>
+                    <td role="cell" data-label="Ingresso"><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($incontro['joined_at'])) : '—' ?></td>
+                    <td role="cell" data-label="Ritardo">
                         <?= $presente && $ritardo !== '' && $ritardo !== '0'
                             ? htmlspecialchars($ritardo) . ' min'
                             : ($presente ? 'in orario' : '—') ?>
@@ -138,6 +171,7 @@ use App\Controllers\ReportController;
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     </section>
 <?php endif; ?>
 

@@ -8,6 +8,7 @@ use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
+use App\Core\QuizScoring;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
@@ -25,6 +26,9 @@ class QuizController
 {
     private const MIN_OPTIONS = 2;
     private const MAX_OPTIONS = 6;
+
+    /** Quanto puo' essere lunga una risposta aperta. */
+    public const MAX_OPEN_CHARS = 5000;
 
     // ---------------------------------------------------------------
     // Gestione quiz — admin/tutor
@@ -235,6 +239,29 @@ class QuizController
         $this->redirect('/quizzes/' . $question['quiz_id'] . '/edit');
     }
 
+    /**
+     * Sposta una domanda di un posto su o giu'. Come per lezioni e
+     * materiali: due pulsanti, nessun trascinamento, funziona senza
+     * JavaScript.
+     */
+    public function moveQuestion(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEditQuestion((int) $params['id']);
+
+        $question = QuizQuestionModel::find((int) $params['id']);
+
+        if (!$question) {
+            $this->notFound('Domanda non trovata.');
+            return;
+        }
+
+        $direction = ($_POST['direction'] ?? '') === 'up' ? 'up' : 'down';
+        QuizQuestionModel::move((int) $question['id'], $direction);
+
+        $this->redirect('/quizzes/' . $question['quiz_id'] . '/edit');
+    }
+
     public function destroyQuestion(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
@@ -281,10 +308,21 @@ class QuizController
 
         $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
         $optionsByQuestion = [];
+        $correctCountByQuestion = [];
 
         foreach ($questions as $question) {
             // Senza il flag is_correct: la soluzione non deve finire nell'HTML.
             $optionsByQuestion[$question['id']] = QuizOptionModel::forQuestionWithoutAnswers((int) $question['id']);
+
+            /*
+             * Quante risposte corrette ha la domanda. Il **numero** si puo'
+             * dire — serve allo studente per sapere quante sceglierne — ma
+             * quali siano no: nell'HTML arriva un conteggio, non un indizio
+             * su chi e' la giusta.
+             */
+            $correctCountByQuestion[$question['id']] = count(
+                QuizOptionModel::correctIdsForQuestion((int) $question['id'])
+            );
         }
 
         View::render('quizzes/take', [
@@ -294,6 +332,7 @@ class QuizController
             'course' => $course,
             'questions' => $questions,
             'optionsByQuestion' => $optionsByQuestion,
+            'correctCountByQuestion' => $correctCountByQuestion,
             'attempts' => QuizAttemptModel::forUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
             'best' => QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
         ]);
@@ -329,33 +368,102 @@ class QuizController
         }
 
         $submitted = is_array($_POST['answers'] ?? null) ? $_POST['answers'] : [];
+        $testi = is_array($_POST['open'] ?? null) ? $_POST['open'] : [];
+
         $answers = [];
-        $correct = 0;
+        $giuste = 0;
+        $valutate = 0;
 
         foreach ($questions as $question) {
             $questionId = (int) $question['id'];
-            $selectedId = (int) ($submitted[$questionId] ?? 0);
-            $option = $selectedId > 0 ? QuizOptionModel::find($selectedId) : null;
+            $tipo = (string) $question['question_type'];
 
-            // L'opzione deve esistere e appartenere davvero a questa domanda
-            // (altrimenti il punteggio sarebbe manipolabile dal client).
-            if ($option === null || (int) $option['question_id'] !== $questionId) {
+            // --- risposta aperta: si raccoglie, non si corregge ----------
+            if ($tipo === 'open') {
+                $testo = trim((string) ($testi[$questionId] ?? ''));
+
+                if ($testo === '') {
+                    $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il quiz.';
+                    $this->redirect('/quizzes/' . $quiz['id']);
+                }
+
+                $answers[] = [
+                    'question_id' => $questionId,
+                    'selected_option_id' => null,
+                    // Tagliato per non lasciare che il corpo della richiesta
+                    // decida quanto spazio occupare nel database.
+                    'answer_text' => mb_substr($testo, 0, self::MAX_OPEN_CHARS),
+                    // Non e' «sbagliata»: e' fuori dal punteggio. Il valore
+                    // nella colonna non viene letto per le aperte, e vale 0
+                    // perche' la colonna non ammette nulla.
+                    'is_correct' => false,
+                ];
+
+                continue;
+            }
+
+            $valutate++;
+
+            // --- le opzioni scelte, comunque siano arrivate ---------------
+            //
+            // La multipla manda un elenco, gli altri tipi un valore solo:
+            // si normalizza a elenco e il resto del codice non deve piu'
+            // sapere la differenza.
+            $grezze = $submitted[$questionId] ?? null;
+            $scelte = is_array($grezze) ? array_map('intval', $grezze) : [(int) $grezze];
+            $scelte = array_values(array_unique(array_filter($scelte, static fn (int $v): bool => $v > 0)));
+
+            if ($scelte === []) {
                 $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il quiz.';
                 $this->redirect('/quizzes/' . $quiz['id']);
             }
 
-            $isCorrect = (bool) $option['is_correct'];
-            $correct += $isCorrect ? 1 : 0;
+            if (!QuizScoring::piuRisposte($tipo) && count($scelte) > 1) {
+                // Una domanda a scelta singola con due risposte non arriva da
+                // un modulo onesto: si ferma invece di tenerne una a caso.
+                $_SESSION['flash_error'] = 'Su questa domanda si può scegliere una sola risposta.';
+                $this->redirect('/quizzes/' . $quiz['id']);
+            }
 
-            $answers[] = [
-                'question_id' => $questionId,
-                'selected_option_id' => $selectedId,
-                'is_correct' => $isCorrect,
-            ];
+            // Ogni opzione deve esistere e appartenere **a questa domanda**:
+            // senza questo controllo il punteggio sarebbe manipolabile
+            // mandando l'identificativo di un'opzione corretta di un'altra.
+            foreach ($scelte as $optionId) {
+                $option = QuizOptionModel::find($optionId);
+
+                if ($option === null || (int) $option['question_id'] !== $questionId) {
+                    $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il quiz.';
+                    $this->redirect('/quizzes/' . $quiz['id']);
+                }
+            }
+
+            $corrette = QuizOptionModel::correctIdsForQuestion($questionId);
+
+            $indovinata = QuizScoring::piuRisposte($tipo)
+                ? QuizScoring::multiplaGiusta($scelte, $corrette)
+                : in_array($scelte[0], $corrette, true);
+
+            $giuste += $indovinata ? 1 : 0;
+
+            /*
+             * Una riga per opzione scelta. `is_correct` dice se **l'intera
+             * domanda** e' stata indovinata, non se quella singola opzione
+             * era giusta: con il «tutto o niente» il verdetto e' della
+             * domanda, e due righe della stessa domanda portano lo stesso
+             * valore.
+             */
+            foreach ($scelte as $optionId) {
+                $answers[] = [
+                    'question_id' => $questionId,
+                    'selected_option_id' => $optionId,
+                    'answer_text' => null,
+                    'is_correct' => $indovinata,
+                ];
+            }
         }
 
-        $scorePct = round(($correct / count($questions)) * 100, 2);
-        $passed = $scorePct >= (float) $quiz['passing_score_pct'];
+        $scorePct = QuizScoring::percentuale($giuste, $valutate);
+        $passed = QuizScoring::superato($scorePct, (int) $quiz['passing_score_pct'], $valutate);
 
         $attemptId = QuizAttemptModel::create((int) Auth::id(), (int) $quiz['id'], $scorePct, $passed, $answers);
 
@@ -398,6 +506,13 @@ class QuizController
             return;
         }
 
+        /*
+         * Il conteggio che conta e' quello delle domande **valutate**: un
+         * quiz con due aperte su cinque dice «3 su 3», non «3 su 5», perche'
+         * il punteggio e' calcolato su tre.
+         */
+        $domande = QuizQuestionModel::forQuiz((int) $quiz['id']);
+
         View::render('quizzes/result', [
             'pageTitle' => 'Esito quiz',
             'attempt' => $attempt,
@@ -405,6 +520,8 @@ class QuizController
             'module' => $module,
             'course' => CourseModel::find((int) $module['course_id']),
             'questionCount' => QuizModel::countQuestions((int) $quiz['id']),
+            'scoredCount' => QuizScoring::conteggioValutate($domande),
+            'openAnswers' => QuizAttemptModel::openAnswersForAttempt((int) $attempt['id']),
             'best' => QuizAttemptModel::bestForUserAndQuiz((int) $attempt['user_id'], (int) $quiz['id']),
         ]);
     }
@@ -448,6 +565,10 @@ class QuizController
     /**
      * Estrae e valida testo, tipo e opzioni di una domanda dal POST.
      *
+     * Quattro tipi, quattro forme diverse di dati in arrivo. La validazione
+     * sta qui e non nel browser: il modulo nasconde i gruppi di campi che
+     * non servono, ma quello che arriva al server lo decide chi invia.
+     *
      * @return array{0: string, 1: string, 2: array<int, array{text: string, is_correct: bool}>}
      * @throws \RuntimeException se i dati non sono validi
      */
@@ -459,10 +580,20 @@ class QuizController
             throw new \RuntimeException('Il testo della domanda è obbligatorio.');
         }
 
-        $type = ($_POST['question_type'] ?? 'single_choice') === 'true_false' ? 'true_false' : 'single_choice';
-        $correctIndex = (int) ($_POST['correct_option'] ?? -1);
+        $type = (string) ($_POST['question_type'] ?? 'single_choice');
+
+        if (!QuizScoring::esiste($type)) {
+            $type = 'single_choice';
+        }
+
+        // La risposta aperta non ha opzioni: non c'e' altro da validare.
+        if ($type === 'open') {
+            return [$text, $type, []];
+        }
 
         if ($type === 'true_false') {
+            $correctIndex = (int) ($_POST['correct_option'] ?? -1);
+
             if (!in_array($correctIndex, [0, 1], true)) {
                 throw new \RuntimeException('Indica se la risposta corretta è Vero o Falso.');
             }
@@ -472,6 +603,16 @@ class QuizController
                 ['text' => 'Falso', 'is_correct' => $correctIndex === 1],
             ]];
         }
+
+        /*
+         * Gli indici delle corrette si leggono sulle righe **come arrivano**,
+         * prima di scartare quelle vuote: e' la riga numero tre del modulo
+         * che e' stata spuntata, non la terza fra quelle compilate. Filtrare
+         * prima sposterebbe la risposta giusta su un'altra opzione.
+         */
+        $corretti = $type === 'multiple_choice'
+            ? array_map('intval', is_array($_POST['correct_options'] ?? null) ? $_POST['correct_options'] : [])
+            : [(int) ($_POST['correct_option'] ?? -1)];
 
         $rawOptions = is_array($_POST['options'] ?? null) ? array_values($_POST['options']) : [];
         $options = [];
@@ -483,7 +624,7 @@ class QuizController
                 continue;
             }
 
-            $options[] = ['text' => $optionText, 'is_correct' => $index === $correctIndex];
+            $options[] = ['text' => $optionText, 'is_correct' => in_array($index, $corretti, true)];
         }
 
         if (count($options) < self::MIN_OPTIONS) {
@@ -491,9 +632,32 @@ class QuizController
         }
 
         $options = array_slice($options, 0, self::MAX_OPTIONS);
+        $quante = count(array_filter($options, static fn (array $o): bool => $o['is_correct']));
 
-        if (!array_filter($options, static fn (array $o): bool => $o['is_correct'])) {
-            throw new \RuntimeException('Seleziona quale opzione è la risposta corretta.');
+        if ($quante === 0) {
+            throw new \RuntimeException($type === 'multiple_choice'
+                ? 'Spunta almeno un\'opzione corretta. Se la risposta giusta è una sola, usa il tipo "Scelta singola".'
+                : 'Seleziona quale opzione è la risposta corretta.');
+        }
+
+        /*
+         * Una multipla con una sola risposta corretta funzionerebbe, ma allo
+         * studente arriverebbero caselle dove bastavano pallini, e la
+         * scritta «seleziona 1 risposta» suonerebbe come un errore. Meglio
+         * dirlo a chi costruisce il quiz.
+         */
+        if ($type === 'multiple_choice' && $quante === 1) {
+            throw new \RuntimeException(
+                'Una domanda a scelta multipla vuole almeno due risposte corrette. '
+                . 'Se la risposta giusta è una sola, usa il tipo "Scelta singola".'
+            );
+        }
+
+        if ($type === 'multiple_choice' && $quante === count($options)) {
+            throw new \RuntimeException(
+                'Tutte le opzioni sono segnate come corrette: la domanda non distinguerebbe nessuno. '
+                . 'Lasciane almeno una sbagliata.'
+            );
         }
 
         return [$text, $type, $options];

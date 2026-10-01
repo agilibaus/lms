@@ -403,6 +403,12 @@ const PAGINE_INTERNE = [
     ['/reports/groups/1', 'Report per gruppo'],
     ['/lessons/1/edit', 'Modifica lezione'],
     ['/courses/1', 'Corso'],
+    // Il percorso del quiz: e' quello che uno studente fa dal telefono piu'
+    // di qualunque altra cosa, ed era rimasto fuori dai controlli.
+    ['/quizzes/1', 'Quiz da svolgere'],
+    ['/quizzes/1/edit', 'Quiz: domande'],
+    ['/attempts/1', 'Esito del quiz'],
+    ['/modules/1/quiz/create', 'Nuovo quiz'],
 ];
 
 async function entra(page) {
