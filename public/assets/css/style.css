@@ -2536,3 +2536,21 @@ fieldset.checkbox-group legend {
     text-transform: none;
     letter-spacing: normal;
 }
+
+/* ---------- Scarico dei report ---------- */
+
+/* Il comando "Scarica" sta dentro una riga di tabella, dove un pulsante di
+   taglia piena alzerebbe tutte le righe. Si stringe il riempimento, non
+   l'altezza: i 24px di bersaglio minimo restano. */
+.btn.btn-small {
+    padding: 0.2rem 0.6rem;
+    min-height: var(--tap-target);
+    font-size: 0.86rem;
+}
+
+/* In una tabella il pannello va allineato a destra: sull'ultima colonna, a
+   sinistra uscirebbe dal bordo della scheda. */
+.dropdown-riga > .dropdown-menu {
+    left: auto;
+    right: 0;
+}

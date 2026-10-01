@@ -16,7 +16,20 @@ use App\Core\Csrf;
         <?= (int) $totals['lessons'] ?> lezioni · <?= (int) $totals['quizzes'] ?> quiz ·
         <?= count($rows) ?> iscritti
     </p>
-    <p><a href="/reports/courses/<?= (int) $course['id'] ?>/csv" class="btn btn-secondary">Esporta CSV</a></p>
+    <?php /* Stessa tendina dell'elenco dei report: XLSX prima perche' si apre
+             con un doppio clic, CSV per chi deve darlo in pasto a un programma.
+             `details`/`summary` funziona senza JavaScript. */ ?>
+    <p>
+        <details class="dropdown">
+            <summary class="btn btn-secondary">Scarica</summary>
+            <div class="dropdown-menu">
+                <?php if (App\Core\Xlsx::disponibile()): ?>
+                    <a href="/reports/courses/<?= (int) $course['id'] ?>/xlsx">XLSX</a>
+                <?php endif; ?>
+                <a href="/reports/courses/<?= (int) $course['id'] ?>/csv">CSV</a>
+            </div>
+        </details>
+    </p>
 </div>
 
 <?php if (!empty($_SESSION['flash_success'])): ?>
@@ -83,3 +96,5 @@ use App\Core\Csrf;
         </tbody>
     </table>
 <?php endif; ?>
+
+<script src="/assets/js/dropdown.js"></script>

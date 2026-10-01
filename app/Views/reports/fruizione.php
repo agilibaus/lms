@@ -16,12 +16,12 @@ use App\Core\Xlsx;
     <p class="page-subtitle"><?= htmlspecialchars((string) $course['title']) ?></p>
     <div class="page-actions">
         <details class="dropdown">
-            <summary class="btn btn-secondary">Scarica dati</summary>
+            <summary class="btn btn-secondary">Scarica</summary>
             <div class="dropdown-menu">
-                <a href="/reports/fruizione/<?= (int) $course['id'] ?>/csv">CSV</a>
                 <?php if (Xlsx::disponibile()): ?>
                     <a href="/reports/fruizione/<?= (int) $course['id'] ?>/xlsx">XLSX</a>
                 <?php endif; ?>
+                <a href="/reports/fruizione/<?= (int) $course['id'] ?>/csv">CSV</a>
             </div>
         </details>
     </div>

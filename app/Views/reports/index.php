@@ -23,6 +23,32 @@ declare(strict_types=1);
          pagina scende finché non trova il livello che gli serve. I corsi
          senza video non compaiono nell'ultima: non avrebbero niente da dire. */ ?>
 
+<?php
+/*
+ * La tendina dello scarico, uguale in tutte le sezioni: `details`/`summary`,
+ * che si apre e si chiude senza JavaScript e si usa da tastiera. XLSX prima
+ * del CSV perche' e' quello che si apre con un doppio clic; il CSV resta per
+ * chi deve darlo in pasto a un programma.
+ *
+ * Il CSV c'e' sempre, l'XLSX solo dove PHP ha l'estensione zip: senza, il
+ * file non si puo' nemmeno costruire, e un comando che porta a un errore e'
+ * peggio di un comando che non c'e'.
+ */
+$scarica = static function (string $base): void {
+    ?>
+    <details class="dropdown dropdown-riga">
+        <summary class="btn btn-secondary btn-small">Scarica</summary>
+        <div class="dropdown-menu">
+            <?php if (App\Core\Xlsx::disponibile()): ?>
+                <a href="<?= htmlspecialchars($base) ?>/xlsx">XLSX</a>
+            <?php endif; ?>
+            <a href="<?= htmlspecialchars($base) ?>/csv">CSV</a>
+        </div>
+    </details>
+    <?php
+};
+?>
+
 <section class="card">
     <h2>Per corso</h2>
     <?php if ($courses === []): ?>
@@ -46,7 +72,7 @@ declare(strict_types=1);
                     <td><?= (int) $course['certificate_count'] ?></td>
                     <td class="row-actions">
                         <a href="/reports/courses/<?= (int) $course['id'] ?>">Dettaglio</a>
-                        <a href="/reports/courses/<?= (int) $course['id'] ?>/csv">CSV</a>
+                        <?php $scarica('/reports/courses/' . (int) $course['id']); ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -76,7 +102,7 @@ declare(strict_types=1);
                     <td><?= (int) $group['member_count'] ?></td>
                     <td class="row-actions">
                         <a href="/reports/groups/<?= (int) $group['id'] ?>">Dettaglio</a>
-                        <a href="/reports/groups/<?= (int) $group['id'] ?>/csv">CSV</a>
+                        <?php $scarica('/reports/groups/' . (int) $group['id']); ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -108,7 +134,7 @@ declare(strict_types=1);
                     <td><?= (int) $student['certificate_count'] ?></td>
                     <td class="row-actions">
                         <a href="/reports/students/<?= (int) $student['id'] ?>">Dettaglio</a>
-                        <a href="/reports/students/<?= (int) $student['id'] ?>/csv">CSV</a>
+                        <?php $scarica('/reports/students/' . (int) $student['id']); ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -138,7 +164,7 @@ declare(strict_types=1);
                     <td><?= (int) $sessione['attended'] ?>/<?= (int) $sessione['expected'] ?></td>
                     <td class="row-actions">
                         <a href="/reports/live/<?= (int) $sessione['id'] ?>">Dettaglio</a>
-                        <a href="/reports/live/<?= (int) $sessione['id'] ?>/csv">CSV</a>
+                        <?php $scarica('/reports/live/' . (int) $sessione['id']); ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -174,10 +200,7 @@ declare(strict_types=1);
                     <td><?= (int) $corso['avviati'] ?></td>
                     <td class="row-actions">
                         <a href="/reports/fruizione/<?= (int) $corso['id'] ?>">Dettaglio</a>
-                        <a href="/reports/fruizione/<?= (int) $corso['id'] ?>/csv">CSV</a>
-                        <?php if (App\Core\Xlsx::disponibile()): ?>
-                            <a href="/reports/fruizione/<?= (int) $corso['id'] ?>/xlsx">XLSX</a>
-                        <?php endif; ?>
+                        <?php $scarica('/reports/fruizione/' . (int) $corso['id']); ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -185,3 +208,7 @@ declare(strict_types=1);
         </table>
     <?php endif; ?>
 </section>
+
+<?php /* La tendina funziona senza JavaScript; lo script aggiunge solo la
+         chiusura con Esc e con un clic fuori. */ ?>
+<script src="/assets/js/dropdown.js"></script>

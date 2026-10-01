@@ -115,19 +115,26 @@ $router->get('/verify/{code}', [CertificateController::class, 'verify']);
 
 // --- Report -----------------------------------------------------------
 $router->get('/reports', [ReportController::class, 'index']);
+
+/*
+ * Ogni report si scarica in CSV e in XLSX: il formato e' l'ultimo segmento
+ * dell'indirizzo. Un segmento diverso da «xlsx» vale CSV, cosi' i vecchi
+ * collegamenti a «/csv» continuano a funzionare e un indirizzo inventato
+ * non produce un file a sorpresa.
+ */
 $router->get('/reports/courses/{id}', [ReportController::class, 'course']);
-$router->get('/reports/courses/{id}/csv', [ReportController::class, 'courseCsv']);
+$router->get('/reports/courses/{id}/{formato}', [ReportController::class, 'courseDownload']);
 $router->get('/reports/students/{id}', [ReportController::class, 'student']);
-$router->get('/reports/students/{id}/csv', [ReportController::class, 'studentCsv']);
+$router->get('/reports/students/{id}/{formato}', [ReportController::class, 'studentDownload']);
 $router->get('/reports/live/{id}', [ReportController::class, 'liveSession']);
-$router->get('/reports/live/{id}/csv', [ReportController::class, 'liveSessionCsv']);
+$router->get('/reports/live/{id}/{formato}', [ReportController::class, 'liveSessionDownload']);
 // Fruizione dei video, per corso. Le rotte specifiche prima di quelle con
 // {id} non serve qui perche' il segmento fisso e' il primo, ma la coppia
 // pagina/scarico segue lo stesso ordine delle altre.
 $router->get('/reports/fruizione/{id}', [ReportController::class, 'videoCourse']);
 $router->get('/reports/fruizione/{id}/{formato}', [ReportController::class, 'videoCourseDownload']);
 $router->get('/reports/groups/{id}', [ReportController::class, 'group']);
-$router->get('/reports/groups/{id}/csv', [ReportController::class, 'groupCsv']);
+$router->get('/reports/groups/{id}/{formato}', [ReportController::class, 'groupDownload']);
 
 // --- Pannello di amministrazione --------------------------------------
 $router->get('/admin/users', [AdminUserController::class, 'index']);

@@ -81,7 +81,7 @@ class ReportController
         ]);
     }
 
-    public function liveSessionCsv(array $params): void
+    public function liveSessionDownload(array $params): void
     {
         $this->requireReportAccess();
 
@@ -111,10 +111,13 @@ class ReportController
             ];
         }
 
-        Csv::send(
-            'report-incontro-' . Csv::slug((string) $session['title']) . '.csv',
+        $this->inviaReport(
+            self::formato($params),
+            'report-incontro-' . Csv::slug((string) $session['title']),
             ['Partecipante', 'Email', 'Presenza', 'Ingresso', 'Ritardo (minuti)', 'Origine'],
-            $rows
+            $rows,
+            [4 => 'numero'],
+            'Incontro'
         );
     }
 
@@ -146,7 +149,7 @@ class ReportController
         ]);
     }
 
-    public function courseCsv(array $params): void
+    public function courseDownload(array $params): void
     {
         $this->requireReportAccess();
 
@@ -162,6 +165,9 @@ class ReportController
             return;
         }
 
+        $formato = self::formato($params);
+        $xlsx = $formato === 'xlsx';
+
         $totals = ReportModel::courseTotals((int) $course['id']);
         $rows = [];
 
@@ -170,7 +176,7 @@ class ReportController
                 $row['full_name'],
                 $row['email'],
                 $row['enrolled_at'],
-                number_format((float) $row['progress_pct'], 2, ',', ''),
+                self::decimale((float) $row['progress_pct'], $xlsx),
                 $row['lessons_completed'] . '/' . $totals['lessons'],
                 $row['quizzes_passed'] . '/' . $totals['quizzes'],
                 $row['completed_at'] ?? '',
@@ -178,10 +184,13 @@ class ReportController
             ];
         }
 
-        Csv::send(
-            'report-corso-' . Csv::slug((string) $course['title']) . '.csv',
+        $this->inviaReport(
+            $formato,
+            'report-corso-' . Csv::slug((string) $course['title']),
             ['Studente', 'Email', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Quiz superati', 'Completato il', 'Certificato'],
-            $rows
+            $rows,
+            [3 => 'numero'],
+            'Corso'
         );
     }
 
@@ -222,13 +231,6 @@ class ReportController
     {
         [$course, $lezioni, $righe] = $this->videoCourseData((int) $params['id']);
 
-        $xlsx = (string) ($params['formato'] ?? 'csv') === 'xlsx';
-
-        if ($xlsx && !Xlsx::disponibile()) {
-            http_response_code(500);
-            exit('Il formato XLSX richiede l\'estensione zip di PHP, che qui non c\'è. Scarica il CSV.');
-        }
-
         $intestazioni = ['Studente', 'Email', 'Corso'];
         $tipi = [];
 
@@ -262,14 +264,14 @@ class ReportController
             $dati[] = $cella;
         }
 
-        $nome = 'fruizione-video-' . Csv::slug((string) $course['title']) . '-' . date('Y-m-d');
-
-        if ($xlsx) {
-            Xlsx::send($nome . '.xlsx', $intestazioni, $dati, $tipi, 'Fruizione');
-            return;
-        }
-
-        Csv::send($nome . '.csv', $intestazioni, $dati);
+        $this->inviaReport(
+            self::formato($params),
+            'fruizione-video-' . Csv::slug((string) $course['title']) . '-' . date('Y-m-d'),
+            $intestazioni,
+            $dati,
+            $tipi,
+            'Fruizione'
+        );
     }
 
     /**
@@ -341,7 +343,7 @@ class ReportController
         ]);
     }
 
-    public function studentCsv(array $params): void
+    public function studentDownload(array $params): void
     {
         $this->requireReportAccess();
 
@@ -351,13 +353,16 @@ class ReportController
             return;
         }
 
+        $formato = self::formato($params);
+        $xlsx = $formato === 'xlsx';
+
         $rows = [];
 
         foreach (ReportModel::studentDetail((int) $student['id']) as $row) {
             $rows[] = [
                 $row['course_title'],
                 $row['enrolled_at'],
-                number_format((float) $row['progress_pct'], 2, ',', ''),
+                self::decimale((float) $row['progress_pct'], $xlsx),
                 $row['lessons_completed'] . '/' . $row['lessons_total'],
                 $row['quizzes_passed'] . '/' . $row['quizzes_total'],
                 $row['completed_at'] ?? '',
@@ -387,10 +392,20 @@ class ReportController
             }
         }
 
-        Csv::send(
-            'report-studente-' . Csv::slug((string) $student['full_name']) . '.csv',
+        /*
+         * Niente colonna dichiarata come numero qui: sotto le righe dei
+         * corsi ce ne sono altre con un significato diverso — gli incontri
+         * dal vivo — e nella terza colonna hanno un testo. Dire al foglio
+         * di calcolo che quella colonna e' numerica la farebbe litigare con
+         * meta' del proprio contenuto.
+         */
+        $this->inviaReport(
+            $formato,
+            'report-studente-' . Csv::slug((string) $student['full_name']),
             ['Corso', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Quiz superati', 'Completato il', 'Certificato'],
-            $rows
+            $rows,
+            [],
+            'Studente'
         );
     }
 
@@ -417,7 +432,7 @@ class ReportController
         ]);
     }
 
-    public function groupCsv(array $params): void
+    public function groupDownload(array $params): void
     {
         $this->requireReportAccess();
 
@@ -427,6 +442,9 @@ class ReportController
             return;
         }
 
+        $formato = self::formato($params);
+        $xlsx = $formato === 'xlsx';
+
         $rows = [];
 
         foreach (ReportModel::groupDetail((int) $group['id']) as $row) {
@@ -434,23 +452,85 @@ class ReportController
                 $row['full_name'],
                 $row['email'],
                 $row['course_title'],
-                $row['progress_pct'] === null ? 'non iscritto' : number_format((float) $row['progress_pct'], 2, ',', ''),
+                $row['progress_pct'] === null
+                    ? 'non iscritto'
+                    : self::decimale((float) $row['progress_pct'], $xlsx),
                 $row['quizzes_passed'] . '/' . $row['quizzes_total'],
                 $row['completed_at'] ?? '',
                 $this->certificateLabel($row),
             ];
         }
 
-        Csv::send(
-            'report-gruppo-' . Csv::slug((string) $group['name']) . '.csv',
+        // Colonna del progresso non dichiarata numerica: dove lo studente
+        // non e' iscritto al corso c'e' scritto «non iscritto», ed e'
+        // un'informazione, non uno zero.
+        $this->inviaReport(
+            $formato,
+            'report-gruppo-' . Csv::slug((string) $group['name']),
             ['Studente', 'Email', 'Corso', 'Progresso %', 'Quiz superati', 'Completato il', 'Certificato'],
-            $rows
+            $rows,
+            [],
+            'Gruppo'
         );
     }
 
     // ---------------------------------------------------------------
     // Helper privati
     // ---------------------------------------------------------------
+
+    /**
+     * Manda un report nel formato chiesto. Tutti i report passano di qui,
+     * cosi' CSV e XLSX escono per forza dagli stessi dati: se un giorno si
+     * aggiunge una colonna, non c'e' un secondo posto da ricordarsi.
+     *
+     * `$tipi` vale solo per l'XLSX e dice quali colonne sono numeri — senza,
+     * un foglio di calcolo le tratta come testo e non si sommano.
+     *
+     * @param list<string>                                  $intestazioni
+     * @param array<int, array<int, string|int|float|null>> $righe
+     * @param array<int, string>                            $tipi
+     */
+    private function inviaReport(
+        string $formato,
+        string $nomeSenzaEstensione,
+        array $intestazioni,
+        array $righe,
+        array $tipi = [],
+        string $foglio = 'Report'
+    ): void {
+        if ($formato === 'xlsx') {
+            if (!Xlsx::disponibile()) {
+                http_response_code(500);
+                exit('Il formato XLSX richiede l\'estensione zip di PHP, che qui non c\'è. Scarica il CSV.');
+            }
+
+            Xlsx::send($nomeSenzaEstensione . '.xlsx', $intestazioni, $righe, $tipi, $foglio);
+            return;
+        }
+
+        Csv::send($nomeSenzaEstensione . '.csv', $intestazioni, $righe);
+    }
+
+    /**
+     * Il formato chiesto nell'indirizzo, con il CSV come ripiego: un
+     * segmento inventato non deve produrre un file a sorpresa.
+     *
+     * @param array<string, mixed> $params
+     */
+    private static function formato(array $params): string
+    {
+        return ($params['formato'] ?? 'csv') === 'xlsx' ? 'xlsx' : 'csv';
+    }
+
+    /**
+     * Un numero per il foglio di calcolo, la sua scrittura italiana per il
+     * CSV: Excel in italiano legge «12.5» come una data e «12,5» come un
+     * numero. Gli interi non hanno questo problema e passano com'e'.
+     */
+    private static function decimale(float $valore, bool $xlsx): string|float
+    {
+        return $xlsx ? round($valore, 2) : number_format($valore, 2, ',', '');
+    }
 
     private function requireReportAccess(): void
     {

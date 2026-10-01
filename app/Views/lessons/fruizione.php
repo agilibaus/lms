@@ -47,12 +47,12 @@ $quando = static function (?string $data): string {
         <?php /* Stessa tendina dell'elenco utenti: `details`/`summary`, che si
                  apre e si chiude senza JavaScript. */ ?>
         <details class="dropdown">
-            <summary class="btn btn-secondary">Scarica dati</summary>
+            <summary class="btn btn-secondary">Scarica</summary>
             <div class="dropdown-menu">
-                <a href="/lessons/<?= (int) $lesson['id'] ?>/fruizione/csv">CSV</a>
                 <?php if (Xlsx::disponibile()): ?>
                     <a href="/lessons/<?= (int) $lesson['id'] ?>/fruizione/xlsx">XLSX</a>
                 <?php endif; ?>
+                <a href="/lessons/<?= (int) $lesson['id'] ?>/fruizione/csv">CSV</a>
             </div>
         </details>
     </div>

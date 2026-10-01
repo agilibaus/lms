@@ -20,7 +20,20 @@ use App\Controllers\ReportController;
             Sessioni live seguite: <?= (int) $liveAttendance['attended'] ?>/<?= (int) $liveAttendance['total'] ?>
         </p>
     <?php endif; ?>
-    <p><a href="/reports/students/<?= (int) $student['id'] ?>/csv" class="btn btn-secondary">Esporta CSV</a></p>
+    <?php /* Stessa tendina dell'elenco dei report: XLSX prima perche' si apre
+             con un doppio clic, CSV per chi deve darlo in pasto a un programma.
+             `details`/`summary` funziona senza JavaScript. */ ?>
+    <p>
+        <details class="dropdown">
+            <summary class="btn btn-secondary">Scarica</summary>
+            <div class="dropdown-menu">
+                <?php if (App\Core\Xlsx::disponibile()): ?>
+                    <a href="/reports/students/<?= (int) $student['id'] ?>/xlsx">XLSX</a>
+                <?php endif; ?>
+                <a href="/reports/students/<?= (int) $student['id'] ?>/csv">CSV</a>
+            </div>
+        </details>
+    </p>
 </div>
 
 <?php if ($courses === []): ?>
@@ -127,3 +140,5 @@ use App\Controllers\ReportController;
         </table>
     </section>
 <?php endif; ?>
+
+<script src="/assets/js/dropdown.js"></script>

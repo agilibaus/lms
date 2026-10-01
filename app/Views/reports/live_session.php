@@ -25,7 +25,20 @@ $presenti = count(array_filter($rows, static fn (array $r): bool => $r['joined_a
             · Gruppo <?= htmlspecialchars((string) $session['group_name']) ?>
         <?php endif; ?>
     </p>
-    <p><a href="/reports/live/<?= $id ?>/csv" class="btn btn-secondary">Esporta CSV</a></p>
+    <?php /* Stessa tendina dell'elenco dei report: XLSX prima perche' si apre
+             con un doppio clic, CSV per chi deve darlo in pasto a un programma.
+             `details`/`summary` funziona senza JavaScript. */ ?>
+    <p>
+        <details class="dropdown">
+            <summary class="btn btn-secondary">Scarica</summary>
+            <div class="dropdown-menu">
+                <?php if (App\Core\Xlsx::disponibile()): ?>
+                    <a href="/reports/live/<?= $id ?>/xlsx">XLSX</a>
+                <?php endif; ?>
+                <a href="/reports/live/<?= $id ?>/csv">CSV</a>
+            </div>
+        </details>
+    </p>
 </div>
 
 <section class="card">
@@ -77,3 +90,5 @@ $presenti = count(array_filter($rows, static fn (array $r): bool => $r['joined_a
         </table>
     <?php endif; ?>
 </section>
+
+<script src="/assets/js/dropdown.js"></script>
