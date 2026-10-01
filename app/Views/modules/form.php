@@ -32,5 +32,25 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
         Quiz obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il quiz di questo modulo
     </label>
 
+    <?php /* Il valore in tabella e' "2026-11-15 09:00:00", il campo del
+             browser vuole "2026-11-15T09:00": la T al posto dello spazio e
+             senza i secondi. */ ?>
+    <?php
+    $availableFrom = $module['available_from'] ?? null;
+    $availableFromInput = $availableFrom === null
+        ? ''
+        : str_replace(' ', 'T', substr((string) $availableFrom, 0, 16));
+    ?>
+    <label for="available_from">Disponibile dal</label>
+    <input type="datetime-local" id="available_from" name="available_from"
+           value="<?= htmlspecialchars($availableFromInput) ?>"
+           aria-describedby="available_from_aiuto">
+    <p class="hint" id="available_from_aiuto">
+        Lascia vuoto per tenere il modulo aperto da subito. Con una data, gli studenti
+        vedono il titolo del modulo in grigio con l’indicazione di quando si aprirà, e
+        non possono aprirne le lezioni, i quiz, i materiali né gli incontri dal vivo.
+        La data è uguale per tutti gli studenti e il giorno dell’apertura ricevono un’email.
+    </p>
+
     <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Salva' : 'Crea modulo' ?></button>
 </form>

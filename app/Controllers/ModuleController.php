@@ -54,7 +54,7 @@ class ModuleController
             exit;
         }
 
-        ModuleModel::create($courseId, $title, isset($_POST['quiz_required']));
+        ModuleModel::create($courseId, $title, isset($_POST['quiz_required']), $this->availableFromPost());
 
         header('Location: /courses/' . $courseId);
         exit;
@@ -98,11 +98,43 @@ class ModuleController
         $title = trim($_POST['title'] ?? '');
 
         if ($title !== '') {
-            ModuleModel::update((int) $module['id'], $title, isset($_POST['quiz_required']));
+            ModuleModel::update(
+                (int) $module['id'],
+                $title,
+                isset($_POST['quiz_required']),
+                $this->availableFromPost()
+            );
         }
 
         header('Location: /courses/' . $module['course_id']);
         exit;
+    }
+
+    /**
+     * La data di apertura dal modulo inviato, o null se il campo e' vuoto.
+     *
+     * Vuoto vuol dire «sempre aperto», ed e' il comportamento di tutti i
+     * moduli che esistevano prima del rilascio progressivo: svuotare il campo
+     * riapre il modulo, non lo lascia com'era.
+     *
+     * Una data incomprensibile diventa anch'essa null. E' voluto: il campo e'
+     * un `datetime-local`, quindi il browser manda solo valori validi, e
+     * quello che arriva storto arriva da un POST costruito a mano. Fra il
+     * rifiutare il salvataggio e il lasciare il modulo aperto, la seconda non
+     * nasconde contenuto per sbaglio.
+     */
+    private function availableFromPost(): ?string
+    {
+        $value = trim((string) ($_POST['available_from'] ?? ''));
+
+        if ($value === '') {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $value)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value);
+
+        return $date === false ? null : $date->format('Y-m-d H:i:s');
     }
 
     /**

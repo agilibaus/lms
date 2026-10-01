@@ -558,6 +558,15 @@ class LessonController
             return;
         }
 
+        // Il materiale e' servito da PHP, quindi e' un ingresso al pari della
+        // pagina della lezione: senza questo controllo un modulo chiuso si
+        // scavalcherebbe scaricando direttamente i suoi allegati.
+        if ($this->isModuleLocked((int) $module['id'])) {
+            http_response_code(403);
+            echo 'Questo materiale appartiene a un modulo non ancora disponibile.';
+            return;
+        }
+
         $absolute = Upload::absolutePath($material['file_path']);
 
         if (!is_file($absolute)) {

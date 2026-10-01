@@ -45,6 +45,10 @@ class CourseController
             'heading' => $title,
             'isStaff' => $isStaff,
             'courses' => $courses,
+            // La percentuale dice quanto manca alla fine del corso; questa
+            // dice se lo studente e' in pari con quello che puo' fare oggi.
+            // Sono due domande diverse e vanno mostrate come due cose diverse.
+            'availability' => $isStaff ? [] : $this->availability((int) Auth::id()),
         ]);
     }
 
@@ -151,9 +155,55 @@ class CourseController
             'completedLessonIds' => $completedLessonIds,
             'quizByModule' => $quizByModule,
             'quizPassedByModule' => $quizPassedByModule,
-            'lockedModuleIds' => $isStudent ? CourseAccess::lockedModuleIds($userId, $courseId) : [],
+            'moduleLocks' => $isStudent ? CourseAccess::locks($userId, $courseId) : [],
             'certificate' => $isStudent ? CertificateModel::findForUserAndCourse($userId, $courseId) : null,
             'eligibility' => $isStudent ? CertificateService::eligibility($userId, $courseId) : null,
         ]);
+    }
+
+    /**
+     * Lo stato del rilascio progressivo per le schede dei corsi (§8.7).
+     *
+     * Il grosso del conto viene da due query sole, per tutti i corsi
+     * insieme. Quelle pero' sanno guardare solo le date, perche' la data e'
+     * una condizione che sta in SQL; la catena dei quiz dipende dai
+     * tentativi dello studente. Senza questa correzione la frase direbbe
+     * «0 di 2 lezioni disponibili» dove una delle due e' chiusa da un quiz,
+     * cioe' prometterebbe una lezione che poi non si apre.
+     *
+     * Il costo in piu' si paga **solo sui corsi che il rilascio lo usano
+     * davvero**: su un corso tutto aperto la frase non compare, e qui non si
+     * entra nemmeno.
+     *
+     * @return array<int, array{disponibili: int, fatte: int, prossima: ?string}>
+     */
+    private function availability(int $userId): array
+    {
+        $riepilogo = LessonProgressModel::availabilitySummary($userId);
+
+        foreach ($riepilogo as $courseId => $stato) {
+            if ($stato['prossima'] === null) {
+                continue;
+            }
+
+            $perQuiz = [];
+
+            foreach (CourseAccess::locks($userId, $courseId) as $moduleId => $lock) {
+                if ($lock['motivo'] === CourseAccess::MOTIVO_QUIZ) {
+                    $perQuiz[] = $moduleId;
+                }
+            }
+
+            if ($perQuiz === []) {
+                continue;
+            }
+
+            $tolti = LessonProgressModel::countsForModules($userId, $perQuiz);
+
+            $riepilogo[$courseId]['disponibili'] = max(0, $stato['disponibili'] - $tolti['lezioni']);
+            $riepilogo[$courseId]['fatte'] = max(0, $stato['fatte'] - $tolti['fatte']);
+        }
+
+        return $riepilogo;
     }
 }

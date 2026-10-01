@@ -11,15 +11,47 @@ use App\Core\Database;
  */
 class ModuleModel
 {
+    /**
+     * I moduli del corso, ciascuno con `is_available`: 1 se e' gia' aperto.
+     *
+     * **Il confronto con l'ora si fa qui, in SQL, non in PHP.** E' la regola
+     * di §5 gia' pagata una volta con i tempi di fruizione: l'orologio di PHP
+     * e quello di MySQL possono stare su fusi diversi, e qui un'ora di
+     * differenza vuol dire un modulo aperto o chiuso quando non doveva.
+     * `NOW()` e `available_from` vengono dallo stesso orologio per
+     * costruzione.
+     *
+     * `available_from` NULL vuol dire «sempre aperto»: e' il comportamento di
+     * tutti i moduli che esistevano prima di questa funzione.
+     */
     public static function forCourse(int $courseId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, course_id, title, position, quiz_required
+            'SELECT id, course_id, title, position, quiz_required, available_from,
+                    (available_from IS NULL OR available_from <= NOW()) AS is_available
              FROM modules WHERE course_id = :course_id ORDER BY position, id'
         );
         $stmt->execute(['course_id' => $courseId]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Un solo modulo, con lo stesso `is_available` calcolato in SQL.
+     *
+     * `find()` resta com'era — la usano in molti punti che non c'entrano con
+     * il rilascio — ma chi deve decidere se far entrare qualcuno usa questa.
+     */
+    public static function findWithAvailability(int $id): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *, (available_from IS NULL OR available_from <= NOW()) AS is_available
+             FROM modules WHERE id = :id LIMIT 1'
+        );
+        $stmt->execute(['id' => $id]);
+        $module = $stmt->fetch();
+
+        return $module ?: null;
     }
 
     public static function find(int $id): ?array
@@ -31,30 +63,46 @@ class ModuleModel
         return $module ?: null;
     }
 
-    public static function create(int $courseId, string $title, bool $quizRequired = false): int
-    {
+    public static function create(
+        int $courseId,
+        string $title,
+        bool $quizRequired = false,
+        ?string $availableFrom = null
+    ): int {
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO modules (course_id, title, position, quiz_required)
-             VALUES (:course_id, :title, :position, :quiz_required)'
+            'INSERT INTO modules (course_id, title, position, quiz_required, available_from)
+             VALUES (:course_id, :title, :position, :quiz_required, :available_from)'
         );
         $stmt->execute([
             'course_id' => $courseId,
             'title' => $title,
             'position' => self::nextPosition($courseId),
             'quiz_required' => $quizRequired ? 1 : 0,
+            'available_from' => $availableFrom,
         ]);
 
         return (int) $db->lastInsertId();
     }
 
-    public static function update(int $id, string $title, bool $quizRequired = false): void
-    {
+    public static function update(
+        int $id,
+        string $title,
+        bool $quizRequired = false,
+        ?string $availableFrom = null
+    ): void {
         $stmt = Database::connection()->prepare(
-            'UPDATE modules SET title = :title, quiz_required = :quiz_required WHERE id = :id'
+            'UPDATE modules
+                SET title = :title, quiz_required = :quiz_required, available_from = :available_from
+              WHERE id = :id'
         );
-        $stmt->execute(['title' => $title, 'quiz_required' => $quizRequired ? 1 : 0, 'id' => $id]);
+        $stmt->execute([
+            'title' => $title,
+            'quiz_required' => $quizRequired ? 1 : 0,
+            'available_from' => $availableFrom,
+            'id' => $id,
+        ]);
     }
 
     public static function delete(int $id): void

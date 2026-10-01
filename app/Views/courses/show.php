@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\CourseRights;
 use App\Auth\Auth;
+use App\Core\CourseAccess;
 use App\Core\CourseCover;
 use App\Core\Csrf;
 
@@ -13,7 +14,7 @@ use App\Core\Csrf;
 /** @var int[] $completedLessonIds */
 /** @var array<int, array|null> $quizByModule */
 /** @var array<int, bool> $quizPassedByModule */
-/** @var int[] $lockedModuleIds */
+/** @var array<int, array{motivo: string, available_from: ?string}> $moduleLocks */
 /** @var array|null $certificate */
 /** @var array|null $eligibility */
 
@@ -72,13 +73,23 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             <?php
             $moduleId = (int) $module['id'];
             $quiz = $quizByModule[$moduleId] ?? null;
-            $isLocked = in_array($moduleId, $lockedModuleIds, true);
+            $lock = $moduleLocks[$moduleId] ?? null;
+            $isLocked = $lock !== null;
+            // Un modulo chiuso da una data si annuncia con la data: lo
+            // studente sa quando tornare. Uno chiuso da un quiz no, perche'
+            // quando si apre dipende da lui.
+            $lockedByDate = $isLocked && $lock['motivo'] === CourseAccess::MOTIVO_DATA
+                && $lock['available_from'] !== null;
             ?>
             <section class="module-card <?= $isLocked ? 'module-locked' : '' ?>" id="modulo-<?= $moduleId ?>">
                 <div class="module-card-header">
                     <h2>
                         <?= htmlspecialchars($module['title']) ?>
-                        <?php if ($isLocked): ?>
+                        <?php if ($lockedByDate): ?>
+                            <span class="badge badge-muted">
+                                dal <?= htmlspecialchars(date('j/n/Y', strtotime((string) $lock['available_from']))) ?>
+                            </span>
+                        <?php elseif ($isLocked): ?>
                             <span class="badge badge-danger">bloccato</span>
                         <?php elseif (!empty($module['quiz_required'])): ?>
                             <span class="badge">quiz obbligatorio</span>
@@ -121,7 +132,15 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                     <?php endif; ?>
                 </div>
 
-                <?php if ($isLocked): ?>
+                <?php if ($lockedByDate): ?>
+                    <p class="empty-state-small">
+                        Disponibile dal
+                        <?= htmlspecialchars(
+                            date('j/n/Y \a\l\l\e H:i', strtotime((string) $lock['available_from']))
+                        ) ?>.
+                        Riceverai un’email quando si apre.
+                    </p>
+                <?php elseif ($isLocked): ?>
                     <p class="empty-state-small">
                         Supera il quiz del modulo precedente per sbloccare questo modulo.
                     </p>

@@ -528,6 +528,25 @@ h3 { font-size: 1.05rem; }
     color: var(--color-text-muted);
 }
 
+/* La frase del rilascio progressivo, sotto la percentuale.
+   Dicono due cose diverse — quanto manca alla fine del corso, e se si e' in
+   pari con quello che oggi si puo' fare — e qui si vede che sono due: un
+   filo di spazio sopra e un bordo leggero a sinistra, perche' non si leggano
+   come una riga sola. */
+.rilascio-stato {
+    margin: 0.5rem 0 0;
+    padding-left: 0.6rem;
+    border-left: 2px solid var(--color-border);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: var(--color-text-muted);
+}
+
+.rilascio-inpari {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
 /* ---------- Badges / alerts ---------- */
 
 .badge {

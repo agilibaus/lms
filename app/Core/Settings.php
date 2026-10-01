@@ -185,6 +185,40 @@ class Settings
     }
 
     /**
+     * Chiavi che scrive la piattaforma stessa, non chi amministra.
+     *
+     * Stanno fuori da `isWritable()` di proposito: quell'elenco esiste per
+     * impedire che un POST costruito a mano scriva qualunque cosa in
+     * tabella, e una traccia di esecuzione non e' un'impostazione da
+     * modificare dal pannello. Il pannello la legge e basta.
+     */
+    public const SYSTEM_KEYS = [
+        'DRIP_LAST_RUN_AT',
+    ];
+
+    /**
+     * Scrive una delle chiavi di sistema. Stesso meccanismo di `set()`, ma
+     * con il proprio elenco chiuso e senza un utente che l'ha cambiata.
+     */
+    public static function recordSystem(string $key, string $value): void
+    {
+        if (!in_array($key, self::SYSTEM_KEYS, true)) {
+            throw new \InvalidArgumentException('Chiave di sistema sconosciuta: ' . $key);
+        }
+
+        self::load();
+
+        $stmt = Database::connection()->prepare(
+            'INSERT INTO settings (setting_key, setting_value)
+             VALUES (:k, :v)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
+        );
+        $stmt->execute(['k' => $key, 'v' => $value]);
+
+        self::$cache[$key] = $value;
+    }
+
+    /**
      * Quando dell'ultima modifica dal pannello, per le due pagine.
      */
     public static function lastUpdate(array $keys): ?array

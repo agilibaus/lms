@@ -178,6 +178,29 @@ class Mailer
         );
     }
 
+    /**
+     * Un modulo a rilascio programmato si e' aperto (§8.7).
+     *
+     * La manda il comando `bin/rilascio-moduli`, non una richiesta web:
+     * nessuno ha premuto niente, e' passata una data.
+     */
+    public static function moduleUnlocked(
+        string $email,
+        string $name,
+        string $moduleTitle,
+        string $courseTitle,
+        string $link
+    ): Message {
+        return new Message(
+            $email,
+            $name,
+            'Nuovo modulo disponibile: ' . $moduleTitle,
+            "Ciao {$name},\n\n"
+            . "nel corso \"{$courseTitle}\" si è aperto il modulo \"{$moduleTitle}\".\n\n"
+            . "Puoi cominciarlo da qui:\n{$link}\n"
+        );
+    }
+
     public static function enrollmentRequested(
         string $email,
         string $name,

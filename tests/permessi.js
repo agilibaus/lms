@@ -92,6 +92,23 @@ async function entra(browser, email) {
  * `negato` quando il server la rifiuta o rimanda all'accesso.
  */
 async function esitoGet(page, url) {
+    // Un indirizzo che scarica un file non si puo' aprire con `goto`: il
+    // browser avvia un download invece di navigare, e Playwright solleva un
+    // errore. Si chiede con `fetch`, che del download ci da' solo il codice
+    // — che e' tutto quello che serve qui.
+    if (url.includes('/download')) {
+        await page.goto(BASE + '/profilo');
+
+        const stato = await page.evaluate(async (u) => {
+            const res = await fetch(u, { credentials: 'same-origin', redirect: 'manual' });
+            return res.status;
+        }, url);
+
+        return stato >= 200 && stato < 400
+            ? { esito: 'consentito', come: stato + '' }
+            : { esito: 'negato', come: stato + '' };
+    }
+
     const risposta = await page.goto(BASE + url);
     const stato = risposta ? risposta.status() : 0;
 
@@ -187,6 +204,20 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + A.lezione + '/edit', 'negato', 'uno studente non modifica le lezioni'],
             ['/lessons/' + A.lezione + '/fruizione', 'negato', 'il rendiconto è dello staff'],
             ['/live/' + B.incontro, 'negato', 'incontro di un gruppo non suo'],
+
+            // Rilascio progressivo (§8.7). Qui lo studente è iscritto e il
+            // corso è suo: a rifiutare non è l'iscrizione ma la data del
+            // modulo. Sono quattro ingressi separati nel codice, e si
+            // provano tutti e quattro perché proteggerne tre su quattro
+            // equivale a non proteggerne nessuno.
+            ['/modules/' + A.modulo_chiuso + '/edit', 'negato', 'uno studente non modifica i moduli'],
+            ['/lessons/' + A.lezione_chiusa, 'negato', 'lezione di un modulo non ancora aperto'],
+            ['/quizzes/' + A.quiz_chiuso, 'negato', 'quiz di un modulo non ancora aperto'],
+            ['/materials/' + A.materiale_chiuso + '/download', 'negato',
+                'materiale di un modulo non ancora aperto'],
+            ['/live/' + A.incontro_chiuso, 'negato', 'incontro di un modulo non ancora aperto'],
+            ['/lessons/' + A.lezione, 'consentito',
+                'controprova: il modulo aperto dello stesso corso resta aperto'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
@@ -204,6 +235,13 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/users', 'negato', 'la gestione utenti è dell\'admin'],
             ['/admin/permissions', 'negato', 'i permessi sono dell\'admin'],
             ['/admin/settings', 'negato', 'le impostazioni sono dell\'admin'],
+
+            // Lo staff non è mai soggetto al rilascio: un modulo che si apre
+            // fra un mese va preparato oggi, e chi lo prepara deve entrarci.
+            ['/lessons/' + A.lezione_chiusa + '/edit', 'consentito',
+                'il tutor prepara il modulo chiuso prima che si apra'],
+            ['/live/' + A.incontro_chiuso, 'consentito',
+                'l\'incontro del modulo chiuso è suo da organizzare'],
         ]],
 
         ['assist@test.it', 'assistente del tutor A', [
@@ -222,6 +260,9 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
             ['/admin/permissions', 'consentito', 'è sua'],
             ['/admin/settings/bunny', 'consentito', 'è sua'],
+            ['/lessons/' + A.lezione_chiusa, 'consentito', 'il rilascio non vale per l\'admin'],
+            ['/materials/' + A.materiale_chiuso + '/download', 'consentito',
+                'il rilascio non vale per l\'admin, e il file di prova esiste'],
         ]],
     ];
 

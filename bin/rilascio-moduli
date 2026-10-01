@@ -1,0 +1,118 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Manda l'email agli studenti dei moduli che si sono appena aperti (§8.7).
+ *
+ * Esecuzione da cron, una volta al giorno:
+ *
+ *   30 7 * * *  cd /percorso/lms && php bin/rilascio-moduli >> storage/logs/rilascio.log 2>&1
+ *
+ * E' il **primo lavoro periodico della piattaforma**. Fin qui Pistacchio
+ * mandava email solo dentro la richiesta web che le causava — un invito, una
+ * reimpostazione password. Qui non c'e' nessuna richiesta: lo sblocco avviene
+ * perche' e' passata una data, e qualcuno deve accorgersene.
+ *
+ * Tre cose che rendono questo comando diverso da una pagina:
+ *
+ * 1. **Non manda due volte.** La riga in `module_unlock_notifications` si
+ *    scrive prima dell'invio (vedi `ModuleUnlockModel::claim`). Eseguirlo
+ *    dieci volte di fila non manda dieci email.
+ * 2. **Puo' girare in parallelo con se' stesso** senza danni: a decidere e'
+ *    la chiave unica del database, non un controllo fatto prima.
+ * 3. **Lascia detto di aver girato**, nella chiave DRIP_LAST_RUN_AT delle
+ *    impostazioni. Un cron fermo non si lamenta: senza questa traccia, il
+ *    primo segnale di guasto sarebbe uno studente che non ha saputo di un
+ *    modulo aperto da due settimane.
+ *
+ * `--prova` elenca che cosa manderebbe senza mandare niente e senza scrivere
+ * in tabella: serve a guardare prima di lasciarlo andare da solo.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit("Questo comando si esegue dal terminale.\n");
+}
+
+require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../config/config.php';
+
+use App\Core\Mail\Mailer;
+use App\Core\Settings;
+use App\Core\Url;
+use App\Models\ModuleUnlockModel;
+
+$prova = in_array('--prova', $argv, true);
+
+// Da terminale non c'e' nessuna richiesta HTTP da cui ricavare l'indirizzo
+// del sito: senza APP_URL, `Url::base()` ripiega su "localhost" e le email
+// partirebbero con un collegamento che non porta da nessuna parte. Meglio
+// fermarsi: un avviso non mandato si recupera, un avviso mandato a tutti con
+// il link sbagliato no.
+if (trim((string) App\Core\Env::get('APP_URL', '')) === '') {
+    fwrite(STDERR, "APP_URL non è configurato nel .env: i collegamenti nelle email sarebbero sbagliati.\n");
+    exit(2);
+}
+
+$inSospeso = ModuleUnlockModel::pending();
+
+if ($inSospeso === []) {
+    echo date('c') . " nessun modulo da annunciare.\n";
+    if (!$prova) {
+        Settings::recordSystem('DRIP_LAST_RUN_AT', date('Y-m-d H:i:s'));
+    }
+    exit(0);
+}
+
+$mandate = 0;
+$fallite = 0;
+$saltate = 0;
+
+foreach ($inSospeso as $avviso) {
+    $moduleId = (int) $avviso['module_id'];
+    $userId = (int) $avviso['user_id'];
+    $link = Url::base() . '/courses/' . (int) $avviso['course_id'] . '#modulo-' . $moduleId;
+
+    if ($prova) {
+        echo "  [prova] " . $avviso['email'] . " ← «" . $avviso['module_title'] . "»\n";
+        continue;
+    }
+
+    // Prima la riga, poi l'email: se qui si perde qualcosa si perde un
+    // avviso, non si manda un doppione.
+    if (!ModuleUnlockModel::claim($moduleId, $userId)) {
+        $saltate++;
+        continue;
+    }
+
+    $messaggio = Mailer::moduleUnlocked(
+        (string) $avviso['email'],
+        (string) $avviso['full_name'],
+        (string) $avviso['module_title'],
+        (string) $avviso['course_title'],
+        $link
+    );
+
+    if (Mailer::sendQuietly($messaggio)) {
+        $mandate++;
+    } else {
+        // L'avviso resta segnato come mandato e non ripartira'. E' la
+        // conseguenza voluta della regola «prima la riga»: lo studente
+        // trovera' comunque il modulo aperto rientrando.
+        $fallite++;
+        error_log('[Rilascio moduli] invio fallito: ' . $avviso['email'] . ' / modulo ' . $moduleId);
+    }
+}
+
+if ($prova) {
+    echo date('c') . ' prova: ' . count($inSospeso) . " avvisi da mandare, niente inviato.\n";
+    exit(0);
+}
+
+Settings::recordSystem('DRIP_LAST_RUN_AT', date('Y-m-d H:i:s'));
+
+echo date('c') . " mandate {$mandate}, fallite {$fallite}, gia' prese da altri {$saltate}.\n";
+
+exit($fallite > 0 ? 1 : 0);

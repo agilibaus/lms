@@ -142,6 +142,65 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         ->execute(['m' => $modulo, 'g' => $gruppo, 't' => $nome . ' incontro', 'a' => $admin]);
     $incontro = (int) $pdo->lastInsertId();
 
+    // --- un secondo modulo, chiuso da una data nel futuro ------------------
+    //
+    // Serve al rilascio progressivo (§8.7). Senza un modulo chiuso non c'e'
+    // niente da provare a scavalcare: con uno, si puo' chiedere allo
+    // studente iscritto — che quel corso lo puo' aprire legittimamente — di
+    // raggiungerne la lezione, il quiz, il materiale e l'incontro scrivendo
+    // l'indirizzo. Sono quattro ingressi distinti, e il controllo va in
+    // ciascuno.
+    //
+    // La data e' relativa a NOW() e non scritta a mano: un file di prova con
+    // dentro "2027-01-01" smette di provare quello che prova nel 2027.
+
+    $pdo->prepare('INSERT INTO modules (course_id, title, position, available_from)
+                   VALUES (:c, :t, 1, DATE_ADD(NOW(), INTERVAL 30 DAY))')
+        ->execute(['c' => $corso, 't' => $nome . ' modulo chiuso']);
+    $moduloChiuso = (int) $pdo->lastInsertId();
+
+    $pdo->prepare('INSERT INTO lessons (module_id, title, content_html, position)
+                   VALUES (:m, :t, :h, 0)')
+        ->execute([
+            'm' => $moduloChiuso,
+            't' => $nome . ' lezione chiusa',
+            'h' => '<p>Contenuto non ancora disponibile.</p>',
+        ]);
+    $lezioneChiusa = (int) $pdo->lastInsertId();
+
+    // **Il file deve esistere davvero sul disco.** Senza, la richiesta
+    // arriverebbe in fondo e risponderebbe 404 per il file mancante: un
+    // rifiuto che il controllo conterebbe come buono, mentre del permesso
+    // non avrebbe provato niente. E' un verde falso, ed e' stato trovato
+    // proprio rompendo di proposito la regola della data per vedere se il
+    // controllo diventava rosso: tre prove su quattro lo diventavano,
+    // questa no.
+    $materialeFile = __DIR__ . '/../storage/materials/prova-permessi.pdf';
+
+    if (!is_dir(dirname($materialeFile))) {
+        mkdir(dirname($materialeFile), 0775, true);
+    }
+
+    if (!is_file($materialeFile)) {
+        file_put_contents($materialeFile, "%PDF-1.4\n% file di prova della verifica dei permessi\n");
+    }
+
+    $pdo->prepare('INSERT INTO lesson_materials (lesson_id, file_name, file_path, file_type, file_size_bytes)
+                   VALUES (:l, "dispensa.pdf", "materials/prova-permessi.pdf", "application/pdf", :s)')
+        ->execute(['l' => $lezioneChiusa, 's' => filesize($materialeFile)]);
+    $materialeChiuso = (int) $pdo->lastInsertId();
+
+    $pdo->prepare('INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (:m, :t, 60)')
+        ->execute(['m' => $moduloChiuso, 't' => $nome . ' quiz chiuso']);
+    $quizChiuso = (int) $pdo->lastInsertId();
+
+    $pdo->prepare('INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, meet_link, created_by)
+                   VALUES (:m, :g, :t, DATE_ADD(NOW(), INTERVAL 31 DAY),
+                           DATE_ADD(NOW(), INTERVAL 31 DAY) + INTERVAL 60 MINUTE,
+                           "https://meet.google.com/prova-permessi-chiuso", :a)')
+        ->execute(['m' => $moduloChiuso, 'g' => $gruppo, 't' => $nome . ' incontro chiuso', 'a' => $admin]);
+    $incontroChiuso = (int) $pdo->lastInsertId();
+
     return [
         'corso' => $corso,
         'gruppo' => $gruppo,
@@ -152,6 +211,11 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         'incontro' => $incontro,
         'studente' => $studente,
         'tutor' => $tutor,
+        'modulo_chiuso' => $moduloChiuso,
+        'lezione_chiusa' => $lezioneChiusa,
+        'materiale_chiuso' => $materialeChiuso,
+        'quiz_chiuso' => $quizChiuso,
+        'incontro_chiuso' => $incontroChiuso,
     ];
 }
 

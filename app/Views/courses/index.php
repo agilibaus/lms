@@ -9,6 +9,7 @@ use App\Core\Csrf;
 /** @var array $courses */
 /** @var string $heading */
 /** @var bool $isStaff */
+/** @var array<int, array{disponibili: int, fatte: int, prossima: ?string}> $availability */
 ?>
 <div class="page-header">
     <h1><?= htmlspecialchars($heading) ?></h1>
@@ -52,6 +53,28 @@ use App\Core\Csrf;
                             <div class="progress-bar-fill" style="width: <?= (float) $course['progress_pct'] ?>%"></div>
                         </div>
                         <span class="progress-label"><?= (float) $course['progress_pct'] ?>% completato</span>
+
+                        <?php
+                        /* La frase del rilascio progressivo.
+                           La percentuale sopra e' sul corso intero e non cambia
+                           significato; questa dice se lo studente e' in pari con
+                           quello che oggi puo' aprire. Compare solo quando c'e'
+                           davvero un modulo chiuso: su un corso tutto aperto
+                           sarebbe una ripetizione della percentuale. */
+                        $stato = $availability[(int) $course['id']] ?? null;
+                        ?>
+                        <?php if ($stato !== null && $stato['prossima'] !== null): ?>
+                            <p class="rilascio-stato">
+                                <?php if ($stato['disponibili'] > 0 && $stato['fatte'] >= $stato['disponibili']): ?>
+                                    <span class="rilascio-inpari">Sei in pari</span>
+                                <?php else: ?>
+                                    <?= (int) $stato['fatte'] ?> di <?= (int) $stato['disponibili'] ?>
+                                    lezioni disponibili
+                                <?php endif; ?>
+                                — prossimo modulo il
+                                <?= htmlspecialchars(date('j/n/Y', strtotime((string) $stato['prossima']))) ?>
+                            </p>
+                        <?php endif; ?>
                     <?php elseif (!$course['is_published']): ?>
                         <span class="badge badge-muted">Bozza</span>
                     <?php endif; ?>

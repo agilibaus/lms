@@ -156,9 +156,24 @@ CREATE TABLE modules (
     position        INT UNSIGNED NOT NULL DEFAULT 0,
     -- se 1, i moduli successivi restano bloccati finche' il quiz di questo modulo non e' superato
     quiz_required   TINYINT(1) NOT NULL DEFAULT 0,
+    -- vuoto = sempre aperto; con una data il modulo si apre in quel momento (§8.7)
+    available_from  DATETIME NULL DEFAULT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-    INDEX idx_course_position (course_id, position)
+    INDEX idx_course_position (course_id, position),
+    INDEX idx_modules_available_from (available_from)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Un'email di sblocco gia' mandata. La riga si scrive PRIMA dell'invio:
+-- la chiave unica e' cio' che impedisce i doppioni.
+CREATE TABLE module_unlock_notifications (
+    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    module_id  INT UNSIGNED NOT NULL,
+    user_id    INT UNSIGNED NOT NULL,
+    sent_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_module_user (module_id, user_id),
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------

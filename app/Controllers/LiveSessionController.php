@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Core\CourseAccess;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Mail\LiveSessionNotifier;
@@ -35,9 +36,15 @@ class LiveSessionController
 
         View::render('live/index', [
             'pageTitle' => 'Sessioni live',
+            // L'elenco mostra quello che si puo' aprire: un incontro di un
+            // modulo chiuso darebbe 403 al clic, e un elenco che propone
+            // porte chiuse e' peggio di un elenco piu' corto.
             'sessions' => $isStaff
                 ? array_values(array_filter(LiveSessionModel::all(), fn (array $s): bool => $this->inScope($s)))
-                : LiveSessionModel::forUser((int) Auth::id()),
+                : array_values(array_filter(
+                    LiveSessionModel::forUser((int) Auth::id()),
+                    fn (array $s): bool => $this->canView($s)
+                )),
             'canManage' => $isStaff,
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
@@ -459,7 +466,19 @@ class LiveSessionController
             return true;
         }
 
-        return LiveSessionModel::isParticipant((int) $session['id'], (int) Auth::id());
+        if (!LiveSessionModel::isParticipant((int) $session['id'], (int) Auth::id())) {
+            return false;
+        }
+
+        // Un incontro legato a un modulo chiuso e' chiuso con lui: altrimenti
+        // il link Meet del modulo di dicembre sarebbe raggiungibile a ottobre
+        // scrivendo l'indirizzo a mano. Gli incontri rivolti a un gruppo e non
+        // a un modulo non hanno un modulo da cui dipendere: restano visibili.
+        if (!empty($session['module_id'])) {
+            return !CourseAccess::isModuleLocked((int) Auth::id(), (int) $session['module_id']);
+        }
+
+        return true;
     }
 
     /**
