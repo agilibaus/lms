@@ -1186,15 +1186,34 @@ h3 { font-size: 1.05rem; }
     margin-bottom: 1.5rem;
 }
 
+/* Le etichette dei campi sono testo da leggere, non decorazione.
+   A 0.82rem erano 13.1 px, il 18% sotto il corpo della pagina: nessuna
+   regola WCAG impone una misura minima, ma 13 px su un'etichetta che
+   spiega che cosa va in un campo si legge male. 0.95rem sono 15.2 px, e
+   restano distinguibili dal testo normale per il peso, non per la
+   piccolezza. Il valore e' in rem e non in px perche' chi ingrandisce il
+   testo nel browser deve continuare a vederlo crescere (WCAG 1.4.4). */
 .stacked-form label {
-    font-size: 0.82rem;
+    font-size: 0.95rem;
     font-weight: 600;
     margin-top: 0.7rem;
 }
 
+/* `datetime-local` e gli altri campi tipizzati erano fuori da questo
+   elenco: non essendo vestiti, prendevano il carattere di sistema del
+   browser — 13.3 px — e il valore scritto dentro risultava piu' piccolo
+   della sua stessa etichetta. Un elenco di tipi e' sempre una lista che
+   invecchia: chi aggiunge un campo di un tipo nuovo lo aggiunga anche
+   qui, o lo vedra' sbucare vestito a meta'. */
 .stacked-form input[type="text"],
 .stacked-form input[type="number"],
 .stacked-form input[type="file"],
+.stacked-form input[type="date"],
+.stacked-form input[type="time"],
+.stacked-form input[type="datetime-local"],
+.stacked-form input[type="email"],
+.stacked-form input[type="url"],
+.stacked-form input[type="password"],
 .stacked-form textarea,
 .stacked-form select {
     padding: 0.55rem 0.65rem;
@@ -1255,8 +1274,13 @@ h3 { font-size: 1.05rem; }
     display: none;
 }
 
+/* Il testo di aiuto sotto un campo: 0.8rem erano 12.8 px, ed e' proprio
+   il testo che va letto quando una funzione e' nuova. Il grigio resta
+   quello di prima — e' a 4.59:1, appena sopra il 4.5:1 richiesto — ma
+   adesso almeno e' grande abbastanza. Se un giorno quel grigio si
+   schiarisce, questo testo diventa non conforme: e' un margine del 2%. */
 .hint {
-    font-size: 0.8rem;
+    font-size: 0.92rem;
     color: var(--color-text-muted);
     margin: 0.2rem 0;
 }
@@ -2010,12 +2034,15 @@ body.has-focus-video {
 
 /* ---------- Form generici ---------- */
 
+/* Stessa misura delle etichette del form impilato: sono due sistemi
+   paralleli nel foglio di stile, e se se ne ingrandisce uno solo la
+   stessa cosa si legge in due modi a seconda della pagina. */
 .form label,
 .form legend {
     display: block;
     margin-top: 0.9rem;
     margin-bottom: 0.3rem;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 600;
 }
 
@@ -2063,7 +2090,7 @@ body.has-focus-video {
 
 .form-hint {
     color: var(--color-text-muted);
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     margin-top: 0.5rem;
 }
 
@@ -2077,7 +2104,7 @@ body.has-focus-video {
        misura minima, altrimenti resta alta quanto una riga di testo. */
     min-height: var(--tap-target);
     margin: 0.9rem 0;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     line-height: 1.4;
 }
 
