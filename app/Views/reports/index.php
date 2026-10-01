@@ -16,6 +16,13 @@ declare(strict_types=1);
     <?php endif; ?>
 </div>
 
+<?php /* L'ordine delle sezioni è deciso: dal contenitore più grande al più
+         piccolo — corso, gruppo, studente — poi gli eventi e infine il
+         dettaglio sui video, che è il taglio più specifico. Non è l'ordine
+         in cui le sezioni sono state scritte, ed è voluto: chi apre questa
+         pagina scende finché non trova il livello che gli serve. I corsi
+         senza video non compaiono nell'ultima: non avrebbero niente da dire. */ ?>
+
 <section class="card">
     <h2>Per corso</h2>
     <?php if ($courses === []): ?>
@@ -51,37 +58,25 @@ declare(strict_types=1);
 <?php /* Sta subito dopo "Per corso" perché è la stessa lettura — un corso per
          riga — vista da un'altra angolazione. I corsi senza video non
          compaiono: non avrebbero niente da dire. */ ?>
+
 <section class="card">
-    <h2>Fruizione dei video</h2>
-    <p class="hint">
-        Quanta parte di ogni video hanno guardato gli studenti. È il dato da rendicontare:
-        si scarica per corso, con una colonna per lezione.
-    </p>
-    <?php if ($corsiConVideo === []): ?>
-        <p class="empty-state-small">Nessun corso ha lezioni con video.</p>
+    <h2>Per gruppo</h2>
+    <?php if ($groups === []): ?>
+        <p class="empty-state-small">Nessun gruppo visibile.</p>
     <?php else: ?>
         <table class="data-table">
             <thead>
-            <tr><th>Corso</th><th>Lezioni con video</th><th>Iscritti</th><th>Hanno aperto un video</th><th></th></tr>
+            <tr><th>Gruppo</th><th>Tutor</th><th>Membri</th><th></th></tr>
             </thead>
             <tbody>
-            <?php foreach ($corsiConVideo as $corso): ?>
+            <?php foreach ($groups as $group): ?>
                 <tr>
-                    <td>
-                        <?= htmlspecialchars((string) $corso['title']) ?>
-                        <?php if ((int) $corso['is_published'] === 0): ?>
-                            <span class="badge">bozza</span>
-                        <?php endif; ?>
-                    </td>
-                    <td><?= (int) $corso['lezioni_video'] ?></td>
-                    <td><?= (int) $corso['iscritti'] ?></td>
-                    <td><?= (int) $corso['avviati'] ?></td>
+                    <td><?= htmlspecialchars((string) $group['name']) ?></td>
+                    <td><?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?></td>
+                    <td><?= (int) $group['member_count'] ?></td>
                     <td class="row-actions">
-                        <a href="/reports/fruizione/<?= (int) $corso['id'] ?>">Dettaglio</a>
-                        <a href="/reports/fruizione/<?= (int) $corso['id'] ?>/csv">CSV</a>
-                        <?php if (App\Core\Xlsx::disponibile()): ?>
-                            <a href="/reports/fruizione/<?= (int) $corso['id'] ?>/xlsx">XLSX</a>
-                        <?php endif; ?>
+                        <a href="/reports/groups/<?= (int) $group['id'] ?>">Dettaglio</a>
+                        <a href="/reports/groups/<?= (int) $group['id'] ?>/csv">CSV</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -153,23 +148,36 @@ declare(strict_types=1);
 </section>
 
 <section class="card">
-    <h2>Per gruppo</h2>
-    <?php if ($groups === []): ?>
-        <p class="empty-state-small">Nessun gruppo visibile.</p>
+    <h2>Fruizione dei video</h2>
+    <p class="hint">
+        Quanta parte di ogni video hanno guardato gli studenti. È il dato da rendicontare:
+        si scarica per corso, con una colonna per lezione.
+    </p>
+    <?php if ($corsiConVideo === []): ?>
+        <p class="empty-state-small">Nessun corso ha lezioni con video.</p>
     <?php else: ?>
         <table class="data-table">
             <thead>
-            <tr><th>Gruppo</th><th>Tutor</th><th>Membri</th><th></th></tr>
+            <tr><th>Corso</th><th>Lezioni con video</th><th>Iscritti</th><th>Hanno aperto un video</th><th></th></tr>
             </thead>
             <tbody>
-            <?php foreach ($groups as $group): ?>
+            <?php foreach ($corsiConVideo as $corso): ?>
                 <tr>
-                    <td><?= htmlspecialchars((string) $group['name']) ?></td>
-                    <td><?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?></td>
-                    <td><?= (int) $group['member_count'] ?></td>
+                    <td>
+                        <?= htmlspecialchars((string) $corso['title']) ?>
+                        <?php if ((int) $corso['is_published'] === 0): ?>
+                            <span class="badge">bozza</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= (int) $corso['lezioni_video'] ?></td>
+                    <td><?= (int) $corso['iscritti'] ?></td>
+                    <td><?= (int) $corso['avviati'] ?></td>
                     <td class="row-actions">
-                        <a href="/reports/groups/<?= (int) $group['id'] ?>">Dettaglio</a>
-                        <a href="/reports/groups/<?= (int) $group['id'] ?>/csv">CSV</a>
+                        <a href="/reports/fruizione/<?= (int) $corso['id'] ?>">Dettaglio</a>
+                        <a href="/reports/fruizione/<?= (int) $corso['id'] ?>/csv">CSV</a>
+                        <?php if (App\Core\Xlsx::disponibile()): ?>
+                            <a href="/reports/fruizione/<?= (int) $corso['id'] ?>/xlsx">XLSX</a>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
