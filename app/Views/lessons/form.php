@@ -242,6 +242,33 @@ $provider = $lesson['video_provider'] ?? 'none';
         block_formats: 'Paragrafo=p; Titolo=h2; Sottotitolo=h3; Sotto-sottotitolo=h4; Preformattato=pre',
         autoresize_bottom_margin: 24,
         min_height: 420,
+
+        /*
+         * Sul telefono l'editor si riduce. TinyMCE fa già da sé una parte del
+         * lavoro — riconosce il dispositivo, toglie la barra dei menu e fa
+         * scorrere la toolbar di lato — ma restano tredici comandi su una
+         * striscia di 355 px, e per arrivare agli ultimi si scorre a lungo.
+         *
+         * Qui restano i comandi che servono alla cosa che si fa davvero da un
+         * telefono: una correzione di testo. Tabelle, immagini, media,
+         * schermo intero, codice sorgente, caratteri speciali e cerca/sostituisci
+         * sono lavoro da scrivania, e un comando che non ci si aspetta di usare
+         * li' in mezzo e' un comando che allunga la strada verso quelli veri.
+         *
+         * **Non si perde niente di quello che c'e' gia'**: togliere un
+         * estensione toglie i suoi comandi, non il contenuto. Una lezione con
+         * una tabella aperta dal telefono conserva la tabella; semplicemente
+         * da li' non la si modifica. Verificato, non dedotto.
+         *
+         * `mobile` e' l'opzione prevista da TinyMCE per questo
+         * (tiny.cloud/docs/tinymce/latest/tinymce-for-mobile).
+         */
+        mobile: {
+            menubar: false,
+            plugins: 'autolink autoresize lists link',
+            toolbar: 'undo redo | blocks | bold italic | bullist numlist | link | removeformat',
+        },
+
         content_css: '/assets/css/style.css',
         body_class: 'lesson-content',
         convert_urls: false,
