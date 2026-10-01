@@ -129,7 +129,7 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
 
 <?php if (!empty($liveSessions)): ?>
     <section class="live-sessions-box">
-        <h3>Incontri dal vivo di questo modulo</h3>
+        <h2>Incontri dal vivo di questo modulo</h2>
 
         <ul class="live-session-list">
             <?php foreach ($liveSessions as $session): ?>
@@ -183,7 +183,7 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
 
 <?php if (!empty($materials)): ?>
     <section class="materials-section">
-        <h3>Materiali</h3>
+        <h2>Materiali</h2>
         <ul class="material-list">
             <?php foreach ($materials as $material): ?>
                 <?php $extension = pathinfo((string) $material['file_name'], PATHINFO_EXTENSION); ?>

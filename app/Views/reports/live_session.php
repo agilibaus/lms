@@ -57,37 +57,47 @@ $presenti = count(array_filter($rows, static fn (array $r): bool => $r['joined_a
                 : 'Nessun partecipante atteso: il modulo o il gruppo collegati non hanno iscritti.' ?>
         </p>
     <?php else: ?>
-        <table class="data-table">
-            <thead>
-            <tr><th>Partecipante</th><th>Presenza</th><th>Ingresso</th><th>Ritardo</th><th>Origine</th></tr>
+        <?php /* Cinque colonne: sotto i 50 rem di spazio diventa un elenco di
+                 schede. */ ?>
+        <div class="tabella-schede">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
+                <th scope="col" role="columnheader">Partecipante</th>
+                <th scope="col" role="columnheader">Presenza</th>
+                <th scope="col" role="columnheader">Ingresso</th>
+                <th scope="col" role="columnheader">Ritardo</th>
+                <th scope="col" role="columnheader">Origine</th>
+            </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
             <?php foreach ($rows as $row): ?>
                 <?php $presente = $row['joined_at'] !== null; ?>
-                <tr>
-                    <td>
+                <tr role="row">
+                    <td role="cell" data-label="Partecipante">
                         <?= htmlspecialchars((string) $row['full_name']) ?>
                         <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                     </td>
-                    <td>
+                    <td role="cell" data-label="Presenza">
                         <?php if ($presente): ?>
                             <span class="badge badge-success">presente</span>
                         <?php else: ?>
                             <span class="badge badge-danger">assente</span>
                         <?php endif; ?>
                     </td>
-                    <td><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($row['joined_at'])) : '—' ?></td>
-                    <td>
+                    <td role="cell" data-label="Ingresso"><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($row['joined_at'])) : '—' ?></td>
+                    <td role="cell" data-label="Ritardo">
                         <?php $ritardo = ReportController::delayLabel($row); ?>
                         <?= $presente && $ritardo !== '' && $ritardo !== '0'
                             ? htmlspecialchars($ritardo) . ' min'
                             : ($presente ? 'in orario' : '—') ?>
                     </td>
-                    <td><?= $presente ? htmlspecialchars(ReportController::sourceLabel($row['source'])) : '—' ?></td>
+                    <td role="cell" data-label="Origine"><?= $presente ? htmlspecialchars(ReportController::sourceLabel($row['source'])) : '—' ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 </section>
 

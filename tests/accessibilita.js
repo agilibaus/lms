@@ -375,6 +375,16 @@ const PAGINE_PUBBLICHE = [
     ['/login', 'Accesso'],
     ['/register', 'Registrazione'],
     ['/password/dimenticata', 'Password dimenticata'],
+    ['/register/verifica-inviata', 'Verifica inviata'],
+    ['/register/rinvia', 'Rinvia il link di conferma'],
+    /*
+     * La pagina della nuova password si apre da un collegamento ricevuto per
+     * email, quindi spesso dal telefono. Il token qui sotto e' un dato di
+     * prova: in tabella sta solo il suo hash, e dove quel dato non c'e' la
+     * pagina risponde comunque — mostra la variante «collegamento non piu'
+     * valido», che vale la pena controllare lo stesso.
+     */
+    ['/password/reimposta/token-di-prova-per-i-controlli', 'Nuova password'],
 ];
 
 const PAGINE_INTERNE = [
@@ -409,6 +419,33 @@ const PAGINE_INTERNE = [
     ['/quizzes/1/edit', 'Quiz: domande'],
     ['/attempts/1', 'Esito del quiz'],
     ['/modules/1/quiz/create', 'Nuovo quiz'],
+    ['/questions/1/edit', 'Modifica domanda'],
+    ['/lessons/1', 'Lezione'],
+
+    // Incontri dal vivo.
+    ['/live/create', 'Nuovo incontro'],
+    ['/live/1', 'Incontro dal vivo'],
+    ['/live/1/edit', 'Modifica incontro'],
+    ['/reports/live/1', 'Report dell\'incontro'],
+
+    // I moduli di creazione e modifica: sono i piu' lunghi della
+    // piattaforma, ed e' dove un'impaginazione storta si sente di piu'.
+    ['/admin/courses/create', 'Nuovo corso'],
+    ['/admin/courses/1/edit', 'Modifica corso'],
+    ['/admin/groups/create', 'Nuovo gruppo'],
+    ['/admin/groups/1/edit', 'Modifica gruppo'],
+    ['/admin/users/create', 'Nuovo utente'],
+    ['/admin/users/2/edit', 'Modifica utente'],
+    ['/courses/1/modules/create', 'Nuovo modulo'],
+    ['/modules/1/edit', 'Modifica modulo'],
+    ['/modules/1/lessons/create', 'Nuova lezione'],
+
+    // Le tre pagine di impostazioni che mancavano.
+    ['/admin/settings/inviti', 'Inviti sessioni live'],
+    ['/admin/settings/bunny', 'Bunny Stream'],
+    ['/admin/settings/meet', 'Google Meet'],
+
+    ['/catalogo', 'Catalogo'],
 ];
 
 async function entra(page) {

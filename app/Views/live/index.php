@@ -32,11 +32,20 @@ $now = new DateTimeImmutable('now');
 <?php if ($sessions === []): ?>
     <p class="empty-state">Nessuna sessione in programma.</p>
 <?php else: ?>
-    <table class="data-table">
-        <thead>
-        <tr><th>Quando</th><th>Sessione</th><th>Destinatari</th><th>Meet</th><th></th></tr>
+    <?php /* Cinque colonne: sotto i 50 rem di spazio diventa un elenco di
+             schede (vedi `.tabella-schede`). */ ?>
+    <div class="tabella-schede">
+    <table class="data-table" role="table">
+        <thead role="rowgroup">
+        <tr role="row">
+            <th scope="col" role="columnheader">Quando</th>
+            <th scope="col" role="columnheader">Sessione</th>
+            <th scope="col" role="columnheader">Destinatari</th>
+            <th scope="col" role="columnheader">Meet</th>
+            <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+        </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
         <?php foreach ($sessions as $session): ?>
             <?php
             $startsAt = new DateTimeImmutable((string) $session['starts_at']);
@@ -44,8 +53,8 @@ $now = new DateTimeImmutable('now');
             $isLive = $startsAt <= $now && $now <= $endsAt;
             $isPast = $endsAt < $now;
             ?>
-            <tr class="<?= $isPast ? 'row-past' : '' ?>">
-                <td>
+            <tr role="row" class="<?= $isPast ? 'row-past' : '' ?>">
+                <td role="cell" data-label="Quando">
                     <?= htmlspecialchars($startsAt->format('d/m/Y H:i')) ?>–<?= htmlspecialchars($endsAt->format('H:i')) ?>
                     <?php if ($isLive): ?>
                         <span class="badge badge-success">in corso</span>
@@ -53,8 +62,8 @@ $now = new DateTimeImmutable('now');
                         <span class="badge">conclusa</span>
                     <?php endif; ?>
                 </td>
-                <td><a href="/live/<?= (int) $session['id'] ?>"><?= htmlspecialchars((string) $session['title']) ?></a></td>
-                <td>
+                <td role="cell" data-label="Sessione"><a href="/live/<?= (int) $session['id'] ?>"><?= htmlspecialchars((string) $session['title']) ?></a></td>
+                <td role="cell" data-label="Destinatari">
                     <?php if (!empty($session['course_title'])): ?>
                         <span class="cell-line"><?= htmlspecialchars((string) $session['course_title']) ?> · <?= htmlspecialchars((string) $session['module_title']) ?></span>
                     <?php endif; ?>
@@ -62,7 +71,7 @@ $now = new DateTimeImmutable('now');
                         <span class="cell-line">Gruppo: <?= htmlspecialchars((string) $session['group_name']) ?></span>
                     <?php endif; ?>
                 </td>
-                <td>
+                <td role="cell" data-label="Meet">
                     <?php if (!empty($session['meet_link'])): ?>
                         <?php if (!empty($session['google_event_id'])): ?>
                             <span class="badge badge-success">Google</span>
@@ -73,7 +82,7 @@ $now = new DateTimeImmutable('now');
                         <span class="badge badge-danger">assente</span>
                     <?php endif; ?>
                 </td>
-                <td class="row-actions">
+                <td role="cell" class="row-actions">
                     <?php if (!empty($session['meet_link']) && !$isPast): ?>
                         <a href="/live/<?= (int) $session['id'] ?>/join"
                            target="_blank" rel="noopener">Entra</a>
@@ -86,4 +95,5 @@ $now = new DateTimeImmutable('now');
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 <?php endif; ?>

@@ -1333,7 +1333,11 @@ h3 { font-size: 1.05rem; }
     background: var(--color-surface);
 }
 
-.live-sessions-box h3 {
+/* Il titolo è passato da h3 a h2 per non saltare un livello sotto l'h1
+   della pagina, come già per la scheda del corso e il titolo del modulo.
+   La misura resta quella di prima: cambia il livello nella struttura, non
+   l'importanza visiva. */
+.live-sessions-box h2 {
     margin: 0 0 0.6rem;
     font-size: 0.95rem;
 }
@@ -2664,39 +2668,59 @@ fieldset.checkbox-group legend {
     }
 
     /* La riga non disegna piu' il proprio bordo: lo disegna la scheda. Senza
-       questo si vedrebbero due righine per ogni valore. */
+       questo si vedrebbero due righine per ogni valore.
+
+       Griglia a due colonne e non flex, per due ragioni che si vedono solo
+       guardando le schede vere. Con flex le etichette cadevano a un'ascissa
+       diversa in ogni riga, perche' la colonna si adattava alla lunghezza
+       del valore: una colonna di etichette che non e' una colonna. E i
+       valori composti da piu' righe — «Corso · Modulo» e «Gruppo: …» nella
+       stessa cella — diventavano elementi flex affiancati invece di
+       incolonnarsi. */
     .tabella-schede .data-table td,
     .tabella-schede .data-table tbody th {
         border-bottom: 0;
         padding: 0.15rem 0;
-        display: flex;
+        display: grid;
+        grid-template-columns: 7.5rem minmax(0, 1fr);
         align-items: baseline;
-        gap: 0.75rem;
+        gap: 0.2rem 0.75rem;
     }
 
-    /* L'etichetta puo' stringersi ma non sparire: una misura fissa faceva
-       uscire la riga di diciassette pixel sui telefoni piu' stretti. */
     .tabella-schede .data-table td::before,
     .tabella-schede .data-table tbody th::before {
         content: attr(data-label);
-        flex: 0 1 8rem;
-        min-width: 6rem;
+        grid-column: 1;
+        grid-row: 1;
         font-size: 0.78rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--color-text-muted);
     }
 
+    /* Tutto il contenuto della cella sta nella seconda colonna, uno sotto
+       l'altro. Il testo nudo ci finisce da se', collocato subito dopo
+       l'etichetta; gli elementi vanno indirizzati, altrimenti il secondo si
+       metterebbe accanto al primo. */
+    .tabella-schede .data-table td > *,
+    .tabella-schede .data-table tbody th > * {
+        grid-column: 2;
+    }
+
     /* La cella delle azioni non ha etichetta da mostrare — «Azioni» davanti
        a due comandi non dice niente — e sta a sinistra come il resto: la
        colonna allineata a destra serve a far combaciare tabelle affiancate
        in verticale, e qui di tabelle non ce ne sono piu'. */
+    /* La cella delle azioni non e' coppia etichetta/valore ma una fila di
+       comandi: torna a flex, su tutta la larghezza della scheda. */
     .tabella-schede .data-table td.row-actions {
+        display: flex;
+        flex-wrap: wrap;
         justify-content: flex-start;
+        align-items: center;
         text-align: left;
         gap: 0.75rem;
         padding-top: 0.5rem;
-        flex-wrap: wrap;
     }
 
     .tabella-schede .data-table td.row-actions::before {
@@ -2868,4 +2892,10 @@ fieldset.checkbox-group legend {
 .danger-zone .form-hint {
     margin: 0;
     flex: 1 1 18rem;
+}
+
+/* Stessa cosa per «Materiali» nella pagina della lezione. */
+.lesson-materials h2,
+.materials-section h2 {
+    font-size: 1.05rem;
 }

@@ -103,29 +103,36 @@ $isPast = $endsAt < $now;
         <?php if ($participants === []): ?>
             <p class="empty-state-small">Nessun partecipante atteso: il modulo o il gruppo collegati non hanno iscritti.</p>
         <?php else: ?>
-            <table class="data-table">
-                <thead>
-                <tr><th>Partecipante</th><th>Ingresso</th><th>Origine</th><th></th></tr>
+            <?php /* Sotto i 50 rem di spazio diventa un elenco di schede. */ ?>
+            <div class="tabella-schede">
+            <table class="data-table" role="table">
+                <thead role="rowgroup">
+                <tr role="row">
+                    <th scope="col" role="columnheader">Partecipante</th>
+                    <th scope="col" role="columnheader">Ingresso</th>
+                    <th scope="col" role="columnheader">Origine</th>
+                    <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                 <?php foreach ($participants as $participant): ?>
                     <?php
                     $record = $attendance[(int) $participant['id']] ?? null;
                     $present = $record !== null && $record['joined_at'] !== null;
                     ?>
-                    <tr>
-                        <td>
+                    <tr role="row">
+                        <td role="cell" data-label="Partecipante">
                             <?= htmlspecialchars((string) $participant['full_name']) ?>
                             <span class="cell-sub"><?= htmlspecialchars((string) $participant['email']) ?></span>
                         </td>
-                        <td>
+                        <td role="cell" data-label="Ingresso">
                             <?php if ($present): ?>
                                 <?= htmlspecialchars((new DateTimeImmutable((string) $record['joined_at']))->format('d/m/Y H:i')) ?>
                             <?php else: ?>
                                 —
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td role="cell" data-label="Origine">
                             <?php if ($present): ?>
                                 <span class="badge <?= $record['source'] === 'manual' ? '' : 'badge-success' ?>">
                                     <?= $record['source'] === 'manual' ? 'segnata dal tutor' : 'piattaforma' ?>
@@ -134,7 +141,7 @@ $isPast = $endsAt < $now;
                                 <span class="badge badge-danger">assente</span>
                             <?php endif; ?>
                         </td>
-                        <td class="row-actions">
+                        <td role="cell" class="row-actions">
                             <form action="/live/<?= $id ?>/attendance/<?= (int) $participant['id'] ?>" method="post">
                                 <?= Csrf::field() ?>
                                 <input type="hidden" name="present" value="<?= $present ? '0' : '1' ?>">
@@ -147,6 +154,7 @@ $isPast = $endsAt < $now;
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php endif; ?>
     </section>
 
