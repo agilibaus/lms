@@ -197,7 +197,14 @@ class Mailer
             'Nuovo modulo disponibile: ' . $moduleTitle,
             "Ciao {$name},\n\n"
             . "nel corso \"{$courseTitle}\" si è aperto il modulo \"{$moduleTitle}\".\n\n"
-            . "Puoi cominciarlo da qui:\n{$link}\n"
+            . "Puoi cominciarlo da qui:\n{$link}\n\n"
+            // Il saluto chiude solo questa email, per scelta del 01/10. E'
+            // l'unica che annuncia qualcosa di bello invece di chiedere
+            // un'azione o confermare un fatto. Se un giorno si decide di
+            // dare una chiusura a tutti i messaggi, questa e' la forma da
+            // ripetere, non un'eccezione da togliere.
+            . "Buono studio!\n"
+            . "Pistacchio\n"
         );
     }
 
