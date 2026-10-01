@@ -2554,3 +2554,26 @@ fieldset.checkbox-group legend {
     left: auto;
     right: 0;
 }
+
+/* Le colonne delle azioni di Report formano una colonna sola.
+
+   Prima «Dettaglio» e «Scarica» cadevano a un'ascissa diversa in ogni
+   tabella, perché le colonne precedenti hanno larghezze diverse e l'ultima
+   si prendeva lo spazio avanzato allineando il contenuto a sinistra. Qui
+   l'ultima colonna si stringe sul proprio contenuto (`width: 1%` è il modo
+   con cui si chiede a una tabella «il minimo indispensabile») e il
+   contenuto va a destra: così il bordo destro è lo stesso in tutte le
+   tabelle, e i comandi ci si appoggiano in fila.
+
+   Niente `display: flex` sulla cella, per quanto allinei bene: una cella
+   che diventa contenitore flex smette di comportarsi da cella, il browser
+   non la conta più nel calcolo delle colonne e la colonna collassa a venti
+   pixel con il contenuto che le esce a sinistra. Visto misurando. Per
+   l'allineamento verticale basta la regola generale di `.row-actions > *`,
+   che li rende `inline-block` centrati. */
+.reports-index .data-table th:last-child,
+.reports-index .data-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+}

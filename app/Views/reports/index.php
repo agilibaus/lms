@@ -49,6 +49,12 @@ $scarica = static function (string $base): void {
 };
 ?>
 
+<?php /* Il contenitore serve solo a tenere la regola di allineamento qui
+         dentro: le colonne delle azioni devono formare una colonna sola
+         attraverso tabelle diverse, e non e' detto che la stessa cosa serva
+         altrove. */ ?>
+<div class="reports-index">
+
 <section class="card">
     <h2>Per corso</h2>
     <?php if ($courses === []): ?>
@@ -208,6 +214,8 @@ $scarica = static function (string $base): void {
         </table>
     <?php endif; ?>
 </section>
+
+</div>
 
 <?php /* La tendina funziona senza JavaScript; lo script aggiunge solo la
          chiusura con Esc e con un clic fuori. */ ?>
