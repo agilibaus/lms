@@ -501,35 +501,92 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
      * controllo direbbe sempre di si' senza guardare niente.
      */
     if (daTelefono) {
-        const largo = await page.evaluate(() => {
-            const d = document.documentElement;
-            const scroll = d.scrollWidth - d.clientWidth;
+        await controllaSforamento(page, nome);
+    }
+}
 
-            if (scroll <= 0) {
-                return { scroll: 0, colpevoli: [] };
+/**
+ * Nessuno scorrimento orizzontale, e quando c'e' il nome dell'elemento che
+ * lo causa: «la pagina e' larga» da sola non si sa da dove prenderla.
+ */
+async function controllaSforamento(page, nome) {
+    const largo = await page.evaluate(() => {
+        const d = document.documentElement;
+        const scroll = d.scrollWidth - d.clientWidth;
+
+        if (scroll <= 0) {
+            return { scroll: 0, colpevoli: [] };
+        }
+
+        const colpevoli = [];
+
+        document.querySelectorAll('body *').forEach((el) => {
+            const b = el.getBoundingClientRect();
+
+            if (b.width > 0 && b.right > d.clientWidth + 1) {
+                const classe = typeof el.className === 'string' && el.className.trim() !== ''
+                    ? '.' + el.className.trim().split(/\s+/)[0]
+                    : '';
+                colpevoli.push(el.tagName.toLowerCase() + classe + ' arriva a ' + Math.round(b.right) + 'px');
             }
-
-            const colpevoli = [];
-
-            document.querySelectorAll('body *').forEach((el) => {
-                const b = el.getBoundingClientRect();
-
-                if (b.width > 0 && b.right > d.clientWidth + 1) {
-                    const classe = typeof el.className === 'string' && el.className.trim() !== ''
-                        ? '.' + el.className.trim().split(/\s+/)[0]
-                        : '';
-                    colpevoli.push(el.tagName.toLowerCase() + classe + ' arriva a ' + Math.round(b.right) + 'px');
-                }
-            });
-
-            return { scroll, colpevoli: [...new Set(colpevoli)].slice(0, 5) };
         });
 
-        check(
-            nome + ': nessuno scorrimento orizzontale',
-            largo.scroll === 0,
-            largo.scroll === 0 ? [] : ['sfora di ' + largo.scroll + 'px'].concat(largo.colpevoli)
-        );
+        return { scroll, colpevoli: [...new Set(colpevoli)].slice(0, 5) };
+    });
+
+    check(
+        nome + ': nessuno scorrimento orizzontale',
+        largo.scroll === 0,
+        largo.scroll === 0 ? [] : ['sfora di ' + largo.scroll + 'px'].concat(largo.colpevoli)
+    );
+}
+
+/**
+ * Giro veloce sulle due larghezze estreme: **solo** lo sforamento, non tutti
+ * i controlli.
+ *
+ * I 320 px sono il minimo che le WCAG chiedono di reggere (1.4.10), e
+ * 844×390 e' un telefono girato di lato — la misura in cui la barra laterale
+ * torna visibile e al contenuto resta pochissimo. Sono le due larghezze in
+ * cui si rompono cose diverse da quelle che si rompono a 390: a 320 le
+ * tabelle di gruppi e modifica corso, di lato la pagina dei permessi, che
+ * spingeva l'intera area principale invece di far scorrere la propria
+ * tabella.
+ *
+ * Qui non si rifanno contrasto, bersagli e fuoco: a quelle larghezze
+ * darebbero le stesse risposte di 390 px, e triplicare il tempo di ogni
+ * patch per sentirsele ripetere non conviene.
+ */
+async function giroLarghezzeEstreme(browser) {
+    for (const [larghezza, altezza, etichetta] of [[320, 568, 'minimo WCAG'], [844, 390, 'telefono di lato']]) {
+        console.log('\n=== ' + etichetta + ' (' + larghezza + '×' + altezza + ') — solo scorrimento orizzontale ===');
+
+        const ctx = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+        const page = await ctx.newPage();
+
+        for (const [url, nome] of PAGINE_PUBBLICHE) {
+            const risposta = await page.goto(BASE + url);
+
+            if (risposta && risposta.status() >= 400) {
+                continue;
+            }
+
+            await controllaSforamento(page, nome);
+        }
+
+        await entra(page);
+
+        for (const [url, nome] of PAGINE_INTERNE) {
+            const risposta = await page.goto(BASE + url);
+
+            if (risposta && risposta.status() >= 400) {
+                continue;
+            }
+
+            await controllaSforamento(page, nome);
+        }
+
+        await ctx.close();
     }
 }
 
@@ -561,6 +618,8 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
 
             await ctx.close();
         }
+
+        await giroLarghezzeEstreme(browser);
     } finally {
         await browser.close();
     }

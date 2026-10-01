@@ -44,20 +44,27 @@ $courseId = (int) $course['id'];
             Approvando, lo studente viene iscritto e riceve un'email; rifiutando, riceve un avviso.
         </p>
 
-        <table class="data-table">
-            <thead>
-            <tr><th>Studente</th><th>Messaggio</th><th>Richiesta del</th><th></th></tr>
+        <?php /* Sotto i 50 rem di spazio diventa un elenco di schede. */ ?>
+        <div class="tabella-schede">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
+                <th scope="col" role="columnheader">Studente</th>
+                <th scope="col" role="columnheader">Messaggio</th>
+                <th scope="col" role="columnheader">Richiesta del</th>
+                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+            </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
             <?php foreach ($requests as $request): ?>
-                <tr>
-                    <td>
+                <tr role="row">
+                    <td role="cell" data-label="Studente">
                         <?= htmlspecialchars((string) $request['full_name']) ?>
                         <span class="cell-sub"><?= htmlspecialchars((string) $request['email']) ?></span>
                     </td>
-                    <td><?= $request['message'] !== null ? nl2br(htmlspecialchars((string) $request['message'])) : '—' ?></td>
-                    <td><?= htmlspecialchars((string) $request['requested_at']) ?></td>
-                    <td class="row-actions">
+                    <td role="cell" data-label="Messaggio"><?= $request['message'] !== null ? nl2br(htmlspecialchars((string) $request['message'])) : '—' ?></td>
+                    <td role="cell" data-label="Richiesta del"><?= htmlspecialchars((string) $request['requested_at']) ?></td>
+                    <td role="cell" class="row-actions">
                         <form action="/admin/requests/<?= (int) $request['id'] ?>" method="post">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="decision" value="approve">
@@ -74,6 +81,7 @@ $courseId = (int) $course['id'];
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     </section>
 <?php endif; ?>
 
@@ -86,25 +94,32 @@ $courseId = (int) $course['id'];
     <?php if ($enrollments === []): ?>
         <p class="empty-state-small">Nessuno studente iscritto.</p>
     <?php else: ?>
-        <table class="data-table">
-            <thead>
-            <tr><th>Studente</th><th>Iscritto il</th><th>Progresso</th><th></th></tr>
+        <?php /* Come sopra. */ ?>
+        <div class="tabella-schede">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
+                <th scope="col" role="columnheader">Studente</th>
+                <th scope="col" role="columnheader">Iscritto il</th>
+                <th scope="col" role="columnheader">Progresso</th>
+                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+            </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
             <?php foreach ($enrollments as $row): ?>
-                <tr>
-                    <td>
+                <tr role="row">
+                    <td role="cell" data-label="Studente">
                         <a href="/reports/students/<?= (int) $row['user_id'] ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
                         <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                     </td>
-                    <td><?= htmlspecialchars((string) $row['enrolled_at']) ?></td>
-                    <td>
+                    <td role="cell" data-label="Iscritto il"><?= htmlspecialchars((string) $row['enrolled_at']) ?></td>
+                    <td role="cell" data-label="Progresso">
                         <?= number_format((float) $row['progress_pct'], 0) ?>%
                         <?php if ($row['completed_at'] !== null): ?>
                             <span class="badge badge-success">completato</span>
                         <?php endif; ?>
                     </td>
-                    <td class="row-actions">
+                    <td role="cell" class="row-actions">
                         <form action="/admin/courses/<?= $courseId ?>/enrollments/<?= (int) $row['user_id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere l’iscrizione? Progresso, tentativi quiz e certificato di questo corso verranno eliminati.');">
                             <?= Csrf::field() ?>
@@ -115,6 +130,7 @@ $courseId = (int) $course['id'];
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 
     <?php if ($availableStudents !== []): ?>

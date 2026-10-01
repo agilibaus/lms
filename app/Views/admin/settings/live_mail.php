@@ -58,9 +58,12 @@ $campi = [
         Si possono usare sia nell’oggetto sia nel testo; quelli che non esistono restano scritti come sono,
         così un errore di battitura si vede invece di sparire.
     </p>
-    <table class="data-table">
+    <?php /* Due colonne sole: non vale la pena farla diventare schede, ma a
+             320 px i segnaposto fra graffe sono parole lunghe che non vanno
+             a capo da sole e spingono fuori la tabella. */ ?>
+    <table class="data-table tabella-a-capo">
         <thead>
-        <tr><th>Segnaposto</th><th>Diventa</th></tr>
+        <tr><th scope="col">Segnaposto</th><th scope="col">Diventa</th></tr>
         </thead>
         <tbody>
         <?php foreach ($placeholders as $segnaposto => $spiegazione): ?>

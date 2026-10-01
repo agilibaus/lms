@@ -221,6 +221,14 @@ h3 { font-size: 1.05rem; }
     flex-grow: 1;
     padding: 1.75rem 2rem;
     max-width: 1080px;
+    /* `min-width: 0` non è un dettaglio: un elemento flex per difetto non si
+       stringe sotto la larghezza del proprio contenuto, e basta una tabella
+       larga dentro un contenitore che scorre perché a spingere non sia la
+       tabella — che scorrerebbe — ma l'intera area principale, trascinandosi
+       dietro titolo, sottotitolo e schede. Si vedeva solo con la barra
+       laterale visibile e poco spazio accanto: a 844×390, cioè un telefono
+       girato di lato, la pagina dei permessi sforava di 72 px. */
+    min-width: 0;
 }
 
 /* I comandi del menu sono nascosti per difetto: ciascuno ricompare nella
@@ -2898,4 +2906,14 @@ fieldset.checkbox-group legend {
 .lesson-materials h2,
 .materials-section h2 {
     font-size: 1.05rem;
+}
+
+/* Tabelle strette che non diventano schede — due colonne sole — ma il cui
+   contenuto contiene parole lunghe: i segnaposto fra graffe degli inviti,
+   per esempio. A 320 px spingevano fuori la tabella. Qui le si lascia
+   andare a capo anche dentro la parola: brutto, ma meno di una pagina che
+   scorre di lato. */
+.tabella-a-capo td,
+.tabella-a-capo th {
+    overflow-wrap: anywhere;
 }

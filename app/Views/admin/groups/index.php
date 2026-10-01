@@ -23,14 +23,22 @@ use App\Core\GroupLogo;
 <?php if ($groups === []): ?>
     <p class="empty-state">Nessun gruppo.</p>
 <?php else: ?>
-    <table class="data-table data-table-media">
-        <thead>
-        <tr><th>Gruppo</th><th>Tutor</th><th>Membri</th><th></th></tr>
+    <?php /* Quattro colonne e un logo: a 320 px non ci sta. Sotto i 50 rem
+             di spazio diventa un elenco di schede. */ ?>
+    <div class="tabella-schede">
+    <table class="data-table data-table-media" role="table">
+        <thead role="rowgroup">
+        <tr role="row">
+            <th scope="col" role="columnheader">Gruppo</th>
+            <th scope="col" role="columnheader">Tutor</th>
+            <th scope="col" role="columnheader">Membri</th>
+            <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+        </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
         <?php foreach ($groups as $group): ?>
-            <tr>
-                <td>
+            <tr role="row">
+                <td role="cell" data-label="Gruppo">
                     <a href="/admin/groups/<?= (int) $group['id'] ?>/edit" class="group-name">
                         <?php $logo = GroupLogo::url($group); ?>
                         <?php if ($logo !== null): ?>
@@ -44,9 +52,9 @@ use App\Core\GroupLogo;
                         <?= htmlspecialchars((string) $group['name']) ?>
                     </a>
                 </td>
-                <td><?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?></td>
-                <td><?= (int) $group['member_count'] ?></td>
-                <td class="row-actions">
+                <td role="cell" data-label="Tutor"><?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?></td>
+                <td role="cell" data-label="Membri"><?= (int) $group['member_count'] ?></td>
+                <td role="cell" class="row-actions">
                     <a href="/reports/groups/<?= (int) $group['id'] ?>">Report</a>
                     <form action="/admin/groups/<?= (int) $group['id'] ?>/delete" method="post"
                           onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
@@ -58,4 +66,5 @@ use App\Core\GroupLogo;
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 <?php endif; ?>
