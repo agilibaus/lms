@@ -135,7 +135,7 @@ $provider = $lesson['video_provider'] ?? 'none';
              Invio in un campo di testo avrebbe tolto il video invece di
              salvare. */ ?>
     <section class="card video-actions">
-        <h3>Video caricato sul server</h3>
+        <h2>Video caricato sul server</h2>
 
         <form action="/lessons/<?= $lessonId ?>/video/detach" method="post" class="inline-form">
             <?= Csrf::field() ?>
@@ -154,7 +154,7 @@ $provider = $lesson['video_provider'] ?? 'none';
 
 <?php if ($isEdit): ?>
     <section class="materials-section lesson-form" id="materiali">
-        <h3>Materiali scaricabili</h3>
+        <h2>Materiali scaricabili</h2>
         <p class="hint">PDF, documenti, presentazioni, fogli di calcolo, audio e archivi &mdash; max 50&nbsp;MB ciascuno.
             L'ordine di questo elenco è quello che vedono gli studenti.</p>
 

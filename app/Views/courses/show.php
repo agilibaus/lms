@@ -76,14 +76,14 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             ?>
             <section class="module-card <?= $isLocked ? 'module-locked' : '' ?>" id="modulo-<?= $moduleId ?>">
                 <div class="module-card-header">
-                    <h3>
+                    <h2>
                         <?= htmlspecialchars($module['title']) ?>
                         <?php if ($isLocked): ?>
                             <span class="badge badge-danger">bloccato</span>
                         <?php elseif (!empty($module['quiz_required'])): ?>
                             <span class="badge">quiz obbligatorio</span>
                         <?php endif; ?>
-                    </h3>
+                    </h2>
                     <?php if ($isStaff): ?>
                         <div class="module-card-actions">
                             <?php /* Le frecce stanno per prime: sono l'azione che si

@@ -92,29 +92,30 @@ $quando = static function (?string $data): string {
 <?php if ($righe === []): ?>
     <p class="empty-state">Nessuno studente è iscritto a questo corso.</p>
 <?php else: ?>
-    <table class="data-table">
+    <div class="tabella-schede">
+    <table class="data-table" role="table">
         <caption class="sr-only">
             Fruizione del video della lezione <?= htmlspecialchars($lesson['title']) ?>,
             uno studente per riga.
         </caption>
-        <thead>
-            <tr>
-                <th scope="col">Studente</th>
-                <th scope="col">Vista</th>
-                <th scope="col">Tempo guardato (secondi)</th>
-                <th scope="col">Ultima posizione</th>
-                <th scope="col">Ultima visita</th>
-                <th scope="col">Completata</th>
+        <thead role="rowgroup">
+            <tr role="row">
+                <th scope="col" role="columnheader">Studente</th>
+                <th scope="col" role="columnheader">Vista</th>
+                <th scope="col" role="columnheader">Tempo guardato (secondi)</th>
+                <th scope="col" role="columnheader">Ultima posizione</th>
+                <th scope="col" role="columnheader">Ultima visita</th>
+                <th scope="col" role="columnheader">Completata</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
             <?php foreach ($righe as $riga): ?>
-                <tr>
-                    <td>
+                <tr role="row">
+                    <td role="cell" data-label="Studente">
                         <?= htmlspecialchars((string) $riga['full_name']) ?>
                         <span class="riga-secondaria"><?= htmlspecialchars((string) $riga['email']) ?></span>
                     </td>
-                    <td>
+                    <td role="cell" data-label="Vista">
                         <?php if ($riga['percentage'] === null): ?>
                             <span class="valore-assente" title="Durata del video sconosciuta">—</span>
                         <?php else: ?>
@@ -127,20 +128,21 @@ $quando = static function (?string $data): string {
                             <?= (int) $riga['percentage'] ?>%
                         <?php endif; ?>
                     </td>
-                    <td><?= VideoProgressController::secondi((int) $riga['watched_seconds']) ?></td>
-                    <td><?= htmlspecialchars($minutoSecondo(
+                    <td role="cell" data-label="Tempo guardato (secondi)"><?= VideoProgressController::secondi((int) $riga['watched_seconds']) ?></td>
+                    <td role="cell" data-label="Ultima posizione"><?= htmlspecialchars($minutoSecondo(
                         $riga['position_seconds'] === null ? null : (int) $riga['position_seconds']
                     )) ?></td>
-                    <td><?= htmlspecialchars($quando(
+                    <td role="cell" data-label="Ultima visita"><?= htmlspecialchars($quando(
                         $riga['updated_at'] === null ? null : (string) $riga['updated_at']
                     )) ?></td>
-                    <td><?= htmlspecialchars($quando(
+                    <td role="cell" data-label="Completata"><?= htmlspecialchars($quando(
                         $riga['completed_at'] === null ? null : (string) $riga['completed_at']
                     )) ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 <?php endif; ?>
 
 <?php /* Detto qui e non solo nel promemoria: chi legge questa pagina deve

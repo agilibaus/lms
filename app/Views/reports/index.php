@@ -135,10 +135,12 @@ $bozza = static function (array $riga) use ($esc): string {
 };
 ?>
 
-<?php /* Il contenitore tiene qui dentro le regole di impaginazione: le
-         colonne delle azioni allineate fra tabelle diverse, e le schede
-         sotto i 500 px. Non e' detto che la stessa cosa serva altrove. */ ?>
-<div class="reports-index">
+<?php /* Due classi, due compiti. `reports-index` allinea le colonne delle
+         azioni fra tabelle diverse, e vale solo qui. `tabella-schede` fa
+         diventare schede le tabelle quando lo spazio non basta, ed e' il
+         pattern comune: si adotta dove serve, dopo aver messo `data-label`
+         su ogni cella. */ ?>
+<div class="reports-index tabella-schede">
 
 <?php $sezione(
     'Per corso',

@@ -277,6 +277,21 @@ function raccogli(minimoBersaglio) {
         // un bersaglio a se' e la regola non lo riguarda.
         if (el.tagName === 'A' && el.closest('p, li, td') && getComputedStyle(el).display === 'inline') continue;
 
+        /*
+         * I comandi dentro TinyMCE (`.tox`) non sono nostri: sono l'interfaccia
+         * dell'editor, copiata in casa senza modifiche come arriva dal
+         * progetto. Ritoccarne il CSS vorrebbe dire mettere le mani in una
+         * interfaccia di terzi che al prossimo aggiornamento cambia, per
+         * guadagnare qualche pixel su un contatore di parole che non e'
+         * nemmeno un comando vero.
+         *
+         * **E' un'esclusione, non un'assoluzione**: se un giorno l'editor
+         * diventasse uno strumento che gli studenti usano davvero — oggi lo
+         * aprono solo admin e tutor, al computer — la cosa andrebbe
+         * riaperta, probabilmente scegliendo un'altra barra di stato.
+         */
+        if (el.closest('.tox')) continue;
+
         // Una casella dentro un'etichetta si preme anche toccando l'etichetta:
         // il bersaglio e' quello, non il quadratino. Misurare il quadratino
         // segnalerebbe un difetto che non c'e'.
@@ -380,6 +395,14 @@ const PAGINE_INTERNE = [
     // c'è, la si salta invece di far fallire tutto (vedi `apri`).
     ['/lessons/1/fruizione', 'Fruizione del video'],
     ['/reports/fruizione/1', 'Fruizione per corso'],
+    // Pagine di dettaglio: dipendono dai dati, e se la riga non c'è vengono
+    // saltate. Stanno in elenco perché hanno tabelle larghe, ed è lì che le
+    // regressioni sullo scorrimento orizzontale si nascondono.
+    ['/reports/courses/1', 'Report per corso'],
+    ['/reports/students/2', 'Report per studente'],
+    ['/reports/groups/1', 'Report per gruppo'],
+    ['/lessons/1/edit', 'Modifica lezione'],
+    ['/courses/1', 'Corso'],
 ];
 
 async function entra(page) {
@@ -390,7 +413,7 @@ async function entra(page) {
     await page.waitForLoadState('load');
 }
 
-async function esamina(page, url, nome, minimoBersaglio) {
+async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     const risposta = await page.goto(BASE + url);
 
     if (risposta && risposta.status() === 404) {
@@ -422,6 +445,49 @@ async function esamina(page, url, nome, minimoBersaglio) {
 
     const fuoco = await fuocoInvisibile(page);
     check(nome + ': fuoco visibile su ogni comando', fuoco.length === 0, fuoco);
+
+    /*
+     * Solo alla larghezza del telefono, e non per pignoleria: Pistacchio si
+     * usa molto da li', e una pagina che scorre in orizzontale su un
+     * telefono e' una pagina in cui le colonne non stanno dove ci si
+     * aspetta e meta' del contenuto e' fuori vista. Il controllo dice anche
+     * QUALE elemento sfora, perche' «la pagina e' larga» da sola non si sa
+     * da dove prenderla.
+     *
+     * Non vale a 1440 px: li' lo scorrimento orizzontale non c'e' mai, e il
+     * controllo direbbe sempre di si' senza guardare niente.
+     */
+    if (daTelefono) {
+        const largo = await page.evaluate(() => {
+            const d = document.documentElement;
+            const scroll = d.scrollWidth - d.clientWidth;
+
+            if (scroll <= 0) {
+                return { scroll: 0, colpevoli: [] };
+            }
+
+            const colpevoli = [];
+
+            document.querySelectorAll('body *').forEach((el) => {
+                const b = el.getBoundingClientRect();
+
+                if (b.width > 0 && b.right > d.clientWidth + 1) {
+                    const classe = typeof el.className === 'string' && el.className.trim() !== ''
+                        ? '.' + el.className.trim().split(/\s+/)[0]
+                        : '';
+                    colpevoli.push(el.tagName.toLowerCase() + classe + ' arriva a ' + Math.round(b.right) + 'px');
+                }
+            });
+
+            return { scroll, colpevoli: [...new Set(colpevoli)].slice(0, 5) };
+        });
+
+        check(
+            nome + ': nessuno scorrimento orizzontale',
+            largo.scroll === 0,
+            largo.scroll === 0 ? [] : ['sfora di ' + largo.scroll + 'px'].concat(largo.colpevoli)
+        );
+    }
 }
 
 // ---------------------------------------------------------------
@@ -431,6 +497,7 @@ async function esamina(page, url, nome, minimoBersaglio) {
 
     try {
         for (const [larghezza, altezza, etichetta] of [[1440, 900, 'desktop'], [390, 844, 'telefono']]) {
+            const daTelefono = larghezza <= 500;
             console.log('\n=== ' + etichetta + ' (' + larghezza + '×' + altezza + ') ===');
 
             const ctx = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
@@ -439,14 +506,14 @@ async function esamina(page, url, nome, minimoBersaglio) {
             console.log('\n--- pagine pubbliche');
 
             for (const [url, nome] of PAGINE_PUBBLICHE) {
-                await esamina(page, url, nome, BERSAGLIO_MINIMO);
+                await esamina(page, url, nome, BERSAGLIO_MINIMO, daTelefono);
             }
 
             console.log('\n--- pagine interne');
             await entra(page);
 
             for (const [url, nome] of PAGINE_INTERNE) {
-                await esamina(page, url, nome, BERSAGLIO_MINIMO);
+                await esamina(page, url, nome, BERSAGLIO_MINIMO, daTelefono);
             }
 
             await ctx.close();

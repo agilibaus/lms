@@ -43,36 +43,50 @@ use App\Core\Csrf;
 <?php if ($users === []): ?>
     <p class="empty-state">Nessun utente da mostrare.</p>
 <?php else: ?>
-    <table class="data-table">
-        <thead>
-        <tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Tutor</th><th>Stato</th><th></th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($users as $user): ?>
-            <tr>
-                <td><?= htmlspecialchars((string) $user['full_name']) ?></td>
-                <td><?= htmlspecialchars((string) $user['email']) ?></td>
-                <td><?= htmlspecialchars(Auth::roleLabel($user['role'] ?? 'assistente')) ?></td>
-                <td><?= htmlspecialchars((string) ($user['supervising_tutor_name'] ?? '—')) ?></td>
-                <td>
-                    <?php if ((int) $user['is_active'] === 1): ?>
-                        <span class="badge badge-success">attivo</span>
-                    <?php else: ?>
-                        <span class="badge badge-danger">disattivato</span>
-                    <?php endif; ?>
-                </td>
-                <td class="row-actions">
-                    <a href="/admin/users/<?= (int) $user['id'] ?>/edit">Modifica</a>
-                    <form action="/admin/users/<?= (int) $user['id'] ?>/delete" method="post"
-                          onsubmit="return confirm('Eliminare questo utente? Iscrizioni, progressi, tentativi quiz e certificati verranno rimossi. In alternativa puoi disattivarlo.');">
-                        <?= Csrf::field() ?>
-                        <button type="submit" class="link-btn link-btn-danger">Elimina</button>
-                    </form>
-                </td>
+    <?php /* Sei colonne su un telefono non ci stanno: sotto i 50 rem di
+             spazio la tabella diventa un elenco di schede, e ogni valore si
+             porta davanti l'etichetta della sua colonna. I `role` espliciti
+             servono perché cambiando il `display` la tabella perderebbe le
+             proprie semantiche. */ ?>
+    <div class="tabella-schede">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
+                <th scope="col" role="columnheader">Nome</th>
+                <th scope="col" role="columnheader">Email</th>
+                <th scope="col" role="columnheader">Ruolo</th>
+                <th scope="col" role="columnheader">Tutor</th>
+                <th scope="col" role="columnheader">Stato</th>
+                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
             </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody role="rowgroup">
+            <?php foreach ($users as $user): ?>
+                <tr role="row">
+                    <td role="cell" data-label="Nome"><?= htmlspecialchars((string) $user['full_name']) ?></td>
+                    <td role="cell" data-label="Email"><?= htmlspecialchars((string) $user['email']) ?></td>
+                    <td role="cell" data-label="Ruolo"><?= htmlspecialchars(Auth::roleLabel($user['role'] ?? 'assistente')) ?></td>
+                    <td role="cell" data-label="Tutor"><?= htmlspecialchars((string) ($user['supervising_tutor_name'] ?? '—')) ?></td>
+                    <td role="cell" data-label="Stato">
+                        <?php if ((int) $user['is_active'] === 1): ?>
+                            <span class="badge badge-success">attivo</span>
+                        <?php else: ?>
+                            <span class="badge badge-danger">disattivato</span>
+                        <?php endif; ?>
+                    </td>
+                    <td role="cell" class="row-actions">
+                        <a href="/admin/users/<?= (int) $user['id'] ?>/edit">Modifica</a>
+                        <form action="/admin/users/<?= (int) $user['id'] ?>/delete" method="post"
+                              onsubmit="return confirm('Eliminare questo utente? Iscrizioni, progressi, tentativi quiz e certificati verranno rimossi. In alternativa puoi disattivarlo.');">
+                            <?= Csrf::field() ?>
+                            <button type="submit" class="link-btn link-btn-danger">Elimina</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 <?php endif; ?>
 
 <?php if ($canManageAll): ?>

@@ -1030,6 +1030,14 @@ h3 { font-size: 1.05rem; }
     padding: 1rem 1.25rem;
 }
 
+/* Il titolo del modulo è passato da h3 a h2 per non saltare un livello sotto
+   l'h1 della pagina — stessa ragione della scheda del corso qui sopra — e la
+   misura resta quella di prima: a cambiare è il livello nella struttura, non
+   l'importanza visiva. */
+.module-card-header h2 {
+    font-size: 1.05rem;
+}
+
 .module-card-header {
     display: flex;
     align-items: baseline;
@@ -2578,54 +2586,66 @@ fieldset.checkbox-group legend {
     text-align: right;
 }
 
-/* Quando lo spazio non basta, le tabelle di Report diventano schede.
+/* ---------- Tabelle che diventano schede ---------- */
 
-   **Query di contenitore e non di schermo**, e la differenza qui si vede.
-   Una soglia sulla larghezza della finestra sbaglia in tutta la fascia in
-   cui la barra laterale e' tornata visibile: a 780 px di finestra il
-   contenuto ne ha poco piu' di 540, e la tabella usciva di 214 px pur
-   essendo «sopra la soglia da telefono». La tabella non ha bisogno di
-   sapere quanto e' grande lo schermo, ma quanto spazio le e' rimasto.
+/* Pistacchio si usa molto dal telefono: una tabella con piu' di tre o
+   quattro colonne li' non ci sta. O si stringe fino a spezzare ogni parola,
+   o la pagina scorre in orizzontale — e allora le colonne di tabelle
+   diverse smettono di combaciare e niente sta piu' dove ci si aspetta.
 
-   Sotto i 50 rem di contenitore ogni riga diventa una scheda e ogni valore
-   si porta davanti l'etichetta della sua colonna, presa da `data-label` —
-   la stessa stringa dell'intestazione, perche' la vista le genera tutte e
-   due dallo stesso elenco di colonne e non possono divergere.
+   Questa classe si mette sul contenitore di una o piu' tabelle. Quando lo
+   spazio scende sotto i 50 rem ogni riga diventa una scheda e ogni valore
+   si porta davanti l'etichetta della propria colonna, presa da
+   `data-label`.
 
-   Dove `@container` non e' supportato non succede niente e resta la tabella
-   di prima: un browser vecchio vede quello che vedeva ieri, non una pagina
-   rotta.
+   **Si adotta, non si eredita**: va messa solo dove serve, e solo dopo aver
+   messo `data-label` su ogni cella. Senza quell'attributo le schede
+   mostrerebbero una colonna di valori senza sapere di cosa parlano. Per lo
+   stesso motivo l'etichetta e l'intestazione dovrebbero venire dalla stessa
+   stringa, come fa `reports/index.php`, che costruisce le tabelle da un
+   elenco di colonne.
 
-   L'intestazione sparisce dalla vista ma non dal documento: resta leggibile
-   da un lettore di schermo, che insieme ai `role` espliciti nel markup
-   continua ad annunciare righe e colonne anche con il `display` cambiato. */
-.reports-index {
+   **Query di contenitore e non di schermo**, e la differenza si vede: una
+   soglia sulla larghezza della finestra sbaglia in tutta la fascia in cui
+   la barra laterale e' tornata visibile. A 780 px di finestra il contenuto
+   ne ha poco piu' di 540, e la tabella usciva di 214 px pur essendo «sopra
+   la soglia da telefono». La tabella non ha bisogno di sapere quanto e'
+   grande lo schermo, ma quanto spazio le e' rimasto.
+
+   **Il ripiego** dove `@container` non e' supportato: non succede niente e
+   resta la tabella. Un browser vecchio vede quello che vedeva prima, non
+   una pagina rotta.
+
+   La soglia e' tarata sulla tabella piu' larga che la usa (gli utenti, con
+   le email), ma una soglia presa sui dati di oggi invecchia: i valori vanno
+   anche a capo, cosi' un'email piu' lunga del previsto non fa scorrere la
+   pagina.
+
+   Cambiare il `display` di una tabella le toglie le semantiche: nelle viste
+   ci sono i `role` espliciti (`table`, `row`, `cell`, `columnheader`)
+   perche' un lettore di schermo continui ad annunciare righe e colonne. */
+.tabella-schede {
     container-type: inline-size;
-    container-name: report;
+    container-name: tabella;
 }
 
-/* La soglia e' 50 rem perche' la tabella piu' larga — quella degli studenti,
-   con le email — ne misura 768 px di contenuto. Ma una soglia tarata sui
-   dati di oggi invecchia: basta un'email piu' lunga. Per questo i valori
-   possono anche andare a capo quando la tabella c'e'. Fra le due cose, la
-   soglia sceglie l'impaginazione giusta e il ritorno a capo evita che una
-   riga inattesa faccia scorrere la pagina. */
-.reports-index .data-table td {
+.tabella-schede .data-table td {
     overflow-wrap: anywhere;
 }
 
-@container report (max-width: 50rem) {
-    .reports-index .data-table,
-    .reports-index .data-table tbody,
-    .reports-index .data-table tr,
-    .reports-index .data-table td {
+@container tabella (max-width: 50rem) {
+    .tabella-schede .data-table,
+    .tabella-schede .data-table tbody,
+    .tabella-schede .data-table tr,
+    .tabella-schede .data-table td,
+    .tabella-schede .data-table th {
         display: block;
         width: auto;
     }
 
     /* Non `display: none`: toglierebbe le intestazioni anche a chi legge con
        un lettore di schermo, e sono loro a dare un nome alle colonne. */
-    .reports-index .data-table thead {
+    .tabella-schede .data-table thead {
         position: absolute;
         width: 1px;
         height: 1px;
@@ -2634,31 +2654,30 @@ fieldset.checkbox-group legend {
         white-space: nowrap;
     }
 
-    .reports-index .data-table tr {
+    .tabella-schede .data-table tr {
         padding: 0.6rem 0;
         border-bottom: 1px solid var(--color-border);
     }
 
-    .reports-index .data-table tr:last-child {
+    .tabella-schede .data-table tbody tr:last-child {
         border-bottom: 0;
     }
 
     /* La riga non disegna piu' il proprio bordo: lo disegna la scheda. Senza
        questo si vedrebbero due righine per ogni valore. */
-    .reports-index .data-table td {
+    .tabella-schede .data-table td,
+    .tabella-schede .data-table tbody th {
         border-bottom: 0;
         padding: 0.15rem 0;
         display: flex;
         align-items: baseline;
         gap: 0.75rem;
-        /* Un valore lungo — un'email, il titolo di un corso — va a capo
-           invece di allargare la scheda. */
-        overflow-wrap: anywhere;
     }
 
     /* L'etichetta puo' stringersi ma non sparire: una misura fissa faceva
        uscire la riga di diciassette pixel sui telefoni piu' stretti. */
-    .reports-index .data-table td::before {
+    .tabella-schede .data-table td::before,
+    .tabella-schede .data-table tbody th::before {
         content: attr(data-label);
         flex: 0 1 8rem;
         min-width: 6rem;
@@ -2669,24 +2688,51 @@ fieldset.checkbox-group legend {
     }
 
     /* La cella delle azioni non ha etichetta da mostrare — «Azioni» davanti
-       a due comandi non dice niente — e torna a sinistra: la colonna
-       allineata a destra serviva a far combaciare tabelle affiancate in
-       verticale, qui i comandi stanno in fondo alla propria scheda. */
-    .reports-index .data-table td.row-actions {
+       a due comandi non dice niente — e sta a sinistra come il resto: la
+       colonna allineata a destra serve a far combaciare tabelle affiancate
+       in verticale, e qui di tabelle non ce ne sono piu'. */
+    .tabella-schede .data-table td.row-actions {
         justify-content: flex-start;
         text-align: left;
         gap: 0.75rem;
         padding-top: 0.5rem;
+        flex-wrap: wrap;
     }
 
-    .reports-index .data-table td.row-actions::before {
+    .tabella-schede .data-table td.row-actions::before {
         content: none;
     }
 
     /* Il pannello della tendina torna a sinistra: qui il comando sta a
        sinistra, e ancorarlo a destra lo porterebbe fuori scheda. */
-    .reports-index .dropdown-riga > .dropdown-menu {
+    .tabella-schede .dropdown-riga > .dropdown-menu {
         left: 0;
         right: auto;
     }
+
+    /* Una riga vuota di significato in modalita' scheda: la cella senza
+       contenuto di una colonna che in tabella serviva solo da spaziatura. */
+    .tabella-schede .data-table td:empty {
+        display: none;
+    }
+}
+
+/* Stessa cosa nelle sezioni della pagina di modifica della lezione: il
+   livello scende sotto l'h1 senza saltare, la misura non cambia. */
+.materials-section h2,
+.video-actions h2 {
+    font-size: 1.05rem;
+}
+
+/* Collegamenti che sono anche bersagli, in due posti dove restavano alti
+   quanto il loro testo: il titolo del corso nel report per studente e il
+   titolo della lezione nell'elenco di un corso. Lo spazio si mette dentro
+   il collegamento invece che attorno, come già si è fatto per i comandi
+   dentro le tabelle: così il bersaglio arriva ai 24 px senza che la riga
+   cresca di altrettanto. */
+.card-head h2 a,
+.lesson-list-item > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
 }

@@ -45,33 +45,38 @@ use App\Core\Csrf;
 <?php if ($rows === []): ?>
     <p class="empty-state">Nessuno studente iscritto a questo corso.</p>
 <?php else: ?>
-    <table class="data-table">
-        <thead>
-        <tr>
-            <th>Studente</th>
-            <th>Progresso</th>
-            <th>Lezioni</th>
-            <th>Quiz superati</th>
-            <th>Certificato</th>
-            <th></th>
+    <?php /* Sei colonne su un telefono non ci stanno: sotto i 50 rem di
+             spazio la tabella diventa un elenco di schede. I `role` espliciti
+             servono perché cambiando il `display` la tabella perderebbe le
+             proprie semantiche. */ ?>
+    <div class="tabella-schede">
+    <table class="data-table" role="table">
+        <thead role="rowgroup">
+        <tr role="row">
+            <th scope="col" role="columnheader">Studente</th>
+            <th scope="col" role="columnheader">Progresso</th>
+            <th scope="col" role="columnheader">Lezioni</th>
+            <th scope="col" role="columnheader">Quiz superati</th>
+            <th scope="col" role="columnheader">Certificato</th>
+            <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
         <?php foreach ($rows as $row): ?>
-            <tr>
-                <td>
+            <tr role="row">
+                <td role="cell" data-label="Studente">
                     <a href="/reports/students/<?= (int) $row['user_id'] ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
                     <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                 </td>
-                <td>
+                <td role="cell" data-label="Progresso">
                     <?= number_format((float) $row['progress_pct'], 0) ?>%
                     <?php if ($row['completed_at'] !== null): ?>
                         <span class="badge badge-success">completato</span>
                     <?php endif; ?>
                 </td>
-                <td><?= (int) $row['lessons_completed'] ?>/<?= (int) $totals['lessons'] ?></td>
-                <td><?= (int) $row['quizzes_passed'] ?>/<?= (int) $totals['quizzes'] ?></td>
-                <td>
+                <td role="cell" data-label="Lezioni"><?= (int) $row['lessons_completed'] ?>/<?= (int) $totals['lessons'] ?></td>
+                <td role="cell" data-label="Quiz superati"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $totals['quizzes'] ?></td>
+                <td role="cell" data-label="Certificato">
                     <?php if (empty($row['certificate_code'])): ?>
                         —
                     <?php elseif ($row['certificate_revoked_at'] !== null): ?>
@@ -80,7 +85,7 @@ use App\Core\Csrf;
                         <code><?= htmlspecialchars((string) $row['certificate_code']) ?></code>
                     <?php endif; ?>
                 </td>
-                <td class="row-actions">
+                <td role="cell" class="row-actions">
                     <?php if (Auth::can('certificate.issue') && empty($row['certificate_code'])): ?>
                         <form action="/certificates/issue" method="post">
     <?= Csrf::field() ?>
@@ -95,6 +100,7 @@ use App\Core\Csrf;
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 <?php endif; ?>
 
 <script src="/assets/js/dropdown.js"></script>
