@@ -2836,3 +2836,36 @@ fieldset.checkbox-group legend {
     color: var(--color-text-muted);
     font-variant-numeric: tabular-nums;
 }
+
+/* Un campo numerico con la sua unità accanto: il «%» sta fuori dal campo,
+   perché dentro lo si cancellerebbe scrivendo, e senza non si capisce di
+   che cosa sia la percentuale. */
+.campo-con-unita {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.campo-con-unita input[type="number"] {
+    width: 6rem;
+    margin: 0;
+}
+
+.campo-con-unita > span {
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+/* La riga pericolosa: il comando e la sua spiegazione sulla stessa riga
+   finché c'è spazio, incolonnati sul telefono. */
+.danger-zone {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.danger-zone .form-hint {
+    margin: 0;
+    flex: 1 1 18rem;
+}

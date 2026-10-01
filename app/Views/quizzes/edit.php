@@ -36,21 +36,70 @@ use App\Core\QuizScoring;
     </div>
 <?php endif; ?>
 
+<?php
+/*
+ * I due campi avevano solo un'etichetta per i lettori di schermo: all'occhio
+ * erano un riquadro di testo e un numero nudo, e il numero non diceva di che
+ * cosa fosse la percentuale. Adesso ciascuno ha la propria etichetta scritta,
+ * e la soglia dice in parole che cosa comporta **su questo quiz**.
+ */
+$soglia = (int) $quiz['passing_score_pct'];
+$valutate = QuizScoring::conteggioValutate($questions);
+
+// Quante risposte giuste servono davvero con la soglia di adesso. E' il
+// numero che chi costruisce il quiz ha in testa, e che finora doveva
+// calcolarsi da solo.
+$minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
+?>
 <section class="card">
-    <h2>Impostazioni</h2>
-    <form action="/quizzes/<?= (int) $quiz['id'] ?>" method="post" class="form form-inline">
+    <h2>Impostazioni del quiz</h2>
+
+    <form action="/quizzes/<?= (int) $quiz['id'] ?>" method="post" class="form">
         <?= Csrf::field() ?>
-        <input type="text" name="title" maxlength="200" required value="<?= htmlspecialchars($quiz['title']) ?>"
-               aria-label="Titolo del quiz">
-        <input type="number" name="passing_score_pct" min="1" max="100"
-               value="<?= (int) $quiz['passing_score_pct'] ?>" aria-label="Punteggio minimo (%)">
-        <button type="submit" class="btn btn-secondary">Salva</button>
+
+        <label for="quiz-title">Titolo del quiz</label>
+        <input type="text" id="quiz-title" name="title" maxlength="200" required
+               value="<?= htmlspecialchars($quiz['title']) ?>">
+        <p class="form-hint">È il nome che vede lo studente quando apre il quiz.</p>
+
+        <label for="quiz-soglia">Punteggio minimo per superarlo</label>
+        <div class="campo-con-unita">
+            <input type="number" id="quiz-soglia" name="passing_score_pct" min="1" max="100" step="1"
+                   value="<?= $soglia ?>" aria-describedby="quiz-soglia-aiuto">
+            <span aria-hidden="true">%</span>
+        </div>
+        <p class="form-hint" id="quiz-soglia-aiuto">
+            <?php if ($valutate === 0): ?>
+                Questo quiz non ha ancora domande che fanno punteggio, quindi la soglia non è
+                ancora usata. Le domande aperte non entrano nel calcolo.
+            <?php else: ?>
+                Su <?= $valutate ?>
+                <?= $valutate === 1 ? 'domanda che fa punteggio' : 'domande che fanno punteggio' ?>,
+                con questa soglia servono almeno <strong><?= $minimeGiuste ?></strong>
+                <?= $minimeGiuste === 1 ? 'risposta giusta' : 'risposte giuste' ?>.
+                <?php $aperte = count($questions) - $valutate; ?>
+                <?php if ($aperte > 0): ?>
+                    <?= $aperte === 1
+                        ? 'La domanda aperta non entra nel conto.'
+                        : 'Le ' . $aperte . ' domande aperte non entrano nel conto.' ?>
+                <?php endif; ?>
+            <?php endif; ?>
+            I tentativi sono illimitati e vale il punteggio migliore.
+        </p>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Salva impostazioni</button>
+        </div>
     </form>
 
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/delete" method="post" class="danger-zone"
           onsubmit="return confirm('Eliminare il quiz, le sue domande e tutti i tentativi degli studenti?');">
         <?= Csrf::field() ?>
-        <button type="submit" class="link-btn link-btn-danger">Elimina quiz</button>
+        <button type="submit" class="link-btn link-btn-danger">Elimina il quiz</button>
+        <span class="form-hint">
+            Spariscono le domande e tutti i tentativi già svolti dagli studenti.
+            Non si torna indietro.
+        </span>
     </form>
 </section>
 
