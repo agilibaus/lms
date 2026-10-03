@@ -15,16 +15,20 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 
 - **Corsi** strutturati in Moduli → Lezioni, con video (Bunny/Cloudflare Stream o self-hosted) e materiali scaricabili
 - **Editor di testo ricco** (TinyMCE incluso nel progetto) per il contenuto della lezione: formattazione, elenchi, tabelle, immagini caricate e video incorporati da YouTube/Vimeo
-- **Quiz** a scelta multipla/vero-falso con verifica automatica del punteggio
+- **Quiz** con quattro tipi di domanda — scelta singola, vero/falso, risposta multipla e
+  risposta aperta — riordinabili, con verifica automatica del punteggio
 - **Certificati** di completamento generati in PDF, con codice di verifica pubblico
-- **Report/dashboard** su progressi utente/corso, risultati quiz, presenze alle sessioni live
+- **Report/dashboard** su progressi utente/corso, risultati quiz, presenze alle sessioni live e
+  tempi di fruizione dei video, tutti scaricabili in CSV e XLSX
+- **Rilascio progressivo**: ogni modulo puo' avere una data di apertura, con avviso via email
+  agli iscritti il giorno in cui si apre
 - **Ruoli utente**, con privilegi configurabili nella tabella `role_permissions` (nessun privilegio hardcodato nel codice):
   
   | Ruolo | Ambito |
   |---|---|
   | `admin` | Gestione completa: corsi, utenti, gruppi, permessi, certificati |
   | `tutor` | Modifica corsi assegnati, corregge quiz, segue gruppi/coorti, gestisce i propri assistenti |
-  | `assistente` | Affianca un tutor specifico (`supervising_tutor_id`), non l'admin: correzioni e report solo sugli ambiti assegnati |
+  | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), non l'admin: correzioni e report solo sugli ambiti assegnati |
   | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge quiz, scarica i propri certificati |
 - **Profilo personale**: ogni utente compila i propri dati e carica un'immagine, che compare tonda accanto al suo nome
 - **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
@@ -36,9 +40,11 @@ In sviluppo iniziale.
 - ✅ Schema database (`database/schema.sql`)
 - ✅ Scaffold applicativo: router, autenticazione/sessioni, connessione PDO, layout responsive, lista/dettaglio corsi
 - ✅ Moduli/lezioni con upload materiali ed embed video (Bunny/Cloudflare Stream o self-hosted)
-- ✅ Quiz (scelta singola / vero-falso), tentativi illimitati, sblocco progressivo dei moduli
+- ✅ Quiz con quattro tipi di domanda, domande riordinabili, tentativi illimitati
+- ✅ Sblocco progressivo dei moduli: per quiz obbligatorio e per data di apertura
 - ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
-- ✅ Report per corso, studente e gruppo, con export CSV
+- ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
+  in CSV e XLSX
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
 - ✅ Protezione CSRF su tutte le richieste POST
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
@@ -46,15 +52,24 @@ In sviluppo iniziale.
 - ✅ Registrazione autonoma con verifica email, recupero password, catalogo e auto-iscrizione
 - ✅ Editor ricco nella lezione, immagini caricate e materiali ordinabili
 - ✅ Profilo personale con immagine
+- ✅ Cambio password dal profilo e password temporanea dal pannello
+- ✅ Video protetti: indirizzi Bunny Stream firmati e a scadenza
+- ✅ Ripresa del video da dove si era rimasti e tracciatura dei tempi di fruizione
+- ✅ Email di avviso quando si apre un modulo a rilascio programmato (comando da cron)
+- ✅ Tutte le pagine responsive, verificate automaticamente a tre larghezze
+- ✅ Controlli automatici di accessibilità e dei permessi per ruolo
 
 ## Requisiti
 
 - PHP **8.1 o superiore**, con estensioni `pdo_mysql`, `mbstring`, `dom`, `gd` (le ultime due richieste da Dompdf per i certificati)
+- Estensione `zip` per il download dei report in XLSX. **Non è obbligatoria**: dove manca,
+  il pulsante XLSX non compare e resta il CSV
 - MySQL 8+ o MariaDB 10.6+
 - Server web con supporto al rewrite degli URL (Apache + `mod_rewrite`, oppure Nginx configurato in modo equivalente)
 - Composer (autoload PSR-4 e installazione di Dompdf: senza `composer install` i certificati non possono essere generati)
 - Estensioni `openssl` e `curl` per l'integrazione Google (già presenti in quasi tutte le installazioni)
 - Per le sessioni live: un progetto Google Cloud con **Calendar API** abilitata e un account di servizio con delega a livello di dominio (vedi sotto). Senza, le sessioni restano utilizzabili con link Meet inseriti a mano
+- **Accesso al cron** (o all'Utilità di pianificazione su Windows) per le email di apertura dei moduli a rilascio programmato. Senza, il resto funziona: mancano solo quegli avvisi
 
 ## Installazione
 
@@ -71,6 +86,10 @@ creazione del database, primo amministratore e impostazioni facoltative.
    `composer update` (non `install`) installa l'autoload PSR-4 e **Dompdf**, usato per i
    certificati PDF: rigenera `composer.lock` includendolo. Dagli aggiornamenti successivi
    `composer install` è di nuovo sufficiente.
+
+   **In produzione usa `composer install --no-dev`.** Fra le dipendenze di sviluppo c'è
+   PHPStan: senza quell'opzione finisce nel `vendor/` del server con tutto il suo seguito,
+   senza servire a niente.
 
 2. **Imposta il document root sulla cartella `public/`**
    L'applicazione va servita con `public/` come document root (non la root del repo), così i
@@ -123,30 +142,57 @@ ordine di data), ad esempio:
 ```bash
 mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
-Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position` sui materiali),
-`2026_09_16_profilo_utente.sql` (campi del profilo e immagine) e
-`2026_09_17_copertina_corso.sql` (testo alternativo della copertina del corso) e
-`2026_09_17_impostazioni.sql` (tabella `settings` e permesso `settings.manage`).
+Le migrazioni vanno applicate **in ordine di data**, e ciascuna si puo' rieseguire senza
+danni. Le piu' recenti:
+
+| File | Cosa fa |
+|---|---|
+| `2026_09_17_logo_gruppo.sql` | colonna `logo_path` sui gruppi |
+| `2026_09_18_ordine_corsi.sql` | colonna `position` sui corsi |
+| `2026_09_29_tutor_assistenti.sql` | tabella `assistant_tutors`, un assistente puo' affiancare piu' tutor |
+| `2026_09_30_cambio_password.sql` | cambio password dal profilo |
+| `2026_09_30_fruizione_video.sql` | ripresa del video e tracciatura dei tempi |
+| `2026_09_30_rimozione_supervising_tutor_id.sql` | toglie la colonna, sostituita da `assistant_tutors` |
+| `2026_10_01_quiz_tipi_domanda.sql` | risposta multipla e domanda aperta |
+| `2026_10_01_rilascio_moduli.sql` | data di apertura dei moduli e avvisi gia' inviati |
+
+**Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
+vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
 
 ## Struttura del progetto
 
 ```
 /public              → document root
   /assets/css         → stylesheet
+  /assets/js          → course-order (riordino schede), lesson-video (copertina),
+                        lesson-focus (senza distrazioni), lesson-tracking (tempi di
+                        fruizione), dropdown
   /assets/vendor/tinymce → editor di testo ricco (vedi README-pistacchio.md nella cartella)
   /install            → procedura di installazione guidata (da eliminare dopo l'uso)
   index.php           → front controller
   .htaccess           → rewrite verso index.php
 /app
-  /Controllers        → logica delle route (AuthController, CourseController, ModuleController, LessonController, QuizController, CertificateController, ReportController)
-    /Admin             → pannello di amministrazione (UserController, GroupController, CourseController, PermissionController)
+  /Controllers        → logica delle route: Auth, Registration, PasswordReset, Profile,
+                        Course, Module, Lesson, Quiz, Certificate, Report, Catalog,
+                        LiveSession, VideoProgress
+    /Admin             → pannello di amministrazione: Admin, User, Group, Course,
+                        Permission, Settings
   /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
   /Auth               → login, sessione, permessi per ruolo (Auth.php)
-  /Core               → Router minimale, Database (PDO), Env, View, Upload, VideoEmbed, CourseAccess, CertificateService, Csv, Csrf, HtmlSanitizer, FileType
+  /Core               → Router minimale, Database (PDO), Env, View, Settings, Url
+                         Upload, FileType, OrphanFiles          → file caricati
+                         VideoEmbed, VideoPoster, BunnyToken, WatchIntervals → video
+                         CourseAccess, QuizScoring, CertificateService → regole didattiche
+                         CourseCover, GroupLogo, AvatarImage, AuthLayout → immagini e aspetto
+                         Csv, Xlsx, Ics                         → formati di scambio
+                         Csrf, HtmlSanitizer, PasswordPolicy, PasswordGenerator → sicurezza
     /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
+    /Mail              → client SMTP scritto in casa, trasporti e testi dei messaggi
   /Views
     /partials          → layout condiviso (shell.php)
   routes.php
+/bin
+  rilascio-moduli      → comando da cron: avvisa gli studenti dei moduli che si aprono
 /config
   config.php           → bootstrap (env, error reporting, timezone)
 /storage
@@ -154,31 +200,96 @@ Le ultime migrazioni sono `2026_09_16_materiali_lezione.sql` (colonna `position`
   /materials
   /lesson-images       → immagini inserite nel testo delle lezioni
   /avatars             → immagini del profilo
+  /course-covers       → copertine dei corsi, in due misure
+  /group-logos         → logo dei gruppi
   /certificates
+  /google              → chiave dell'account di servizio (permessi 0600)
+  /mail                → messaggi .eml quando MAIL_TRANSPORT=log
+  /logs                → uscita dei comandi da cron
 /database
   schema.sql
   /migrations         → migrazioni incrementali per installazioni gia' esistenti
-/tests
-  google_meet_test.php  → test del client Google (senza rete né credenziali reali)
-  html_sanitizer_test.php → test del sanificatore HTML dell'editor
-  course_cover_test.php   → test della copertina del corso (ritaglio, misure, testo alternativo)
-  settings_test.php       → test delle impostazioni salvate in tabella (richiede il database)
+/tests                 → vedi la sezione «Test» più sotto per l'elenco completo
 ```
 
 ## Quiz, certificati e report
 
 ### Quiz
-Ogni modulo puo' avere **un quiz** (domande a scelta singola o vero/falso). Il tutor imposta
-la soglia di superamento in percentuale; i **tentativi sono illimitati** e allo studente vale
-sempre il punteggio migliore. Le risposte corrette non vengono mai inviate al browser durante
-lo svolgimento, e la correzione avviene lato server verificando che l'opzione scelta appartenga
-davvero alla domanda.
+Ogni modulo puo' avere **un quiz**. Il tutor imposta la soglia di superamento in percentuale;
+i **tentativi sono illimitati** e allo studente vale sempre il punteggio migliore. Le risposte
+corrette non vengono mai inviate al browser durante lo svolgimento, e la correzione avviene
+lato server verificando che l'opzione scelta appartenga davvero alla domanda. Le domande si
+riordinano con due frecce, come moduli e lezioni.
+
+Quattro tipi di domanda:
+
+| Tipo | Come si corregge |
+|---|---|
+| Scelta singola | Una sola opzione giusta |
+| Vero / falso | Idem, con due opzioni fisse |
+| Risposta multipla | **Tutto o niente**: vale solo se lo studente segna esattamente le opzioni giuste. La domanda dice quante sono |
+| Risposta aperta | **Non fa punteggio**: la risposta si raccoglie e basta |
+
+Le domande aperte restano **fuori dal conteggio**, sia al numeratore sia al denominatore: un
+quiz di sole domande aperte risulta consegnato e superato, senza percentuale. Le risposte si
+leggono nel report del singolo studente. La logica sta tutta in `App\Core\QuizScoring`, con
+46 test.
 
 ### Sblocco progressivo dei moduli
-Se un modulo ha il flag **"quiz obbligatorio"**, tutti i moduli successivi restano bloccati
-(lezioni comprese) finche' lo studente non supera quel quiz. Lo staff non e' mai soggetto al
-blocco. Un modulo marcato come obbligatorio ma privo di quiz — o con un quiz senza domande —
-non blocca nulla, per evitare vicoli ciechi.
+Due regole indipendenti possono chiudere un modulo, e ne basta una. **Lo staff non e' mai
+soggetto al blocco**: un modulo chiuso va preparato prima che si apra.
+
+**Per quiz obbligatorio.** Se un modulo ha il flag "quiz obbligatorio", tutti i moduli
+successivi restano bloccati finche' lo studente non supera quel quiz. Un modulo marcato come
+obbligatorio ma privo di quiz — o con un quiz senza domande — non blocca nulla, per evitare
+vicoli ciechi.
+
+**Per data (rilascio progressivo).** Ogni modulo ha un campo **"Disponibile dal"**: vuoto vuol
+dire aperto, con una data il modulo si apre in quel momento, uguale per tutti gli studenti.
+Lo studente vede il titolo in grigio con la data e non puo' aprire **ne' le lezioni, ne' i
+quiz, ne' i materiali scaricabili, ne' gli incontri dal vivo** di quel modulo: sono quattro
+ingressi distinti nel codice, e il controllo e' in tutti e quattro, perche' nascondere un
+collegamento non e' bloccarlo.
+
+Le due regole si incatenano nel verso giusto: un modulo chiuso per data che ha il quiz
+obbligatorio chiude anche quelli dopo, perche' il suo quiz non si puo' fare.
+
+Il confronto fra la data di apertura e l'ora corrente si fa **in SQL**, mai in PHP: il server
+web e il database possono trovarsi su fusi diversi, e qui un'ora di differenza vuol dire un
+modulo aperto quando non doveva.
+
+**La percentuale di avanzamento non cambia**: continua a contare tutte le lezioni del corso,
+aperte e chiuse, cosi' certificati e report restano confrontabili. Accanto, sulla scheda del
+corso, lo studente legge una frase che risponde all'altra domanda — «Sei in pari — prossimo
+modulo il 31/10/2026» — e che compare solo se c'e' davvero un modulo chiuso.
+
+#### L'email di apertura, e il cron che la manda
+Il giorno in cui un modulo si apre gli iscritti ricevono un'email. Non la manda una richiesta
+web — non c'e' nessuna richiesta, e' passata una data — ma un comando da eseguire una volta al
+giorno:
+
+```
+30 7 * * * cd /percorso/del/sito && php bin/rilascio-moduli >> storage/logs/rilascio.log 2>&1
+```
+
+`php bin/rilascio-moduli --prova` elenca che cosa manderebbe senza mandare niente.
+
+Tre cose da sapere prima di affidarglisi:
+
+- **Non manda due volte.** La riga in `module_unlock_notifications` si scrive **prima**
+  dell'invio, e a decidere e' la chiave unica del database: due esecuzioni sovrapposte non
+  mandano la stessa email due volte. Il rovescio e' voluto: se il server di posta rifiuta,
+  quell'avviso e' perduto e lo studente trovera' comunque il modulo aperto rientrando. Fra
+  perdere un avviso e mandarne dieci a tutti insieme, il primo e' il verso giusto in cui
+  sbagliare.
+- **Si rifiuta di partire senza `APP_URL`.** Da terminale non c'e' una richiesta da cui
+  ricavare l'indirizzo del sito, e le email uscirebbero con collegamenti a `localhost`.
+- **Lascia detto di aver girato**, in `settings.DRIP_LAST_RUN_AT`. Un cron fermo non si
+  lamenta: senza quella traccia, il primo segnale sarebbe uno studente che non ha saputo di un
+  modulo aperto da due settimane.
+
+**Se il cron non c'e', i moduli si aprono lo stesso** — il blocco si calcola quando lo studente
+apre la pagina — e a mancare sono solo le email.
 
 ### Certificati
 Il certificato viene emesso **automaticamente** quando lo studente ha completato tutte le
@@ -191,17 +302,23 @@ solo intestatario, corso e data. Admin e tutor possono emettere un certificato m
 risulta "revocato" nella verifica pubblica e non viene rigenerato dall'emissione automatica.
 
 ### Report
-Disponibili in `/reports`, con export CSV di ogni vista:
+Disponibili in `/reports`, dal generale al particolare. **Ogni vista si scarica in XLSX e in
+CSV**, da un unico pulsante "Scarica" con la tendina dei due formati:
 
 | Report | Contenuto |
 |---|---|
 | Per corso | Iscritti con progresso, lezioni completate, quiz superati, stato certificato |
-| Per studente | Tutti i corsi dello studente, con dettaglio tentativi e punteggi per quiz |
 | Per gruppo | Membri del gruppo incrociati con i corsi assegnati al gruppo |
+| Per studente | Tutti i corsi dello studente, con dettaglio tentativi, punteggi e risposte aperte |
+| Per incontro dal vivo | Presenze, con l'origine del dato (piattaforma o segnata a mano) |
+| Fruizione dei video | Tempo effettivamente guardato per studente e per lezione, in secondi |
+
+L'XLSX non richiede dipendenze: il file lo scrive `App\Core\Xlsx`, che ha bisogno
+dell'estensione `zip`. Dove manca, il pulsante XLSX non compare e resta il CSV.
 
 I permessi seguono `role_permissions`: `report.view` (admin, tutor) da' accesso completo,
-`report.view_assigned` (assistente) limita la vista agli studenti dei gruppi seguiti dal
-proprio tutor di riferimento (`supervising_tutor_id`).
+`report.view_assigned` (assistente) limita la vista agli studenti dei gruppi seguiti dai tutor
+che affianca (tabella `assistant_tutors`).
 
 ## Pannello di amministrazione
 
@@ -209,8 +326,12 @@ Raggiungibile dalla sezione **Amministrazione** della sidebar, che mostra solo l
 consentite dai permessi dell'utente.
 
 ### Utenti (`/admin/users`)
-Creazione utenti con ruolo, stato attivo/disattivo e password iniziale (minimo 8 caratteri),
-modifica e reimpostazione password. Serve `user.manage`; chi ha solo `assistant.manage`
+Creazione utenti con ruolo, stato attivo/disattivo e password iniziale, modifica e
+reimpostazione password. **La password iniziale la genera la piattaforma** e si consegna una
+volta sola: è temporanea, e al primo accesso l'utente deve sceglierne una propria. Chiunque
+può cambiarla in qualsiasi momento dal proprio **Profilo**; il cambio chiude tutte le altre
+sessioni aperte e manda un avviso per email. La regola è almeno 8 caratteri con lettere e
+cifre (`App\Core\PasswordPolicy`). Serve `user.manage`; chi ha solo `assistant.manage`
 (il tutor) vede e gestisce esclusivamente i propri assistenti e non può assegnare altri ruoli.
 
 Alcune protezioni sono deliberatamente rigide, per non restare chiusi fuori:
@@ -312,26 +433,105 @@ Nota: l'ingresso tracciato certifica l'apertura del link dalla piattaforma, non 
 permanenza nella riunione. Per il dato reale di partecipazione servirebbe la Reports API di
 Google Workspace, che richiede scope aggiuntivi ed è disponibile solo a sessione conclusa.
 
+## Protezione dei video (Bunny Stream)
+
+Un video caricato su Bunny si guarda con un **indirizzo firmato e a scadenza**: l'embed porta
+un token calcolato dal server (`App\Core\BunnyToken`) a partire dalla chiave della libreria,
+e senza quel token Bunny risponde **403**. Vale anche per il flusso `.m3u8` chiesto da fuori.
+
+Gli interruttori da accendere su Bunny sono due e **non sono la stessa cosa**: la *Embed View
+Token Authentication* sta nelle impostazioni della Video Library ed è quella che serve qui;
+la *CDN Token Authentication* sta sulla Pull Zone ed è una cintura in più. La chiave non va
+mai nel repository: si incolla in **Amministrazione → Bunny Stream**, che la salva in tabella.
+
+## Ripresa del video e tempi di fruizione
+
+Lo studente che rientra in una lezione già cominciata trova sulla copertina due pulsanti
+della stessa larghezza — **Riprendi da hh:mm:ss** e **Guarda dall'inizio** — invece del solo
+play. La soglia è 30 secondi: sotto, "riprendere" non avrebbe senso.
+
+La piattaforma registra anche **quanto di ogni video è stato davvero guardato**, non solo il
+punto più avanzato: il player manda gli intervalli visti, che vengono fusi in scrittura, così
+rivedere due volte lo stesso minuto conta una volta sola. Il risultato sta nel report
+*Fruizione dei video*, per studente e per lezione.
+
+Due difese contro i tempi gonfiati: un **tetto di plausibilità** (nessuno può dichiarare più
+di 2,5 volte il tempo realmente trascorso, più 30 secondi di tolleranza), e il fatto che il
+tempo trascorso si calcola **in SQL** con `TIMESTAMPDIFF`, perché l'orologio di PHP e quello
+di MySQL possono stare su fusi diversi.
+
+**Resta un dato dichiarato dal client.** Nessun controllo lato server può renderlo
+infalsificabile: serve a rendicontare lo studio di chi studia, non a inchiodare chi bara.
+
+## Mobile
+
+**Ogni pagina deve essere utilizzabile da telefono**, e dove adattarla non è possibile deve
+avere un ripiego dichiarato. Non è un auspicio: è un requisito di accettazione, verificato
+automaticamente a ogni giro.
+
+Il modo normale per una tabella larga è `.tabella-schede`, che sotto i 50 rem di spazio
+disponibile la trasforma in un elenco di schede — con *container query*, quindi in base allo
+spazio che la tabella ha davvero, non alla larghezza della finestra. Dove le schede non hanno
+senso (la matrice dei permessi, che ha una colonna per permesso) c'è il ripiego: scorrimento
+orizzontale **dentro il proprio riquadro**, senza trascinarsi dietro la pagina.
+
 ## Test
 
+Due famiglie. I test PHP girano da soli; i due file `.js` usano Playwright e hanno bisogno del
+server di sviluppo attivo.
+
 ```bash
-php tests/google_meet_test.php
-php tests/html_sanitizer_test.php
-php tests/course_cover_test.php
-php tests/settings_test.php
+# logica pura, nessun database
+php tests/google_meet_test.php      # client Google: JWT firmata, richieste, errori 403/404
+php tests/html_sanitizer_test.php   # l'HTML dell'editor non può contenere codice eseguibile
+php tests/course_cover_test.php     # ritaglio 16:9, due misure, testo alternativo (serve GD)
+php tests/bunny_token_test.php      # firma e scadenza degli indirizzi Bunny
+php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto di plausibilità
+php tests/quiz_scoring_test.php     # punteggio dei quattro tipi di domanda
+php tests/password_test.php         # regola della password e generatore
+php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
+php tests/live_session_mail_test.php   # testi delle email degli incontri
+php tests/xlsx_test.php             # il file XLSX scritto in casa
+
+# richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
+php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
+php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
+
+# richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
+node tests/accessibilita.js         # 1225 controlli su 49 pagine, a tre larghezze
+node tests/permessi.js              # 72 prove: ogni ruolo prova a raggiungere le cose di un altro
 ```
 
-Verifica il client Google senza rete e senza credenziali reali: genera una chiave RSA al volo,
-controlla che la JWT sia firmata correttamente (verifica con la chiave pubblica) e che la
-richiesta a Calendar contenga i parametri giusti, simulando le risposte di Google — compresi
-gli errori 403 e 404.
+### I due controlli automatici che vale la pena conoscere
 
-`html_sanitizer_test.php` verifica che l'HTML salvato dall'editor non possa contenere codice
-eseguibile: script, gestori di eventi, `javascript:`, `data:` e iframe da host non previsti.
+**Accessibilità** (`accessibilita.js`). Su **tutte** le pagine HTML della piattaforma verifica
+lingua e titolo, un solo titolo principale, contrasto del testo, campi con etichetta, immagini
+con testo alternativo, comandi con un nome, identificativi non ripetuti, titoli senza salti di
+livello, bersagli di almeno 24 px, fuoco visibile e **nessuno scorrimento orizzontale**.
+Quest'ultimo gira a 390 px, a **320** (il minimo che chiede la 1.4.10 delle WCAG) e a 844×390,
+cioè il telefono girato di lato; quando fallisce dice **quale elemento** sfora. È scritto in
+Node e non in PHP perché contrasto, fuoco e dimensioni esistono solo dopo che il browser ha
+applicato il CSS.
 
-`course_cover_test.php` verifica il ritaglio 16:9 e le due misure della copertina, la scelta
-del file da servire, l'eliminazione di entrambe le misure, la normalizzazione del testo
-alternativo e le iniziali mostrate quando la copertina manca. Richiede l'estensione GD.
+**Non è un test di usabilità**, ed è scritto per non essere scambiato per tale: dice se una
+pagina rispetta delle regole misurabili, non se una persona capisce cosa deve fare.
+
+**Permessi** (`permessi.js`). `semina_permessi.php` crea **due mondi paralleli e simmetrici**,
+A e B, con proprietari diversi — un controllo sui permessi ha senso solo se c'è qualcosa che
+non si deve poter toccare. Poi, per ogni ruolo, si prova a raggiungere le cose dell'altro
+mondo **scrivendo l'indirizzo a mano**, dichiarando in anticipo che cosa ci si aspetta. Si
+provano anche le POST distruttive, perché metà del danno possibile sta lì.
+
+Guarda la porta, non che cosa c'è nella stanza: una pagina può rispondere 200
+legittimamente e mostrare dentro righe che non dovrebbe.
+
+> **Un verde è sospetto finché non lo si è visto diventare rosso.** Rompendo di proposito
+> una regola, i controlli che la riguardano devono fallire. È così che è saltato fuori che
+> una prova sul download di un materiale passava per il motivo sbagliato — il file non
+> esisteva sul disco, e il 404 del file mancante veniva scambiato per un rifiuto del permesso.
+
+`tests/semina_permessi.php` **scrive nel database dell'installazione su cui gira**: è per lo
+sviluppo, non per la produzione.
 
 ## File caricati: la piattaforma non cancella mai da sola
 
@@ -476,9 +676,10 @@ Il permesso `assistant.manage` al tutor è **vietato per regola**, non per scelt
 permessi lo mostra bloccato, e il salvataggio lo rifiuta anche se arriva da una richiesta
 costruita a mano (`RolePermissionModel::FORBIDDEN`).
 
-Migrazione `2026_09_29_tutor_assistenti.sql`: crea `assistant_tutors`, vi trasferisce i legami
-esistenti di `users.supervising_tutor_id` — che nelle installazioni esistenti resta ma non viene
-più letta — e toglie il permesso al tutor. Si può rieseguire senza danni.
+Due migrazioni, in quest'ordine. `2026_09_29_tutor_assistenti.sql` crea `assistant_tutors`,
+vi trasferisce i legami esistenti di `users.supervising_tutor_id` e toglie il permesso al
+tutor; `2026_09_30_rimozione_supervising_tutor_id.sql` **elimina la colonna**, che nel
+frattempo non la leggeva più nessuno. Entrambe si possono rieseguire senza danni.
 
 ## Ordine dei corsi
 
@@ -559,10 +760,11 @@ In una lezione che contiene **solo** un video — niente testo, niente materiali
 "Segna come completata" resta disabilitato finché lo studente non avvia il video. Il clic sulla
 copertina è il segnale, e per i video sul nostro server vale anche l'evento `play` del player.
 
-Il pulsante è **abilitato nell'HTML** e lo disabilita `public/assets/js/lesson-start.js`: senza
-JavaScript, o se qualcosa va storto, lo studente può comunque concludere la lezione. Sempre per
-questo, un `<noscript>` contiene lo stesso player caricato subito, altrimenti senza JavaScript
-l'iframe resterebbe senza indirizzo e il video non si vedrebbe.
+Il pulsante è **abilitato nell'HTML** e lo disabilita `public/assets/js/lesson-video.js`, lo
+stesso script della copertina: senza JavaScript, o se qualcosa va storto, lo studente può
+comunque concludere la lezione. Sempre per questo, un `<noscript>` contiene lo stesso player
+caricato subito, altrimenti senza JavaScript l'iframe resterebbe senza indirizzo e il video
+non si vedrebbe. Il riquadro dichiara con `data-attende-avvio` se la regola lo riguarda.
 
 Il ricordo dell'avvio sta in `sessionStorage`, quindi ricaricando la pagina il pulsante resta
 sbloccato. Non segue lo studente su un altro dispositivo, e non è un controllo: chi vuole può
