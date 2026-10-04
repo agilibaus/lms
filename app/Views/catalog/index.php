@@ -10,7 +10,11 @@ use App\Models\CourseModel;
 ?>
 <div class="page-header">
     <h1>Esplora corsi</h1>
-    <p class="page-subtitle">I corsi a cui puoi iscriverti. Quelli che segui già sono nella pagina Corsi.</p>
+    <?php /* «I miei corsi» e' il nome che la voce ha nel menu dello studente,
+             che e' l'unico a vedere questa pagina: «Corsi» e' come la stessa
+             voce si chiama per admin, tutor e assistente, e qui mandava a
+             cercare una pagina che con quel nome lo studente non ha. */ ?>
+    <p class="page-subtitle">I corsi a cui puoi iscriverti. Quelli che segui già sono nella pagina I miei corsi.</p>
 </div>
 
 <?php require __DIR__ . '/../admin/_flash.php'; ?>
