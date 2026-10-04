@@ -28,6 +28,15 @@ $aspetto = AuthLayout::current();
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" href="/assets/img/pistacchio-32.png" sizes="32x32">
     <link rel="apple-touch-icon" href="/assets/img/pistacchio-180.png">
+    <?php /* Il font viene chiesto subito, in parallelo al foglio di stile,
+             invece di aspettare che il CSS sia letto e analizzato: senza
+             questa riga il testo compare prima nel carattere di sistema e
+             cambia sotto gli occhi un attimo dopo. `crossorigin` serve anche
+             se il file e' nostro — i font si scaricano sempre in modalita'
+             CORS, e senza quell'attributo il browser lo scaricherebbe due
+             volte. */ ?>
+    <link rel="preload" href="/assets/fonts/albert-sans-latin.woff2" as="font"
+          type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <?php if ($aspetto === AuthLayout::AFFIANCATO): ?>

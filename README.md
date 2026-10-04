@@ -167,6 +167,7 @@ vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli s
   /assets/js          → course-order (riordino schede), lesson-video (copertina),
                         lesson-focus (senza distrazioni), lesson-tracking (tempi di
                         fruizione), dropdown
+  /assets/fonts       → Albert Sans per le pagine pubbliche (vedi LEGGIMI.md nella cartella)
   /assets/vendor/tinymce → editor di testo ricco (vedi README-pistacchio.md nella cartella)
   /install            → procedura di installazione guidata (da eliminare dopo l'uso)
   index.php           → front controller
@@ -609,6 +610,44 @@ Google Meet **non si può incorporare** in un iframe dentro la piattaforma: `mee
 vieta di essere incorniciato da altri siti e il browser rifiuta di disegnarlo. Per avere la
 videoconferenza dentro la pagina servirebbe un provider nato per essere incorporato (Jitsi,
 Whereby, Daily), cioè lasciare Meet.
+
+## Carattere delle pagine pubbliche (Albert Sans)
+
+Accesso, registrazione, recupero e nuova password e cambio password obbligato usano
+**Albert Sans**, in entrambi gli aspetti (guscio e affiancato). Dentro l'applicazione il
+carattere resta quello di sistema: la scelta riguarda le pagine che si vedono **prima** di
+entrare.
+
+**Il file sta nel progetto e non si carica da Google.** Oltre alla coerenza con TinyMCE,
+copiato qui per la stessa ragione, c'è un motivo preciso: un `<link>` a
+`fonts.googleapis.com` farebbe contattare un server di Google al browser di chi apre la
+pagina di accesso, mandandogli il proprio indirizzo IP prima ancora che abbia fatto accesso.
+Nel 2022 il Landgericht di Monaco ha stabilito che farlo senza consenso viola il GDPR. Con il
+file in casa non parte **nessuna richiesta a terzi**, e lo si può verificare: aprendo la
+pagina di accesso, l'unico host contattato è il proprio.
+
+`public/assets/fonts/albert-sans-latin.woff2` — **31 KB, un file solo**. È il font
+**variabile**: contiene l'intero asse dei pesi da 100 a 900, quindi il grassetto non costa un
+secondo scaricamento. È ridotto all'alfabeto latino più la punteggiatura usata dalle pagine;
+l'originale completo pesa 129 KB. Il corsivo non è incluso, perché in quelle pagine non ce
+n'è. Licenza **SIL Open Font License 1.1**: il file `albert-sans-OFL.txt` va tenuto accanto al
+font, è la condizione che la licenza pone. Dettagli e procedura in
+`public/assets/fonts/LEGGIMI.md`.
+
+Due dettagli che è facile sbagliare, entrambi commentati nel codice:
+
+- **I controlli dei form non ereditano il carattere**: il browser impone a `button`, `input`,
+  `select` e `textarea` il proprio, quindi l'etichetta dentro il pulsante "Accedi" resterebbe
+  nel carattere di sistema accanto a un modulo tutto in Albert Sans. Serve un
+  `font-family: inherit` esplicito su quei quattro.
+- **`font-display: swap`**: il testo compare subito con il carattere di sistema e viene
+  sostituito appena il font è pronto. Il comportamento predefinito del browser è invece
+  lasciarlo **invisibile** fino a tre secondi — su una pagina di accesso, un modulo senza
+  etichette.
+
+Il `<link rel="preload">` nella `<head>` chiede il font in parallelo al foglio di stile invece
+che dopo. Porta `crossorigin` anche se il file è nostro: i font si scaricano sempre in
+modalità CORS, e senza quell'attributo il browser lo scaricherebbe due volte.
 
 ## Icona nella scheda del browser
 

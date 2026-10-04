@@ -37,6 +37,45 @@
        una modifica sola, non una caccia. */
     --tap-target: 24px;
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    /* Carattere delle sole pagine pubbliche (accesso, registrazione, recupero
+       e nuova password, cambio password obbligato), in entrambi gli aspetti.
+       Dentro l'applicazione resta `--font-sans`, cioe' il carattere di
+       sistema: la decisione del 04/10 riguarda le pagine che si vedono prima
+       di entrare, non le altre. */
+    --font-auth: "Albert Sans", var(--font-sans);
+}
+
+/* ---------- Albert Sans, per le pagine pubbliche ----------
+
+   Il file sta nel progetto e NON si carica da Google. Oltre alla coerenza
+   con TinyMCE, gia' copiato qui per la stessa ragione, c'e' un motivo
+   preciso: un <link> a fonts.googleapis.com farebbe contattare un server di
+   Google al browser di chi apre la pagina di accesso — mandandogli il
+   proprio indirizzo IP prima ancora di aver fatto accesso. Nel 2022 un
+   tribunale tedesco ha stabilito che farlo senza consenso viola il GDPR, e
+   la pagina di accesso di una piattaforma di formazione finanziata da
+   Regione Lombardia e' il posto meno adatto a una chiamata verso l'esterno.
+
+   Un file solo, 31 KB: e' il font **variabile**, quindi `font-weight: 100 900`
+   non e' un'approssimazione — i pesi intermedi ci sono davvero, e il
+   grassetto non costa un secondo scaricamento.
+
+   `font-display: swap` disegna subito il testo con il carattere di sistema e
+   lo sostituisce appena il font e' pronto. L'alternativa predefinita del
+   browser e' lasciare il testo **invisibile** fino a tre secondi: su una
+   pagina di accesso vuol dire un modulo senza etichette.
+
+   Dettagli e licenza (OFL 1.1): public/assets/fonts/LEGGIMI.md
+   ---------------------------------------------------------- */
+
+@font-face {
+    font-family: "Albert Sans";
+    src: url("/assets/fonts/albert-sans-latin.woff2") format("woff2-variations"),
+         url("/assets/fonts/albert-sans-latin.woff2") format("woff2");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
 }
 
 * {
@@ -608,6 +647,30 @@ h3 { font-size: 1.05rem; }
 }
 
 /* ---------- Auth page ---------- */
+
+/* Albert Sans su tutte e due le pagine pubbliche, guscio e affiancato.
+
+   La seconda regola non e' ridondante: campi, pulsanti e tendine **non
+   ereditano** il carattere dal genitore, perche' il browser impone loro il
+   proprio. Senza di essa l'etichetta "Accedi" dentro il pulsante resterebbe
+   nel carattere di sistema accanto a un modulo tutto in Albert Sans — ed e'
+   esattamente la differenza che si nota. `font-family: inherit` sui soli
+   controlli e' il modo corto di dirlo una volta per tutti. */
+.auth-body,
+.auth-body-split {
+    font-family: var(--font-auth);
+}
+
+.auth-body button,
+.auth-body input,
+.auth-body select,
+.auth-body textarea,
+.auth-body-split button,
+.auth-body-split input,
+.auth-body-split select,
+.auth-body-split textarea {
+    font-family: inherit;
+}
 
 .auth-body {
     /* I tre cerchi sono gradienti radiali con stop quasi netti: stessa resa
