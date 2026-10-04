@@ -193,7 +193,16 @@ $titoliGruppi = [
                                     <?= (int) $g->format('j') ?>
                                 </span>
                                 <?php foreach ($casella['eventi'] as $e): ?>
+                                    <?php /* `title`: la tipologia compare passandoci sopra
+                                             con il mouse. E' l'attributo del browser e non
+                                             una finestrella disegnata da noi, che dentro a
+                                             una cella di tabella e' la cosa che prima o poi
+                                             qualcosa ritaglia (vedi la 0089). Non si vede
+                                             da tastiera ne' col dito: per quelli ci sono la
+                                             legenda qui sotto e il testo nascosto nel
+                                             collegamento. */ ?>
                                     <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?>"
+                                       title="<?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?>"
                                        href="<?= $esc((string) $e['url']) ?>">
                                         <span class="agenda-pillola-ora"><?= $esc($e['inizio']->format('H:i')) ?></span>
                                         <?= $esc((string) $e['titolo']) ?>
@@ -209,6 +218,26 @@ $titoliGruppi = [
             </tbody>
         </table>
     </div>
+
+    <?php /* La legenda sta **sotto** alla griglia e non sopra: si guarda
+             la prima volta, o quando un colore non torna, non a ogni
+             visita. Le due voci sono le stesse di `Agenda::etichettaTipo()`,
+             cosi' la legenda non puo' chiamare le cose in un modo diverso
+             da come le chiama l'elenco.
+
+             E' una legenda, non una decorazione: senza, il colore sarebbe
+             l'unico modo di distinguere i due tipi, che e' proprio quello
+             che il criterio 1.4.1 delle WCAG chiede di non fare. Il
+             quadratino e' `aria-hidden`: a chi legge con un lettore di
+             schermo non dice niente, e il testo accanto dice tutto. */ ?>
+    <ul class="agenda-legenda">
+        <?php foreach ([Agenda::INCONTRO, Agenda::APERTURA] as $tipo): ?>
+            <li>
+                <span class="agenda-segno agenda-<?= $esc($tipo) ?>" aria-hidden="true"></span>
+                <?= $esc(Agenda::etichettaTipo($tipo)) ?>
+            </li>
+        <?php endforeach; ?>
+    </ul>
 <?php endif; ?>
 
 <?php /* Il calendario esterno sta in fondo: si configura una volta sola,

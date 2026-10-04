@@ -594,7 +594,64 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     if (daTelefono) {
         await controllaSforamento(page, nome);
     }
+
+    if (EXTRA[nome] !== undefined) {
+        await EXTRA[nome](page, nome);
+    }
 }
+
+/**
+ * Controlli che valgono per **una** pagina sola.
+ *
+ * Le regole qui sopra sono generali: valgono ovunque, e per questo non
+ * possono dire niente su come una certa pagina usa il colore. Questo e'
+ * il posto per le cose che riguardano una pagina e basta.
+ */
+const EXTRA = {
+    /*
+     * Nella griglia del mese i due tipi di evento sono pastiglie colorate.
+     * Il colore da solo non e' un'informazione (criterio 1.4.1 delle
+     * WCAG): chi non distingue quelle due tinte, o chi stampa in bianco e
+     * nero, deve poter capire lo stesso. A dirlo e' la legenda sotto alla
+     * griglia, e questo controllo verifica che ci sia e che nomini
+     * **tutti** i tipi presenti nel mese — non solo che esista.
+     */
+    'Agenda del mese': async (page, nome) => {
+        const esito = await page.evaluate(() => {
+            const tipi = [...new Set([...document.querySelectorAll('.agenda-pillola')]
+                .map((a) => [...a.classList].find((c) => c.startsWith('agenda-') && c !== 'agenda-pillola')))]
+                .filter((c) => c !== undefined);
+
+            const voci = [...document.querySelectorAll('.agenda-legenda li')];
+
+            return {
+                tipi,
+                spiegati: tipi.filter((t) => voci.some((li) => li.querySelector('.' + t) !== null)),
+                voci: voci.length,
+                // Una voce senza testo sarebbe un quadrato colorato e basta,
+                // cioe' una legenda che spiega il colore col colore.
+                etichette: voci.map((li) => li.textContent.trim()).filter((t) => t !== ''),
+            };
+        });
+
+        if (esito.tipi.length === 0) {
+            console.log('  --   ' + nome + ': nessun evento in questo mese, legenda non verificabile');
+            return;
+        }
+
+        check(
+            nome + ': la legenda spiega ogni colore presente',
+            esito.spiegati.length === esito.tipi.length,
+            ['tipi nel mese: ' + JSON.stringify(esito.tipi), 'spiegati: ' + JSON.stringify(esito.spiegati)]
+        );
+
+        check(
+            nome + ': ogni voce della legenda ha un testo, non solo un colore',
+            esito.voci > 0 && esito.etichette.length === esito.voci,
+            ['voci: ' + esito.voci + ', con un testo: ' + JSON.stringify(esito.etichette)]
+        );
+    },
+};
 
 /**
  * Nessuno scorrimento orizzontale, e quando c'e' il nome dell'elemento che

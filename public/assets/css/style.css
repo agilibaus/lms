@@ -3839,6 +3839,52 @@ fieldset.checkbox-group legend {
     font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Agenda: la legenda del mese ----------
+
+   Orizzontale e sotto alla griglia: si legge una volta e poi si smette di
+   guardarla. Va a capo da sola quando lo spazio non basta, invece di
+   spingere fuori la pagina.
+
+   I quadratini riprendono lo sfondo delle pillole, ma con un contorno
+   proprio: su uno sfondo chiaro un quadrato di colore tenue senza bordo
+   sparisce, e una legenda invisibile e' peggio di nessuna legenda. */
+.agenda-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    list-style: none;
+    margin: 0.7rem 0 0;
+    padding: 0;
+    font-size: 0.88rem;
+}
+
+.agenda-legenda li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.agenda-segno {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid currentColor;
+}
+
+/* Lo stesso colore della pillola corrispondente: la legenda e la griglia
+   devono poter cambiare insieme, e due valori scritti a mano in due punti
+   divergerebbero al primo ritocco. */
+.agenda-segno.agenda-incontro {
+    background: var(--color-primary-soft);
+    color: #243B2A;
+}
+
+.agenda-segno.agenda-apertura {
+    background: #F3EADA;
+    color: #5A4420;
+}
+
 /* Sotto i 36 rem di spazio la griglia diventa un elenco dei soli giorni
    che hanno qualcosa.
 

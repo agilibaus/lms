@@ -590,7 +590,13 @@ qualcuno porta la vista che si stava guardando.
   secondo criterio lascerebbe vuoto proprio il gruppo che interessa. Un incontro cominciato
   ma non finito resta fra quelli di oggi — è il momento in cui serve di più — e lì compare il
   pulsante «Entra», che appare solo da un quarto d'ora prima della fine.
-- **Mese**: griglia che comincia di lunedì, con i giorni di orlo in grigio. Sotto i 36 rem di
+- **Mese**: griglia che comincia di lunedì, con i giorni di orlo in grigio. Sotto alla
+  griglia c'è la **legenda** dei due colori, e passando il mouse su una pastiglia il tipo
+  compare come suggerimento del browser (`title`). La legenda non è decorazione: senza, il
+  colore sarebbe l'unico modo di distinguere i due tipi, che è quello che il criterio 1.4.1
+  delle WCAG chiede di non fare. Il suggerimento del mouse non si vede da tastiera né col
+  dito, e infatti non è lui a reggere la distinzione: ci sono la legenda e il testo nascosto
+  dentro a ogni pastiglia, che un lettore di schermo annuncia. Sotto i 36 rem di
   spazio diventa l'elenco dei soli giorni che hanno qualcosa: sette colonne in 320 px fanno
   caselle da 40 px, dove un titolo non ci sta e un bersaglio da toccare nemmeno.
 
@@ -665,7 +671,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # 1431 controlli su 53 pagine, a tre larghezze
+node tests/accessibilita.js         # 1435 controlli su 53 pagine, a tre larghezze
 node tests/permessi.js              # 96 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
