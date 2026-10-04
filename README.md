@@ -659,6 +659,24 @@ anche quelle non attive, perché l'admin può cambiare tavolozza dopo aver scelt
 un colore valido solo con quella di oggi diventerebbe illeggibile domani senza che nessuno
 glielo dica.
 
+### Misura del titolo della presentazione
+
+Nel riquadro *Testi della presentazione*, perché riguarda quelle due righe e non altro:
+quattro livelli (piccola, normale, grande, molto grande) per il titolo e il testo della
+sezione di sinistra dell'aspetto affiancato. Titolo e testo crescono insieme, per non
+rompere il rapporto fra i due, e su schermo stretto si riducono **in proporzione alla misura
+scelta** invece che a un valore fisso — altrimenti da telefono la scelta non conterebbe
+niente.
+
+È separata dalla «Dimensione del testo» qui sotto: lì il titolo è un elemento grafico, e
+ingrandirlo è una scelta di presentazione, non di leggibilità. Senza questa misura, per avere
+un titolo più grande bisognava ingrandire anche i menu e i report.
+
+> Attenzione al verso opposto: i valori sono in `rem`, quindi alzando **anche** la dimensione
+> generale del testo la presentazione cresce insieme al resto. È voluto — un titolo rimasto
+> indietro dentro un'interfaccia cresciuta sarebbe sbagliato — ma vuol dire che le due scelte
+> si sommano.
+
 ### Arrotondamento degli angoli
 
 Quattro livelli: squadrato (0/0), leggero (3/5), normale (6/10, quello di fabbrica), morbido

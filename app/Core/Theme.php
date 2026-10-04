@@ -45,9 +45,43 @@ class Theme
     /** Colore del testo che scavalca quello di fabbrica, se impostato. */
     public const KEY_TEXT_COLOR = 'THEME_TEXT_COLOR';
 
+    /** Misura del titolo e del testo della presentazione (aspetto affiancato). */
+    public const KEY_SCENE_SIZE = 'THEME_SCENE_SIZE';
+
     public const PREDEFINITA = 'verde';
     public const RAGGIO_PREDEFINITO = 'normale';
     public const MISURA_TESTO_PREDEFINITA = 'normale';
+
+    public const MISURA_SCENA_PREDEFINITA = 'normale';
+
+    /**
+     * Misura del titolo e del testo della presentazione, nell'aspetto
+     * affiancato.
+     *
+     * **Si regola per conto proprio**: ingrandire il titolo non ingrandisce
+     * il resto dell'interfaccia. Quella generale scala tutto perche'
+     * riguarda la leggibilita'; qui le due righe sono un elemento grafico, e
+     * ingrandirle e' una scelta di presentazione. Senza questa misura, per
+     * avere un titolo piu' grande bisognava ingrandire anche i menu e i
+     * report.
+     *
+     * Attenzione pero' al verso opposto: i valori sono in `rem`, quindi se
+     * si alza **anche** la dimensione generale del testo questi crescono
+     * insieme a tutto il resto. E' voluto — un titolo rimasto indietro
+     * dentro un'interfaccia cresciuta sarebbe sbagliato — ma vuol dire che
+     * le due scelte si sommano.
+     *
+     * Due valori per livello, come per l'arrotondamento: il titolo e il
+     * testo sotto devono crescere insieme, o il rapporto fra i due si rompe.
+     *
+     * @var array<string, array{nome: string, titolo: string, testo: string}>
+     */
+    public const MISURE_SCENA = [
+        'piccola' => ['nome' => 'Piccola', 'titolo' => '1.5rem', 'testo' => '0.95rem'],
+        'normale' => ['nome' => 'Normale', 'titolo' => '1.85rem', 'testo' => '1rem'],
+        'grande' => ['nome' => 'Grande', 'titolo' => '2.3rem', 'testo' => '1.1rem'],
+        'molto-grande' => ['nome' => 'Molto grande', 'titolo' => '2.9rem', 'testo' => '1.2rem'],
+    ];
 
     /**
      * Arrotondamento degli angoli. Due valori per livello, non uno: nel
@@ -166,6 +200,13 @@ class Theme
         $scelta = (string) Settings::get(self::KEY_RADIUS, self::RAGGIO_PREDEFINITO);
 
         return isset(self::RAGGI[$scelta]) ? $scelta : self::RAGGIO_PREDEFINITO;
+    }
+
+    public static function misuraScenaCorrente(): string
+    {
+        $scelta = (string) Settings::get(self::KEY_SCENE_SIZE, self::MISURA_SCENA_PREDEFINITA);
+
+        return isset(self::MISURE_SCENA[$scelta]) ? $scelta : self::MISURA_SCENA_PREDEFINITA;
     }
 
     public static function misuraTestoCorrente(): string
@@ -294,6 +335,10 @@ class Theme
             '--color-text-muted: ' . $spento,
         ];
 
+        $scena = self::MISURE_SCENA[self::misuraScenaCorrente()];
+        $righe[] = '--scene-title-size: ' . self::misuraRemValida($scena['titolo']);
+        $righe[] = '--scene-text-size: ' . self::misuraRemValida($scena['testo']);
+
         $css = ':root{' . implode(';', $righe) . '}';
 
         // La dimensione del testo non e' una variabile ma la misura di
@@ -324,7 +369,8 @@ class Theme
             || self::coloreValido((string) Settings::get(self::KEY_PRIMARY, '')) !== null
             || self::coloreValido((string) Settings::get(self::KEY_TEXT_COLOR, '')) !== null
             || self::raggioCorrente() !== self::RAGGIO_PREDEFINITO
-            || self::misuraTestoCorrente() !== self::MISURA_TESTO_PREDEFINITA;
+            || self::misuraTestoCorrente() !== self::MISURA_TESTO_PREDEFINITA
+            || self::misuraScenaCorrente() !== self::MISURA_SCENA_PREDEFINITA;
     }
 
     /**
@@ -336,6 +382,12 @@ class Theme
     private static function misuraValida(string $valore): string
     {
         return preg_match('/^\d{1,3}px$/', $valore) === 1 ? $valore : '0px';
+    }
+
+    /** Come sopra, per le misure in rem. */
+    private static function misuraRemValida(string $valore): string
+    {
+        return preg_match('/^\d{1,2}(\.\d{1,2})?rem$/', $valore) === 1 ? $valore : '1rem';
     }
 
     // ---------------------------------------------------------------

@@ -280,6 +280,8 @@ class SettingsController extends AdminController
             'misureTesto' => Theme::MISURE_TESTO,
             'coloreTesto' => (string) (Settings::stored(Theme::KEY_TEXT_COLOR) ?? ''),
             'coloreTestoInVigore' => Theme::coloriTesto()[0],
+            'misuraScena' => Theme::misuraScenaCorrente(),
+            'misureScena' => Theme::MISURE_SCENA,
             'lastUpdate' => Settings::lastUpdate(Settings::APPEARANCE_KEYS),
         ]);
     }
@@ -347,6 +349,12 @@ class SettingsController extends AdminController
             $coloreTesto = (string) Theme::coloreValido($coloreTesto);
         }
 
+        $scena = (string) ($_POST[Theme::KEY_SCENE_SIZE] ?? Theme::MISURA_SCENA_PREDEFINITA);
+
+        if (!array_key_exists($scena, Theme::MISURE_SCENA)) {
+            $this->fail('Misura della presentazione non valida.', self::APPEARANCE_PAGE);
+        }
+
         Settings::set('AUTH_LAYOUT', $layout, $userId);
         Settings::set('AUTH_SPLIT_TITLE', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TITLE'] ?? ''))), $userId);
         Settings::set('AUTH_SPLIT_TEXT', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TEXT'] ?? ''))), $userId);
@@ -355,6 +363,7 @@ class SettingsController extends AdminController
         Settings::set(Theme::KEY_RADIUS, $raggio, $userId);
         Settings::set(Theme::KEY_TEXT_SIZE, $misura, $userId);
         Settings::set(Theme::KEY_TEXT_COLOR, $coloreTesto, $userId);
+        Settings::set(Theme::KEY_SCENE_SIZE, $scena, $userId);
 
         $this->success('Aspetto salvato.', self::APPEARANCE_PAGE);
     }

@@ -31,6 +31,17 @@
        sarebbero rimasti verdi in mezzo a tutto il resto. */
     --color-scene-title: #2f3a2c;
     --color-scene-text: #5f6b59;
+    /* Misura del titolo e del testo della presentazione, nell'aspetto
+       affiancato. Si regolano **per conto proprio**: ingrandirle non tocca
+       il resto dell'interfaccia, perche' li' quelle due righe sono un
+       elemento grafico e ingrandirle e' una scelta di presentazione, non di
+       leggibilita'.
+       Sono in `rem`, quindi se si alza anche la dimensione generale del
+       testo crescono insieme a tutto il resto: il rapporto si mantiene, e
+       non si ottiene un titolo rimasto indietro dentro un'interfaccia
+       cresciuta. Le due scelte si sommano, non si escludono. */
+    --scene-title-size: 1.85rem;
+    --scene-text-size: 1rem;
     --color-danger: #b91c1c;
     --color-danger-soft: #fef2f2;
     --radius-sm: 6px;
@@ -867,7 +878,7 @@ h3 { font-size: 1.05rem; }
 
 .scene-claim h2 {
     margin: 0 0 0.9rem;
-    font-size: 1.85rem;
+    font-size: var(--scene-title-size);
     line-height: 1.25;
     font-weight: 700;
     color: var(--color-scene-title);
@@ -875,7 +886,7 @@ h3 { font-size: 1.05rem; }
 
 .scene-claim p {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--scene-text-size);
     line-height: 1.6;
     color: var(--color-scene-text);
 }
@@ -934,12 +945,16 @@ h3 { font-size: 1.05rem; }
         margin-bottom: 0;
     }
 
+    /* Sullo schermo stretto la presentazione si riduce, ma in proporzione
+       alla misura scelta: scrivere qui un valore fisso vorrebbe dire che da
+       telefono la scelta dell'admin non conta niente. I fattori sono il
+       rapporto fra i valori che c'erano prima (1.35/1.85 e 0.9/1). */
     .scene-claim h2 {
-        font-size: 1.35rem;
+        font-size: calc(var(--scene-title-size) * 0.73);
     }
 
     .scene-claim p {
-        font-size: 0.9rem;
+        font-size: calc(var(--scene-text-size) * 0.9);
     }
 
     .auth-panel {

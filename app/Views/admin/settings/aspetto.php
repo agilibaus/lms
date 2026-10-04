@@ -20,6 +20,8 @@ use App\Core\Theme;
  * @var array<string, array<string, string>> $misureTesto
  * @var string $coloreTesto
  * @var string $coloreTestoInVigore
+ * @var string $misuraScena
+ * @var array<string, array<string, string>> $misureScena
  * @var array|null $lastUpdate
  */
 ?>
@@ -162,6 +164,24 @@ use App\Core\Theme;
         <p class="form-hint" style="margin-top: 0;">
             Si vedono solo con l'aspetto affiancato, nella sezione di sinistra.
             Un campo lasciato vuoto usa il testo predefinito, quello che si legge in grigio.
+        </p>
+
+        <label for="<?= Theme::KEY_SCENE_SIZE ?>">Misura del titolo e del testo</label>
+        <select id="<?= Theme::KEY_SCENE_SIZE ?>" name="<?= Theme::KEY_SCENE_SIZE ?>"
+                aria-describedby="scena_aiuto">
+            <?php foreach ($misureScena as $chiave => $m): ?>
+                <option value="<?= htmlspecialchars($chiave) ?>"
+                        <?= $misuraScena === $chiave ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($m['nome']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="form-hint" id="scena_aiuto">
+            Riguarda <strong>solo queste due righe</strong>, non il resto della piattaforma:
+            è indipendente dalla «Dimensione del testo» qui sopra, perché qui il titolo è un
+            elemento grafico e ingrandirlo è una scelta di presentazione, non di leggibilità.
+            Titolo e testo crescono insieme, per non rompere il rapporto fra i due.
+            Su schermo stretto si riducono in proporzione alla misura scelta.
         </p>
 
         <label for="AUTH_SPLIT_TITLE">Titolo</label>

@@ -77,6 +77,7 @@ class Settings
         'THEME_RADIUS',
         'THEME_TEXT_SIZE',
         'THEME_TEXT_COLOR',
+        'THEME_SCENE_SIZE',
     ];
 
     /**

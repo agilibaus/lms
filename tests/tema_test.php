@@ -256,6 +256,43 @@ foreach (Theme::MISURE_TESTO as $chiave => $m) {
 }
 
 // ---------------------------------------------------------------
+echo PHP_EOL . 'Misura della presentazione (aspetto affiancato)' . PHP_EOL;
+
+check(
+    'la misura predefinita esiste',
+    isset(Theme::MISURE_SCENA[Theme::MISURA_SCENA_PREDEFINITA])
+);
+
+$precedenteTitolo = 0.0;
+
+foreach (Theme::MISURE_SCENA as $chiave => $m) {
+    check(
+        "{$chiave}: due misure in rem",
+        preg_match('/^\d{1,2}(\.\d{1,2})?rem$/', $m['titolo']) === 1
+        && preg_match('/^\d{1,2}(\.\d{1,2})?rem$/', $m['testo']) === 1,
+        $m['titolo'] . ' / ' . $m['testo']
+    );
+    check(
+        "{$chiave}: il titolo e piu grande del testo sotto",
+        (float) $m['titolo'] > (float) $m['testo'],
+        'un titolo piu piccolo del proprio sottotitolo non e una misura, e un difetto'
+    );
+    check(
+        "{$chiave}: piu grande del livello precedente",
+        (float) $m['titolo'] > $precedenteTitolo,
+        'i livelli devono crescere, o l\'elenco confonde invece di aiutare'
+    );
+    $precedenteTitolo = (float) $m['titolo'];
+}
+
+check(
+    'la misura predefinita e quella che il foglio di stile aveva prima',
+    Theme::MISURE_SCENA[Theme::MISURA_SCENA_PREDEFINITA]['titolo'] === '1.85rem'
+    && Theme::MISURE_SCENA[Theme::MISURA_SCENA_PREDEFINITA]['testo'] === '1rem',
+    'chi non tocca niente non deve vedere la pagina cambiata'
+);
+
+// ---------------------------------------------------------------
 echo PHP_EOL . 'Il colore del testo, e il grigio ricavato da lui' . PHP_EOL;
 
 check('il quasi-nero di oggi passa', Theme::percheTesto(Theme::TESTO) === null);
