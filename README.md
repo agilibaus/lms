@@ -44,7 +44,7 @@ In sviluppo iniziale.
 - ✅ Sblocco progressivo dei moduli: per quiz obbligatorio e per data di apertura
 - ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
 - ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
-  in CSV e XLSX
+  in CSV e XLSX, con indice a riquadri, ricerca e paginazione
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
 - ✅ Protezione CSRF su tutte le richieste POST
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
@@ -187,6 +187,7 @@ vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli s
                          CourseAccess, QuizScoring, CertificateService → regole didattiche
                          CourseCover, GroupLogo, AvatarImage, AuthLayout → immagini e aspetto
                          Csv, Xlsx, Ics                         → formati di scambio
+                         ReportSections                         → i cinque tagli dei report
                          Csrf, HtmlSanitizer, PasswordPolicy, PasswordGenerator → sicurezza
     /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
     /Mail              → client SMTP scritto in casa, trasporti e testi dei messaggi
@@ -306,8 +307,28 @@ solo intestatario, corso e data. Admin e tutor possono emettere un certificato m
 risulta "revocato" nella verifica pubblica e non viene rigenerato dall'emissione automatica.
 
 ### Report
-Disponibili in `/reports`, dal generale al particolare. **Ogni vista si scarica in XLSX e in
-CSV**, da un unico pulsante "Scarica" con la tendina dei due formati:
+`/reports` è un **indice che sceglie**, non una pagina che stampa tutto: cinque riquadri, uno
+per taglio, ciascuno con il proprio numero (quanti corsi, quanti studenti…). L'elenco completo
+di un taglio sta in una pagina sua, `/reports/elenco/{sezione}`, con **ricerca** e
+**paginazione a 50 righe**.
+
+Prima le cinque tabelle erano stampate per intero una sotto l'altra: con 605 studenti la
+pagina era alta **22.042 px** — ventidue schermi — e non c'era modo di cercare una riga se non
+scorrendo. Adesso l'indice sta in uno schermo.
+
+Nelle tabelle le colonne di conteggio sono **allineate a destra, in cifre a larghezza fissa e
+della stessa larghezza in tutte e cinque le pagine**: passando da un elenco all'altro i numeri
+cadono dove ci si aspetta. (Prima erano allineati a sinistra e cambiavano ascissa in ogni
+tabella.) Sotto i 50 rem di spazio disponibile ogni riga diventa una scheda e l'allineamento
+delle colonne decade da solo, perché lì colonne non ce ne sono più.
+
+I cinque tagli sono descritti una volta sola in `App\Core\ReportSections` e le loro colonne in
+`app/Views/reports/_colonne.php`: indice ed elenchi leggono di lì, così non possono divergere.
+La ricerca filtra in memoria sui campi che la sezione dichiara — con seicento righe è
+istantanea; è il punto da cambiare se un giorno le righe saranno decine di migliaia.
+
+**Ogni vista si scarica in XLSX e in CSV**, da un unico pulsante "Scarica" con la tendina dei
+due formati:
 
 | Report | Contenuto |
 |---|---|
@@ -502,10 +523,13 @@ php tests/settings_test.php         # impostazioni in tabella, con il .env come 
 php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale
+php tests/report_test.php           # tagli dei report: ricerca senza maiuscole, paginazione
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
-node tests/accessibilita.js         # 1225 controlli su 49 pagine, a tre larghezze
-node tests/permessi.js              # 72 prove: ogni ruolo prova a raggiungere le cose di un altro
+#   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
+#    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
+node tests/accessibilita.js         # 1275 controlli su 51 pagine, a tre larghezze
+node tests/permessi.js              # 79 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 ```
 
@@ -530,7 +554,11 @@ mondo **scrivendo l'indirizzo a mano**, dichiarando in anticipo che cosa ci si a
 provano anche le POST distruttive, perché metà del danno possibile sta lì.
 
 Guarda la porta, non che cosa c'è nella stanza: una pagina può rispondere 200
-legittimamente e mostrare dentro righe che non dovrebbe.
+legittimamente e mostrare dentro righe che non dovrebbe. Per l'elenco degli studenti —
+l'unica pagina dei report che si apre per tutti e tre i ruoli dello staff mostrando righe
+**diverse** a ciascuno — il controllo guarda anche dentro: l'assistente non deve trovarci lo
+studente di un altro tutor, nemmeno cercandolo per email, e l'amministratore invece sì
+(senza la controprova, "non lo trova" non dimostrerebbe niente).
 
 > **Un verde è sospetto finché non lo si è visto diventare rosso.** Rompendo di proposito
 > una regola, i controlli che la riguardano devono fallire. È così che è saltato fuori che

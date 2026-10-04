@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Core\Csv;
+use App\Core\ReportSections;
 use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\CourseModel;
@@ -26,31 +27,108 @@ use App\Models\VideoProgressModel;
  */
 class ReportController
 {
+    /**
+     * L'indice: sceglie il taglio, non lo stampa.
+     *
+     * Prima stampava cinque tabelle intere, e con 605 studenti la pagina era
+     * alta 22.000 px. Adesso sono cinque riquadri con il proprio numero
+     * chiave: chi arriva vede in uno schermo quali tagli esistono e quanto
+     * c'e' dentro ciascuno, poi apre quello che gli serve. I conteggi
+     * costano quanto costava stampare le righe, perche' i dati si leggono
+     * comunque tutti — ma non si disegnano.
+     */
     public function index(array $params = []): void
     {
         $this->requireReportAccess();
 
-        $allowed = $this->allowedStudentIds();
+        $sezioni = [];
 
-        $students = ReportModel::studentsOverview();
-
-        if ($allowed !== null) {
-            $students = array_values(array_filter(
-                $students,
-                static fn (array $s): bool => in_array((int) $s['id'], $allowed, true)
-            ));
+        foreach (array_keys(ReportSections::tutte()) as $chiave) {
+            $sezioni[$chiave] = count($this->righeDi($chiave));
         }
 
         View::render('reports/index', [
             'pageTitle' => 'Report',
-            'courses' => $this->filterCourses(ReportModel::coursesOverview()),
-            'students' => $students,
-            'groups' => $this->visibleGroups(),
-            'liveSessions' => $this->filterSessions(LiveSessionModel::overview()),
-            'corsiConVideo' => $this->filterCourses(VideoProgressModel::coursesWithVideo()),
-            'restricted' => $allowed !== null,
+            'sezioni' => ReportSections::tutte(),
+            'conteggi' => $sezioni,
+            'restricted' => $this->allowedStudentIds() !== null,
         ]);
     }
+
+    /**
+     * Un elenco completo, con ricerca e paginazione.
+     *
+     * Una sola azione per tutti e cinque i tagli: cambiano i dati e le
+     * colonne, non quello che la pagina fa. Cinque azioni identiche
+     * sarebbero cinque posti in cui correggere lo stesso difetto.
+     */
+    public function lista(array $params): void
+    {
+        $this->requireReportAccess();
+
+        $chiave = (string) ($params['sezione'] ?? '');
+
+        if (!ReportSections::esiste($chiave)) {
+            http_response_code(404);
+            echo 'Report non trovato.';
+            return;
+        }
+
+        $sezione = ReportSections::tutte()[$chiave];
+        $cerca = trim((string) ($_GET['cerca'] ?? ''));
+        $righe = ReportSections::filtra($this->righeDi($chiave), $sezione['cerca'], $cerca);
+        $fetta = ReportSections::pagina($righe, (int) ($_GET['pagina'] ?? 1));
+
+        View::render('reports/lista', [
+            'pageTitle' => $sezione['titolo'],
+            'chiave' => $chiave,
+            'sezione' => $sezione,
+            'righe' => $fetta['righe'],
+            'pagina' => $fetta['pagina'],
+            'pagine' => $fetta['pagine'],
+            'totale' => $fetta['totale'],
+            'cerca' => $cerca,
+            'restricted' => $this->allowedStudentIds() !== null,
+        ]);
+    }
+
+    /**
+     * I dati di un taglio, gia' ristretti al perimetro di chi guarda.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function righeDi(string $chiave): array
+    {
+        switch ($chiave) {
+            case 'courses':
+                return $this->filterCourses(ReportModel::coursesOverview());
+
+            case 'groups':
+                return $this->visibleGroups();
+
+            case 'students':
+                $allowed = $this->allowedStudentIds();
+                $students = ReportModel::studentsOverview();
+
+                if ($allowed !== null) {
+                    $students = array_values(array_filter(
+                        $students,
+                        static fn (array $s): bool => in_array((int) $s['id'], $allowed, true)
+                    ));
+                }
+
+                return $students;
+
+            case 'live':
+                return $this->filterSessions(LiveSessionModel::overview());
+
+            case 'fruizione':
+                return $this->filterCourses(VideoProgressModel::coursesWithVideo());
+        }
+
+        return [];
+    }
+
 
     // ---------------------------------------------------------------
     // Report per incontro dal vivo

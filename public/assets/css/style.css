@@ -716,6 +716,7 @@ h3 { font-size: 1.05rem; }
 .form input[type="time"],
 .form input[type="datetime-local"],
 .form input[type="url"],
+.form input[type="search"],
 .form select,
 .form textarea,
 .stacked-form input[type="text"],
@@ -727,9 +728,15 @@ h3 { font-size: 1.05rem; }
 .stacked-form input[type="email"],
 .stacked-form input[type="url"],
 .stacked-form input[type="password"],
+.stacked-form input[type="search"],
 .stacked-form select,
 .stacked-form textarea,
-.auth-form input {
+.auth-form input,
+/* La ricerca dei report non sta dentro un `.form`, ma e' un campo come gli
+   altri e deve essere alto e vestito come gli altri: entra nel blocco
+   comune invece di avere una regola sua, che e' il modo in cui i tre
+   sistemi erano derivati. */
+.report-ricerca-riga input[type="search"] {
     padding: 0.55rem 0.65rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -3006,10 +3013,174 @@ fieldset.checkbox-group legend {
    l'allineamento verticale basta la regola generale di `.row-actions > *`,
    che li rende `inline-block` centrati. */
 .reports-index .data-table th:last-child,
-.reports-index .data-table td:last-child {
+.reports-index .data-table td:last-child,
+.reports-elenco .col-azioni {
     width: 1%;
     white-space: nowrap;
     text-align: right;
+}
+
+/* ---------- Le colonne numeriche dei report ----------
+
+   Il disordine principale della pagina Report, misurato il 04/10: i
+   conteggi erano allineati a **sinistra**, quindi in una stessa colonna le
+   cifre cominciavano in punti diversi a seconda della lunghezza, e fra
+   tabelle diverse le colonne cadevano a 611, 740 e 917 px. Non si poteva
+   confrontare niente con l'occhio, ed e' quello che Elena ha descritto
+   come «numeri in ordine sparso».
+
+   Tre cose insieme, e servono tutte e tre:
+
+   - **a destra**, cosi' le unita' stanno sotto le unita' e le decine sotto
+     le decine;
+   - **cifre a larghezza fissa** (`tabular-nums`): nei caratteri
+     proporzionali l'1 e' piu' stretto dell'8, e due numeri di tre cifre
+     non sono larghi uguale;
+   - **una larghezza uguale per tutte le colonne numeriche di tutte le
+     pagine**, cosi' passando da un elenco all'altro le colonne cadono dove
+     ci si aspetta. `width: 1%` farebbe stringere ognuna sul proprio
+     contenuto, che e' il contrario di quello che serve qui. */
+
+.reports-elenco .col-numero {
+    width: 7.5rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* L'intestazione sta sopra ai numeri che descrive: allinearla a sinistra
+   mentre la colonna e' a destra e' il modo piu' rapido per far sembrare
+   storta una tabella dritta.
+
+   **L'intestazione pero' va a capo, il numero no.** Con `nowrap` anche
+   sull'intestazione, un titolo lungo come «Hanno aperto un video» allargava
+   la colonna a 189 px invece di 120, e quella tabella perdeva
+   l'allineamento con le altre quattro — cioe' proprio la cosa per cui
+   queste regole esistono. Misurato. */
+.reports-elenco .data-table th.col-numero {
+    text-align: right;
+    white-space: normal;
+}
+
+/* Sotto i 50 rem le righe diventano schede: li' non ci sono piu' colonne da
+   allineare, e una larghezza fissa spezzerebbe la scheda. */
+@container tabella (max-width: 50rem) {
+    .reports-elenco .col-numero,
+    .reports-elenco .col-azioni {
+        width: auto;
+        text-align: left;
+    }
+}
+
+/* ---------- Indice dei report: i cinque tagli ---------- */
+
+.report-scelta {
+    display: grid;
+    /* Si adatta da se': tre per riga su uno schermo largo, una sul
+       telefono, senza soglie scritte a mano. */
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0.9rem;
+    margin-top: 0.4rem;
+}
+
+.report-taglio {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.report-taglio:hover,
+.report-taglio:focus-visible {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+}
+
+.report-taglio-titolo {
+    font-weight: 600;
+}
+
+/* Il numero e' la cosa che si cerca aprendo la pagina: grande, in cifre a
+   larghezza fissa come nelle tabelle, cosi' i riquadri affiancati si
+   leggono in colonna. */
+.report-taglio-numero {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-primary);
+}
+
+/* I due testi secondari del riquadro NON usano `--color-text-muted`, ed e'
+   una scelta misurata, non una dimenticanza.
+
+   Il grigio tenue vale 4,80:1 sul bianco — passa — ma il riquadro e' un
+   collegamento, e sotto il puntatore o con il fuoco da tastiera il suo
+   sfondo diventa `--color-primary-soft`: li' lo stesso grigio scende a
+   **4,18:1** e il minimo (4,5) non c'e' piu'. Cioe' il testo peggiora
+   proprio quando qualcuno lo sta guardando. Trovato dal controllo di
+   accessibilita', che misura la pagina con un elemento a fuoco: guardando
+   la pagina ferma non si vedeva.
+
+   `#5A554F` e' lo stesso tono gia' usato per `.badge-muted`, scelto la
+   volta scorsa per la stessa ragione: 7,38:1 sul bianco e 6,42:1 sullo
+   sfondo del passaggio. Un tono in piu' invece di due. */
+.report-taglio-unita {
+    font-size: 0.92rem;
+    font-weight: 400;
+    color: #5A554F;
+}
+
+.report-taglio-nota {
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: #5A554F;
+}
+
+/* ---------- Ricerca e paginazione negli elenchi ---------- */
+
+.report-ricerca {
+    margin-bottom: 0.8rem;
+}
+
+.report-ricerca label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.report-ricerca-riga {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.report-ricerca-riga input {
+    flex: 1 1 16rem;
+    max-width: 26rem;
+}
+
+.report-conteggio {
+    margin: 0 0 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.paginazione {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 1rem;
+}
+
+.paginazione-stato {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Tabelle che diventano schede ---------- */

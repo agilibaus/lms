@@ -197,6 +197,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + B.lezione, 'negato', 'lezione di un corso non suo'],
             ['/quizzes/' + B.quiz, 'negato', 'quiz di un corso non suo'],
             ['/reports', 'negato', 'gli studenti non hanno i report'],
+            // Gli elenchi sono pagine nuove, con un indirizzo diverso da
+            // quello dell'indice: una porta nuova va provata, non dedotta
+            // dal fatto che quella accanto è chiusa.
+            ['/reports/elenco/students', 'negato', 'nemmeno l\'elenco degli studenti'],
+            ['/reports/elenco/courses', 'negato', 'nemmeno l\'elenco dei corsi'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'report di un altro studente'],
             ['/admin/users', 'negato', 'nessuna pagina di amministrazione'],
             ['/admin/courses', 'negato', 'nessuna pagina di amministrazione'],
@@ -246,6 +251,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
         ['assist@test.it', 'assistente del tutor A', [
             ['/reports', 'consentito', 'vede i report, ristretti al suo perimetro'],
+            ['/reports/elenco/students', 'consentito',
+                'l\'elenco si apre: a restringerlo sono le righe, non la porta'],
             ['/reports/courses/' + A.corso, 'consentito', 'corso del tutor che segue'],
             ['/reports/courses/' + B.corso, 'negato', 'corso di un tutor che non segue'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
@@ -282,6 +289,59 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
 
             await ctx.close();
+        }
+
+        // --- il contenuto dell'elenco, non solo la porta ------------------
+        //
+        // L'elenco degli studenti è l'unica pagina dei report che si apre
+        // per tutti e tre i ruoli dello staff e mostra righe **diverse** a
+        // ciascuno. Qui il controllo "risponde 200?" non dice niente: la
+        // porta deve aprirsi, e il difetto sarebbe dentro. Dal 04/10
+        // c'è anche una ricerca, cioè un modo di chiedere per nome proprio
+        // la riga che non si dovrebbe vedere: si prova anche quella.
+
+        console.log('\n--- l\'elenco degli studenti: che cosa c\'è dentro');
+
+        {
+            // Si cerca l'**email**, non il nome: il nome dello studente B è
+            // apposta pieno di virgolette e di `<tag>`, quindi nella pagina
+            // arriva trasformato e un confronto con la stringa originale
+            // fallirebbe sempre — dicendo "non c'è" anche quando c'è.
+            const emailB = 'strano@test.it';
+            const quanteRighe = (html) => (html.match(/data-label="Studente"/g) || []).length;
+
+            const { ctx, page } = await entra(browser, 'assist@test.it');
+
+            await page.goto(BASE + '/reports/elenco/students');
+            check(
+                'assistente → l\'elenco non contiene lo studente del mondo B',
+                !(await page.content()).includes(emailB),
+                ['«' + emailB + '» compare in una pagina che risponde 200']
+            );
+
+            await page.goto(BASE + '/reports/elenco/students?cerca=' + encodeURIComponent(emailB));
+            const conRicerca = await page.content();
+            // Qui si contano le righe e basta: l'email cercata torna
+            // comunque nella pagina, dentro al campo di ricerca e nella
+            // frase «0 studenti per …», quindi cercarla nel testo direbbe
+            // "c'è" anche con la tabella vuota.
+            check(
+                'assistente → e non lo trova nemmeno cercandolo per email',
+                quanteRighe(conRicerca) === 0,
+                ['la ricerca ha restituito ' + quanteRighe(conRicerca) + ' righe']
+            );
+
+            await ctx.close();
+
+            const admin = await entra(browser, 'admin@test.it');
+            await admin.page.goto(BASE + '/reports/elenco/students?cerca=' + encodeURIComponent(emailB));
+            const daAdmin = await admin.page.content();
+            check(
+                'controprova: l\'amministratore lo trova',
+                daAdmin.includes(emailB) && quanteRighe(daAdmin) === 1,
+                ['se non lo trovasse nemmeno lui, le due prove qui sopra non direbbero niente']
+            );
+            await admin.ctx.close();
         }
 
         // --- le azioni, cioè la metà che fa danno ------------------------
@@ -342,6 +402,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             '/lessons/' + A.lezione,
             '/quizzes/' + A.quiz,
             '/reports',
+            '/reports/elenco/students',
             '/admin/users',
             '/admin/permissions',
             '/profilo',

@@ -123,6 +123,11 @@ $router->get('/verify/{code}', [CertificateController::class, 'verify']);
 // --- Report -----------------------------------------------------------
 $router->get('/reports', [ReportController::class, 'index']);
 
+// L'elenco completo di un taglio. Sta PRIMA delle rotte con {id} perche' il
+// router prende la prima che combacia, e `/reports/courses` non deve finire
+// in `/reports/courses/{id}` con un id vuoto.
+$router->get('/reports/elenco/{sezione}', [ReportController::class, 'lista']);
+
 /*
  * Ogni report si scarica in CSV e in XLSX: il formato e' l'ultimo segmento
  * dell'indirizzo. Un segmento diverso da «xlsx» vale CSV, cosi' i vecchi

@@ -406,6 +406,12 @@ const PAGINE_INTERNE = [
     ['/profilo', 'Profilo'],
     ['/profilo/password', 'Cambia password'],
     ['/reports', 'Report'],
+    // Gli elenchi dei report, dal 04/10 pagine a sé. Due su cinque: quello
+    // degli studenti è il più lungo (è lui che ha la paginazione) e quello
+    // della fruizione ha le intestazioni più larghe, cioè i due casi in cui
+    // le colonne e lo scorrimento orizzontale possono rompersi.
+    ['/reports/elenco/students', 'Elenco studenti'],
+    ['/reports/elenco/fruizione', 'Elenco fruizione'],
     ['/live', 'Sessioni live'],
     ['/certificates', 'Certificati'],
     ['/admin/courses', 'Gestione corsi'],
