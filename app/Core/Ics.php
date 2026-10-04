@@ -120,6 +120,73 @@ class Ics
         );
     }
 
+    /**
+     * Un calendario da sottoscrivere: METHOD:PUBLISH e tanti VEVENT.
+     *
+     * E' una cosa diversa dall'invito qui sopra, e la differenza non e'
+     * cosmetica. Un invito (REQUEST) ha un ORGANIZER e un ATTENDEE, e il
+     * calendario di chi lo riceve ci mette i pulsanti «accetto / rifiuto».
+     * Un calendario sottoscritto non invita nessuno: elenca quello che c'e',
+     * e viene riletto ogni tanto dal programma che lo ha sottoscritto.
+     * Mandare dei REQUEST in un feed vorrebbe dire chiedere a ogni
+     * rilettura di rispondere a un invito gia' accettato.
+     *
+     * Gli eventi senza una fine (l'apertura di un modulo e' un istante)
+     * durano mezz'ora: un evento di durata zero alcuni calendari non lo
+     * disegnano affatto.
+     *
+     * @param list<array{uid: string, titolo: string, inizio: \DateTimeInterface,
+     *                   fine: ?\DateTimeInterface, descrizione?: string, luogo?: string}> $eventi
+     */
+    public static function publish(array $eventi, string $nomeCalendario): string
+    {
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Pistacchio LMS//Agenda//IT',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            // Le due righe che fanno comparire un nome invece di «Senza
+            // titolo» nell'elenco dei calendari sottoscritti. Non sono
+            // standard — X-WR-CALNAME e' una convenzione di Apple — ma le
+            // leggono Google, Apple e Outlook, e senza il calendario
+            // arriva anonimo.
+            'X-WR-CALNAME:' . self::escape($nomeCalendario),
+            'NAME:' . self::escape($nomeCalendario),
+        ];
+
+        $adesso = new \DateTimeImmutable('now');
+
+        foreach ($eventi as $evento) {
+            $fine = $evento['fine'] ?? \DateTimeImmutable::createFromInterface($evento['inizio'])
+                ->modify('+30 minutes');
+
+            $lines[] = 'BEGIN:VEVENT';
+            $lines[] = 'UID:' . self::escape($evento['uid']);
+            $lines[] = 'SEQUENCE:' . self::sequence();
+            $lines[] = 'DTSTAMP:' . self::utc($adesso);
+            $lines[] = 'DTSTART:' . self::utc($evento['inizio']);
+            $lines[] = 'DTEND:' . self::utc($fine);
+            $lines[] = 'SUMMARY:' . self::escape($evento['titolo']);
+
+            if (($evento['descrizione'] ?? '') !== '') {
+                $lines[] = 'DESCRIPTION:' . self::escape((string) $evento['descrizione']);
+            }
+
+            if (($evento['luogo'] ?? '') !== '') {
+                $lines[] = 'LOCATION:' . self::escape((string) $evento['luogo']);
+                $lines[] = 'URL;VALUE=URI:' . self::escape((string) $evento['luogo']);
+            }
+
+            $lines[] = 'STATUS:CONFIRMED';
+            $lines[] = 'END:VEVENT';
+        }
+
+        $lines[] = 'END:VCALENDAR';
+
+        return implode(self::CRLF, array_map(self::fold(...), $lines)) . self::CRLF;
+    }
+
     // ---------------------------------------------------------------
 
     private static function build(

@@ -33,6 +33,12 @@ CREATE TABLE users (
     city            VARCHAR(120) NULL,
     -- Percorso relativo a /storage (mai un URL pubblico)
     avatar_path     VARCHAR(255) NULL,
+    -- Indirizzo personale del calendario (.ics da sottoscrivere). NULL
+    -- finche' non lo si chiede: un segreto mai creato non si puo' rubare.
+    -- E' una credenziale, non un identificativo: chi ha il link vede gli
+    -- impegni di questa persona senza fare l'accesso. Si rigenera dal
+    -- profilo, e rigenerarlo invalida il link vecchio.
+    calendar_token  VARCHAR(64) NULL DEFAULT NULL UNIQUE,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

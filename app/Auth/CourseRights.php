@@ -134,6 +134,23 @@ class CourseRights
     /**
      * @return int[]
      */
+    /**
+     * I corsi che un tutor puo' modificare, **senza passare dalla
+     * sessione**.
+     *
+     * Serve al calendario sottoscritto, che risponde a un programma e non
+     * a una persona: li' `Auth` non c'e', ma la regola di chi vede cosa
+     * dev'essere la stessa di sempre. Da qui la stessa query di
+     * `canEdit()`, chiamata con un identificativo esplicito invece che con
+     * quello in sessione.
+     *
+     * @return int[]
+     */
+    public static function courseIdsFor(int $tutorId): array
+    {
+        return self::tutorCourseIds($tutorId);
+    }
+
     private static function tutorCourseIds(int $tutorId): array
     {
         if (!isset(self::$cache[$tutorId])) {

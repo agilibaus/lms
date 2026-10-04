@@ -469,6 +469,10 @@ const PAGINE_INTERNE = [
     ['/', 'Corsi'],
     ['/profilo', 'Profilo'],
     ['/profilo/password', 'Cambia password'],
+    // L'agenda in tutte e due le viste: la griglia del mese e' la cosa
+    // piu' difficile da far stare in 320 px di tutta la piattaforma.
+    ['/agenda', 'Agenda'],
+    ['/agenda?vista=mese', 'Agenda del mese'],
     ['/reports', 'Report'],
     // Gli elenchi dei report, dal 04/10 pagine a sé. Due su cinque: quello
     // degli studenti è il più lungo (è lui che ha la paginazione) e quello

@@ -46,6 +46,7 @@ In sviluppo iniziale.
 - ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
   in CSV e XLSX, con indice a riquadri, ricerca e paginazione
 - ✅ Tabelle ordinabili dal nome della colonna, dal server e senza JavaScript
+- ✅ Agenda con vista a elenco e a mese, e calendario .ics da sottoscrivere
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
 - ✅ Protezione CSRF su tutte le richieste POST
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
@@ -143,6 +144,9 @@ ordine di data), ad esempio:
 ```bash
 mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
+L'ultima è `2026_10_04_agenda_calendario.sql`, che aggiunge `users.calendar_token` per
+l'indirizzo personale del calendario (vedi **Agenda**).
+
 Le migrazioni vanno applicate **in ordine di data**, e ciascuna si puo' rieseguire senza
 danni. Le piu' recenti:
 
@@ -568,6 +572,58 @@ l'ordine è deciso a mano dal tutor, cioè *è* il contenuto — e le singole co
 un campo **oppure** un altro («Corso o gruppo»): ordinarle su uno dei due manderebbe in fondo
 tutte le righe dell'altro, con l'aria di un difetto.
 
+## Agenda
+
+`/agenda` risponde a una domanda sola: **che cosa mi aspetta**. Dentro ci sono due tipi di
+evento — gli incontri dal vivo dei propri corsi e gruppi, e le date in cui si aprono i moduli
+a rilascio programmato — distinti da un'etichetta scritta oltre che da un colore.
+
+**Due viste, un indirizzo** (`/agenda?vista=mese`), così il collegamento che si manda a
+qualcuno porta la vista che si stava guardando.
+
+- **Elenco** (la vista d'ingresso): «Oggi», «Nei prossimi sette giorni», «Più avanti», e in
+  fondo i passati, richiusi. Sette giorni e non «fino a domenica»: di domenica pomeriggio il
+  secondo criterio lascerebbe vuoto proprio il gruppo che interessa. Un incontro cominciato
+  ma non finito resta fra quelli di oggi — è il momento in cui serve di più — e lì compare il
+  pulsante «Entra», che appare solo da un quarto d'ora prima della fine.
+- **Mese**: griglia che comincia di lunedì, con i giorni di orlo in grigio. Sotto i 36 rem di
+  spazio diventa l'elenco dei soli giorni che hanno qualcosa: sette colonne in 320 px fanno
+  caselle da 40 px, dove un titolo non ci sta e un bersaglio da toccare nemmeno.
+
+Settimana e giorno non ci sono, ed è una scelta: senza orari fitti mostrerebbero le stesse
+due righe dell'elenco occupando uno schermo intero. Si aggiungono il giorno che gli incontri
+saranno molti — la forma degli eventi in `App\Core\Agenda` è già quella giusta, e un terzo
+tipo di evento (una scadenza dei quiz, che oggi non esiste) si aggiunge in un posto solo e
+compare in tutte e due le viste e nel calendario esterno.
+
+**Chi vede cosa** non si decide qui: la regola è una sola, in `App\Core\LiveScope`, e la usano
+la pagina «Sessioni live», l'agenda e il calendario esterno. Prima stava dentro al controller
+delle sessioni come metodi privati, e andava bene finché gli incontri si guardavano da una
+pagina sola.
+
+### Il calendario nel proprio programma
+
+Due modi, dalla stessa pagina:
+
+- **un incontro alla volta**: `/agenda/evento/{id}.ics`, che chiede l'accesso come ogni altra
+  pagina e risponde 404 per un incontro che non è fra i propri;
+- **tutta l'agenda, sempre aggiornata**: un indirizzo personale `/calendario/{token}.ics` da
+  incollare in Google Calendar, Calendario di Apple o Outlook.
+
+Il secondo è **l'unico indirizzo interno che risponde senza accesso**, e lo fa perché deve: a
+rileggerlo è un programma, ogni tanto, senza nessuno davanti che possa scrivere una password.
+Al posto dell'accesso c'è il token, che quindi **è una credenziale**: 24 byte dal generatore
+crittografico, colonna `users.calendar_token` con un indice unico, NULL finché non lo si
+chiede — un segreto che non è mai stato creato non può essere rubato. Si rigenera e si
+disattiva dall'agenda, e la pagina dice in chiaro che chi ha quel link vede gli impegni di
+quella persona. Un utente disattivato non ha più calendario, anche se il link gli è rimasto
+nel telefono.
+
+Il file è un `METHOD:PUBLISH` con un `VEVENT` per evento, diverso dall'invito che parte per
+email (`METHOD:REQUEST`, con organizzatore e invitato): un calendario sottoscritto elenca,
+non invita, e mandare dei REQUEST in un feed vorrebbe dire chiedere a ogni rilettura di
+rispondere a un invito già accettato.
+
 ## Test
 
 Due famiglie. I test PHP girano da soli; i due file `.js` usano Playwright e hanno bisogno del
@@ -593,12 +649,13 @@ php tests/tema_test.php             # tavolozze, arrotondamento, misure del test
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
 php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, indirizzi
+php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # 1377 controlli su 51 pagine, a tre larghezze
-node tests/permessi.js              # 79 prove: ogni ruolo prova a raggiungere le cose di un altro
+node tests/accessibilita.js         # 1431 controlli su 53 pagine, a tre larghezze
+node tests/permessi.js              # 91 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

@@ -203,6 +203,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/elenco/students', 'negato', 'nemmeno l\'elenco degli studenti'],
             ['/reports/elenco/courses', 'negato', 'nemmeno l\'elenco dei corsi'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'report di un altro studente'],
+            // L'agenda si apre per tutti: e' un altro modo di guardare le
+            // cose che uno gia' vede. Quello che NON deve contenere si
+            // prova piu' sotto, guardandoci dentro.
+            ['/agenda', 'consentito', 'l\'agenda e di chi la guarda'],
+            ['/agenda?vista=mese', 'consentito', 'anche la vista del mese'],
             ['/admin/users', 'negato', 'nessuna pagina di amministrazione'],
             ['/admin/courses', 'negato', 'nessuna pagina di amministrazione'],
             ['/admin/permissions', 'negato', 'la pagina più delicata del pannello'],
@@ -313,10 +318,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const { ctx, page } = await entra(browser, 'assist@test.it');
 
             await page.goto(BASE + '/reports/elenco/students');
+            const senzaRicerca = !(await page.content()).includes(emailB);
             check(
                 'assistente → l\'elenco non contiene lo studente del mondo B',
-                !(await page.content()).includes(emailB),
-                ['«' + emailB + '» compare in una pagina che risponde 200']
+                senzaRicerca,
+                senzaRicerca ? [] : ['«' + emailB + '» compare in una pagina che risponde 200']
             );
 
             await page.goto(BASE + '/reports/elenco/students?cerca=' + encodeURIComponent(emailB));
@@ -328,7 +334,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             check(
                 'assistente → e non lo trova nemmeno cercandolo per email',
                 quanteRighe(conRicerca) === 0,
-                ['la ricerca ha restituito ' + quanteRighe(conRicerca) + ' righe']
+                quanteRighe(conRicerca) === 0 ? [] : ['la ricerca ha restituito ' + quanteRighe(conRicerca) + ' righe']
             );
 
             await ctx.close();
@@ -336,12 +342,80 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const admin = await entra(browser, 'admin@test.it');
             await admin.page.goto(BASE + '/reports/elenco/students?cerca=' + encodeURIComponent(emailB));
             const daAdmin = await admin.page.content();
+            const loTrova = daAdmin.includes(emailB) && quanteRighe(daAdmin) === 1;
             check(
                 'controprova: l\'amministratore lo trova',
-                daAdmin.includes(emailB) && quanteRighe(daAdmin) === 1,
-                ['se non lo trovasse nemmeno lui, le due prove qui sopra non direbbero niente']
+                loTrova,
+                loTrova ? [] : ['se non lo trovasse nemmeno lui, le due prove qui sopra non direbbero niente']
             );
             await admin.ctx.close();
+        }
+
+        // --- l'agenda: quello che non deve contenere ---------------------
+        //
+        // L'agenda e' un elenco di cose che esistono altrove, ed e'
+        // esattamente il genere di pagina da cui si scopre per sbaglio
+        // l'esistenza di un corso altrui. Qui si guarda **dentro**: lo
+        // studente del mondo A non deve trovarci l'incontro del mondo B,
+        // ne' nell'elenco ne' nella griglia del mese ne' nel file .ics.
+
+        console.log('\n--- l\'agenda: che cosa c\'è dentro');
+
+        {
+            const incontroB = String(B.incontro);
+            const { ctx, page } = await entra(browser, 'stud@test.it');
+
+            for (const [url, dove] of [['/agenda', 'nell\'elenco'], ['/agenda?vista=mese', 'nel mese']]) {
+                await page.goto(BASE + url);
+                const html = await page.content();
+
+                const assente = !html.includes('/live/' + incontroB);
+                check(
+                    'studente A → l\'incontro del mondo B non compare ' + dove,
+                    assente,
+                    assente ? [] : ['trovato un collegamento a /live/' + incontroB]
+                );
+            }
+
+            // Controprova: l'incontro del SUO mondo c'e'. Senza, le due
+            // prove qui sopra passerebbero anche con l'agenda rotta.
+            await page.goto(BASE + '/agenda');
+            const ilSuo = (await page.content()).includes('/live/' + String(A.incontro));
+            check(
+                'controprova: il suo incontro c\'è',
+                ilSuo,
+                ilSuo ? [] : ['se non c\'e nemmeno il suo, le prove qui sopra non dicono niente']
+            );
+
+            // Il file .ics del singolo incontro segue la stessa regola
+            // della pagina: non e' un indirizzo piu' permissivo.
+            const suo = await page.request.get(BASE + '/agenda/evento/' + String(A.incontro) + '.ics');
+            const altrui = await page.request.get(BASE + '/agenda/evento/' + incontroB + '.ics');
+
+            check('studente A → il .ics del suo incontro si scarica', suo.status() === 200);
+            check(
+                'studente A → il .ics di un incontro non suo non esiste',
+                altrui.status() === 404,
+                altrui.status() === 404 ? [] : ['ha risposto ' + altrui.status()]
+            );
+
+            // Il calendario sottoscritto risponde senza accesso: e' il solo
+            // indirizzo che lo fa, e regge solo finche' il token e'
+            // imprevedibile e verificato.
+            const anonimo = await browser.newContext();
+            const ap = await anonimo.newPage();
+
+            for (const token of ['0'.repeat(48), 'abc', '1', '../../etc/passwd']) {
+                const r = await ap.request.get(BASE + '/calendario/' + encodeURIComponent(token) + '.ics');
+                check(
+                    'un token inventato («' + token.slice(0, 12) + '») non apre nessun calendario',
+                    r.status() === 404,
+                    r.status() === 404 ? [] : ['ha risposto ' + r.status()]
+                );
+            }
+
+            await anonimo.close();
+            await ctx.close();
         }
 
         // --- le azioni, cioè la metà che fa danno ------------------------
@@ -403,6 +477,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             '/quizzes/' + A.quiz,
             '/reports',
             '/reports/elenco/students',
+            '/agenda',
             '/admin/users',
             '/admin/permissions',
             '/profilo',

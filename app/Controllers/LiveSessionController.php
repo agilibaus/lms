@@ -9,6 +9,7 @@ use App\Auth\CourseRights;
 use App\Core\CourseAccess;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
+use App\Core\LiveScope;
 use App\Core\Mail\LiveSessionNotifier;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -39,12 +40,7 @@ class LiveSessionController
             // L'elenco mostra quello che si puo' aprire: un incontro di un
             // modulo chiuso darebbe 403 al clic, e un elenco che propone
             // porte chiuse e' peggio di un elenco piu' corto.
-            'sessions' => $isStaff
-                ? array_values(array_filter(LiveSessionModel::all(), fn (array $s): bool => $this->inScope($s)))
-                : array_values(array_filter(
-                    LiveSessionModel::forUser((int) Auth::id()),
-                    fn (array $s): bool => $this->canView($s)
-                )),
+            'sessions' => LiveScope::elencoPer((int) Auth::id()),
             'canManage' => $isStaff,
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
@@ -411,18 +407,15 @@ class LiveSessionController
      * tutor quelle dei moduli dei corsi assegnati ai suoi gruppi, e quelle
      * rivolte direttamente a un suo gruppo.
      */
+    /*
+     * Le tre regole di visibilita' stanno in `App\Core\LiveScope`, non
+     * qui: dalla 0090 le pagine che mostrano incontri sono due — questa e
+     * l'agenda — e una regola scritta in due posti prima o poi dice due
+     * cose diverse. Questi metodi restano come scorciatoie leggibili.
+     */
     private function inScope(array $session): bool
     {
-        if (Auth::hasRole('admin')) {
-            return true;
-        }
-
-        if (!empty($session['module_id']) && isset($session['course_id'])
-            && CourseRights::canEdit((int) $session['course_id'])) {
-            return true;
-        }
-
-        return !empty($session['group_id']) && $this->isMyGroup((int) $session['group_id']);
+        return LiveScope::gestibile($session);
     }
 
     private function requireInScope(?array $session): void
@@ -436,13 +429,7 @@ class LiveSessionController
 
     private function isMyGroup(int $groupId): bool
     {
-        if (Auth::hasRole('admin')) {
-            return true;
-        }
-
-        $group = GroupModel::find($groupId);
-
-        return $group !== null && (int) ($group['tutor_id'] ?? 0) === (int) Auth::id();
+        return LiveScope::gruppoMio($groupId);
     }
 
     private function groupOptions(): array
@@ -462,23 +449,7 @@ class LiveSessionController
 
     private function canView(array $session): bool
     {
-        if ($this->canManage() || Auth::hasRole('admin', 'tutor', 'assistente')) {
-            return true;
-        }
-
-        if (!LiveSessionModel::isParticipant((int) $session['id'], (int) Auth::id())) {
-            return false;
-        }
-
-        // Un incontro legato a un modulo chiuso e' chiuso con lui: altrimenti
-        // il link Meet del modulo di dicembre sarebbe raggiungibile a ottobre
-        // scrivendo l'indirizzo a mano. Gli incontri rivolti a un gruppo e non
-        // a un modulo non hanno un modulo da cui dipendere: restano visibili.
-        if (!empty($session['module_id'])) {
-            return !CourseAccess::isModuleLocked((int) Auth::id(), (int) $session['module_id']);
-        }
-
-        return true;
+        return LiveScope::visibile($session);
     }
 
     /**

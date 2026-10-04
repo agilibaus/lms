@@ -1900,12 +1900,18 @@ h3 { font-size: 1.05rem; }
 
 /* Riquadro con le iniziali quando il logo manca: tinta dall'identificativo,
    come per le copertine dei corsi. */
+/* Il colore delle iniziali dipende dall'identificativo del gruppo, quindi
+   il contrasto cambia da un gruppo all'altro: con la tinta sbagliata
+   scendeva a 4,29:1, sotto il minimo di 4,5. Non si vedeva finche' non e'
+   nato il gruppo con quella tinta — ed e' successo. Calcolato il peggiore
+   su tutti e 360 i valori possibili: con la luminosita' al 29% il caso
+   peggiore e' 5,01:1, quindi nessun gruppo futuro potra' andare sotto. */
 .group-logo-placeholder {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: hsl(var(--logo-hue, 90) 34% 90%);
-    color: hsl(var(--logo-hue, 90) 40% 32%);
+    color: hsl(var(--logo-hue, 90) 40% 29%);
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.03em;
@@ -3575,4 +3581,309 @@ fieldset.checkbox-group legend {
 .tabella-a-capo td,
 .tabella-a-capo th {
     overflow-wrap: anywhere;
+}
+
+/* ---------- Agenda ----------
+
+   Due viste, un indirizzo. L'elenco e' la vista d'ingresso perche'
+   risponde alla domanda con cui si apre un'agenda — «che cosa mi aspetta
+   adesso» — e perche' funziona identico sul telefono; il mese serve al
+   colpo d'occhio.
+
+   I due tipi di evento si distinguono da **un'etichetta scritta e** da un
+   colore, mai dal colore soltanto: e' il criterio 1.4.1 delle WCAG, e in
+   una pagina di righe colorate sarebbe la prima cosa a saltare. */
+
+.agenda-viste {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.agenda-viste a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.agenda-viste a.attiva {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+    font-weight: 600;
+}
+
+.agenda-gruppo {
+    margin-bottom: 1.4rem;
+}
+
+.agenda-gruppo h2 {
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+}
+
+.agenda-elenco {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Tre zone: quando, cosa, comandi. A schermo largo stanno in fila con la
+   data a larghezza fissa, cosi' le ore si incolonnano come i numeri nelle
+   tabelle dei report; stretto, vanno a capo. */
+.agenda-voce {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.9rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-left-width: 4px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    margin-bottom: 0.45rem;
+}
+
+.agenda-voce.agenda-incontro {
+    border-left-color: var(--color-primary);
+}
+
+/* Un'apertura di modulo non e' un appuntamento: colore diverso, e
+   l'etichetta scritta sotto al titolo lo dice comunque. */
+.agenda-voce.agenda-apertura {
+    border-left-color: #8A6D3B;
+}
+
+.agenda-voce.agenda-in-corso {
+    background: var(--color-primary-soft);
+}
+
+.agenda-quando {
+    flex: 0 0 6.5rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.agenda-giorno {
+    font-weight: 700;
+}
+
+.agenda-ora {
+    color: #5A554F;
+}
+
+.agenda-cosa {
+    flex: 1 1 14rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+/* Il titolo e' un collegamento, e un collegamento vuole 24 px di bersaglio
+   (criterio 2.5.8): una riga di testo ne misura 18. `align-items: start`
+   perche' il riquadro cresca in altezza senza prendersi tutta la larghezza
+   della colonna. */
+.agenda-cosa > a {
+    display: inline-flex;
+    align-items: center;
+    align-self: start;
+    min-height: var(--tap-target);
+    font-weight: 600;
+}
+
+.agenda-tipo {
+    font-size: 0.82rem;
+    color: #5A554F;
+}
+
+.agenda-contesto {
+    font-size: 0.88rem;
+    color: #5A554F;
+}
+
+.agenda-azioni {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.agenda-azioni a:not(.btn) {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+}
+
+.agenda-passati {
+    margin-top: 1.4rem;
+}
+
+.agenda-passati > summary {
+    cursor: pointer;
+    min-height: var(--tap-target);
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+/* Le voci gia' passate non si cancellano, si spengono: servono a
+   ricordare, non a programmare. */
+.agenda-passati .agenda-voce {
+    opacity: 0.75;
+}
+
+/* ---------- Agenda: il mese ---------- */
+
+.agenda-mesi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+}
+
+.agenda-mesi h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.agenda-mese {
+    container-type: inline-size;
+    container-name: agenda;
+}
+
+.agenda-griglia {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.agenda-griglia th {
+    padding: 0.3rem;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #5A554F;
+    text-align: left;
+}
+
+.agenda-griglia td {
+    vertical-align: top;
+    height: 5.5rem;
+    padding: 0.25rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.agenda-griglia td.fuori-mese {
+    background: transparent;
+    color: #5A554F;
+}
+
+.agenda-griglia td.oggi {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+}
+
+.agenda-numero {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+}
+
+.agenda-pillola {
+    display: block;
+    min-height: var(--tap-target);
+    padding: 0.15rem 0.35rem;
+    margin-bottom: 0.15rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    line-height: 1.25;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.agenda-pillola.agenda-incontro {
+    background: var(--color-primary-soft);
+    color: #243B2A;
+}
+
+.agenda-pillola.agenda-apertura {
+    background: #F3EADA;
+    color: #5A4420;
+}
+
+.agenda-pillola-ora {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Sotto i 36 rem di spazio la griglia diventa un elenco dei soli giorni
+   che hanno qualcosa.
+
+   Non e' una preferenza: sette colonne in 320 px fanno caselle da 40 px,
+   dove un titolo non ci sta e un bersaglio da toccare nemmeno. Come per le
+   tabelle, la soglia e' sullo **spazio che la griglia ha davvero** e non
+   sulla larghezza della finestra, perche' la barra laterale cambia la
+   seconda senza cambiare la prima. */
+@container agenda (max-width: 36rem) {
+    .agenda-griglia,
+    .agenda-griglia tbody,
+    .agenda-griglia tr,
+    .agenda-griglia td {
+        display: block;
+        width: auto;
+        height: auto;
+    }
+
+    /* I nomi dei giorni restano per chi legge con un lettore di schermo:
+       senza, le caselle perderebbero il proprio nome di colonna. */
+    .agenda-griglia thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+
+    /* I giorni vuoti e quelli di orlo spariscono: in un elenco una riga
+       «17» senza niente sotto e' solo una riga da scorrere. */
+    .agenda-griglia td.fuori-mese,
+    .agenda-griglia td:not(:has(.agenda-pillola)) {
+        display: none;
+    }
+
+    .agenda-griglia td {
+        margin-bottom: 0.4rem;
+        border-left-width: 4px;
+        border-left-color: var(--color-primary);
+    }
+}
+
+/* ---------- Agenda: il calendario esterno ---------- */
+
+.agenda-calendario {
+    margin-top: 1.8rem;
+}
+
+.agenda-calendario h2 {
+    font-size: 1.05rem;
+}
+
+/* L'indirizzo va copiato intero: va a capo dove serve invece di uscire
+   dalla pagina, e si seleziona con un gesto solo. */
+.agenda-indirizzo {
+    display: inline-block;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-soft);
+    overflow-wrap: anywhere;
+    user-select: all;
 }

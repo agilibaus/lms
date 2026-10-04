@@ -127,6 +127,13 @@ use App\Core\Csrf;
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
                 <a href="/reports" class="nav-link<?= $voce('/reports') ?>">Report</a>
             <?php endif; ?>
+            <?php /* L'Agenda sta sopra a «Sessioni live» perche' risponde a
+                     una domanda piu' frequente — «che cosa mi aspetta» — e
+                     perche' le sessioni sono una delle cose che contiene.
+                     Restano due voci: «Sessioni live» e' il posto dove lo
+                     staff le crea e le modifica, l'agenda e' il posto dove
+                     si guardano. */ ?>
+            <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
             <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
             <a href="/certificates" class="nav-link<?= $voce('/certificates') ?>">Certificati</a>
             <a href="/profilo" class="nav-link<?= $voce('/profilo') ?>">Profilo</a>

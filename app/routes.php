@@ -7,6 +7,7 @@ use App\Controllers\Admin\GroupController as AdminGroupController;
 use App\Controllers\Admin\PermissionController as AdminPermissionController;
 use App\Controllers\Admin\SettingsController;
 use App\Controllers\Admin\UserController as AdminUserController;
+use App\Controllers\AgendaController;
 use App\Controllers\AuthController;
 use App\Controllers\CatalogController;
 use App\Controllers\CertificateController;
@@ -210,6 +211,20 @@ $router->post('/admin/requests/{requestId}', [AdminCourseController::class, 'dec
 
 $router->get('/admin/permissions', [AdminPermissionController::class, 'index']);
 $router->post('/admin/permissions', [AdminPermissionController::class, 'update']);
+
+// --- Agenda -----------------------------------------------------------
+$router->get('/agenda', [AgendaController::class, 'index']);
+$router->get('/agenda/evento/{id}.ics', [AgendaController::class, 'evento']);
+$router->post('/agenda/calendario', [AgendaController::class, 'rigenera']);
+$router->post('/agenda/calendario/dimentica', [AgendaController::class, 'dimentica']);
+
+/*
+ * Il calendario personale da sottoscrivere: **l'unico indirizzo interno che
+ * risponde senza accesso**, perche' a rileggerlo e' un programma e non una
+ * persona. Al posto dell'accesso c'e' il token, che e' una credenziale: 24
+ * byte casuali, revocabile dal profilo dell'agenda.
+ */
+$router->get('/calendario/{token}.ics', [AgendaController::class, 'feed']);
 
 // --- Sessioni live (Google Meet) --------------------------------------
 $router->get('/live', [LiveSessionController::class, 'index']);
