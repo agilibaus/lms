@@ -775,10 +775,16 @@ h3 { font-size: 1.05rem; }
     padding: 2.6rem 3.5rem;
 }
 
+/* Il marchio e il richiamo rientrano di 1.2rem rispetto al bordo della
+   sezione (richiesta del 04/10). Sta sui due elementi e non nel `padding`
+   di `.auth-scene`, perche' il riempimento della sezione regge anche i
+   cerchi dello sfondo: spostando quello si sposterebbe il disegno insieme
+   al testo. */
 .scene-brand {
     display: flex;
     align-items: center;
     gap: 0.7rem;
+    margin-left: 1.2rem;
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--color-primary);
@@ -795,6 +801,7 @@ h3 { font-size: 1.05rem; }
     max-width: 26rem;
     margin-top: auto;
     margin-bottom: auto;
+    margin-left: 1.2rem;
 }
 
 .scene-claim h2 {
@@ -851,6 +858,14 @@ h3 { font-size: 1.05rem; }
                 rgba(217, 166, 121, 0.12) 0%, rgba(217, 166, 121, 0.12) 96%, transparent 100%),
             radial-gradient(circle 100px at 20% 82%,
                 rgba(122, 140, 110, 0.10) 0%, rgba(122, 140, 110, 0.10) 96%, transparent 100%);
+    }
+
+    /* Sotto gli 860 px le due sezioni si impilano: non e' piu' il tema
+       affiancato, il riempimento scende a 1.4rem e un rientro in piu'
+       mangerebbe larghezza proprio dove ce n'e' meno. */
+    .scene-brand,
+    .scene-claim {
+        margin-left: 0;
     }
 
     .scene-claim {
