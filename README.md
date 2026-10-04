@@ -502,6 +502,7 @@ php tests/tema_test.php             # tavolozze, arrotondamento, misure del test
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 node tests/accessibilita.js         # 1225 controlli su 49 pagine, a tre larghezze
 node tests/permessi.js              # 72 prove: ogni ruolo prova a raggiungere le cose di un altro
+node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 ```
 
 ### I due controlli automatici che vale la pena conoscere
@@ -700,6 +701,39 @@ proprio browser continua a vederlo crescere, qualunque misura sia scelta qui.
 > Ora va a capo — il che è la cosa giusta anche a 16 px, dove semplicemente non capitava.
 > È il genere di cosa che si vede solo misurando: l'accessibilità è stata eseguita una volta
 > per ogni misura e una per ogni livello di arrotondamento.
+
+## I moduli da compilare: una misura sola
+
+Nel progetto convivono **tre famiglie di moduli**, nate in momenti diversi: `.form` nel
+pannello, `.stacked-form` nei moduli brevi, `.auth-form` nelle pagine pubbliche. Ognuna si
+era portata dietro la propria misura, e al 04/10 la deriva era questa: etichette a 15,2 px in
+due sistemi e **13,1 nel terzo**, campi alti 40 px in due e **34 nel terzo**, e lo stesso
+pulsante alto **35 px da solo e 37 accanto a un altro comando**, perché `.form-actions` è una
+riga flessibile che lo stirava. Nessuna di queste era una decisione: erano copie invecchiate
+in modo diverso.
+
+Ora le dichiarazioni comuni — dimensione e peso delle etichette, aspetto e altezza dei campi
+— stanno **in un blocco solo** che elenca i tre sistemi, e nei blocchi dei singoli restano le
+differenze vere: la larghezza massima di `.form`, i margini, la disposizione. Chi aggiunge un
+quarto sistema lo aggiunge a quei selettori invece di ricopiare i valori: è ricopiandoli che
+sono diventati diversi.
+
+I pulsanti hanno un'altezza minima pari a quella dei campi, così uno stesso comando è alto
+uguale ovunque e non dipende da chi gli sta accanto. `.btn` è `inline-flex` e non
+`inline-block` proprio per questo: con un'altezza minima il testo va centrato nello spazio
+che avanza. `.btn-small` conserva la propria altezza, che è la misura minima di un bersaglio
+toccabile.
+
+`node tests/coerenza_moduli.js` misura le tre famiglie su sette pagine e fallisce quando una
+si discosta. Non è un doppione del controllo di accessibilità: **una pagina con le etichette
+piccole è accessibile lo stesso**, e infatti quella deriva è passata sotto i suoi 1225
+controlli per giorni. Questo guarda un'altra cosa — che la stessa cosa sia disegnata allo
+stesso modo — e non vede se le misure sono *giuste*: tre moduli sbagliati allo stesso modo
+passano.
+
+> La tolleranza è di 1,5 px, e non è indulgenza: le pagine pubbliche usano Albert Sans e
+> quelle interne il carattere di sistema, e due caratteri diversi alla stessa dimensione
+> danno righe alte 17 e 18 px. È una differenza del carattere, non del foglio di stile.
 
 ## Carattere delle pagine pubbliche (Albert Sans)
 

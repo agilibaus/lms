@@ -639,13 +639,26 @@ h3 { font-size: 1.05rem; }
 
 /* ---------- Buttons / forms ---------- */
 
+/* Un pulsante e' alto uguale ovunque, e alto quanto un campo.
+   Prima no: lo stesso «Salva» misurava 35 px da solo e 37 accanto a un
+   altro comando, perche' `.form-actions` e' una riga flessibile e lo
+   stirava fino all'elemento piu' alto. Due pagine, due altezze, nessuna
+   decisa da nessuno.
+   `inline-flex` e non `inline-block` perche' con un'altezza minima il testo
+   va centrato nello spazio che avanza, altrimenti resta appoggiato in alto.
+   `.btn-small` si tiene la propria altezza, che e' la misura minima di un
+   bersaglio toccabile. */
 .btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0.6rem 1.1rem;
+    min-height: 2.5rem;
     border-radius: var(--radius-sm);
     border: none;
     font-size: 0.92rem;
     font-weight: 600;
+    text-align: center;
     cursor: pointer;
 }
 
@@ -660,6 +673,75 @@ h3 { font-size: 1.05rem; }
 
 .btn-block {
     width: 100%;
+}
+
+/* ==========================================================
+   I campi dei moduli: una misura sola per tutti e tre i sistemi
+   ==========================================================
+
+   Nel progetto convivono tre famiglie di moduli — `.form` (pannello),
+   `.stacked-form` (moduli brevi) e `.auth-form` (pagine pubbliche) — nate
+   in momenti diversi. Ognuna si era portata dietro la propria misura: al
+   04/10 le etichette erano 15.2 px in due sistemi e 13.1 nel terzo, e i
+   campi 40 px in due e 34 nel terzo. Tre misure per la stessa cosa non
+   sono tre scelte, sono una deriva, e si vede passando da una pagina
+   all'altra.
+
+   Qui stanno le dichiarazioni comuni, una volta sola. Nei blocchi dei
+   singoli sistemi restano solo le differenze vere: la larghezza massima di
+   `.form`, i margini, la disposizione. Chi aggiunge un quarto sistema di
+   moduli lo aggiunga a questi selettori invece di ricopiare i valori: e'
+   ricopiandoli che sono diventati diversi.
+   ========================================================== */
+
+.form label,
+.form legend,
+.stacked-form label,
+.auth-form label {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.form input[type="text"],
+.form input[type="password"],
+.form input[type="email"],
+.form input[type="number"],
+.form input[type="date"],
+.form input[type="time"],
+.form input[type="datetime-local"],
+.form input[type="url"],
+.form select,
+.form textarea,
+.stacked-form input[type="text"],
+.stacked-form input[type="number"],
+.stacked-form input[type="file"],
+.stacked-form input[type="date"],
+.stacked-form input[type="time"],
+.stacked-form input[type="datetime-local"],
+.stacked-form input[type="email"],
+.stacked-form input[type="url"],
+.stacked-form input[type="password"],
+.stacked-form select,
+.stacked-form textarea,
+.auth-form input {
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.92rem;
+    /* Tutti i campi di una riga alti uguale: un `datetime-local` e' 2 px
+       piu' alto perche' dentro ha il pulsantino del calendario, che sta nel
+       guscio del browser e non si rimpicciolisce (0076). */
+    min-height: 2.5rem;
+}
+
+/* Le aree di testo lunghe sono alte quanto le loro `rows`: l'altezza minima
+   dei campi di una riga non le riguarda. */
+.form textarea,
+.stacked-form textarea {
+    min-height: 0;
 }
 
 /* ---------- Tavolozze, nella pagina Aspetto ---------- */
@@ -992,18 +1074,11 @@ h3 { font-size: 1.05rem; }
     gap: 0.3rem;
 }
 
+/* Misura e aspetto stanno nel blocco comune dei tre sistemi, piu' in alto:
+   qui resta solo il margine, che e' l'unica cosa davvero diversa — in una
+   colonna stretta le etichette stanno piu' vicine ai propri campi. */
 .auth-form label {
-    font-size: 0.82rem;
-    font-weight: 600;
     margin-top: 0.6rem;
-}
-
-.auth-form input {
-    padding: 0.55rem 0.65rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-size: 0.92rem;
-    font-family: inherit;
 }
 
 .auth-form input:focus {
@@ -1355,48 +1430,17 @@ h3 { font-size: 1.05rem; }
    piccolezza. Il valore e' in rem e non in px perche' chi ingrandisce il
    testo nel browser deve continuare a vederlo crescere (WCAG 1.4.4). */
 .stacked-form label {
-    font-size: 0.95rem;
-    font-weight: 600;
     margin-top: 0.7rem;
 }
 
-/* `datetime-local` e gli altri campi tipizzati erano fuori da questo
-   elenco: non essendo vestiti, prendevano il carattere di sistema del
-   browser — 13.3 px — e il valore scritto dentro risultava piu' piccolo
-   della sua stessa etichetta. Un elenco di tipi e' sempre una lista che
-   invecchia: chi aggiunge un campo di un tipo nuovo lo aggiunga anche
-   qui, o lo vedra' sbucare vestito a meta'. */
-.stacked-form input[type="text"],
-.stacked-form input[type="number"],
-.stacked-form input[type="file"],
-.stacked-form input[type="date"],
-.stacked-form input[type="time"],
-.stacked-form input[type="datetime-local"],
-.stacked-form input[type="email"],
-.stacked-form input[type="url"],
-.stacked-form input[type="password"],
-.stacked-form textarea,
-.stacked-form select {
-    padding: 0.55rem 0.65rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-size: 0.92rem;
-    font-family: inherit;
-    background: var(--color-surface);
-    color: var(--color-text);
-    /* Tutti i campi alti uguale. Senza, un `datetime-local` viene 2 px piu'
-       alto di un campo di testo accanto: dentro ha il pulsantino del
-       calendario, che e' nel guscio del browser e non si puo' rimpicciolire.
-       Due px si vedono quando i riquadri sono incolonnati, e l'occhio li
-       legge come «questi due campi non sono la stessa cosa». */
-    min-height: 2.5rem;
-}
-
+/* Misura e aspetto dei campi stanno nel blocco comune dei tre sistemi, piu'
+   in alto. Un avvertimento che resta valido li' come qui: **l'elenco dei
+   tipi e' una lista che invecchia**. Un campo di un tipo nuovo che non ci
+   finisce dentro prende il carattere di sistema del browser — 13.3 px — e
+   il valore scritto risulta piu' piccolo della propria etichetta. E'
+   successo con `datetime-local` (0075). */
 .stacked-form textarea {
     resize: vertical;
-    /* Un'area di testo e' alta quanto le sue `rows`: l'altezza minima dei
-       campi di una riga non la riguarda. */
-    min-height: 0;
 }
 
 /* La pagina della lezione contiene un editor: 520px basterebbero a un form di
@@ -2220,20 +2264,24 @@ body.has-focus-video {
    restavano alla larghezza predefinita del browser — stretti accanto agli
    altri. Si vedeva gia' nell'email del profilo e nella password iniziale
    della scheda utente. */
+/* I campi di `.form` erano 0.9rem con un riempimento piu' stretto: 34 px di
+   altezza contro i 40 degli altri due sistemi. Tre misure per la stessa
+   cosa non sono tre scelte, sono una deriva — e si vedeva passando da una
+   pagina all'altra. Le dichiarazioni comuni stanno adesso nel blocco unico
+   piu' sotto; qui restano solo le due cose che riguardano davvero soltanto
+   questo sistema, cioe' la larghezza. */
 .form input[type="text"],
 .form input[type="password"],
 .form input[type="email"],
 .form input[type="number"],
+.form input[type="date"],
+.form input[type="time"],
+.form input[type="datetime-local"],
+.form input[type="url"],
 .form select,
 .form textarea {
     width: 100%;
     max-width: 520px;
-    padding: 0.5rem 0.6rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-family: inherit;
-    font-size: 0.9rem;
-    background: var(--color-surface);
 }
 
 .form-inline {
