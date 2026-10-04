@@ -250,6 +250,12 @@ check(
 );
 check('i giorni cominciano da lunedì', Agenda::nomiGiorni()[0] === 'lunedì');
 
+// Le etichette dei due tipi stanno in un posto solo perche' compaiono in
+// due — sotto al titolo e nel testo annunciato dalla griglia del mese — e
+// scritte due volte divergono: e' gia' successo con l'iniziale maiuscola.
+check('l etichetta dell incontro comincia maiuscola', Agenda::etichettaTipo(Agenda::INCONTRO) === 'Incontro dal vivo');
+check('e anche quella dell apertura', Agenda::etichettaTipo(Agenda::APERTURA) === 'Apertura di un modulo');
+
 // ---------------------------------------------------------------
 // Il file .ics
 // ---------------------------------------------------------------

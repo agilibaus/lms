@@ -577,7 +577,10 @@ tutte le righe dell'altro, con l'aria di un difetto.
 
 `/agenda` risponde a una domanda sola: **che cosa mi aspetta**. Dentro ci sono due tipi di
 evento — gli incontri dal vivo dei propri corsi e gruppi, e le date in cui si aprono i moduli
-a rilascio programmato — distinti da un'etichetta scritta oltre che da un colore.
+a rilascio programmato — distinti da un'etichetta scritta oltre che da un colore. Le due
+etichette («Incontro dal vivo», «Apertura di un modulo») stanno in `Agenda::etichettaTipo()`
+e non nella vista: compaiono in due punti — sotto al titolo nell'elenco e nel testo che un
+lettore di schermo annuncia nella griglia del mese — e scritte due volte divergono.
 
 **Due viste, un indirizzo** (`/agenda?vista=mese`), così il collegamento che si manda a
 qualcuno porta la vista che si stava guardando.

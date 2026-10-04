@@ -257,6 +257,23 @@ class Agenda
             . mb_substr($nome, 1) . ' ' . $mese->format('Y');
     }
 
+    /**
+     * Come si chiama un tipo di evento, a parole.
+     *
+     * Sta qui e non nella vista perche' la stessa etichetta compare in due
+     * punti — sotto al titolo nell'elenco, e nel testo che un lettore di
+     * schermo annuncia nella griglia del mese — e scritta due volte e'
+     * destinata a divergere: e' gia' successo con l'iniziale maiuscola,
+     * che andava messa in due posti.
+     *
+     * Maiuscola perche' l'etichetta sta da sola sotto al titolo, come una
+     * voce di legenda, non in mezzo a una frase.
+     */
+    public static function etichettaTipo(string $tipo): string
+    {
+        return $tipo === self::INCONTRO ? 'Incontro dal vivo' : 'Apertura di un modulo';
+    }
+
     /** Lunedi'…domenica, nell'ordine della griglia. */
     public static function nomiGiorni(): array
     {

@@ -52,7 +52,7 @@ $voce = static function (array $e) use ($esc, $adesso): string {
         . $esc($e['inizio']->format('d/m')) . '</span> <span class="agenda-ora">' . $esc($ora) . '</span></span>'
         . '<span class="agenda-cosa">'
         . '<a href="' . $esc((string) $e['url']) . '">' . $esc((string) $e['titolo']) . '</a>'
-        . '<span class="agenda-tipo">' . ($incontro ? 'incontro dal vivo' : 'apertura di un modulo') . '</span>'
+        . '<span class="agenda-tipo">' . $esc(Agenda::etichettaTipo((string) $e['tipo'])) . '</span>'
         . ($e['contesto'] === '' ? '' : '<span class="agenda-contesto">' . $esc((string) $e['contesto']) . '</span>')
         . '</span>'
         . '<span class="agenda-azioni">';
@@ -198,8 +198,7 @@ $titoliGruppi = [
                                         <span class="agenda-pillola-ora"><?= $esc($e['inizio']->format('H:i')) ?></span>
                                         <?= $esc((string) $e['titolo']) ?>
                                         <span class="sr-only">
-                                            — <?= $e['tipo'] === Agenda::INCONTRO
-                                                ? 'incontro dal vivo' : 'apertura di un modulo' ?>
+                                            — <?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?>
                                         </span>
                                     </a>
                                 <?php endforeach; ?>
