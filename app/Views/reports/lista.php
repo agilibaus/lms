@@ -67,10 +67,17 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
 <?php /* La ricerca è un modulo GET: funziona senza JavaScript, e l'indirizzo
          che ne esce si può salvare nei preferiti o passare a un collega. */ ?>
 <form class="report-ricerca" method="get" action="/reports/elenco/<?= $esc($chiave) ?>">
-    <label for="cerca">Cerca fra i <?= $esc((string) $sezione['plurale']) ?></label>
+    <?php /* «Cerca fra **gli** studenti», non «fra i studenti»: l'articolo
+             dipende da come comincia la parola e sta nella sezione. */ ?>
+    <label for="cerca">
+        Cerca fra <?= $esc((string) $sezione['articolo']) ?> <?= $esc((string) $sezione['plurale']) ?>
+    </label>
     <div class="report-ricerca-riga">
+        <?php /* Il suggerimento nomina le colonne in cui si cerca davvero:
+                 l'email si cerca fra gli studenti, non fra i corsi. */ ?>
         <input type="search" id="cerca" name="cerca" value="<?= $esc($cerca) ?>"
-               placeholder="nome, email…" spellcheck="false">
+               placeholder="<?= $esc(ReportSections::suggerimento($sezione['cerca'])) ?>"
+               spellcheck="false">
         <button type="submit" class="btn btn-secondary">Cerca</button>
         <?php if ($cerca !== ''): ?>
             <a class="btn btn-secondary" href="/reports/elenco/<?= $esc($chiave) ?>">Azzera</a>

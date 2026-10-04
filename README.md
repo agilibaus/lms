@@ -327,13 +327,21 @@ I cinque tagli sono descritti una volta sola in `App\Core\ReportSections` e le l
 La ricerca filtra in memoria sui campi che la sezione dichiara — con seicento righe è
 istantanea; è il punto da cambiare se un giorno le righe saranno decine di migliaia.
 
+**Il campo di ricerca dice che cosa si può cercare lì**: il suggerimento elenca le colonne in
+cui quel report cerca davvero (`studente, email…` fra gli studenti, `incontro, corso o
+gruppo…` fra gli incontri), perché i cinque report hanno dati diversi e un suggerimento
+uguale per tutti prometteva ricerche che non esistono. Le intestazioni citate sono quelle
+della tabella sotto, e `tests/report_test.php` verifica che lo restino. Ogni sezione dichiara
+anche il proprio articolo plurale, così la frase è «Cerca fra **gli** studenti» e non «fra i
+studenti»: in italiano dipende da come comincia la parola, non dal genere.
+
 **Ogni vista si scarica in XLSX e in CSV**, da un unico pulsante "Scarica" con la tendina dei
 due formati:
 
 | Report | Contenuto |
 |---|---|
 | Per corso | Iscritti con progresso, lezioni completate, quiz superati, stato certificato |
-| Per gruppo | Membri del gruppo incrociati con i corsi assegnati al gruppo |
+| Per gruppo | Membri del gruppo incrociati con i corsi assegnati al gruppo (con il simbolo del gruppo accanto al nome, come nel pannello) |
 | Per studente | Tutti i corsi dello studente, con dettaglio tentativi, punteggi e risposte aperte |
 | Per incontro dal vivo | Presenze, con l'origine del dato (piattaforma o segnata a mano) |
 | Fruizione dei video | Tempo effettivamente guardato per studente e per lezione, in secondi |
@@ -523,7 +531,7 @@ php tests/settings_test.php         # impostazioni in tabella, con il .env come 
 php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale
-php tests/report_test.php           # tagli dei report: ricerca senza maiuscole, paginazione
+php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha

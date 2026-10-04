@@ -34,9 +34,25 @@ class ReportSections
      * I cinque tagli. `chiave` finisce nell'indirizzo, `dati` dice al
      * controller quale insieme passare.
      *
+     * `articolo` e' l'articolo determinativo plurale: «Cerca fra **i**
+     * corsi» ma «Cerca fra **gli** studenti». In italiano dipende da come
+     * comincia la parola, non dal genere, quindi non si puo' ricavare da
+     * `plurale` senza riscrivere la regola — e sbagliarla su un caso.
+     * Dichiararlo e' una parola in piu' per sezione e nessuna eccezione da
+     * indovinare.
+     *
+     * `cerca` e' **campo del dato => intestazione della colonna**. La
+     * chiave serve a filtrare, il valore a dire a chi guarda che cosa puo'
+     * scrivere nel campo di ricerca: i report hanno dati diversi, e un
+     * suggerimento uguale per tutti («nome, email…») prometteva in quattro
+     * casi su cinque una ricerca che non c'e'. Le intestazioni sono quelle
+     * della tabella sotto, e `tests/report_test.php` verifica che lo
+     * restino: sono scritte in due file, e due stringhe uguali scritte in
+     * due posti divergono.
+     *
      * @return array<string, array{titolo: string, singolare: string, plurale: string,
-     *                             base: string, vuoto: string, occhiello: string,
-     *                             cerca: string[]}>
+     *                             articolo: string, base: string, vuoto: string,
+     *                             occhiello: string, cerca: array<string, string>}>
      */
     public static function tutte(): array
     {
@@ -45,49 +61,81 @@ class ReportSections
                 'titolo' => 'Per corso',
                 'singolare' => 'corso',
                 'plurale' => 'corsi',
+                'articolo' => 'i',
                 'base' => '/reports/courses',
                 'vuoto' => 'Nessun corso.',
                 'occhiello' => 'Iscritti, completamenti e certificati di ogni corso.',
-                'cerca' => ['title'],
+                'cerca' => ['title' => 'Corso'],
             ],
             'groups' => [
                 'titolo' => 'Per gruppo',
                 'singolare' => 'gruppo',
                 'plurale' => 'gruppi',
+                'articolo' => 'i',
                 'base' => '/reports/groups',
                 'vuoto' => 'Nessun gruppo visibile.',
                 'occhiello' => 'I membri di ogni gruppo incrociati con i corsi assegnati.',
-                'cerca' => ['name', 'tutor_name'],
+                'cerca' => ['name' => 'Gruppo', 'tutor_name' => 'Tutor'],
             ],
             'students' => [
                 'titolo' => 'Per studente',
                 'singolare' => 'studente',
                 'plurale' => 'studenti',
+                'articolo' => 'gli',
                 'base' => '/reports/students',
                 'vuoto' => 'Nessuno studente visibile.',
                 'occhiello' => 'Tutti i corsi di uno studente, con tentativi e punteggi.',
-                'cerca' => ['full_name', 'email'],
+                'cerca' => ['full_name' => 'Studente', 'email' => 'Email'],
             ],
             'live' => [
                 'titolo' => 'Per incontro dal vivo',
                 'singolare' => 'incontro',
                 'plurale' => 'incontri',
+                'articolo' => 'gli',
                 'base' => '/reports/live',
                 'vuoto' => 'Nessun incontro.',
                 'occhiello' => 'Le presenze, con l’origine del dato.',
-                'cerca' => ['title', 'course_title', 'group_name'],
+                // Due campi diversi, una colonna sola: il suggerimento la
+                // nomina una volta (ci pensa `suggerimento()`).
+                'cerca' => [
+                    'title' => 'Incontro',
+                    'course_title' => 'Corso o gruppo',
+                    'group_name' => 'Corso o gruppo',
+                ],
             ],
             'fruizione' => [
                 'titolo' => 'Fruizione dei video',
                 'singolare' => 'corso con video',
                 'plurale' => 'corsi con video',
+                'articolo' => 'i',
                 'base' => '/reports/fruizione',
                 'vuoto' => 'Nessun corso ha lezioni con video.',
                 'occhiello' => 'Quanta parte di ogni video hanno guardato gli studenti. '
                     . 'È il dato da rendicontare: si scarica per corso, con una colonna per lezione.',
-                'cerca' => ['title'],
+                'cerca' => ['title' => 'Corso'],
             ],
         ];
+    }
+
+    /**
+     * Il suggerimento del campo di ricerca: le colonne in cui si cerca
+     * davvero, in minuscolo e senza ripetizioni.
+     *
+     * @param array<string, string> $cerca campo => intestazione
+     */
+    public static function suggerimento(array $cerca): string
+    {
+        $etichette = [];
+
+        foreach ($cerca as $etichetta) {
+            $minuscola = mb_strtolower($etichetta);
+
+            if (!in_array($minuscola, $etichette, true)) {
+                $etichette[] = $minuscola;
+            }
+        }
+
+        return implode(', ', $etichette) . '…';
     }
 
     public static function esiste(string $chiave): bool

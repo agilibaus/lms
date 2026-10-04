@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\GroupLogo;
+
 /**
  * Le colonne di ogni taglio, in un posto solo.
  *
@@ -23,6 +25,32 @@ declare(strict_types=1);
  * @return array<string, list<array{0: string, 1: string, 2: callable(array): string}>>
  */
 
+/**
+ * Il nome del gruppo con il suo simbolo davanti, come nell'elenco dei
+ * gruppi del pannello: chi passa da una pagina all'altra riconosce il
+ * gruppo dal colore prima di leggerlo, e qui mancava. Dove il logo non c'e'
+ * resta il riquadro con le iniziali, tinto dall'identificativo — non un
+ * buco, perche' una colonna in cui l'immagine a volte c'e' e a volte no
+ * sembra rotta.
+ *
+ * Il simbolo e' decorativo: il nome e' li' accanto in chiaro, quindi
+ * `alt=""` e `aria-hidden` perche' un lettore di schermo non lo legga due
+ * volte.
+ */
+$gruppoConLogo = static function (array $riga) use ($esc): string {
+    $logo = GroupLogo::url($riga);
+    $id = (int) $riga['id'];
+    $nome = (string) $riga['name'];
+
+    $simbolo = $logo !== null
+        ? '<img src="' . $esc($logo) . '" alt="" class="group-logo" loading="lazy">'
+        : '<span class="group-logo group-logo-placeholder" aria-hidden="true"'
+            . ' style="--logo-hue: ' . GroupLogo::hue($id) . ';">'
+            . $esc(GroupLogo::initials($nome)) . '</span>';
+
+    return '<span class="group-name">' . $simbolo . $esc($nome) . '</span>';
+};
+
 $bozza = static function (array $riga) use ($esc): string {
     return $esc((string) $riga['title'])
         . ((int) $riga['is_published'] === 0 ? ' <span class="badge">bozza</span>' : '');
@@ -36,7 +64,7 @@ return [
         ['Certificati', 'numero', static fn (array $r): string => (string) (int) $r['certificate_count']],
     ],
     'groups' => [
-        ['Gruppo', 'testo', static fn (array $r): string => $esc((string) $r['name'])],
+        ['Gruppo', 'testo', $gruppoConLogo],
         ['Tutor', 'testo', static fn (array $r): string => $esc((string) ($r['tutor_name'] ?? '—'))],
         ['Membri', 'numero', static fn (array $r): string => (string) (int) $r['member_count']],
     ],

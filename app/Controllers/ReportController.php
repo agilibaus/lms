@@ -76,7 +76,9 @@ class ReportController
 
         $sezione = ReportSections::tutte()[$chiave];
         $cerca = trim((string) ($_GET['cerca'] ?? ''));
-        $righe = ReportSections::filtra($this->righeDi($chiave), $sezione['cerca'], $cerca);
+        // `cerca` e' campo => intestazione: a filtrare servono le chiavi,
+        // le intestazioni sono per il suggerimento mostrato nel campo.
+        $righe = ReportSections::filtra($this->righeDi($chiave), array_keys($sezione['cerca']), $cerca);
         $fetta = ReportSections::pagina($righe, (int) ($_GET['pagina'] ?? 1));
 
         View::render('reports/lista', [

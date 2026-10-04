@@ -59,7 +59,7 @@ check('sono cinque', count($sezioni) === 5, 'trovate: ' . implode(', ', array_ke
 foreach ($sezioni as $chiave => $s) {
     $completa = true;
 
-    foreach (['titolo', 'singolare', 'plurale', 'base', 'vuoto', 'occhiello', 'cerca'] as $campo) {
+    foreach (['titolo', 'singolare', 'plurale', 'articolo', 'base', 'vuoto', 'occhiello', 'cerca'] as $campo) {
         if (!isset($s[$campo]) || $s[$campo] === '' || $s[$campo] === []) {
             $completa = false;
         }
@@ -105,6 +105,71 @@ check(
     count($almenoUnNumero) === count($colonne),
     'senza: ' . implode(', ', array_diff(array_keys($colonne), array_keys($almenoUnNumero)))
 );
+
+// ---------------------------------------------------------------
+// La frase sopra al campo di ricerca e il suo suggerimento
+// ---------------------------------------------------------------
+
+echo PHP_EOL . 'La frase e il suggerimento' . PHP_EOL;
+
+// Le cinque frasi per esteso, non la regola: «Cerca fra i studenti» era
+// esattamente il genere di errore che una regola dedotta da `plurale`
+// rimette dentro al primo caso nuovo.
+$frasi = [
+    'courses' => 'Cerca fra i corsi',
+    'groups' => 'Cerca fra i gruppi',
+    'students' => 'Cerca fra gli studenti',
+    'live' => 'Cerca fra gli incontri',
+    'fruizione' => 'Cerca fra i corsi con video',
+];
+
+foreach ($frasi as $chiave => $attesa) {
+    $s = $sezioni[$chiave];
+    $frase = 'Cerca fra ' . $s['articolo'] . ' ' . $s['plurale'];
+
+    check("«{$attesa}»", $frase === $attesa, 'ottenuto: «' . $frase . '»');
+}
+
+$suggerimenti = [
+    'courses' => 'corso…',
+    'groups' => 'gruppo, tutor…',
+    'students' => 'studente, email…',
+    'live' => 'incontro, corso o gruppo…',
+    'fruizione' => 'corso…',
+];
+
+foreach ($suggerimenti as $chiave => $atteso) {
+    $avuto = ReportSections::suggerimento($sezioni[$chiave]['cerca']);
+
+    check(
+        "il suggerimento di «{$chiave}» è «{$atteso}»",
+        $avuto === $atteso,
+        'ottenuto: «' . $avuto . '»'
+    );
+}
+
+// Negli incontri due campi diversi stanno sotto la stessa colonna: il
+// suggerimento la nomina una volta, altrimenti direbbe «corso o gruppo,
+// corso o gruppo».
+check(
+    'un suggerimento non ripete due volte la stessa colonna',
+    substr_count(ReportSections::suggerimento($sezioni['live']['cerca']), 'corso o gruppo') === 1
+);
+
+// Il legame fra i due file: le intestazioni citate nel suggerimento devono
+// essere colonne che esistono davvero in quella tabella. Sono scritte in
+// `ReportSections` e in `_colonne.php`, e due stringhe uguali scritte in
+// due posti divergono alla prima modifica.
+foreach ($sezioni as $chiave => $s) {
+    $intestazioni = array_column($colonne[$chiave], 0);
+    $sconosciute = array_values(array_diff(array_unique(array_values($s['cerca'])), $intestazioni));
+
+    check(
+        "le colonne citate dal suggerimento di «{$chiave}» esistono nella tabella",
+        $sconosciute === [],
+        'non sono colonne di questa tabella: ' . implode(', ', $sconosciute)
+    );
+}
 
 // ---------------------------------------------------------------
 // La ricerca
