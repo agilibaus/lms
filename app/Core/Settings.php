@@ -78,6 +78,8 @@ class Settings
         'THEME_TEXT_SIZE',
         'THEME_TEXT_COLOR',
         'THEME_SCENE_SIZE',
+        'THEME_FONT_AUTH',
+        'THEME_FONT_APP',
     ];
 
     /**

@@ -744,6 +744,44 @@ h3 { font-size: 1.05rem; }
     min-height: 0;
 }
 
+/* ---------- Gruppi di impostazioni ----------
+
+   La pagina Aspetto ha cinque riquadri, e cinque riquadri in fila non si
+   leggono: l'occhio li prende per un elenco indifferenziato e deve
+   ricostruirsi da solo che cosa vale dove. I gruppi dicono la cosa che
+   conta davvero — **dove fa effetto** quello che si sta cambiando — prima
+   che si legga il primo campo.
+
+   Il titolo del gruppo e' un `h2` e quelli dei riquadri sono diventati
+   `h3`: la gerarchia non e' decorativa, e' quella che un lettore di schermo
+   annuncia saltando da un titolo all'altro. */
+
+.gruppo-impostazioni {
+    margin-bottom: 2.2rem;
+}
+
+.gruppo-titolo {
+    margin: 0 0 0.2rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.gruppo-nota {
+    margin: 0 0 0.9rem;
+    max-width: 44rem;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+}
+
+/* Dentro un gruppo i riquadri stanno piu' vicini fra loro che al gruppo
+   successivo: e' la distanza, non una linea, a dire dove finisce uno e
+   comincia l'altro. */
+.gruppo-impostazioni .card + .card {
+    margin-top: 0.9rem;
+}
+
 /* ---------- Tavolozze, nella pagina Aspetto ---------- */
 
 .tavolozze {

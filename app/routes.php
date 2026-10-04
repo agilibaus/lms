@@ -11,6 +11,7 @@ use App\Controllers\AuthController;
 use App\Controllers\CatalogController;
 use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
+use App\Controllers\FontController;
 use App\Controllers\LessonController;
 use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
@@ -91,6 +92,11 @@ $router->post('/lessons/{id}/fruizione', [VideoProgressController::class, 'store
 $router->get('/lessons/{id}/fruizione', [VideoProgressController::class, 'report']);
 $router->get('/lessons/{id}/fruizione/{formato}', [VideoProgressController::class, 'download']);
 $router->get('/materials/{id}/download', [LessonController::class, 'downloadMaterial']);
+
+// Pubblica di proposito: il carattere serve anche alla pagina di accesso,
+// cioe' a chi l'accesso non l'ha ancora fatto. Un file di carattere non
+// contiene dati di nessuno.
+$router->get('/assets/fonts/catalogo/{file}', [FontController::class, 'serve']);
 
 // --- Quiz -------------------------------------------------------------
 $router->get('/modules/{moduleId}/quiz/create', [QuizController::class, 'createForm']);

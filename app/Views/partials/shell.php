@@ -22,7 +22,7 @@ use App\Core\Csrf;
          dichiarazione vince, e cosi' `style.css` non viene mai riscritto —
          le patch future non ci vanno in conflitto (§8.5). Niente quando non
          c'e' niente da cambiare. */ ?>
-<?php $coloriTema = App\Core\Theme::blocco(); ?>
+<?php $coloriTema = App\Core\Theme::bloccoFont() . App\Core\Theme::blocco(); ?>
 <?php if ($coloriTema !== ''): ?>
     <style><?= $coloriTema ?></style>
 <?php endif; ?>

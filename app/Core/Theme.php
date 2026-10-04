@@ -48,6 +48,12 @@ class Theme
     /** Misura del titolo e del testo della presentazione (aspetto affiancato). */
     public const KEY_SCENE_SIZE = 'THEME_SCENE_SIZE';
 
+    /** Carattere delle pagine pubbliche: famiglia del catalogo, o vuoto. */
+    public const KEY_FONT_AUTH = 'THEME_FONT_AUTH';
+
+    /** Carattere dell'applicazione: famiglia del catalogo, o vuoto. */
+    public const KEY_FONT_APP = 'THEME_FONT_APP';
+
     public const PREDEFINITA = 'verde';
     public const RAGGIO_PREDEFINITO = 'normale';
     public const MISURA_TESTO_PREDEFINITA = 'normale';
@@ -195,6 +201,62 @@ class Theme
     public const TESTO = '#1C1C1A';
     public const TESTO_SPENTO = '#78716C';
 
+    /**
+     * La famiglia scelta per una delle due zone, o null.
+     *
+     * Torna null anche quando la famiglia e' impostata ma **il file non
+     * c'e'**: sarebbe il caso di un carattere scaricato e poi cancellato a
+     * mano da `storage/`, e chiedere a ogni pagina un file inesistente
+     * aggiunge un 404 per visitatore senza cambiare niente di quello che si
+     * vede. Meglio tornare al carattere di partenza in silenzio.
+     */
+    public static function fontScelto(string $chiave): ?string
+    {
+        $famiglia = trim((string) Settings::get($chiave, ''));
+
+        if ($famiglia === '' || !FontLibrary::presente($famiglia)) {
+            return null;
+        }
+
+        return $famiglia;
+    }
+
+    /**
+     * I blocchi `@font-face` dei caratteri scelti, pronti da stampare.
+     *
+     * `font-display: swap` disegna subito il testo con il carattere di
+     * sistema e lo sostituisce appena il file e' pronto. Il comportamento
+     * predefinito del browser e' invece lasciarlo **invisibile** fino a tre
+     * secondi: su una pagina di accesso, un modulo senza etichette.
+     */
+    public static function bloccoFont(): string
+    {
+        $css = '';
+        $viste = [];
+
+        foreach ([self::KEY_FONT_AUTH, self::KEY_FONT_APP] as $chiave) {
+            $famiglia = self::fontScelto($chiave);
+
+            if ($famiglia === null || isset($viste[$famiglia])) {
+                continue;
+            }
+
+            $viste[$famiglia] = true;
+
+            // Il nome finisce dentro `font-family: "..."`. Le virgolette e
+            // tutto cio' che non sia una lettera, una cifra o uno spazio si
+            // tolgono: il nome arriva dal catalogo, ma un catalogo e' un
+            // file, e un file si puo' modificare.
+            $nome = (string) preg_replace('/[^A-Za-z0-9 ]/', '', $famiglia);
+
+            $css .= '@font-face{font-family:"' . $nome . '";'
+                . 'src:url("' . FontLibrary::url($famiglia) . '") format("woff2");'
+                . 'font-weight:100 900;font-style:normal;font-display:swap}';
+        }
+
+        return $css;
+    }
+
     public static function raggioCorrente(): string
     {
         $scelta = (string) Settings::get(self::KEY_RADIUS, self::RAGGIO_PREDEFINITO);
@@ -339,6 +401,20 @@ class Theme
         $righe[] = '--scene-title-size: ' . self::misuraRemValida($scena['titolo']);
         $righe[] = '--scene-text-size: ' . self::misuraRemValida($scena['testo']);
 
+        // I due caratteri. `--font-auth` e' gia' usato dalle pagine
+        // pubbliche (0078) e vale Albert Sans se nessuno sceglie altro;
+        // `--font-sans` e' quello di tutto il resto.
+        $pubbliche = self::fontScelto(self::KEY_FONT_AUTH);
+        $interno = self::fontScelto(self::KEY_FONT_APP);
+
+        if ($pubbliche !== null) {
+            $righe[] = '--font-auth: ' . self::pila($pubbliche);
+        }
+
+        if ($interno !== null) {
+            $righe[] = '--font-sans: ' . self::pila($interno);
+        }
+
         $css = ':root{' . implode(';', $righe) . '}';
 
         // La dimensione del testo non e' una variabile ma la misura di
@@ -370,7 +446,9 @@ class Theme
             || self::coloreValido((string) Settings::get(self::KEY_TEXT_COLOR, '')) !== null
             || self::raggioCorrente() !== self::RAGGIO_PREDEFINITO
             || self::misuraTestoCorrente() !== self::MISURA_TESTO_PREDEFINITA
-            || self::misuraScenaCorrente() !== self::MISURA_SCENA_PREDEFINITA;
+            || self::misuraScenaCorrente() !== self::MISURA_SCENA_PREDEFINITA
+            || self::fontScelto(self::KEY_FONT_AUTH) !== null
+            || self::fontScelto(self::KEY_FONT_APP) !== null;
     }
 
     /**
@@ -382,6 +460,25 @@ class Theme
     private static function misuraValida(string $valore): string
     {
         return preg_match('/^\d{1,3}px$/', $valore) === 1 ? $valore : '0px';
+    }
+
+    /**
+     * La famiglia piu' il suo ripiego generico: `"Lora", serif`.
+     *
+     * Il generico non e' decorazione. Mentre il file si scarica, e se un
+     * giorno sparisse, il testo si disegna con qualcosa della stessa
+     * natura — un serif al posto di un serif — invece che con qualcosa di
+     * diverso.
+     */
+    private static function pila(string $famiglia): string
+    {
+        $nome = (string) preg_replace('/[^A-Za-z0-9 ]/', '', $famiglia);
+        $generico = FontLibrary::generico($famiglia);
+        $generico = in_array($generico, ['sans-serif', 'serif', 'monospace', 'cursive'], true)
+            ? $generico
+            : 'sans-serif';
+
+        return '"' . $nome . '", ' . $generico;
     }
 
     /** Come sopra, per le misure in rem. */

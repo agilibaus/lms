@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Auth\Auth;
 use App\Core\AuthLayout;
 use App\Core\BunnyToken;
+use App\Core\FontLibrary;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Google\ServiceAccountClient;
@@ -282,6 +283,9 @@ class SettingsController extends AdminController
             'coloreTestoInVigore' => Theme::coloriTesto()[0],
             'misuraScena' => Theme::misuraScenaCorrente(),
             'misureScena' => Theme::MISURE_SCENA,
+            'catalogoFont' => array_keys(FontLibrary::catalogo()),
+            'fontPubbliche' => (string) (Settings::stored(Theme::KEY_FONT_AUTH) ?? ''),
+            'fontInterno' => (string) (Settings::stored(Theme::KEY_FONT_APP) ?? ''),
             'lastUpdate' => Settings::lastUpdate(Settings::APPEARANCE_KEYS),
         ]);
     }
@@ -364,6 +368,37 @@ class SettingsController extends AdminController
         Settings::set(Theme::KEY_TEXT_SIZE, $misura, $userId);
         Settings::set(Theme::KEY_TEXT_COLOR, $coloreTesto, $userId);
         Settings::set(Theme::KEY_SCENE_SIZE, $scena, $userId);
+
+        // I caratteri per ultimi, perche' sono gli unici che possono
+        // fallire per una ragione fuori dal nostro controllo: se il server
+        // non riesce a scaricarli, tutto il resto e' gia' salvato e si
+        // perde solo quella scelta, invece di perdere l'intero modulo.
+        foreach ([Theme::KEY_FONT_AUTH => 'font_pubbliche', Theme::KEY_FONT_APP => 'font_interno'] as $chiave => $campo) {
+            $famiglia = trim((string) ($_POST[$campo] ?? ''));
+
+            if ($famiglia === '') {
+                Settings::set($chiave, '', $userId);
+                continue;
+            }
+
+            if (!FontLibrary::esiste($famiglia)) {
+                $this->fail('Il carattere "' . $famiglia . '" non è nel catalogo.', self::APPEARANCE_PAGE);
+            }
+
+            // Gia' sul nostro server: niente da scaricare, si salva e basta.
+            if (!FontLibrary::presente($famiglia)) {
+                try {
+                    FontLibrary::scarica($famiglia);
+                } catch (\RuntimeException $e) {
+                    // **L'impostazione non si salva.** Il nome di un
+                    // carattere il cui file non esiste vorrebbe dire pagine
+                    // che chiedono un file inesistente a ogni caricamento.
+                    $this->fail($e->getMessage(), self::APPEARANCE_PAGE);
+                }
+            }
+
+            Settings::set($chiave, $famiglia, $userId);
+        }
 
         $this->success('Aspetto salvato.', self::APPEARANCE_PAGE);
     }

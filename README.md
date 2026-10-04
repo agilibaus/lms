@@ -168,6 +168,7 @@ vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli s
                         lesson-focus (senza distrazioni), lesson-tracking (tempi di
                         fruizione), dropdown
   /assets/fonts       → Albert Sans per le pagine pubbliche (vedi LEGGIMI.md nella cartella)
+                        i caratteri scelti dal catalogo NON stanno qui ma in storage/fonts
   /assets/vendor/tinymce → editor di testo ricco (vedi README-pistacchio.md nella cartella)
   /install            → procedura di installazione guidata (da eliminare dopo l'uso)
   index.php           → front controller
@@ -207,8 +208,10 @@ vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli s
   /google              → chiave dell'account di servizio (permessi 0600)
   /mail                → messaggi .eml quando MAIL_TRANSPORT=log
   /logs                → uscita dei comandi da cron
+  /fonts               → caratteri scaricati dal catalogo di Google Fonts
 /database
   schema.sql
+  google-fonts.json    → elenco delle famiglie del catalogo (solo nomi, 50 KB)
   /migrations         → migrazioni incrementali per installazioni gia' esistenti
 /tests                 → vedi la sezione «Test» più sotto per l'elenco completo
 ```
@@ -498,6 +501,7 @@ php tests/xlsx_test.php             # il file XLSX scritto in casa
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
 php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
+php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 node tests/accessibilita.js         # 1225 controlli su 49 pagine, a tre larghezze
@@ -734,6 +738,51 @@ passano.
 > La tolleranza è di 1,5 px, e non è indulgenza: le pagine pubbliche usano Albert Sans e
 > quelle interne il carattere di sistema, e due caratteri diversi alla stessa dimensione
 > danno righe alte 17 e 18 px. È una differenza del carattere, non del foglio di stile.
+
+## Caratteri dal catalogo
+
+**Amministrazione → Aspetto → Caratteri.** L'elenco completo di Google Fonts —
+**1941 famiglie** — con due scelte separate: una per l'applicazione (corsi, report, pannello:
+le pagine dove si legge per ore) e una per le pagine pubbliche (che si vedono per pochi
+secondi, e dove un carattere caratterizzato ha senso). Campo vuoto = carattere di partenza.
+
+**Nessun visitatore contatta mai Google.** L'elenco viaggia con il progetto
+(`database/google-fonts.json`, 50 KB) e serve solo a riempire il campo. Quando l'admin
+sceglie una famiglia, **il server** scarica quel singolo file una volta sola in
+`storage/fonts/` e da lì in poi lo serve Pistacchio, da `/assets/fonts/catalogo/{file}`. È la
+stessa ragione per cui Albert Sans sta nel repository: un `<link>` a `fonts.googleapis.com`
+farebbe arrivare a Google l'indirizzo IP di chi apre la pagina di accesso.
+
+Si passa dal foglio di stile `css2` di Google e non dal file grezzo su GitHub perché il primo
+restituisce un **woff2** già compresso e ridotto al latino — una trentina di KB — mentre il
+`.ttf` è lo stesso carattere a 130 KB, e convertirlo in PHP non si può. Lo `User-Agent` nella
+richiesta non è un vezzo: senza, Google risponde con indirizzi `.ttf`, credendo di parlare con
+un browser vecchio.
+
+### Se il server non può uscire su internet
+
+Su molti hosting condivisi le connessioni in uscita sono chiuse. In quel caso **lo
+scaricamento fallisce e l'impostazione non viene salvata** — di proposito: salvare il nome di
+un carattere il cui file non esiste vorrebbe dire pagine che chiedono un file inesistente a
+ogni caricamento. Il messaggio dice qual è il server irraggiungibile e che cosa fare.
+
+Il ripiego funziona ovunque: si mette il file woff2 in `storage/fonts/` col nome della
+famiglia in minuscolo e trattini — `playfair-display.woff2`. `FontLibrary::accettaCaricato()`
+riconosce un woff2 dalla **firma del file** (`wOF2` nei primi quattro byte), non
+dall'estensione, che la decide chi carica.
+
+### Due dettagli di sicurezza
+
+- **Il nome del file non arriva mai dall'indirizzo.** La rotta prende la famiglia dal
+  catalogo e ricalcola il nome: un indirizzo come
+  `/assets/fonts/catalogo/..%2f..%2fconfig.php` cerca una famiglia che non esiste e finisce in
+  404, invece di diventare un percorso.
+- **Dal CSS di Google si accetta solo un `fonts.gstatic.com/….woff2`.** Una risposta
+  intercettata che indicasse un altro host farebbe scaricare qualunque cosa.
+
+La rotta del carattere è **l'unica rotta di file che non chiede l'accesso**, e deve esserlo:
+il carattere serve anche alla pagina di accesso, cioè a chi l'accesso non l'ha ancora fatto.
+Un file di carattere non contiene dati di nessuno.
 
 ## Carattere delle pagine pubbliche (Albert Sans)
 

@@ -22,6 +22,9 @@ use App\Core\Theme;
  * @var string $coloreTestoInVigore
  * @var string $misuraScena
  * @var array<string, array<string, string>> $misureScena
+ * @var string[] $catalogoFont
+ * @var string $fontPubbliche
+ * @var string $fontInterno
  * @var array|null $lastUpdate
  */
 ?>
@@ -29,11 +32,10 @@ use App\Core\Theme;
     <a href="/admin/settings" class="back-link">← Impostazioni</a>
     <h1>Aspetto</h1>
     <p class="page-subtitle">
-        Due cose, con due portate diverse. <strong>I colori</strong> valgono per tutta la
-        piattaforma, dentro e fuori. <strong>Struttura e testi</strong> riguardano solo le
-        cinque pagine pubbliche — accesso, registrazione, recupero password, nuova password
-        e cambio password obbligato — e valgono per tutte e cinque insieme: cambiare aspetto
-        nel giro di tre clic si leggerebbe come un difetto.
+        Le impostazioni sono divise per <strong>dove fanno effetto</strong>: prima quelle
+        che valgono su tutte le pagine, poi quelle che riguardano solo le cinque pagine
+        pubbliche — accesso, registrazione, recupero password, nuova password e cambio
+        password obbligato.
     </p>
 </div>
 
@@ -42,8 +44,12 @@ use App\Core\Theme;
 <form action="/admin/settings/aspetto" method="post" class="form">
     <?= Csrf::field() ?>
 
+    <div class="gruppo-impostazioni">
+        <h2 class="gruppo-titolo">Tutta la piattaforma</h2>
+        <p class="gruppo-nota">Valgono ovunque: pagine pubbliche, corsi, report, pannello.</p>
+
     <section class="card">
-        <h2>Colori</h2>
+        <h3>Colori</h3>
         <p class="form-hint" style="margin-top: 0;">
             Valgono su <strong>tutte</strong> le pagine, non solo su quelle pubbliche.
             Le quattro tavolozze sono state verificate sui contrasti prima di essere offerte:
@@ -84,7 +90,6 @@ use App\Core\Theme;
             di quanto manca: sotto 4,5:1 di contrasto la scritta bianca sui pulsanti non si
             leggerebbe più.
         </p>
-    </section>
 
         <label for="<?= Theme::KEY_TEXT_COLOR ?>">Colore del testo (facoltativo)</label>
         <input type="text" id="<?= Theme::KEY_TEXT_COLOR ?>" name="<?= Theme::KEY_TEXT_COLOR ?>"
@@ -106,7 +111,56 @@ use App\Core\Theme;
     </section>
 
     <section class="card">
-        <h2>Forma e misura</h2>
+        <h3>Caratteri</h3>
+        <p class="form-hint" style="margin-top: 0;">
+            Dal catalogo di Google Fonts, <strong><?= count($catalogoFont) ?> famiglie</strong>.
+            I caratteri <strong>non si caricano dai server di Google</strong>: quando ne
+            scegli uno, è Pistacchio a scaricarlo una volta sola e poi a servirlo lui, così
+            chi apre la pagina di accesso non contatta nessuno. Lascia vuoto per il carattere
+            di partenza.
+        </p>
+
+        <?php /* Una tendina da 1941 voci sarebbe inservibile; un `datalist`
+                 lascia scrivere le prime lettere e propone le corrispondenze,
+                 e senza JavaScript resta un campo di testo che funziona lo
+                 stesso. */ ?>
+        <datalist id="catalogo-caratteri">
+            <?php foreach ($catalogoFont as $famiglia): ?>
+                <option value="<?= htmlspecialchars($famiglia) ?>"></option>
+            <?php endforeach; ?>
+        </datalist>
+
+        <label for="font_interno">Carattere dell’applicazione</label>
+        <input type="text" id="font_interno" name="font_interno" list="catalogo-caratteri"
+               value="<?= htmlspecialchars($fontInterno) ?>"
+               placeholder="carattere di sistema" spellcheck="false"
+               aria-describedby="font_interno_aiuto">
+        <p class="form-hint" id="font_interno_aiuto">
+            Corsi, lezioni, report, pannello: le pagine dove si legge per ore. Un carattere
+            neutro è spesso la scelta giusta qui.
+        </p>
+
+        <label for="font_pubbliche">Carattere delle pagine pubbliche</label>
+        <input type="text" id="font_pubbliche" name="font_pubbliche" list="catalogo-caratteri"
+               value="<?= htmlspecialchars($fontPubbliche) ?>"
+               placeholder="Albert Sans" spellcheck="false"
+               aria-describedby="font_pubbliche_aiuto">
+        <p class="form-hint" id="font_pubbliche_aiuto">
+            Accesso, registrazione, recupero password. È la prima cosa che si vede, e si
+            vede per pochi secondi: qui un carattere caratterizzato ha senso.
+        </p>
+
+        <p class="form-hint">
+            <strong>Se il salvataggio fallisce dicendo che non riesce a raggiungere
+            Google</strong>, il server non può uscire su internet — capita su molti hosting
+            condivisi. In quel caso il carattere va messo a mano in
+            <code>storage/fonts/</code>: il nome del file è quello della famiglia in
+            minuscolo con i trattini, per esempio <code>playfair-display.woff2</code>.
+        </p>
+    </section>
+
+    <section class="card">
+        <h3>Forma e misura</h3>
         <p class="form-hint" style="margin-top: 0;">
             Anche queste valgono su tutte le pagine.
         </p>
@@ -147,8 +201,18 @@ use App\Core\Theme;
         </p>
     </section>
 
+    </div>
+
+    <div class="gruppo-impostazioni">
+        <h2 class="gruppo-titolo">Solo le pagine pubbliche</h2>
+        <p class="gruppo-nota">
+            Accesso, registrazione, recupero password, nuova password e cambio password
+            obbligato. La scelta vale per tutte e cinque insieme: cambiare aspetto nel giro
+            di tre clic si leggerebbe come un difetto.
+        </p>
+
     <section class="card">
-        <h2>Struttura delle pagine pubbliche</h2>
+        <h3>Struttura</h3>
 
         <?php foreach ($choices as $valore => $etichetta): ?>
             <label class="checkbox-label">
@@ -160,7 +224,7 @@ use App\Core\Theme;
     </section>
 
     <section class="card">
-        <h2>Testi della presentazione</h2>
+        <h3>Testi della presentazione</h3>
         <p class="form-hint" style="margin-top: 0;">
             Si vedono solo con l'aspetto affiancato, nella sezione di sinistra.
             Un campo lasciato vuoto usa il testo predefinito, quello che si legge in grigio.
@@ -196,6 +260,8 @@ use App\Core\Theme;
         <textarea id="AUTH_SPLIT_TEXT" name="AUTH_SPLIT_TEXT" rows="3"
                   placeholder="<?= htmlspecialchars($defaults['AUTH_SPLIT_TEXT']) ?>"><?= htmlspecialchars($values['AUTH_SPLIT_TEXT']) ?></textarea>
     </section>
+
+    </div>
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">Salva</button>
