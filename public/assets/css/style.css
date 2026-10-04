@@ -3786,9 +3786,23 @@ fieldset.checkbox-group legend {
     color: #5A554F;
 }
 
+/* Il giorno di oggi si segna con un **contorno**, non con i bordi della
+   cella.
+
+   La griglia ha `border-collapse: collapse`, dove due celle vicine
+   condividono una linea sola e il browser ne sceglie una: a parita' di
+   spessore e di stile vince quella della cella piu' a sinistra. Il bordo
+   sinistro di «oggi» perdeva quindi contro il bordo destro del giorno
+   prima, e la cornice si vedeva su tre lati. Misurato sui pixel: a destra
+   il verde (79,114,86), a sinistra il grigio del vicino (231,229,228).
+
+   `outline` non partecipa a quella contesa, si disegna sopra e non occupa
+   spazio, quindi non sposta di un pixel la griglia; `outline-offset`
+   negativo lo porta dentro al bordo della cella invece che fuori. */
 .agenda-griglia td.oggi {
-    border-color: var(--color-primary);
     background: var(--color-primary-soft);
+    outline: 1px solid var(--color-primary);
+    outline-offset: -1px;
 }
 
 .agenda-numero {
