@@ -39,6 +39,12 @@ CREATE TABLE users (
     -- impegni di questa persona senza fare l'accesso. Si rigenera dal
     -- profilo, e rigenerarlo invalida il link vecchio.
     calendar_token  VARCHAR(64) NULL DEFAULT NULL UNIQUE,
+    -- Quando e' stato creato e quando e' stato letto l'ultima volta: una
+    -- credenziale di cui non si sa niente non si sa nemmeno quando
+    -- revocarla. Non si registra CHI ha letto: la data basta a decidere,
+    -- il resto sarebbe un registro di abitudini che nessuno ha chiesto.
+    calendar_token_created_at DATETIME NULL DEFAULT NULL,
+    calendar_token_used_at    DATETIME NULL DEFAULT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

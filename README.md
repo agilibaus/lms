@@ -144,8 +144,9 @@ ordine di data), ad esempio:
 ```bash
 mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
-L'ultima è `2026_10_04_agenda_calendario.sql`, che aggiunge `users.calendar_token` per
-l'indirizzo personale del calendario (vedi **Agenda**).
+Le ultime due sono `2026_10_04_agenda_calendario.sql` e
+`2026_10_04_agenda_calendario_date.sql`, che aggiungono `users.calendar_token` e le sue due
+date per l'indirizzo personale del calendario (vedi **Agenda**).
 
 Le migrazioni vanno applicate **in ordine di data**, e ciascuna si puo' rieseguire senza
 danni. Le piu' recenti:
@@ -610,6 +611,13 @@ Due modi, dalla stessa pagina:
 - **tutta l'agenda, sempre aggiornata**: un indirizzo personale `/calendario/{token}.ics` da
   incollare in Google Calendar, Calendario di Apple o Outlook.
 
+Accanto all'indirizzo la pagina mostra **da quando esiste e quando è stato letto l'ultima
+volta**: è quello su cui si decide se tenerlo. Un calendario che non risulta letto da mesi
+si disattiva, e una lettura che non si spiega è il motivo per cui il pulsante «Rigenera» sta
+lì sotto — rigenerare è una revoca, il link vecchio smette di funzionare subito. Non si
+registra **chi** ha letto (niente indirizzi IP, niente nomi di programmi): la data basta a
+decidere, il resto sarebbe un registro di abitudini che nessuno ha chiesto.
+
 Il secondo è **l'unico indirizzo interno che risponde senza accesso**, e lo fa perché deve: a
 rileggerlo è un programma, ogni tanto, senza nessuno davanti che possa scrivere una password.
 Al posto dell'accesso c'è il token, che quindi **è una credenziale**: 24 byte dal generatore
@@ -655,7 +663,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # 1431 controlli su 53 pagine, a tre larghezze
-node tests/permessi.js              # 91 prove: ogni ruolo prova a raggiungere le cose di un altro
+node tests/permessi.js              # 96 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

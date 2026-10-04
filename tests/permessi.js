@@ -414,6 +414,62 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 );
             }
 
+            // Le due date accanto all'indirizzo sono quello su cui una
+            // persona decide se revocarlo. Se la lettura non venisse
+            // registrata, la pagina direbbe «mai» a un calendario che
+            // qualcuno sta leggendo da settimane: una rassicurazione
+            // falsa, che e' peggio del non dire niente.
+            await page.goto(BASE + '/agenda');
+            const creaOrigenera = await page.$('.agenda-calendario button');
+            await Promise.all([page.waitForNavigation(), creaOrigenera.click()]);
+
+            const indirizzo = await page.evaluate(() => {
+                const c = document.querySelector('.agenda-indirizzo');
+                return c === null ? null : c.textContent.trim();
+            });
+
+            check('creando l\'indirizzo, la pagina lo mostra', indirizzo !== null);
+
+            if (indirizzo !== null) {
+                const prima = await page.evaluate(() =>
+                    document.querySelector('.agenda-dati').textContent.replace(/\s+/g, ' '));
+
+                check(
+                    'appena creato, risulta non ancora letto da nessuno',
+                    prima.includes('mai'),
+                    [prima]
+                );
+
+                const lettura = await ap.request.get(indirizzo);
+                check('e il calendario si legge senza accesso', lettura.status() === 200,
+                    lettura.status() === 200 ? [] : ['ha risposto ' + lettura.status()]);
+
+                await page.goto(BASE + '/agenda');
+                const dopo = await page.evaluate(() =>
+                    document.querySelector('.agenda-dati').textContent.replace(/\s+/g, ' '));
+
+                check(
+                    'dopo una lettura, la data dell ultima lettura c e',
+                    !dopo.includes('mai') && /\d{2}\/\d{2}\/\d{4}/.test(dopo),
+                    [dopo]
+                );
+
+                // Rigenerare e' una revoca: il link vecchio deve smettere
+                // di funzionare **subito**, non alla prossima lettura.
+                const vecchio = indirizzo;
+                await Promise.all([
+                    page.waitForNavigation(),
+                    page.click('.agenda-calendario form[action="/agenda/calendario"] button'),
+                ]);
+                const morto = await ap.request.get(vecchio);
+
+                check(
+                    'rigenerando, il vecchio indirizzo non apre piu niente',
+                    morto.status() === 404,
+                    morto.status() === 404 ? [] : ['ha risposto ' + morto.status()]
+                );
+            }
+
             await anonimo.close();
             await ctx.close();
         }

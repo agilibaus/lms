@@ -19,7 +19,7 @@ use App\Core\Url;
  * @var list<array<string, mixed>> $eventi
  * @var array<string, list<array<string, mixed>>> $gruppi
  * @var list<list<array<string, mixed>>> $settimane
- * @var string|null $token
+ * @var array{token: string, creato: ?string, usato: ?string}|null $calendario
  */
 
 $esc = static fn (?string $v): string => htmlspecialchars((string) $v);
@@ -129,7 +129,7 @@ $titoliGruppi = [
     <?php endforeach; ?>
 
     <?php if ($gruppi['oggi'] === [] && $gruppi['settimana'] === [] && $gruppi['prossimi'] === []): ?>
-        <p class="empty-state">Niente in programma. Qui sotto c'è quello che è già passato.</p>
+        <p class="empty-state">Niente in programma. Qui sotto puoi vedere lo storico.</p>
     <?php endif; ?>
 
     <?php if ($gruppi['passati'] !== []): ?>
@@ -137,7 +137,7 @@ $titoliGruppi = [
                  programmare, e aperto spingerebbe in fondo le cose che
                  contano. */ ?>
         <details class="agenda-passati">
-            <summary>Già passati (<?= count($gruppi['passati']) ?>)</summary>
+            <summary>Storico (<?= count($gruppi['passati']) ?>)</summary>
             <ul class="agenda-elenco">
                 <?php foreach ($gruppi['passati'] as $e): ?>
                     <?= $voce($e) ?>
@@ -215,9 +215,9 @@ $titoliGruppi = [
 <?php /* Il calendario esterno sta in fondo: si configura una volta sola,
          e in cima ruberebbe spazio a quello che si guarda ogni giorno. */ ?>
 <section class="card agenda-calendario">
-    <h2>Nel tuo calendario</h2>
+    <h2>Calendario personale</h2>
 
-    <?php if ($token === null): ?>
+    <?php if ($calendario === null): ?>
         <p>
             Puoi aggiungere questa agenda a Google Calendar, a Calendario di Apple o a
             Outlook: si aggiorna da sola, e i nuovi incontri compaiono lì senza che tu
@@ -229,18 +229,54 @@ $titoliGruppi = [
             password, e se ti sfugge puoi rigenerarlo da qui — il collegamento vecchio
             smette di funzionare.
         </p>
-        <form method="post" action="/agenda/calendario">
+        <form method="post" action="/agenda/calendario" class="agenda-crea">
             <?= Csrf::field() ?>
             <button type="submit" class="btn btn-primary">Crea l'indirizzo del calendario</button>
         </form>
     <?php else: ?>
-        <?php $indirizzo = Url::to('/calendario/' . $token . '.ics'); ?>
+        <?php $indirizzo = Url::to('/calendario/' . $calendario['token'] . '.ics'); ?>
         <p>Incolla questo indirizzo nel tuo calendario, alla voce «iscriviti a un calendario»:</p>
         <p><code class="agenda-indirizzo"><?= $esc($indirizzo) ?></code></p>
+
+        <?php
+        /*
+         * Le due date dicono quello che serve per decidere se tenere
+         * l'indirizzo o rigenerarlo: da quando esiste, e se qualcuno lo
+         * sta ancora leggendo. Una lettura che non ci si spiega è il
+         * segnale per cui il pulsante «Rigenera» sta lì sotto.
+         *
+         * Chi aveva creato l'indirizzo prima che le date esistessero non
+         * ce le ha: lo si dice, invece di inventare un giorno.
+         */
+        $quando = static function (?string $valore) use ($esc): string {
+            if ($valore === null || $valore === '') {
+                return 'data non registrata';
+            }
+
+            $t = strtotime($valore);
+
+            return $t === false ? 'data non registrata' : $esc(date('d/m/Y \a\l\l\e H:i', $t));
+        };
+        ?>
+        <dl class="agenda-dati">
+            <div>
+                <dt>Creato</dt>
+                <dd><?= $quando($calendario['creato']) ?></dd>
+            </div>
+            <div>
+                <dt>Ultima lettura</dt>
+                <dd>
+                    <?= $calendario['usato'] === null && $calendario['creato'] !== null
+                        ? 'mai: il calendario non è ancora stato aperto da nessun programma'
+                        : $quando($calendario['usato']) ?>
+                </dd>
+            </div>
+        </dl>
+
         <p class="hint">
             <strong>Chi ha questo indirizzo vede i tuoi impegni</strong> senza entrare in
-            Pistacchio. Se lo hai mandato a qualcuno per sbaglio, rigeneralo: quello vecchio
-            smette di funzionare subito.
+            Pistacchio. Se la data di lettura non ti torna, o se lo hai mandato a qualcuno
+            per sbaglio, rigeneralo: quello vecchio smette di funzionare subito.
         </p>
         <div class="form-actions">
             <form method="post" action="/agenda/calendario">

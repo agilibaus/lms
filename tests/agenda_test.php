@@ -235,7 +235,19 @@ foreach ([
     );
 }
 
-check('il nome del mese e in italiano', Agenda::nomeMese($oggi) === 'ottobre 2026');
+// Il nome del mese e' un titolo in cima alla griglia, non una parola in
+// mezzo a una frase: va con l'iniziale maiuscola.
+check('il nome del mese e in italiano e comincia maiuscolo', Agenda::nomeMese($oggi) === 'Ottobre 2026');
+check(
+    'vale per tutti e dodici',
+    array_map(
+        static fn (int $m): string => Agenda::nomeMese(new DateTimeImmutable(sprintf('2026-%02d-01', $m))),
+        range(1, 12)
+    ) === [
+        'Gennaio 2026', 'Febbraio 2026', 'Marzo 2026', 'Aprile 2026', 'Maggio 2026', 'Giugno 2026',
+        'Luglio 2026', 'Agosto 2026', 'Settembre 2026', 'Ottobre 2026', 'Novembre 2026', 'Dicembre 2026',
+    ]
+);
 check('i giorni cominciano da lunedì', Agenda::nomiGiorni()[0] === 'lunedì');
 
 // ---------------------------------------------------------------

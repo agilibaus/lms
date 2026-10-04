@@ -233,7 +233,17 @@ class Agenda
         return $mese->setTime(0, 0);
     }
 
-    /** I nomi dei mesi in italiano: `strftime` non c'e' piu' e `date()` e' in inglese. */
+    /**
+     * I nomi dei mesi in italiano: `strftime` non c'e' piu' e `date()` e'
+     * in inglese.
+     *
+     * Con l'iniziale maiuscola perche' qui il nome del mese e' un titolo —
+     * «Ottobre 2026» in cima alla griglia — e non una parola in mezzo a una
+     * frase. Si usa `mb_convert_case` e non `ucfirst`, che su una lettera
+     * accentata lavorerebbe sul primo **byte**: oggi nessun mese italiano
+     * comincia per accentata, ma la funzione non sa di essere usata solo
+     * per l'italiano.
+     */
     public static function nomeMese(\DateTimeImmutable $mese): string
     {
         $nomi = [
@@ -241,7 +251,10 @@ class Agenda
             'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
         ];
 
-        return $nomi[(int) $mese->format('n')] . ' ' . $mese->format('Y');
+        $nome = $nomi[(int) $mese->format('n')];
+
+        return mb_convert_case(mb_substr($nome, 0, 1), MB_CASE_UPPER)
+            . mb_substr($nome, 1) . ' ' . $mese->format('Y');
     }
 
     /** Lunedi'…domenica, nell'ordine della griglia. */

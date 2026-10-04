@@ -74,15 +74,38 @@ class AgendaModel
     }
 
     /**
-     * L'indirizzo personale del calendario, se e' stato creato.
+     * L'indirizzo personale del calendario e le sue due date.
+     *
+     * Le date non sono un dettaglio: un indirizzo che vale come una
+     * password e di cui non si sa niente non si sa nemmeno quando
+     * revocarlo. «Creato il 4 ottobre, letto l'ultima volta oggi alle
+     * 9:15» dice a chi guarda se serve ancora e se lo sta leggendo
+     * qualcuno che non se lo aspetta.
+     *
+     * Restano NULL per chi aveva creato l'indirizzo prima che queste due
+     * colonne esistessero: la pagina lo dice invece di inventare un
+     * giorno.
+     *
+     * @return array{token: string, creato: ?string, usato: ?string}|null
      */
-    public static function tokenDi(int $userId): ?string
+    public static function calendarioDi(int $userId): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT calendar_token FROM users WHERE id = :id');
+        $stmt = Database::connection()->prepare(
+            'SELECT calendar_token, calendar_token_created_at, calendar_token_used_at
+               FROM users WHERE id = :id'
+        );
         $stmt->execute(['id' => $userId]);
-        $token = $stmt->fetchColumn();
+        $riga = $stmt->fetch();
 
-        return $token === false || $token === null || $token === '' ? null : (string) $token;
+        if ($riga === false || ($riga['calendar_token'] ?? '') === '' || $riga['calendar_token'] === null) {
+            return null;
+        }
+
+        return [
+            'token' => (string) $riga['calendar_token'],
+            'creato' => $riga['calendar_token_created_at'],
+            'usato' => $riga['calendar_token_used_at'],
+        ];
     }
 
     /**
@@ -130,8 +153,15 @@ class AgendaModel
         // qui vorrebbe dire gli impegni di una persona letti da un altro.
         $token = bin2hex(random_bytes(24));
 
+        // La data di creazione si scrive qui e la data d'uso si azzera:
+        // rigenerare e' una revoca, e tenere l'ultima lettura del token
+        // vecchio accanto a quello nuovo direbbe una cosa falsa.
         $stmt = Database::connection()->prepare(
-            'UPDATE users SET calendar_token = :t WHERE id = :id'
+            'UPDATE users
+                SET calendar_token = :t,
+                    calendar_token_created_at = NOW(),
+                    calendar_token_used_at = NULL
+              WHERE id = :id'
         );
         $stmt->execute(['t' => $token, 'id' => $userId]);
 
@@ -141,7 +171,32 @@ class AgendaModel
     public static function dimenticaToken(int $userId): void
     {
         $stmt = Database::connection()->prepare(
-            'UPDATE users SET calendar_token = NULL WHERE id = :id'
+            'UPDATE users
+                SET calendar_token = NULL,
+                    calendar_token_created_at = NULL,
+                    calendar_token_used_at = NULL
+              WHERE id = :id'
+        );
+        $stmt->execute(['id' => $userId]);
+    }
+
+    /**
+     * Segna che il calendario e' stato letto adesso.
+     *
+     * Una scrittura per ogni lettura, e va bene: un programma di
+     * calendario rilegge ogni qualche ora, non ogni secondo, e la riga e'
+     * una sola. L'ora la mette il database con `NOW()` e non PHP: e' la
+     * stessa ragione per cui le date del rilascio si confrontano in SQL
+     * (§5 del promemoria).
+     *
+     * Non si registra **chi** ha letto — niente indirizzi, niente nomi di
+     * programmi: la data basta a decidere se revocare, il resto sarebbe un
+     * registro delle abitudini di una persona che nessuno ha chiesto.
+     */
+    public static function segnaLettura(int $userId): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE users SET calendar_token_used_at = NOW() WHERE id = :id'
         );
         $stmt->execute(['id' => $userId]);
     }

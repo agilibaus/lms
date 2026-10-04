@@ -50,7 +50,7 @@ class AgendaController
             'eventi' => $eventi,
             'gruppi' => Agenda::raggruppa($eventi),
             'settimane' => Agenda::griglia($mese, $eventi),
-            'token' => AgendaModel::tokenDi($userId),
+            'calendario' => AgendaModel::calendarioDi($userId),
         ]);
     }
 
@@ -152,6 +152,11 @@ class AgendaController
             fn (array $e): array => $this->perIcs($e),
             Agenda::eventiDi((int) $utente['id'])
         );
+
+        // Si segna la lettura **dopo** aver raccolto gli eventi: se la
+        // raccolta fallisce, la pagina non racconta che il calendario e'
+        // stato letto quando non lo e' stato.
+        AgendaModel::segnaLettura((int) $utente['id']);
 
         header('Cache-Control: private, no-store');
         $this->inviaIcs(Ics::publish($eventi, 'Pistacchio · ' . $utente['full_name']), 'agenda.ics');

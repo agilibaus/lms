@@ -3877,6 +3877,37 @@ fieldset.checkbox-group legend {
     font-size: 1.05rem;
 }
 
+/* Un rem sopra al pulsante: senza, «Crea l'indirizzo del calendario»
+   restava appiccicato al paragrafo che lo spiega, e i due si leggevano
+   come un blocco solo. */
+.agenda-crea {
+    margin-top: 1rem;
+}
+
+/* Le due date del calendario: etichetta e valore, in riga dove c'e'
+   spazio e impilate quando non ce n'e'. */
+.agenda-dati {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 2rem;
+    margin: 0.8rem 0;
+}
+
+.agenda-dati > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.agenda-dati dt {
+    font-weight: 600;
+}
+
+.agenda-dati dd {
+    margin: 0;
+    color: #5A554F;
+}
+
 /* L'indirizzo va copiato intero: va a capo dove serve invece di uscire
    dalla pagina, e si seleziona con un gesto solo. */
 .agenda-indirizzo {
