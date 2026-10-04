@@ -20,6 +20,14 @@ $valid = $certificate !== null && $certificate['revoked_at'] === null;
     <link rel="icon" type="image/png" href="/assets/img/pistacchio-32.png" sizes="32x32">
     <link rel="apple-touch-icon" href="/assets/img/pistacchio-180.png">
     <link rel="stylesheet" href="/assets/css/style.css">
+<?php /* I colori scelti dal pannello, DOPO il foglio di stile: l'ultima
+         dichiarazione vince, e cosi' `style.css` non viene mai riscritto —
+         le patch future non ci vanno in conflitto (§8.5). Niente quando non
+         c'e' niente da cambiare. */ ?>
+<?php $coloriTema = App\Core\Theme::blocco(); ?>
+<?php if ($coloriTema !== ''): ?>
+    <style><?= $coloriTema ?></style>
+<?php endif; ?>
 </head>
 <body class="centered-page">
 <main class="verify-card">

@@ -38,6 +38,14 @@ $aspetto = AuthLayout::current();
     <link rel="preload" href="/assets/fonts/albert-sans-latin.woff2" as="font"
           type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/assets/css/style.css">
+<?php /* I colori scelti dal pannello, DOPO il foglio di stile: l'ultima
+         dichiarazione vince, e cosi' `style.css` non viene mai riscritto —
+         le patch future non ci vanno in conflitto (§8.5). Niente quando non
+         c'e' niente da cambiare. */ ?>
+<?php $coloriTema = App\Core\Theme::blocco(); ?>
+<?php if ($coloriTema !== ''): ?>
+    <style><?= $coloriTema ?></style>
+<?php endif; ?>
 </head>
 <?php if ($aspetto === AuthLayout::AFFIANCATO): ?>
 <body class="auth-body-split">

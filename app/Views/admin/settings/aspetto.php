@@ -3,12 +3,17 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Theme;
 
 /**
  * @var string $layout
  * @var array<string, string> $choices
  * @var array<string, string> $values
  * @var array<string, string> $defaults
+ * @var string $palette
+ * @var array<string, array<string, string>> $tavolozze
+ * @var string $primario
+ * @var string $primarioInVigore
  * @var array|null $lastUpdate
  */
 ?>
@@ -16,10 +21,11 @@ use App\Core\Csrf;
     <a href="/admin/settings" class="back-link">← Impostazioni</a>
     <h1>Aspetto</h1>
     <p class="page-subtitle">
-        Come si presentano le pagine pubbliche: accesso, registrazione, recupero password,
-        nuova password e cambio password obbligato. La scelta vale per tutte e cinque insieme:
-        cambiare aspetto nel giro di tre clic si leggerebbe come un difetto.
-        Le pagine interne non sono toccate.
+        Due cose, con due portate diverse. <strong>I colori</strong> valgono per tutta la
+        piattaforma, dentro e fuori. <strong>Struttura e testi</strong> riguardano solo le
+        cinque pagine pubbliche — accesso, registrazione, recupero password, nuova password
+        e cambio password obbligato — e valgono per tutte e cinque insieme: cambiare aspetto
+        nel giro di tre clic si leggerebbe come un difetto.
     </p>
 </div>
 
@@ -29,7 +35,51 @@ use App\Core\Csrf;
     <?= Csrf::field() ?>
 
     <section class="card">
-        <h2>Struttura</h2>
+        <h2>Colori</h2>
+        <p class="form-hint" style="margin-top: 0;">
+            Valgono su <strong>tutte</strong> le pagine, non solo su quelle pubbliche.
+            Le quattro tavolozze sono state verificate sui contrasti prima di essere offerte:
+            qualunque si scelga, i testi restano leggibili.
+        </p>
+
+        <fieldset class="tavolozze">
+            <legend class="sr-only">Tavolozza</legend>
+            <?php foreach ($tavolozze as $chiave => $t): ?>
+                <label class="tavolozza">
+                    <input type="radio" name="<?= Theme::KEY_PALETTE ?>"
+                           value="<?= htmlspecialchars($chiave) ?>"
+                           <?= $palette === $chiave ? 'checked' : '' ?>>
+                    <?php /* I quadratini sono decorazione: il nome accanto dice gia'
+                             di quale tavolozza si tratta, e un lettore di schermo
+                             leggerebbe tre volte la stessa cosa. */ ?>
+                    <span class="tavolozza-campioni" aria-hidden="true">
+                        <span style="background: <?= htmlspecialchars($t['primary']) ?>"></span>
+                        <span style="background: <?= htmlspecialchars($t['soft']) ?>"></span>
+                        <span style="background: <?= htmlspecialchars($t['auth_bg']) ?>"></span>
+                    </span>
+                    <span class="tavolozza-nome"><?= htmlspecialchars($t['nome']) ?></span>
+                </label>
+            <?php endforeach; ?>
+        </fieldset>
+
+        <label for="<?= Theme::KEY_PRIMARY ?>">Colore principale (facoltativo)</label>
+        <input type="text" id="<?= Theme::KEY_PRIMARY ?>" name="<?= Theme::KEY_PRIMARY ?>"
+               value="<?= htmlspecialchars($primario) ?>"
+               placeholder="<?= htmlspecialchars($primarioInVigore) ?>"
+               inputmode="text" spellcheck="false"
+               aria-describedby="primario_aiuto">
+        <p class="form-hint" id="primario_aiuto">
+            Scritto come <code>#rrggbb</code>, per avvicinare il colore a quello del vostro
+            marchio. Lascia vuoto per usare quello della tavolozza, che è
+            <code><?= htmlspecialchars($primarioInVigore) ?></code>.
+            Un colore troppo chiaro viene <strong>rifiutato al salvataggio</strong>, dicendo
+            di quanto manca: sotto 4,5:1 di contrasto la scritta bianca sui pulsanti non si
+            leggerebbe più.
+        </p>
+    </section>
+
+    <section class="card">
+        <h2>Struttura delle pagine pubbliche</h2>
 
         <?php foreach ($choices as $valore => $etichetta): ?>
             <label class="checkbox-label">

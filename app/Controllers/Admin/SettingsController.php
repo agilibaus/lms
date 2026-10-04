@@ -15,6 +15,7 @@ use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\Mail\Message;
 use App\Core\Settings;
+use App\Core\Theme;
 use App\Core\View;
 
 /**
@@ -266,6 +267,13 @@ class SettingsController extends AdminController
             'choices' => AuthLayout::CHOICES,
             'values' => $values,
             'defaults' => AuthLayout::DEFAULTS,
+            'palette' => Theme::paletteCorrente(),
+            'tavolozze' => Theme::TAVOLOZZE,
+            // Nel campo va quello che e' stato scritto, non il colore in
+            // vigore: vuoto significa "quello della tavolozza", ed e'
+            // esattamente cio' che il campo vuoto deve dire.
+            'primario' => (string) (Settings::stored(Theme::KEY_PRIMARY) ?? ''),
+            'primarioInVigore' => Theme::valori()['primary'],
             'lastUpdate' => Settings::lastUpdate(Settings::APPEARANCE_KEYS),
         ]);
     }
@@ -283,9 +291,34 @@ class SettingsController extends AdminController
             $this->fail('Aspetto non valido.', self::APPEARANCE_PAGE);
         }
 
+        // Stesso criterio dell'aspetto: elenco chiuso, perche' una chiave
+        // inventata lascerebbe la piattaforma senza colori.
+        $palette = (string) ($_POST[Theme::KEY_PALETTE] ?? Theme::PREDEFINITA);
+
+        if (!array_key_exists($palette, Theme::TAVOLOZZE)) {
+            $this->fail('Tavolozza non valida.', self::APPEARANCE_PAGE);
+        }
+
+        // Il colore personalizzato: vuoto vuol dire "quello della
+        // tavolozza". Se c'e', deve leggersi — e il motivo per cui non va
+        // bene si dice adesso, non dopo averlo salvato.
+        $primario = trim((string) ($_POST[Theme::KEY_PRIMARY] ?? ''));
+
+        if ($primario !== '') {
+            $motivo = Theme::perche($primario);
+
+            if ($motivo !== null) {
+                $this->fail($motivo, self::APPEARANCE_PAGE);
+            }
+
+            $primario = (string) Theme::coloreValido($primario);
+        }
+
         Settings::set('AUTH_LAYOUT', $layout, $userId);
         Settings::set('AUTH_SPLIT_TITLE', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TITLE'] ?? ''))), $userId);
         Settings::set('AUTH_SPLIT_TEXT', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TEXT'] ?? ''))), $userId);
+        Settings::set(Theme::KEY_PALETTE, $palette, $userId);
+        Settings::set(Theme::KEY_PRIMARY, $primario, $userId);
 
         $this->success('Aspetto salvato.', self::APPEARANCE_PAGE);
     }

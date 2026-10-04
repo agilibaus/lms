@@ -497,6 +497,7 @@ php tests/xlsx_test.php             # il file XLSX scritto in casa
 # richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
 php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
+php tests/tema_test.php             # tavolozze: contrasti di ogni coppia, e quali colori entrano nel CSS
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 node tests/accessibilita.js         # 1225 controlli su 49 pagine, a tre larghezze
@@ -610,6 +611,40 @@ Google Meet **non si può incorporare** in un iframe dentro la piattaforma: `mee
 vieta di essere incorniciato da altri siti e il browser rifiuta di disegnarlo. Per avere la
 videoconferenza dentro la pagina servirebbe un provider nato per essere incorporato (Jitsi,
 Whereby, Daily), cioè lasciare Meet.
+
+## Colori: le tavolozze
+
+**Amministrazione → Aspetto → Colori.** Quattro tavolozze pronte — verde pistacchio
+(predefinita), blu ardesia, terracotta, prugna — più un campo facoltativo per il solo colore
+principale. **I colori valgono su tutta la piattaforma**, dentro e fuori; struttura e testi
+delle pagine pubbliche, nella stessa pagina, riguardano invece solo quelle cinque pagine.
+
+**`style.css` non viene mai riscritto.** I colori sono già variabili CSS, e la tavolozza
+scelta diventa un blocco `:root { … }` stampato **dopo** il foglio di stile: l'ultima
+dichiarazione vince. Così una patch futura non trova conflitti su `style.css` e `git am` non
+si blocca — era la condizione posta in §8.5 del promemoria. Con la tavolozza predefinita e
+nessun colore personalizzato non si stampa niente: sarebbe un blocco identico a quello che
+sovrascrive.
+
+**Perché tavolozze pronte e non un campo per colore.** Una tavolozza sono sette valori che
+devono reggersi fra loro: il colore principale deve staccare sul bianco *e* sul fondo delle
+pagine pubbliche, il bianco deve leggersi sopra di esso, la variante scura sopra la propria
+tinta chiara. Sette campi liberi vogliono dire combinazioni illeggibili. Ogni tavolozza è
+verificata su **dieci coppie** prima di essere offerta, e `tests/tema_test.php` rifà quel
+conto a ogni esecuzione.
+
+L'eccezione è il **colore principale**, che è quello che si vuole cambiare più spesso, di
+solito per avvicinarlo a un marchio. Lì il controllo è al salvataggio: un colore sotto 4,5:1
+viene rifiutato dicendo di quanto manca, invece di essere salvato e scoperto dopo. Le varianti
+(stato premuto, tinta chiara) si ricavano da quello scelto, e anche loro sono verificate.
+
+> **Un colore arriva dal database e finisce dentro un tag `<style>`.** Senza controllo, un
+> valore come `#fff; } body { display:none` sarebbe CSS eseguito. Per questo ogni valore passa
+> da `Theme::coloreValido()`, che accetta solo `#rgb` e `#rrggbb` e rifiuta tutto il resto —
+> nomi di colore, `rgb()`, `url()`. Stesso principio del sanificatore dell'HTML dell'editor.
+
+La pagina dell'installer è l'unica che non riceve il blocco: gira prima che esistano le
+impostazioni.
 
 ## Carattere delle pagine pubbliche (Albert Sans)
 

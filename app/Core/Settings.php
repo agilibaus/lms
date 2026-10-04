@@ -72,6 +72,8 @@ class Settings
         'AUTH_LAYOUT',
         'AUTH_SPLIT_TITLE',
         'AUTH_SPLIT_TEXT',
+        'THEME_PALETTE',
+        'THEME_PRIMARY',
     ];
 
     /**
