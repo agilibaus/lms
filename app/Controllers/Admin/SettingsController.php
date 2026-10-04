@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Auth\Auth;
 use App\Core\AuthLayout;
 use App\Core\BunnyToken;
+use App\Core\ElementStyle;
 use App\Core\FontLibrary;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
@@ -286,6 +287,9 @@ class SettingsController extends AdminController
             'catalogoFont' => array_keys(FontLibrary::catalogo()),
             'fontPubbliche' => (string) (Settings::stored(Theme::KEY_FONT_AUTH) ?? ''),
             'fontInterno' => (string) (Settings::stored(Theme::KEY_FONT_APP) ?? ''),
+            'elementi' => ElementStyle::ELEMENTI,
+            'proprieta' => ElementStyle::PROPRIETA,
+            'ritocchi' => ElementStyle::valori(),
             'lastUpdate' => Settings::lastUpdate(Settings::APPEARANCE_KEYS),
         ]);
     }
@@ -367,7 +371,22 @@ class SettingsController extends AdminController
         Settings::set(Theme::KEY_RADIUS, $raggio, $userId);
         Settings::set(Theme::KEY_TEXT_SIZE, $misura, $userId);
         Settings::set(Theme::KEY_TEXT_COLOR, $coloreTesto, $userId);
+        // I ritocchi sui singoli elementi: arrivano come
+        // `elemento[chiave][proprieta]`, si ripuliscono contro gli elenchi
+        // chiusi e si controllano i colori prima di salvare.
+        $ritocchi = ElementStyle::ripulisci((array) ($_POST['elemento'] ?? []));
+        $motivo = ElementStyle::perche($ritocchi);
+
+        if ($motivo !== null) {
+            $this->fail($motivo, self::APPEARANCE_PAGE);
+        }
+
         Settings::set(Theme::KEY_SCENE_SIZE, $scena, $userId);
+        Settings::set(
+            ElementStyle::KEY,
+            $ritocchi === [] ? '' : (string) json_encode($ritocchi, JSON_UNESCAPED_SLASHES),
+            $userId
+        );
 
         // I caratteri per ultimi, perche' sono gli unici che possono
         // fallire per una ragione fuori dal nostro controllo: se il server

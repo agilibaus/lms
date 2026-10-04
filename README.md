@@ -739,6 +739,46 @@ passano.
 > quelle interne il carattere di sistema, e due caratteri diversi alla stessa dimensione
 > danno righe alte 17 e 18 px. È una differenza del carattere, non del foglio di stile.
 
+## Ritocchi ai singoli elementi
+
+**Amministrazione → Aspetto → Solo le pagine pubbliche → Ritocchi ai singoli elementi.** Sei
+elementi — titolo e testo della presentazione, nome della piattaforma, titolo del modulo,
+riga sotto al titolo, pulsante principale — ognuno con le stesse sette possibilità: peso,
+stile, lettere, spaziatura, allineamento, colore, e la misura dove già esisteva.
+
+**Perché un meccanismo e non altri comandi.** Fino alla 0084 ogni richiesta diventava un
+comando suo. Funziona per quattro, non per quaranta: la pagina cresce finché non si legge
+più. Qui c'è un elenco di elementi e un elenco di proprietà, e ogni elemento si regola con le
+stesse. **Aggiungere domani «il titolo della lezione» costa una riga in `ElementStyle::ELEMENTI`,
+non un riquadro nuovo.**
+
+Cosa lo rende diverso dal «CSS libero», che §8.5 ha escluso:
+
+- **i selettori li scriviamo noi** e stanno nel codice: dal pannello non si sceglie *dove*
+  applicare qualcosa, solo *che cosa* applicare a un elemento già nominato;
+- **i valori vengono da elenchi chiusi**: non si scrive `font-weight`, si sceglie «Normale».
+  Un valore fuori elenco viene ignorato, non stampato — e la pulizia si applica **sia in
+  scrittura sia in lettura**, perché il valore passa dal database;
+- **nessuna proprietà può nascondere niente.** Niente `display`, `visibility`, `position`: è
+  la trappola di §5 — ciò che si nasconde resta inviato — e non deve poter rientrare da una
+  tendina. Un test lo verifica sull'elenco delle proprietà, non sulle intenzioni.
+
+Il prezzo è quello che §8.5 chiamava **un impegno**: questi selettori diventano un contratto.
+Chi rinomina `.scene-claim h2` deve aggiornare anche quella tabella, o un ritocco salvato
+smetterà di avere effetto restando salvato — il difetto peggiore, perché non si vede.
+
+Nel pannello i sei elementi stanno in un riquadro solo, ciascuno in un `<details>`: sei righe
+chiuse invece di quarantadue comandi in fila. Si apre da sé quello che è già stato modificato,
+e porta l'etichetta «modificato», così chi torna sulla pagina vede dove ha messo le mani senza
+aprire sei cassetti. `<details>` è un elemento del browser: funziona senza JavaScript, con la
+tastiera e con un lettore di schermo senza che dobbiamo costruirne il comportamento.
+
+> **Una differenza voluta non è una deriva.** Da qui in avanti l'admin può dare di proposito
+> al pulsante delle pagine pubbliche un peso diverso da quello interno, e
+> `tests/coerenza_moduli.js` fallirebbe su una sua scelta. Il controllo legge ora le regole
+> che Pistacchio stampa nella pagina: se per quel selettore c'è una regola, il confronto si
+> salta dicendolo.
+
 ## Caratteri dal catalogo
 
 **Amministrazione → Aspetto → Caratteri.** L'elenco completo di Google Fonts —

@@ -22,6 +22,9 @@ use App\Core\Theme;
  * @var string $coloreTestoInVigore
  * @var string $misuraScena
  * @var array<string, array<string, string>> $misureScena
+ * @var array<string, array<string, string>> $elementi
+ * @var array<string, array<string, mixed>> $proprieta
+ * @var array<string, array<string, string>> $ritocchi
  * @var string[] $catalogoFont
  * @var string $fontPubbliche
  * @var string $fontInterno
@@ -220,6 +223,63 @@ use App\Core\Theme;
                        <?= $layout === $valore ? 'checked' : '' ?>>
                 <span><?= htmlspecialchars($etichetta) ?></span>
             </label>
+        <?php endforeach; ?>
+    </section>
+
+    <section class="card">
+        <h3>Ritocchi ai singoli elementi</h3>
+        <p class="form-hint" style="margin-top: 0;">
+            Per chi vuole scendere nel dettaglio: ogni elemento delle pagine pubbliche con
+            le stesse sette possibilità. Tutto quello che si lascia su «Come adesso» non
+            viene toccato, e un elemento mai aperto resta esattamente com'è.
+            I colori passano dal controllo del contrasto, come altrove.
+        </p>
+
+        <?php foreach ($elementi as $chiave => $el): ?>
+            <?php
+            $suoi = $ritocchi[$chiave] ?? [];
+            // Aperto se c'è già qualcosa dentro: chi torna sulla pagina deve
+            // vedere subito dove ha messo le mani, senza aprire sei cassetti.
+            $aperto = $suoi !== [];
+            ?>
+            <details class="ritocco" <?= $aperto ? 'open' : '' ?>>
+                <summary>
+                    <span class="ritocco-nome"><?= htmlspecialchars($el['nome']) ?></span>
+                    <?php if ($aperto): ?>
+                        <span class="badge badge-muted">modificato</span>
+                    <?php endif; ?>
+                    <?php if ($el['solo'] !== null): ?>
+                        <span class="badge">solo affiancato</span>
+                    <?php endif; ?>
+                </summary>
+
+                <p class="form-hint"><?= htmlspecialchars($el['descrizione']) ?></p>
+
+                <div class="ritocco-campi">
+                    <?php foreach ($proprieta as $nomeProp => $prop): ?>
+                        <?php $id = 'el_' . $chiave . '_' . $nomeProp; ?>
+                        <div class="ritocco-campo">
+                            <label for="<?= $id ?>"><?= htmlspecialchars($prop['nome']) ?></label>
+                            <?php if ($nomeProp === 'colore'): ?>
+                                <input type="text" id="<?= $id ?>"
+                                       name="elemento[<?= htmlspecialchars($chiave) ?>][colore]"
+                                       value="<?= htmlspecialchars($suoi['colore'] ?? '') ?>"
+                                       placeholder="come adesso" spellcheck="false">
+                            <?php else: ?>
+                                <select id="<?= $id ?>"
+                                        name="elemento[<?= htmlspecialchars($chiave) ?>][<?= htmlspecialchars($nomeProp) ?>]">
+                                    <?php foreach ($prop['valori'] as $valore => $etichetta): ?>
+                                        <option value="<?= htmlspecialchars((string) $valore) ?>"
+                                                <?= ($suoi[$nomeProp] ?? '') === (string) $valore ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($etichetta) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </details>
         <?php endforeach; ?>
     </section>
 

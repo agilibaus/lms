@@ -613,9 +613,15 @@ h3 { font-size: 1.05rem; }
     margin-top: 0.5rem;
 }
 
+/* Il grigio dei testi secondari su questo fondo dava 3.82:1, sotto il
+   minimo di 4.5 — e per di piu' a 11.5 px. Era li' da sempre e nessun
+   controllo lo aveva visto, perche' finche' nessuna pagina usava questo
+   distintivo con del testo dentro non c'era niente da misurare: l'ha fatto
+   emergere il «modificato» dei ritocchi (0085). Questo grigio piu' scuro
+   da' 5.87:1 sul bordo e 7.38 sul bianco. */
 .badge-muted {
     background: var(--color-border);
-    color: var(--color-text-muted);
+    color: #5A554F;
 }
 
 .alert {
@@ -780,6 +786,71 @@ h3 { font-size: 1.05rem; }
    comincia l'altro. */
 .gruppo-impostazioni .card + .card {
     margin-top: 0.9rem;
+}
+
+/* ---------- Ritocchi ai singoli elementi ----------
+
+   Sei elementi per sette proprieta' sono quarantadue comandi: in fila
+   sarebbero un muro. Ognuno sta dentro un `details`, che si apre solo se
+   serve — ed e' un elemento del browser, quindi funziona senza
+   JavaScript, con la tastiera e con un lettore di schermo senza che
+   dobbiamo costruirne il comportamento. */
+
+.ritocco {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-top: 0.5rem;
+    background: var(--color-surface);
+}
+
+.ritocco > summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: var(--tap-target);
+    padding: 0.6rem 0.8rem;
+    cursor: pointer;
+    list-style-position: inside;
+}
+
+.ritocco > summary:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.ritocco[open] > summary {
+    border-bottom: 1px solid var(--color-border);
+}
+
+.ritocco-nome {
+    font-weight: 600;
+}
+
+.ritocco .form-hint {
+    margin: 0.7rem 0.8rem 0;
+}
+
+/* I campi si dispongono da se': tre per riga dove c'e' spazio, uno sul
+   telefono, senza una soglia scritta a mano. */
+.ritocco-campi {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.5rem 0.9rem;
+    padding: 0.6rem 0.8rem 0.9rem;
+}
+
+.ritocco-campo label {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+/* `.form select` ha una larghezza massima di 520 px pensata per i campi a
+   tutta riga: dentro una griglia a tre colonne deve stare nella propria. */
+.ritocco-campo select,
+.ritocco-campo input[type="text"] {
+    width: 100%;
+    max-width: 100%;
 }
 
 /* ---------- Tavolozze, nella pagina Aspetto ---------- */

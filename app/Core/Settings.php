@@ -80,6 +80,7 @@ class Settings
         'THEME_SCENE_SIZE',
         'THEME_FONT_AUTH',
         'THEME_FONT_APP',
+        'THEME_ELEMENTI',
     ];
 
     /**

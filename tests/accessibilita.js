@@ -333,6 +333,20 @@ async function fuocoInvisibile(page) {
             .filter((el) => {
                 const r = el.getBoundingClientRect();
                 const s = getComputedStyle(el);
+
+                // Dentro un `<details>` chiuso il browser **rifiuta il
+                // fuoco**: `focus()` non fa niente e nessuno stato cambia,
+                // quindi il comando risulterebbe "senza fuoco visibile".
+                // Non e' un difetto — non e' raggiungibile nemmeno con il
+                // tabulatore — ma attenzione: un rettangolo di dimensione
+                // zero non basta a riconoscerlo, perche' Chromium quei
+                // comandi li dispone lo stesso. Va guardato l'antenato.
+                const dettaglio = el.closest('details');
+
+                if (dettaglio !== null && !dettaglio.open && el.tagName !== 'SUMMARY') {
+                    return false;
+                }
+
                 return r.width > 0 && r.height > 0 && s.visibility !== 'hidden'
                     && el.getAttribute('tabindex') !== '-1' && !el.disabled;
             });

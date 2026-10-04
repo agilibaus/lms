@@ -28,6 +28,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config/config.php';
 
+use App\Core\ElementStyle;
 use App\Core\Theme;
 
 $ok = 0;
@@ -334,6 +335,91 @@ check(
     'un testo gia al limite non produce un grigio illeggibile',
     Theme::contrasto(Theme::spegni('#767676'), Theme::SUPERFICIE) >= 4.0,
     'in quel caso si restituisce il colore di partenza invece di schiarire'
+);
+
+// ---------------------------------------------------------------
+echo PHP_EOL . 'Ritocchi ai singoli elementi' . PHP_EOL;
+
+check('ci sono elementi da ritoccare', ElementStyle::ELEMENTI !== []);
+check('ci sono proprieta', ElementStyle::PROPRIETA !== []);
+
+$vietate = ['display', 'visibility', 'position', 'content', 'opacity', 'z-index', 'transform'];
+$fuorilegge = [];
+
+foreach (ElementStyle::PROPRIETA as $nome => $prop) {
+    if (in_array($prop['css'], $vietate, true)) {
+        $fuorilegge[] = $nome . ' => ' . $prop['css'];
+    }
+}
+
+check(
+    'nessuna proprieta puo nascondere o spostare qualcosa',
+    $fuorilegge === [],
+    implode(', ', $fuorilegge) . ' — e la trappola di §5: cio che si nasconde resta inviato'
+);
+
+foreach (ElementStyle::ELEMENTI as $chiave => $el) {
+    check(
+        "{$chiave}: il selettore non puo uscire dal proprio ambito",
+        !str_contains($el['selettore'], '{') && !str_contains($el['selettore'], '}')
+        && !str_contains($el['selettore'], ';'),
+        $el['selettore']
+    );
+    check("{$chiave}: ha un nome e una descrizione", $el['nome'] !== '' && $el['descrizione'] !== '');
+}
+
+// La pulizia e' la difesa vera: tutto quello che non e' negli elenchi
+// chiusi non diventa CSS.
+$sporco = [
+    'scene_titolo' => ['peso' => '400', 'inventata' => 'x', 'stile' => 'italic'],
+    'elemento_che_non_esiste' => ['peso' => '700'],
+    'pulsante' => ['peso' => '999'],
+    'marchio' => ['colore' => '#fff; } body{display:none'],
+    'scene_testo' => ['allineamento' => 'justify'],
+    42 => ['peso' => '400'],
+];
+$pulito = ElementStyle::ripulisci($sporco);
+
+check('un valore valido passa', ($pulito['scene_titolo']['peso'] ?? '') === '400');
+check('una proprieta inventata non passa', !isset($pulito['scene_titolo']['inventata']));
+check('un elemento che non esiste non passa', !isset($pulito['elemento_che_non_esiste']));
+check('un peso fuori elenco non passa', !isset($pulito['pulsante']['peso']));
+check(
+    'un colore che prova a chiudere il CSS non passa',
+    !isset($pulito['marchio']['colore']),
+    'finirebbe dentro un tag <style>'
+);
+check('un allineamento fuori elenco non passa', !isset($pulito['scene_testo']['allineamento']));
+check('una chiave che non e una stringa non passa', !isset($pulito[42]));
+
+// Il CSS prodotto: solo regole, niente che possa uscirne.
+try {
+    $css = ElementStyle::blocco();
+    check(
+        'il CSS prodotto non contiene tag',
+        !str_contains($css, '<') && !str_contains($css, '>'),
+        $css
+    );
+} catch (Throwable $e) {
+    echo '  --   database non raggiungibile: prova sul CSS saltata' . PHP_EOL;
+}
+
+check(
+    'un colore illeggibile sul fondo della presentazione viene respinto',
+    ElementStyle::perche(['scene_titolo' => ['colore' => '#CCCCCC']]) !== null
+);
+check(
+    'un colore illeggibile sul riquadro bianco viene respinto',
+    ElementStyle::perche(['titolo_riquadro' => ['colore' => '#999999']]) !== null
+);
+check(
+    'un colore scuro passa',
+    ElementStyle::perche(['scene_titolo' => ['colore' => '#2F3A2C']]) === null
+);
+check(
+    'il motivo dice quale elemento e quale fondo',
+    str_contains((string) ElementStyle::perche(['scene_titolo' => ['colore' => '#CCCCCC']]), 'presentazione'),
+    (string) ElementStyle::perche(['scene_titolo' => ['colore' => '#CCCCCC']])
 );
 
 echo PHP_EOL . "Totale: {$ok} superati, {$fail} falliti" . PHP_EOL;

@@ -42,7 +42,12 @@ $aspetto = AuthLayout::current();
          dichiarazione vince, e cosi' `style.css` non viene mai riscritto —
          le patch future non ci vanno in conflitto (§8.5). Niente quando non
          c'e' niente da cambiare. */ ?>
-<?php $coloriTema = App\Core\Theme::bloccoFont() . App\Core\Theme::blocco(); ?>
+<?php /* I ritocchi sui singoli elementi stanno in fondo, dopo le variabili:
+         sono regole piu' specifiche e devono poter vincere su quelle del
+         foglio di stile. Valgono solo qui, per questo il guscio
+         dell'applicazione non li stampa. */ ?>
+<?php $coloriTema = App\Core\Theme::bloccoFont() . App\Core\Theme::blocco()
+    . App\Core\ElementStyle::blocco(); ?>
 <?php if ($coloriTema !== ''): ?>
     <style><?= $coloriTema ?></style>
 <?php endif; ?>

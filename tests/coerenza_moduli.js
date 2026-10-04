@@ -21,6 +21,14 @@
  *
  * COSA NON VEDE. Se le misure sono giuste: tre moduli sbagliati allo stesso
  * modo passano. Dice che sono coerenti, non che sono belli.
+ *
+ * UNA DIFFERENZA VOLUTA NON E' UNA DERIVA. Dalla 0085 l'admin può ritoccare
+ * di proposito singoli elementi delle pagine pubbliche — per esempio dare al
+ * pulsante un peso diverso. Quando succede, confrontare quel pezzo con le
+ * pagine interne vorrebbe dire far fallire il controllo per una scelta di
+ * chi amministra. Il confronto su quel pezzo viene quindi **saltato
+ * dicendolo**, e si riconosce leggendo le regole che Pistacchio stampa nella
+ * pagina: se c'è una regola per quel selettore, qualcuno l'ha voluta.
  */
 
 'use strict';
@@ -157,6 +165,19 @@ async function entra(page) {
 
     const raccolte = [];
 
+    // Le regole che il pannello Aspetto stampa nella pagina pubblica: è da
+    // qui che si capisce quali differenze sono state volute.
+    await page.goto(BASE + '/login');
+    const ritoccati = await page.evaluate(() => {
+        const css = Array.from(document.querySelectorAll('style')).map((s) => s.textContent).join('');
+
+        return {
+            etichetta: css.includes('.auth-form label{'),
+            campo: css.includes('.auth-form input{'),
+            pulsante: css.includes('.auth-form .btn{'),
+        };
+    });
+
     for (const [url, nome, radice] of pubbliche) {
         const risposta = await page.goto(BASE + url);
 
@@ -208,6 +229,14 @@ async function entra(page) {
 
         if (presenti.length < 2) {
             console.log('  --   ' + parte + ': meno di due pagine da confrontare, saltata');
+            continue;
+        }
+
+        if (ritoccati[parte]) {
+            console.log(
+                '  --   ' + parte + ': in Aspetto è stato scelto apposta uno stile diverso '
+                + 'per le pagine pubbliche, confronto saltato'
+            );
             continue;
         }
 
