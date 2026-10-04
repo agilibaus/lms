@@ -326,6 +326,70 @@ function raccogli(minimoBersaglio) {
  * fuoco senza mostrarlo. «Si vede» qui vuol dire: un contorno, o un'ombra, o
  * un bordo diverso da quello che aveva prima.
  */
+/**
+ * I pannelli che si aprono non devono finire dentro a un contenitore che
+ * scorre.
+ *
+ * DA DOVE VIENE QUESTO CONTROLLO. Negli elenchi dei report la tendina
+ * «Scarica» stava dentro a un `div` con `overflow-x: auto`. Un contenitore
+ * che scorre **ritaglia** quello che esce dai suoi bordi: aprendo la
+ * tendina comparivano dei bordi e una barra di scorrimento verticale
+ * attorno alla tabella — l'aria di un riquadro incastrato nella pagina — e
+ * sull'ultima riga il menu restava tagliato, 74 px fuori. Non lo vedeva
+ * nessun controllo: la pagina chiusa e' perfetta, e il difetto compare
+ * solo dopo un clic.
+ *
+ * Qui si apre ogni `details` e si guarda se il suo pannello esce dal primo
+ * antenato che scorre. Nota: `overflow-x: auto` da solo basta a creare il
+ * problema, perche' il browser rende `auto` anche l'altro asse.
+ */
+async function pannelliRitagliati(page) {
+    return page.evaluate(() => {
+        const guai = [];
+        const tendine = [...document.querySelectorAll('details.dropdown, details.ritocco')];
+
+        for (const d of tendine) {
+            const eraAperta = d.open;
+            d.open = true;
+
+            const pannello = d.querySelector('.dropdown-menu, :scope > *:not(summary)');
+
+            if (pannello !== null) {
+                let nodo = d.parentElement;
+
+                while (nodo !== null && nodo !== document.body) {
+                    const st = getComputedStyle(nodo);
+                    const scorre = ['auto', 'scroll'].includes(st.overflowX)
+                        || ['auto', 'scroll'].includes(st.overflowY);
+
+                    if (scorre) {
+                        const p = pannello.getBoundingClientRect();
+                        const c = nodo.getBoundingClientRect();
+
+                        if (p.bottom > c.bottom + 1 || p.right > c.right + 1) {
+                            guai.push({
+                                firma: 'ritaglio|' + (d.className || '') + '|' + (nodo.className || nodo.tagName),
+                                riga: 'il pannello di «' + (d.querySelector('summary') || { textContent: '?' })
+                                    .textContent.trim() + '» esce di '
+                                    + Math.round(Math.max(p.bottom - c.bottom, p.right - c.right))
+                                    + ' px da un contenitore che scorre (' + (nodo.className || nodo.tagName) + ')',
+                            });
+                        }
+
+                        break;
+                    }
+
+                    nodo = nodo.parentElement;
+                }
+            }
+
+            d.open = eraAperta;
+        }
+
+        return guai.map((g) => g.riga);
+    });
+}
+
 async function fuocoInvisibile(page) {
     return page.evaluate(() => {
         const invisibili = [];
@@ -508,6 +572,9 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
 
     const fuoco = await fuocoInvisibile(page);
     check(nome + ': fuoco visibile su ogni comando', fuoco.length === 0, fuoco);
+
+    const ritagliati = await pannelliRitagliati(page);
+    check(nome + ': i pannelli che si aprono non vengono ritagliati', ritagliati.length === 0, ritagliati);
 
     /*
      * Solo alla larghezza del telefono, e non per pignoleria: Pistacchio si

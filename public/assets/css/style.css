@@ -651,9 +651,7 @@ h3 { font-size: 1.05rem; }
    stirava fino all'elemento piu' alto. Due pagine, due altezze, nessuna
    decisa da nessuno.
    `inline-flex` e non `inline-block` perche' con un'altezza minima il testo
-   va centrato nello spazio che avanza, altrimenti resta appoggiato in alto.
-   `.btn-small` si tiene la propria altezza, che e' la misura minima di un
-   bersaglio toccabile. */
+   va centrato nello spazio che avanza, altrimenti resta appoggiato in alto. */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -3027,21 +3025,11 @@ fieldset.checkbox-group legend {
 
 /* ---------- Scarico dei report ---------- */
 
-/* Il comando "Scarica" sta dentro una riga di tabella, dove un pulsante di
-   taglia piena alzerebbe tutte le righe. Si stringe il riempimento, non
-   l'altezza: i 24px di bersaglio minimo restano. */
-.btn.btn-small {
-    padding: 0.2rem 0.6rem;
-    min-height: var(--tap-target);
-    font-size: 0.86rem;
-}
-
-/* In una tabella il pannello va allineato a destra: sull'ultima colonna, a
-   sinistra uscirebbe dal bordo della scheda. */
-.dropdown-riga > .dropdown-menu {
-    left: auto;
-    right: 0;
-}
+/* `.btn-small` e `.dropdown-riga` stavano qui: servivano alla tendina
+   «Scarica» dentro alle righe degli elenchi dei report, che dalla 0089 non
+   c'e' piu' — i due formati sono collegamenti scritti. Tolte invece di
+   lasciarle: una regola senza nessuno che la usi la si ritrova fra un mese
+   e non si sa piu' se serve. */
 
 /* Le colonne delle azioni di Report formano una colonna sola.
 
@@ -3411,13 +3399,6 @@ fieldset.checkbox-group legend {
 
     .tabella-schede .data-table td.row-actions::before {
         content: none;
-    }
-
-    /* Il pannello della tendina torna a sinistra: qui il comando sta a
-       sinistra, e ancorarlo a destra lo porterebbe fuori scheda. */
-    .tabella-schede .dropdown-riga > .dropdown-menu {
-        left: 0;
-        right: auto;
     }
 
     /* Una riga vuota di significato in modalita' scheda: la cella senza

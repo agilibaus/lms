@@ -336,8 +336,13 @@ della tabella sotto, e `tests/report_test.php` verifica che lo restino. Ogni sez
 anche il proprio articolo plurale, così la frase è «Cerca fra **gli** studenti» e non «fra i
 studenti»: in italiano dipende da come comincia la parola, non dal genere.
 
-**Ogni vista si scarica in XLSX e in CSV**, da un unico pulsante "Scarica" con la tendina dei
-due formati:
+**Ogni vista si scarica in XLSX e in CSV.** In cima a una pagina di dettaglio i due formati
+stanno dietro a un pulsante "Scarica" con la tendina; **nelle righe degli elenchi no**: lì
+sono due collegamenti scritti, `XLSX` e `CSV`, accanto a `Dettaglio`. Una tendina per riga
+costa un clic in più cinquanta volte per pagina, e soprattutto un pannello che si apre
+dentro a una tabella è un pannello che qualcosa può ritagliare — è successo, ed è il motivo
+per cui ora un controllo automatico apre ogni tendina della piattaforma e verifica che il
+suo pannello non esca da un contenitore che scorre.
 
 | Report | Contenuto |
 |---|---|
@@ -592,7 +597,7 @@ php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, in
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # 1275 controlli su 51 pagine, a tre larghezze
+node tests/accessibilita.js         # 1377 controlli su 51 pagine, a tre larghezze
 node tests/permessi.js              # 79 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
@@ -604,7 +609,11 @@ node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cl
 lingua e titolo, un solo titolo principale, contrasto del testo, campi con etichetta, immagini
 con testo alternativo, comandi con un nome, identificativi non ripetuti, titoli senza salti di
 livello, bersagli di almeno 24 px, fuoco visibile e **nessuno scorrimento orizzontale**.
-Quest'ultimo gira a 390 px, a **320** (il minimo che chiede la 1.4.10 delle WCAG) e a 844×390,
+C'è anche **«i pannelli che si aprono non vengono ritagliati»**: apre ogni tendina della
+pagina e verifica che il pannello non esca dal primo antenato che scorre. Un contenitore con
+`overflow` ritaglia quello che esce, e il difetto compare solo dopo un clic — a pagina chiusa
+non lo vedeva nessun controllo.
+Il controllo sullo scorrimento orizzontale gira a 390 px, a **320** (il minimo che chiede la 1.4.10 delle WCAG) e a 844×390,
 cioè il telefono girato di lato; quando fallisce dice **quale elemento** sfora. È scritto in
 Node e non in PHP perché contrasto, fuoco e dimensioni esistono solo dopo che il browser ha
 applicato il CSS.

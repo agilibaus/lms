@@ -30,20 +30,31 @@ $tutteLeColonne = require __DIR__ . '/_colonne.php';
 $colonne = $tutteLeColonne[$chiave];
 
 /**
- * La tendina dello scarico. XLSX prima del CSV perché è quello che si apre
- * con un doppio clic; il CSV resta per chi deve darlo in pasto a un
- * programma. L'XLSX compare solo dove PHP ha l'estensione zip: senza, il
- * file non si può nemmeno costruire, e un comando che porta a un errore è
- * peggio di un comando che non c'è.
+ * I comandi di una riga: il dettaglio e i due formati, in chiaro.
+ *
+ * PRIMA ERA UNA TENDINA, ed era sbagliato per due motivi che si sommavano.
+ * Il primo: la tabella stava dentro a un contenitore con `overflow-x`, e
+ * un contenitore che scorre **ritaglia** quello che esce. Aprendo la
+ * tendina comparivano dei bordi e una barra di scorrimento verticale
+ * attorno alla tabella — l'aria di un riquadro incastrato dentro la
+ * pagina — e sull'ultima riga il menu restava tagliato: 74 px fuori,
+ * misurati. Il secondo: una tendina per riga e' un comando in piu' da
+ * aprire per arrivare a due collegamenti, cinquanta volte in una pagina.
+ *
+ * Due collegamenti scritti non si possono ritagliare, non hanno uno stato
+ * aperto/chiuso, si raggiungono con un clic invece di due e funzionano
+ * uguale da tastiera. La tendina resta dove serve davvero: in cima a una
+ * pagina, dove i comandi sono tanti e la riga e' una sola.
+ *
+ * L'XLSX compare solo dove PHP ha l'estensione zip: senza, il file non si
+ * puo' nemmeno costruire, e un comando che porta a un errore e' peggio di
+ * un comando che non c'e'.
  */
 $scarica = static function (string $base): string {
     $b = htmlspecialchars($base);
     $xlsx = Xlsx::disponibile() ? '<a href="' . $b . '/xlsx">XLSX</a>' : '';
 
-    return '<details class="dropdown dropdown-riga">'
-        . '<summary class="btn btn-secondary btn-small">Scarica</summary>'
-        . '<div class="dropdown-menu">' . $xlsx . '<a href="' . $b . '/csv">CSV</a></div>'
-        . '</details>';
+    return $xlsx . '<a href="' . $b . '/csv">CSV</a>';
 };
 
 /** L'indirizzo di questa pagina con un parametro cambiato. */
@@ -123,42 +134,44 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
     <?php /* `tabella-schede` trasforma la tabella in un elenco di schede
              quando lo spazio non basta; `reports-elenco` tiene le colonne
              numeriche della stessa larghezza in tutte e cinque le pagine. */ ?>
+    <?php /* Niente contenitore che scorre qui dentro: sotto i 50 rem le
+             righe diventano schede, quindi la tabella non ha mai bisogno
+             di scorrere in orizzontale — e un contenitore che scorre
+             ritaglia tutto quello che esce dai suoi bordi. */ ?>
     <div class="reports-elenco tabella-schede">
-        <div class="table-scroll">
-            <table class="data-table" role="table">
-                <thead role="rowgroup">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+                <tr role="row">
+                    <?php foreach ($colonne as $c): ?>
+                        <?= $ordine->th(
+                            $c['etichetta'],
+                            $c['chiave'],
+                            $c['tipo'] === 'numero' ? 'col-numero' : ''
+                        ) ?>
+                    <?php endforeach; ?>
+                    <th scope="col" role="columnheader" class="col-azioni">
+                        <span class="sr-only">Azioni</span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody role="rowgroup">
+                <?php foreach ($righe as $riga): ?>
+                    <?php $base = $sezione['base'] . '/' . (int) $riga['id']; ?>
                     <tr role="row">
                         <?php foreach ($colonne as $c): ?>
-                            <?= $ordine->th(
-                                $c['etichetta'],
-                                $c['chiave'],
-                                $c['tipo'] === 'numero' ? 'col-numero' : ''
-                            ) ?>
-                        <?php endforeach; ?>
-                        <th scope="col" role="columnheader" class="col-azioni">
-                            <span class="sr-only">Azioni</span>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody role="rowgroup">
-                    <?php foreach ($righe as $riga): ?>
-                        <?php $base = $sezione['base'] . '/' . (int) $riga['id']; ?>
-                        <tr role="row">
-                            <?php foreach ($colonne as $c): ?>
-                                <td role="cell" data-label="<?= $esc($c['etichetta']) ?>"
-                                    class="<?= $c['tipo'] === 'numero' ? 'col-numero' : '' ?>">
-                                    <?= ($c['cella'])($riga) ?>
-                                </td>
-                            <?php endforeach; ?>
-                            <td role="cell" data-label="Azioni" class="col-azioni">
-                                <a href="<?= $esc($base) ?>">Dettaglio</a>
-                                <?= $scarica($base) ?>
+                            <td role="cell" data-label="<?= $esc($c['etichetta']) ?>"
+                                class="<?= $c['tipo'] === 'numero' ? 'col-numero' : '' ?>">
+                                <?= ($c['cella'])($riga) ?>
                             </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                        <?php endforeach; ?>
+                        <td role="cell" data-label="Azioni" class="col-azioni row-actions">
+                            <a href="<?= $esc($base) ?>">Dettaglio</a>
+                            <?= $scarica($base) ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
 
     <?php if ($pagine > 1): ?>
@@ -181,7 +194,3 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
         </nav>
     <?php endif; ?>
 <?php endif; ?>
-
-<?php /* La tendina funziona senza JavaScript; lo script aggiunge solo la
-         chiusura con Esc e con un clic fuori. */ ?>
-<script src="/assets/js/dropdown.js"></script>
