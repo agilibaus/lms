@@ -14,6 +14,12 @@ use App\Core\Theme;
  * @var array<string, array<string, string>> $tavolozze
  * @var string $primario
  * @var string $primarioInVigore
+ * @var string $raggio
+ * @var array<string, array<string, string>> $raggi
+ * @var string $misuraTesto
+ * @var array<string, array<string, string>> $misureTesto
+ * @var string $coloreTesto
+ * @var string $coloreTestoInVigore
  * @var array|null $lastUpdate
  */
 ?>
@@ -75,6 +81,67 @@ use App\Core\Theme;
             Un colore troppo chiaro viene <strong>rifiutato al salvataggio</strong>, dicendo
             di quanto manca: sotto 4,5:1 di contrasto la scritta bianca sui pulsanti non si
             leggerebbe più.
+        </p>
+    </section>
+
+        <label for="<?= Theme::KEY_TEXT_COLOR ?>">Colore del testo (facoltativo)</label>
+        <input type="text" id="<?= Theme::KEY_TEXT_COLOR ?>" name="<?= Theme::KEY_TEXT_COLOR ?>"
+               value="<?= htmlspecialchars($coloreTesto) ?>"
+               placeholder="<?= htmlspecialchars($coloreTestoInVigore) ?>"
+               inputmode="text" spellcheck="false"
+               aria-describedby="testo_aiuto">
+        <p class="form-hint" id="testo_aiuto">
+            Il nero dei testi, se ne volete uno diverso — per esempio un grigio molto scuro
+            invece del quasi-nero di oggi, che è
+            <code><?= htmlspecialchars($coloreTestoInVigore) ?></code>.
+            Il grigio dei testi secondari <strong>non si imposta</strong>: viene ricavato da
+            questo, schiarito fin dove resta leggibile. Due campi che devono stare in
+            rapporto fra loro sono due modi di sbagliare invece di uno.
+            Il controllo è fatto su tutti i fondi su cui il testo finisce, <em>comprese le
+            tinte tenui di tutte e quattro le tavolozze</em>: così il colore resta valido
+            anche se un domani cambiate tavolozza.
+        </p>
+    </section>
+
+    <section class="card">
+        <h2>Forma e misura</h2>
+        <p class="form-hint" style="margin-top: 0;">
+            Anche queste valgono su tutte le pagine.
+        </p>
+
+        <label for="<?= Theme::KEY_RADIUS ?>">Arrotondamento degli angoli</label>
+        <select id="<?= Theme::KEY_RADIUS ?>" name="<?= Theme::KEY_RADIUS ?>"
+                aria-describedby="raggio_aiuto">
+            <?php foreach ($raggi as $chiave => $r): ?>
+                <option value="<?= htmlspecialchars($chiave) ?>"
+                        <?= $raggio === $chiave ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($r['nome']) ?>
+                    (<?= htmlspecialchars($r['sm']) ?> / <?= htmlspecialchars($r['md']) ?>)
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="form-hint" id="raggio_aiuto">
+            Due valori per ogni livello: il primo veste campi e pulsanti, il secondo i
+            riquadri. Il rapporto fra i due è quello che fa sembrare la pagina disegnata
+            invece che assemblata, ed è il motivo per cui qui non c'è un numero libero.
+        </p>
+
+        <label for="<?= Theme::KEY_TEXT_SIZE ?>">Dimensione del testo</label>
+        <select id="<?= Theme::KEY_TEXT_SIZE ?>" name="<?= Theme::KEY_TEXT_SIZE ?>"
+                aria-describedby="misura_aiuto">
+            <?php foreach ($misureTesto as $chiave => $m): ?>
+                <option value="<?= htmlspecialchars($chiave) ?>"
+                        <?= $misuraTesto === $chiave ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($m['nome']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="form-hint" id="misura_aiuto">
+            <strong>Scala tutta l'interfaccia, non solo le lettere</strong>: nel foglio di
+            stile quasi ogni misura è relativa a questa, quindi crescono insieme testo,
+            riempimenti e spazi, e le proporzioni restano quelle. Non si scende sotto i
+            15&nbsp;px. Chi ha bisogno di testo più grande può comunque ingrandire dal proprio
+            browser, e continuerà a funzionare qualunque misura scegliate qui.
         </p>
     </section>
 

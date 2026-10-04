@@ -497,7 +497,7 @@ php tests/xlsx_test.php             # il file XLSX scritto in casa
 # richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
 php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
-php tests/tema_test.php             # tavolozze: contrasti di ogni coppia, e quali colori entrano nel CSS
+php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 node tests/accessibilita.js         # 1225 controlli su 49 pagine, a tre larghezze
@@ -645,6 +645,43 @@ viene rifiutato dicendo di quanto manca, invece di essere salvato e scoperto dop
 
 La pagina dell'installer è l'unica che non riceve il blocco: gira prima che esistano le
 impostazioni.
+
+### Colore del testo
+
+Campo facoltativo, accanto a quello del colore principale. **Il grigio dei testi secondari
+non si imposta**: viene ricavato dal primo, schiarito per gradi verso lo sfondo e fermato
+all'ultimo passo che resta leggibile. Due campi che devono stare in rapporto fra loro sono
+due modi di sbagliare invece di uno.
+
+Il controllo al salvataggio guarda tutti i fondi su cui il testo finisce: il bianco dei
+riquadri, lo sfondo delle pagine, e la tinta tenue di **tutte e quattro** le tavolozze —
+anche quelle non attive, perché l'admin può cambiare tavolozza dopo aver scelto il colore, e
+un colore valido solo con quella di oggi diventerebbe illeggibile domani senza che nessuno
+glielo dica.
+
+### Arrotondamento degli angoli
+
+Quattro livelli: squadrato (0/0), leggero (3/5), normale (6/10, quello di fabbrica), morbido
+(10/16). **Due valori per livello**, non uno: nel foglio di stile il raggio piccolo veste
+campi e pulsanti, quello grande i riquadri, e il rapporto fra i due è ciò che fa sembrare la
+pagina disegnata invece che assemblata. Un campo numerico libero lascerebbe scegliere 2 e 40.
+
+### Dimensione del testo
+
+Quattro misure: compatto 15 px, normale 16, comodo 17, grande 18. **Scala tutta
+l'interfaccia, non solo le lettere**: nel foglio di stile quasi ogni misura è in `rem`,
+quindi crescono insieme testo, riempimenti e spazi e le proporzioni restano quelle. È il
+motivo per cui non esiste un "ingrandisci solo il testo", che lascerebbe lettere grandi
+dentro riquadri rimasti piccoli. Sotto i 15 px non si scende.
+
+Resta indipendente dall'ingrandimento del browser: chi alza il testo dalle impostazioni del
+proprio browser continua a vederlo crescere, qualunque misura sia scelta qui.
+
+> Offrire le due misure più grandi ha fatto emergere un difetto vero: a 17 e 18 px la riga
+> dei comandi di un modulo non entrava più in 320 px e spingeva fuori la pagina di 30 px.
+> Ora va a capo — il che è la cosa giusta anche a 16 px, dove semplicemente non capitava.
+> È il genere di cosa che si vede solo misurando: l'accessibilità è stata eseguita una volta
+> per ogni misura e una per ogni livello di arrotondamento.
 
 ## Carattere delle pagine pubbliche (Albert Sans)
 

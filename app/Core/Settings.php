@@ -74,6 +74,9 @@ class Settings
         'AUTH_SPLIT_TEXT',
         'THEME_PALETTE',
         'THEME_PRIMARY',
+        'THEME_RADIUS',
+        'THEME_TEXT_SIZE',
+        'THEME_TEXT_COLOR',
     ];
 
     /**

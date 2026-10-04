@@ -225,6 +225,80 @@ check(
     isset(Theme::TAVOLOZZE[Theme::PREDEFINITA])
 );
 
+// ---------------------------------------------------------------
+echo PHP_EOL . 'Arrotondamento e dimensione del testo' . PHP_EOL;
+
+check('il livello predefinito di arrotondamento esiste', isset(Theme::RAGGI[Theme::RAGGIO_PREDEFINITO]));
+check('la misura predefinita del testo esiste', isset(Theme::MISURE_TESTO[Theme::MISURA_TESTO_PREDEFINITA]));
+
+foreach (Theme::RAGGI as $chiave => $r) {
+    check(
+        "{$chiave}: i due raggi sono misure in pixel",
+        preg_match('/^\d{1,3}px$/', $r['sm']) === 1 && preg_match('/^\d{1,3}px$/', $r['md']) === 1,
+        $r['sm'] . ' / ' . $r['md']
+    );
+    check(
+        "{$chiave}: il raggio dei riquadri non e piu piccolo di quello dei campi",
+        (int) $r['md'] >= (int) $r['sm'],
+        'invertirli farebbe sembrare la pagina assemblata a caso'
+    );
+}
+
+foreach (Theme::MISURE_TESTO as $chiave => $m) {
+    $px = (int) $m['px'];
+    check("{$chiave}: misura in pixel", preg_match('/^\d{1,3}px$/', $m['px']) === 1, $m['px']);
+    check(
+        "{$chiave}: non si scende sotto i 15 px",
+        $px >= 15,
+        $m['px'] . ' — piu in basso peggiora la lettura per tutti'
+    );
+    check("{$chiave}: non si sale sopra i 20 px", $px <= 20, $m['px']);
+}
+
+// ---------------------------------------------------------------
+echo PHP_EOL . 'Il colore del testo, e il grigio ricavato da lui' . PHP_EOL;
+
+check('il quasi-nero di oggi passa', Theme::percheTesto(Theme::TESTO) === null);
+check('un grigio chiaro viene rifiutato', Theme::percheTesto('#BBBBBB') !== null);
+check(
+    'un grigio al limite viene rifiutato per lo sfondo, non per il bianco',
+    str_contains((string) Theme::percheTesto('#767676'), 'sfondo'),
+    (string) Theme::percheTesto('#767676')
+);
+check(
+    'un colore buono su bianco ma non sulle tinte tenui viene rifiutato',
+    Theme::percheTesto('#6E6E6E') !== null || Theme::contrasto('#6E6E6E', '#F0EAF3') >= Theme::MINIMO,
+    'il controllo deve guardare anche le tavolozze che oggi non sono attive'
+);
+
+// Il grigio spento e' ricavato, non scelto: deve restare leggibile comunque
+// sia il colore di partenza.
+foreach ([Theme::TESTO, '#000000', '#333333', '#1F2937', '#402020'] as $testo) {
+    $spento = Theme::spegni($testo);
+
+    check(
+        "da {$testo} il grigio {$spento} si legge sul bianco",
+        Theme::contrasto($spento, Theme::SUPERFICIE) >= Theme::MINIMO,
+        sprintf('%.2f', Theme::contrasto($spento, Theme::SUPERFICIE))
+    );
+    check(
+        "da {$testo} il grigio {$spento} si legge sullo sfondo",
+        Theme::contrasto($spento, Theme::SFONDO_PAGINA) >= Theme::MINIMO,
+        sprintf('%.2f', Theme::contrasto($spento, Theme::SFONDO_PAGINA))
+    );
+    check(
+        "da {$testo} il grigio e piu chiaro del testo, non piu scuro",
+        Theme::contrasto($spento, Theme::SUPERFICIE) <= Theme::contrasto($testo, Theme::SUPERFICIE),
+        'un "testo secondario" piu marcato del testo principale e il contrario di quello che serve'
+    );
+}
+
+check(
+    'un testo gia al limite non produce un grigio illeggibile',
+    Theme::contrasto(Theme::spegni('#767676'), Theme::SUPERFICIE) >= 4.0,
+    'in quel caso si restituisce il colore di partenza invece di schiarire'
+);
+
 echo PHP_EOL . "Totale: {$ok} superati, {$fail} falliti" . PHP_EOL;
 
 exit($fail > 0 ? 1 : 0);

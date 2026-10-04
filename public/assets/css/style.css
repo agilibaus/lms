@@ -1255,7 +1255,14 @@ h3 { font-size: 1.05rem; }
 
 .module-card-actions {
     display: flex;
+    /* Va a capo. Con il testo a 17 o 18 px i cinque comandi non entrano piu'
+       in 320 px e spingevano fuori la pagina di 30 px: senza questa riga la
+       dimensione "Comodo" sarebbe stata offerta e rotta insieme. Un elenco
+       di comandi su due righe e' la cosa giusta anche a 16 px, dove
+       semplicemente non capitava. */
+    flex-wrap: wrap;
     gap: 0.75rem;
+    row-gap: 0.4rem;
     font-size: 0.82rem;
 }
 

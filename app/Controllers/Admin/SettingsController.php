@@ -274,6 +274,12 @@ class SettingsController extends AdminController
             // esattamente cio' che il campo vuoto deve dire.
             'primario' => (string) (Settings::stored(Theme::KEY_PRIMARY) ?? ''),
             'primarioInVigore' => Theme::valori()['primary'],
+            'raggio' => Theme::raggioCorrente(),
+            'raggi' => Theme::RAGGI,
+            'misuraTesto' => Theme::misuraTestoCorrente(),
+            'misureTesto' => Theme::MISURE_TESTO,
+            'coloreTesto' => (string) (Settings::stored(Theme::KEY_TEXT_COLOR) ?? ''),
+            'coloreTestoInVigore' => Theme::coloriTesto()[0],
             'lastUpdate' => Settings::lastUpdate(Settings::APPEARANCE_KEYS),
         ]);
     }
@@ -314,11 +320,41 @@ class SettingsController extends AdminController
             $primario = (string) Theme::coloreValido($primario);
         }
 
+        $raggio = (string) ($_POST[Theme::KEY_RADIUS] ?? Theme::RAGGIO_PREDEFINITO);
+
+        if (!array_key_exists($raggio, Theme::RAGGI)) {
+            $this->fail('Arrotondamento non valido.', self::APPEARANCE_PAGE);
+        }
+
+        $misura = (string) ($_POST[Theme::KEY_TEXT_SIZE] ?? Theme::MISURA_TESTO_PREDEFINITA);
+
+        if (!array_key_exists($misura, Theme::MISURE_TESTO)) {
+            $this->fail('Dimensione del testo non valida.', self::APPEARANCE_PAGE);
+        }
+
+        // Il colore del testo, come quello principale: vuoto vuol dire
+        // quello di fabbrica, e se c'e' deve leggersi — su tutti i fondi su
+        // cui il testo finisce, tavolozze comprese.
+        $coloreTesto = trim((string) ($_POST[Theme::KEY_TEXT_COLOR] ?? ''));
+
+        if ($coloreTesto !== '') {
+            $motivo = Theme::percheTesto($coloreTesto);
+
+            if ($motivo !== null) {
+                $this->fail($motivo, self::APPEARANCE_PAGE);
+            }
+
+            $coloreTesto = (string) Theme::coloreValido($coloreTesto);
+        }
+
         Settings::set('AUTH_LAYOUT', $layout, $userId);
         Settings::set('AUTH_SPLIT_TITLE', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TITLE'] ?? ''))), $userId);
         Settings::set('AUTH_SPLIT_TEXT', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TEXT'] ?? ''))), $userId);
         Settings::set(Theme::KEY_PALETTE, $palette, $userId);
         Settings::set(Theme::KEY_PRIMARY, $primario, $userId);
+        Settings::set(Theme::KEY_RADIUS, $raggio, $userId);
+        Settings::set(Theme::KEY_TEXT_SIZE, $misura, $userId);
+        Settings::set(Theme::KEY_TEXT_COLOR, $coloreTesto, $userId);
 
         $this->success('Aspetto salvato.', self::APPEARANCE_PAGE);
     }
