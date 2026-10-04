@@ -65,7 +65,12 @@ $voce = static function (array $e) use ($esc, $adesso): string {
         $html .= '<a class="btn btn-primary" href="/live/' . (int) $e['id'] . '/join">Entra</a>';
     }
 
-    if ($incontro) {
+    // Non per un incontro gia' finito: mettere in agenda un appuntamento
+    // passato non serve a niente. La condizione e' la stessa con cui
+    // `Agenda::raggruppa()` manda una voce nello Storico — la fine se c'e',
+    // altrimenti l'inizio — cosi' il collegamento sparisce esattamente
+    // quando la voce scende li' sotto.
+    if ($incontro && $adesso <= $fine) {
         $html .= '<a href="/agenda/evento/' . (int) $e['id'] . '.ics">Al calendario</a>';
     }
 

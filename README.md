@@ -616,7 +616,9 @@ pagina sola.
 Due modi, dalla stessa pagina:
 
 - **un incontro alla volta**: `/agenda/evento/{id}.ics`, che chiede l'accesso come ogni altra
-  pagina e risponde 404 per un incontro che non è fra i propri;
+  pagina e risponde 404 per un incontro che non è fra i propri. Il collegamento «Al
+  calendario» compare **finché l'incontro non è finito**: nello Storico non c'è, perché
+  mettere in agenda un appuntamento già passato non serve a niente;
 - **tutta l'agenda, sempre aggiornata**: un indirizzo personale `/calendario/{token}.ics` da
   incollare in Google Calendar, Calendario di Apple o Outlook.
 
