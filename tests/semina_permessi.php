@@ -142,6 +142,16 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         ->execute(['m' => $modulo, 'g' => $gruppo, 't' => $nome . ' incontro', 'a' => $admin]);
     $incontro = (int) $pdo->lastInsertId();
 
+    // Un incontro gia' concluso, che nell'agenda finisce nello Storico.
+    // Serve a provare che li' non si offra di metterlo in calendario: con
+    // soli incontri futuri non ci sarebbe nessuno Storico da guardare.
+    $pdo->prepare('INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, meet_link, created_by)
+                   VALUES (:m, :g, :t, DATE_SUB(NOW(), INTERVAL 2 DAY),
+                           DATE_SUB(NOW(), INTERVAL 2 DAY) + INTERVAL 60 MINUTE,
+                           "https://meet.google.com/prova-permessi-concluso", :a)')
+        ->execute(['m' => $modulo, 'g' => $gruppo, 't' => $nome . ' incontro concluso', 'a' => $admin]);
+    $incontroConcluso = (int) $pdo->lastInsertId();
+
     // --- un secondo modulo, chiuso da una data nel futuro ------------------
     //
     // Serve al rilascio progressivo (§8.7). Senza un modulo chiuso non c'e'
@@ -209,6 +219,7 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         'quiz' => $quiz,
         'domanda' => $domanda,
         'incontro' => $incontro,
+        'incontro_concluso' => $incontroConcluso,
         'studente' => $studente,
         'tutor' => $tutor,
         'modulo_chiuso' => $moduloChiuso,

@@ -674,7 +674,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # 1435 controlli su 53 pagine, a tre larghezze
-node tests/permessi.js              # 96 prove: ogni ruolo prova a raggiungere le cose di un altro
+node tests/permessi.js              # 98 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

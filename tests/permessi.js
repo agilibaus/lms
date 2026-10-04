@@ -399,6 +399,33 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 altrui.status() === 404 ? [] : ['ha risposto ' + altrui.status()]
             );
 
+            // «Al calendario» non si offre per un incontro gia' finito:
+            // mettere in agenda un appuntamento passato non serve a niente.
+            // Si guarda la voce, non la pagina: il collegamento c'e' sugli
+            // incontri futuri, e la controprova e' quella che distingue
+            // «tolto dove va tolto» da «tolto dappertutto».
+            const linkIcs = async (id) => await page.$$eval(
+                '.agenda-voce',
+                (voci, atteso) => voci
+                    .filter(v => v.querySelector('a[href="/live/' + atteso + '"]'))
+                    .some(v => v.querySelector('a[href$="/' + atteso + '.ics"]')),
+                String(id)
+            );
+
+            const concluso = await linkIcs(A.incontro_concluso);
+            check(
+                'studente A → nello Storico non si offre «Al calendario»',
+                !concluso,
+                concluso ? ['l\'incontro concluso ha ancora il collegamento al .ics'] : []
+            );
+
+            const futuro = await linkIcs(A.incontro);
+            check(
+                'controprova: su un incontro futuro «Al calendario» c\'è',
+                futuro,
+                futuro ? [] : ['se mancasse anche li\', la prova qui sopra non direbbe niente']
+            );
+
             // Il calendario sottoscritto risponde senza accesso: e' il solo
             // indirizzo che lo fa, e regge solo finche' il token e'
             // imprevedibile e verificato.
