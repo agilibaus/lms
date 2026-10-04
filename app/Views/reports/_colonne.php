@@ -3,11 +3,18 @@
 declare(strict_types=1);
 
 use App\Core\GroupLogo;
+use App\Core\Ordinamento;
 
 /**
  * Le colonne di ogni taglio, in un posto solo.
  *
- * Ogni colonna e' [etichetta, tipo, funzione che rende la cella].
+ * Ogni colonna è una voce con nome:
+ *
+ *   etichetta  il testo dell'intestazione, che finisce anche in `data-label`
+ *   tipo       `testo` o `numero`
+ *   cella      la funzione che rende il contenuto
+ *   chiave     come si chiama nell'indirizzo quando si ordina (null: non si ordina)
+ *   campo      il campo del dato su cui ordinare
  *
  * **Il tipo non e' aspetto, e' significato.** `numero` manda la colonna a
  * destra, in cifre a larghezza fissa e con una larghezza uguale in tutte e
@@ -15,15 +22,41 @@ use App\Core\GroupLogo;
  * un'occhiata. Prima i conteggi erano allineati a sinistra e cadevano in
  * punti diversi in ogni tabella — nella prima a 611, 740 e 917 px — quindi
  * le cifre non formavano colonne e la pagina sembrava, come l'ha descritta
- * Elena, «numeri in ordine sparso».
+ * Elena, «numeri in ordine sparso». Lo stesso tipo dice anche come si
+ * ordina: per valore e non per come è scritto.
+ *
+ * **`campo` non è sempre quello che si vede.** La colonna «Quando» mostra
+ * «04/10/2026 18:30» ma si ordina su `starts_at`, che è la data vera: sul
+ * testo mostrato, marzo verrebbe prima di maggio perché «03» viene prima di
+ * «05», e il 2025 dopo il 2026. «Presenti» mostra «3/12» e si ordina sul
+ * numero dei presenti.
  *
  * L'etichetta finisce sia nell'intestazione sia in `data-label`, che sotto i
  * 500 px il CSS stampa davanti al valore: vengono dalla stessa stringa e non
  * possono divergere.
  *
  * @var callable(?string): string $esc
- * @return array<string, list<array{0: string, 1: string, 2: callable(array): string}>>
+ * @return array<string, list<array{etichetta: string, tipo: string,
+ *                                  cella: callable(array): string,
+ *                                  chiave: ?string, campo: ?string}>>
  */
+
+/** Una colonna, con i valori che quasi sempre bastano. */
+$colonna = static function (
+    string $etichetta,
+    string $tipo,
+    callable $cella,
+    ?string $chiave = null,
+    ?string $campo = null
+): array {
+    return [
+        'etichetta' => $etichetta,
+        'tipo' => $tipo,
+        'cella' => $cella,
+        'chiave' => $chiave,
+        'campo' => $campo,
+    ];
+};
 
 /**
  * Il nome del gruppo con il suo simbolo davanti, come nell'elenco dei
@@ -58,43 +91,59 @@ $bozza = static function (array $riga) use ($esc): string {
 
 return [
     'courses' => [
-        ['Corso', 'testo', $bozza],
-        ['Iscritti', 'numero', static fn (array $r): string => (string) (int) $r['enrolled_count']],
-        ['Completati', 'numero', static fn (array $r): string => (string) (int) $r['completed_count']],
-        ['Certificati', 'numero', static fn (array $r): string => (string) (int) $r['certificate_count']],
+        $colonna('Corso', 'testo', $bozza, 'corso', 'title'),
+        $colonna('Iscritti', 'numero', static fn (array $r): string
+            => (string) (int) $r['enrolled_count'], 'iscritti', 'enrolled_count'),
+        $colonna('Completati', 'numero', static fn (array $r): string
+            => (string) (int) $r['completed_count'], 'completati', 'completed_count'),
+        $colonna('Certificati', 'numero', static fn (array $r): string
+            => (string) (int) $r['certificate_count'], 'certificati', 'certificate_count'),
     ],
     'groups' => [
-        ['Gruppo', 'testo', $gruppoConLogo],
-        ['Tutor', 'testo', static fn (array $r): string => $esc((string) ($r['tutor_name'] ?? '—'))],
-        ['Membri', 'numero', static fn (array $r): string => (string) (int) $r['member_count']],
+        $colonna('Gruppo', 'testo', $gruppoConLogo, 'gruppo', 'name'),
+        $colonna('Tutor', 'testo', static fn (array $r): string
+            => $esc((string) ($r['tutor_name'] ?? '—')), 'tutor', 'tutor_name'),
+        $colonna('Membri', 'numero', static fn (array $r): string
+            => (string) (int) $r['member_count'], 'membri', 'member_count'),
     ],
     'students' => [
-        ['Studente', 'testo', static function (array $r) use ($esc): string {
+        $colonna('Studente', 'testo', static function (array $r) use ($esc): string {
             return $esc((string) $r['full_name'])
                 . ((int) $r['is_active'] === 0 ? ' <span class="badge">disattivato</span>' : '');
-        }],
-        ['Email', 'testo', static fn (array $r): string => $esc((string) $r['email'])],
-        ['Corsi', 'numero', static fn (array $r): string => (string) (int) $r['enrolled_count']],
-        ['Certificati', 'numero', static fn (array $r): string => (string) (int) $r['certificate_count']],
+        }, 'studente', 'full_name'),
+        $colonna('Email', 'testo', static fn (array $r): string
+            => $esc((string) $r['email']), 'email', 'email'),
+        $colonna('Corsi', 'numero', static fn (array $r): string
+            => (string) (int) $r['enrolled_count'], 'corsi', 'enrolled_count'),
+        $colonna('Certificati', 'numero', static fn (array $r): string
+            => (string) (int) $r['certificate_count'], 'certificati', 'certificate_count'),
     ],
     'live' => [
-        ['Incontro', 'testo', static fn (array $r): string => $esc((string) $r['title'])],
-        ['Quando', 'testo', static function (array $r) use ($esc): string {
+        $colonna('Incontro', 'testo', static fn (array $r): string
+            => $esc((string) $r['title']), 'incontro', 'title'),
+        // Mostra la data scritta all'italiana, ordina su quella vera.
+        $colonna('Quando', Ordinamento::DATA, static function (array $r) use ($esc): string {
             $inizio = strtotime((string) $r['starts_at']);
 
             return $inizio === false ? '—' : $esc(date('d/m/Y H:i', $inizio));
-        }],
-        ['Corso o gruppo', 'testo', static fn (array $r): string
-            => $esc((string) ($r['course_title'] ?? $r['group_name'] ?? '—'))],
+        }, 'quando', 'starts_at'),
+        // Non si ordina: la cella mostra il corso **oppure** il gruppo, e
+        // sono due campi diversi. Ordinare su uno dei due metterebbe in
+        // fondo tutte le righe dell'altro, con l'aria di un difetto.
+        $colonna('Corso o gruppo', 'testo', static fn (array $r): string
+            => $esc((string) ($r['course_title'] ?? $r['group_name'] ?? '—'))),
         // Numero anche se porta una barra: «3/12» va letto confrontandolo
         // con quello della riga sopra, come ogni altro conteggio.
-        ['Presenti', 'numero', static fn (array $r): string
-            => (int) $r['attended'] . '/' . (int) $r['expected']],
+        $colonna('Presenti', 'numero', static fn (array $r): string
+            => (int) $r['attended'] . '/' . (int) $r['expected'], 'presenti', 'attended'),
     ],
     'fruizione' => [
-        ['Corso', 'testo', $bozza],
-        ['Lezioni con video', 'numero', static fn (array $r): string => (string) (int) $r['lezioni_video']],
-        ['Iscritti', 'numero', static fn (array $r): string => (string) (int) $r['iscritti']],
-        ['Hanno aperto un video', 'numero', static fn (array $r): string => (string) (int) $r['avviati']],
+        $colonna('Corso', 'testo', $bozza, 'corso', 'title'),
+        $colonna('Lezioni con video', 'numero', static fn (array $r): string
+            => (string) (int) $r['lezioni_video'], 'lezioni', 'lezioni_video'),
+        $colonna('Iscritti', 'numero', static fn (array $r): string
+            => (string) (int) $r['iscritti'], 'iscritti', 'iscritti'),
+        $colonna('Hanno aperto un video', 'numero', static fn (array $r): string
+            => (string) (int) $r['avviati'], 'avviati', 'avviati'),
     ],
 ];

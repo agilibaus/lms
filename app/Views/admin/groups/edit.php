@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 use App\Core\GroupLogo;
 
 /** @var array $group */
@@ -14,6 +15,13 @@ use App\Core\GroupLogo;
 /** @var array $availableCourses */
 
 $groupId = (int) $group['id'];
+
+$ordineMembri = Ordinamento::daRichiesta([
+    'nome' => ['full_name', Ordinamento::TESTO],
+    'email' => ['email', Ordinamento::TESTO],
+    'dal' => ['joined_at', Ordinamento::DATA],
+]);
+$members = $ordineMembri->applica($members);
 ?>
 <div class="page-header">
     <a href="/admin/groups" class="back-link">&larr; Gruppi</a>
@@ -95,7 +103,12 @@ $groupId = (int) $group['id'];
     <?php else: ?>
         <table class="data-table">
             <thead>
-            <tr><th>Nome</th><th>Email</th><th>Nel gruppo dal</th><th></th></tr>
+            <tr>
+                <?= $ordineMembri->th('Nome', 'nome') ?>
+                <?= $ordineMembri->th('Email', 'email') ?>
+                <?= $ordineMembri->th('Nel gruppo dal', 'dal') ?>
+                <th></th>
+            </tr>
             </thead>
             <tbody>
             <?php foreach ($members as $member): ?>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\CourseRights;
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 use App\Core\OrphanFiles;
 use App\Models\CourseModel;
 
@@ -11,6 +12,13 @@ use App\Models\CourseModel;
 /** @var bool $canCreate */
 /** @var bool $canDelete */
 /** @var int $pendingRequests */
+
+$ordine = Ordinamento::daRichiesta([
+    'titolo' => ['title', Ordinamento::TESTO],
+    // Pubblicato o bozza: un clic raggruppa le bozze da una parte.
+    'stato' => ['is_published', Ordinamento::NUMERO],
+]);
+$courses = $ordine->applica($courses);
 ?>
 <div class="page-header">
     <h1>Gestione corsi</h1>
@@ -33,7 +41,7 @@ use App\Models\CourseModel;
 <?php else: ?>
     <table class="data-table">
         <thead>
-        <tr><th>Titolo</th><th>Stato</th><th></th></tr>
+        <tr><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($courses as $course): ?>

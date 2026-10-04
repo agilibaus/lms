@@ -3,12 +3,27 @@
 declare(strict_types=1);
 
 use App\Controllers\VideoProgressController;
+use App\Core\Ordinamento;
 use App\Core\Xlsx;
 
 /** @var array $course */
 /** @var list<array{id: int, title: string, module_title: string, duration_seconds: int|null}> $lezioni */
 /** @var list<array<string, mixed>> $righe */
 /** @var bool $dettaglioApribile */
+
+/*
+ * Qui si ordina per studente, per media e per tempo totale, non per
+ * singola lezione: le colonne delle lezioni sono quante sono le lezioni
+ * del corso, e i loro titoli sono gia' collegamenti al dettaglio. Farli
+ * diventare anche comandi di ordinamento vorrebbe dire due cose diverse
+ * sotto lo stesso clic.
+ */
+$ordine = Ordinamento::daRichiesta([
+    'studente' => ['full_name', Ordinamento::TESTO],
+    'media' => ['percentuale_media', Ordinamento::NUMERO],
+    'tempo' => ['secondi_totali', Ordinamento::NUMERO],
+]);
+$righe = $ordine->applica($righe);
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
@@ -43,7 +58,7 @@ use App\Core\Xlsx;
             </caption>
             <thead>
                 <tr>
-                    <th scope="col">Studente</th>
+                    <?= $ordine->th('Studente', 'studente') ?>
                     <?php foreach ($lezioni as $lezione): ?>
                         <th scope="col">
                             <?php if ($dettaglioApribile): ?>
@@ -56,8 +71,8 @@ use App\Core\Xlsx;
                             <span class="riga-secondaria"><?= htmlspecialchars($lezione['module_title']) ?></span>
                         </th>
                     <?php endforeach; ?>
-                    <th scope="col">Media</th>
-                    <th scope="col">Tempo totale (secondi)</th>
+                    <?= $ordine->th('Media', 'media') ?>
+                    <?= $ordine->th('Tempo totale (secondi)', 'tempo') ?>
                 </tr>
             </thead>
             <tbody>

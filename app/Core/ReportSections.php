@@ -144,6 +144,43 @@ class ReportSections
     }
 
     /**
+     * Le colonne di un taglio, lette dallo stesso file che le disegna.
+     *
+     * Il controller deve ordinare **prima** di paginare — ordinare dopo
+     * vorrebbe dire riordinare le cinquanta righe di quella pagina, cioe'
+     * la risposta sbagliata — e per farlo gli serve sapere su quale campo
+     * ordina ogni colonna. Quelle informazioni stanno in
+     * `app/Views/reports/_colonne.php` insieme al resto della colonna.
+     *
+     * Leggerle di li' e' meno ordinato che averle in una classe, e lo
+     * preferisco a un secondo elenco di campi tenuto a mano: due elenchi
+     * della stessa cosa divergono, e qui divergere vorrebbe dire ordinare
+     * una colonna sui dati di un'altra — un difetto che non si vede, perche'
+     * la pagina resta piena di numeri plausibili.
+     *
+     * @return array<string, array{0: string, 1: string}> chiave => [campo, tipo]
+     */
+    public static function ordinabili(string $chiave): array
+    {
+        // Le funzioni che rendono le celle lo richiedono per chiudersi
+        // sopra; qui non ne viene chiamata nessuna.
+        $esc = static fn (?string $v): string => htmlspecialchars((string) $v);
+
+        /** @var array<string, list<array<string, mixed>>> $tutte */
+        $tutte = require dirname(__DIR__) . '/Views/reports/_colonne.php';
+
+        $mappa = [];
+
+        foreach ($tutte[$chiave] ?? [] as $colonna) {
+            if ($colonna['chiave'] !== null && $colonna['campo'] !== null) {
+                $mappa[$colonna['chiave']] = [$colonna['campo'], $colonna['tipo']];
+            }
+        }
+
+        return $mappa;
+    }
+
+    /**
      * Le righe che corrispondono al testo cercato.
      *
      * Ricerca semplice, senza indici ne' punteggi: un confronto senza

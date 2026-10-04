@@ -2,10 +2,23 @@
 
 declare(strict_types=1);
 
+use App\Core\Ordinamento;
+
 /** @var array $group */
 /** @var array $courses */
 /** @var array $members */
 /** @var array $rows */
+
+$ordine = Ordinamento::daRichiesta([
+    'studente' => ['full_name', Ordinamento::TESTO],
+    'corso' => ['course_title', Ordinamento::TESTO],
+    // Chi non e' iscritto a quel corso non ha una percentuale: quelle
+    // righe finiscono in fondo in tutti e due i versi.
+    'progresso' => ['progress_pct', Ordinamento::NUMERO],
+    'quiz' => ['quizzes_passed', Ordinamento::NUMERO],
+    'certificato' => ['certificate_code', Ordinamento::TESTO],
+]);
+$rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
@@ -39,7 +52,13 @@ declare(strict_types=1);
 <?php else: ?>
     <table class="data-table">
         <thead>
-        <tr><th>Studente</th><th>Corso</th><th>Progresso</th><th>Quiz superati</th><th>Certificato</th></tr>
+        <tr>
+            <?= $ordine->th('Studente', 'studente') ?>
+            <?= $ordine->th('Corso', 'corso') ?>
+            <?= $ordine->th('Progresso', 'progresso') ?>
+            <?= $ordine->th('Quiz superati', 'quiz') ?>
+            <?= $ordine->th('Certificato', 'certificato') ?>
+        </tr>
         </thead>
         <tbody>
         <?php foreach ($rows as $row): ?>

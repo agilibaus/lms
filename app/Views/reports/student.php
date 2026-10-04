@@ -4,12 +4,44 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Controllers\ReportController;
+use App\Core\Ordinamento;
 
 /** @var array $student */
 /** @var array $courses */
 /** @var array<int, array> $quizzesByCourse */
 /** @var array{attended: int, total: int} $liveAttendance */
 /** @var array $liveSessions */
+
+/*
+ * Due ordinamenti su una pagina sola, con chiavi diverse: l'indirizzo ne
+ * porta una alla volta, e quello che non la riconosce lascia le righe come
+ * stanno. Cosi' ordinando gli incontri le tabelle dei quiz non si
+ * scompongono, e viceversa.
+ *
+ * Le tabelle dei quiz sono tante, una per corso, e si ordinano **tutte
+ * insieme**: hanno le stesse colonne, e un ordine per ciascuna vorrebbe
+ * dire un parametro per corso nell'indirizzo.
+ */
+$ordineQuiz = Ordinamento::daRichiesta([
+    'quiz' => ['quiz_title', Ordinamento::TESTO],
+    'modulo' => ['module_title', Ordinamento::TESTO],
+    'tentativi' => ['attempts', Ordinamento::NUMERO],
+    'punteggio' => ['best_score_pct', Ordinamento::NUMERO],
+    'esito' => ['passed', Ordinamento::NUMERO],
+    'ultimo' => ['last_attempt_at', Ordinamento::DATA],
+]);
+
+$ordineIncontri = Ordinamento::daRichiesta([
+    'incontro' => ['title', Ordinamento::TESTO],
+    'quando' => ['starts_at', Ordinamento::DATA],
+    'presenza' => ['presenza', Ordinamento::NUMERO],
+    'ingresso' => ['joined_at', Ordinamento::DATA],
+]);
+
+$liveSessions = $ordineIncontri->applica(array_map(
+    static fn (array $r): array => $r + ['presenza' => $r['joined_at'] !== null ? 1 : 0],
+    $liveSessions
+));
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
@@ -65,7 +97,7 @@ use App\Controllers\ReportController;
                 <?php endif; ?>
             </p>
 
-            <?php $quizzes = $quizzesByCourse[$course['course_id']] ?? []; ?>
+            <?php $quizzes = $ordineQuiz->applica($quizzesByCourse[$course['course_id']] ?? []); ?>
 
             <?php if ($quizzes !== []): ?>
                 <?php /* Sei colonne: sotto i 50 rem di spazio diventa un
@@ -74,12 +106,12 @@ use App\Controllers\ReportController;
                 <table class="data-table" role="table">
                     <thead role="rowgroup">
                     <tr role="row">
-                        <th scope="col" role="columnheader">Quiz</th>
-                        <th scope="col" role="columnheader">Modulo</th>
-                        <th scope="col" role="columnheader">Tentativi</th>
-                        <th scope="col" role="columnheader">Miglior punteggio</th>
-                        <th scope="col" role="columnheader">Esito</th>
-                        <th scope="col" role="columnheader">Ultimo tentativo</th>
+                        <?= $ordineQuiz->th('Quiz', 'quiz') ?>
+                        <?= $ordineQuiz->th('Modulo', 'modulo') ?>
+                        <?= $ordineQuiz->th('Tentativi', 'tentativi') ?>
+                        <?= $ordineQuiz->th('Miglior punteggio', 'punteggio') ?>
+                        <?= $ordineQuiz->th('Esito', 'esito') ?>
+                        <?= $ordineQuiz->th('Ultimo tentativo', 'ultimo') ?>
                     </tr>
                     </thead>
                     <tbody role="rowgroup">
@@ -136,11 +168,11 @@ use App\Controllers\ReportController;
         <table class="data-table" role="table">
             <thead role="rowgroup">
             <tr role="row">
-                <th scope="col" role="columnheader">Incontro</th>
-                <th scope="col" role="columnheader">Quando</th>
+                <?= $ordineIncontri->th('Incontro', 'incontro') ?>
+                <?= $ordineIncontri->th('Quando', 'quando') ?>
                 <th scope="col" role="columnheader">Corso o gruppo</th>
-                <th scope="col" role="columnheader">Presenza</th>
-                <th scope="col" role="columnheader">Ingresso</th>
+                <?= $ordineIncontri->th('Presenza', 'presenza') ?>
+                <?= $ordineIncontri->th('Ingresso', 'ingresso') ?>
                 <th scope="col" role="columnheader">Ritardo</th>
             </tr>
             </thead>

@@ -2,11 +2,22 @@
 
 declare(strict_types=1);
 
+use App\Core\Ordinamento;
+
 /** @var array $sessions */
 /** @var bool $canManage */
 /** @var bool $googleConfigured */
 
 $now = new DateTimeImmutable('now');
+
+// «Destinatari» non si ordina: la cella mostra il corso **oppure** il
+// gruppo, e sono due campi diversi. Ordinare su uno metterebbe in fondo
+// tutte le righe dell'altro, con l'aria di un difetto.
+$ordine = Ordinamento::daRichiesta([
+    'quando' => ['starts_at', Ordinamento::DATA],
+    'sessione' => ['title', Ordinamento::TESTO],
+]);
+$sessions = $ordine->applica($sessions);
 ?>
 <div class="page-header">
     <h1>Sessioni live</h1>
@@ -38,8 +49,8 @@ $now = new DateTimeImmutable('now');
     <table class="data-table" role="table">
         <thead role="rowgroup">
         <tr role="row">
-            <th scope="col" role="columnheader">Quando</th>
-            <th scope="col" role="columnheader">Sessione</th>
+            <?= $ordine->th('Quando', 'quando') ?>
+            <?= $ordine->th('Sessione', 'sessione') ?>
             <th scope="col" role="columnheader">Destinatari</th>
             <th scope="col" role="columnheader">Meet</th>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>

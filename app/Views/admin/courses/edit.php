@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 
 /** @var array $course */
 /** @var array $requests */
@@ -11,6 +12,21 @@ use App\Core\Csrf;
 /** @var bool $canDelete */
 
 $courseId = (int) $course['id'];
+
+// Due tabelle, due insiemi di chiavi: l'indirizzo ne porta uno alla volta
+// e l'altro lascia le sue righe come stanno.
+$ordineRichieste = Ordinamento::daRichiesta([
+    'richiedente' => ['full_name', Ordinamento::TESTO],
+    'richiesta' => ['requested_at', Ordinamento::DATA],
+]);
+$requests = $ordineRichieste->applica($requests);
+
+$ordineIscritti = Ordinamento::daRichiesta([
+    'studente' => ['full_name', Ordinamento::TESTO],
+    'iscritto' => ['enrolled_at', Ordinamento::DATA],
+    'progresso' => ['progress_pct', Ordinamento::NUMERO],
+]);
+$enrollments = $ordineIscritti->applica($enrollments);
 ?>
 <div class="page-header">
     <a href="/admin/courses" class="back-link">&larr; Gestione corsi</a>
@@ -49,9 +65,9 @@ $courseId = (int) $course['id'];
         <table class="data-table" role="table">
             <thead role="rowgroup">
             <tr role="row">
-                <th scope="col" role="columnheader">Studente</th>
+                <?= $ordineRichieste->th('Studente', 'richiedente') ?>
                 <th scope="col" role="columnheader">Messaggio</th>
-                <th scope="col" role="columnheader">Richiesta del</th>
+                <?= $ordineRichieste->th('Richiesta del', 'richiesta') ?>
                 <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
             </tr>
             </thead>
@@ -99,9 +115,9 @@ $courseId = (int) $course['id'];
         <table class="data-table" role="table">
             <thead role="rowgroup">
             <tr role="row">
-                <th scope="col" role="columnheader">Studente</th>
-                <th scope="col" role="columnheader">Iscritto il</th>
-                <th scope="col" role="columnheader">Progresso</th>
+                <?= $ordineIscritti->th('Studente', 'studente') ?>
+                <?= $ordineIscritti->th('Iscritto il', 'iscritto') ?>
+                <?= $ordineIscritti->th('Progresso', 'progresso') ?>
                 <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
             </tr>
             </thead>

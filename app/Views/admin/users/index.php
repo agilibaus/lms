@@ -4,10 +4,22 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 
 /** @var array $users */
 /** @var bool $canManageAll */
 /** @var bool $canExportXlsx */
+
+$ordine = Ordinamento::daRichiesta([
+    'nome' => ['full_name', Ordinamento::TESTO],
+    'email' => ['email', Ordinamento::TESTO],
+    'ruolo' => ['role', Ordinamento::TESTO],
+    'tutor' => ['supervising_tutor_name', Ordinamento::TESTO],
+    // Lo stato e' 0 o 1: ordinando per numero, un clic raggruppa i
+    // disattivati in fondo e il clic opposto li porta in cima.
+    'stato' => ['is_active', Ordinamento::NUMERO],
+]);
+$users = $ordine->applica($users);
 ?>
 <div class="page-header">
     <h1>Utenti</h1>
@@ -52,11 +64,11 @@ use App\Core\Csrf;
         <table class="data-table" role="table">
             <thead role="rowgroup">
             <tr role="row">
-                <th scope="col" role="columnheader">Nome</th>
-                <th scope="col" role="columnheader">Email</th>
-                <th scope="col" role="columnheader">Ruolo</th>
-                <th scope="col" role="columnheader">Tutor</th>
-                <th scope="col" role="columnheader">Stato</th>
+                <?= $ordine->th('Nome', 'nome') ?>
+                <?= $ordine->th('Email', 'email') ?>
+                <?= $ordine->th('Ruolo', 'ruolo') ?>
+                <?= $ordine->th('Tutor', 'tutor') ?>
+                <?= $ordine->th('Stato', 'stato') ?>
                 <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
             </tr>
             </thead>

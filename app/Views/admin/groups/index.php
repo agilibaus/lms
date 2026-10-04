@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 use App\Core\Csrf;
 use App\Core\GroupLogo;
+use App\Core\Ordinamento;
 
 /** @var array $groups */
 /** @var bool $canManageAll */
+
+$ordine = Ordinamento::daRichiesta([
+    'gruppo' => ['name', Ordinamento::TESTO],
+    'tutor' => ['tutor_name', Ordinamento::TESTO],
+    'membri' => ['member_count', Ordinamento::NUMERO],
+]);
+$groups = $ordine->applica($groups);
 ?>
 <div class="page-header">
     <h1>Gruppi</h1>
@@ -29,9 +37,9 @@ use App\Core\GroupLogo;
     <table class="data-table data-table-media" role="table">
         <thead role="rowgroup">
         <tr role="row">
-            <th scope="col" role="columnheader">Gruppo</th>
-            <th scope="col" role="columnheader">Tutor</th>
-            <th scope="col" role="columnheader">Membri</th>
+            <?= $ordine->th('Gruppo', 'gruppo') ?>
+            <?= $ordine->th('Tutor', 'tutor') ?>
+            <?= $ordine->th('Membri', 'membri') ?>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>

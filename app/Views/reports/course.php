@@ -4,10 +4,22 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 
 /** @var array $course */
 /** @var array $rows */
 /** @var array{lessons: int, quizzes: int} $totals */
+
+// «Lezioni» e «Quiz superati» mostrano «3/12»: si ordinano sul numero di
+// sinistra, perche' il denominatore e' uguale per tutta la tabella.
+$ordine = Ordinamento::daRichiesta([
+    'studente' => ['full_name', Ordinamento::TESTO],
+    'progresso' => ['progress_pct', Ordinamento::NUMERO],
+    'lezioni' => ['lessons_completed', Ordinamento::NUMERO],
+    'quiz' => ['quizzes_passed', Ordinamento::NUMERO],
+    'certificato' => ['certificate_code', Ordinamento::TESTO],
+]);
+$rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
@@ -53,11 +65,11 @@ use App\Core\Csrf;
     <table class="data-table" role="table">
         <thead role="rowgroup">
         <tr role="row">
-            <th scope="col" role="columnheader">Studente</th>
-            <th scope="col" role="columnheader">Progresso</th>
-            <th scope="col" role="columnheader">Lezioni</th>
-            <th scope="col" role="columnheader">Quiz superati</th>
-            <th scope="col" role="columnheader">Certificato</th>
+            <?= $ordine->th('Studente', 'studente') ?>
+            <?= $ordine->th('Progresso', 'progresso') ?>
+            <?= $ordine->th('Lezioni', 'lezioni') ?>
+            <?= $ordine->th('Quiz superati', 'quiz') ?>
+            <?= $ordine->th('Certificato', 'certificato') ?>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>

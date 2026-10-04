@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\ReportController;
+use App\Core\Ordinamento;
 
 /** @var array $session */
 /** @var array $rows */
@@ -12,6 +13,31 @@ $id = (int) $session['id'];
 $inizio = new DateTimeImmutable((string) $session['starts_at']);
 $fine = new DateTimeImmutable((string) $session['ends_at']);
 $presenti = count(array_filter($rows, static fn (array $r): bool => $r['joined_at'] !== null));
+
+/*
+ * Presenza e ritardo si vedono come etichette ma si ordinano come numeri,
+ * e il valore su cui ordinare si calcola qui: «presente/assente» e'
+ * `joined_at` che c'e' o non c'e', e il ritardo e' un numero di minuti che
+ * per gli assenti non esiste.
+ */
+$rows = array_map(static function (array $r): array {
+    $presente = $r['joined_at'] !== null;
+    $ritardo = ReportController::delayLabel($r);
+
+    return $r + [
+        'presenza' => $presente ? 1 : 0,
+        'minuti_ritardo' => $presente ? (int) $ritardo : null,
+    ];
+}, $rows);
+
+$ordine = Ordinamento::daRichiesta([
+    'partecipante' => ['full_name', Ordinamento::TESTO],
+    'presenza' => ['presenza', Ordinamento::NUMERO],
+    'ingresso' => ['joined_at', Ordinamento::DATA],
+    'ritardo' => ['minuti_ritardo', Ordinamento::NUMERO],
+    'origine' => ['source', Ordinamento::TESTO],
+]);
+$rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link">&larr; Report</a>
@@ -63,11 +89,11 @@ $presenti = count(array_filter($rows, static fn (array $r): bool => $r['joined_a
         <table class="data-table" role="table">
             <thead role="rowgroup">
             <tr role="row">
-                <th scope="col" role="columnheader">Partecipante</th>
-                <th scope="col" role="columnheader">Presenza</th>
-                <th scope="col" role="columnheader">Ingresso</th>
-                <th scope="col" role="columnheader">Ritardo</th>
-                <th scope="col" role="columnheader">Origine</th>
+                <?= $ordine->th('Partecipante', 'partecipante') ?>
+                <?= $ordine->th('Presenza', 'presenza') ?>
+                <?= $ordine->th('Ingresso', 'ingresso') ?>
+                <?= $ordine->th('Ritardo', 'ritardo') ?>
+                <?= $ordine->th('Origine', 'origine') ?>
             </tr>
             </thead>
             <tbody role="rowgroup">

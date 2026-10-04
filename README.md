@@ -45,6 +45,7 @@ In sviluppo iniziale.
 - ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
 - ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
   in CSV e XLSX, con indice a riquadri, ricerca e paginazione
+- ✅ Tabelle ordinabili dal nome della colonna, dal server e senza JavaScript
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
 - ✅ Protezione CSRF su tutte le richieste POST
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
@@ -508,6 +509,60 @@ spazio che la tabella ha davvero, non alla larghezza della finestra. Dove le sch
 senso (la matrice dei permessi, che ha una colonna per permesso) c'è il ripiego: scorrimento
 orizzontale **dentro il proprio riquadro**, senza trascinarsi dietro la pagina.
 
+## Tabelle ordinabili
+
+**Ogni tabella in cui l'ordine è un dato si ordina cliccando sul nome della colonna.** Il
+clic ricarica la pagina con `?ordina=colonna&verso=desc`: costa una ricarica, e in cambio dà
+tre cose che il riordino in JavaScript non può dare.
+
+1. **Ordina tutte le righe, non quelle a schermo.** Gli elenchi dei report sono paginati a
+   cinquanta righe: riordinando nel browser, «il punteggio più alto» sarebbe il più alto di
+   quella pagina, non del report — una risposta sbagliata che sembra giusta.
+2. **L'ordine sta nell'indirizzo**, quindi si salva nei preferiti e si manda a un collega.
+   Sopravvive alla paginazione e alla ricerca.
+3. **Funziona senza JavaScript**, come il resto della piattaforma.
+
+Il meccanismo è `App\Core\Ordinamento`, e una vista lo usa così:
+
+```php
+$ordine = Ordinamento::daRichiesta([
+    'nome'  => ['full_name', Ordinamento::TESTO],
+    'stato' => ['is_active', Ordinamento::NUMERO],
+]);
+$utenti = $ordine->applica($utenti);
+// nella testata:  <?= $ordine->th('Nome', 'nome') ?>
+```
+
+Quattro cose da sapere prima di aggiungerne una:
+
+- **Le chiavi dell'indirizzo non sono i nomi dei campi** (`nome`, non `full_name`). Quello
+  che si scrive nell'indirizzo è un'interfaccia pubblica: legarla ai nomi delle colonne del
+  database vorrebbe dire raccontarli a chi guarda e non poterli più cambiare. Una chiave che
+  non è stata dichiarata viene ignorata, quindi **niente di quello che arriva dall'indirizzo
+  diventa mai un nome di campo**.
+- **Si ordina sul dato, non su come è scritto.** «Quando» mostra `04/10/2026 18:30` e ordina
+  su `starts_at`; «Presenti» mostra `3/12` e ordina sul numero dei presenti. Dove il valore
+  mostrato è un'etichetta calcolata (presente/assente, valido/revocato) la vista calcola un
+  campo apposta: ordinare su `revoked_at` manderebbe i validi sempre in fondo, perché non ce
+  l'hanno.
+- **I vuoti stanno in fondo in tutti e due i versi.** Un trattino che sale in cima
+  invertendo l'ordine non è un'informazione: sono le righe a cui quel dato manca.
+- **Senza parametri non si ordina niente.** Ogni elenco ha già il suo ordine naturale (gli
+  incontri per data, le lezioni per posizione) e sostituirlo al primo caricamento sarebbe un
+  peggioramento. L'ordinamento è stabile, così a parità di valore le righe non si rimescolano
+  a ogni caricamento.
+
+Sul telefono, dove la tabella diventa un elenco di schede, l'intestazione non sparisce: torna
+come **una fila di comandi sopra alle schede**. Nasconderla del tutto avrebbe tolto
+l'ordinamento proprio dove la tabella è più scomoda, e avrebbe lasciato dei collegamenti
+raggiungibili con il tasto di tabulazione ma invisibili.
+
+Restano **non ordinabili**, e per scelta: la matrice dei permessi (caselle, non righe da
+confrontare), il quiz da svolgere, gli elenchi di moduli e lezioni dentro un corso — lì
+l'ordine è deciso a mano dal tutor, cioè *è* il contenuto — e le singole colonne che mostrano
+un campo **oppure** un altro («Corso o gruppo»): ordinarle su uno dei due manderebbe in fondo
+tutte le righe dell'altro, con l'aria di un difetto.
+
 ## Test
 
 Due famiglie. I test PHP girano da soli; i due file `.js` usano Playwright e hanno bisogno del
@@ -532,6 +587,7 @@ php tests/rilascio_test.php         # rilascio progressivo: catena, conti, nient
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
+php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, indirizzi
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
@@ -539,9 +595,10 @@ php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, p
 node tests/accessibilita.js         # 1275 controlli su 51 pagine, a tre larghezze
 node tests/permessi.js              # 79 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
+node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
 
-### I due controlli automatici che vale la pena conoscere
+### I tre controlli automatici che vale la pena conoscere
 
 **Accessibilità** (`accessibilita.js`). Su **tutte** le pagine HTML della piattaforma verifica
 lingua e titolo, un solo titolo principale, contrasto del testo, campi con etichetta, immagini
@@ -554,6 +611,15 @@ applicato il CSS.
 
 **Non è un test di usabilità**, ed è scritto per non essere scambiato per tale: dice se una
 pagina rispetta delle regole misurabili, non se una persona capisce cosa deve fare.
+
+**Ordinamento** (`ordinamento_pagine.js`). Apre ogni pagina con una tabella ordinabile,
+segue **ogni** collegamento di intestazione e verifica quattro cose: che si apra, che sia
+quella colonna — e nessun'altra — a dichiararsi ordinata, che le righe restino le stesse
+(ordinare rimette in fila: non aggiunge, non toglie, non duplica) e che su una colonna di
+testo l'ordine alfabetico ci sia davvero. Quest'ultima è la sola che vede l'errore più
+insidioso: un'intestazione legata per sbaglio al campo di un'altra colonna ordina
+benissimo, e la pagina resta piena di valori plausibili nell'ordine sbagliato. Provato che
+sa diventare rosso legando «Email» al campo del nome.
 
 **Permessi** (`permessi.js`). `semina_permessi.php` crea **due mondi paralleli e simmetrici**,
 A e B, con proprietari diversi — un controllo sui permessi ha senso solo se c'è qualcosa che

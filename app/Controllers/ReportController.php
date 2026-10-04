@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Core\Csv;
+use App\Core\Ordinamento;
 use App\Core\ReportSections;
 use App\Core\View;
 use App\Core\Xlsx;
@@ -79,7 +80,12 @@ class ReportController
         // `cerca` e' campo => intestazione: a filtrare servono le chiavi,
         // le intestazioni sono per il suggerimento mostrato nel campo.
         $righe = ReportSections::filtra($this->righeDi($chiave), array_keys($sezione['cerca']), $cerca);
-        $fetta = ReportSections::pagina($righe, (int) ($_GET['pagina'] ?? 1));
+
+        // Si ordina **prima** di paginare: ordinando dopo si riordinerebbero
+        // le cinquanta righe di questa pagina, e «il punteggio piu' alto»
+        // sarebbe il piu' alto della pagina aperta, non del report.
+        $ordine = Ordinamento::daRichiesta(ReportSections::ordinabili($chiave));
+        $fetta = ReportSections::pagina($ordine->applica($righe), (int) ($_GET['pagina'] ?? 1));
 
         View::render('reports/lista', [
             'pageTitle' => $sezione['titolo'],
@@ -90,6 +96,7 @@ class ReportController
             'pagine' => $fetta['pagine'],
             'totale' => $fetta['totale'],
             'cerca' => $cerca,
+            'ordine' => $ordine,
             'restricted' => $this->allowedStudentIds() !== null,
         ]);
     }

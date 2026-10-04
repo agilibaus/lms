@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ordinamento;
 use App\Core\ReportSections;
 use App\Core\Xlsx;
 
@@ -18,6 +19,7 @@ use App\Core\Xlsx;
  * @var int $pagine
  * @var int $totale
  * @var string $cerca
+ * @var Ordinamento $ordine
  * @var bool $restricted
  */
 
@@ -45,8 +47,15 @@ $scarica = static function (string $base): string {
 };
 
 /** L'indirizzo di questa pagina con un parametro cambiato. */
-$conParametro = static function (string $nome, string $valore) use ($chiave, $cerca, $pagina): string {
-    $q = ['cerca' => $cerca, 'pagina' => (string) $pagina];
+$conParametro = static function (string $nome, string $valore) use ($chiave, $cerca, $pagina, $ordine): string {
+    // L'ordine scelto viaggia con le pagine: «pagina 2» di un elenco
+    // ordinato per punteggio deve restare ordinata per punteggio.
+    $q = [
+        'cerca' => $cerca,
+        'ordina' => (string) $ordine->chiave(),
+        'verso' => $ordine->chiave() === null ? '' : $ordine->verso(),
+        'pagina' => (string) $pagina,
+    ];
     $q[$nome] = $valore;
     $q = array_filter($q, static fn (string $v): bool => $v !== '' && $v !== '1');
 
@@ -72,6 +81,13 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
     <label for="cerca">
         Cerca fra <?= $esc((string) $sezione['articolo']) ?> <?= $esc((string) $sezione['plurale']) ?>
     </label>
+    <?php /* L'ordine scelto sopravvive alla ricerca: chi ha ordinato per
+             punteggio e poi cerca un nome si aspetta di ritrovare lo stesso
+             ordine, non quello di partenza. */ ?>
+    <?php if ($ordine->chiave() !== null): ?>
+        <input type="hidden" name="ordina" value="<?= $esc((string) $ordine->chiave()) ?>">
+        <input type="hidden" name="verso" value="<?= $esc($ordine->verso()) ?>">
+    <?php endif; ?>
     <div class="report-ricerca-riga">
         <?php /* Il suggerimento nomina le colonne in cui si cerca davvero:
                  l'email si cerca fra gli studenti, non fra i corsi. */ ?>
@@ -112,11 +128,12 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
             <table class="data-table" role="table">
                 <thead role="rowgroup">
                     <tr role="row">
-                        <?php foreach ($colonne as [$etichetta, $tipo,]): ?>
-                            <th scope="col" role="columnheader"
-                                class="<?= $tipo === 'numero' ? 'col-numero' : '' ?>">
-                                <?= $esc($etichetta) ?>
-                            </th>
+                        <?php foreach ($colonne as $c): ?>
+                            <?= $ordine->th(
+                                $c['etichetta'],
+                                $c['chiave'],
+                                $c['tipo'] === 'numero' ? 'col-numero' : ''
+                            ) ?>
                         <?php endforeach; ?>
                         <th scope="col" role="columnheader" class="col-azioni">
                             <span class="sr-only">Azioni</span>
@@ -127,10 +144,10 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
                     <?php foreach ($righe as $riga): ?>
                         <?php $base = $sezione['base'] . '/' . (int) $riga['id']; ?>
                         <tr role="row">
-                            <?php foreach ($colonne as [$etichetta, $tipo, $cella]): ?>
-                                <td role="cell" data-label="<?= $esc($etichetta) ?>"
-                                    class="<?= $tipo === 'numero' ? 'col-numero' : '' ?>">
-                                    <?= $cella($riga) ?>
+                            <?php foreach ($colonne as $c): ?>
+                                <td role="cell" data-label="<?= $esc($c['etichetta']) ?>"
+                                    class="<?= $c['tipo'] === 'numero' ? 'col-numero' : '' ?>">
+                                    <?= ($c['cella'])($riga) ?>
                                 </td>
                             <?php endforeach; ?>
                             <td role="cell" data-label="Azioni" class="col-azioni">

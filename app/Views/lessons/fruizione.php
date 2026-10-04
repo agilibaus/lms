@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\VideoProgressController;
+use App\Core\Ordinamento;
 use App\Core\Xlsx;
 
 /** @var array $lesson */
@@ -12,6 +13,18 @@ use App\Core\Xlsx;
 /** @var array{iscritti: int, avviati: int, media: int|null, completati: int} $riepilogo */
 
 $durata = (int) ($lesson['duration_seconds'] ?? 0);
+
+// «Vista» mostra una percentuale che puo' mancare (durata del video
+// sconosciuta): quelle righe finiscono in fondo, come ogni vuoto.
+$ordine = Ordinamento::daRichiesta([
+    'studente' => ['full_name', Ordinamento::TESTO],
+    'vista' => ['percentage', Ordinamento::NUMERO],
+    'tempo' => ['watched_seconds', Ordinamento::NUMERO],
+    'posizione' => ['position_seconds', Ordinamento::NUMERO],
+    'visita' => ['updated_at', Ordinamento::DATA],
+    'completata' => ['completed_at', Ordinamento::DATA],
+]);
+$righe = $ordine->applica($righe);
 
 /** «12:04», come sulla barra del player. */
 $minutoSecondo = static function (?int $secondi): string {
@@ -100,12 +113,12 @@ $quando = static function (?string $data): string {
         </caption>
         <thead role="rowgroup">
             <tr role="row">
-                <th scope="col" role="columnheader">Studente</th>
-                <th scope="col" role="columnheader">Vista</th>
-                <th scope="col" role="columnheader">Tempo guardato (secondi)</th>
-                <th scope="col" role="columnheader">Ultima posizione</th>
-                <th scope="col" role="columnheader">Ultima visita</th>
-                <th scope="col" role="columnheader">Completata</th>
+                <?= $ordine->th('Studente', 'studente') ?>
+                <?= $ordine->th('Vista', 'vista') ?>
+                <?= $ordine->th('Tempo guardato (secondi)', 'tempo') ?>
+                <?= $ordine->th('Ultima posizione', 'posizione') ?>
+                <?= $ordine->th('Ultima visita', 'visita') ?>
+                <?= $ordine->th('Completata', 'completata') ?>
             </tr>
         </thead>
         <tbody role="rowgroup">

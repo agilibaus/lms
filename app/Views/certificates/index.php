@@ -4,10 +4,29 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 
 /** @var bool $isStaff */
 /** @var array $certificates */
 /** @var bool $dompdfAvailable */
+
+$ordine = Ordinamento::daRichiesta([
+    'studente' => ['full_name', Ordinamento::TESTO],
+    'corso' => ['course_title', Ordinamento::TESTO],
+    'codice' => ['certificate_code', Ordinamento::TESTO],
+    'emesso' => ['issued_at', Ordinamento::DATA],
+    // Revocato o valido. **Non** si ordina su `revoked_at`: i validi non
+    // ce l'hanno, e i vuoti vanno in fondo in tutti e due i versi, quindi
+    // non si potrebbero mai portare in cima. Si ordina su un valore
+    // calcolato qui, che e' 0 o 1 e si rovescia come ci si aspetta.
+    'stato' => ['stato_revoca', Ordinamento::NUMERO],
+]);
+
+$certificates = array_map(
+    static fn (array $c): array => $c + ['stato_revoca' => $c['revoked_at'] === null ? 0 : 1],
+    $certificates
+);
+$certificates = $ordine->applica($certificates);
 ?>
 <div class="page-header">
     <h1>Certificati</h1>
@@ -41,11 +60,11 @@ use App\Core\Csrf;
     <table class="data-table">
         <thead>
         <tr>
-            <?php if ($isStaff): ?><th>Studente</th><?php endif; ?>
-            <th>Corso</th>
-            <th>Codice</th>
-            <th>Emesso il</th>
-            <th>Stato</th>
+            <?php if ($isStaff): ?><?= $ordine->th('Studente', 'studente') ?><?php endif; ?>
+            <?= $ordine->th('Corso', 'corso') ?>
+            <?= $ordine->th('Codice', 'codice') ?>
+            <?= $ordine->th('Emesso il', 'emesso') ?>
+            <?= $ordine->th('Stato', 'stato') ?>
             <th></th>
         </tr>
         </thead>

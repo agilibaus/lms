@@ -2295,6 +2295,53 @@ body.has-focus-video {
     color: var(--color-text-muted);
 }
 
+/* ---------- Intestazione che ordina ----------
+
+   L'intestazione diventa un collegamento, e un collegamento ha due obblighi
+   che un'intestazione non aveva: essere grande abbastanza da colpirlo con un
+   dito (24 px, criterio 2.5.8) e far vedere dove sta il fuoco da tastiera.
+   Il `min-height` serve per questo: «EMAIL» a 12 px ne sarebbe alto 15 e il
+   bersaglio sarebbe sotto il minimo. `inline-flex` incolonna freccia e testo
+   sulla stessa linea di base.
+
+   Il colore e la forma restano quelli dell'intestazione di prima: la
+   tabella non deve sembrare piena di collegamenti blu. Che siano cliccabili
+   lo dicono il puntatore, la sottolineatura al passaggio e la freccia su
+   quella attiva. */
+.data-table th .ordina {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 24px;
+    color: inherit;
+    text-decoration: none;
+    /* Per non allargare la colonna: il riempimento della cella c'e' gia'. */
+    margin: -0.15rem 0;
+}
+
+.data-table th .ordina:hover {
+    text-decoration: underline;
+    color: var(--color-text);
+}
+
+/* La colonna su cui si sta ordinando si distingue senza dover cercare la
+   freccia: e' piu' scura e piu' marcata delle altre. */
+.data-table th .ordina-attiva {
+    color: var(--color-text);
+    font-weight: 700;
+}
+
+.ordina-freccia {
+    /* La freccia non deve far ballare la colonna quando compare: ha una
+       larghezza sua ed e' nel documento anche prima del primo clic, vuota.
+       Senza, cliccando la prima intestazione tutte le colonne si
+       spostavano di qualche pixel. */
+    display: inline-block;
+    width: 0.7em;
+    font-size: 0.9em;
+    line-height: 1;
+}
+
 .data-table code {
     font-size: 0.82rem;
 }
@@ -3241,14 +3288,60 @@ fieldset.checkbox-group legend {
     }
 
     /* Non `display: none`: toglierebbe le intestazioni anche a chi legge con
-       un lettore di schermo, e sono loro a dare un nome alle colonne. */
+       un lettore di schermo, e sono loro a dare un nome alle colonne.
+
+       **Da quando le intestazioni ordinano, pero', nascoderle tutte non va
+       piu' bene**, per due motivi che si tengono: sul telefono non ci
+       sarebbe piu' modo di ordinare, e i collegamenti nascosti
+       resterebbero raggiungibili con il tasto di tabulazione — cioe' tre o
+       quattro fermate del fuoco su roba che non si vede. Quindi in modalita'
+       schede l'intestazione torna visibile come **una fila di comandi
+       sopra alle schede**: le stesse colonne, la stessa interfaccia
+       pubblica, una forma adatta allo spazio. */
     .tabella-schede .data-table thead {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .tabella-schede .data-table thead tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        align-items: center;
+        border: 0;
+        padding: 0;
+    }
+
+    .tabella-schede .data-table thead th {
+        display: inline-block;
+        width: auto;
+        padding: 0;
+        border: 0;
+    }
+
+    /* Le colonne che non si ordinano — «Azioni», o una colonna calcolata —
+       non hanno niente da comandare: restano fuori dalla vista ma dentro
+       al documento, come prima, perche' danno il nome alla colonna a chi
+       legge con un lettore di schermo. Niente `display: none`. */
+    .tabella-schede .data-table thead th:not(:has(.ordina)) {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+
+    .tabella-schede .data-table thead .ordina {
+        padding: 0.15rem 0.5rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface);
+    }
+
+    .tabella-schede .data-table thead .ordina-attiva {
+        border-color: var(--color-primary);
+        background: var(--color-primary-soft);
     }
 
     .tabella-schede .data-table tr {

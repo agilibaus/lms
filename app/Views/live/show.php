@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 
 /** @var array $session */
 /** @var bool $canManage */
@@ -14,6 +15,31 @@ $id = (int) $session['id'];
 $startsAt = new DateTimeImmutable((string) $session['starts_at']);
 $endsAt = new DateTimeImmutable((string) $session['ends_at']);
 $now = new DateTimeImmutable('now');
+
+/*
+ * La presenza non sta nella riga del partecipante: sta in `$attendance`,
+ * indicizzata per identificativo. Per ordinarci sopra si porta dentro alla
+ * riga, invece di insegnare all'ordinamento a guardare in un secondo
+ * elenco — sarebbe una cosa in piu' che puo' rompersi, per una pagina sola.
+ */
+$participants = array_map(
+    static function (array $p) use ($attendance): array {
+        $r = $attendance[(int) $p['id']] ?? null;
+
+        return $p + [
+            'ingresso' => $r === null ? null : $r['joined_at'],
+            'origine' => $r === null || $r['joined_at'] === null ? null : $r['source'],
+        ];
+    },
+    $participants
+);
+
+$ordine = Ordinamento::daRichiesta([
+    'partecipante' => ['full_name', Ordinamento::TESTO],
+    'ingresso' => ['ingresso', Ordinamento::DATA],
+    'origine' => ['origine', Ordinamento::TESTO],
+]);
+$participants = $ordine->applica($participants);
 $isPast = $endsAt < $now;
 ?>
 <div class="page-header">
@@ -108,9 +134,9 @@ $isPast = $endsAt < $now;
             <table class="data-table" role="table">
                 <thead role="rowgroup">
                 <tr role="row">
-                    <th scope="col" role="columnheader">Partecipante</th>
-                    <th scope="col" role="columnheader">Ingresso</th>
-                    <th scope="col" role="columnheader">Origine</th>
+                    <?= $ordine->th('Partecipante', 'partecipante') ?>
+                    <?= $ordine->th('Ingresso', 'ingresso') ?>
+                    <?= $ordine->th('Origine', 'origine') ?>
                     <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
                 </tr>
                 </thead>

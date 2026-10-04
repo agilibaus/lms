@@ -86,18 +86,50 @@ check(
 
 $tipiBuoni = true;
 $almenoUnNumero = [];
+$chiaviDoppie = [];
 
 foreach ($colonne as $chiave => $lista) {
-    foreach ($lista as [$etichetta, $tipo, $cella]) {
-        if (!in_array($tipo, ['testo', 'numero'], true) || $etichetta === '' || !is_callable($cella)) {
+    $viste = [];
+
+    foreach ($lista as $c) {
+        $tipo = $c['tipo'] ?? '';
+
+        if (
+            !in_array($tipo, ['testo', 'numero', 'data'], true)
+            || ($c['etichetta'] ?? '') === ''
+            || !is_callable($c['cella'] ?? null)
+        ) {
             $tipiBuoni = false;
         }
 
         if ($tipo === 'numero') {
             $almenoUnNumero[$chiave] = true;
         }
+
+        // Una colonna si ordina solo se dichiara **tutte e due** le cose:
+        // come si chiama nell'indirizzo e su quale campo. Dichiararne una
+        // sola e' un ordinamento che non funziona ma sembra esserci.
+        if (($c['chiave'] === null) !== ($c['campo'] === null)) {
+            $tipiBuoni = false;
+        }
+
+        if ($c['chiave'] !== null) {
+            if (in_array($c['chiave'], $viste, true)) {
+                $chiaviDoppie[] = $chiave . '/' . $c['chiave'];
+            }
+
+            $viste[] = $c['chiave'];
+        }
     }
 }
+
+// Due colonne con la stessa chiave nell'indirizzo: la seconda non si
+// potrebbe mai ordinare, e nessuno se ne accorgerebbe guardando la pagina.
+check(
+    'le chiavi di ordinamento non si ripetono dentro una tabella',
+    $chiaviDoppie === [],
+    'ripetute: ' . implode(', ', $chiaviDoppie)
+);
 
 check('ogni colonna dichiara etichetta, tipo e come si rende', $tipiBuoni);
 check(
@@ -161,7 +193,7 @@ check(
 // `ReportSections` e in `_colonne.php`, e due stringhe uguali scritte in
 // due posti divergono alla prima modifica.
 foreach ($sezioni as $chiave => $s) {
-    $intestazioni = array_column($colonne[$chiave], 0);
+    $intestazioni = array_column($colonne[$chiave], 'etichetta');
     $sconosciute = array_values(array_diff(array_unique(array_values($s['cerca'])), $intestazioni));
 
     check(
