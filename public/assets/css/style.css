@@ -52,6 +52,13 @@
        collegamenti d'azione nelle tabelle, "indietro" — e cambiarlo dev'essere
        una modifica sola, non una caccia. */
     --tap-target: 24px;
+    /* Lo scalino a sinistra delle righe dentro a un modulo: lo riempiono le
+       frecce di riordino nelle lezioni e lo lascia vuoto il quiz, che è uno
+       solo per modulo e non si sposta. È una variabile perché serve nei due
+       posti insieme — scritto due volte diventerebbe due numeri diversi, e
+       il disallineamento che questa misura corregge nasceva proprio dal non
+       averne nessuno. */
+    --gutter-ordine: 4rem;
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
     /* Carattere delle sole pagine pubbliche (accesso, registrazione, recupero
@@ -1864,8 +1871,12 @@ h3 { font-size: 1.05rem; }
     flex-shrink: 0;
 }
 
+/* Le frecce occupano esattamente lo scalino, margine compreso: così il
+   titolo della lezione comincia a `--gutter-ordine` dal bordo interno, e
+   lì comincia anche il quiz, che lo scalino lo lascia vuoto. */
 .lesson-list-item .order-actions {
-    margin-right: 0.35rem;
+    width: var(--gutter-ordine);
+    margin-right: 0;
 }
 
 /* Il titolo prende lo spazio che resta: la riga distanzia gli elementi alle
@@ -2645,12 +2656,35 @@ body.has-focus-video {
     opacity: 0.72;
 }
 
+/* Il quiz è un'altra voce del contenuto del modulo, quindi ha la forma
+   delle righe delle lezioni e non una sua: stesso riempimento, stesso
+   arrotondamento, stesso evidenziarsi al passaggio del mouse. Con regole
+   proprie partiva 9,6 px più a sinistra dei titoli — il riempimento
+   orizzontale che le lezioni avevano e lui no — e da staff 73,6, perché
+   lì i titoli sono spinti a destra dalle frecce di riordino. */
 .module-quiz-row {
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    margin: 0.7rem 0 0;
+    margin: 0.35rem 0 0;
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
+}
+
+.module-quiz-row:hover {
+    background: var(--color-primary-soft);
+}
+
+/* Lo scalino lasciato libero dalle frecce che il quiz non ha. Vuoto e
+   `aria-hidden`: è spaziatura, e un lettore di schermo non deve
+   annunciare niente. */
+.module-quiz-row .ordine-vuoto {
+    /* Meno lo spazio della riga, che segue il segnaposto e fa parte dello
+       scalino: senza la sottrazione il titolo del quiz finirebbe 8 px più a
+       destra di quelli delle lezioni — misurato. */
+    width: calc(var(--gutter-ordine) - 0.5rem);
+    flex-shrink: 0;
 }
 
 .course-progress-hint {

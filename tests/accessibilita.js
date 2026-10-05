@@ -609,6 +609,43 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
  */
 const EXTRA = {
     /*
+     * Dentro al riquadro di un modulo, il quiz e' una voce come le lezioni
+     * e deve cominciare dove cominciano loro. Era disallineato in due modi
+     * diversi: di 9,6 px per tutti — il riempimento orizzontale che le
+     * righe delle lezioni hanno e la riga del quiz non aveva — e di 73,6
+     * da staff, dove i titoli sono spinti a destra dalle frecce di
+     * riordino che il quiz non ha.
+     *
+     * Si confrontano le ascisse **renderizzate**, non il CSS scritto: lo
+     * scalino viene da una variabile e dal passo della riga, e due regole
+     * che "sembrano" uguali possono cadere in due punti diversi. Questa
+     * pagina gira con un utente dello staff, cioe' nel caso peggiore.
+     */
+    'Corso': async (page, nome) => {
+        const scarto = await page.evaluate(() => {
+            const sezioni = [...document.querySelectorAll('section')]
+                .filter((s) => s.querySelector('.module-quiz-row') !== null
+                    && s.querySelector('.lesson-list-item a') !== null);
+
+            return sezioni.map((s) => Math.round((
+                s.querySelector('.module-quiz-row .quiz-link').getBoundingClientRect().x
+                - s.querySelector('.lesson-list-item a').getBoundingClientRect().x
+            ) * 10) / 10);
+        });
+
+        if (scarto.length === 0) {
+            console.log('  --   ' + nome + ': nessun modulo con lezioni e quiz, allineamento non verificabile');
+            return;
+        }
+
+        check(
+            nome + ': il quiz è incolonnato con le lezioni del modulo',
+            scarto.every((s) => Math.abs(s) < 1),
+            ['scarti misurati, in px: ' + JSON.stringify(scarto)]
+        );
+    },
+
+    /*
      * Nella griglia del mese i due tipi di evento sono pastiglie colorate.
      * Il colore da solo non e' un'informazione (criterio 1.4.1 delle
      * WCAG): chi non distingue quelle due tinte, o chi stampa in bianco e

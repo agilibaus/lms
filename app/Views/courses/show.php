@@ -187,6 +187,15 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 
                     <?php if ($quiz !== null): ?>
                         <p class="module-quiz-row">
+                            <?php if ($isStaff): ?>
+                                <?php /* Lo scalino delle frecce di riordino, che
+                                         il quiz non ha: ce n'e' uno solo per
+                                         modulo e non si sposta. Serve a
+                                         incolonnare il suo titolo con quelli
+                                         delle lezioni, ed e' spaziatura, quindi
+                                         un lettore di schermo non lo annuncia. */ ?>
+                                <span class="ordine-vuoto" aria-hidden="true"></span>
+                            <?php endif; ?>
                             <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="quiz-link">
                                 Quiz: <?= htmlspecialchars((string) $quiz['title']) ?>
                             </a>
