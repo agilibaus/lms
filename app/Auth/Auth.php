@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Auth;
 
 use App\Core\Csrf;
+use App\Core\Welcome;
 use App\Models\RolePermissionModel;
 use App\Models\UserModel;
 
@@ -52,7 +53,7 @@ class Auth
      * Stato della password per la richiesta in corso: `false` finche' non e'
      * stato letto, poi la riga oppure null se l'utente non esiste piu'.
      *
-     * @var array{password_changed_at: ?string, must_change_password: int}|null|false
+     * @var array{password_changed_at: ?string, must_change_password: int, welcome_seen_at: ?string}|null|false
      */
     private static array|null|false $passwordState = false;
 
@@ -229,6 +230,24 @@ class Auth
             header('Location: ' . self::PASSWORD_PAGE);
             exit;
         }
+
+        // 3. Il benvenuto, **dopo** il cambio password e non prima: chi entra
+        //    con una password temporanea deve prima sceglierne una sua, e due
+        //    schermate obbligate che si contendono la stessa persona sarebbero
+        //    una di troppo. Il controllo e' qui sotto proprio per questo.
+        //
+        //    Solo gli studenti: lo staff entra per lavorare, e un video di
+        //    benvenuto davanti all'amministratore che deve sistemare un corso
+        //    e' un ostacolo, non un'accoglienza.
+        if (
+            $stato['welcome_seen_at'] === null
+            && self::hasRole('studente')
+            && !Welcome::paginaEsente(self::percorsoCorrente())
+            && Welcome::configurato()
+        ) {
+            header('Location: ' . Welcome::PAGE);
+            exit;
+        }
     }
 
     /**
@@ -236,9 +255,34 @@ class Auth
      */
     private static function onPasswordPage(): bool
     {
-        $percorso = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+        $percorso = self::percorsoCorrente();
 
         return $percorso === self::PASSWORD_PAGE || $percorso === '/logout';
+    }
+
+    /** Il percorso della richiesta, senza la stringa di ricerca. */
+    private static function percorsoCorrente(): string
+    {
+        return parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+    }
+
+    /**
+     * Vero se questa persona non ha ancora visto il video di benvenuto.
+     *
+     * Legge lo stato gia' caricato per la sessione, quindi non costa una
+     * query in piu'. Non dice se un video esista: quella e' una domanda di
+     * `Welcome::configurato()`, e tenerle separate serve perche' il profilo
+     * offre di **rivedere** il video anche a chi l'ha gia' visto.
+     */
+    public static function welcomePending(): bool
+    {
+        if (!self::check()) {
+            return false;
+        }
+
+        $stato = self::passwordState();
+
+        return $stato !== null && $stato['welcome_seen_at'] === null;
     }
 
     /**
@@ -261,7 +305,7 @@ class Auth
      * Stato della password, letto una volta sola per richiesta: la stessa
      * pagina lo chiede al controllo della sessione e poi alla vista.
      *
-     * @return array{password_changed_at: ?string, must_change_password: int}|null
+     * @return array{password_changed_at: ?string, must_change_password: int, welcome_seen_at: ?string}|null
      */
     private static function passwordState(): ?array
     {

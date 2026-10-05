@@ -17,6 +17,7 @@ use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\Mail\Message;
 use App\Core\Settings;
+use App\Core\Welcome;
 use App\Core\Theme;
 use App\Core\View;
 
@@ -425,6 +426,62 @@ class SettingsController extends AdminController
     // ---------------------------------------------------------------
     // Bunny Stream
     // ---------------------------------------------------------------
+
+    // ---------------------------------------------------------------
+    // Video di benvenuto
+    // ---------------------------------------------------------------
+
+    private const WELCOME_PAGE = '/admin/settings/benvenuto';
+
+    public function welcome(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        View::render('admin/settings/benvenuto', [
+            'pageTitle' => 'Video di benvenuto',
+            'provider' => Welcome::provider(),
+            'videoRef' => Welcome::videoRef(),
+            'configurato' => Welcome::configurato(),
+            'sources' => self::sourcesFor(Settings::WELCOME_KEYS),
+            'lastUpdate' => Settings::lastUpdate(Settings::WELCOME_KEYS),
+        ]);
+    }
+
+    public function updateWelcome(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $userId = Auth::id();
+        $provider = (string) ($_POST['WELCOME_VIDEO_PROVIDER'] ?? 'none');
+
+        // Un provider fuori elenco non diventa mai un valore salvato: la
+        // tendina e' una promessa all'utente, non una difesa.
+        if (!isset(Welcome::PROVIDERS[$provider])) {
+            $this->fail('Provider video non riconosciuto.', self::WELCOME_PAGE);
+        }
+
+        $ref = trim((string) ($_POST['WELCOME_VIDEO_REF'] ?? ''));
+
+        // Un provider scelto senza identificativo non accende niente e non
+        // lo dice: meglio fermarsi qui che lasciare l'admin convinto di
+        // aver pubblicato un video che nessuno vedra'.
+        if ($provider !== 'none' && $ref === '') {
+            $this->fail(
+                'Hai scelto un provider ma non hai indicato l\'identificativo del video.',
+                self::WELCOME_PAGE
+            );
+        }
+
+        Settings::set('WELCOME_VIDEO_PROVIDER', $provider, $userId);
+        Settings::set('WELCOME_VIDEO_REF', $ref, $userId);
+
+        $this->success(
+            $provider === 'none'
+                ? 'Video di benvenuto disattivato: la pagina non comparirà più.'
+                : 'Video di benvenuto salvato.',
+            self::WELCOME_PAGE
+        );
+    }
 
     public function bunny(array $params = []): void
     {

@@ -26,6 +26,12 @@ $sezioni = [
         'visibile' => $canSettings,
     ],
     [
+        'titolo' => 'Video di benvenuto',
+        'href' => '/admin/settings/benvenuto',
+        'testo' => 'Il video che uno studente vede al primo accesso, una volta sola.',
+        'visibile' => $canSettings,
+    ],
+    [
         'titolo' => 'Bunny Stream',
         'href' => '/admin/settings/bunny',
         'testo' => 'Dove stanno i video dei corsi, e la firma che impedisce di guardarli senza essere iscritti.',

@@ -94,6 +94,15 @@ class Settings
         'BUNNY_TOKEN_TTL_HOURS',
     ];
 
+    /**
+     * Il video di benvenuto, mostrato una volta al primo accesso di uno
+     * studente. Provider e identificativo, come per le lezioni.
+     */
+    public const WELCOME_KEYS = [
+        'WELCOME_VIDEO_PROVIDER',
+        'WELCOME_VIDEO_REF',
+    ];
+
     /** Chiavi da non rimandare mai al browser. */
     public const SECRET_KEYS = [
         'MAIL_PASSWORD',
@@ -106,7 +115,8 @@ class Settings
             || in_array($key, self::GOOGLE_KEYS, true)
             || in_array($key, self::LIVE_MAIL_KEYS, true)
             || in_array($key, self::APPEARANCE_KEYS, true)
-            || in_array($key, self::BUNNY_KEYS, true);
+            || in_array($key, self::BUNNY_KEYS, true)
+            || in_array($key, self::WELCOME_KEYS, true);
     }
 
     public static function isSecret(string $key): bool

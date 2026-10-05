@@ -20,6 +20,10 @@ CREATE TABLE users (
     -- 1 quando la password l'ha generata un admin: finche' resta 1 l'utente
     -- vede solo la pagina di cambio password.
     must_change_password TINYINT(1) NOT NULL DEFAULT 0,
+    -- Quando ha visto il video di benvenuto. NULL = non ancora: al primo
+    -- accesso viene portato alla pagina del benvenuto, una volta sola e solo
+    -- se un video e' configurato. Si puo' comunque rivedere dal profilo.
+    welcome_seen_at DATETIME NULL DEFAULT NULL,
     full_name       VARCHAR(150) NOT NULL,
     role            ENUM('admin','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)

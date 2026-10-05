@@ -18,6 +18,7 @@ use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
 use App\Controllers\PasswordResetController;
 use App\Controllers\ProfileController;
+use App\Controllers\WelcomeController;
 use App\Controllers\QuizController;
 use App\Controllers\RegistrationController;
 use App\Controllers\ReportController;
@@ -46,6 +47,12 @@ $router->post('/password/reimposta/{token}', [PasswordResetController::class, 'r
 // --- Catalogo e auto-iscrizione ---------------------------------------
 $router->get('/catalogo', [CatalogController::class, 'index']);
 $router->post('/catalogo/{id}/iscrizione', [CatalogController::class, 'enroll']);
+
+// --- Video di benvenuto ------------------------------------------------
+// La pagina risponde a chiunque abbia fatto accesso: ci si arriva dirottati
+// al primo accesso, oppure dal collegamento nel profilo per rivederlo.
+$router->get('/benvenuto', [WelcomeController::class, 'show']);
+$router->post('/benvenuto/visto', [WelcomeController::class, 'seen']);
 
 // --- Profilo dell'utente ----------------------------------------------
 $router->get('/profilo', [ProfileController::class, 'show']);
@@ -199,6 +206,8 @@ $router->get('/admin/settings/inviti', [SettingsController::class, 'liveMail']);
 $router->post('/admin/settings/inviti', [SettingsController::class, 'updateLiveMail']);
 $router->get('/admin/settings/aspetto', [SettingsController::class, 'appearance']);
 $router->post('/admin/settings/aspetto', [SettingsController::class, 'updateAppearance']);
+$router->get('/admin/settings/benvenuto', [SettingsController::class, 'welcome']);
+$router->post('/admin/settings/benvenuto', [SettingsController::class, 'updateWelcome']);
 $router->get('/admin/settings/bunny', [SettingsController::class, 'bunny']);
 $router->post('/admin/settings/bunny', [SettingsController::class, 'updateBunny']);
 $router->get('/admin/settings/meet', [SettingsController::class, 'meet']);

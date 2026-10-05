@@ -282,13 +282,40 @@ class UserModel
      */
     public static function passwordState(int $id): ?array
     {
+        // `welcome_seen_at` viaggia con le altre due: `guardSession()` le
+        // chiede tutte nello stesso momento, e una colonna in piu' in una
+        // query che c'e' gia' costa zero, mentre una seconda query sarebbe
+        // una query per richiesta per ogni persona collegata (§7.2: il
+        // vincolo vero sono i 20 processi PHP, non il database).
         $stmt = Database::connection()->prepare(
-            'SELECT password_changed_at, must_change_password FROM users WHERE id = :id LIMIT 1'
+            'SELECT password_changed_at, must_change_password, welcome_seen_at
+               FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);
         $stato = $stmt->fetch();
 
         return $stato ?: null;
+    }
+
+    /**
+     * Segna il video di benvenuto come visto, adesso.
+     *
+     * `NOW()` del database e non `date()` di PHP: le due macchine possono
+     * stare su fusi diversi, ed e' la trappola di §5 gia' pagata una volta
+     * con i tempi di fruizione. Qui sbagliare costerebbe poco, ma la regola
+     * vale per ogni data che finisce in tabella, non solo per quelle che si
+     * confrontano.
+     *
+     * Scrive solo se la casella e' ancora vuota: chi riguarda il video non
+     * sposta in avanti la data del proprio primo accesso.
+     */
+    public static function markWelcomeSeen(int $id): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE users SET welcome_seen_at = NOW()
+              WHERE id = :id AND welcome_seen_at IS NULL'
+        );
+        $stmt->execute(['id' => $id]);
     }
 
     public static function setActive(int $id, bool $isActive): void

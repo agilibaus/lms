@@ -68,6 +68,49 @@ $assistente = utente($pdo, 'assist@test.it');
 $studenteA = utente($pdo, 'stud@test.it');
 $studenteB = utente($pdo, 'strano@test.it');
 
+// Uno studente che non ha mai fatto accesso.
+//
+// PERCHE' UN UTENTE APPOSTA. Il benvenuto si mostra a chi ha la casella
+// `welcome_seen_at` vuota, e gli altri utenti di prova non possono averla
+// vuota: verrebbero dirottati alla pagina del benvenuto a ogni richiesta e
+// non proverebbero piu' niente di quello per cui esistono. Questo invece
+// nasce vergine a ogni semina ed e' l'unico su cui si prova il primo
+// accesso. Lo crea la semina se non c'e': e' roba sua, non una delle sei
+// utenze che il pacchetto si aspetta di trovare.
+$pdo->prepare(
+    'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at)
+     VALUES (:e, :p, :n, "studente", 1, NOW())
+     ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), is_active = 1'
+)->execute([
+    'e' => 'nuovo@test.it',
+    'p' => password_hash('Password1!', PASSWORD_DEFAULT),
+    'n' => MARCHIO . ' studente al primo accesso',
+]);
+$studenteNuovo = utente($pdo, 'nuovo@test.it');
+
+// La casella torna vuota a ogni semina, cosi' la prova del primo accesso
+// si puo' ripetere.
+$pdo->prepare('UPDATE users SET welcome_seen_at = NULL, must_change_password = 0 WHERE id = :id')
+    ->execute(['id' => $studenteNuovo]);
+
+// I due studenti di prova hanno gia' visto il video di benvenuto.
+//
+// Senza questa riga uno studente con la casella vuota verrebbe dirottato
+// alla pagina del benvenuto a ogni richiesta, e **tutte** le prove che
+// aprono una pagina da studente finirebbero li' invece che dove dovevano:
+// non sarebbe un difetto del benvenuto, ma una semina che consegna utenti
+// in uno stato ambiguo.
+//
+// LO STAFF RESTA CON LA CASELLA VUOTA, ED E' VOLUTO. Il benvenuto non si
+// mostra allo staff per via del **ruolo**, non perche' l'abbia gia' visto:
+// se lo si segnasse come visto, la prova «l'amministratore non viene
+// portato al benvenuto» sarebbe verde anche togliendo la regola sul ruolo,
+// cioe' verde per il motivo sbagliato. Verificato: con lo staff a NULL,
+// togliere quella regola fa diventare rosse tutte e tre quelle prove.
+$pdo->prepare('UPDATE users SET welcome_seen_at = NOW()
+                WHERE welcome_seen_at IS NULL AND id IN (:sa, :sb)')
+    ->execute(['sa' => $studenteA, 'sb' => $studenteB]);
+
 // --- pulizia di quello che c'era ------------------------------------------
 //
 // L'ordine conta solo dove non c'e' una cascata: i corsi si portano dietro
@@ -259,6 +302,7 @@ echo json_encode([
         'assistente' => $assistente,
         'studenteA' => $studenteA,
         'studenteB' => $studenteB,
+        'studenteNuovo' => $studenteNuovo,
     ],
     'A' => $a,
     'B' => $b,

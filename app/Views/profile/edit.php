@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\GroupLogo;
+use App\Core\Welcome;
 
 /** @var array $user */
 /** @var array $groups */
@@ -101,6 +102,16 @@ $hasAvatar = !empty($user['avatar_path']);
         <a href="<?= Auth::PASSWORD_PAGE ?>" class="btn btn-secondary">Cambia password</a>
     </p>
 </section>
+
+<?php /* Il benvenuto si rivede solo se un video c'e' davvero: una voce che
+         porta a una pagina vuota e' peggio di una voce che manca. E' un
+         collegamento discreto e non una scheda sua, perche' si usa una
+         volta ogni tanto. */ ?>
+<?php if (Welcome::configurato()): ?>
+    <p class="profilo-benvenuto">
+        <a href="<?= Welcome::PAGE ?>">Rivedi video di benvenuto</a>
+    </p>
+<?php endif; ?>
 
 <?php if ($groups !== []): ?>
     <section class="card">

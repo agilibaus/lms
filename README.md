@@ -45,6 +45,7 @@ In sviluppo iniziale.
 - ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
 - ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
   in CSV e XLSX, con indice a riquadri, ricerca e paginazione
+- ✅ Video di benvenuto al primo accesso dello studente, una volta sola e rivedibile dal profilo
 - ✅ Tabelle ordinabili dal nome della colonna, dal server e senza JavaScript
 - ✅ Agenda con vista a elenco e a mese, e calendario .ics da sottoscrivere
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
@@ -161,9 +162,17 @@ danni. Le piu' recenti:
 | `2026_09_30_rimozione_supervising_tutor_id.sql` | toglie la colonna, sostituita da `assistant_tutors` |
 | `2026_10_01_quiz_tipi_domanda.sql` | risposta multipla e domanda aperta |
 | `2026_10_01_rilascio_moduli.sql` | data di apertura dei moduli e avvisi gia' inviati |
+| `2026_10_04_agenda_calendario.sql` | indirizzo del calendario personale |
+| `2026_10_04_agenda_calendario_date.sql` | da quando esiste e quando e' stato letto |
+| `2026_10_05_benvenuto.sql` | video di benvenuto: chi l'ha gia' visto |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
+
+**`2026_10_05_benvenuto.sql` decide un comportamento, non solo una colonna**: nello stesso
+momento in cui la crea, segna come «già visto» tutti gli utenti che esistono in quel momento.
+È il modo in cui chi è già iscritto non viene interrotto dalla pagina di benvenuto — e non si
+torna indietro, se non svuotando la casella a mano.
 
 ## Struttura del progetto
 
@@ -596,6 +605,42 @@ l'ordine è deciso a mano dal tutor, cioè *è* il contenuto — e le singole co
 un campo **oppure** un altro («Corso o gruppo»): ordinarle su uno dei due manderebbe in fondo
 tutte le righe dell'altro, con l'aria di un difetto.
 
+## Video di benvenuto
+
+Uno studente che accede per la **prima volta** vede una pagina con un video, un pulsante
+«Vai ai miei corsi», e nient'altro. Una volta sola: il pulsante registra la visione in
+`users.welcome_seen_at` e da lì in avanti si atterra su «I miei corsi» come sempre. Dal
+profilo c'è un collegamento «Rivedi video di benvenuto», perché una pagina che si vede una
+volta sola è una pagina che nessuno può rivedere, e chi la chiude per sbaglio avrebbe perso
+quello che c'era dentro.
+
+Il video lo imposta l'admin in **Impostazioni → Video di benvenuto**: provider (Bunny o
+Cloudflare) e identificativo, come nelle lezioni. Niente `self_hosted`, che viene servito
+passando dall'identificativo di una lezione e il benvenuto non è una lezione. **Senza video
+configurato la pagina non esiste e nessuno viene dirottato**: il benvenuto si accende
+mettendo il video, non con un interruttore a parte che si può dimenticare acceso a vuoto.
+
+Quattro decisioni che non sono evidenti dal codice:
+
+- **Chi era già iscritto non lo vede.** La migrazione riempie `welcome_seen_at` per tutti gli
+  utenti esistenti al momento in cui viene applicata: chi è dentro da prima non viene
+  interrotto da una schermata nuova. Lo vedranno solo gli account creati da lì in avanti. Per
+  farlo rivedere a una persona bisogna svuotargli la casella a mano.
+- **Dopo il cambio password, non prima.** Chi entra con una password temporanea deve prima
+  sceglierne una sua: il controllo sta in `Auth::guardSession()` subito **sotto** a quello del
+  cambio password, altrimenti due schermate obbligate si contendono la stessa persona.
+- **Solo gli studenti.** Lo staff entra per lavorare, e un video di benvenuto davanti
+  all'amministratore che deve sistemare un corso è un ostacolo, non un'accoglienza.
+- **Il pulsante non dipende dall'aver guardato.** Se Bunny non risponde o il player non parte,
+  si prosegue lo stesso: il peggio che può succedere dev'essere il comportamento di sempre.
+
+Non costa una query in più: `welcome_seen_at` viaggia nella stessa query che
+`guardSession()` fa già a ogni richiesta per lo stato della password.
+
+**Le pagine esenti dal rimando sono un prefisso, non un indirizzo.** Sotto `/benvenuto` c'è
+anche la POST che registra la visione: trattandola come «non esente» la si dirotta verso la
+pagina del benvenuto, e il giro non si chiude mai. Trovato provando, non leggendo.
+
 ## Agenda
 
 `/agenda` risponde a una domanda sola: **che cosa mi aspetta**. Dentro ci sono due tipi di
@@ -705,7 +750,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # 1447 controlli su 53 pagine, a tre larghezze
-node tests/permessi.js              # 107 prove: ogni ruolo prova a raggiungere le cose di un altro
+node tests/permessi.js              # 117 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

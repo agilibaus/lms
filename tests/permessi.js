@@ -351,6 +351,129 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await admin.ctx.close();
         }
 
+        // --- il video di benvenuto ---------------------------------------
+        //
+        // Non e' un permesso ma un **dirottamento**, e sbagliarlo si paga
+        // caro in tutte e due le direzioni: se scatta per chi non deve,
+        // nessuno riesce piu' a usare la piattaforma; se non scatta per chi
+        // deve, la funzione semplicemente non c'e'. Si prova con l'unico
+        // utente che la semina lascia al primo accesso.
+
+        console.log('\n--- il video di benvenuto');
+
+        {
+            const admin = await entra(browser, 'admin@test.it');
+
+            // Lo stato di partenza si legge e si rimette a posto alla fine:
+            // questa prova cambia un'impostazione vera del database.
+            await admin.page.goto(BASE + '/admin/settings/benvenuto');
+
+            // Prima di tutto: l'admin e' arrivato dove voleva. Se la regola
+            // sul ruolo si rompesse, l'admin verrebbe dirottato al benvenuto
+            // e tutto il resto di questo blocco esploderebbe su un campo che
+            // non c'e' — un errore di JavaScript invece di una prova rossa,
+            // che e' un modo peggiore di dire la stessa cosa.
+            const paginaAdmin = await admin.page.$('#welcome-provider');
+            check(
+                'l\'admin raggiunge le impostazioni del benvenuto',
+                paginaAdmin !== null,
+                paginaAdmin !== null ? [] : ['dirottato su ' + new URL(admin.page.url()).pathname]
+            );
+
+            if (paginaAdmin === null) {
+                await admin.ctx.close();
+                return;
+            }
+
+            const prima = await admin.page.evaluate(() => ({
+                provider: document.querySelector('#welcome-provider').value,
+                ref: document.querySelector('#welcome-ref').value,
+            }));
+
+            const configura = async (provider, ref) => {
+                await admin.page.goto(BASE + '/admin/settings/benvenuto');
+                await admin.page.selectOption('#welcome-provider', provider);
+                await admin.page.fill('#welcome-ref', ref);
+                await Promise.all([
+                    admin.page.waitForNavigation(),
+                    admin.page.click('form.form button[type="submit"]'),
+                ]);
+            };
+
+            const dove = async (page, url) => {
+                await page.goto(BASE + url);
+
+                return new URL(page.url()).pathname;
+            };
+
+            // 1. Senza video non si dirotta nessuno: il benvenuto si accende
+            //    mettendo il video, non con un interruttore a parte.
+            await configura('none', '');
+            const nuovoSenza = await entra(browser, 'nuovo@test.it');
+            const senza = await dove(nuovoSenza.page, '/');
+            check(
+                'senza video configurato nessuno viene portato al benvenuto',
+                senza === '/',
+                senza === '/' ? [] : ['e finito su ' + senza]
+            );
+            await nuovoSenza.ctx.close();
+
+            // 2. Con il video, chi non l'ha ancora visto ci finisce da
+            //    qualunque pagina parta.
+            await configura('bunny', 'prova-benvenuto');
+            const nuovo = await entra(browser, 'nuovo@test.it');
+
+            for (const url of ['/', '/profilo', '/agenda']) {
+                const finito = await dove(nuovo.page, url);
+                check(
+                    'studente al primo accesso: ' + url + ' porta al benvenuto',
+                    finito === '/benvenuto',
+                    finito === '/benvenuto' ? [] : ['e finito su ' + finito]
+                );
+            }
+
+            // 3. Il pulsante registra la visione e libera la navigazione.
+            //    Senza questa prova il difetto trovato a mano — la POST che
+            //    veniva dirottata verso la pagina stessa, cioe' un giro che
+            //    non si chiudeva mai — tornerebbe senza che nessuno lo veda.
+            await nuovo.page.goto(BASE + '/benvenuto');
+            await Promise.all([
+                nuovo.page.waitForNavigation(),
+                nuovo.page.click('.benvenuto-azioni button'),
+            ]);
+            const dopo = await dove(nuovo.page, '/');
+            check(
+                'dopo «Vai ai miei corsi» non viene piu\' dirottato',
+                dopo === '/',
+                dopo === '/' ? [] : ['e finito su ' + dopo]
+            );
+
+            // 4. E il video resta rivedibile dal profilo.
+            await nuovo.page.goto(BASE + '/profilo');
+            const rivedi = await nuovo.page.$('.profilo-benvenuto a');
+            check('il profilo offre di rivedere il benvenuto', rivedi !== null);
+            await nuovo.ctx.close();
+
+            // 5. Lo staff non ci finisce mai: entra per lavorare.
+            for (const [email, ruolo] of [
+                ['admin@test.it', 'l\'amministratore'],
+                ['tutor1@test.it', 'il tutor'],
+                ['assist@test.it', 'l\'assistente'],
+            ]) {
+                const s = await entra(browser, email);
+                const dovE = await dove(s.page, '/');
+                check(
+                    ruolo + ' non viene portato al benvenuto',
+                    dovE === '/',
+                    dovE === '/' ? [] : ['e finito su ' + dovE]
+                );
+                await s.ctx.close();
+            }
+
+            await configura(prima.provider, prima.ref);
+            await admin.ctx.close();
+        }
+
         // --- un permesso che non si raggiunge non e' un permesso ---------
         //
         // Il tutor *poteva* modificare ed eliminare il proprio quiz — le

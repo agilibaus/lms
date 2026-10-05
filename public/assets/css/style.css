@@ -1751,6 +1751,44 @@ h3 { font-size: 1.05rem; }
     background: #000;
 }
 
+/* ---------- Benvenuto ---------- */
+
+/* La pagina e' tutta qui dentro e sta al centro: non c'e' una colonna di
+   testo accanto al video, quindi non c'e' niente a cui allinearsi a
+   sinistra. `max-width` sul contenitore e margini automatici: su uno
+   schermo grande resta un blocco centrato, su un telefono prende tutta la
+   larghezza disponibile. */
+.benvenuto {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.benvenuto-testa {
+    text-align: center;
+}
+
+/* 900 px invece dei 720 della lezione: li' il video divide lo spazio con il
+   testo della lezione, qui e' l'unica cosa sulla pagina. Il rapporto lo
+   tiene `aspect-ratio` sull'iframe (regola `.video-embed iframe`), quindi
+   sul telefono il video e' largo quanto lo spazio e alto di conseguenza —
+   nessuna soglia da indovinare, e niente lettere nere sopra e sotto. */
+.benvenuto-video .video-embed {
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Il collegamento per rivedere il benvenuto: sta fra due schede, quindi
+   si prende lo spazio che le separa invece di appoggiarsi a una delle due. */
+.profilo-benvenuto {
+    margin: -0.5rem 0 1.25rem;
+    font-size: 0.9rem;
+}
+
+.benvenuto-azioni {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
 /* ---------- Incontri dal vivo nella lezione ---------- */
 
 .live-sessions-box {
