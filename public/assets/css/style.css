@@ -2245,6 +2245,15 @@ body.has-focus-video {
     margin-bottom: 1.25rem;
 }
 
+/* Il riepilogo dei file scollegati, in fondo a Gestione corsi, segue
+   l'elenco dei corsi attaccato al suo bordo: `.card` ha solo il margine
+   sotto e la tabella non ne ha nessuno, quindi fra i due c'erano zero
+   pixel — misurati — e il riquadro si leggeva come l'ultima riga della
+   tabella invece che come un'altra cosa. */
+.orphan-summary {
+    margin-top: 1.5rem;
+}
+
 .card h2 {
     margin: 0 0 0.9rem;
     font-size: 1rem;
