@@ -71,7 +71,11 @@ $voce = static function (array $e) use ($esc, $adesso): string {
     // altrimenti l'inizio — cosi' il collegamento sparisce esattamente
     // quando la voce scende li' sotto.
     if ($incontro && $adesso <= $fine) {
-        $html .= '<a href="/agenda/evento/' . (int) $e['id'] . '.ics">Al calendario</a>';
+        // «Aggiungi al calendario» e non «Al calendario»: in una riga di
+        // comandi un'etichetta senza verbo non dice cosa succede a
+        // cliccarla. Non «in agenda», che qui e' il nome della pagina:
+        // il calendario di destinazione e' quello di chi legge.
+        $html .= '<a href="/agenda/evento/' . (int) $e['id'] . '.ics">Aggiungi al calendario</a>';
     }
 
     return $html . '</span></li>';

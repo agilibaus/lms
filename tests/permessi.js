@@ -399,7 +399,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 altrui.status() === 404 ? [] : ['ha risposto ' + altrui.status()]
             );
 
-            // «Al calendario» non si offre per un incontro gia' finito:
+            // «Aggiungi al calendario» non si offre per un incontro gia' finito:
             // mettere in agenda un appuntamento passato non serve a niente.
             // Si guarda la voce, non la pagina: il collegamento c'e' sugli
             // incontri futuri, e la controprova e' quella che distingue
@@ -414,14 +414,14 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             const concluso = await linkIcs(A.incontro_concluso);
             check(
-                'studente A → nello Storico non si offre «Al calendario»',
+                'studente A → nello Storico non si offre «Aggiungi al calendario»',
                 !concluso,
                 concluso ? ['l\'incontro concluso ha ancora il collegamento al .ics'] : []
             );
 
             const futuro = await linkIcs(A.incontro);
             check(
-                'controprova: su un incontro futuro «Al calendario» c\'è',
+                'controprova: su un incontro futuro «Aggiungi al calendario» c\'è',
                 futuro,
                 futuro ? [] : ['se mancasse anche li\', la prova qui sopra non direbbe niente']
             );
