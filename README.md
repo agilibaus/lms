@@ -319,6 +319,9 @@ giorno:
 
 `php bin/rilascio-moduli --prova` elenca che cosa manderebbe senza mandare niente.
 
+In sviluppo, su Windows con Laragon, questo comando si pianifica con l'Utilità di
+pianificazione: la ricetta sta più sotto, in «I lavori periodici su Windows».
+
 Tre cose da sapere prima di affidarglisi:
 
 - **Non manda due volte.** La riga in `module_unlock_notifications` si scrive **prima**
@@ -665,6 +668,51 @@ si vede.
 L'email dell'invito è sua e non quella della password temporanea: quel testo dice «la
 password precedente non funziona più» e «le sessioni aperte sono state chiuse», due frasi
 vere per un account esistente e false per uno appena creato.
+
+## I lavori periodici su Windows (Laragon)
+
+I due comandi — `bin/rilascio-moduli` e `bin/invita-utenti` — in sviluppo girano sul computer
+di Elena, che è Windows con Laragon, tramite l'Utilità di pianificazione. La ricetta è la
+stessa per tutti e due, cambia solo il nome e la frequenza.
+
+**Il percorso del PHP.** Dal terminale di Laragon, `where php`: esce qualcosa come
+`C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe`, con il numero di versione che è il
+proprio. Serve quello completo: l'Utilità di pianificazione non conosce il `php` del
+terminale di Laragon.
+
+**L'operazione**, da un prompt dei comandi *come amministratore*, in una riga sola (inviti,
+ogni quarto d'ora):
+
+```
+schtasks /create /tn "Pistacchio - inviti" /sc minute /mo 15 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\invita-utenti >> storage\logs\inviti.log 2>&1"
+```
+
+Per il rilascio dei moduli è identica, con `/sc daily /st 07:30` al posto di `/sc minute /mo 15`.
+
+**`cd /d` non è decorativo**: i comandi cercano `vendor/autoload.php` e il `.env` relativi
+alla cartella corrente, e senza quello partono e non trovano niente. Se `storage\logs` non
+esiste va creata prima, altrimenti il log non si scrive e non lo si sa.
+
+**Provarla subito, senza aspettare:**
+
+```
+schtasks /run /tn "Pistacchio - inviti"
+type C:\laragon\www\lms\storage\logs\inviti.log
+```
+
+Nel log compare `inviti mandati: 0 / in coda ne restano: 0`. Se il file non esiste
+l'operazione non è partita: `schtasks /query /tn "Pistacchio - inviti" /v /fo list` mostra
+«Ultimo risultato», dove `0` vuol dire andata bene.
+
+Con l'interfaccia grafica: Crea attività di base, attivazione «Ogni giorno», poi proprietà →
+Attivatori → Modifica → «Ripeti attività ogni» 15 minuti, durata «Indefinitamente».
+
+**Finché il computer è spento gli inviti non partono**, ma non si perdono: restano in coda e
+partono al primo giro utile, oppure a mano dalla pagina Utenti.
+
+**Questa pianificazione vive dentro Windows e non si porta dietro niente**: non sta nel
+repository, nessun deploy la copia. Sull'hosting Linux vanno rifatte da zero tutte e due come
+righe di cron, ed è nell'elenco delle cose da fare prima di aprire agli studenti.
 
 ## Video di benvenuto
 
