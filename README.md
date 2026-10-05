@@ -585,7 +585,7 @@ lettore di schermo annuncia nella griglia del mese — e scritte due volte diver
 **Due viste, un indirizzo** (`/agenda?vista=mese`), così il collegamento che si manda a
 qualcuno porta la vista che si stava guardando.
 
-- **Elenco** (la vista d'ingresso): «Oggi», «Nei prossimi sette giorni», «Più avanti», e in
+- **Elenco** (la vista d'ingresso): «Oggi», «Nei prossimi sette giorni», «Pianificato», e in
   fondo i passati, richiusi. Sette giorni e non «fino a domenica»: di domenica pomeriggio il
   secondo criterio lascerebbe vuoto proprio il gruppo che interessa. Un incontro cominciato
   ma non finito resta fra quelli di oggi — è il momento in cui serve di più — e lì compare il

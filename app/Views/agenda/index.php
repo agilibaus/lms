@@ -95,7 +95,7 @@ $link = static function (string $v, ?DateTimeImmutable $m = null) use ($mese): s
 $titoliGruppi = [
     'oggi' => 'Oggi',
     'settimana' => 'Nei prossimi sette giorni',
-    'prossimi' => 'Più avanti',
+    'prossimi' => 'Pianificato',
 ];
 ?>
 <div class="page-header">
