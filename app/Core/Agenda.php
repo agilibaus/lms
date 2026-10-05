@@ -23,6 +23,8 @@ use App\Models\AgendaModel;
  *   contesto   il corso o il gruppo, cioe' «dove» succede
  *   url        dove si va cliccando
  *   id         per l'indirizzo del singolo .ics
+ *   apribile   solo gli incontri: si puo' entrare adesso
+ *   in_corso   solo gli incontri: e' gia' cominciato e non e' finito
  *
  * Un terzo tipo di evento — una scadenza dei quiz, il giorno che non
  * esiste ancora — si aggiunge qui e compare in tutte e due le viste e nel
@@ -63,6 +65,12 @@ class Agenda
                 'titolo' => (string) $incontro['title'],
                 'inizio' => $inizio,
                 'fine' => self::momento((string) ($incontro['ends_at'] ?? '')),
+                // Dalla query, non ricalcolati qui: la finestra d'ingresso
+                // e' definita una volta sola in
+                // `LiveSessionModel::FINESTRA_SELECT`, e a calcolarla e'
+                // il database, che e' l'orologio giusto (§5).
+                'apribile' => (bool) ($incontro['joinable'] ?? false),
+                'in_corso' => (bool) ($incontro['started'] ?? false),
                 'contesto' => (string) ($incontro['course_title'] ?? $incontro['group_name'] ?? ''),
                 'url' => '/live/' . (int) $incontro['id'],
             ];

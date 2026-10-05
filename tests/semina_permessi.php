@@ -152,6 +152,17 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         ->execute(['m' => $modulo, 'g' => $gruppo, 't' => $nome . ' incontro concluso', 'a' => $admin]);
     $incontroConcluso = (int) $pdo->lastInsertId();
 
+    // Un incontro dentro alla finestra d'ingresso: comincia fra cinque
+    // minuti. Serve a provare che «Entra» compaia quando deve — con soli
+    // incontri lontani la prova sarebbe verde anche se il comando non
+    // comparisse mai.
+    $pdo->prepare('INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, meet_link, created_by)
+                   VALUES (:m, :g, :t, DATE_ADD(NOW(), INTERVAL 5 MINUTE),
+                           DATE_ADD(NOW(), INTERVAL 65 MINUTE),
+                           "https://meet.google.com/prova-permessi-imminente", :a)')
+        ->execute(['m' => $modulo, 'g' => $gruppo, 't' => $nome . ' incontro imminente', 'a' => $admin]);
+    $incontroImminente = (int) $pdo->lastInsertId();
+
     // --- un secondo modulo, chiuso da una data nel futuro ------------------
     //
     // Serve al rilascio progressivo (§8.7). Senza un modulo chiuso non c'e'
@@ -220,6 +231,7 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         'domanda' => $domanda,
         'incontro' => $incontro,
         'incontro_concluso' => $incontroConcluso,
+        'incontro_imminente' => $incontroImminente,
         'studente' => $studente,
         'tutor' => $tutor,
         'modulo_chiuso' => $moduloChiuso,

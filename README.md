@@ -589,7 +589,7 @@ qualcuno porta la vista che si stava guardando.
   fondo i passati, richiusi. Sette giorni e non «fino a domenica»: di domenica pomeriggio il
   secondo criterio lascerebbe vuoto proprio il gruppo che interessa. Un incontro cominciato
   ma non finito resta fra quelli di oggi — è il momento in cui serve di più — e lì compare il
-  pulsante «Entra», che appare solo da un quarto d'ora prima della fine.
+  pulsante «Entra», che appare solo da un quarto d'ora prima dell'inizio fino alla fine.
 - **Mese**: griglia che comincia di lunedì, con i giorni di orlo in grigio. Sotto alla
   griglia c'è la **legenda** dei due colori, e passando il mouse su una pastiglia il tipo
   compare come suggerimento del browser (`title`). La legenda non è decorazione: senza, il
@@ -674,7 +674,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # 1435 controlli su 53 pagine, a tre larghezze
-node tests/permessi.js              # 98 prove: ogni ruolo prova a raggiungere le cose di un altro
+node tests/permessi.js              # 104 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
@@ -789,6 +789,16 @@ Sotto il video, la lezione mostra gli incontri **del proprio modulo** ancora da 
 corso; quelli passati non compaiono. Il pulsante "Entra nella riunione" si attiva da un quarto
 d'ora prima dell'inizio fino alla fine, e prima di allora resta la sola data. Chi non ha ancora
 il link Meet vede scritto che non è disponibile.
+
+**La finestra d'ingresso è una sola per tutta la piattaforma.** Le quattro pagine che mostrano
+«Entra» — la lezione, l'agenda, l'elenco degli incontri e il dettaglio della sessione — leggono
+`joinable` e `started` da `LiveSessionModel::FINESTRA_SELECT`, cioè dalla query. Prima erano
+tre regole diverse: la lezione la calcolava in SQL, l'agenda la rifaceva in PHP, e le altre due
+mostravano il comando per qualunque incontro non ancora concluso — anche fra tre settimane.
+Fuori dalla finestra non compare un comando spento ma la frase «Si entra da 15 minuti prima»:
+un collegamento senza `href` non prende il fuoco col tabulatore e un lettore di schermo non lo
+annuncia, e il grigio da solo non dice perché. Il calcolo sta in SQL perché server e database
+possono trovarsi su fusi diversi.
 
 Le finestre temporali sono calcolate in SQL (`LiveSessionModel::upcomingForModule`), non in
 PHP: server web e database possono trovarsi su fusi diversi.

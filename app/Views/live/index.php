@@ -61,7 +61,11 @@ $sessions = $ordine->applica($sessions);
             <?php
             $startsAt = new DateTimeImmutable((string) $session['starts_at']);
             $endsAt = new DateTimeImmutable((string) $session['ends_at']);
-            $isLive = $startsAt <= $now && $now <= $endsAt;
+            // «in corso» e la finestra d'ingresso arrivano dalla query
+            // (`LiveSessionModel::FINESTRA_SELECT`): una definizione sola
+            // per tutte le pagine, e calcolata dall'orologio del database.
+            $isLive = (bool) ($session['started'] ?? false);
+            $apribile = (bool) ($session['joinable'] ?? false);
             $isPast = $endsAt < $now;
             ?>
             <tr role="row" class="<?= $isPast ? 'row-past' : '' ?>">
@@ -94,9 +98,18 @@ $sessions = $ordine->applica($sessions);
                     <?php endif; ?>
                 </td>
                 <td role="cell" class="row-actions">
-                    <?php if (!empty($session['meet_link']) && !$isPast): ?>
+                    <?php /* Fuori dalla finestra non un comando spento ma la
+                             frase che spiega quando: un collegamento senza
+                             `href` non e' piu' un collegamento — non prende
+                             il fuoco col tabulatore e un lettore di schermo
+                             non lo annuncia — e il grigio da solo non dice
+                             perche'. E' la stessa forma gia' usata nella
+                             pagina della lezione. */ ?>
+                    <?php if (!empty($session['meet_link']) && $apribile): ?>
                         <a href="/live/<?= (int) $session['id'] ?>/join"
                            target="_blank" rel="noopener">Entra</a>
+                    <?php elseif (!empty($session['meet_link']) && !$isPast): ?>
+                        <span class="cell-sub">Si entra da 15 minuti prima</span>
                     <?php endif; ?>
                     <?php if ($canManage): ?>
                         <a href="/live/<?= (int) $session['id'] ?>/edit">Modifica</a>

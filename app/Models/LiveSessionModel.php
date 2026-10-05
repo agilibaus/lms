@@ -14,12 +14,36 @@ use App\Core\Database;
  */
 class LiveSessionModel
 {
+    /**
+     * La finestra d'ingresso, scritta una volta sola.
+     *
+     * `joinable` dice se si puo' entrare: da un quarto d'ora prima
+     * dell'inizio fino alla fine. `started` dice se l'incontro e' davvero
+     * cominciato, che non e' la stessa cosa — si entra anche prima — ed e'
+     * quello che regge l'etichetta «in corso».
+     *
+     * PERCHE' STA QUI E NON NELLE VISTE. La regola era scritta in SQL per
+     * la pagina della lezione e ricalcolata in PHP nell'agenda, mentre
+     * l'elenco e il dettaglio degli incontri non ce l'avevano affatto:
+     * offrivano «Entra» per qualunque incontro non ancora concluso, anche
+     * fra tre settimane. Quattro pagine, tre risposte diverse alla stessa
+     * domanda. Adesso la definizione e' una e arriva dalla query.
+     *
+     * In SQL e non in PHP perche' server e database possono stare su fusi
+     * diversi: e' la trappola di §5, gia' pagata una volta con i tempi di
+     * fruizione.
+     */
+    private const FINESTRA_SELECT =
+        '(NOW() >= DATE_SUB(ls.starts_at, INTERVAL 15 MINUTE) AND NOW() <= ls.ends_at) AS joinable,
+         (NOW() >= ls.starts_at AND NOW() <= ls.ends_at) AS started';
+
     private const BASE_SELECT =
         'SELECT ls.*,
                 m.title AS module_title, m.course_id,
                 c.title AS course_title,
                 g.name AS group_name,
-                u.full_name AS created_by_name
+                u.full_name AS created_by_name,
+                ' . self::FINESTRA_SELECT . '
          FROM live_sessions ls
          LEFT JOIN modules m ON m.id = ls.module_id
          LEFT JOIN courses c ON c.id = m.course_id
@@ -71,11 +95,8 @@ class LiveSessionModel
      * lezione. Le passate non compaiono: il link a una riunione finita e'
      * solo rumore in mezzo al contenuto.
      *
-     * `joinable` dice se il pulsante va reso attivo: da un quarto d'ora prima
-     * dell'inizio fino alla fine. `started` dice se l'incontro e' davvero
-     * cominciato, che non e' la stessa cosa: si entra anche prima. Entrambi
-     * sono calcolati in SQL e non in PHP, perche' le due macchine possono
-     * trovarsi su fusi diversi.
+     * `joinable` e `started` vengono da `FINESTRA_SELECT`, come in tutte le
+     * altre query: la finestra d'ingresso e' definita li' una volta sola.
      */
     public static function upcomingForModule(int $moduleId): array
     {
@@ -83,8 +104,7 @@ class LiveSessionModel
             'SELECT ls.*,
                     m.title AS module_title, m.course_id,
                     c.title AS course_title,
-                    (NOW() >= DATE_SUB(ls.starts_at, INTERVAL 15 MINUTE) AND NOW() <= ls.ends_at) AS joinable,
-                    (NOW() >= ls.starts_at AND NOW() <= ls.ends_at) AS started
+                    ' . self::FINESTRA_SELECT . '
              FROM live_sessions ls
              LEFT JOIN modules m ON m.id = ls.module_id
              LEFT JOIN courses c ON c.id = m.course_id

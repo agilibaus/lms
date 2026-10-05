@@ -35,14 +35,14 @@ $adesso = new DateTimeImmutable('now');
 $voce = static function (array $e) use ($esc, $adesso): string {
     $incontro = $e['tipo'] === Agenda::INCONTRO;
     $fine = $e['fine'] ?? $e['inizio'];
-    $inCorso = $incontro && $e['inizio'] <= $adesso && $adesso <= $fine;
 
-    // «Entra» compare solo quando serve davvero: da un quarto d'ora prima
-    // fino alla fine. Un pulsante che porta a una riunione che comincia
-    // fra tre settimane e' un invito a sbagliare.
-    $apribile = $incontro
-        && $adesso >= $e['inizio']->modify('-15 minutes')
-        && $adesso <= $fine;
+    // «in corso» e «si puo' entrare» non si ricalcolano qui: arrivano
+    // dalla query, dove la finestra e' scritta una volta sola per tutte
+    // le pagine (`LiveSessionModel::FINESTRA_SELECT`). Prima erano due
+    // confronti fatti in PHP, cioe' la stessa regola con un altro
+    // orologio.
+    $inCorso = $incontro && ($e['in_corso'] ?? false);
+    $apribile = $incontro && ($e['apribile'] ?? false);
 
     $ora = $e['inizio']->format('H:i');
     $ora .= $incontro && $e['fine'] !== null ? '–' . $e['fine']->format('H:i') : '';

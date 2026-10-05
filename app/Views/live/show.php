@@ -41,6 +41,9 @@ $ordine = Ordinamento::daRichiesta([
 ]);
 $participants = $ordine->applica($participants);
 $isPast = $endsAt < $now;
+// La finestra d'ingresso arriva dalla query, come in tutte le altre
+// pagine: `LiveSessionModel::FINESTRA_SELECT`.
+$apribile = (bool) ($session['joinable'] ?? false);
 ?>
 <div class="page-header">
     <a href="/live" class="back-link">&larr; Sessioni live</a>
@@ -73,7 +76,7 @@ $isPast = $endsAt < $now;
         </p>
         <?php if ($isPast): ?>
             <p class="empty-state-small">La sessione è conclusa.</p>
-        <?php else: ?>
+        <?php elseif ($apribile): ?>
             <?php /* La riunione si apre in una seconda scheda: chiudendo Meet si
                      ritrova Pistacchio dov'era, senza dover tornare indietro.
                      Google non offre un modo per rimandare al mittente chi esce
@@ -84,6 +87,8 @@ $isPast = $endsAt < $now;
                    target="_blank" rel="noopener">Entra nella sessione</a>
             </p>
             <p class="form-hint">Si apre in una nuova scheda: questa pagina resta aperta.</p>
+        <?php else: ?>
+            <p class="empty-state-small">Si entra da 15 minuti prima.</p>
         <?php endif; ?>
         <?php if ($hasJoined): ?>
             <p class="form-hint">Il tuo ingresso è stato registrato.</p>

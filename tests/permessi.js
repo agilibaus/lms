@@ -426,6 +426,48 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 futuro ? [] : ['se mancasse anche li\', la prova qui sopra non direbbe niente']
             );
 
+            // «Entra» solo dentro alla finestra: da un quarto d'ora prima
+            // fino alla fine. Si prova sulle due pagine che lo mostrano —
+            // l'agenda e l'elenco degli incontri — e su tutti e tre gli
+            // stati, perche' la stessa regola era scritta in tre modi
+            // diversi e nessuno se ne accorgeva guardando una pagina sola.
+            const comandoEntra = async (url, id) => {
+                await page.goto(BASE + url);
+
+                return await page.$$eval(
+                    'tr, .agenda-voce',
+                    (righe, atteso) => righe
+                        .filter(r => r.querySelector('a[href*="/live/' + atteso + '"]'))
+                        .some(r => r.querySelector('a[href="/live/' + atteso + '/join"]')),
+                    String(id)
+                );
+            };
+
+            for (const [url, dove] of [['/agenda', 'in agenda'], ['/live', 'in Sessioni live']]) {
+                const lontano = await comandoEntra(url, A.incontro);
+                check(
+                    'studente A → «Entra» non c\'è su un incontro fra tre giorni ' + dove,
+                    !lontano,
+                    lontano ? ['il comando compare fuori dalla finestra d\'ingresso'] : []
+                );
+
+                const imminente = await comandoEntra(url, A.incontro_imminente);
+                check(
+                    'controprova: «Entra» c\'è su un incontro che comincia fra 5 minuti ' + dove,
+                    imminente,
+                    imminente ? [] : ['se mancasse anche qui, la prova sopra non direbbe niente']
+                );
+
+                const finito = await comandoEntra(url, A.incontro_concluso);
+                check(
+                    'studente A → «Entra» non c\'è su un incontro concluso ' + dove,
+                    !finito,
+                    finito ? ['il comando compare su una riunione gia\' finita'] : []
+                );
+            }
+
+            await page.goto(BASE + '/agenda');
+
             // Il calendario sottoscritto risponde senza accesso: e' il solo
             // indirizzo che lo fa, e regge solo finche' il token e'
             // imprevedibile e verificato.
