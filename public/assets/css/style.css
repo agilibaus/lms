@@ -3817,10 +3817,42 @@ fieldset.checkbox-group legend {
    `outline` non partecipa a quella contesa, si disegna sopra e non occupa
    spazio, quindi non sposta di un pixel la griglia; `outline-offset`
    negativo lo porta dentro al bordo della cella invece che fuori. */
+/* NIENTE RIEMPIMENTO, e non per gusto. La cella di oggi usava
+   `--color-primary-soft`, che e' **lo stesso valore** dello sfondo delle
+   pastiglie degli incontri: il giorno corrente si leggeva come un
+   incontro largo quanto la cella, e le pastiglie dentro sparivano nel
+   proprio sfondo.
+
+   Provate nove tinte tenui alternative e misurata la distanza dai `soft`
+   delle quattro tavolozze: le tinte davvero tenui distano 6-11 (i soft
+   distano 28-32 dal bianco), cioe' si leggono come un verde sbagliato
+   invece che come un altro colore; per staccarsi davvero servirebbe
+   #E6E3DF, che pero' dista 5 dal grigio dei bordi e fa sparire le linee
+   della griglia. Una quinta tinta con un proprio colore andrebbe
+   riverificata contro quattro tavolozze piu' il colore principale
+   libero, cioe' infinite combinazioni.
+
+   Quindi oggi si distingue per **forma e posizione**, non per campo di
+   colore: la cornice e il numero in pastiglia. Non puo' competere con
+   nessuna pastiglia in nessuna tavolozza — e' vero per costruzione, non
+   perche' l'abbiamo verificato in quelle che esistono oggi. */
 .agenda-griglia td.oggi {
-    background: var(--color-primary-soft);
-    outline: 1px solid var(--color-primary);
-    outline-offset: -1px;
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+/* Il numero del giorno in una pastiglia tonda piena: bianco su colore
+   principale, lo stesso accostamento dei pulsanti, quindi sopra 4,5:1 in
+   tutte e quattro le tavolozze senza bisogno di un secondo controllo.
+   `min-width` perche' «5» e «25» abbiano lo stesso ingombro. */
+.agenda-griglia td.oggi .agenda-numero {
+    display: inline-block;
+    min-width: 1.5rem;
+    padding: 0.1rem 0.25rem;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: #fff;
+    text-align: center;
 }
 
 .agenda-numero {

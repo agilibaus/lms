@@ -650,6 +650,44 @@ const EXTRA = {
             esito.voci > 0 && esito.etichette.length === esito.voci,
             ['voci: ' + esito.voci + ', con un testo: ' + JSON.stringify(esito.etichette)]
         );
+
+        /*
+         * Il giorno corrente non si segna con lo stesso colore di un
+         * evento. Usava `--color-primary-soft`, cioe' **lo stesso
+         * valore** dello sfondo delle pastiglie degli incontri: la cella
+         * si leggeva come un incontro largo quanto il giorno, e le
+         * pastiglie dentro sparivano nel proprio sfondo.
+         *
+         * Si confrontano i colori **calcolati**, non il CSS scritto: i
+         * due valori arrivano da variabili che cambiano con la
+         * tavolozza, e confrontare due nomi di variabile non direbbe
+         * niente su come la pagina appare davvero.
+         */
+        const tinte = await page.evaluate(() => {
+            const oggi = document.querySelector('.agenda-griglia td.oggi');
+
+            if (oggi === null) {
+                return null;
+            }
+
+            const sfondo = (el) => getComputedStyle(el).backgroundColor;
+
+            return {
+                oggi: sfondo(oggi),
+                pastiglie: [...new Set([...document.querySelectorAll('.agenda-pillola')].map(sfondo))],
+            };
+        });
+
+        if (tinte === null) {
+            console.log('  --   ' + nome + ': oggi non cade in questo mese, tinte non verificabili');
+            return;
+        }
+
+        check(
+            nome + ': il giorno di oggi non ha il colore di un evento',
+            !tinte.pastiglie.includes(tinte.oggi),
+            ['oggi: ' + tinte.oggi, 'pastiglie: ' + JSON.stringify(tinte.pastiglie)]
+        );
     },
 };
 

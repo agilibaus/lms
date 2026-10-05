@@ -590,7 +590,15 @@ qualcuno porta la vista che si stava guardando.
   secondo criterio lascerebbe vuoto proprio il gruppo che interessa. Un incontro cominciato
   ma non finito resta fra quelli di oggi — è il momento in cui serve di più — e lì compare il
   pulsante «Entra», che appare solo da un quarto d'ora prima dell'inizio fino alla fine.
-- **Mese**: griglia che comincia di lunedì, con i giorni di orlo in grigio. Sotto alla
+- **Mese**: griglia che comincia di lunedì, con i giorni di orlo in grigio. **Il giorno
+  corrente si riconosce dalla forma, non dal colore**: cornice nel colore principale e numero
+  dentro una pastiglia tonda piena, senza riempire la cella. Prima la cella usava
+  `--color-primary-soft`, cioè lo stesso valore dello sfondo delle pastiglie degli incontri:
+  oggi si leggeva come un incontro largo quanto il giorno. Nessuna tinta tenue alternativa
+  regge — misurate, distano 6-11 dai `soft` delle quattro tavolozze, contro i 28-32 che
+  separano i `soft` dal bianco — e una quinta tinta andrebbe riverificata contro ogni
+  tavolozza più il colore principale libero. `accessibilita.js` ora verifica, sui colori
+  calcolati, che la cella di oggi non abbia lo sfondo di una pastiglia. Sotto alla
   griglia c'è la **legenda** dei due colori, e passando il mouse su una pastiglia il tipo
   compare come suggerimento del browser (`title`). La legenda non è decorazione: senza, il
   colore sarebbe l'unico modo di distinguere i due tipi, che è quello che il criterio 1.4.1
@@ -673,7 +681,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # 1435 controlli su 53 pagine, a tre larghezze
+node tests/accessibilita.js         # 1437 controlli su 53 pagine, a tre larghezze
 node tests/permessi.js              # 104 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
