@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Auth\CourseRights;
 use App\Controllers\QuizController;
 use App\Core\Csrf;
 use App\Core\QuizScoring;
@@ -25,6 +26,15 @@ use App\Core\QuizScoring;
         tentativi illimitati
     </p>
 </div>
+
+<?php /* Lo stesso pulsante che la pagina della lezione ha da sempre, e che
+         qui mancava: da un contenuto si arriva a modificarlo. Senza, l'unica
+         via per modificare o eliminare un quiz era un collegamento
+         nell'intestazione del modulo, e chi partiva dal quiz non la trovava.
+         Il permesso e' quello del corso, come per la lezione. */ ?>
+<?php if ($course !== null && CourseRights::canEdit((int) $course['id'])): ?>
+    <p><a href="/quizzes/<?= (int) $quiz['id'] ?>/edit" class="btn btn-primary">Modifica quiz</a></p>
+<?php endif; ?>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
     <div class="alert alert-error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>

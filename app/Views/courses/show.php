@@ -120,9 +120,17 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                             <?php if ($quiz === null): ?>
                                 <a href="/modules/<?= $moduleId ?>/quiz/create">+ Quiz</a>
                             <?php else: ?>
-                                <a href="/quizzes/<?= (int) $quiz['id'] ?>/edit">Quiz</a>
+                                <?php /* «Modifica quiz» e non «Quiz»: questa riga e'
+                                         fatta di verbi, e un sostantivo in mezzo si
+                                         legge come il nome di una sezione invece che
+                                         come un'azione. Era l'unica via per
+                                         modificare o eliminare un quiz, e non si
+                                         trovava. Per lo stesso motivo quella del
+                                         modulo dice «Modifica modulo»: due
+                                         «Modifica» affiancate non si distinguono. */ ?>
+                                <a href="/quizzes/<?= (int) $quiz['id'] ?>/edit">Modifica quiz</a>
                             <?php endif; ?>
-                            <a href="/modules/<?= $moduleId ?>/edit">Modifica</a>
+                            <a href="/modules/<?= $moduleId ?>/edit">Modifica modulo</a>
                             <form action="/modules/<?= $moduleId ?>/delete" method="post"
                                   onsubmit="return confirm('Eliminare questo modulo e tutte le sue lezioni?');">
                                 <?= Csrf::field() ?>

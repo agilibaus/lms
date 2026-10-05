@@ -351,6 +351,58 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await admin.ctx.close();
         }
 
+        // --- un permesso che non si raggiunge non e' un permesso ---------
+        //
+        // Il tutor *poteva* modificare ed eliminare il proprio quiz — le
+        // prove qui sopra lo dicono — ma dall'interfaccia non si arrivava:
+        // l'unica via era un collegamento etichettato «Quiz» in mezzo a dei
+        // verbi, e dalla pagina del quiz non c'era niente. Per chi lo
+        // cercava equivaleva a una funzione mancante. Qui si verifica la
+        // **via**, non il diritto: che dalle due pagine dove si guarda un
+        // quiz si arrivi a modificarlo, e che allo studente non compaia.
+
+        console.log('\n--- la via per modificare un quiz');
+
+        {
+            const viaDa = async (page, url) => {
+                await page.goto(BASE + url);
+
+                return await page.$$eval(
+                    'a[href$="/edit"]',
+                    (link, atteso) => link.some((a) => a.getAttribute('href') === atteso),
+                    '/quizzes/' + String(A.quiz) + '/edit'
+                );
+            };
+
+            const staff = await entra(browser, 'tutor1@test.it');
+
+            for (const [url, dove] of [
+                ['/courses/' + A.corso, 'dalla pagina del corso'],
+                ['/quizzes/' + A.quiz, 'dalla pagina del quiz'],
+            ]) {
+                const c = await viaDa(staff.page, url);
+                check(
+                    'tutor A → si arriva a modificare il quiz ' + dove,
+                    c,
+                    c ? [] : ['nessun collegamento a /quizzes/' + A.quiz + '/edit']
+                );
+            }
+
+            await staff.ctx.close();
+
+            // Controprova: allo studente quella via non si mostra. Senza,
+            // le due prove qui sopra passerebbero anche con il collegamento
+            // stampato per tutti.
+            const studente = await entra(browser, 'stud@test.it');
+            const visto = await viaDa(studente.page, '/quizzes/' + A.quiz);
+            check(
+                'controprova: allo studente il collegamento non compare',
+                !visto,
+                visto ? ['lo studente vede la via per modificare il quiz'] : []
+            );
+            await studente.ctx.close();
+        }
+
         // --- l'agenda: quello che non deve contenere ---------------------
         //
         // L'agenda e' un elenco di cose che esistono altrove, ed e'

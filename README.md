@@ -232,6 +232,15 @@ corrette non vengono mai inviate al browser durante lo svolgimento, e la correzi
 lato server verificando che l'opzione scelta appartenga davvero alla domanda. Le domande si
 riordinano con due frecce, come moduli e lezioni.
 
+**Dove si modifica e si elimina.** Da due posti: «Modifica quiz» nell'intestazione del
+riquadro del modulo, nella pagina del corso, e lo stesso pulsante nella pagina del quiz —
+come «Modifica lezione» nella lezione. L'eliminazione sta in fondo alla pagina di modifica,
+con la conferma, perché cancella domande e tentativi già svolti e non si torna indietro. Fino
+alla 0106 quel collegamento si chiamava soltanto «Quiz» e nella pagina del quiz non c'era
+niente: le funzioni c'erano ma non si trovavano, che per chi le cerca è lo stesso. Da lì una
+regola e tre prove in `permessi.js`: un permesso che dall'interfaccia non si raggiunge non è
+un permesso, quindi si verifica anche la **via**, non solo il diritto.
+
 Quattro tipi di domanda:
 
 | Tipo | Come si corregge |
@@ -682,7 +691,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # 1439 controlli su 53 pagine, a tre larghezze
-node tests/permessi.js              # 104 prove: ogni ruolo prova a raggiungere le cose di un altro
+node tests/permessi.js              # 107 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
