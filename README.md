@@ -255,6 +255,20 @@ quiz di sole domande aperte risulta consegnato e superato, senza percentuale. Le
 leggono nel report del singolo studente. La logica sta tutta in `App\Core\QuizScoring`, con
 46 test.
 
+**Quanto si può scrivere in una risposta aperta**: 3.000 caratteri
+(`QuizController::MAX_OPEN_CHARS`), dichiarati in tre posti con tre mestieri diversi. Il
+`maxlength` del campo è quello che il browser fa rispettare, e funziona **senza JavaScript**.
+Il contatore sopra l'angolo in alto a destra del campo scala mentre si scrive, e sotto i 100
+caratteri rimasti il numero si fa scuro e grassetto — non solo di un altro colore, perché il
+colore da solo non è un'informazione. Senza JavaScript resta fermo su «3000 caratteri
+rimasti», che a campo vuoto è vero. **Il limite che conta è il taglio in PHP**: il corpo di
+una richiesta lo scrive chi vuole, e togliere `maxlength` dagli strumenti per sviluppatori è
+un attimo. Il contatore non è una regione viva (niente `aria-live`): annunciarsi a ogni tasto
+coprirebbe con la propria voce quello che la persona sta scrivendo; il collegamento è
+`aria-describedby`, che lo fa leggere entrando nel campo. Sono caratteri e non byte:
+`answer_text` è un TEXT da 65.535 byte e 3.000 caratteri accentati in utf8mb4 ne occupano al
+massimo 12.000, quindi non serve nessuna migrazione.
+
 ### Sblocco progressivo dei moduli
 Due regole indipendenti possono chiudere un modulo, e ne basta una. **Lo staff non e' mai
 soggetto al blocco**: un modulo chiuso va preparato prima che si apra.
@@ -690,7 +704,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # 1439 controlli su 53 pagine, a tre larghezze
+node tests/accessibilita.js         # 1447 controlli su 53 pagine, a tre larghezze
 node tests/permessi.js              # 107 prove: ogni ruolo prova a raggiungere le cose di un altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero

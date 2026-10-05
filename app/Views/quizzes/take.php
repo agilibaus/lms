@@ -89,9 +89,35 @@ use App\Core\QuizScoring;
                             <label class="sr-only" for="aperta-<?= $qid ?>">
                                 La tua risposta a: <?= htmlspecialchars($question['question_text']) ?>
                             </label>
-                            <textarea id="aperta-<?= $qid ?>" name="open[<?= $qid ?>]" rows="4"
-                                      maxlength="<?= QuizController::MAX_OPEN_CHARS ?>" required
-                                      class="quiz-open-answer"></textarea>
+                            <?php /* Il contatore sta **prima** del campo nel
+                                     documento, perche' li' sta anche sullo
+                                     schermo — sopra, a destra — e perche' un
+                                     lettore di schermo lo annuncia come
+                                     descrizione del campo quando ci si entra,
+                                     grazie ad `aria-describedby`.
+
+                                     Niente `aria-live`: un contatore che parla
+                                     a ogni tasto e' esattamente il caso che le
+                                     linee guida classificano come «passivo»,
+                                     da leggere solo andandoci sopra. Qui
+                                     annunciarlo di continuo coprirebbe quello
+                                     che la persona sta scrivendo.
+
+                                     Senza JavaScript resta scritto «3000
+                                     caratteri rimasti», che a campo vuoto e'
+                                     vero: degrada in una dichiarazione del
+                                     limite, e il limite lo fa comunque
+                                     rispettare `maxlength`. */ ?>
+                            <div class="quiz-open-wrap">
+                                <span class="quiz-open-count" id="resta-<?= $qid ?>"
+                                      data-max="<?= QuizController::MAX_OPEN_CHARS ?>">
+                                    <?= QuizController::MAX_OPEN_CHARS ?> caratteri rimasti
+                                </span>
+                                <textarea id="aperta-<?= $qid ?>" name="open[<?= $qid ?>]" rows="4"
+                                          maxlength="<?= QuizController::MAX_OPEN_CHARS ?>" required
+                                          aria-describedby="resta-<?= $qid ?>"
+                                          class="quiz-open-answer"></textarea>
+                            </div>
                         <?php else: ?>
                             <?php foreach ($opzioni as $option): ?>
                                 <label class="quiz-option">
@@ -125,6 +151,11 @@ use App\Core\QuizScoring;
             <p class="form-hint">Anteprima per lo staff: l'invio è riservato agli studenti iscritti.</p>
         <?php endif; ?>
     </form>
+
+    <?php /* In fondo e non in testa: lo script cerca i campi, quindi deve
+             trovarli gia' nel documento. Caricato solo se il quiz ha delle
+             domande, cioe' dove c'e' il modulo. */ ?>
+    <script src="/assets/js/quiz-open-count.js"></script>
 <?php endif; ?>
 
 <?php if ($attempts !== []): ?>

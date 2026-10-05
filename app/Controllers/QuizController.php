@@ -27,8 +27,20 @@ class QuizController
     private const MIN_OPTIONS = 2;
     private const MAX_OPTIONS = 6;
 
-    /** Quanto puo' essere lunga una risposta aperta. */
-    public const MAX_OPEN_CHARS = 5000;
+    /**
+     * Quanto puo' essere lunga una risposta aperta. Scelto da Elena.
+     *
+     * Vale in tre posti e per tre motivi diversi: `maxlength` sul campo, che
+     * il browser fa rispettare **senza JavaScript**; il contatore che scala
+     * mentre si scrive, che e' solo un di piu'; e il taglio in PHP piu'
+     * sotto, che e' l'unico che conta davvero, perche' il corpo di una
+     * richiesta lo scrive chi vuole.
+     *
+     * In caratteri, non in byte: `answer_text` e' un TEXT da 65.535 byte, e
+     * 3.000 caratteri accentati in utf8mb4 ne occupano al massimo 12.000.
+     * Nessuna migrazione.
+     */
+    public const MAX_OPEN_CHARS = 3000;
 
     // ---------------------------------------------------------------
     // Gestione quiz — admin/tutor

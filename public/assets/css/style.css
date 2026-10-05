@@ -3503,9 +3503,35 @@ fieldset.checkbox-group legend {
     white-space: nowrap;
 }
 
+/* Il contatore sopra l'angolo in alto a destra del campo. Una colonna
+   flessibile con il contatore allineato a destra: niente `position:
+   absolute`, che lo porterebbe fuori dal flusso e, crescendo il testo
+   dal pannello, finirebbe sopra al bordo del campo invece che sopra al
+   campo. Così lo spazio se lo prende, e la riga non si sovrappone mai. */
+.quiz-open-wrap {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.5rem;
+}
+
+.quiz-open-count {
+    align-self: flex-end;
+    margin-bottom: 0.2rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Quasi pieno: il numero si fa scuro e grassetto invece di cambiare
+   colore e basta — il colore da solo non è un'informazione (1.4.1 delle
+   WCAG), e questo conta proprio per chi sta per finire lo spazio. */
+.quiz-open-count-basso {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
 .quiz-open-answer {
     width: 100%;
-    margin-top: 0.5rem;
 }
 
 /* Le risposte aperte nell'esito: la domanda sopra, la risposta sotto e

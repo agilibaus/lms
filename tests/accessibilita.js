@@ -609,6 +609,71 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
  */
 const EXTRA = {
     /*
+     * Il contatore della risposta aperta: dove sta, e che non parli.
+     *
+     * Deve stare **sopra** il campo e allineato al suo bordo destro — e'
+     * quello che si e' chiesto — e deve essere collegato al campo con
+     * `aria-describedby`, cosi' chi usa un lettore di schermo sente il
+     * limite entrando nel campo.
+     *
+     * E **non** deve essere una regione viva: un contatore che si annuncia
+     * a ogni tasto coprirebbe con la propria voce quello che la persona sta
+     * scrivendo. E' il caso che le linee guida chiamano «passivo», da
+     * leggere solo andandoci sopra, e un `aria-live` aggiunto per
+     * distrazione non si vede guardando la pagina.
+     */
+    'Quiz da svolgere': async (page, nome) => {
+        const esito = await page.evaluate(() => {
+            const campo = document.querySelector('.quiz-open-answer');
+
+            if (campo === null) {
+                return null;
+            }
+
+            const contatore = document.getElementById(campo.getAttribute('aria-describedby') || '');
+
+            if (contatore === null) {
+                return { collegato: false };
+            }
+
+            const c = contatore.getBoundingClientRect();
+            const t = campo.getBoundingClientRect();
+
+            return {
+                collegato: true,
+                sopra: Math.round(c.bottom) <= Math.round(t.top),
+                aDestra: Math.abs(c.right - t.right) < 2,
+                vivo: contatore.getAttribute('aria-live'),
+                limite: campo.getAttribute('maxlength'),
+            };
+        });
+
+        if (esito === null) {
+            console.log('  --   ' + nome + ': nessuna risposta aperta in questo quiz');
+            return;
+        }
+
+        check(nome + ': il contatore è descrizione del campo', esito.collegato === true,
+            ['nessun elemento puntato da aria-describedby']);
+
+        if (esito.collegato !== true) {
+            return;
+        }
+
+        check(nome + ': il contatore sta sopra il campo, a destra',
+            esito.sopra === true && esito.aDestra === true,
+            ['sopra: ' + esito.sopra + ', allineato a destra: ' + esito.aDestra]);
+
+        check(nome + ': il contatore non è una regione viva',
+            esito.vivo === null || esito.vivo === 'off',
+            ['aria-live: ' + esito.vivo]);
+
+        check(nome + ': il campo dichiara il limite al browser',
+            esito.limite !== null && Number(esito.limite) > 0,
+            ['maxlength: ' + esito.limite]);
+    },
+
+    /*
      * Dentro al riquadro di un modulo, il quiz e' una voce come le lezioni
      * e deve cominciare dove cominciano loro. Era disallineato in due modi
      * diversi: di 9,6 px per tutti — il riempimento orizzontale che le
