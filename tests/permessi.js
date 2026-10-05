@@ -209,6 +209,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/agenda', 'consentito', 'l\'agenda e di chi la guarda'],
             ['/agenda?vista=mese', 'consentito', 'anche la vista del mese'],
             ['/admin/users', 'negato', 'nessuna pagina di amministrazione'],
+            ['/admin/users/importa', 'negato', 'men che meno importare utenti'],
             ['/admin/courses', 'negato', 'nessuna pagina di amministrazione'],
             ['/admin/permissions', 'negato', 'la pagina più delicata del pannello'],
             ['/lessons/' + A.lezione + '/edit', 'negato', 'uno studente non modifica le lezioni'],
@@ -243,6 +244,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/courses/' + B.corso + '/edit', 'negato', 'corso non suo'],
             ['/reports/courses/' + B.corso, 'negato', 'report di un corso non suo'],
             ['/admin/users', 'negato', 'la gestione utenti è dell\'admin'],
+            ['/admin/users/importa', 'negato', 'importare utenti è dell\'admin'],
             ['/admin/permissions', 'negato', 'i permessi sono dell\'admin'],
             ['/admin/settings', 'negato', 'le impostazioni sono dell\'admin'],
 
@@ -263,6 +265,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
             ['/lessons/' + A.lezione + '/edit', 'negato', 'un assistente non modifica le lezioni'],
             ['/admin/users', 'negato', 'nessuna gestione utenti'],
+            ['/admin/users/importa', 'negato', 'nemmeno importarli da un file'],
             ['/admin/courses', 'negato', 'nessuna gestione corsi'],
         ]],
 
@@ -271,6 +274,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + B.lezione + '/edit', 'consentito', 'l\'admin modifica tutto'],
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
             ['/admin/permissions', 'consentito', 'è sua'],
+            ['/admin/users/importa', 'consentito', 'l\'importazione è sua'],
             ['/admin/settings/bunny', 'consentito', 'è sua'],
             ['/lessons/' + A.lezione_chiusa, 'consentito', 'il rilascio non vale per l\'admin'],
             ['/materials/' + A.materiale_chiuso + '/download', 'consentito',

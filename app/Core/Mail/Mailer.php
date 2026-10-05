@@ -146,6 +146,39 @@ class Mailer
     }
 
     /**
+     * Invito a chi e' stato importato da un elenco.
+     *
+     * NON SI RIUSA `temporaryPassword()`, ed e' la seconda volta che questo
+     * progetto lo scopre dopo averlo fatto: quel testo dice «la password
+     * precedente non funziona piu'» e «le sessioni aperte sono state
+     * chiuse», due frasi vere per un account esistente e **false** per uno
+     * appena creato, che una password precedente non ce l'ha mai avuta. Chi
+     * la riceve si chiede quale password abbia perso, e quando abbia aperto
+     * una sessione.
+     */
+    public static function invite(
+        string $email,
+        string $name,
+        string $password,
+        string $link
+    ): Message {
+        return new Message(
+            $email,
+            $name,
+            'Il tuo accesso a Pistacchio LMS',
+            "Ciao {$name},\n\n"
+            . "è stato creato un account per te su Pistacchio LMS, la piattaforma dei corsi.\n\n"
+            . "Indirizzo con cui entrare: {$email}\n"
+            . "Password provvisoria: {$password}\n\n"
+            . "Entra da qui:\n\n"
+            . "{$link}\n\n"
+            . "Al primo accesso ti verrà chiesto di scegliere una password tua: fino ad\n"
+            . "allora non potrai usare il resto della piattaforma. Non rispondere a questo\n"
+            . "messaggio lasciando la password nel testo.\n"
+        );
+    }
+
+    /**
      * Avviso all'utente che la sua password e' cambiata. Non contiene la
      * password: serve solo a far accorgere di un cambio non voluto.
      */

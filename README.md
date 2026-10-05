@@ -46,6 +46,7 @@ In sviluppo iniziale.
 - ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
   in CSV e XLSX, con indice a riquadri, ricerca e paginazione
 - ✅ Video di benvenuto al primo accesso dello studente, una volta sola e rivedibile dal profilo
+- ✅ Importazione di utenti da file CSV, con anteprima e inviti mandati a scaglioni
 - ✅ Tabelle ordinabili dal nome della colonna, dal server e senza JavaScript
 - ✅ Agenda con vista a elenco e a mese, e calendario .ics da sottoscrivere
 - ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
@@ -165,6 +166,7 @@ danni. Le piu' recenti:
 | `2026_10_04_agenda_calendario.sql` | indirizzo del calendario personale |
 | `2026_10_04_agenda_calendario_date.sql` | da quando esiste e quando e' stato letto |
 | `2026_10_05_benvenuto.sql` | video di benvenuto: chi l'ha gia' visto |
+| `2026_10_05_importazione_utenti.sql` | la coda degli inviti per gli utenti importati |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -605,6 +607,65 @@ l'ordine è deciso a mano dal tutor, cioè *è* il contenuto — e le singole co
 un campo **oppure** un altro («Corso o gruppo»): ordinarle su uno dei due manderebbe in fondo
 tutte le righe dell'altro, con l'aria di un difetto.
 
+## Importazione di utenti da file
+
+Si carica un **CSV**, si guarda l'anteprima, si conferma. Finché non si preme «Importa» non
+viene scritta una riga: con duecento persone vere la differenza fra vedere prima cosa
+succederà e scoprirlo dopo è un pomeriggio di telefonate.
+
+Il file ha una riga di intestazione, in qualunque ordine: `email` (obbligatoria), il nome
+— come `nome completo` oppure `nome` e `cognome` separati — e `gruppo`, facoltativo. Gli
+utenti nascono come **studenti**. Massimo 1.000 righe per file.
+
+`App\Core\UserImport` legge e giudica, **non scrive**: è per questo che tutta la parte che
+sbaglia davvero si prova con delle stringhe (`php tests/importazione_test.php`). Le tre cose
+che vanno storte, in ordine di frequenza vera:
+
+- **La codifica.** Excel su Windows produce UTF-8 con il BOM oppure Windows-1252. Col BOM la
+  prima intestazione si chiama davvero `\xEF\xBB\xBFemail` e il file sembra non avere la
+  colonna email; col Windows-1252 «Nicolò» arriva rotto. Si riconoscono e si sistemano tutti
+  e due.
+- **Il separatore.** Excel in italiano scrive il punto e virgola, perché la virgola la usa
+  per i decimali. Si conta quale compare di più nell'intestazione, non si chiede all'utente.
+- **I duplicati dentro al file.** Due righe con la stessa email: la seconda si ferma qui,
+  dicendo quale riga ripete. Lasciata passare, la fermerebbe il database con «esiste già»,
+  che fa pensare a un utente vecchio invece che a un refuso.
+
+Una riga con un'email già presente su Pistacchio viene **saltata e dichiarata**: l'account
+esistente non si tocca e non riceve nessuna password nuova. I gruppi non si creano al volo —
+un gruppo nominato e inesistente ferma quella riga, invece di far nascere un gruppo da un
+refuso. Chi entra in un gruppo viene iscritto anche ai suoi corsi: è quello che i gruppi
+hanno sempre fatto, ma con un file si fa duecento volte in un colpo.
+
+### Le password, e perché a scaglioni
+
+L'importazione **non manda niente**. Gli account nascono con un'impronta di byte casuali —
+che non corrisponde a nessuna password scrivibile — e la password vera la genera
+`bin/invita-utenti` nel momento in cui compone l'email. Così nessuna password resta in attesa
+dentro al database, che sarebbe la cosa peggiore di tutta questa storia.
+
+```
+*/15 * * * *  cd /percorso/lms && php bin/invita-utenti >> storage/logs/inviti.log 2>&1
+```
+
+Venti per volta, ogni quarto d'ora: duecento persone in due ore e mezza, senza che duecento
+email identiche in trenta secondi incontrino il limite di invii dell'hosting e i filtri
+antispam. L'ordine delle operazioni è quello che conta: si genera la password, se ne scrive
+l'impronta, si manda l'email, e **solo se l'email è partita** l'utente esce dalla coda. Se la
+posta fallisce quell'utente resta in coda e al giro dopo riceve una password nuova: quella di
+adesso non l'ha saputa nessuno. Il verso opposto lascerebbe un account con una password che
+non conosce nemmeno il suo proprietario.
+
+**Se il cron non gira, nessuno entra.** È più grave del rilascio dei moduli, dove un cron
+fermo fa mancare solo un avviso: qui chi è stato importato non ha una password finché
+l'invito non parte. Per questo la pagina Utenti mostra quanti inviti restano, quando è
+partito l'ultimo scaglione, e un pulsante per mandarne uno a mano. Se il numero non scende,
+si vede.
+
+L'email dell'invito è sua e non quella della password temporanea: quel testo dice «la
+password precedente non funziona più» e «le sessioni aperte sono state chiuse», due frasi
+vere per un account esistente e false per uno appena creato.
+
 ## Video di benvenuto
 
 Uno studente che accede per la **prima volta** vede una pagina con un video, un pulsante
@@ -732,6 +793,7 @@ php tests/course_cover_test.php     # ritaglio 16:9, due misure, testo alternati
 php tests/bunny_token_test.php      # firma e scadenza degli indirizzi Bunny
 php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto di plausibilità
 php tests/quiz_scoring_test.php     # punteggio dei quattro tipi di domanda
+php tests/importazione_test.php     # 27 prove: codifiche, separatori e righe del file utenti
 php tests/password_test.php         # regola della password e generatore
 php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
 php tests/live_session_mail_test.php   # testi delle email degli incontri
@@ -749,8 +811,8 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # 1447 controlli su 53 pagine, a tre larghezze
-node tests/permessi.js              # 117 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto
+node tests/accessibilita.js         # 1474 controlli su 54 pagine, a tre larghezze
+node tests/permessi.js              # 121 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

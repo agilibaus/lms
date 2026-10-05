@@ -11,6 +11,8 @@ use App\Core\Mail\Mailer;
 use App\Core\PasswordGenerator;
 use App\Core\Upload;
 use App\Core\Url;
+use App\Core\Invites;
+use App\Core\Settings;
 use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\EnrollmentModel;
@@ -34,10 +36,48 @@ class UserController extends AdminController
             'pageTitle' => 'Utenti',
             'users' => $this->visibleUsers(),
             'canManageAll' => Auth::can('user.manage'),
+            // Gli inviti ancora da mandare. Si mostrano perche' un cron
+            // fermo non si lamenta, e qui il silenzio vuol dire persone che
+            // non riescono a entrare.
+            'invitiInAttesa' => Auth::can('user.manage') ? UserModel::countPendingInvites() : 0,
+            'ultimoInvio' => Settings::get(Invites::KEY_LAST_RUN),
             // Il pulsante XLSX non compare dove il server non puo' produrlo:
             // meglio non offrirlo che offrirlo e fallire.
             'canExportXlsx' => Xlsx::disponibile(),
         ]);
+    }
+
+    /**
+     * Manda a mano il prossimo scaglione di inviti.
+     *
+     * E' la rete di sicurezza del cron: se la pianificazione non e' mai
+     * stata creata, o si e' fermata, il numero in fondo alla pagina Utenti
+     * non scende e da li' si puo' far partire uno scaglione con un clic.
+     * Senza, un cron fermo non si lamenta — e qui non si tratta di un
+     * avviso mancato ma di persone che non possono entrare.
+     */
+    public function sendInvites(array $params = []): void
+    {
+        Auth::requirePermission('user.manage');
+
+        $esito = Invites::mandaScaglione();
+
+        if ($esito['mandati'] === 0 && $esito['falliti'] === []) {
+            $this->success('Non c\'erano inviti da mandare.', '/admin/users');
+        }
+
+        $messaggio = $esito['mandati'] . ($esito['mandati'] === 1 ? ' invito mandato' : ' inviti mandati')
+            . '. In coda ne restano ' . $esito['restano'] . '.';
+
+        if ($esito['falliti'] !== []) {
+            $this->fail(
+                $messaggio . ' Non sono partiti: ' . implode(', ', $esito['falliti'])
+                . ' — restano in coda e riproveranno.',
+                '/admin/users'
+            );
+        }
+
+        $this->success($messaggio, '/admin/users');
     }
 
     public function createForm(array $params = []): void

@@ -485,6 +485,7 @@ const PAGINE_INTERNE = [
     ['/admin/courses', 'Gestione corsi'],
     ['/admin/groups', 'Gruppi'],
     ['/admin/users', 'Utenti'],
+    ['/admin/users/importa', 'Importa utenti'],
     ['/admin/settings', 'Impostazioni'],
     ['/admin/settings/posta', 'Posta elettronica'],
     ['/admin/settings/aspetto', 'Aspetto'],

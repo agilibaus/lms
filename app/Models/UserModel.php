@@ -395,6 +395,125 @@ class UserModel
         return (int) Database::connection()->lastInsertId();
     }
 
+    /**
+     * Crea un account da una riga di importazione.
+     *
+     * NESSUNA PASSWORD VIENE SCELTA QUI, e non e' una dimenticanza. Gli
+     * inviti partono a scaglioni, quindi fra la creazione e l'email possono
+     * passare delle ore: una password generata adesso andrebbe conservata
+     * in chiaro per poterla poi scrivere nel messaggio, ed e' esattamente
+     * la cosa che non si fa. L'account nasce con un'impronta di byte
+     * casuali — che non corrisponde a nessuna password scrivibile, quindi
+     * nessuno ci entra — e la password vera la genera `bin/invita-utenti`
+     * nel momento in cui compone l'email.
+     *
+     * `must_change_password` a 1 da subito: chiunque entri con quella
+     * password dovra' sceglierne una sua, come per ogni account creato
+     * dallo staff.
+     */
+    public static function createPendingInvite(string $email, string $fullName): int
+    {
+        $stmt = Database::connection()->prepare(
+            'INSERT INTO users (email, password_hash, password_changed_at, must_change_password,
+                                full_name, role, is_active, email_verified_at, invite_pending)
+             VALUES (:email, :hash, NOW(), 1, :full_name, "studente", 1, NOW(), 1)'
+        );
+        $stmt->execute([
+            'email' => $email,
+            'hash' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT),
+            'full_name' => $fullName,
+        ]);
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    /**
+     * Quali di queste email esistono gia'.
+     *
+     * Una query sola con un `IN`, non una per riga: con duecento righe
+     * sarebbero duecento query per **mostrare un'anteprima**, cioe' prima
+     * ancora di scrivere qualcosa.
+     *
+     * @param list<string> $emails
+     * @return list<string>
+     */
+    public static function existingEmails(array $emails): array
+    {
+        $emails = array_values(array_unique(array_filter($emails)));
+
+        if ($emails === []) {
+            return [];
+        }
+
+        $segnaposto = implode(',', array_fill(0, count($emails), '?'));
+        $stmt = Database::connection()->prepare(
+            'SELECT email FROM users WHERE email IN (' . $segnaposto . ')'
+        );
+        $stmt->execute($emails);
+
+        return array_map(
+            static fn ($r): string => mb_strtolower((string) $r['email']),
+            $stmt->fetchAll()
+        );
+    }
+
+    /** Quanti inviti devono ancora partire. */
+    public static function countPendingInvites(): int
+    {
+        return (int) Database::connection()
+            ->query('SELECT COUNT(*) FROM users WHERE invite_pending = 1')
+            ->fetchColumn();
+    }
+
+    /**
+     * Il prossimo scaglione di inviti, dai piu' vecchi.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function pendingInvites(int $quanti): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id, email, full_name FROM users
+              WHERE invite_pending = 1
+              ORDER BY id
+              LIMIT ' . max(1, $quanti)
+        );
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Scrive la password appena generata per un invito.
+     *
+     * Separata dalla riga che toglie l'utente dalla coda, e l'ordine conta:
+     * prima si scrive l'impronta, poi si manda, e **solo se l'invio
+     * riesce** si toglie dalla coda. Se la posta fallisce, quell'utente
+     * resta in coda e al giro dopo riceve una password nuova: quella di
+     * adesso non l'ha mai saputa nessuno, quindi riscriverla non toglie
+     * niente a nessuno. Il verso opposto — togliere dalla coda e poi
+     * mandare — lascerebbe l'account con una password che non conosce
+     * nemmeno il suo proprietario, e nessuno se ne accorgerebbe.
+     */
+    public static function setInvitePassword(int $id, string $password): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE users
+                SET password_hash = :hash, password_changed_at = NOW(), must_change_password = 1
+              WHERE id = :id'
+        );
+        $stmt->execute(['hash' => password_hash($password, PASSWORD_DEFAULT), 'id' => $id]);
+    }
+
+    /** L'invito e' partito: fuori dalla coda. */
+    public static function markInviteSent(int $id): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE users SET invite_pending = 0 WHERE id = :id'
+        );
+        $stmt->execute(['id' => $id]);
+    }
+
     public static function markEmailVerified(int $id): void
     {
         $stmt = Database::connection()->prepare(

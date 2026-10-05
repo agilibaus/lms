@@ -7,6 +7,7 @@ use App\Controllers\Admin\GroupController as AdminGroupController;
 use App\Controllers\Admin\PermissionController as AdminPermissionController;
 use App\Controllers\Admin\SettingsController;
 use App\Controllers\Admin\UserController as AdminUserController;
+use App\Controllers\Admin\UserImportController;
 use App\Controllers\AgendaController;
 use App\Controllers\AuthController;
 use App\Controllers\CatalogController;
@@ -162,6 +163,11 @@ $router->get('/admin/users', [AdminUserController::class, 'index']);
 // segmento, e 'csv' verrebbe preso per un identificativo.
 $router->get('/admin/users/csv', [AdminUserController::class, 'exportCsv']);
 $router->get('/admin/users/xlsx', [AdminUserController::class, 'exportXlsx']);
+// Anche queste prima di «{id}», per lo stesso motivo del CSV qui sopra.
+$router->get('/admin/users/importa', [UserImportController::class, 'form']);
+$router->post('/admin/users/importa/anteprima', [UserImportController::class, 'preview']);
+$router->post('/admin/users/importa', [UserImportController::class, 'run']);
+$router->post('/admin/users/inviti/manda', [AdminUserController::class, 'sendInvites']);
 $router->get('/admin/users/create', [AdminUserController::class, 'createForm']);
 $router->post('/admin/users', [AdminUserController::class, 'store']);
 $router->get('/admin/users/{id}/edit', [AdminUserController::class, 'editForm']);

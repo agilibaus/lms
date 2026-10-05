@@ -24,6 +24,11 @@ CREATE TABLE users (
     -- accesso viene portato alla pagina del benvenuto, una volta sola e solo
     -- se un video e' configurato. Si puo' comunque rivedere dal profilo.
     welcome_seen_at DATETIME NULL DEFAULT NULL,
+    -- 1 quando l'account nasce da un'importazione e l'email con la password
+    -- non e' ancora partita. La manda `bin/invita-utenti`, a scaglioni.
+    -- Nessuna password viene conservata in attesa: si genera al momento
+    -- dell'invio.
+    invite_pending TINYINT(1) NOT NULL DEFAULT 0,
     full_name       VARCHAR(150) NOT NULL,
     role            ENUM('admin','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)

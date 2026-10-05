@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\Invites;
 use App\Core\Ordinamento;
 
 /** @var array $users */
 /** @var bool $canManageAll */
 /** @var bool $canExportXlsx */
+/** @var int $invitiInAttesa */
+/** @var ?string $ultimoInvio */
 
 $ordine = Ordinamento::daRichiesta([
     'nome' => ['full_name', Ordinamento::TESTO],
@@ -32,6 +35,10 @@ $users = $ordine->applica($users);
         <a href="/admin/users/create" class="btn btn-primary">+ Nuovo utente</a>
 
         <?php if ($canManageAll): ?>
+            <a href="/admin/users/importa" class="btn btn-secondary">Importa da file</a>
+        <?php endif; ?>
+
+        <?php if ($canManageAll): ?>
             <?php /* `details`/`summary`: la tendina si apre e si chiude da sola,
                      senza JavaScript, e si usa da tastiera come qualunque
                      pulsante. Lo script aggiunge solo la chiusura con Esc e
@@ -49,6 +56,32 @@ $users = $ordine->applica($users);
         <?php endif; ?>
     </div>
 </div>
+
+<?php /* Gli inviti ancora da mandare.
+         NON E' UN DETTAGLIO DECORATIVO. Chi e' stato importato non ha una
+         password finche' l'invito non parte: se il cron non e' mai stato
+         creato, o si e' fermato, queste persone non entrano e nessuno se ne
+         accorge — il difetto gia' noto del rilascio dei moduli, ma qui le
+         conseguenze sono peggiori. Il numero non scende, e si vede. */ ?>
+<?php if ($canManageAll && $invitiInAttesa > 0): ?>
+    <div class="alert alert-warning">
+        <strong><?= (int) $invitiInAttesa ?></strong>
+        <?= $invitiInAttesa === 1 ? 'invito è ancora da mandare' : 'inviti sono ancora da mandare' ?>:
+        fino ad allora quelle persone non hanno una password e non possono entrare.
+        Partono da soli a scaglioni di <?= Invites::PER_SCAGLIONE ?>.
+        <?php if ($ultimoInvio !== null): ?>
+            Ultimo scaglione:
+            <?= htmlspecialchars(date('d/m/Y H:i', (int) strtotime($ultimoInvio))) ?>.
+        <?php else: ?>
+            <strong>Non è ancora partito nessuno scaglione</strong>: controlla che la riga di
+            cron per <code>bin/invita-utenti</code> esista.
+        <?php endif; ?>
+        <form action="/admin/users/inviti/manda" method="post">
+            <?= Csrf::field() ?>
+            <button type="submit" class="link-btn">Manda adesso il prossimo scaglione</button>
+        </form>
+    </div>
+<?php endif; ?>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 

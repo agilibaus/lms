@@ -1,0 +1,71 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Manda il prossimo scaglione di inviti agli utenti importati da file.
+ *
+ * Esecuzione da cron, ogni quarto d'ora:
+ *
+ *   *\/15 * * * *  cd /percorso/lms && php bin/invita-utenti >> storage/logs/inviti.log 2>&1
+ *
+ * (nel file di crontab vero la barra rovesciata non va: e' qui solo perche'
+ * questo e' un commento PHP.)
+ *
+ * PERCHE' ESISTE. L'importazione crea gli account tutti insieme ma non manda
+ * niente: duecento email identiche in trenta secondi sono il limite di invii
+ * dell'hosting piu' i filtri antispam, tutti e due in una volta. Questo
+ * comando ne manda venti per volta.
+ *
+ * SE NON GIRA, NESSUNO ENTRA. E' piu' grave del rilascio dei moduli, dove un
+ * cron fermo fa mancare solo un avviso: qui chi e' stato importato **non ha
+ * una password** finche' l'invito non parte, quindi non puo' accedere. Per
+ * questo la pagina Utenti mostra quanti inviti restano e un pulsante per
+ * mandarne uno scaglione a mano: se il numero non scende, si vede.
+ *
+ * `--quanti=N` manda uno scaglione di misura diversa, per i casi in cui si
+ * sa quello che si sta facendo.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit("Questo comando si esegue dal terminale.\n");
+}
+
+require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../config/config.php';
+
+use App\Core\Env;
+use App\Core\Invites;
+
+// Senza APP_URL le email uscirebbero con un collegamento a localhost, cioe'
+// inutili per chi le riceve. Meglio non partire: e' la stessa difesa del
+// comando del rilascio dei moduli.
+if (trim((string) Env::get('APP_URL', '')) === '') {
+    fwrite(STDERR, "APP_URL non e' configurato: gli inviti uscirebbero con un indirizzo sbagliato.\n");
+    exit(1);
+}
+
+$quanti = Invites::PER_SCAGLIONE;
+
+foreach ($argv as $arg) {
+    if (preg_match('/^--quanti=(\d+)$/', (string) $arg, $m) === 1) {
+        $quanti = max(1, (int) $m[1]);
+    }
+}
+
+$esito = Invites::mandaScaglione($quanti);
+
+$righe = [
+    date('Y-m-d H:i:s') . ' — inviti mandati: ' . $esito['mandati'],
+    'in coda ne restano: ' . $esito['restano'],
+];
+
+if ($esito['falliti'] !== []) {
+    $righe[] = 'non partiti (restano in coda e riproveranno): ' . implode(', ', $esito['falliti']);
+}
+
+echo implode(PHP_EOL, $righe) . PHP_EOL;
+
+exit($esito['falliti'] === [] ? 0 : 1);

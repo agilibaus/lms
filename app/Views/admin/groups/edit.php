@@ -101,22 +101,29 @@ $members = $ordineMembri->applica($members);
     <?php if ($members === []): ?>
         <p class="empty-state-small">Nessun membro.</p>
     <?php else: ?>
-        <table class="data-table">
-            <thead>
-            <tr>
+        <?php /* `tabella-schede`: sotto i 50 rem di spazio le righe diventano
+                 schede. Serviva da sempre e non si vedeva, perche' con tre
+                 membri di prova dai nomi corti la tabella ci stava: e' la
+                 regola gia' scritta — «il controllo vede solo quello che i
+                 dati gli mostrano». Con dei veri indirizzi email sfora di
+                 172 px a 320 px di larghezza, misurati. */ ?>
+        <div class="tabella-schede">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
                 <?= $ordineMembri->th('Nome', 'nome') ?>
                 <?= $ordineMembri->th('Email', 'email') ?>
                 <?= $ordineMembri->th('Nel gruppo dal', 'dal') ?>
-                <th></th>
+                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
             </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
             <?php foreach ($members as $member): ?>
-                <tr>
-                    <td><a href="/reports/students/<?= (int) $member['id'] ?>"><?= htmlspecialchars((string) $member['full_name']) ?></a></td>
-                    <td><?= htmlspecialchars((string) $member['email']) ?></td>
-                    <td><?= htmlspecialchars((string) $member['joined_at']) ?></td>
-                    <td class="row-actions">
+                <tr role="row">
+                    <td role="cell" data-label="Nome"><a href="/reports/students/<?= (int) $member['id'] ?>"><?= htmlspecialchars((string) $member['full_name']) ?></a></td>
+                    <td role="cell" data-label="Email"><?= htmlspecialchars((string) $member['email']) ?></td>
+                    <td role="cell" data-label="Nel gruppo dal"><?= htmlspecialchars((string) $member['joined_at']) ?></td>
+                    <td role="cell" class="row-actions">
                         <form action="/admin/groups/<?= $groupId ?>/members/<?= (int) $member['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere questo membro dal gruppo? Le iscrizioni ai corsi restano attive.');">
                             <?= Csrf::field() ?>
@@ -127,6 +134,7 @@ $members = $ordineMembri->applica($members);
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 
     <?php if ($availableStudents !== []): ?>
