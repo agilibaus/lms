@@ -2254,6 +2254,20 @@ body.has-focus-video {
     margin-top: 1.5rem;
 }
 
+/* Stessa storia dopo un modulo: in «Modifica utente» il riquadro dei
+   gruppi cominciava a zero pixel dai pulsanti «Salva» e «Annulla», e
+   sembrava una parte del modulo invece che un'altra sezione — con il
+   rischio peggiore, cioè che si prenda «Salva» per il pulsante dei
+   gruppi.
+
+   La regola è scritta sulla coppia «modulo seguito da una scheda» e non
+   su quel riquadro: oggi in tutta la piattaforma quella coppia esiste in
+   un punto solo, ma così la prossima scheda che finisce sotto a un
+   modulo nasce staccata invece di ripresentare lo stesso difetto. */
+.form + .card {
+    margin-top: 1.5rem;
+}
+
 .card h2 {
     margin: 0 0 0.9rem;
     font-size: 1rem;
