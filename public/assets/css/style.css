@@ -2390,10 +2390,16 @@ body.has-focus-video {
    sotto al titolo della colonna di fianco, e le colonne sembravano
    disallineate. La stessa cosa faceva l'altezza di riga ereditata, che
    rendeva l'etichetta piu' alta della riga che la contiene. */
+/* `nowrap` perche' un'etichetta e' una parola sola, e spezzata a meta'
+   («manu / ale») smette di leggersi come un'etichetta. In una tabella
+   stretta e' il primo elemento che il browser prova a mandare a capo,
+   proprio perche' e' il piu' corto: successo in «Sessioni live» appena
+   la tabella e' passata da cinque a sei colonne. */
 .data-table .badge {
     margin-top: 0;
     line-height: 1;
     vertical-align: middle;
+    white-space: nowrap;
 }
 
 /* Le azioni di riga stanno sempre in un <td>. Niente display:flex qui: un

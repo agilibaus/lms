@@ -803,10 +803,16 @@ il link Meet vede scritto che non è disponibile.
 `joinable` e `started` da `LiveSessionModel::FINESTRA_SELECT`, cioè dalla query. Prima erano
 tre regole diverse: la lezione la calcolava in SQL, l'agenda la rifaceva in PHP, e le altre due
 mostravano il comando per qualunque incontro non ancora concluso — anche fra tre settimane.
-Fuori dalla finestra non compare un comando spento ma la frase «Si entra da 15 minuti prima»:
-un collegamento senza `href` non prende il fuoco col tabulatore e un lettore di schermo non lo
+Fuori dalla finestra non compare un comando spento ma la frase che spiega quando: un
+collegamento senza `href` non prende il fuoco col tabulatore e un lettore di schermo non lo
 annuncia, e il grigio da solo non dice perché. Il calcolo sta in SQL perché server e database
 possono trovarsi su fusi diversi.
+
+Nell'elenco «Sessioni live» questo sta in una colonna sua, **Accesso**, che dice sempre come
+si entra e cambia contenuto invece di apparire e sparire: «Da 15 minuti prima» finché è
+presto, poi il collegamento «Entra», niente a incontro concluso. Nella pagina della lezione e
+nel dettaglio della sessione, dove non c'è una tabella, resta la frase «Si entra da 15 minuti
+prima».
 
 Le finestre temporali sono calcolate in SQL (`LiveSessionModel::upcomingForModule`), non in
 PHP: server web e database possono trovarsi su fusi diversi.

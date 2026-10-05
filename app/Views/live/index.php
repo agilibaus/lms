@@ -43,7 +43,7 @@ $sessions = $ordine->applica($sessions);
 <?php if ($sessions === []): ?>
     <p class="empty-state">Nessuna sessione in programma.</p>
 <?php else: ?>
-    <?php /* Cinque colonne: sotto i 50 rem di spazio diventa un elenco di
+    <?php /* Sei colonne: sotto i 50 rem di spazio diventa un elenco di
              schede (vedi `.tabella-schede`). */ ?>
     <div class="tabella-schede">
     <table class="data-table" role="table">
@@ -53,6 +53,7 @@ $sessions = $ordine->applica($sessions);
             <?= $ordine->th('Sessione', 'sessione') ?>
             <th scope="col" role="columnheader">Destinatari</th>
             <th scope="col" role="columnheader">Meet</th>
+            <th scope="col" role="columnheader">Accesso</th>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>
@@ -97,20 +98,29 @@ $sessions = $ordine->applica($sessions);
                         <span class="badge badge-danger">assente</span>
                     <?php endif; ?>
                 </td>
-                <td role="cell" class="row-actions">
-                    <?php /* Fuori dalla finestra non un comando spento ma la
-                             frase che spiega quando: un collegamento senza
-                             `href` non e' piu' un collegamento — non prende
-                             il fuoco col tabulatore e un lettore di schermo
-                             non lo annuncia — e il grigio da solo non dice
-                             perche'. E' la stessa forma gia' usata nella
-                             pagina della lezione. */ ?>
+                <?php /* La colonna dice sempre **come si entra**, e cambia
+                         contenuto invece di apparire e sparire: «Da 15
+                         minuti prima» finche' e' presto, poi il
+                         collegamento vero. Fuori dalla finestra non c'e' un
+                         comando spento: un collegamento senza `href` non e'
+                         piu' un collegamento — non prende il fuoco col
+                         tabulatore e un lettore di schermo non lo annuncia
+                         — e il grigio da solo non dice perche'.
+
+                         Il testo sta nella misura della tabella e non in
+                         `.cell-sub`, che e' la riga **secondaria** di una
+                         cella: qui non c'e' nessuna riga principale sopra,
+                         e da sola diventerebbe un sottotitolo senza titolo
+                         (vedi §5). */ ?>
+                <td role="cell" data-label="Accesso">
                     <?php if (!empty($session['meet_link']) && $apribile): ?>
                         <a href="/live/<?= (int) $session['id'] ?>/join"
                            target="_blank" rel="noopener">Entra</a>
                     <?php elseif (!empty($session['meet_link']) && !$isPast): ?>
-                        <span class="cell-sub">Si entra da 15 minuti prima</span>
+                        Da 15 minuti prima
                     <?php endif; ?>
+                </td>
+                <td role="cell" class="row-actions">
                     <?php if ($canManage): ?>
                         <a href="/live/<?= (int) $session['id'] ?>/edit">Modifica</a>
                     <?php endif; ?>
