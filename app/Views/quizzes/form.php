@@ -25,7 +25,7 @@ $action = $quiz === null
 
 <form action="<?= $action ?>" method="post" class="form">
     <?= Csrf::field() ?>
-    <label for="title">Titolo del quiz</label>
+    <label for="title">Titolo del questionario</label>
     <input type="text" id="title" name="title" maxlength="200" required
            value="<?= htmlspecialchars($quiz['title'] ?? '') ?>">
 

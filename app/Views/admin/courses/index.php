@@ -22,7 +22,7 @@ $courses = $ordine->applica($courses);
 ?>
 <div class="page-header">
     <h1>Gestione corsi</h1>
-    <p class="page-subtitle">Creazione, pubblicazione e iscrizioni. I contenuti (moduli, lezioni, quiz) si gestiscono dalla scheda del corso.</p>
+    <p class="page-subtitle">Creazione, pubblicazione e iscrizioni. I contenuti (moduli, lezioni, questionari) si gestiscono dalla scheda del corso.</p>
     <?php if ($canCreate): ?>
         <p><a href="/admin/courses/create" class="btn btn-primary">+ Nuovo corso</a></p>
     <?php endif; ?>
@@ -79,7 +79,7 @@ $courses = $ordine->applica($courses);
                     <?php endif; ?>
                     <?php if ($canDelete): ?>
                         <form action="/admin/courses/<?= (int) $course['id'] ?>/delete" method="post"
-                              onsubmit="return confirm('Eliminare il corso con moduli, lezioni, quiz, iscrizioni e certificati?');">
+                              onsubmit="return confirm('Eliminare il corso con moduli, lezioni, questionari, iscrizioni e certificati?');">
                             <?= Csrf::field() ?>
                             <button type="submit" class="link-btn link-btn-danger">Elimina</button>
                         </form>

@@ -89,7 +89,7 @@ $users = $ordine->applica($users);
                     <td role="cell" class="row-actions">
                         <a href="/admin/users/<?= (int) $user['id'] ?>/edit">Modifica</a>
                         <form action="/admin/users/<?= (int) $user['id'] ?>/delete" method="post"
-                              onsubmit="return confirm('Eliminare questo utente? Iscrizioni, progressi, tentativi quiz e certificati verranno rimossi. In alternativa puoi disattivarlo.');">
+                              onsubmit="return confirm('Eliminare questo utente? Iscrizioni, progressi, tentativi dei questionari e certificati verranno rimossi. In alternativa puoi disattivarlo.');">
                             <?= Csrf::field() ?>
                             <button type="submit" class="link-btn link-btn-danger">Elimina</button>
                         </form>

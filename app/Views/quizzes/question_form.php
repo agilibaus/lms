@@ -10,7 +10,7 @@ use App\Core\Csrf;
 /** @var int $maxOptions */
 ?>
 <div class="page-header">
-    <a href="/quizzes/<?= (int) $question['quiz_id'] ?>/edit" class="back-link">&larr; <?= htmlspecialchars($quiz['title'] ?? 'Quiz') ?></a>
+    <a href="/quizzes/<?= (int) $question['quiz_id'] ?>/edit" class="back-link">&larr; <?= htmlspecialchars($quiz['title'] ?? 'Questionario') ?></a>
     <h1>Modifica domanda</h1>
 </div>
 

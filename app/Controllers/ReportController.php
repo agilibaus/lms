@@ -274,7 +274,7 @@ class ReportController
         $this->inviaReport(
             $formato,
             'report-corso-' . Csv::slug((string) $course['title']),
-            ['Studente', 'Email', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Quiz superati', 'Completato il', 'Certificato'],
+            ['Studente', 'Email', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Questionari superati', 'Completato il', 'Certificato'],
             $rows,
             [3 => 'numero'],
             'Corso'
@@ -489,7 +489,7 @@ class ReportController
         $this->inviaReport(
             $formato,
             'report-studente-' . Csv::slug((string) $student['full_name']),
-            ['Corso', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Quiz superati', 'Completato il', 'Certificato'],
+            ['Corso', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Questionari superati', 'Completato il', 'Certificato'],
             $rows,
             [],
             'Studente'
@@ -554,7 +554,7 @@ class ReportController
         $this->inviaReport(
             $formato,
             'report-gruppo-' . Csv::slug((string) $group['name']),
-            ['Studente', 'Email', 'Corso', 'Progresso %', 'Quiz superati', 'Completato il', 'Certificato'],
+            ['Studente', 'Email', 'Corso', 'Progresso %', 'Questionari superati', 'Completato il', 'Certificato'],
             $rows,
             [],
             'Gruppo'

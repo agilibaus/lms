@@ -25,7 +25,7 @@ $rows = $ordine->applica($rows);
     <a href="/reports" class="back-link">&larr; Report</a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
-        <?= (int) $totals['lessons'] ?> lezioni · <?= (int) $totals['quizzes'] ?> quiz ·
+        <?= (int) $totals['lessons'] ?> lezioni · <?= (int) $totals['quizzes'] ?> questionari ·
         <?= count($rows) ?> iscritti
     </p>
     <?php /* Stessa tendina dell'elenco dei report: XLSX prima perche' si apre
@@ -68,7 +68,7 @@ $rows = $ordine->applica($rows);
             <?= $ordine->th('Studente', 'studente') ?>
             <?= $ordine->th('Progresso', 'progresso') ?>
             <?= $ordine->th('Lezioni', 'lezioni') ?>
-            <?= $ordine->th('Quiz superati', 'quiz') ?>
+            <?= $ordine->th('Questionari superati', 'quiz') ?>
             <?= $ordine->th('Certificato', 'certificato') ?>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
         </tr>
@@ -87,7 +87,7 @@ $rows = $ordine->applica($rows);
                     <?php endif; ?>
                 </td>
                 <td role="cell" data-label="Lezioni"><?= (int) $row['lessons_completed'] ?>/<?= (int) $totals['lessons'] ?></td>
-                <td role="cell" data-label="Quiz superati"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $totals['quizzes'] ?></td>
+                <td role="cell" data-label="Questionari superati"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $totals['quizzes'] ?></td>
                 <td role="cell" data-label="Certificato">
                     <?php if (empty($row['certificate_code'])): ?>
                         —

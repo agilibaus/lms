@@ -137,7 +137,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                     </td>
                     <td role="cell" class="row-actions">
                         <form action="/admin/courses/<?= $courseId ?>/enrollments/<?= (int) $row['user_id'] ?>/delete" method="post"
-                              onsubmit="return confirm('Rimuovere l’iscrizione? Progresso, tentativi quiz e certificato di questo corso verranno eliminati.');">
+                              onsubmit="return confirm('Rimuovere l’iscrizione? Progresso, tentativi dei questionari e certificato di questo corso verranno eliminati.');">
                             <?= Csrf::field() ?>
                             <button type="submit" class="link-btn link-btn-danger">Rimuovi</button>
                         </form>
@@ -169,7 +169,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
 <?php if ($canDelete): ?>
     <section class="card">
         <h2 class="danger-heading">Elimina corso</h2>
-        <p class="card-meta">Vengono rimossi anche moduli, lezioni, quiz, tentativi, iscrizioni e certificati collegati.</p>
+        <p class="card-meta">Vengono rimossi anche moduli, lezioni, questionari, tentativi, iscrizioni e certificati collegati.</p>
         <form action="/admin/courses/<?= $courseId ?>/delete" method="post"
               onsubmit="return confirm('Eliminare definitivamente questo corso e tutti i dati collegati?');">
             <?= Csrf::field() ?>

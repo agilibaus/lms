@@ -57,7 +57,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <?php elseif ($eligibility !== null && !$eligibility['eligible']): ?>
     <p class="course-progress-hint">
         Per ottenere il certificato: lezioni <?= (int) $eligibility['lessons_done'] ?>/<?= (int) $eligibility['lessons_total'] ?>,
-        quiz superati <?= (int) $eligibility['quizzes_passed'] ?>/<?= (int) $eligibility['quizzes_total'] ?>.
+        questionari superati <?= (int) $eligibility['quizzes_passed'] ?>/<?= (int) $eligibility['quizzes_total'] ?>.
     </p>
 <?php endif; ?>
 
@@ -92,7 +92,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         <?php elseif ($isLocked): ?>
                             <span class="badge badge-danger">bloccato</span>
                         <?php elseif (!empty($module['quiz_required'])): ?>
-                            <span class="badge">quiz obbligatorio</span>
+                            <span class="badge">questionario obbligatorio</span>
                         <?php endif; ?>
                     </h2>
                     <?php if ($isStaff): ?>
@@ -118,9 +118,9 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                             </span>
                             <a href="/modules/<?= $moduleId ?>/lessons/create">+ Lezione</a>
                             <?php if ($quiz === null): ?>
-                                <a href="/modules/<?= $moduleId ?>/quiz/create">+ Quiz</a>
+                                <a href="/modules/<?= $moduleId ?>/quiz/create">+ Questionario</a>
                             <?php else: ?>
-                                <a href="/quizzes/<?= (int) $quiz['id'] ?>/edit">Quiz</a>
+                                <a href="/quizzes/<?= (int) $quiz['id'] ?>/edit">Questionario</a>
                             <?php endif; ?>
                             <a href="/modules/<?= $moduleId ?>/edit">Modulo</a>
                             <form action="/modules/<?= $moduleId ?>/delete" method="post"
@@ -142,7 +142,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                     </p>
                 <?php elseif ($isLocked): ?>
                     <p class="empty-state-small">
-                        Supera il quiz del modulo precedente per sbloccare questo modulo.
+                        Supera il questionario del modulo precedente per sbloccare questo modulo.
                     </p>
                 <?php else: ?>
                     <?php $lessons = $lessonsByModule[$moduleId] ?? []; ?>
@@ -197,7 +197,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                 <span class="ordine-vuoto" aria-hidden="true"></span>
                             <?php endif; ?>
                             <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="quiz-link">
-                                Quiz: <?= htmlspecialchars((string) $quiz['title']) ?>
+                                Questionario: <?= htmlspecialchars((string) $quiz['title']) ?>
                             </a>
                             <?php if (!empty($quizPassedByModule[$moduleId])): ?>
                                 <span class="badge badge-success">superato</span>

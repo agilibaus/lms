@@ -139,7 +139,7 @@ class LessonController
 
         if ($this->isModuleLocked((int) $module['id'])) {
             http_response_code(403);
-            echo 'Questo modulo è bloccato: supera prima il quiz del modulo precedente.';
+            echo 'Questo modulo è bloccato: supera prima il questionario del modulo precedente.';
             return;
         }
 

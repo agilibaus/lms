@@ -29,7 +29,7 @@ use App\Core\QuizScoring;
 <?php endif; ?>
 
 <?php if ($questions === []): ?>
-    <div class="alert alert-warning">Il quiz non ha ancora domande: non è somministrabile agli studenti.</div>
+    <div class="alert alert-warning">Il questionario non ha ancora domande: non è somministrabile agli studenti.</div>
 <?php elseif ($incompleteQuestions > 0): ?>
     <div class="alert alert-warning">
         <?= (int) $incompleteQuestions ?> domande non hanno una risposta corretta impostata.
@@ -52,15 +52,15 @@ $valutate = QuizScoring::conteggioValutate($questions);
 $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
 ?>
 <section class="card">
-    <h2>Impostazioni del quiz</h2>
+    <h2>Impostazioni del questionario</h2>
 
     <form action="/quizzes/<?= (int) $quiz['id'] ?>" method="post" class="form">
         <?= Csrf::field() ?>
 
-        <label for="quiz-title">Titolo del quiz</label>
+        <label for="quiz-title">Titolo del questionario</label>
         <input type="text" id="quiz-title" name="title" maxlength="200" required
                value="<?= htmlspecialchars($quiz['title']) ?>">
-        <p class="form-hint">È il nome che vede lo studente quando apre il quiz.</p>
+        <p class="form-hint">È il nome che vede lo studente quando apre il questionario.</p>
 
         <label for="quiz-soglia">Punteggio minimo per superarlo</label>
         <div class="campo-con-unita">
@@ -70,7 +70,7 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
         </div>
         <p class="form-hint" id="quiz-soglia-aiuto">
             <?php if ($valutate === 0): ?>
-                Questo quiz non ha ancora domande che fanno punteggio, quindi la soglia non è
+                Questo questionario non ha ancora domande che fanno punteggio, quindi la soglia non è
                 ancora usata. Le domande aperte non entrano nel calcolo.
             <?php else: ?>
                 Su <?= $valutate ?>
@@ -93,9 +93,9 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
     </form>
 
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/delete" method="post" class="danger-zone"
-          onsubmit="return confirm('Eliminare il quiz, le sue domande e tutti i tentativi degli studenti?');">
+          onsubmit="return confirm('Eliminare il questionario, le sue domande e tutti i tentativi degli studenti?');">
         <?= Csrf::field() ?>
-        <button type="submit" class="link-btn link-btn-danger">Elimina il quiz</button>
+        <button type="submit" class="link-btn link-btn-danger">Elimina il questionario</button>
         <span class="form-hint">
             Spariscono le domande e tutti i tentativi già svolti dagli studenti.
             Non si torna indietro.

@@ -59,7 +59,7 @@ class QuizController
         }
 
         if (QuizModel::forModule((int) $module['id']) !== null) {
-            $_SESSION['flash_error'] = 'Questo modulo ha già un quiz.';
+            $_SESSION['flash_error'] = 'Questo modulo ha già un questionario.';
             $this->redirect('/courses/' . $module['course_id']);
         }
 
@@ -84,14 +84,14 @@ class QuizController
         }
 
         if (QuizModel::forModule((int) $module['id']) !== null) {
-            $_SESSION['flash_error'] = 'Questo modulo ha già un quiz.';
+            $_SESSION['flash_error'] = 'Questo modulo ha già un questionario.';
             $this->redirect('/courses/' . $module['course_id']);
         }
 
         $title = trim($_POST['title'] ?? '');
 
         if ($title === '') {
-            $_SESSION['flash_error'] = 'Il titolo del quiz è obbligatorio.';
+            $_SESSION['flash_error'] = 'Il titolo del questionario è obbligatorio.';
             $this->redirect('/modules/' . $module['id'] . '/quiz/create');
         }
 
@@ -108,14 +108,14 @@ class QuizController
         $quiz = QuizModel::find((int) $params['id']);
 
         if (!$quiz) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
 
         if ($module === null) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
         $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
@@ -145,7 +145,7 @@ class QuizController
         $quiz = QuizModel::find((int) $params['id']);
 
         if (!$quiz) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
 
@@ -166,7 +166,7 @@ class QuizController
         $quiz = QuizModel::find((int) $params['id']);
 
         if (!$quiz) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
 
@@ -188,7 +188,7 @@ class QuizController
         $quiz = QuizModel::find((int) $params['id']);
 
         if (!$quiz) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
 
@@ -302,14 +302,14 @@ class QuizController
         $quiz = QuizModel::find((int) $params['id']);
 
         if (!$quiz) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
 
         if ($module === null) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
         $course = CourseModel::find((int) $module['course_id']);
@@ -357,14 +357,14 @@ class QuizController
         $quiz = QuizModel::find((int) $params['id']);
 
         if (!$quiz) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
 
         if ($module === null) {
-            $this->notFound('Quiz non trovato.');
+            $this->notFound('Questionario non trovato.');
             return;
         }
 

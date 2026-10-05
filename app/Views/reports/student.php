@@ -85,7 +85,7 @@ $liveSessions = $ordineIncontri->applica(array_map(
 
             <p class="card-meta">
                 Lezioni <?= (int) $course['lessons_completed'] ?>/<?= (int) $course['lessons_total'] ?> ·
-                Quiz superati <?= (int) $course['quizzes_passed'] ?>/<?= (int) $course['quizzes_total'] ?> ·
+                Questionari superati <?= (int) $course['quizzes_passed'] ?>/<?= (int) $course['quizzes_total'] ?> ·
                 Iscritto il <?= htmlspecialchars((string) $course['enrolled_at']) ?>
                 <?php if (!empty($course['certificate_code'])): ?>
                     · Certificato
@@ -106,7 +106,7 @@ $liveSessions = $ordineIncontri->applica(array_map(
                 <table class="data-table" role="table">
                     <thead role="rowgroup">
                     <tr role="row">
-                        <?= $ordineQuiz->th('Quiz', 'quiz') ?>
+                        <?= $ordineQuiz->th('Questionario', 'quiz') ?>
                         <?= $ordineQuiz->th('Modulo', 'modulo') ?>
                         <?= $ordineQuiz->th('Tentativi', 'tentativi') ?>
                         <?= $ordineQuiz->th('Miglior punteggio', 'punteggio') ?>
@@ -117,7 +117,7 @@ $liveSessions = $ordineIncontri->applica(array_map(
                     <tbody role="rowgroup">
                     <?php foreach ($quizzes as $quiz): ?>
                         <tr role="row">
-                            <td role="cell" data-label="Quiz"><?= htmlspecialchars((string) $quiz['quiz_title']) ?></td>
+                            <td role="cell" data-label="Questionario"><?= htmlspecialchars((string) $quiz['quiz_title']) ?></td>
                             <td role="cell" data-label="Modulo"><?= htmlspecialchars((string) $quiz['module_title']) ?></td>
                             <td role="cell" data-label="Tentativi"><?= (int) $quiz['attempts'] ?></td>
                             <td role="cell" data-label="Miglior punteggio"><?= $quiz['best_score_pct'] === null ? '—' : number_format((float) $quiz['best_score_pct'], 0) . '%' ?></td>

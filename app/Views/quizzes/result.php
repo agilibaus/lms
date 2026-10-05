@@ -31,16 +31,16 @@ $soloAperte = $scoredCount === 0;
     <?php /* Nessun punteggio da mostrare: farebbe credere a una valutazione
              che non c'è stata. */ ?>
     <div class="result-panel result-passed">
-        <p class="result-label">Quiz consegnato</p>
+        <p class="result-label">Questionario consegnato</p>
         <p class="result-detail">
-            Questo quiz è fatto di sole domande aperte: non assegna un punteggio.
+            Questo questionario è fatto di sole domande aperte: non assegna un punteggio.
             Le risposte sono state registrate e le leggerà il tutor.
         </p>
     </div>
 <?php else: ?>
     <div class="result-panel <?= $passed ? 'result-passed' : 'result-failed' ?>">
         <p class="result-score"><?= number_format($scorePct, 0) ?>%</p>
-        <p class="result-label"><?= $passed ? 'Quiz superato' : 'Quiz non superato' ?></p>
+        <p class="result-label"><?= $passed ? 'Questionario superato' : 'Questionario non superato' ?></p>
         <p class="result-detail">
             <?= $correct ?> risposte corrette su <?= (int) $scoredCount ?> ·
             soglia richiesta <?= (int) $quiz['passing_score_pct'] ?>%

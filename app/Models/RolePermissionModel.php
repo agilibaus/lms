@@ -46,9 +46,9 @@ class RolePermissionModel
                 'course.edit' => 'Modificare corsi, moduli e lezioni',
                 'course.delete' => 'Eliminare corsi',
             ],
-            'Quiz' => [
-                'quiz.take' => 'Svolgere i quiz',
-                'quiz.grade' => 'Gestire i quiz e consultare i tentativi',
+            'Questionari' => [
+                'quiz.take' => 'Svolgere i questionari',
+                'quiz.grade' => 'Gestire i questionari e consultare i tentativi',
                 'quiz.grade_assigned' => 'Consultare i tentativi degli studenti seguiti',
             ],
             'Utenti e gruppi' => [

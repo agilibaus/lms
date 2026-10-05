@@ -32,8 +32,8 @@ $certificates = $ordine->applica($certificates);
     <h1>Certificati</h1>
     <p class="page-subtitle">
         <?= $isStaff
-            ? 'Tutti i certificati emessi. L\'emissione è automatica quando lo studente completa lezioni e quiz del corso.'
-            : 'I certificati che hai ottenuto completando lezioni e quiz dei tuoi corsi.' ?>
+            ? 'Tutti i certificati emessi. L\'emissione è automatica quando lo studente completa lezioni e questionari del corso.'
+            : 'I certificati che hai ottenuto completando lezioni e questionari dei tuoi corsi.' ?>
     </p>
 </div>
 

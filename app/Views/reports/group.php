@@ -56,7 +56,7 @@ $rows = $ordine->applica($rows);
             <?= $ordine->th('Studente', 'studente') ?>
             <?= $ordine->th('Corso', 'corso') ?>
             <?= $ordine->th('Progresso', 'progresso') ?>
-            <?= $ordine->th('Quiz superati', 'quiz') ?>
+            <?= $ordine->th('Questionari superati', 'quiz') ?>
             <?= $ordine->th('Certificato', 'certificato') ?>
         </tr>
         </thead>

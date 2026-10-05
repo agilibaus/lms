@@ -29,7 +29,7 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
 
     <label class="checkbox-label">
         <input type="checkbox" name="quiz_required" value="1" <?= !empty($module['quiz_required']) ? 'checked' : '' ?>>
-        Quiz obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il quiz di questo modulo
+        Questionario obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il questionario di questo modulo
     </label>
 
     <?php /* Il valore in tabella e' "2026-11-15 09:00:00", il campo del
@@ -48,7 +48,7 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
     <p class="hint" id="available_from_aiuto">
         Lascia vuoto per tenere il modulo aperto da subito. Con una data, gli studenti
         vedono il titolo del modulo in grigio con l’indicazione di quando si aprirà, e
-        non possono aprirne le lezioni, i quiz, i materiali né gli incontri dal vivo.
+        non possono aprirne le lezioni, i questionari, i materiali né gli incontri dal vivo.
         La data è uguale per tutti gli studenti e il giorno dell’apertura ricevono un’email.
     </p>
 

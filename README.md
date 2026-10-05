@@ -15,10 +15,10 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 
 - **Corsi** strutturati in Moduli → Lezioni, con video (Bunny/Cloudflare Stream o self-hosted) e materiali scaricabili
 - **Editor di testo ricco** (TinyMCE incluso nel progetto) per il contenuto della lezione: formattazione, elenchi, tabelle, immagini caricate e video incorporati da YouTube/Vimeo
-- **Quiz** con quattro tipi di domanda — scelta singola, vero/falso, risposta multipla e
+- **Questionari** con quattro tipi di domanda — scelta singola, vero/falso, risposta multipla e
   risposta aperta — riordinabili, con verifica automatica del punteggio
 - **Certificati** di completamento generati in PDF, con codice di verifica pubblico
-- **Report/dashboard** su progressi utente/corso, risultati quiz, presenze alle sessioni live e
+- **Report/dashboard** su progressi utente/corso, risultati dei questionari, presenze alle sessioni live e
   tempi di fruizione dei video, tutti scaricabili in CSV e XLSX
 - **Rilascio progressivo**: ogni modulo puo' avere una data di apertura, con avviso via email
   agli iscritti il giorno in cui si apre
@@ -40,8 +40,8 @@ In sviluppo iniziale.
 - ✅ Schema database (`database/schema.sql`)
 - ✅ Scaffold applicativo: router, autenticazione/sessioni, connessione PDO, layout responsive, lista/dettaglio corsi
 - ✅ Moduli/lezioni con upload materiali ed embed video (Bunny/Cloudflare Stream o self-hosted)
-- ✅ Quiz con quattro tipi di domanda, domande riordinabili, tentativi illimitati
-- ✅ Sblocco progressivo dei moduli: per quiz obbligatorio e per data di apertura
+- ✅ Questionari con quattro tipi di domanda, domande riordinabili, tentativi illimitati
+- ✅ Sblocco progressivo dei moduli: per questionario obbligatorio e per data di apertura
 - ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
 - ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
   in CSV e XLSX, con indice a riquadri, ricerca e paginazione
@@ -223,21 +223,21 @@ vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli s
 /tests                 → vedi la sezione «Test» più sotto per l'elenco completo
 ```
 
-## Quiz, certificati e report
+## Questionari, certificati e report
 
-### Quiz
-Ogni modulo puo' avere **un quiz**. Il tutor imposta la soglia di superamento in percentuale;
+### Questionari
+Ogni modulo puo' avere **un questionario**. Il tutor imposta la soglia di superamento in percentuale;
 i **tentativi sono illimitati** e allo studente vale sempre il punteggio migliore. Le risposte
 corrette non vengono mai inviate al browser durante lo svolgimento, e la correzione avviene
 lato server verificando che l'opzione scelta appartenga davvero alla domanda. Le domande si
 riordinano con due frecce, come moduli e lezioni.
 
-**Dove si modifica e si elimina.** Da due posti: il collegamento «Quiz» nell'intestazione del
-riquadro del modulo, nella pagina del corso, e il pulsante «Modifica quiz» nella pagina del
-quiz — come «Modifica lezione» nella lezione. L'eliminazione sta in fondo alla pagina di
+**Dove si modifica e si elimina.** Da due posti: il collegamento «Questionario» nell'intestazione del
+riquadro del modulo, nella pagina del corso, e il pulsante «Modifica questionario» nella pagina del
+questionario — come «Modifica lezione» nella lezione. L'eliminazione sta in fondo alla pagina di
 modifica, con la conferma, perché cancella domande e tentativi già svolti e non si torna
 indietro. Fino alla 0106 il secondo posto non esisteva: la funzione c'era ma dalla pagina del
-quiz non ci si arrivava, che per chi la cerca è lo stesso. Da lì una regola e tre prove in
+questionario non ci si arrivava, che per chi la cerca è lo stesso. Da lì una regola e tre prove in
 `permessi.js`: un permesso che dall'interfaccia non si raggiunge non è un permesso, quindi si
 verifica anche la **via**, non solo il diritto.
 
@@ -251,7 +251,7 @@ Quattro tipi di domanda:
 | Risposta aperta | **Non fa punteggio**: la risposta si raccoglie e basta |
 
 Le domande aperte restano **fuori dal conteggio**, sia al numeratore sia al denominatore: un
-quiz di sole domande aperte risulta consegnato e superato, senza percentuale. Le risposte si
+questionario di sole domande aperte risulta consegnato e superato, senza percentuale. Le risposte si
 leggono nel report del singolo studente. La logica sta tutta in `App\Core\QuizScoring`, con
 46 test.
 
@@ -273,20 +273,20 @@ massimo 12.000, quindi non serve nessuna migrazione.
 Due regole indipendenti possono chiudere un modulo, e ne basta una. **Lo staff non e' mai
 soggetto al blocco**: un modulo chiuso va preparato prima che si apra.
 
-**Per quiz obbligatorio.** Se un modulo ha il flag "quiz obbligatorio", tutti i moduli
-successivi restano bloccati finche' lo studente non supera quel quiz. Un modulo marcato come
-obbligatorio ma privo di quiz — o con un quiz senza domande — non blocca nulla, per evitare
+**Per questionario obbligatorio.** Se un modulo ha il flag "questionario obbligatorio", tutti i moduli
+successivi restano bloccati finche' lo studente non supera quel questionario. Un modulo marcato come
+obbligatorio ma privo di questionario — o con un questionario senza domande — non blocca nulla, per evitare
 vicoli ciechi.
 
 **Per data (rilascio progressivo).** Ogni modulo ha un campo **"Disponibile dal"**: vuoto vuol
 dire aperto, con una data il modulo si apre in quel momento, uguale per tutti gli studenti.
 Lo studente vede il titolo in grigio con la data e non puo' aprire **ne' le lezioni, ne' i
-quiz, ne' i materiali scaricabili, ne' gli incontri dal vivo** di quel modulo: sono quattro
+questionari, ne' i materiali scaricabili, ne' gli incontri dal vivo** di quel modulo: sono quattro
 ingressi distinti nel codice, e il controllo e' in tutti e quattro, perche' nascondere un
 collegamento non e' bloccarlo.
 
-Le due regole si incatenano nel verso giusto: un modulo chiuso per data che ha il quiz
-obbligatorio chiude anche quelli dopo, perche' il suo quiz non si puo' fare.
+Le due regole si incatenano nel verso giusto: un modulo chiuso per data che ha il questionario
+obbligatorio chiude anche quelli dopo, perche' il suo questionario non si puo' fare.
 
 Il confronto fra la data di apertura e l'ora corrente si fa **in SQL**, mai in PHP: il server
 web e il database possono trovarsi su fusi diversi, e qui un'ora di differenza vuol dire un
@@ -327,7 +327,7 @@ apre la pagina — e a mancare sono solo le email.
 
 ### Certificati
 Il certificato viene emesso **automaticamente** quando lo studente ha completato tutte le
-lezioni del corso **e** superato tutti i quiz presenti. Il PDF (A4 orizzontale, generato con
+lezioni del corso **e** superato tutti i questionari presenti. Il PDF (A4 orizzontale, generato con
 Dompdf) viene salvato in `storage/certificates/` e non e' mai raggiungibile direttamente da
 `public/`: il download passa da un endpoint autenticato. Ogni certificato ha un codice di
 verifica pubblico consultabile su `/verify/{codice}`, pagina che non richiede login e mostra
@@ -374,7 +374,7 @@ suo pannello non esca da un contenitore che scorre.
 
 | Report | Contenuto |
 |---|---|
-| Per corso | Iscritti con progresso, lezioni completate, quiz superati, stato certificato |
+| Per corso | Iscritti con progresso, lezioni completate, questionari superati, stato certificato |
 | Per gruppo | Membri del gruppo incrociati con i corsi assegnati al gruppo (con il simbolo del gruppo accanto al nome, come nel pannello) |
 | Per studente | Tutti i corsi dello studente, con dettaglio tentativi, punteggi e risposte aperte |
 | Per incontro dal vivo | Presenze, con l'origine del dato (piattaforma o segnata a mano) |
@@ -423,12 +423,12 @@ responsabile e non può cederlo).
 momento viene iscritto ai corsi già assegnati. L'operazione è idempotente: riassegnare un corso
 non azzera il progresso di chi era già iscritto. Le operazioni inverse — togliere un membro dal
 gruppo o un corso dal gruppo — **non** cancellano le iscrizioni, perché con esse sparirebbero
-progresso, tentativi quiz e certificati; per rimuoverle davvero si usa la scheda del corso.
+progresso, tentativi dei questionari e certificati; per rimuoverle davvero si usa la scheda del corso.
 
 ### Corsi e iscrizioni (`/admin/courses`)
 Creazione (`course.create`), modifica e iscrizioni (`course.edit`), eliminazione
 (`course.delete`). Lo slug è generato dal titolo e reso univoco in automatico. I contenuti
-(moduli, lezioni, quiz) restano nella scheda del corso. La rimozione di un'iscrizione cancella
+(moduli, lezioni, questionari) restano nella scheda del corso. La rimozione di un'iscrizione cancella
 progresso e certificato di quel corso: viene chiesta conferma.
 
 ### Permessi (`/admin/permissions`)
@@ -591,7 +591,7 @@ l'ordinamento proprio dove la tabella è più scomoda, e avrebbe lasciato dei co
 raggiungibili con il tasto di tabulazione ma invisibili.
 
 Restano **non ordinabili**, e per scelta: la matrice dei permessi (caselle, non righe da
-confrontare), il quiz da svolgere, gli elenchi di moduli e lezioni dentro un corso — lì
+confrontare), il questionario da svolgere, gli elenchi di moduli e lezioni dentro un corso — lì
 l'ordine è deciso a mano dal tutor, cioè *è* il contenuto — e le singole colonne che mostrano
 un campo **oppure** un altro («Corso o gruppo»): ordinarle su uno dei due manderebbe in fondo
 tutte le righe dell'altro, con l'aria di un difetto.
@@ -634,7 +634,7 @@ qualcuno porta la vista che si stava guardando.
 Settimana e giorno non ci sono, ed è una scelta: senza orari fitti mostrerebbero le stesse
 due righe dell'elenco occupando uno schermo intero. Si aggiungono il giorno che gli incontri
 saranno molti — la forma degli eventi in `App\Core\Agenda` è già quella giusta, e un terzo
-tipo di evento (una scadenza dei quiz, che oggi non esiste) si aggiunge in un posto solo e
+tipo di evento (una scadenza dei questionari, che oggi non esiste) si aggiunge in un posto solo e
 compare in tutte e due le viste e nel calendario esterno.
 
 **Chi vede cosa** non si decide qui: la regola è una sola, in `App\Core\LiveScope`, e la usano
@@ -1128,9 +1128,9 @@ Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
 
 ## Righe collegate che mancano: 404, non una pagina rotta
 
-Quando una pagina si apre partendo da una riga — una lezione, un materiale, un quiz, un
+Quando una pagina si apre partendo da una riga — una lezione, un materiale, un questionario, un
 tentativo — e la riga a cui è collegata non esiste più, la risposta è un **404** con la stessa
-frase che il controller usa già per il proprio 404 ("Lezione non trovata.", "Quiz non
+frase che il controller usa già per il proprio 404 ("Lezione non trovata.", "Questionario non
 trovato."...). Prima la pagina si apriva lo stesso, con gli avvisi di PHP stampati sopra e un 403
 fuorviante, o addirittura a 200 e sgangherata. Succede con dati importati male o cancellati a
 mano, perché le chiavi esterne del database lo impedirebbero.
@@ -1154,7 +1154,7 @@ Regola decisa il 28/09 (`pistacchio-lms.md` §8.0), tutta in `App\Auth\CourseRig
 - l'**assistente** può affiancare **più tutor** (tabella `assistant_tutors`) e vede i report
   degli studenti dei gruppi di tutti.
 
-Prima ogni azione su moduli, lezioni e quiz controllava solo il ruolo, in una quarantina di
+Prima ogni azione su moduli, lezioni e questionari controllava solo il ruolo, in una quarantina di
 punti: ora passano tutti da `CourseRights::requireEdit*()`, che ferma con un 403 anche chi
 scrive a mano l'indirizzo di un corso altrui.
 

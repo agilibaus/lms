@@ -33,7 +33,7 @@ use App\Core\QuizScoring;
          nell'intestazione del modulo, e chi partiva dal quiz non la trovava.
          Il permesso e' quello del corso, come per la lezione. */ ?>
 <?php if ($course !== null && CourseRights::canEdit((int) $course['id'])): ?>
-    <p><a href="/quizzes/<?= (int) $quiz['id'] ?>/edit" class="btn btn-primary">Modifica quiz</a></p>
+    <p><a href="/quizzes/<?= (int) $quiz['id'] ?>/edit" class="btn btn-primary">Modifica questionario</a></p>
 <?php endif; ?>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
@@ -49,7 +49,7 @@ use App\Core\QuizScoring;
 <?php endif; ?>
 
 <?php if ($questions === []): ?>
-    <p class="empty-state">Questo quiz non ha ancora domande.</p>
+    <p class="empty-state">Questo questionario non ha ancora domande.</p>
 <?php else: ?>
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/attempts" method="post" class="quiz-form">
         <?= Csrf::field() ?>
