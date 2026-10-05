@@ -232,14 +232,14 @@ corrette non vengono mai inviate al browser durante lo svolgimento, e la correzi
 lato server verificando che l'opzione scelta appartenga davvero alla domanda. Le domande si
 riordinano con due frecce, come moduli e lezioni.
 
-**Dove si modifica e si elimina.** Da due posti: «Modifica quiz» nell'intestazione del
-riquadro del modulo, nella pagina del corso, e lo stesso pulsante nella pagina del quiz —
-come «Modifica lezione» nella lezione. L'eliminazione sta in fondo alla pagina di modifica,
-con la conferma, perché cancella domande e tentativi già svolti e non si torna indietro. Fino
-alla 0106 quel collegamento si chiamava soltanto «Quiz» e nella pagina del quiz non c'era
-niente: le funzioni c'erano ma non si trovavano, che per chi le cerca è lo stesso. Da lì una
-regola e tre prove in `permessi.js`: un permesso che dall'interfaccia non si raggiunge non è
-un permesso, quindi si verifica anche la **via**, non solo il diritto.
+**Dove si modifica e si elimina.** Da due posti: il collegamento «Quiz» nell'intestazione del
+riquadro del modulo, nella pagina del corso, e il pulsante «Modifica quiz» nella pagina del
+quiz — come «Modifica lezione» nella lezione. L'eliminazione sta in fondo alla pagina di
+modifica, con la conferma, perché cancella domande e tentativi già svolti e non si torna
+indietro. Fino alla 0106 il secondo posto non esisteva: la funzione c'era ma dalla pagina del
+quiz non ci si arrivava, che per chi la cerca è lo stesso. Da lì una regola e tre prove in
+`permessi.js`: un permesso che dall'interfaccia non si raggiunge non è un permesso, quindi si
+verifica anche la **via**, non solo il diritto.
 
 Quattro tipi di domanda:
 
