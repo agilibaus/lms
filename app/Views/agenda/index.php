@@ -146,7 +146,14 @@ $titoliGruppi = [
                  programmare, e aperto spingerebbe in fondo le cose che
                  contano. */ ?>
         <details class="agenda-passati">
-            <summary>Storico (<?= count($gruppi['passati']) ?>)</summary>
+            <?php /* Il titolo sta dentro al `summary` e non accanto: lo
+                     Storico e' il quarto gruppo dell'elenco, quindi un `h2`
+                     come gli altri tre — stessa misura senza doverla
+                     ridichiarare, e un lettore di schermo annuncia quattro
+                     sezioni invece di tre piu' un bottone. Un `h2` come
+                     primo figlio di `summary` e' HTML valido e non salta
+                     nessun livello: sopra c'e' l'h1 della pagina. */ ?>
+            <summary><h2>Storico (<?= count($gruppi['passati']) ?>)</h2></summary>
             <ul class="agenda-elenco">
                 <?php foreach ($gruppi['passati'] as $e): ?>
                     <?= $voce($e) ?>

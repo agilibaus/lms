@@ -3731,6 +3731,16 @@ fieldset.checkbox-group legend {
     font-weight: 600;
 }
 
+/* Il titolo dentro al comando: stessa misura dei tre gruppi qui sopra
+   (`.agenda-gruppo h2`), e margini azzerati perche' a centrarlo nella
+   riga ci pensa gia' il `summary`, che e' una riga flessibile. Senza
+   questa regola l'h2 prenderebbe la misura predefinita del browser,
+   che il foglio di stile per l'h2 non dichiara. */
+.agenda-passati > summary h2 {
+    font-size: 1.05rem;
+    margin: 0;
+}
+
 /* Aperto, lo Storico stacca le sue voci dal comando che le ha aperte:
    senza, la prima voce comincia esattamente dove finisce «Storico» e le
    due cose sembrano una sola. Solo da aperto — a cassetto chiuso quel
