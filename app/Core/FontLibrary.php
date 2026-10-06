@@ -261,21 +261,57 @@ class FontLibrary
         $errore = curl_error($ch);
         curl_close($ch);
 
+        $host = (string) parse_url($url, PHP_URL_HOST);
+
         if ($corpo === false || $errore !== '') {
-            throw new RuntimeException(
-                'Il server non è riuscito a raggiungere ' . parse_url($url, PHP_URL_HOST) . ': '
-                . $errore . '. Su molti hosting condivisi le connessioni in uscita sono chiuse: '
-                . 'in quel caso carica il file del carattere a mano, qui sotto.'
-            );
+            throw new RuntimeException(self::messaggioErrore($host, $errore, 0, $atteso));
         }
 
         if ($stato !== 200) {
-            throw new RuntimeException(
-                parse_url($url, PHP_URL_HOST) . ' ha risposto ' . $stato
-                . ' invece di 200 mentre chiedevo ' . $atteso . '.'
-            );
+            throw new RuntimeException(self::messaggioErrore($host, '', $stato, $atteso));
         }
 
         return (string) $corpo;
+    }
+
+    /**
+     * Il messaggio per chi non e' riuscito a scaricare un carattere.
+     *
+     * Ogni messaggio dice anche **che cosa fare**: lo legge chi amministra
+     * Pistacchio nel pannello Aspetto, subito sopra il modulo per caricare il
+     * file a mano, e un messaggio che dice solo «non riuscito» lo lascia
+     * senza una strada. Tre casi, decisi con Elena il 06/10:
+     *
+     *   1. **Nessuna connessione** (`$erroreRete` non vuoto): l'hosting
+     *      chiude le connessioni in uscita.
+     *   2. **Google non risponde adesso** (429, o un errore 5xx): troppe
+     *      richieste o un guasto loro. Passa da solo: si puo' riprovare.
+     *   3. **Ogni altra risposta che non e' 200**, e in pratica 401, 403 e
+     *      407: in mezzo c'e' un firewall o un proxy dell'hosting che
+     *      risponde al posto di Google. E' quello che succede nel
+     *      contenitore di sviluppo, dove fino al 06/10 il messaggio diceva
+     *      solo «ha risposto 403 invece di 200», e nessun test lo vedeva
+     *      perche' i contenitori precedenti rifiutavano la connessione.
+     *
+     * Funzione a se', senza rete, perche' si provi su tutti i casi senza
+     * dipendere dalla rete di chi esegue il test (`caratteri_test.php`).
+     */
+    public static function messaggioErrore(string $host, string $erroreRete, int $stato, string $atteso): string
+    {
+        $aMano = 'carica il file del carattere a mano, qui sotto.';
+
+        if ($erroreRete !== '') {
+            return 'Il server non è riuscito a raggiungere ' . $host . ': ' . $erroreRete . '. '
+                . 'Su molti hosting condivisi le connessioni in uscita sono chiuse: in quel caso ' . $aMano;
+        }
+
+        if ($stato === 429 || $stato >= 500) {
+            return $host . ' in questo momento non risponde (codice ' . $stato . ', mentre chiedevo '
+                . $atteso . '): di solito passa da solo. Riprova fra qualche minuto, oppure ' . $aMano;
+        }
+
+        return 'La richiesta a ' . $host . ' è stata rifiutata (codice ' . $stato . ', mentre chiedevo '
+            . $atteso . '). Di solito vuol dire che l\'hosting filtra le connessioni in uscita e '
+            . 'risponde al posto di Google: chiedi al fornitore di aprirle, oppure ' . $aMano;
     }
 }

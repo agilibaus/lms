@@ -858,7 +858,7 @@ php tests/xlsx_test.php             # il file XLSX scritto in casa
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
 php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
-php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale
+php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale, i tre messaggi d'errore
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
 php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, spareggio, indirizzi
 php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
@@ -1215,7 +1215,25 @@ un browser vecchio.
 Su molti hosting condivisi le connessioni in uscita sono chiuse. In quel caso **lo
 scaricamento fallisce e l'impostazione non viene salvata** — di proposito: salvare il nome di
 un carattere il cui file non esiste vorrebbe dire pagine che chiedono un file inesistente a
-ogni caricamento. Il messaggio dice qual è il server irraggiungibile e che cosa fare.
+ogni caricamento.
+
+Il messaggio dice sempre qual è il server e **che cosa fare**, e distingue tre casi
+(`FontLibrary::messaggioErrore()`):
+
+- **nessuna connessione**: l'hosting chiude le uscite, si carica il file a mano;
+- **una risposta di rifiuto** — in pratica 401, 403 o 407, cioè un firewall o un proxy
+  dell'hosting che risponde al posto di Google: si chiede al fornitore di aprire le uscite,
+  oppure si carica il file a mano;
+- **Google che non risponde adesso** (429 o un errore 5xx): di solito passa da solo, si
+  riprova fra qualche minuto oppure si carica il file a mano.
+
+Fino al 06/10 il secondo caso diceva solo «ha risposto 403 invece di 200», senza una strada.
+
+**Il test non dipende dalla rete.** `caratteri_test.php` prova i tre messaggi senza
+collegarsi a niente. Poi tenta uno scaricamento vero, ma solo per informazione: dove Google
+risponde verifica che il file arrivato sia un woff2, dove non risponde stampa il messaggio che
+il pannello mostrerebbe. Prima verificava il messaggio ottenuto dalla rete, e quindi il suo
+esito dipendeva da dove lo si eseguiva.
 
 Il ripiego funziona ovunque: si mette il file woff2 in `storage/fonts/` col nome della
 famiglia in minuscolo e trattini — `playfair-display.woff2`. `FontLibrary::accettaCaricato()`

@@ -213,21 +213,81 @@ if (!is_file($woff2)) {
 }
 
 // ---------------------------------------------------------------
-echo PHP_EOL . 'Quando il server non puo uscire su internet' . PHP_EOL;
+echo PHP_EOL . 'Quando lo scaricamento non riesce: i messaggi' . PHP_EOL;
 
-// Non si simula: si chiede davvero, e in questo contenitore Google e'
-// bloccato. Su una macchina che invece ci arriva, questa prova scarica il
-// carattere e la si riconosce dal messaggio.
+// Senza rete: si prova la funzione che scrive il messaggio, su tutti i casi.
+// Fino al 06/10 questa parte chiedeva davvero a Google e controllava il
+// messaggio ottenuto, quindi il suo esito dipendeva dalla rete di chi la
+// eseguiva: verde nei contenitori che rifiutavano la connessione, rosso in
+// quello il cui proxy rispondeva 403, mai eseguita dove Google risponde.
+// Ed e' cosi' che il messaggio per il 403 era rimasto senza una strada.
+
+$host = 'fonts.googleapis.com';
+$casi = [
+    'connessione rifiutata' => FontLibrary::messaggioErrore($host, 'Failed to connect', 0, 'text/css'),
+    'risposta 403' => FontLibrary::messaggioErrore($host, '', 403, 'text/css'),
+    'risposta 407' => FontLibrary::messaggioErrore($host, '', 407, 'text/css'),
+    'risposta 429' => FontLibrary::messaggioErrore($host, '', 429, 'text/css'),
+    'risposta 503' => FontLibrary::messaggioErrore($host, '', 503, 'text/css'),
+    'risposta 404' => FontLibrary::messaggioErrore($host, '', 404, 'text/css'),
+];
+
+foreach ($casi as $caso => $messaggio) {
+    check(
+        $caso . ': dice che cosa fare',
+        str_contains($messaggio, 'a mano'),
+        'un messaggio che dice solo «non riuscito» lascia chi lo legge senza una strada'
+    );
+    check($caso . ': nomina il server', str_contains($messaggio, $host), $messaggio);
+}
+
+check(
+    'connessione rifiutata: dice che il server non e\' uscito, e perche\' succede',
+    str_contains($casi['connessione rifiutata'], 'non è riuscito a raggiungere')
+        && str_contains($casi['connessione rifiutata'], 'Failed to connect')
+        && str_contains($casi['connessione rifiutata'], 'connessioni in uscita'),
+    $casi['connessione rifiutata']
+);
+
+foreach (['risposta 403', 'risposta 407', 'risposta 404'] as $caso) {
+    check(
+        $caso . ': dice che e\' stata rifiutata, il codice e di chiedere al fornitore',
+        str_contains($casi[$caso], 'rifiutata')
+            && str_contains($casi[$caso], 'codice ' . substr($caso, -3))
+            && str_contains($casi[$caso], 'fornitore'),
+        $casi[$caso]
+    );
+}
+
+foreach (['risposta 429', 'risposta 503'] as $caso) {
+    check(
+        $caso . ': dice che passa da solo e di riprovare, non di chiamare il fornitore',
+        str_contains($casi[$caso], 'Riprova')
+            && str_contains($casi[$caso], 'codice ' . substr($caso, -3))
+            && !str_contains($casi[$caso], 'fornitore'),
+        $casi[$caso]
+    );
+}
+
+// ---------------------------------------------------------------
+echo PHP_EOL . 'Lo scaricamento vero, solo come informazione' . PHP_EOL;
+
+// Qui si chiede davvero a Google, ma **non si verifica niente**: l'esito
+// dipende dalla rete di chi esegue il test, non dal codice. Serve a dire, a
+// chi lo lancia dal proprio PC, se lo scaricamento funziona davvero — che
+// dal contenitore di sviluppo non si puo' sapere.
 $gia = FontLibrary::presente('Lora');
 
 try {
     FontLibrary::scarica('Lora');
-    echo '  --   qui il server esce su internet: il carattere e stato scaricato davvero' . PHP_EOL;
 
     $scaricato = (string) file_get_contents(FontLibrary::percorso('Lora'));
     $buono = substr($scaricato, 0, 4) === 'wOF2';
 
-    check('il file scaricato e un woff2', $buono, 'primi quattro byte: ' . substr($scaricato, 0, 4));
+    // L'unica verifica di questa parte: se un file e' arrivato, deve essere
+    // un carattere. Un file sbagliato sul disco e' un difetto del codice, non
+    // della rete.
+    check('qui Google risponde: il file scaricato e un woff2', $buono, 'primi quattro byte: ' . substr($scaricato, 0, 4));
 
     // **Il file si toglie se non era gia' li' OPPURE se non e' valido.**
     // La prima stesura lo toglieva solo nel primo caso, e durante una prova
@@ -239,16 +299,8 @@ try {
         unlink(FontLibrary::percorso('Lora'));
     }
 } catch (RuntimeException $e) {
-    check(
-        'il messaggio dice che non ha raggiunto il server',
-        str_contains($e->getMessage(), 'non è riuscito a raggiungere'),
-        $e->getMessage()
-    );
-    check(
-        'e dice anche che cosa fare',
-        str_contains($e->getMessage(), 'a mano'),
-        'un messaggio che dice solo «non riuscito» lascia chi lo legge senza una strada'
-    );
+    echo '  --   da qui Google non si raggiunge, e il pannello direbbe:' . PHP_EOL;
+    echo '         · ' . $e->getMessage() . PHP_EOL;
 }
 
 try {
