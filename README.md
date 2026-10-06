@@ -1568,7 +1568,8 @@ facoltative e dove compariranno: la frase e la regola vanno cambiate insieme.
 Il campo **Presentazione** del profilo è facoltativo e lungo al massimo **1.000 caratteri**
 (`ProfileController::MAX_BIO_CHARS`; erano 2.000 fino al 06/10). Il limite è doppio, come per
 le risposte aperte dei questionari: `maxlength` nel campo e il taglio sul server. Sopra il
-campo, a destra, c'è lo stesso contatore che scala delle risposte aperte, con lo stesso script
+campo, sulla stessa riga dell'etichetta e allineato a destra, c'è lo stesso contatore che
+scala delle risposte aperte, con lo stesso script
 (`quiz-open-count.js`): il numero di partenza lo scrive il server contando il testo già
 salvato, così senza JavaScript il contatore resta fermo ma dice il vero. La presentazione la
 vedono le stesse persone che vedono la foto: i compagni di gruppo, il tutor e l'admin.
@@ -1593,8 +1594,12 @@ delle foto, nella stessa classe.
 
 **La presentazione si apre sopra la pagina.** Chi ne ha scritta una è un pulsante — foto e
 nome insieme — con un piccolo fumetto sull'angolo della foto (la forma, non un colore).
-Toccandolo si apre una scheda con foto, nome e testo, che si chiude con la ✕, con Esc o
-toccando fuori; il cerchio non si sposta. Su computer la scheda è centrata, sul telefono sale
+Toccandolo si apre una scheda con foto, nome e il testo fra due **virgolette giganti**, che si
+chiude con la ✕, con Esc o toccando fuori; il cerchio non si sposta. Le virgolette sono
+decorazione (un lettore di schermo non le legge) e hanno una riga bassa apposta: con
+`line-height: 1` la virgoletta che chiude si portava dietro una riga vuota alta come lei, e
+anche una scheda di due righe scorreva in verticale. `accessibilita.js` controlla che una
+scheda che non ha raggiunto la sua altezza massima non scorra. Su computer la scheda è centrata, sul telefono sale
 dal fondo e occupa tutta la larghezza; un testo lungo scorre dentro la scheda.
 
 - **Niente JavaScript**: la scheda è un `popover` aperto dall'attributo `popovertarget`, e il

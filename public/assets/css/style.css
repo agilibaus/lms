@@ -2562,6 +2562,33 @@ body.has-focus-video {
     max-width: 520px;
 }
 
+/* Nel profilo l'etichetta sta sulla stessa riga del contatore: a sinistra
+   il nome del campo, a destra quanto resta, e sotto subito il campo. La
+   riga prende i margini che l'etichetta ha in tutti gli altri campi, cosi'
+   la distanza dal campo e' la stessa. Se su uno schermo stretto i due non
+   ci stanno, il contatore va a capo restando a destra. */
+.campo-contato {
+    margin-top: 0;
+}
+
+.campo-contato-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.75rem;
+    margin-top: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.form .campo-contato-testa label {
+    margin: 0;
+}
+
+.campo-contato-testa .quiz-open-count {
+    align-self: baseline;
+    margin: 0 0 0 auto;
+}
+
 .form-inline {
     display: flex;
     flex-wrap: wrap;
@@ -4467,9 +4494,57 @@ fieldset.checkbox-group legend {
 }
 
 .presentazione-testo {
+    position: relative;
     margin: 0;
+    /* Lo spazio per le due virgolette: a sinistra quella che apre, in alto,
+       e a destra quella che chiude, in basso. Il testo non le tocca mai. */
+    padding: 1.1rem 3.2rem 2rem 3.6rem;
+    /* Alto almeno quanto la virgoletta che apre: con una presentazione di
+       una riga sola il paragrafo era piu' basso di lei, che sporgeva sotto
+       e faceva scorrere la scheda di 8 px. */
+    box-sizing: border-box;
+    min-height: 5.6rem;
     line-height: 1.55;
     overflow-wrap: anywhere;
+}
+
+/* Le virgolette giganti attorno alla presentazione (chieste da Elena).
+   Sono decorazione: il testo dopo la barra in `content` e' quello che
+   legge un lettore di schermo, cioe' niente — altrimenti ogni
+   presentazione comincerebbe con «virgolette». La prima dichiarazione e'
+   il ripiego per i browser che non conoscono quella forma.
+   Un carattere con le grazie, perche' le virgolette di un carattere senza
+   grazie, ingrandite, diventano due trattini storti. Colore principale:
+   cambia con la tavolozza. */
+.presentazione-testo::before,
+.presentazione-testo::after {
+    position: absolute;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 6.5rem;
+    /* Una riga bassa: il segno resta gigante, ma la sua scatola no. Con
+       `line-height: 1` la virgoletta che chiude portava sotto di se' una
+       riga vuota alta come lei, e anche una scheda di due righe scorreva
+       in verticale di 29 px. Il disegno che esce dalla scatola non conta
+       per lo scorrimento. */
+    line-height: 0.6;
+    color: var(--color-primary);
+}
+
+.presentazione-testo::before {
+    content: "\201C";
+    content: "\201C" / "";
+    top: 0.9rem;
+    left: -0.1rem;
+}
+
+.presentazione-testo::after {
+    content: "\201D";
+    content: "\201D" / "";
+    right: 0;
+    /* Non 0: il segno della virgoletta sporge di qualche pixel sotto la
+       propria scatola, e Chromium lo conta nello scorrimento. Misurato:
+       a 0 la scheda scorreva ancora di 6 px. */
+    bottom: 0.6rem;
 }
 
 .presentazione-chiudi {

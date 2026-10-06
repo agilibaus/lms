@@ -107,11 +107,16 @@ $hasAvatar = !empty($user['avatar_path']);
         $bio = (string) ($user['bio'] ?? '');
         $restano = max(0, ProfileController::MAX_BIO_CHARS - mb_strlen($bio));
         ?>
-        <label for="bio">Presentazione</label>
-        <div class="quiz-open-wrap">
-            <span class="quiz-open-count" id="bio-resta" data-max="<?= ProfileController::MAX_BIO_CHARS ?>">
-                <?= $restano ?> <?= $restano === 1 ? 'carattere rimasto' : 'caratteri rimasti' ?>
-            </span>
+        <?php /* Etichetta e contatore sulla stessa riga (chiesto da Elena):
+                 messo sopra il campo, il contatore spingeva l'etichetta una
+                 riga piu' in alto, lontana dal campo che nomina. */ ?>
+        <div class="quiz-open-wrap campo-contato">
+            <div class="campo-contato-testa">
+                <label for="bio">Presentazione</label>
+                <span class="quiz-open-count" id="bio-resta" data-max="<?= ProfileController::MAX_BIO_CHARS ?>">
+                    <?= $restano ?> <?= $restano === 1 ? 'carattere rimasto' : 'caratteri rimasti' ?>
+                </span>
+            </div>
             <textarea id="bio" name="bio" rows="5" maxlength="<?= ProfileController::MAX_BIO_CHARS ?>"
                       class="quiz-open-answer" aria-describedby="bio-resta bio-aiuto"><?= htmlspecialchars($bio) ?></textarea>
         </div>

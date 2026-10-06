@@ -676,7 +676,7 @@ const EXTRA = {
             altezzeChiuse.length > 0 && altezzeChiuse.every((h) => h === 0),
             ['altezze: ' + altezzeChiuse.join(', ')]);
 
-        const problemi = { apre: [], fuori: [], scorre: [], chiudi: [], esc: [], fuoco: [] };
+        const problemi = { apre: [], fuori: [], scorre: [], scorreV: [], chiudi: [], esc: [], fuoco: [] };
 
         for (const id of ids) {
             // Con un timeout breve e senza fermare il giro: se qualcosa copre
@@ -701,12 +701,17 @@ const EXTRA = {
                         && b.right <= window.innerWidth + 0.5 && b.bottom <= window.innerHeight + 0.5,
                     misure: [b.left, b.top, b.right, b.bottom].map(Math.round).join(','),
                     scorre: s.scrollWidth - s.clientWidth,
+                    // In verticale una scheda lunga scorre, ed e' giusto; una
+                    // che non ha raggiunto la sua altezza massima no.
+                    scorreV: b.height < parseFloat(getComputedStyle(s).maxHeight) - 1
+                        ? s.scrollHeight - s.clientHeight : 0,
                     chiudi: Math.min(c.width, c.height),
                 };
             }, id);
 
             if (!r.aperta || !r.dentro) problemi.fuori.push(id + ' [' + r.misure + ']');
             if (r.scorre > 0) problemi.scorre.push(id + ' di ' + r.scorre + ' px');
+            if (r.scorreV > 0) problemi.scorreV.push(id + ' di ' + r.scorreV + ' px');
             if (r.chiudi < 24) problemi.chiudi.push(id + ': ' + r.chiudi + ' px');
 
             await page.keyboard.press('Escape');
@@ -723,6 +728,10 @@ const EXTRA = {
         check(nome + ': ogni persona si può toccare per aprire la presentazione', problemi.apre.length === 0, problemi.apre);
         check(nome + ': ogni presentazione aperta sta dentro lo schermo', problemi.fuori.length === 0, problemi.fuori);
         check(nome + ': nessuna presentazione aperta scorre in orizzontale', problemi.scorre.length === 0, problemi.scorre);
+        // Le virgolette giganti (06/10): il segno di chiusura portava sotto
+        // di se' una riga vuota alta come lui, e una scheda di due righe
+        // scorreva di 29 px — sul telefono si sente sotto il dito.
+        check(nome + ': una presentazione corta non scorre in verticale', problemi.scorreV.length === 0, problemi.scorreV);
         check(nome + ': il comando per chiudere è almeno 24 px', problemi.chiudi.length === 0, problemi.chiudi);
         check(nome + ': Esc chiude la presentazione', problemi.esc.length === 0, problemi.esc);
         check(nome + ': chiusa la presentazione, il fuoco torna sulla persona', problemi.fuoco.length === 0, problemi.fuoco);
