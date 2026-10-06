@@ -167,14 +167,15 @@ class Mailer
             $name,
             'Il tuo accesso a Pistacchio LMS',
             "Ciao {$name},\n\n"
-            . "è stato creato un account per te su Pistacchio LMS, la piattaforma dei corsi.\n\n"
-            . "Indirizzo con cui entrare: {$email}\n"
+            . "è stato creato un account per te su Pistacchio LMS, la piattaforma dei corsi\n"
+            . "online di MoviMente.\n\n"
+            . "Email con cui entrare: {$email}\n"
             . "Password provvisoria: {$password}\n\n"
             . "Entra da qui:\n\n"
             . "{$link}\n\n"
-            . "Al primo accesso ti verrà chiesto di scegliere una password tua: fino ad\n"
+            . "Al primo accesso ti verrà chiesto di scegliere una password nuova: fino ad\n"
             . "allora non potrai usare il resto della piattaforma. Non rispondere a questo\n"
-            . "messaggio lasciando la password nel testo.\n"
+            . "messaggio, è stato generato automaticamente e le risposte non verranno lette.\n"
         );
     }
 
