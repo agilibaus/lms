@@ -178,6 +178,59 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
             ->execute(['d' => $domanda, 't' => $testo, 'c' => $giusta, 'p' => $i]);
     }
 
+    // --- i casi che i controlli di accessibilita' non vedevano ------------
+    //
+    // Il 06/10, montato l'ambiente con il database vero di Elena, sono usciti
+    // sette difetti che con i dati di prova non comparivano mai: le pagine
+    // che li avrebbero mostrati erano vuote, o mostravano un altro caso. Le
+    // righe qui sotto li rendono visibili anche a chi non ha quel database,
+    // e `accessibilita.js` apre le pagine con gli id che questa semina
+    // restituisce invece di sperare che l'id 1 sia il caso giusto.
+
+    // Una domanda vero/falso: e' il solo tipo il cui modulo di modifica
+    // scriveva «Vero» e «Falso» fuori da un'etichetta.
+    $pdo->prepare('INSERT INTO quiz_questions (quiz_id, question_text, question_type, position)
+                   VALUES (:q, :t, "true_false", 1)')
+        ->execute(['q' => $quiz, 't' => 'Affermazione del mondo ' . $lettera . '.']);
+    $domandaVeroFalso = (int) $pdo->lastInsertId();
+
+    foreach ([['Vero', 1], ['Falso', 0]] as $i => [$testo, $giusta]) {
+        $pdo->prepare('INSERT INTO quiz_options (question_id, option_text, is_correct, position)
+                       VALUES (:d, :t, :c, :p)')
+            ->execute(['d' => $domandaVeroFalso, 't' => $testo, 'c' => $giusta, 'p' => $i]);
+    }
+
+    // Un materiale su una lezione **aperta**: quello del modulo chiuso non si
+    // vede nella pagina della lezione, e il nome del file e' un comando a se'
+    // che deve essere alto almeno 24 px.
+    $materialeFile = __DIR__ . '/../storage/materials/prova-permessi.pdf';
+
+    if (!is_dir(dirname($materialeFile))) {
+        mkdir(dirname($materialeFile), 0775, true);
+    }
+
+    if (!is_file($materialeFile)) {
+        file_put_contents($materialeFile, "%PDF-1.4\n% file di prova della verifica dei permessi\n");
+    }
+
+    $pdo->prepare('INSERT INTO lesson_materials (lesson_id, file_name, file_path, file_type, file_size_bytes)
+                   VALUES (:l, "dispensa del mondo.pdf", "materials/prova-permessi.pdf", "application/pdf", :s)')
+        ->execute(['l' => $lezione, 's' => filesize($materialeFile)]);
+    $materiale = (int) $pdo->lastInsertId();
+
+    // Un certificato emesso allo studente: senza, l'elenco dei certificati e
+    // la colonna del report per gruppo restano vuoti, e una tabella vuota
+    // non sfora mai. Si cancella con il corso, per cascata.
+    $pdo->prepare('INSERT INTO certificates (user_id, course_id, certificate_code, file_path, issued_by)
+                   VALUES (:u, :c, :k, "certificates/prova-permessi.pdf", :a)')
+        ->execute([
+            'u' => $studente,
+            'c' => $corso,
+            'k' => 'PROVA-' . $lettera . '-' . strtoupper(bin2hex(random_bytes(6))),
+            'a' => $admin,
+        ]);
+    $certificato = (int) $pdo->lastInsertId();
+
     $pdo->prepare('INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, meet_link, created_by)
                    VALUES (:m, :g, :t, DATE_ADD(NOW(), INTERVAL 3 DAY),
                            DATE_ADD(NOW(), INTERVAL 3 DAY) + INTERVAL 60 MINUTE,
@@ -272,6 +325,9 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         'lezione' => $lezione,
         'quiz' => $quiz,
         'domanda' => $domanda,
+        'domanda_vero_falso' => $domandaVeroFalso,
+        'materiale' => $materiale,
+        'certificato' => $certificato,
         'incontro' => $incontro,
         'incontro_concluso' => $incontroConcluso,
         'incontro_imminente' => $incontroImminente,

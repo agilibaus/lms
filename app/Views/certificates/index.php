@@ -57,35 +57,40 @@ $certificates = $ordine->applica($certificates);
 <?php if ($certificates === []): ?>
     <p class="empty-state">Nessun certificato<?= $isStaff ? ' emesso' : ' ancora disponibile' ?>.</p>
 <?php else: ?>
-    <table class="data-table">
-        <thead>
-        <tr>
+    <?php /* Cinque colonne piu' i comandi non stanno su un telefono: sotto i
+             50 rem di spazio la tabella diventa un elenco di schede, come i
+             report. I `role` espliciti servono perche' cambiando il `display`
+             la tabella perderebbe le proprie semantiche. */ ?>
+    <div class="tabella-schede">
+    <table class="data-table" role="table">
+        <thead role="rowgroup">
+        <tr role="row">
             <?php if ($isStaff): ?><?= $ordine->th('Studente', 'studente') ?><?php endif; ?>
             <?= $ordine->th('Corso', 'corso') ?>
             <?= $ordine->th('Codice', 'codice') ?>
             <?= $ordine->th('Emesso il', 'emesso') ?>
             <?= $ordine->th('Stato', 'stato') ?>
-            <th></th>
+            <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
         <?php foreach ($certificates as $certificate): ?>
             <?php $revoked = $certificate['revoked_at'] !== null; ?>
-            <tr>
+            <tr role="row">
                 <?php if ($isStaff): ?>
-                    <td><?= htmlspecialchars((string) ($certificate['full_name'] ?? '')) ?></td>
+                    <td role="cell" data-label="Studente"><?= htmlspecialchars((string) ($certificate['full_name'] ?? '')) ?></td>
                 <?php endif; ?>
-                <td><?= htmlspecialchars((string) $certificate['course_title']) ?></td>
-                <td><code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code></td>
-                <td><?= htmlspecialchars((string) $certificate['issued_at']) ?></td>
-                <td>
+                <td role="cell" data-label="Corso"><?= htmlspecialchars((string) $certificate['course_title']) ?></td>
+                <td role="cell" data-label="Codice"><code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code></td>
+                <td role="cell" data-label="Emesso il"><?= htmlspecialchars((string) $certificate['issued_at']) ?></td>
+                <td role="cell" data-label="Stato">
                     <?php if ($revoked): ?>
                         <span class="badge badge-danger">revocato</span>
                     <?php else: ?>
                         <span class="badge badge-success">valido</span>
                     <?php endif; ?>
                 </td>
-                <td class="row-actions">
+                <td role="cell" class="row-actions">
                     <?php if (!$revoked): ?>
                         <a href="/certificates/<?= (int) $certificate['id'] ?>/download">PDF</a>
                     <?php endif; ?>
@@ -103,4 +108,5 @@ $certificates = $ordine->applica($certificates);
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 <?php endif; ?>

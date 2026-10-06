@@ -35,6 +35,8 @@
 'use strict';
 
 const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
+const { execFileSync } = require('child_process');
+const path = require('path');
 
 const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const ADMIN = process.env.LMS_ADMIN || 'admin@test.it';
@@ -536,6 +538,40 @@ const PAGINE_INTERNE = [
 
     ['/catalogo', 'Catalogo'],
 ];
+
+/*
+ * LE PAGINE DEI DATI SEMINATI. Le pagine qui sopra con un id dentro (la
+ * lezione 1, la domanda 1, il gruppo 1) mostrano quello che quell'id e'
+ * nel database su cui si gira: nel database di prova un caso, in quello di
+ * Elena un altro. Il 06/10, con il database di Elena, sono usciti sette
+ * difetti che con i dati di prova non comparivano mai — una domanda
+ * vero/falso, un materiale, un certificato, un gruppo con un corso, cioe'
+ * cose che nella riga 1 di prova non c'erano.
+ *
+ * Qui le stesse pagine si aprono **sugli oggetti della semina**, che li
+ * contiene apposta (`semina_permessi.php`, il blocco «i casi che i controlli
+ * di accessibilita' non vedevano»). Gli id li dice la semina stessa, come per
+ * `permessi.js`: nessun numero da indovinare.
+ */
+function semina() {
+    const radice = path.join(__dirname, '..');
+    const uscita = execFileSync('php', [path.join(radice, 'tests', 'semina_permessi.php')], {
+        encoding: 'utf8',
+        cwd: radice,
+    });
+
+    return JSON.parse(uscita);
+}
+
+const SEMINATI = semina().A;
+
+PAGINE_INTERNE.push(
+    ['/lessons/' + SEMINATI.lezione, 'Lezione con materiale (semina)'],
+    ['/lessons/' + SEMINATI.lezione + '/fruizione', 'Fruizione senza durata (semina)'],
+    ['/questions/' + SEMINATI.domanda_vero_falso + '/edit', 'Modifica domanda vero/falso (semina)'],
+    ['/admin/groups/' + SEMINATI.gruppo + '/edit', 'Modifica gruppo con corso (semina)'],
+    ['/reports/groups/' + SEMINATI.gruppo, 'Report per gruppo con certificato (semina)'],
+);
 
 async function entra(page) {
     await page.goto(BASE + '/login');

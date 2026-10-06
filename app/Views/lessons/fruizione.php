@@ -72,11 +72,16 @@ $quando = static function (?string $data): string {
 </div>
 
 <?php if ($durata <= 0): ?>
+    <?php /* Il testo sta in un paragrafo perche' e' un paragrafo: e cosi' il
+             collegamento si legge come parte della frase, che e' cio' che le
+             WCAG esentano dalla misura minima dei bersagli. */ ?>
     <div class="alert alert-info">
-        La durata del video non è indicata sulla lezione, e nessuno studente l'ha ancora
-        aperto: finché manca un denominatore non si può calcolare una percentuale. Si
-        riempie da sé appena il primo studente guarda il video, oppure scrivendo la durata
-        in <a href="/lessons/<?= (int) $lesson['id'] ?>/edit">Modifica lezione</a>.
+        <p>
+            La durata del video non è indicata sulla lezione, e nessuno studente l'ha ancora
+            aperto: finché manca un denominatore non si può calcolare una percentuale. Si
+            riempie da sé appena il primo studente guarda il video, oppure scrivendo la durata
+            in <a href="/lessons/<?= (int) $lesson['id'] ?>/edit">Modifica lezione</a>.
+        </p>
     </div>
 <?php endif; ?>
 

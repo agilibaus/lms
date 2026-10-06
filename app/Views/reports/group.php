@@ -50,9 +50,14 @@ $rows = $ordine->applica($rows);
 <?php elseif ($rows === []): ?>
     <p class="empty-state">Questo gruppo non ha ancora membri.</p>
 <?php else: ?>
-    <table class="data-table">
-        <thead>
-        <tr>
+    <?php /* Cinque colonne non stanno su un telefono: sotto i 50 rem di
+             spazio la tabella diventa un elenco di schede, come nel report
+             per corso. I `role` espliciti servono perche' cambiando il
+             `display` la tabella perderebbe le proprie semantiche. */ ?>
+    <div class="tabella-schede">
+    <table class="data-table" role="table">
+        <thead role="rowgroup">
+        <tr role="row">
             <?= $ordine->th('Studente', 'studente') ?>
             <?= $ordine->th('Corso', 'corso') ?>
             <?= $ordine->th('Progresso', 'progresso') ?>
@@ -60,15 +65,15 @@ $rows = $ordine->applica($rows);
             <?= $ordine->th('Certificato', 'certificato') ?>
         </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
         <?php foreach ($rows as $row): ?>
-            <tr>
-                <td>
+            <tr role="row">
+                <td role="cell" data-label="Studente">
                     <a href="/reports/students/<?= (int) $row['user_id'] ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
                     <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                 </td>
-                <td><?= htmlspecialchars((string) $row['course_title']) ?></td>
-                <td>
+                <td role="cell" data-label="Corso"><?= htmlspecialchars((string) $row['course_title']) ?></td>
+                <td role="cell" data-label="Progresso">
                     <?php if ($row['progress_pct'] === null): ?>
                         <span class="badge">non iscritto</span>
                     <?php else: ?>
@@ -78,8 +83,8 @@ $rows = $ordine->applica($rows);
                         <?php endif; ?>
                     <?php endif; ?>
                 </td>
-                <td><?= (int) $row['quizzes_passed'] ?>/<?= (int) $row['quizzes_total'] ?></td>
-                <td>
+                <td role="cell" data-label="Questionari superati"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $row['quizzes_total'] ?></td>
+                <td role="cell" data-label="Certificato">
                     <?php if (empty($row['certificate_code'])): ?>
                         —
                     <?php elseif ($row['certificate_revoked_at'] !== null): ?>
@@ -92,6 +97,7 @@ $rows = $ordine->applica($rows);
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 <?php endif; ?>
 
 <script src="/assets/js/dropdown.js"></script>

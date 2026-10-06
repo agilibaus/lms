@@ -98,14 +98,19 @@ $perTipo = static fn (string $tipo): array => $type === $tipo ? $valori : [];
 
 <fieldset class="option-set" data-options="true_false" <?= $type === 'true_false' ? '' : 'hidden disabled' ?>>
     <legend>Risposta corretta</legend>
-    <div class="option-row">
+    <?php /* Un'etichetta e non un `span`: e' cio' che fa annunciare «Vero» e
+             «Falso» a un lettore di schermo e che permette di scegliere
+             toccando la parola invece di centrare il pallino. Le opzioni
+             degli altri tipi hanno un campo di testo accanto e si nominano
+             con `aria-label`; qui la parola c'e' gia', e basta legarla. */ ?>
+    <label class="option-row">
         <input type="radio" name="correct_option" value="0" <?= $type === 'true_false' && $trueFalseCorrect === 0 ? 'checked' : '' ?>>
         <span>Vero</span>
-    </div>
-    <div class="option-row">
+    </label>
+    <label class="option-row">
         <input type="radio" name="correct_option" value="1" <?= $type === 'true_false' && $trueFalseCorrect === 1 ? 'checked' : '' ?>>
         <span>Falso</span>
-    </div>
+    </label>
 </fieldset>
 
 <fieldset class="option-set" data-options="open" <?= $type === 'open' ? '' : 'hidden disabled' ?>>

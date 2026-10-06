@@ -638,6 +638,14 @@ h3 { font-size: 1.05rem; }
     margin-bottom: 1rem;
 }
 
+/* Il testo di un avviso puo' stare in un paragrafo — e ci deve stare quando
+   contiene un collegamento, che cosi' si legge come parte della frase — ma
+   il riquadro resta della misura di prima: il margine del paragrafo lo
+   allargherebbe di una riga vuota sopra e sotto. */
+.alert > p {
+    margin: 0;
+}
+
 .alert-error {
     background: var(--color-danger-soft);
     color: var(--color-danger);
@@ -1698,6 +1706,12 @@ h3 { font-size: 1.05rem; }
 .material-name {
     font-weight: 500;
     overflow-wrap: anywhere;
+    /* Il nome del file e' il comando per scaricarlo, e un comando a se'
+       deve essere alto almeno quanto un bersaglio: la riga di testo da
+       sola dava 16 px. Flex per tenere il testo centrato nei 24. */
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-target);
 }
 
 .material-meta {
@@ -2325,6 +2339,14 @@ body.has-focus-video {
     margin: 0.2rem 0 0.9rem;
 }
 
+/* Un percorso o un indirizzo di servizio e' una parola sola lunga anche
+   ottanta caratteri, e il browser non ha dove mandarla a capo: nella pagina
+   di Google Meet il percorso della chiave sforava di 533 px a 320. Sono
+   identificativi, quindi si possono spezzare in qualunque punto. */
+.card-meta code {
+    overflow-wrap: anywhere;
+}
+
 .danger-zone {
     margin-top: 0.9rem;
     padding-top: 0.75rem;
@@ -2596,6 +2618,15 @@ body.has-focus-video {
 
 .option-row input[type="text"] {
     flex-grow: 1;
+}
+
+/* Le righe del vero/falso sono etichette, e dentro `.form` un'etichetta e'
+   un titolo di campo: blocco, grassetto, staccata sopra. Qui invece e' la
+   parola accanto al pallino, e deve restare una riga come le altre. */
+.form label.option-row {
+    display: flex;
+    margin: 0 0 0.45rem;
+    font-weight: 400;
 }
 
 .question-list {
@@ -2897,6 +2928,14 @@ body.has-focus-video {
     border-radius: var(--radius-sm);
     background: var(--color-surface);
     margin-bottom: 0.4rem;
+}
+
+/* Il nome della voce, quando e' un collegamento, e' un comando a se' accanto
+   a «Rimuovi»: va portato alla misura di un bersaglio, come quello. */
+.assign-list li > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
 }
 
 /* Voce su due righe: nome sopra, dettagli sotto (tutor, corsi, data). */

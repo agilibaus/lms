@@ -859,7 +859,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # 1474 controlli su 54 pagine, a tre larghezze
+node tests/accessibilita.js         # circa 1.550 controlli su 59 pagine, a tre larghezze (il numero dipende dai dati)
 node tests/permessi.js              # 121 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
@@ -879,6 +879,15 @@ Il controllo sullo scorrimento orizzontale gira a 390 px, a **320** (il minimo c
 cioè il telefono girato di lato; quando fallisce dice **quale elemento** sfora. È scritto in
 Node e non in PHP perché contrasto, fuoco e dimensioni esistono solo dopo che il browser ha
 applicato il CSS.
+
+**Cinque pagine si aprono sui dati della semina**, non su un id fisso: una lezione con un
+materiale, la pagina di fruizione di un video senza durata, una domanda vero/falso, un gruppo
+con un corso assegnato e il suo report con un certificato. Le pagine con l'id scritto nel
+test (`/lessons/1`, `/questions/1/edit`…) mostrano quello che l'id 1 è nel database su cui si
+gira, e con i dati di prova quei casi non c'erano: sette difetti veri sono rimasti invisibili
+finché il controllo non è stato fatto girare sul database di sviluppo vero. Per questo
+`accessibilita.js` **esegue da sé `semina_permessi.php`**, come `permessi.js`, e ne legge gli
+id — quindi anche lui scrive nel database: non va lanciato in produzione.
 
 **Non è un test di usabilità**, ed è scritto per non essere scambiato per tale: dice se una
 pagina rispetta delle regole misurabili, non se una persona capisce cosa deve fare.
@@ -911,7 +920,9 @@ studente di un altro tutor, nemmeno cercandolo per email, e l'amministratore inv
 > esisteva sul disco, e il 404 del file mancante veniva scambiato per un rifiuto del permesso.
 
 `tests/semina_permessi.php` **scrive nel database dell'installazione su cui gira**: è per lo
-sviluppo, non per la produzione.
+sviluppo, non per la produzione. Lo eseguono da sé anche `permessi.js` e `accessibilita.js`.
+Oltre ai due mondi semina, nel mondo A, i casi che servono ai controlli di accessibilità:
+una domanda vero/falso, un materiale su una lezione aperta e un certificato emesso.
 
 ## File caricati: la piattaforma non cancella mai da sola
 
