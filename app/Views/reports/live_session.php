@@ -31,7 +31,7 @@ $rows = array_map(static function (array $r): array {
 }, $rows);
 
 $ordine = Ordinamento::daRichiesta([
-    'partecipante' => ['full_name', Ordinamento::TESTO],
+    'partecipante' => ['full_name', Ordinamento::TESTO, 'email'],
     'presenza' => ['presenza', Ordinamento::NUMERO],
     'ingresso' => ['joined_at', Ordinamento::DATA],
     'ritardo' => ['minuti_ritardo', Ordinamento::NUMERO],

@@ -11,7 +11,7 @@ use App\Core\Ordinamento;
 /** @var bool $dompdfAvailable */
 
 $ordine = Ordinamento::daRichiesta([
-    'studente' => ['full_name', Ordinamento::TESTO],
+    'studente' => ['full_name', Ordinamento::TESTO, 'email'],
     'corso' => ['course_title', Ordinamento::TESTO],
     'codice' => ['certificate_code', Ordinamento::TESTO],
     'emesso' => ['issued_at', Ordinamento::DATA],

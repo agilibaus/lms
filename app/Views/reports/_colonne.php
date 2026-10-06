@@ -15,6 +15,8 @@ use App\Core\Ordinamento;
  *   cella      la funzione che rende il contenuto
  *   chiave     come si chiama nell'indirizzo quando si ordina (null: non si ordina)
  *   campo      il campo del dato su cui ordinare
+ *   spareggio  il campo da confrontare a parita' del primo (Ordinamento,
+ *              «lo spareggio»): l'email per le colonne delle persone
  *
  * **Il tipo non e' aspetto, e' significato.** `numero` manda la colonna a
  * destra, in cifre a larghezza fissa e con una larghezza uguale in tutte e
@@ -38,7 +40,8 @@ use App\Core\Ordinamento;
  * @var callable(?string): string $esc
  * @return array<string, list<array{etichetta: string, tipo: string,
  *                                  cella: callable(array): string,
- *                                  chiave: ?string, campo: ?string}>>
+ *                                  chiave: ?string, campo: ?string,
+ *                                  spareggio: ?string}>>
  */
 
 /** Una colonna, con i valori che quasi sempre bastano. */
@@ -47,7 +50,8 @@ $colonna = static function (
     string $tipo,
     callable $cella,
     ?string $chiave = null,
-    ?string $campo = null
+    ?string $campo = null,
+    ?string $spareggio = null
 ): array {
     return [
         'etichetta' => $etichetta,
@@ -55,6 +59,7 @@ $colonna = static function (
         'cella' => $cella,
         'chiave' => $chiave,
         'campo' => $campo,
+        'spareggio' => $spareggio,
     ];
 };
 
@@ -110,7 +115,7 @@ return [
         $colonna('Studente', 'testo', static function (array $r) use ($esc): string {
             return $esc((string) $r['full_name'])
                 . ((int) $r['is_active'] === 0 ? ' <span class="badge">disattivato</span>' : '');
-        }, 'studente', 'full_name'),
+        }, 'studente', 'full_name', 'email'),
         $colonna('Email', 'testo', static fn (array $r): string
             => $esc((string) $r['email']), 'email', 'email'),
         $colonna('Corsi', 'numero', static fn (array $r): string

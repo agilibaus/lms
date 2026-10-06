@@ -61,7 +61,7 @@ class GroupModel
              FROM group_members gm
              INNER JOIN users u ON u.id = gm.user_id
              WHERE gm.group_id = :group_id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['group_id' => $groupId]);
 
@@ -83,7 +83,7 @@ class GroupModel
              FROM group_members gm
              INNER JOIN users u ON u.id = gm.user_id
              WHERE gm.group_id = :group_id
-             ORDER BY u.full_name, u.id'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['group_id' => $groupId]);
 

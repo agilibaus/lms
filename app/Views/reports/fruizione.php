@@ -19,7 +19,7 @@ use App\Core\Xlsx;
  * sotto lo stesso clic.
  */
 $ordine = Ordinamento::daRichiesta([
-    'studente' => ['full_name', Ordinamento::TESTO],
+    'studente' => ['full_name', Ordinamento::TESTO, 'email'],
     'media' => ['percentuale_media', Ordinamento::NUMERO],
     'tempo' => ['secondi_totali', Ordinamento::NUMERO],
 ]);

@@ -16,13 +16,13 @@ $courseId = (int) $course['id'];
 // Due tabelle, due insiemi di chiavi: l'indirizzo ne porta uno alla volta
 // e l'altro lascia le sue righe come stanno.
 $ordineRichieste = Ordinamento::daRichiesta([
-    'richiedente' => ['full_name', Ordinamento::TESTO],
+    'richiedente' => ['full_name', Ordinamento::TESTO, 'email'],
     'richiesta' => ['requested_at', Ordinamento::DATA],
 ]);
 $requests = $ordineRichieste->applica($requests);
 
 $ordineIscritti = Ordinamento::daRichiesta([
-    'studente' => ['full_name', Ordinamento::TESTO],
+    'studente' => ['full_name', Ordinamento::TESTO, 'email'],
     'iscritto' => ['enrolled_at', Ordinamento::DATA],
     'progresso' => ['progress_pct', Ordinamento::NUMERO],
 ]);

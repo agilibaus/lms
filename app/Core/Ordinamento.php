@@ -34,6 +34,22 @@ namespace App\Core;
  * raccontarli a chi guarda, sia non poterli piu' cambiare senza rompere i
  * collegamenti salvati.
  *
+ * **LO SPAREGGIO.** Una colonna puo' dichiarare un terzo elemento, il campo
+ * da confrontare quando il primo e' uguale:
+ *
+ *         'studente' => ['full_name', Ordinamento::TESTO, 'email'],
+ *
+ * Serve alle colonne delle persone, dove due omonimi sono comuni. Senza,
+ * le due righe restavano nell'ordine in cui arrivavano dal database, che
+ * nessuno aveva deciso: la colonna non era ordinata del tutto, e — peggio —
+ * con la paginazione a cinquanta righe due omonimi a cavallo di due pagine
+ * potevano scambiarsi fra una richiesta e l'altra, facendo comparire uno
+ * dei due due volte e l'altro mai. Trovato il 06/10 sul database vero di
+ * Elena, che ha due «Elena Mazzoleni». L'email e' unica, quindi con lei
+ * l'ordine e' sempre lo stesso; ed e' scritta nella cella sotto il nome,
+ * quindi l'ordine si vede. Si confronta come testo e **nello stesso verso**
+ * del primo campo: la colonna invertita si legge al contrario tutta intera.
+ *
  * **Niente arriva dall'indirizzo al confronto.** La chiave ricevuta o e'
  * una di quelle dichiarate dalla vista, o viene ignorata: non esiste un
  * percorso in cui il testo scritto da chi naviga diventi un nome di campo.
@@ -47,7 +63,7 @@ class Ordinamento
     public const CRESCENTE = 'asc';
     public const DECRESCENTE = 'desc';
 
-    /** @var array<string, array{0: string, 1: string}> chiave pubblica => [campo, tipo] */
+    /** @var array<string, array{0: string, 1: string, 2?: string}> chiave pubblica => [campo, tipo, spareggio] */
     private array $colonne;
 
     private ?string $chiave;
@@ -58,7 +74,7 @@ class Ordinamento
     private array $altriParametri;
 
     /**
-     * @param array<string, array{0: string, 1: string}> $colonne
+     * @param array<string, array{0: string, 1: string, 2?: string}> $colonne
      * @param array<string, mixed> $parametri di solito `$_GET`
      */
     private function __construct(array $colonne, array $parametri)
@@ -92,7 +108,7 @@ class Ordinamento
     }
 
     /**
-     * @param array<string, array{0: string, 1: string}> $colonne chiave => [campo, tipo]
+     * @param array<string, array{0: string, 1: string, 2?: string}> $colonne chiave => [campo, tipo, spareggio]
      * @param array<string, mixed>|null $parametri
      */
     public static function daRichiesta(array $colonne, ?array $parametri = null): self
@@ -133,12 +149,13 @@ class Ordinamento
         }
 
         [$campo, $tipo] = $this->colonne[$this->chiave];
+        $spareggio = $this->colonne[$this->chiave][2] ?? null;
         $segno = $this->verso === self::DECRESCENTE ? -1 : 1;
 
         // `usort` e' stabile da PHP 8: le righe che hanno lo stesso valore
         // restano nell'ordine di partenza invece di rimescolarsi a ogni
         // caricamento.
-        usort($righe, function (array $a, array $b) use ($campo, $tipo, $segno): int {
+        usort($righe, function (array $a, array $b) use ($campo, $tipo, $spareggio, $segno): int {
             $va = $a[$campo] ?? null;
             $vb = $b[$campo] ?? null;
 
@@ -152,7 +169,13 @@ class Ordinamento
                 return $ma && $mb ? 0 : ($ma ? 1 : -1);
             }
 
-            return $segno * self::confronta($va, $vb, $tipo);
+            $esito = self::confronta($va, $vb, $tipo);
+
+            if ($esito === 0 && $spareggio !== null) {
+                $esito = self::confronta($a[$spareggio] ?? '', $b[$spareggio] ?? '', self::TESTO);
+            }
+
+            return $segno * $esito;
         });
 
         return $righe;

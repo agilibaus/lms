@@ -17,7 +17,7 @@ $durata = (int) ($lesson['duration_seconds'] ?? 0);
 // «Vista» mostra una percentuale che puo' mancare (durata del video
 // sconosciuta): quelle righe finiscono in fondo, come ogni vuoto.
 $ordine = Ordinamento::daRichiesta([
-    'studente' => ['full_name', Ordinamento::TESTO],
+    'studente' => ['full_name', Ordinamento::TESTO, 'email'],
     'vista' => ['percentage', Ordinamento::NUMERO],
     'tempo' => ['watched_seconds', Ordinamento::NUMERO],
     'posizione' => ['position_seconds', Ordinamento::NUMERO],

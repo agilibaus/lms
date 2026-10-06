@@ -13,7 +13,7 @@ use App\Core\Ordinamento;
 // «Lezioni» e «Quiz superati» mostrano «3/12»: si ordinano sul numero di
 // sinistra, perche' il denominatore e' uguale per tutta la tabella.
 $ordine = Ordinamento::daRichiesta([
-    'studente' => ['full_name', Ordinamento::TESTO],
+    'studente' => ['full_name', Ordinamento::TESTO, 'email'],
     'progresso' => ['progress_pct', Ordinamento::NUMERO],
     'lezioni' => ['lessons_completed', Ordinamento::NUMERO],
     'quiz' => ['quizzes_passed', Ordinamento::NUMERO],

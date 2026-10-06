@@ -109,7 +109,7 @@ class EnrollmentModel
              FROM enrollments e
              INNER JOIN users u ON u.id = e.user_id
              WHERE e.course_id = :course_id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['course_id' => $courseId]);
 

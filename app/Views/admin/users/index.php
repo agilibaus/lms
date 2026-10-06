@@ -14,7 +14,7 @@ use App\Core\Ordinamento;
 /** @var ?string $ultimoInvio */
 
 $ordine = Ordinamento::daRichiesta([
-    'nome' => ['full_name', Ordinamento::TESTO],
+    'nome' => ['full_name', Ordinamento::TESTO, 'email'],
     'email' => ['email', Ordinamento::TESTO],
     'ruolo' => ['role', Ordinamento::TESTO],
     'tutor' => ['supervising_tutor_name', Ordinamento::TESTO],

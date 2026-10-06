@@ -51,7 +51,7 @@ class ReportModel
              INNER JOIN users u ON u.id = e.user_id
              LEFT JOIN certificates cert ON cert.user_id = u.id AND cert.course_id = e.course_id
              WHERE e.course_id = :course_id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute([
             'course_id_lessons' => $courseId,
@@ -98,7 +98,7 @@ class ReportModel
                     (SELECT COUNT(*) FROM certificates c WHERE c.user_id = u.id AND c.revoked_at IS NULL) AS certificate_count
              FROM users u
              WHERE u.role = 'studente'
-             ORDER BY u.full_name"
+             ORDER BY u.full_name, u.email"
         )->fetchAll();
     }
 
@@ -160,7 +160,7 @@ class ReportModel
              LEFT JOIN enrollments e ON e.user_id = u.id AND e.course_id = c.id
              LEFT JOIN certificates cert ON cert.user_id = u.id AND cert.course_id = c.id
              WHERE gm.group_id = :group_id
-             ORDER BY u.full_name, c.title'
+             ORDER BY u.full_name, u.email, c.title'
         );
         $stmt->execute(['group_id' => $groupId]);
 

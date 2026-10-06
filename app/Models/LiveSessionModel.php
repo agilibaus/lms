@@ -221,7 +221,7 @@ class LiveSessionModel
              LEFT JOIN group_members gm ON gm.group_id = ls.group_id
              INNER JOIN users u ON u.id = e.user_id OR u.id = gm.user_id
              WHERE ls.id = :session_id AND u.is_active = 1
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['session_id' => $sessionId]);
 
@@ -253,7 +253,7 @@ class LiveSessionModel
              INNER JOIN users u ON u.id = e.user_id OR u.id = gm.user_id
              LEFT JOIN live_session_attendance a ON a.session_id = ls.id AND a.user_id = u.id
              WHERE ls.id = :session_id AND u.is_active = 1
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['session_id' => $sessionId]);
 

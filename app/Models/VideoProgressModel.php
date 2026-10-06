@@ -242,7 +242,7 @@ class VideoProgressModel
              LEFT JOIN lesson_progress lp
                     ON lp.user_id = u.id AND lp.lesson_id = :lesson_id2
              WHERE e.course_id = :course_id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute([
             'lesson_id' => $lessonId,
@@ -389,7 +389,7 @@ class VideoProgressModel
              FROM enrollments e
              INNER JOIN users u ON u.id = e.user_id
              WHERE e.course_id = :course_id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['course_id' => $courseId]);
 

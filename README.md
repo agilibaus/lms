@@ -573,14 +573,14 @@ Il meccanismo è `App\Core\Ordinamento`, e una vista lo usa così:
 
 ```php
 $ordine = Ordinamento::daRichiesta([
-    'nome'  => ['full_name', Ordinamento::TESTO],
+    'nome'  => ['full_name', Ordinamento::TESTO, 'email'],
     'stato' => ['is_active', Ordinamento::NUMERO],
 ]);
 $utenti = $ordine->applica($utenti);
 // nella testata:  <?= $ordine->th('Nome', 'nome') ?>
 ```
 
-Quattro cose da sapere prima di aggiungerne una:
+Cinque cose da sapere prima di aggiungerne una:
 
 - **Le chiavi dell'indirizzo non sono i nomi dei campi** (`nome`, non `full_name`). Quello
   che si scrive nell'indirizzo è un'interfaccia pubblica: legarla ai nomi delle colonne del
@@ -598,6 +598,13 @@ Quattro cose da sapere prima di aggiungerne una:
   incontri per data, le lezioni per posizione) e sostituirlo al primo caricamento sarebbe un
   peggioramento. L'ordinamento è stabile, così a parità di valore le righe non si rimescolano
   a ogni caricamento.
+- **Le colonne delle persone dichiarano lo spareggio**: il terzo elemento, `'email'`, è il
+  campo che decide quando il nome è uguale, nello stesso verso. Due omonimi senza spareggio
+  restavano nell'ordine in cui li mandava il database, che nessuno aveva deciso, e con la
+  paginazione a cinquanta righe potevano scambiarsi fra una pagina e l'altra: uno compariva
+  due volte e l'altro mai. L'email è unica ed è scritta sotto il nome, quindi l'ordine è
+  sempre lo stesso e si vede. Per la stessa ragione **le query che ordinano persone per nome
+  finiscono con `, u.email`**: è l'ordine delle pagine aperte senza aver cliccato niente.
 
 Sul telefono, dove la tabella diventa un elenco di schede, l'intestazione non sparisce: torna
 come **una fila di comandi sopra alle schede**. Nasconderla del tutto avrebbe tolto
@@ -853,7 +860,7 @@ php tests/rilascio_test.php         # rilascio progressivo: catena, conti, nient
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
-php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, indirizzi
+php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, spareggio, indirizzi
 php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
 php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
 

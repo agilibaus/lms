@@ -17,7 +17,7 @@ use App\Core\GroupLogo;
 $groupId = (int) $group['id'];
 
 $ordineMembri = Ordinamento::daRichiesta([
-    'nome' => ['full_name', Ordinamento::TESTO],
+    'nome' => ['full_name', Ordinamento::TESTO, 'email'],
     'email' => ['email', Ordinamento::TESTO],
     'dal' => ['joined_at', Ordinamento::DATA],
 ]);

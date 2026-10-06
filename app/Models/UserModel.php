@@ -83,7 +83,7 @@ class UserModel
              LEFT JOIN assistant_tutors at ON at.assistant_id = u.id
              LEFT JOIN users t ON t.id = at.tutor_id
              GROUP BY u.id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         )->fetchAll();
     }
 
@@ -105,7 +105,7 @@ class UserModel
              LEFT JOIN assistant_tutors at ON at.assistant_id = u.id
              LEFT JOIN users t ON t.id = at.tutor_id
              GROUP BY u.id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         )->fetchAll();
     }
 
@@ -123,7 +123,7 @@ class UserModel
         $placeholders = implode(',', array_fill(0, count($roles), '?'));
         $stmt = Database::connection()->prepare(
             'SELECT id, email, full_name, role, is_active
-             FROM users WHERE role IN (' . $placeholders . ') ORDER BY full_name'
+             FROM users WHERE role IN (' . $placeholders . ') ORDER BY full_name, email'
         );
         $stmt->execute(array_values($roles));
 
@@ -140,7 +140,7 @@ class UserModel
              FROM assistant_tutors at
              INNER JOIN users u ON u.id = at.assistant_id AND u.role = \'assistente\'
              WHERE at.tutor_id = :tutor_id
-             ORDER BY u.full_name'
+             ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['tutor_id' => $tutorId]);
 
@@ -530,7 +530,7 @@ class UserModel
         return Database::connection()->query(
             "SELECT id, email, full_name FROM users
              WHERE role IN ('admin','tutor') AND is_active = 1
-             ORDER BY full_name"
+             ORDER BY full_name, email"
         )->fetchAll();
     }
 }

@@ -10,7 +10,7 @@ use App\Core\Ordinamento;
 /** @var array $rows */
 
 $ordine = Ordinamento::daRichiesta([
-    'studente' => ['full_name', Ordinamento::TESTO],
+    'studente' => ['full_name', Ordinamento::TESTO, 'email'],
     'corso' => ['course_title', Ordinamento::TESTO],
     // Chi non e' iscritto a quel corso non ha una percentuale: quelle
     // righe finiscono in fondo in tutti e due i versi.

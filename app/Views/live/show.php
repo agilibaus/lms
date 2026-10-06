@@ -35,7 +35,7 @@ $participants = array_map(
 );
 
 $ordine = Ordinamento::daRichiesta([
-    'partecipante' => ['full_name', Ordinamento::TESTO],
+    'partecipante' => ['full_name', Ordinamento::TESTO, 'email'],
     'ingresso' => ['ingresso', Ordinamento::DATA],
     'origine' => ['origine', Ordinamento::TESTO],
 ]);

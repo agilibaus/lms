@@ -202,6 +202,58 @@ check(
 );
 
 // ---------------------------------------------------------------
+// Lo spareggio
+// ---------------------------------------------------------------
+
+echo PHP_EOL . 'Lo spareggio' . PHP_EOL;
+
+// Due omonimi, come nel database di Elena, che arrivano dal database
+// nell'ordine «sbagliato» rispetto all'email: e' proprio il caso in cui la
+// sola stabilita' li lascerebbe come sono.
+$omonimi = [
+    ['full_name' => 'Elena Mazzoleni', 'email' => 'info@movimente.it', 'score' => 1],
+    ['full_name' => 'Bruno', 'email' => 'bruno@prova.it', 'score' => 1],
+    ['full_name' => 'Elena Mazzoleni', 'email' => 'elena@prova.it', 'score' => 1],
+];
+
+$conSpareggio = static function (array $parametri): Ordinamento {
+    return Ordinamento::daRichiesta([
+        'nome' => ['full_name', Ordinamento::TESTO, 'email'],
+        'punti' => ['score', Ordinamento::NUMERO],
+    ], $parametri);
+};
+
+check(
+    'a parita\' di nome decide l\'email',
+    $valori($conSpareggio(['ordina' => 'nome'])->applica($omonimi), 'email')
+        === ['bruno@prova.it', 'elena@prova.it', 'info@movimente.it'],
+    'senza, due omonimi restano nell\'ordine in cui li manda il database'
+);
+
+// Qui gli omonimi arrivano nell'ordine opposto: con un ordine di partenza
+// solo, la stabilita' darebbe ragione per caso a uno dei due versi, e la
+// prova passerebbe anche togliendo lo spareggio. Verificato.
+check(
+    'invertendo il verso si inverte anche lo spareggio',
+    $valori($conSpareggio(['ordina' => 'nome', 'verso' => 'desc'])->applica(array_reverse($omonimi)), 'email')
+        === ['info@movimente.it', 'elena@prova.it', 'bruno@prova.it'],
+    'la colonna invertita deve leggersi al contrario tutta intera'
+);
+
+check(
+    'lo spareggio non scavalca il primo campo',
+    $valori($conSpareggio(['ordina' => 'nome'])->applica($omonimi), 'full_name')
+        === ['Bruno', 'Elena Mazzoleni', 'Elena Mazzoleni'],
+    '«bruno@» viene prima di «elena@», ma e\' il nome a decidere'
+);
+
+check(
+    'una colonna senza spareggio resta stabile come prima',
+    $valori($conSpareggio(['ordina' => 'punti'])->applica($omonimi), 'email')
+        === ['info@movimente.it', 'bruno@prova.it', 'elena@prova.it']
+);
+
+// ---------------------------------------------------------------
 // L'intestazione
 // ---------------------------------------------------------------
 

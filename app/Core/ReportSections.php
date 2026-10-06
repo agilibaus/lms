@@ -158,7 +158,7 @@ class ReportSections
      * una colonna sui dati di un'altra — un difetto che non si vede, perche'
      * la pagina resta piena di numeri plausibili.
      *
-     * @return array<string, array{0: string, 1: string}> chiave => [campo, tipo]
+     * @return array<string, array{0: string, 1: string, 2?: string}> chiave => [campo, tipo, spareggio]
      */
     public static function ordinabili(string $chiave): array
     {
@@ -173,7 +173,9 @@ class ReportSections
 
         foreach ($tutte[$chiave] ?? [] as $colonna) {
             if ($colonna['chiave'] !== null && $colonna['campo'] !== null) {
-                $mappa[$colonna['chiave']] = [$colonna['campo'], $colonna['tipo']];
+                $mappa[$colonna['chiave']] = $colonna['spareggio'] === null
+                    ? [$colonna['campo'], $colonna['tipo']]
+                    : [$colonna['campo'], $colonna['tipo'], $colonna['spareggio']];
             }
         }
 
