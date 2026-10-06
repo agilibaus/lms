@@ -425,6 +425,20 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 html.includes(fotoB) ? ['la pagina carica ' + fotoB] : []
             );
 
+
+            // La presentazione (06/10): quella del tutor del gruppo si legge,
+            // quella dello studente di B, che con A non ha nessun gruppo, no.
+            // Nel testo intero, popover chiusi compresi: chiusi non si vedono,
+            // ma stanno nell'HTML, ed e' l'HTML che arriva al browser.
+            check(
+                'studente → nella pagina del gruppo c\'è la presentazione del tutor',
+                html.includes('Presentazione del tutor del mondo A.')
+            );
+            check(
+                'studente → nella pagina del gruppo non c\'è la presentazione dello studente di B',
+                !html.includes('Presentazione dello studente del mondo B')
+            );
+
             await ctx.close();
         }
 

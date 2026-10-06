@@ -2554,6 +2554,14 @@ body.has-focus-video {
     max-width: 520px;
 }
 
+/* Un campo con il contatore sopra (la presentazione del profilo) sta in un
+   contenitore, e il contatore si allinea al bordo destro del contenitore:
+   il contenitore deve fermarsi dove si ferma il campo, o su un computer il
+   numero finisce a mezza pagina di distanza. */
+.form .quiz-open-wrap {
+    max-width: 520px;
+}
+
 .form-inline {
     display: flex;
     flex-wrap: wrap;
@@ -4337,5 +4345,192 @@ fieldset.checkbox-group legend {
     .usa-cerchio .persona-lato-sotto .persona-nome,
     .usa-cerchio .persona-tutor .persona-nome {
         top: calc(100% + 0.4rem);
+    }
+}
+
+/* ---------- La presentazione nella pagina del gruppo ----------
+
+   Chi ha scritto una presentazione e' un pulsante (`.persona-apri`) che
+   apre una scheda sopra la pagina (`.presentazione`, un popover). Il
+   pulsante non deve cambiare niente di come la persona appare: stessa
+   colonna nella griglia, stesso quadrato nel cerchio. */
+
+.persona-apri {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.persona-apri:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 4px;
+}
+
+.persona-apri:hover .persona-nome {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.persona-foto-cornice {
+    position: relative;
+    display: block;
+}
+
+/* Il segno di chi ha una presentazione: un fumetto bianco col bordo,
+   sull'angolo in basso a destra della foto. E' la forma a dirlo, non il
+   colore, e si vede uguale su una foto scura, su una chiara e sulle
+   iniziali. Il disegno e' una maschera CSS, cosi' prende il colore del
+   testo e cambia con la tavolozza. */
+.persona-fumetto {
+    position: absolute;
+    right: -0.15rem;
+    bottom: -0.15rem;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+}
+
+.persona-fumetto::before {
+    content: "";
+    position: absolute;
+    inset: 0.25rem;
+    background: var(--color-text);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 2.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H6.5L3 14.5v-3H2a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 2.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H6.5L3 14.5v-3H2a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+@container gruppo (min-width: 52rem) {
+    /* Nel cerchio il pulsante e' il quadrato della foto; il nome esce di
+       lato come prima, perche' e' posizionato rispetto alla voce. */
+    .usa-cerchio .persona-apri {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+/* La scheda. Dove il browser conosce i popover, la scheda e' chiusa finche'
+   non la si apre, e il browser la nasconde da se'. **Nessun `display`
+   sulla scheda chiusa**: batterebbe la regola con cui il browser la tiene
+   nascosta, come gia' successo con `hidden` e con i `details` (§5 del
+   promemoria). Il `display` si da' solo a `:popover-open`.
+
+   Dove i popover non ci sono, le schede restano nella pagina, una sotto
+   l'altra dopo i partecipanti: e' il ripiego, e le regole qui sotto fuori
+   da `@supports` lo fanno sembrare un elenco ordinato e non un errore. */
+
+.presentazioni {
+    margin-top: 2rem;
+}
+
+.presentazione {
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.2rem 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.presentazione-testa {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.presentazione-testa .persona-foto {
+    width: 48px;
+    height: 48px;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.presentazione-testa h2 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 1.1rem;
+    overflow-wrap: anywhere;
+}
+
+.presentazione-testo {
+    margin: 0;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.presentazione-chiudi {
+    display: none;
+}
+
+@supports selector(:popover-open) {
+    .presentazioni {
+        margin-top: 0;
+    }
+
+    .presentazione:popover-open {
+        display: block;
+        box-sizing: border-box;
+        width: min(32rem, calc(100vw - 2rem));
+        max-height: min(80vh, 40rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        margin: auto;
+        box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
+    }
+
+    .presentazione::backdrop {
+        background: rgb(0 0 0 / 0.35);
+    }
+
+    .presentazione-chiudi {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 2.25rem;
+        height: 2.25rem;
+        padding: 0;
+        border: 1px solid var(--color-border);
+        border-radius: 50%;
+        background: var(--color-surface);
+        color: var(--color-text);
+        font-size: 1.3rem;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .presentazione-chiudi:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    /* Sul telefono la scheda sale dal fondo e prende tutta la larghezza:
+       si legge col pollice e si chiude toccando sopra. Qui la soglia e'
+       sulla finestra, non sul contenitore: la scheda sta nello strato in
+       cima alla pagina e la sua misura e' quella dello schermo. */
+    @media (max-width: 768px) {
+        .presentazione:popover-open {
+            width: 100%;
+            max-width: none;
+            max-height: 85vh;
+            margin: auto 0 0;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            border-bottom: 0;
+            padding-bottom: calc(1.2rem + env(safe-area-inset-bottom, 0px));
+        }
     }
 }

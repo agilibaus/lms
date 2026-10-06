@@ -868,7 +868,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 1.600 controlli su 60 pagine, a tre larghezze (il numero dipende dai dati)
-node tests/permessi.js              # 137 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi e le foto
+node tests/permessi.js              # 139 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
@@ -1560,8 +1560,18 @@ porta al profilo; chi non ha ancora caricato nulla vede l'iniziale del proprio n
 compagni di gruppo e il tutor del gruppo. L'assistente no. Per tutti gli altri l'indirizzo
 risponde 404 come per una foto che non c'è, così non si può scoprire chi l'ha caricata. Fino al
 06/10 bastava aver fatto accesso, e con un numero a caso nell'indirizzo si vedeva la foto di
-chiunque. Sotto il caricamento, nel profilo, un avviso dice che la foto è facoltativa e dove
-comparirà: la frase e la regola vanno cambiate insieme.
+chiunque. Sotto il caricamento, nel profilo, un avviso dice che foto e presentazione sono
+facoltative e dove compariranno: la frase e la regola vanno cambiate insieme.
+
+### La presentazione
+
+Il campo **Presentazione** del profilo è facoltativo e lungo al massimo **1.000 caratteri**
+(`ProfileController::MAX_BIO_CHARS`; erano 2.000 fino al 06/10). Il limite è doppio, come per
+le risposte aperte dei questionari: `maxlength` nel campo e il taglio sul server. Sopra il
+campo, a destra, c'è lo stesso contatore che scala delle risposte aperte, con lo stesso script
+(`quiz-open-count.js`): il numero di partenza lo scrive il server contando il testo già
+salvato, così senza JavaScript il contatore resta fermo ma dice il vero. La presentazione la
+vedono le stesse persone che vedono la foto: i compagni di gruppo, il tutor e l'admin.
 
 ### La pagina del gruppo
 
@@ -1580,6 +1590,23 @@ senza database, ed è provata da `tests/cerchio_test.php`.
 
 La pagina la aprono i partecipanti, il tutor del gruppo e l'amministratore — la stessa regola
 delle foto, nella stessa classe.
+
+**La presentazione si apre sopra la pagina.** Chi ne ha scritta una è un pulsante — foto e
+nome insieme — con un piccolo fumetto sull'angolo della foto (la forma, non un colore).
+Toccandolo si apre una scheda con foto, nome e testo, che si chiude con la ✕, con Esc o
+toccando fuori; il cerchio non si sposta. Su computer la scheda è centrata, sul telefono sale
+dal fondo e occupa tutta la larghezza; un testo lungo scorre dentro la scheda.
+
+- **Niente JavaScript**: la scheda è un `popover` aperto dall'attributo `popovertarget`, e il
+  browser gestisce da sé Esc, il clic fuori e il ritorno del fuoco.
+- **Il ripiego è naturale**: le schede stanno nell'HTML dopo il cerchio, non dentro. Un browser
+  che non conosce i popover le mostra come un elenco di presentazioni sotto i partecipanti.
+- **Nessun `display` sulla scheda chiusa**: batterebbe la regola con cui il browser la tiene
+  nascosta (la trappola di `hidden` e dei `details`), e le schede chiuse coprirebbero la
+  pagina. Il `display` si dà solo a `:popover-open`. `accessibilita.js` apre ogni scheda della
+  pagina seminata e controlla che da chiusa non occupi spazio, da aperta stia dentro lo
+  schermo senza scorrere in orizzontale, che la ✕ sia un bersaglio da 24 px e che Esc la chiuda
+  riportando il fuoco sulla persona.
 
 ## Registrazione e iscrizione degli studenti
 

@@ -69,17 +69,17 @@ class GroupModel
     }
 
     /**
-     * I partecipanti come li vede la pagina del gruppo: nome e foto, niente
-     * altro. **Senza email**, per decisione di Elena: la pagina e' aperta ai
-     * compagni, e qui si sceglie che cosa esce dal database invece di
-     * fidarsi che la vista non lo stampi.
+     * I partecipanti come li vede la pagina del gruppo: nome, foto e
+     * presentazione, niente altro. **Senza email**, per decisione di Elena:
+     * la pagina e' aperta ai compagni, e qui si sceglie che cosa esce dal
+     * database invece di fidarsi che la vista non lo stampi.
      *
-     * @return list<array{id: int, full_name: string, avatar_path: ?string}>
+     * @return list<array{id: int, full_name: string, avatar_path: ?string, bio: ?string}>
      */
     public static function peopleForPage(int $groupId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT u.id, u.full_name, u.avatar_path
+            'SELECT u.id, u.full_name, u.avatar_path, u.bio
              FROM group_members gm
              INNER JOIN users u ON u.id = gm.user_id
              WHERE gm.group_id = :group_id
@@ -91,14 +91,14 @@ class GroupModel
     }
 
     /**
-     * Il tutor del gruppo, con gli stessi tre campi dei partecipanti.
+     * Il tutor del gruppo, con gli stessi campi dei partecipanti.
      *
-     * @return array{id: int, full_name: string, avatar_path: ?string}|null
+     * @return array{id: int, full_name: string, avatar_path: ?string, bio: ?string}|null
      */
     public static function tutorForPage(int $groupId): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT u.id, u.full_name, u.avatar_path
+            'SELECT u.id, u.full_name, u.avatar_path, u.bio
              FROM `groups` g
              INNER JOIN users u ON u.id = g.tutor_id
              WHERE g.id = :group_id LIMIT 1'

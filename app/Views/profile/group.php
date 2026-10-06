@@ -26,6 +26,39 @@ $foto = static function (array $persona): string {
         . htmlspecialchars(CourseCover::initials((string) $persona['full_name']))
         . '</span>';
 };
+
+/*
+ * LA PRESENTAZIONE (06/10, chiesto da Elena). Chi l'ha scritta diventa un
+ * pulsante — foto e nome insieme — che apre una scheda sopra la pagina con
+ * l'attributo `popovertarget`: niente JavaScript, e il browser gestisce da
+ * se' Esc, il clic fuori e il ritorno del fuoco. Il cerchio non si sposta.
+ *
+ * Le schede stanno **dopo** l'elenco, non dentro le voci: un browser che
+ * non conosce i popover le mostra come un elenco di presentazioni sotto i
+ * partecipanti, ed e' il ripiego. Dentro le voci rovinerebbero il cerchio.
+ *
+ * Chi ne ha una lo dice un segno a forma di fumetto sull'angolo della foto
+ * — la forma, non un colore (§4) — e, per un lettore di schermo, il testo
+ * nascosto «leggi la presentazione» nel nome del pulsante.
+ */
+$haPresentazione = static fn (array $persona): bool => trim((string) ($persona['bio'] ?? '')) !== '';
+
+$voce = static function (array $persona, string $nome) use ($foto, $haPresentazione): string {
+    if (!$haPresentazione($persona)) {
+        return $foto($persona) . $nome;
+    }
+
+    return '<button type="button" class="persona-apri" popovertarget="presentazione-' . (int) $persona['id'] . '">'
+        . '<span class="persona-foto-cornice">' . $foto($persona)
+        . '<span class="persona-fumetto" aria-hidden="true"></span></span>'
+        . $nome
+        . '</button>';
+};
+
+$conPresentazione = array_values(array_filter(
+    array_merge($tutor !== null ? [$tutor] : [], $people),
+    $haPresentazione
+));
 ?>
 <div class="page-header">
     <a href="/profilo" class="back-link">&larr; Profilo</a>
@@ -56,11 +89,10 @@ $foto = static function (array $persona): string {
         <ul class="gruppo-cerchio<?= GroupCircle::usaCerchio($quanti) ? ' usa-cerchio' : '' ?>" role="list">
             <?php if ($tutor !== null): ?>
                 <li class="persona persona-tutor">
-                    <?= $foto($tutor) ?>
-                    <span class="persona-nome">
-                        <?= htmlspecialchars((string) $tutor['full_name']) ?>
-                        <span class="persona-ruolo">tutor</span>
-                    </span>
+                    <?= $voce($tutor, '<span class="persona-nome">'
+                        . htmlspecialchars((string) $tutor['full_name'])
+                        . ($haPresentazione($tutor) ? '<span class="sr-only">, leggi la presentazione</span>' : '')
+                        . '<span class="persona-ruolo">tutor</span></span>') ?>
                 </li>
             <?php endif; ?>
 
@@ -68,10 +100,36 @@ $foto = static function (array $persona): string {
                 <?php $pos = $posizioni[$i]; ?>
                 <li class="persona persona-lato-<?= $pos['lato'] ?>"
                     style="--x: <?= sprintf('%.2F', $pos['x']) ?>; --y: <?= sprintf('%.2F', $pos['y']) ?>;">
-                    <?= $foto($persona) ?>
-                    <span class="persona-nome"><?= htmlspecialchars((string) $persona['full_name']) ?></span>
+                    <?= $voce($persona, '<span class="persona-nome">'
+                        . htmlspecialchars((string) $persona['full_name'])
+                        . ($haPresentazione($persona) ? '<span class="sr-only">, leggi la presentazione</span>' : '')
+                        . '</span>') ?>
                 </li>
             <?php endforeach; ?>
         </ul>
     </div>
+
+    <?php if ($conPresentazione !== []): ?>
+        <div class="presentazioni">
+            <?php foreach ($conPresentazione as $persona): ?>
+                <?php $pid = 'presentazione-' . (int) $persona['id']; ?>
+                <section class="presentazione" id="<?= $pid ?>" popover aria-labelledby="<?= $pid ?>-nome">
+                    <div class="presentazione-testa">
+                        <?= $foto($persona) ?>
+                        <h2 id="<?= $pid ?>-nome"><?= htmlspecialchars((string) $persona['full_name']) ?></h2>
+                        <?php /* Il comando per chiudere c'e' solo dove il
+                                 popover funziona: nel ripiego la scheda e'
+                                 una sezione della pagina, e non c'e' niente
+                                 da chiudere. */ ?>
+                        <button type="button" class="presentazione-chiudi"
+                                popovertarget="<?= $pid ?>" popovertargetaction="hide">
+                            <span aria-hidden="true">&times;</span>
+                            <span class="sr-only">Chiudi</span>
+                        </button>
+                    </div>
+                    <p class="presentazione-testo"><?= nl2br(htmlspecialchars(trim((string) $persona['bio'])), false) ?></p>
+                </section>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>

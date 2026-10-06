@@ -650,6 +650,85 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
  */
 const EXTRA = {
     /*
+     * La presentazione nella pagina del gruppo (06/10): una scheda che si
+     * apre sopra la pagina. Tutti gli altri controlli guardano la pagina
+     * ferma, e una scheda chiusa non la vede nessuno — e' la lezione della
+     * 0089. Qui le si apre tutte, una per una, alla larghezza del giro.
+     *
+     * Che cosa si guarda:
+     *   - chiuse, non occupano spazio: e' la trappola di §5, un `display`
+     *     scritto sulla scheda batterebbe la regola con cui il browser la
+     *     tiene nascosta, e le presentazioni comparirebbero tutte sotto il
+     *     cerchio;
+     *   - aperta, sta tutta dentro lo schermo e non scorre in orizzontale —
+     *     la semina ne ha una da mille caratteri con una parola senza spazi;
+     *   - il comando per chiuderla e' un bersaglio da 24 px;
+     *   - Esc la chiude e il fuoco torna sulla persona da cui si e' partiti.
+     */
+    'Pagina del gruppo (semina)': async (page, nome) => {
+        const ids = await page.$$eval('.persona-apri', (bs) => bs.map((b) => b.getAttribute('popovertarget')));
+
+        check(nome + ': chi ha una presentazione è un pulsante che la apre', ids.length >= 3,
+            ['pulsanti trovati: ' + ids.length + ' (la semina ne prepara tre)']);
+
+        const altezzeChiuse = await page.$$eval('.presentazione', (ss) => ss.map((s) => s.getBoundingClientRect().height));
+        check(nome + ': le presentazioni chiuse non occupano spazio',
+            altezzeChiuse.length > 0 && altezzeChiuse.every((h) => h === 0),
+            ['altezze: ' + altezzeChiuse.join(', ')]);
+
+        const problemi = { apre: [], fuori: [], scorre: [], chiudi: [], esc: [], fuoco: [] };
+
+        for (const id of ids) {
+            // Con un timeout breve e senza fermare il giro: se qualcosa copre
+            // il pulsante — una scheda rimasta aperta, o le schede chiuse
+            // che il CSS rende visibili sopra la pagina — e' un rilievo, non
+            // un motivo per interrompere tutti gli altri controlli.
+            try {
+                await page.click('.persona-apri[popovertarget="' + id + '"]', { timeout: 3000 });
+            } catch (e) {
+                problemi.apre.push(id + ': ' + String(e.message).split('\n')[0]);
+                continue;
+            }
+
+            const r = await page.evaluate((id) => {
+                const s = document.getElementById(id);
+                const b = s.getBoundingClientRect();
+                const c = s.querySelector('.presentazione-chiudi').getBoundingClientRect();
+
+                return {
+                    aperta: s.matches(':popover-open'),
+                    dentro: b.left >= 0 && b.top >= 0
+                        && b.right <= window.innerWidth + 0.5 && b.bottom <= window.innerHeight + 0.5,
+                    misure: [b.left, b.top, b.right, b.bottom].map(Math.round).join(','),
+                    scorre: s.scrollWidth - s.clientWidth,
+                    chiudi: Math.min(c.width, c.height),
+                };
+            }, id);
+
+            if (!r.aperta || !r.dentro) problemi.fuori.push(id + ' [' + r.misure + ']');
+            if (r.scorre > 0) problemi.scorre.push(id + ' di ' + r.scorre + ' px');
+            if (r.chiudi < 24) problemi.chiudi.push(id + ': ' + r.chiudi + ' px');
+
+            await page.keyboard.press('Escape');
+
+            const dopo = await page.evaluate((id) => ({
+                aperta: document.getElementById(id).matches(':popover-open'),
+                fuoco: document.activeElement ? document.activeElement.getAttribute('popovertarget') : null,
+            }), id);
+
+            if (dopo.aperta) problemi.esc.push(id);
+            if (dopo.fuoco !== id) problemi.fuoco.push(id + ' → ' + dopo.fuoco);
+        }
+
+        check(nome + ': ogni persona si può toccare per aprire la presentazione', problemi.apre.length === 0, problemi.apre);
+        check(nome + ': ogni presentazione aperta sta dentro lo schermo', problemi.fuori.length === 0, problemi.fuori);
+        check(nome + ': nessuna presentazione aperta scorre in orizzontale', problemi.scorre.length === 0, problemi.scorre);
+        check(nome + ': il comando per chiudere è almeno 24 px', problemi.chiudi.length === 0, problemi.chiudi);
+        check(nome + ': Esc chiude la presentazione', problemi.esc.length === 0, problemi.esc);
+        check(nome + ': chiusa la presentazione, il fuoco torna sulla persona', problemi.fuoco.length === 0, problemi.fuoco);
+    },
+
+    /*
      * Il contatore della risposta aperta: dove sta, e che non parli.
      *
      * Deve stare **sopra** il campo e allineato al suo bordo destro — e'
@@ -671,7 +750,9 @@ const EXTRA = {
                 return null;
             }
 
-            const contatore = document.getElementById(campo.getAttribute('aria-describedby') || '');
+            // Il primo degli id: nel profilo il campo e' descritto anche dal
+            // testo di aiuto, e la lista intera non e' un id.
+            const contatore = document.getElementById((campo.getAttribute('aria-describedby') || '').split(/\s+/)[0]);
 
             if (contatore === null) {
                 return { collegato: false };
@@ -833,6 +914,10 @@ const EXTRA = {
         );
     },
 };
+
+// Il campo della presentazione nel profilo ha lo stesso contatore delle
+// risposte aperte (06/10), e si guarda con lo stesso controllo.
+EXTRA['Profilo'] = EXTRA['Quiz da svolgere'];
 
 /**
  * Nessuno scorrimento orizzontale, e quando c'e' il nome dell'elemento che

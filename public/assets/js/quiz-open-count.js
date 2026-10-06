@@ -28,7 +28,10 @@
     }
 
     function collega(campo) {
-        var contatore = document.getElementById(campo.getAttribute('aria-describedby'));
+        // Il contatore e' il **primo** degli id in `aria-describedby`: il
+        // campo della presentazione nel profilo ha anche il testo di aiuto,
+        // e la lista intera non e' un id.
+        var contatore = document.getElementById(campo.getAttribute('aria-describedby').split(/\s+/)[0]);
 
         if (contatore === null) {
             return;

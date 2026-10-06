@@ -383,6 +383,15 @@ fotoDiProva($pdo, $studenteA, [79, 114, 86]);
 fotoDiProva($pdo, $studenteB, [160, 90, 60]);
 fotoDiProva($pdo, $tutorA, [70, 90, 140]);
 
+// Le presentazioni (06/10). Il tutor e lo studente di A ne hanno una, e una
+// la ha lo studente di B: e' quella che la pagina del gruppo di A non deve
+// mostrare. Le frasi sono riconoscibili apposta, perche' `permessi.js` le
+// cerca nel testo della pagina.
+$presentazione = $pdo->prepare('UPDATE users SET bio = :b WHERE id = :id');
+$presentazione->execute(['id' => $tutorA, 'b' => "Presentazione del tutor del mondo A.\nSeconda riga, dopo un a capo."]);
+$presentazione->execute(['id' => $studenteA, 'b' => 'Presentazione dello studente del mondo A.']);
+$presentazione->execute(['id' => $studenteB, 'b' => 'Presentazione dello studente del mondo B, che A non deve leggere.']);
+
 // Un gruppo con abbastanza persone da fare un cerchio, per i controlli di
 // accessibilita': con il solo studente del mondo A ci sarebbe un punto, non
 // un cerchio, e i nomi sui due fianchi non si vedrebbero mai. Otto
@@ -415,6 +424,16 @@ for ($n = 1; $n <= 7; $n++) {
     $pdo->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')
         ->execute(['g' => $gruppoCerchio, 'u' => utente($pdo, 'compagno' . $n . '@test.it')]);
 }
+
+// La compagna dal nome lungo ha anche la presentazione piu' lunga possibile,
+// mille caratteri e una parola senza spazi: e' lei che deve stare nella
+// scheda senza farla uscire dallo schermo, sul telefono come su computer.
+$lunga = 'Unaparolalunghissimasenzaspazichenonsapreidovemandareacapo'
+    . str_repeat(' Una frase qualunque per arrivare al limite.', 30);
+$presentazione->execute([
+    'id' => utente($pdo, 'compagno3@test.it'),
+    'b' => mb_substr($lunga, 0, 1000),
+]);
 
 echo json_encode([
     'utenti' => [

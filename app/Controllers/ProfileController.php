@@ -23,6 +23,18 @@ use App\Models\UserModel;
  */
 class ProfileController
 {
+    /**
+     * Quanto puo' essere lunga la presentazione: 1.000 caratteri, deciso da
+     * Elena il 06/10 (prima erano 2.000). Da quando la presentazione compare
+     * nella pagina del gruppo, la si legge in una scheda sopra la pagina, e
+     * mille caratteri sono gia' una schermata intera di telefono.
+     *
+     * Il limite e' doppio come per le risposte aperte dei questionari:
+     * `maxlength` nel campo e il taglio qui, perche' un `maxlength` si toglie
+     * dagli strumenti per sviluppatori.
+     */
+    public const MAX_BIO_CHARS = 1000;
+
     public function show(array $params = []): void
     {
         Auth::requireLogin();
@@ -59,7 +71,7 @@ class ProfileController
         UserModel::updateProfile(
             $userId,
             mb_substr($fullName, 0, 150),
-            $this->optional('bio', 2000),
+            $this->optional('bio', self::MAX_BIO_CHARS),
             $this->optional('phone', 40),
             $this->optional('city', 120)
         );

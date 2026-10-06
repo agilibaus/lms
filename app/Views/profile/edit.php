@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Controllers\ProfileController;
 use App\Core\Csrf;
 use App\Core\GroupLogo;
 use App\Core\Welcome;
@@ -51,8 +52,8 @@ $hasAvatar = !empty($user['avatar_path']);
                      perimetro di `GroupPeers`, che e' la regola che lo fa
                      rispettare: se cambia una, va cambiata l'altra. */ ?>
             <p class="form-hint">
-                La foto è facoltativa. Se la carichi, comparirà nella pagina dei tuoi gruppi, dove la
-                vedono i compagni di gruppo, il tutor e l'amministratore.
+                La foto e la presentazione sono facoltative. Se le inserisci, compariranno nella pagina
+                dei tuoi gruppi, dove le vedono i compagni di gruppo, il tutor e l'amministratore.
             </p>
 
             <?php if ($hasAvatar): ?>
@@ -90,9 +91,34 @@ $hasAvatar = !empty($user['avatar_path']);
         <input type="text" id="phone" name="phone" maxlength="40"
                value="<?= htmlspecialchars((string) ($user['phone'] ?? '')) ?>">
 
+        <?php
+        /*
+         * Il contatore e' quello delle risposte aperte dei questionari
+         * (patch 0108), con le stesse classi e lo stesso script: sopra il
+         * campo, a destra, scala mentre si scrive, letto da un lettore di
+         * schermo come descrizione del campo e non a ogni tasto. Le classi si
+         * chiamano `quiz-open-*` perche' e' li' che e' nato.
+         *
+         * Il numero di partenza lo scrive il server, contando quello che c'e'
+         * gia': senza JavaScript il contatore resta fermo, e qui il campo non
+         * parte vuoto come una risposta nuova — «1000 caratteri rimasti»
+         * sopra una presentazione gia' scritta sarebbe falso.
+         */
+        $bio = (string) ($user['bio'] ?? '');
+        $restano = max(0, ProfileController::MAX_BIO_CHARS - mb_strlen($bio));
+        ?>
         <label for="bio">Presentazione</label>
-        <textarea id="bio" name="bio" rows="5" maxlength="2000"><?= htmlspecialchars((string) ($user['bio'] ?? '')) ?></textarea>
-        <p class="form-hint">Due righe su di te: da dove arrivi, perché segui questi corsi. Facoltativa.</p>
+        <div class="quiz-open-wrap">
+            <span class="quiz-open-count" id="bio-resta" data-max="<?= ProfileController::MAX_BIO_CHARS ?>">
+                <?= $restano ?> <?= $restano === 1 ? 'carattere rimasto' : 'caratteri rimasti' ?>
+            </span>
+            <textarea id="bio" name="bio" rows="5" maxlength="<?= ProfileController::MAX_BIO_CHARS ?>"
+                      class="quiz-open-answer" aria-describedby="bio-resta bio-aiuto"><?= htmlspecialchars($bio) ?></textarea>
+        </div>
+        <p class="form-hint" id="bio-aiuto">
+            Due righe su di te: da dove arrivi, perché segui questi corsi. Facoltativa: se la scrivi, i
+            compagni dei tuoi gruppi la leggono nella pagina del gruppo.
+        </p>
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva</button>
@@ -151,3 +177,5 @@ $hasAvatar = !empty($user['avatar_path']);
         </ul>
     </section>
 <?php endif; ?>
+
+<script src="/assets/js/quiz-open-count.js"></script>
