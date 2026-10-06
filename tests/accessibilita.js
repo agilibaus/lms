@@ -563,7 +563,8 @@ function semina() {
     return JSON.parse(uscita);
 }
 
-const SEMINATI = semina().A;
+const SEMINA = semina();
+const SEMINATI = SEMINA.A;
 
 PAGINE_INTERNE.push(
     ['/lessons/' + SEMINATI.lezione, 'Lezione con materiale (semina)'],
@@ -571,6 +572,9 @@ PAGINE_INTERNE.push(
     ['/questions/' + SEMINATI.domanda_vero_falso + '/edit', 'Modifica domanda vero/falso (semina)'],
     ['/admin/groups/' + SEMINATI.gruppo + '/edit', 'Modifica gruppo con corso (semina)'],
     ['/reports/groups/' + SEMINATI.gruppo, 'Report per gruppo con certificato (semina)'],
+    // Il gruppo da otto con il tutor al centro: e' il solo che fa un cerchio
+    // vero, con nomi sui due fianchi, in alto e in basso, e uno lungo.
+    ['/gruppi/' + SEMINA.gruppo_cerchio, 'Pagina del gruppo (semina)'],
 );
 
 async function entra(page) {

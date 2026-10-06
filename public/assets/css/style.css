@@ -2932,7 +2932,8 @@ body.has-focus-video {
 
 /* Il nome della voce, quando e' un collegamento, e' un comando a se' accanto
    a «Rimuovi»: va portato alla misura di un bersaglio, come quello. */
-.assign-list li > a {
+.assign-list li > a,
+.assign-list .assign-info > a {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
@@ -4196,4 +4197,145 @@ fieldset.checkbox-group legend {
     background: var(--color-primary-soft);
     overflow-wrap: anywhere;
     user-select: all;
+}
+
+
+/* ==========================================================
+   La pagina di un gruppo: chi ne fa parte, con la foto
+   ==========================================================
+
+   Deciso da Elena il 06/10. Sul telefono una griglia di foto rotonde con
+   il nome sotto; su computer un cerchio con il tutor al centro e i nomi
+   verso l'esterno; oltre GroupCircle::MASSIMO partecipanti la griglia anche
+   su computer (la vista toglie `.usa-cerchio`).
+
+   **La griglia e' la regola, il cerchio l'eccezione.** Il cerchio si
+   accende con una query di contenitore, quindi sullo spazio che la pagina
+   ha davvero e non sulla larghezza dello schermo — come `.tabella-schede`.
+   Dove `@container` non e' supportato resta la griglia, ed e' voluto.
+
+   La soglia, 52 rem, e' il cerchio (30 rem) piu' un nome da 10 rem e il suo
+   distacco su ciascun lato: sotto, i nomi dei due fianchi uscirebbero. */
+
+.gruppo-persone {
+    container: gruppo / inline-size;
+}
+
+.gruppo-cerchio {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    gap: 1.4rem 0.75rem;
+}
+
+.persona {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    text-align: center;
+}
+
+/* Nella griglia il tutor sta da solo nella prima riga: e' lui il centro
+   anche qui, solo che sul telefono il centro e' l'inizio. */
+.persona-tutor {
+    grid-column: 1 / -1;
+}
+
+.persona-foto {
+    width: 64px;
+    height: 64px;
+    font-size: 1.35rem;
+}
+
+.persona-tutor .persona-foto {
+    width: 88px;
+    height: 88px;
+    font-size: 1.8rem;
+}
+
+.persona-nome {
+    font-size: 0.9rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.persona-ruolo {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+}
+
+@container gruppo (min-width: 52rem) {
+    .gruppo-cerchio.usa-cerchio {
+        display: block;
+        position: relative;
+        width: 30rem;
+        aspect-ratio: 1;
+        /* Sopra e sotto c'e' spazio per i nomi delle foto in alto e in
+           basso, che escono dal quadrato. Sopra di piu': un nome lungo va
+           a capo verso l'alto, e a 4,5 rem toccava il sottotitolo. */
+        margin: 6.5rem auto 4.5rem;
+    }
+
+    .usa-cerchio .persona {
+        position: absolute;
+        left: calc(var(--x) * 1%);
+        top: calc(var(--y) * 1%);
+        width: 64px;
+        height: 64px;
+        display: block;
+        transform: translate(-50%, -50%);
+    }
+
+    .usa-cerchio .persona-tutor {
+        left: 50%;
+        top: 50%;
+        width: 88px;
+        height: 88px;
+    }
+
+    /* Il nome esce dalla foto verso l'esterno: di fianco sui due lati,
+       sopra e sotto in cima e in fondo (GroupCircle::lato). */
+    .usa-cerchio .persona-nome {
+        position: absolute;
+        width: 10rem;
+    }
+
+    .usa-cerchio .persona-lato-destra .persona-nome {
+        left: calc(100% + 0.6rem);
+        top: 50%;
+        transform: translateY(-50%);
+        text-align: left;
+    }
+
+    .usa-cerchio .persona-lato-sinistra .persona-nome {
+        right: calc(100% + 0.6rem);
+        top: 50%;
+        transform: translateY(-50%);
+        text-align: right;
+    }
+
+    .usa-cerchio .persona-lato-sopra .persona-nome,
+    .usa-cerchio .persona-lato-sotto .persona-nome,
+    .usa-cerchio .persona-tutor .persona-nome {
+        width: 7rem;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+    }
+
+    .usa-cerchio .persona-lato-sopra .persona-nome {
+        bottom: calc(100% + 0.4rem);
+    }
+
+    .usa-cerchio .persona-lato-sotto .persona-nome,
+    .usa-cerchio .persona-tutor .persona-nome {
+        top: calc(100% + 0.4rem);
+    }
 }

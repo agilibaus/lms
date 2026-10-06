@@ -69,6 +69,47 @@ class GroupModel
     }
 
     /**
+     * I partecipanti come li vede la pagina del gruppo: nome e foto, niente
+     * altro. **Senza email**, per decisione di Elena: la pagina e' aperta ai
+     * compagni, e qui si sceglie che cosa esce dal database invece di
+     * fidarsi che la vista non lo stampi.
+     *
+     * @return list<array{id: int, full_name: string, avatar_path: ?string}>
+     */
+    public static function peopleForPage(int $groupId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.id, u.full_name, u.avatar_path
+             FROM group_members gm
+             INNER JOIN users u ON u.id = gm.user_id
+             WHERE gm.group_id = :group_id
+             ORDER BY u.full_name, u.id'
+        );
+        $stmt->execute(['group_id' => $groupId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Il tutor del gruppo, con gli stessi tre campi dei partecipanti.
+     *
+     * @return array{id: int, full_name: string, avatar_path: ?string}|null
+     */
+    public static function tutorForPage(int $groupId): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.id, u.full_name, u.avatar_path
+             FROM `groups` g
+             INNER JOIN users u ON u.id = g.tutor_id
+             WHERE g.id = :group_id LIMIT 1'
+        );
+        $stmt->execute(['group_id' => $groupId]);
+        $tutor = $stmt->fetch();
+
+        return $tutor ?: null;
+    }
+
+    /**
      * Corsi assegnati a un gruppo.
      */
     public static function courses(int $groupId): array

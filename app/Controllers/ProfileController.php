@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Auth\GroupPeers;
 use App\Core\AvatarImage;
 use App\Core\Mail\Mailer;
 use App\Core\PasswordPolicy;
@@ -122,6 +123,21 @@ class ProfileController
     public function avatar(array $params): void
     {
         Auth::requireLogin();
+
+        /*
+         * Chi puo' vedere la foto lo decide `GroupPeers`: la persona stessa,
+         * l'amministratore, e chi sta in un gruppo con lei (il tutor del
+         * gruppo compreso). Prima bastava aver fatto accesso, e scrivendo un
+         * numero a caso nell'indirizzo si vedeva la foto di chiunque.
+         *
+         * Il rifiuto risponde come una foto che non c'e', con la stessa
+         * frase: un 403 direbbe che quella persona una foto ce l'ha.
+         */
+        if (!GroupPeers::canSeeAvatar((int) Auth::id(), (int) $params['id'])) {
+            http_response_code(404);
+            echo 'Immagine non impostata.';
+            return;
+        }
 
         $user = UserModel::find((int) $params['id']);
         $path = $user['avatar_path'] ?? null;

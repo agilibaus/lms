@@ -46,6 +46,14 @@ $hasAvatar = !empty($user['avatar_path']);
                 JPG, PNG, GIF o WebP fino a <?= $maxAvatarMb ?>&nbsp;MB. Viene ritagliata quadrata al centro
                 e ridotta: non serve prepararla prima.
             </p>
+            <?php /* Chiesto da Elena il 06/10: chi carica la foto deve sapere
+                     prima dove andra' a finire. La frase dice esattamente il
+                     perimetro di `GroupPeers`, che e' la regola che lo fa
+                     rispettare: se cambia una, va cambiata l'altra. */ ?>
+            <p class="form-hint">
+                La foto è facoltativa. Se la carichi, comparirà nella pagina dei tuoi gruppi, dove la
+                vedono i compagni di gruppo, il tutor e l'amministratore.
+            </p>
 
             <?php if ($hasAvatar): ?>
                 <form action="/profilo/immagine/elimina" method="post"
@@ -130,7 +138,7 @@ $hasAvatar = !empty($user['avatar_path']);
                     <?php endif; ?>
 
                     <span class="assign-info">
-                        <?= htmlspecialchars((string) $group['name']) ?>
+                        <a href="/gruppi/<?= (int) $group['id'] ?>"><?= htmlspecialchars((string) $group['name']) ?></a>
                         <span class="cell-sub">
                             <?= $group['tutor_name'] !== null
                                 ? 'tutor: ' . htmlspecialchars((string) $group['tutor_name'])

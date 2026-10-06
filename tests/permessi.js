@@ -229,6 +229,18 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/live/' + A.incontro_chiuso, 'negato', 'incontro di un modulo non ancora aperto'],
             ['/lessons/' + A.lezione, 'consentito',
                 'controprova: il modulo aperto dello stesso corso resta aperto'],
+
+            // La pagina del gruppo e le foto (06/10, `GroupPeers`). Le foto
+            // esistono tutte sul disco (le mette la semina): un rifiuto qui
+            // e' della regola, non di un file che manca. La controprova e'
+            // dell'admin, piu' sotto.
+            ['/gruppi/' + A.gruppo, 'consentito', 'è il suo gruppo'],
+            ['/gruppi/' + B.gruppo, 'negato', 'gruppo di cui non fa parte'],
+            ['/utenti/' + d.utenti.studenteA + '/immagine', 'consentito', 'la propria foto'],
+            ['/utenti/' + d.utenti.tutorA + '/immagine', 'consentito',
+                'il tutor del suo gruppo: sta al centro del cerchio'],
+            ['/utenti/' + d.utenti.studenteB + '/immagine', 'negato',
+                'nessun gruppo in comune: prima bastava aver fatto accesso'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
@@ -254,6 +266,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 'il tutor prepara il modulo chiuso prima che si apra'],
             ['/live/' + A.incontro_chiuso, 'consentito',
                 'l\'incontro del modulo chiuso è suo da organizzare'],
+            ['/gruppi/' + A.gruppo, 'consentito', 'è il tutor del gruppo, anche se non ne è membro'],
+            ['/gruppi/' + B.gruppo, 'negato', 'gruppo di un collega'],
+            ['/utenti/' + d.utenti.studenteA + '/immagine', 'consentito', 'studente di un suo gruppo'],
+            ['/utenti/' + d.utenti.studenteB + '/immagine', 'negato', 'studente del gruppo di un collega'],
         ]],
 
         ['assist@test.it', 'assistente del tutor A', [
@@ -267,6 +283,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/users', 'negato', 'nessuna gestione utenti'],
             ['/admin/users/importa', 'negato', 'nemmeno importarli da un file'],
             ['/admin/courses', 'negato', 'nessuna gestione corsi'],
+            // Elena il 06/10: le foto le vedono admin, tutor e compagni.
+            // L'assistente no, anche dello studente del tutor che segue.
+            ['/utenti/' + d.utenti.studenteA + '/immagine', 'negato',
+                'l\'assistente non è fra chi vede le foto'],
+            ['/gruppi/' + A.gruppo, 'negato', 'né la pagina del gruppo'],
         ]],
 
         ['admin@test.it', 'amministratore', [
@@ -279,6 +300,9 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + A.lezione_chiusa, 'consentito', 'il rilascio non vale per l\'admin'],
             ['/materials/' + A.materiale_chiuso + '/download', 'consentito',
                 'il rilascio non vale per l\'admin, e il file di prova esiste'],
+            ['/gruppi/' + B.gruppo, 'consentito', 'l\'admin vede ogni gruppo'],
+            ['/utenti/' + d.utenti.studenteB + '/immagine', 'consentito',
+                'controprova: la foto di B esiste, quindi chi la rifiuta lo fa per la regola'],
         ]],
     ];
 
@@ -362,6 +386,47 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         // nessuno riesce piu' a usare la piattaforma; se non scatta per chi
         // deve, la funzione semplicemente non c'e'. Si prova con l'unico
         // utente che la semina lascia al primo accesso.
+
+        // --- la pagina del gruppo: che cosa c'è dentro --------------------
+        //
+        // La porta si apre allo studente del gruppo; qui si guarda dentro.
+        // Due cose decise da Elena: **nessuna email**, e nessuno che non
+        // faccia parte del gruppo. Lo studente di B non deve comparire
+        // nemmeno come nome.
+
+        console.log('\n--- la pagina del gruppo: che cosa c\'è dentro');
+
+        {
+            const { ctx, page } = await entra(browser, 'stud@test.it');
+            await page.goto(BASE + '/gruppi/' + d.gruppo_cerchio);
+            const html = await page.content();
+            const persone = await page.locator('.gruppo-cerchio .persona').count();
+
+            check(
+                'studente → la pagina del gruppo mostra il tutor e gli otto partecipanti',
+                persone === 9,
+                persone === 9 ? [] : ['trovate ' + persone + ' persone invece di 9']
+            );
+            // Nel testo, non nell'HTML intero: la barra laterale non c'entra,
+            // ma un `mailto:` o un `title` nascosto si', quindi l'HTML.
+            const email = (html.match(/[\w.+-]+@test\.it/g) || []);
+            check(
+                'studente → nella pagina del gruppo non c\'è nessuna email',
+                email.length === 0,
+                email.length === 0 ? [] : ['trovate: ' + [...new Set(email)].join(', ')]
+            );
+            // Per la foto e non per il nome: il nome di B, nel database di
+            // prova, e' pieno di virgolette e di `<tag>` e arriva trasformato.
+            // La foto di B esiste, quindi un elenco sbagliato la mostrerebbe.
+            const fotoB = '/utenti/' + d.utenti.studenteB + '/immagine';
+            check(
+                'studente → nella pagina del gruppo non c\'è lo studente del mondo B',
+                !html.includes(fotoB),
+                html.includes(fotoB) ? ['la pagina carica ' + fotoB] : []
+            );
+
+            await ctx.close();
+        }
 
         console.log('\n--- il video di benvenuto');
 

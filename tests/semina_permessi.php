@@ -350,6 +350,72 @@ $pdo->prepare('DELETE FROM assistant_tutors WHERE assistant_id = :a')->execute([
 $pdo->prepare('INSERT INTO assistant_tutors (assistant_id, tutor_id) VALUES (:a, :t)')
     ->execute(['a' => $assistente, 't' => $tutorA]);
 
+// --- le foto del profilo e la pagina del gruppo (06/10) --------------------
+//
+// Chi vede la foto di chi lo decide `GroupPeers`. Per provarlo servono foto
+// **vere sul disco**: senza file la richiesta risponderebbe 404 per la foto
+// mancante, cioe' un rifiuto che il controllo conterebbe come buono senza
+// aver provato la regola — lo stesso verde falso del materiale chiuso. Per
+// questo ce l'hanno lo studente di A, lo studente di B e il tutor di A, e
+// l'admin fa la controprova sulla foto di B.
+
+function fotoDiProva(PDO $pdo, int $userId, array $colore): void
+{
+    $relativo = 'avatars/' . $userId . '/prova-permessi.png';
+    $assoluto = __DIR__ . '/../storage/' . $relativo;
+
+    if (!is_dir(dirname($assoluto))) {
+        mkdir(dirname($assoluto), 0775, true);
+    }
+
+    if (!is_file($assoluto)) {
+        $img = imagecreatetruecolor(96, 96);
+        imagefill($img, 0, 0, imagecolorallocate($img, $colore[0], $colore[1], $colore[2]));
+        imagepng($img, $assoluto);
+        imagedestroy($img);
+    }
+
+    $pdo->prepare('UPDATE users SET avatar_path = :p WHERE id = :id')
+        ->execute(['p' => $relativo, 'id' => $userId]);
+}
+
+fotoDiProva($pdo, $studenteA, [79, 114, 86]);
+fotoDiProva($pdo, $studenteB, [160, 90, 60]);
+fotoDiProva($pdo, $tutorA, [70, 90, 140]);
+
+// Un gruppo con abbastanza persone da fare un cerchio, per i controlli di
+// accessibilita': con il solo studente del mondo A ci sarebbe un punto, non
+// un cerchio, e i nomi sui due fianchi non si vedrebbero mai. Otto
+// partecipanti — lo studente di A e sette compagni senza foto, cosi' si
+// vedono anche le iniziali — e il tutor di A al centro. Uno dei nomi e'
+// lungo apposta: e' lui che deve andare a capo senza uscire dalla pagina.
+//
+// I compagni sono utenti veri e restano fra una semina e l'altra (come
+// `nuovo@test.it`); il gruppo invece si cancella e si ricrea con il marchio.
+$pdo->prepare('INSERT INTO `groups` (name, tutor_id) VALUES (:n, :t)')
+    ->execute(['n' => MARCHIO . ' cerchio', 't' => $tutorA]);
+$gruppoCerchio = (int) $pdo->lastInsertId();
+
+$pdo->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')
+    ->execute(['g' => $gruppoCerchio, 'u' => $studenteA]);
+
+for ($n = 1; $n <= 7; $n++) {
+    $pdo->prepare(
+        'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at, welcome_seen_at)
+         VALUES (:e, :p, :nome, "studente", 1, NOW(), NOW())
+         ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)'
+    )->execute([
+        'e' => 'compagno' . $n . '@test.it',
+        'p' => password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT),
+        'nome' => $n === 3
+            ? 'Compagna con un nome davvero molto lungo Bartolomeo-Castiglioni'
+            : 'Compagno ' . $n,
+    ]);
+
+    $pdo->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')
+        ->execute(['g' => $gruppoCerchio, 'u' => utente($pdo, 'compagno' . $n . '@test.it')]);
+}
+
 echo json_encode([
     'utenti' => [
         'admin' => $admin,
@@ -360,6 +426,7 @@ echo json_encode([
         'studenteB' => $studenteB,
         'studenteNuovo' => $studenteNuovo,
     ],
+    'gruppo_cerchio' => $gruppoCerchio,
     'A' => $a,
     'B' => $b,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL;

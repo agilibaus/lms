@@ -14,6 +14,7 @@ use App\Controllers\CatalogController;
 use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
 use App\Controllers\FontController;
+use App\Controllers\GroupPageController;
 use App\Controllers\LessonController;
 use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
@@ -63,6 +64,11 @@ $router->post('/profilo/password', [ProfileController::class, 'changePassword'])
 $router->post('/profilo/immagine', [ProfileController::class, 'updateAvatar']);
 $router->post('/profilo/immagine/elimina', [ProfileController::class, 'deleteAvatar']);
 $router->get('/utenti/{id}/immagine', [ProfileController::class, 'avatar']);
+
+// La pagina di un gruppo per chi ne fa parte: tutor al centro, compagni
+// attorno. `/gruppi/{id}/immagine` (il logo) ha un segmento in piu', quindi
+// le due rotte non si catturano a vicenda.
+$router->get('/gruppi/{id}', [GroupPageController::class, 'show']);
 
 // --- Copertina del corso (file in /storage, servito dall'applicazione) --
 $router->get('/corsi/{id}/copertina', [CourseController::class, 'cover']);

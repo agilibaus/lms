@@ -855,12 +855,13 @@ php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, rip
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
 php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, indirizzi
 php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
+php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 1.550 controlli su 59 pagine, a tre larghezze (il numero dipende dai dati)
-node tests/permessi.js              # 121 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto
+node tests/accessibilita.js         # circa 1.600 controlli su 60 pagine, a tre larghezze (il numero dipende dai dati)
+node tests/permessi.js              # 137 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi e le foto
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
@@ -880,9 +881,9 @@ cioè il telefono girato di lato; quando fallisce dice **quale elemento** sfora.
 Node e non in PHP perché contrasto, fuoco e dimensioni esistono solo dopo che il browser ha
 applicato il CSS.
 
-**Cinque pagine si aprono sui dati della semina**, non su un id fisso: una lezione con un
+**Sei pagine si aprono sui dati della semina**, non su un id fisso: una lezione con un
 materiale, la pagina di fruizione di un video senza durata, una domanda vero/falso, un gruppo
-con un corso assegnato e il suo report con un certificato. Le pagine con l'id scritto nel
+con un corso assegnato e il suo report con un certificato, e la pagina di un gruppo da otto. Le pagine con l'id scritto nel
 test (`/lessons/1`, `/questions/1/edit`…) mostrano quello che l'id 1 è nel database su cui si
 gira, e con i dati di prova quei casi non c'erano: sette difetti veri sono rimasti invisibili
 finché il controllo non è stato fatto girare sul database di sviluppo vero. Per questo
@@ -922,7 +923,10 @@ studente di un altro tutor, nemmeno cercandolo per email, e l'amministratore inv
 `tests/semina_permessi.php` **scrive nel database dell'installazione su cui gira**: è per lo
 sviluppo, non per la produzione. Lo eseguono da sé anche `permessi.js` e `accessibilita.js`.
 Oltre ai due mondi semina, nel mondo A, i casi che servono ai controlli di accessibilità:
-una domanda vero/falso, un materiale su una lezione aperta e un certificato emesso.
+una domanda vero/falso, un materiale su una lezione aperta e un certificato emesso. Mette
+anche una foto vera sul disco allo studente di A, a quello di B e al tutor di A, e un gruppo
+«cerchio» con il tutor di A e otto partecipanti, sette dei quali sono utenti
+`compagno1@test.it`…`compagno7@test.it` che restano fra una semina e l'altra.
 
 ## File caricati: la piattaforma non cancella mai da sola
 
@@ -1521,11 +1525,36 @@ L'immagine viene **ritagliata quadrata al centro e ridotta a 512 pixel** (GD, qu
 carica la foto della fotocamera non deve prepararla, e il server non si ritrova a spedire 4 MB
 a ogni pagina. Senza l'estensione GD il file viene salvato così com'è. Come le altre immagini
 del progetto sta in `storage/avatars/`, fuori dal document root, e passa da
-`/utenti/{id}/immagine`, che richiede l'accesso. Il nome del file cambia a ogni caricamento,
+`/utenti/{id}/immagine`. Il nome del file cambia a ogni caricamento,
 quindi la cache del browser non mostra mai quella vecchia, e il file precedente viene eliminato.
 
 La miniatura tonda compare accanto al nome in fondo alla barra laterale, in ogni pagina, e
 porta al profilo; chi non ha ancora caricato nulla vede l'iniziale del proprio nome.
+
+**Chi vede la foto** lo decide `App\Auth\GroupPeers`: la persona stessa, l'amministratore, i
+compagni di gruppo e il tutor del gruppo. L'assistente no. Per tutti gli altri l'indirizzo
+risponde 404 come per una foto che non c'è, così non si può scoprire chi l'ha caricata. Fino al
+06/10 bastava aver fatto accesso, e con un numero a caso nell'indirizzo si vedeva la foto di
+chiunque. Sotto il caricamento, nel profilo, un avviso dice che la foto è facoltativa e dove
+comparirà: la frase e la regola vanno cambiate insieme.
+
+### La pagina del gruppo
+
+In **I miei gruppi**, nel profilo, il nome di ogni gruppo porta a `/gruppi/{id}`: chi ne fa
+parte, con la foto o le iniziali, **senza email**. Non c'è una voce nella barra laterale, per
+scelta: è una pagina che si apre ogni tanto, non un luogo dove si torna.
+
+- **Su computer** i partecipanti stanno **in cerchio**, con il tutor al centro e i nomi verso
+  l'esterno: di fianco sui due lati, sopra in cima e sotto in fondo.
+- **Sul telefono**, e su computer **oltre 20 partecipanti**, una griglia di foto con il nome
+  sotto, con il tutor da solo nella prima riga.
+
+Il cerchio si accende con una query di contenitore (52 rem di spazio), come le schede delle
+tabelle: dove non è supportata resta la griglia. La geometria sta in `App\Core\GroupCircle`,
+senza database, ed è provata da `tests/cerchio_test.php`.
+
+La pagina la aprono i partecipanti, il tutor del gruppo e l'amministratore — la stessa regola
+delle foto, nella stessa classe.
 
 ## Registrazione e iscrizione degli studenti
 
