@@ -868,7 +868,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 1.600 controlli su 60 pagine, a tre larghezze (il numero dipende dai dati)
-node tests/permessi.js              # 139 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
+node tests/permessi.js              # 140 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
@@ -1577,7 +1577,9 @@ vedono le stesse persone che vedono la foto: i compagni di gruppo, il tutor e l'
 ### La pagina del gruppo
 
 In **I miei gruppi**, nel profilo, il nome di ogni gruppo porta a `/gruppi/{id}`: chi ne fa
-parte, con la foto o le iniziali, **senza email**. Non c'è una voce nella barra laterale, per
+parte, con la foto o le iniziali, **senza email**. Il titolo è «Gruppo» seguito dal nome
+(«Gruppo Verde»), perché un nome di una parola da solo non dice di che pagina si tratta; se il
+nome comincia già con «Gruppo», la parola non si ripete. Non c'è una voce nella barra laterale, per
 scelta: è una pagina che si apre ogni tanto, non un luogo dove si torna.
 
 - **Su computer** i partecipanti stanno **in cerchio**, con il tutor al centro e i nomi verso
@@ -1593,13 +1595,20 @@ La pagina la aprono i partecipanti, il tutor del gruppo e l'amministratore — l
 delle foto, nella stessa classe.
 
 **La presentazione si apre sopra la pagina.** Chi ne ha scritta una è un pulsante — foto e
-nome insieme — con un piccolo fumetto sull'angolo della foto (la forma, non un colore).
+nome insieme — con un piccolo fumetto verde sull'angolo della foto (è la forma a dirlo; il
+colore principale la accompagna e cambia con la tavolozza).
 Toccandolo si apre una scheda con foto, nome e il testo fra due **virgolette giganti**, che si
-chiude con la ✕, con Esc o toccando fuori; il cerchio non si sposta. Le virgolette sono
-decorazione (un lettore di schermo non le legge) e hanno una riga bassa apposta: con
-`line-height: 1` la virgoletta che chiude si portava dietro una riga vuota alta come lei, e
-anche una scheda di due righe scorreva in verticale. `accessibilita.js` controlla che una
-scheda che non ha raggiunto la sua altezza massima non scorra. Su computer la scheda è centrata, sul telefono sale
+chiude con la ✕, con Esc o toccando fuori; il cerchio non si sposta.
+
+Le virgolette sono **forme, non caratteri**: due maschere CSS ricavate dalle virgolette di
+Noto Serif (SIL Open Font License 1.1), del colore principale. La prima versione usava “ e ”
+in Georgia, e la loro posizione dipendeva dal carattere installato: ogni carattere disegna la
+virgoletta in un punto diverso della propria riga, e su Windows la chiusura finiva a metà del
+testo. Una forma ha la scatola uguale al segno: quella che apre sta accanto alla prima riga,
+quella che chiude accanto all'ultima, per quante righe abbia il testo, e non fanno scorrere la
+scheda. `accessibilita.js` controlla tutte e due le posizioni, che una scheda che non ha
+raggiunto la sua altezza massima non scorra in verticale e che il fumetto sia del colore
+principale. Su computer la scheda è centrata, sul telefono sale
 dal fondo e occupa tutta la larghezza; un testo lungo scorre dentro la scheda.
 
 - **Niente JavaScript**: la scheda è un `popover` aperto dall'attributo `popovertarget`, e il

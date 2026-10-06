@@ -676,7 +676,22 @@ const EXTRA = {
             altezzeChiuse.length > 0 && altezzeChiuse.every((h) => h === 0),
             ['altezze: ' + altezzeChiuse.join(', ')]);
 
-        const problemi = { apre: [], fuori: [], scorre: [], scorreV: [], chiudi: [], esc: [], fuoco: [] };
+        const problemi = { apre: [], fuori: [], scorre: [], scorreV: [], chiudi: [], esc: [], fuoco: [], virgolette: [] };
+
+        // Il fumetto e' verde, cioe' del colore principale (06/10).
+        const fumetto = await page.evaluate(() => {
+            const f = document.querySelector('.persona-fumetto');
+            const sonda = document.createElement('span');
+            sonda.style.color = 'var(--color-primary)';
+            document.body.appendChild(sonda);
+            const verde = getComputedStyle(sonda).color;
+            sonda.remove();
+
+            return f === null ? null : { colore: getComputedStyle(f, '::before').backgroundColor, verde };
+        });
+        check(nome + ': il fumetto ha il colore principale',
+            fumetto !== null && fumetto.colore === fumetto.verde,
+            [fumetto === null ? 'nessun fumetto' : fumetto.colore + ' invece di ' + fumetto.verde]);
 
         for (const id of ids) {
             // Con un timeout breve e senza fermare il giro: se qualcosa copre
@@ -706,6 +721,26 @@ const EXTRA = {
                     scorreV: b.height < parseFloat(getComputedStyle(s).maxHeight) - 1
                         ? s.scrollHeight - s.clientHeight : 0,
                     chiudi: Math.min(c.width, c.height),
+                    // Le virgolette (06/10): quella che apre accanto alla
+                    // prima riga, quella che chiude accanto all'ultima. Sono
+                    // forme con la scatola uguale al segno, quindi la loro
+                    // posizione si misura dallo stile, per quante righe abbia
+                    // il testo. La prima versione, fatta di caratteri, sul
+                    // Windows di Elena metteva la chiusura a meta' testo.
+                    virgolette: (() => {
+                        const p = s.querySelector('.presentazione-testo');
+                        const r = p.getBoundingClientRect();
+                        const rg = document.createRange();
+                        rg.selectNodeContents(p);
+                        const righe = [...rg.getClientRects()];
+                        const prima = righe[0];
+                        const ultima = righe[righe.length - 1];
+
+                        return {
+                            apre: Math.round(r.top + parseFloat(getComputedStyle(p, '::before').top) - prima.top),
+                            chiude: Math.round(r.bottom - parseFloat(getComputedStyle(p, '::after').bottom) - ultima.bottom),
+                        };
+                    })(),
                 };
             }, id);
 
@@ -713,6 +748,10 @@ const EXTRA = {
             if (r.scorre > 0) problemi.scorre.push(id + ' di ' + r.scorre + ' px');
             if (r.scorreV > 0) problemi.scorreV.push(id + ' di ' + r.scorreV + ' px');
             if (r.chiudi < 24) problemi.chiudi.push(id + ': ' + r.chiudi + ' px');
+            if (Math.abs(r.virgolette.apre) > 6 || Math.abs(r.virgolette.chiude) > 6) {
+                problemi.virgolette.push(id + ': apre a ' + r.virgolette.apre + ' px dalla prima riga, chiude a '
+                    + r.virgolette.chiude + ' px dall\'ultima');
+            }
 
             await page.keyboard.press('Escape');
 
@@ -733,6 +772,7 @@ const EXTRA = {
         // scorreva di 29 px — sul telefono si sente sotto il dito.
         check(nome + ': una presentazione corta non scorre in verticale', problemi.scorreV.length === 0, problemi.scorreV);
         check(nome + ': il comando per chiudere è almeno 24 px', problemi.chiudi.length === 0, problemi.chiudi);
+        check(nome + ': le virgolette stanno accanto alla prima e all\'ultima riga', problemi.virgolette.length === 0, problemi.virgolette);
         check(nome + ': Esc chiude la presentazione', problemi.esc.length === 0, problemi.esc);
         check(nome + ': chiusa la presentazione, il fuoco torna sulla persona', problemi.fuoco.length === 0, problemi.fuoco);
     },

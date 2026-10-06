@@ -39,10 +39,21 @@ class GroupPageController
         }
 
         View::render('profile/group', [
-            'pageTitle' => (string) $group['name'],
+            'pageTitle' => self::titolo((string) $group['name']),
             'group' => $group,
             'tutor' => GroupModel::tutorForPage((int) $group['id']),
             'people' => GroupModel::peopleForPage((int) $group['id']),
         ]);
+    }
+
+    /**
+     * «Gruppo Verde», non «Verde» (chiesto da Elena il 06/10): i nomi dei
+     * gruppi sono spesso un colore o una parola sola, che da soli in cima
+     * alla pagina non dicono di che cosa si tratta. Se il nome comincia gia'
+     * con «Gruppo» la parola non si ripete.
+     */
+    public static function titolo(string $nome): string
+    {
+        return preg_match('/^gruppo\b/iu', $nome) === 1 ? $nome : 'Gruppo ' . $nome;
     }
 }

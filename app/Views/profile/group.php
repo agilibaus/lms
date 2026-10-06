@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controllers\GroupPageController;
 use App\Core\CourseCover;
 use App\Core\GroupCircle;
 
@@ -62,7 +63,7 @@ $conPresentazione = array_values(array_filter(
 ?>
 <div class="page-header">
     <a href="/profilo" class="back-link">&larr; Profilo</a>
-    <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
+    <h1><?= htmlspecialchars(GroupPageController::titolo((string) $group['name'])) ?></h1>
     <p class="page-subtitle">
         <?= $quanti === 1 ? '1 partecipante' : $quanti . ' partecipanti' ?>
         <?php if ($tutor !== null): ?>

@@ -401,6 +401,14 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await page.goto(BASE + '/gruppi/' + d.gruppo_cerchio);
             const html = await page.content();
             const persone = await page.locator('.gruppo-cerchio .persona').count();
+            const titolo = (await page.textContent('h1')).trim();
+
+            // «Gruppo …» in cima, non il nome da solo (06/10).
+            check(
+                'studente → il titolo della pagina dice che è un gruppo',
+                titolo === 'Gruppo [prova-permessi] cerchio',
+                titolo === 'Gruppo [prova-permessi] cerchio' ? [] : ['titolo: ' + titolo]
+            );
 
             check(
                 'studente → la pagina del gruppo mostra il tutor e gli otto partecipanti',
