@@ -61,7 +61,11 @@ class Invites
             $email = (string) $utente['email'];
             $password = PasswordGenerator::genera();
 
-            UserModel::setInvitePassword($id, $password);
+            if (!UserModel::setInvitePassword($id, $password)) {
+                // Uscito dalla coda fra la lettura e la scrittura: ha fatto
+                // accesso, o ha gia' una password sua. Niente da mandare.
+                continue;
+            }
 
             try {
                 Mailer::send(Mailer::invite(

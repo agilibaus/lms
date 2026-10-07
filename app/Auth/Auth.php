@@ -86,6 +86,11 @@ class Auth
             return false;
         }
 
+        // Chi entra ha una password che funziona: se era ancora in coda per un
+        // invito, ne esce, o il comando degli inviti gliela sostituirebbe al
+        // giro dopo (07/10, UserModel::setInvitePassword()).
+        UserModel::leaveInviteQueue((int) $user['id']);
+
         session_regenerate_id(true);
         Csrf::rotate();
         $_SESSION['user_id'] = (int) $user['id'];

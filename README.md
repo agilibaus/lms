@@ -702,6 +702,23 @@ posta fallisce quell'utente resta in coda e al giro dopo riceve una password nuo
 adesso non l'ha saputa nessuno. Il verso opposto lascerebbe un account con una password che
 non conosce nemmeno il suo proprietario.
 
+**Chi conosce una password esce dalla coda** (dal 07/10). Il ragionamento qui sopra regge solo
+se chi è in coda non conosce nessuna password, e prima nessuno lo garantiva: una password
+temporanea data dal pannello, un recupero via email, o un'email consegnata nonostante un errore
+della posta lasciavano l'utente in coda con una password in mano, e il giro dopo gliela
+sostituiva — credenziali giuste respinte, e con una posta instabile ogni quarto d'ora. Ora:
+
+- **chi fa accesso esce dalla coda**: ha una password che funziona;
+- **chi ottiene una password per un'altra strada esce dalla coda** — cambio dal profilo, cambio
+  obbligato, recupero via email, password temporanea dal pannello (`UserModel::updatePassword()`);
+- **il comando non scrive la password a chi non è più in coda**: la condizione sta nella
+  scrittura stessa (`AND invite_pending = 1`), così un accesso avvenuto mentre il comando gira
+  non viene annullato, e a quell'utente non parte nessuna email.
+
+Resta un caso: un'email consegnata nonostante l'errore, a un utente che non ha ancora fatto
+accesso. Al giro dopo ne riceve un'altra, e vale la password della seconda; appena entra con
+quella, esce dalla coda.
+
 **Se il cron non gira, nessuno entra.** È più grave del rilascio dei moduli, dove un cron
 fermo fa mancare solo un avviso: qui chi è stato importato non ha una password finché
 l'invito non parte. Per questo la pagina Utenti mostra quanti inviti restano, quando è
@@ -885,6 +902,7 @@ php tests/bunny_token_test.php      # firma e scadenza degli indirizzi Bunny
 php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto di plausibilità
 php tests/quiz_scoring_test.php     # punteggio dei quattro tipi di domanda
 php tests/importazione_test.php     # 27 prove: codifiche, separatori e righe del file utenti
+php tests/inviti_test.php          # coda degli inviti: chi conosce una password non viene sovrascritto
 php tests/password_test.php         # regola della password e generatore
 php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
 php tests/live_session_mail_test.php   # testi delle email degli incontri

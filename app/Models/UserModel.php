@@ -288,6 +288,12 @@ class UserModel
      *
      * @param bool $mustChange vero per una password generata da un admin:
      *                         l'utente dovra' sceglierne una sua al primo accesso.
+     *
+     * **Toglie l'utente dalla coda degli inviti** (07/10). Da qui passano il
+     * cambio dal profilo, il cambio obbligato, il recupero via email e la
+     * password temporanea dal pannello: in tutti i casi l'utente ha una
+     * password che conosce, e il comando degli inviti, al giro dopo, la
+     * sovrascriverebbe con una che non conosce nessuno.
      */
     public static function updatePassword(int $id, string $password, bool $mustChange = false): void
     {
@@ -295,7 +301,8 @@ class UserModel
             'UPDATE users
                 SET password_hash = :password_hash,
                     password_changed_at = NOW(),
-                    must_change_password = :must_change
+                    must_change_password = :must_change,
+                    invite_pending = 0
               WHERE id = :id'
         );
         $stmt->execute([
@@ -517,7 +524,8 @@ class UserModel
     }
 
     /**
-     * Scrive la password appena generata per un invito.
+     * Scrive la password appena generata per un invito, **solo se l'utente
+     * e' ancora in coda**, e dice se l'ha scritta.
      *
      * Separata dalla riga che toglie l'utente dalla coda, e l'ordine conta:
      * prima si scrive l'impronta, poi si manda, e **solo se l'invio
@@ -527,15 +535,47 @@ class UserModel
      * niente a nessuno. Il verso opposto — togliere dalla coda e poi
      * mandare — lascerebbe l'account con una password che non conosce
      * nemmeno il suo proprietario, e nessuno se ne accorgerebbe.
+     *
+     * **Il ragionamento qui sopra valeva solo a una condizione**, che fino al
+     * 07/10 nessuno garantiva: che chi e' in coda non conosca nessuna
+     * password. Non era vero se la posta riporta un errore ma consegna lo
+     * stesso, o se l'utente ottiene una password per un'altra strada mentre
+     * e' in coda (password temporanea dal pannello, recupero via email). Il
+     * giro dopo sovrascriveva la password che l'utente stava usando, e con
+     * una posta instabile lo rifaceva ogni quarto d'ora. Ora la condizione la
+     * garantiscono tre cose: chi fa accesso esce dalla coda
+     * (`leaveInviteQueue()`), chi ottiene una password per un'altra strada
+     * pure (`updatePassword()`), e questa scrittura non tocca chi non e' piu'
+     * in coda.
      */
-    public static function setInvitePassword(int $id, string $password): void
+    public static function setInvitePassword(int $id, string $password): bool
     {
+        // `AND invite_pending = 1`: se nel frattempo l'utente e' uscito dalla
+        // coda — ha fatto accesso, o ha ottenuto una password per un'altra
+        // strada mentre il comando girava — la sua password non si tocca, e
+        // il chiamante non manda niente. La condizione sta nella scrittura e
+        // non in una lettura fatta prima: e' la scrittura a decidere.
         $stmt = Database::connection()->prepare(
             'UPDATE users
                 SET password_hash = :hash, password_changed_at = NOW(), must_change_password = 1
-              WHERE id = :id'
+              WHERE id = :id AND invite_pending = 1'
         );
         $stmt->execute(['hash' => password_hash($password, PASSWORD_DEFAULT), 'id' => $id]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Fuori dalla coda degli inviti chi ha appena fatto accesso: ha una
+     * password che funziona, e un invito gli manderebbe una password nuova
+     * togliendogli quella che sta usando.
+     */
+    public static function leaveInviteQueue(int $id): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE users SET invite_pending = 0 WHERE id = :id AND invite_pending = 1'
+        );
+        $stmt->execute(['id' => $id]);
     }
 
     /** L'invito e' partito: fuori dalla coda. */
