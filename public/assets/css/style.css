@@ -315,14 +315,14 @@ h3 { font-size: 1.05rem; }
    posto nuovo si aggiunge qui, o sul telefono resta senza segnale. */
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
-    .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .benvenuto-riascolta):is(:hover, :focus-visible) {
+    .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
 
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
-        .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .benvenuto-riascolta) {
+        .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -540,10 +540,16 @@ h3 { font-size: 1.05rem; }
     color: hsl(var(--cover-hue, 90) 40% 32%);
 }
 
-/* Copertina in cima alla pagina del corso. */
+/* Copertina in cima alla pagina del corso: una fascia larga quanto i
+   moduli e bassa, 16:5 (07/10, scelta da Elena su un mockup). L'immagine e'
+   caricata in 16:9 e qui si vede la fascia centrale.
+   Prima era 16:9 con `max-height: 320px`, e i due insieme stringevano anche
+   la larghezza, a 569 px: e' la trappola di §5 del promemoria
+   («aspect-ratio piu' max-height riduce anche la larghezza»). Qui c'e' solo
+   la proporzione, e la larghezza e' quella della colonna. */
 .course-hero {
-    aspect-ratio: 16 / 9;
-    max-height: 320px;
+    width: 100%;
+    aspect-ratio: 16 / 5;
     margin-bottom: 1.25rem;
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -640,7 +646,10 @@ h3 { font-size: 1.05rem; }
 .course-description {
     color: var(--color-text-muted);
     line-height: 1.55;
+    /* Un testo, non un riquadro: resta a una lunghezza di riga comoda da
+       leggere anche se i blocchi intorno sono piu' larghi. */
     max-width: 62ch;
+    margin: 0 0 1.4rem;
 }
 
 /* ---------- Progress bar ---------- */
@@ -4749,7 +4758,7 @@ fieldset.checkbox-group legend {
    Nessuna soglia di larghezza: le due colonne vanno a capo da sole quando
    lo spazio non basta, quindi la scheda si adatta allo spazio che ha. */
 
-.benvenuto {
+.tutor-benvenuto {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
@@ -4761,7 +4770,7 @@ fieldset.checkbox-group legend {
     margin: 0 0 1.6rem;
 }
 
-.benvenuto-media {
+.tutor-benvenuto-media {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -4769,7 +4778,7 @@ fieldset.checkbox-group legend {
     max-width: 100%;
 }
 
-.benvenuto-foto {
+.tutor-benvenuto-foto {
     display: block;
     width: 100%;
     aspect-ratio: 15 / 16;
@@ -4779,27 +4788,27 @@ fieldset.checkbox-group legend {
     background: var(--color-primary-soft);
 }
 
-.benvenuto-media audio {
+.tutor-benvenuto-media audio {
     width: 100%;
 }
 
-.benvenuto-testo {
+.tutor-benvenuto-testo {
     flex: 1 1 14rem;
     min-width: 0;
 }
 
-.benvenuto-testo h2 {
+.tutor-benvenuto-testo h2 {
     margin: 0 0 0.3rem;
     font-size: 1.15rem;
 }
 
-.benvenuto-sotto {
+.tutor-benvenuto-sotto {
     margin: 0 0 0.8rem;
     color: var(--color-text-muted);
     font-size: 0.92rem;
 }
 
-.benvenuto-trascrizione summary {
+.tutor-benvenuto-trascrizione summary {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
@@ -4807,7 +4816,7 @@ fieldset.checkbox-group legend {
     font-size: 0.92rem;
 }
 
-.benvenuto-trascrizione p {
+.tutor-benvenuto-trascrizione p {
     margin: 0.5rem 0 0;
     font-style: italic;
     line-height: 1.55;
@@ -4816,11 +4825,11 @@ fieldset.checkbox-group legend {
 
 /* Ridotto a una riga: miniatura, nome, «Riascolta». E' un `details`, quindi
    si apre senza JavaScript, e aperto mostra la scheda completa. */
-.benvenuto-ridotto {
+.tutor-benvenuto-ridotto {
     margin: 0 0 1.6rem;
 }
 
-.benvenuto-ridotto > summary {
+.tutor-benvenuto-ridotto > summary {
     display: flex;
     align-items: center;
     gap: 0.8rem;
@@ -4833,20 +4842,20 @@ fieldset.checkbox-group legend {
     font-size: 0.92rem;
 }
 
-.benvenuto-ridotto > summary::-webkit-details-marker {
+.tutor-benvenuto-ridotto > summary::-webkit-details-marker {
     display: none;
 }
 
-.benvenuto-ridotto > summary:focus-visible {
+.tutor-benvenuto-ridotto > summary:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
-.benvenuto-ridotto[open] > summary {
+.tutor-benvenuto-ridotto[open] > summary {
     margin-bottom: 0.8rem;
 }
 
-.benvenuto-miniatura {
+.tutor-benvenuto-miniatura {
     width: 2.4rem;
     height: 2.4rem;
     flex-shrink: 0;
@@ -4856,33 +4865,33 @@ fieldset.checkbox-group legend {
     box-shadow: 0 0 0 1px var(--color-primary);
 }
 
-.benvenuto-ridotto-nome {
+.tutor-benvenuto-ridotto-nome {
     flex: 1;
     min-width: 0;
 }
 
-.benvenuto-riascolta {
+.tutor-benvenuto-riascolta {
     font-size: 0.85rem;
     color: var(--color-text);
 }
 
-.benvenuto-ridotto[open] .benvenuto-riascolta {
+.tutor-benvenuto-ridotto[open] .tutor-benvenuto-riascolta {
     display: none;
 }
 
 /* Nella pagina di modifica del corso, un blocco per tutor. */
-.benvenuto-admin {
+.tutor-benvenuto-admin {
     border-top: 1px solid var(--color-border);
     padding-top: 1rem;
     margin-top: 1rem;
 }
 
-.benvenuto-admin h3 {
+.tutor-benvenuto-admin h3 {
     margin: 0;
     font-size: 1rem;
 }
 
-.benvenuto-anteprima {
+.tutor-benvenuto-anteprima {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -4890,7 +4899,7 @@ fieldset.checkbox-group legend {
     margin: 0.4rem 0 0.8rem;
 }
 
-.benvenuto-anteprima-foto {
+.tutor-benvenuto-anteprima-foto {
     width: 4.5rem;
     aspect-ratio: 15 / 16;
     object-fit: cover;
@@ -4898,7 +4907,7 @@ fieldset.checkbox-group legend {
     border-radius: var(--radius-sm);
 }
 
-.benvenuto-anteprima audio {
+.tutor-benvenuto-anteprima audio {
     width: 16rem;
     max-width: 100%;
 }

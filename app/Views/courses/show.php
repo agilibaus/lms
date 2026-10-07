@@ -27,18 +27,8 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
     <h1><?= htmlspecialchars($course['title']) ?></h1>
 </div>
 
-<?php if (!empty($welcome)): ?>
-    <?php require __DIR__ . '/_welcome.php'; ?>
-<?php endif; ?>
-
-<?php $cover = CourseCover::url($course, false); ?>
-<?php if ($cover !== null): ?>
-    <div class="course-hero">
-        <img src="<?= htmlspecialchars($cover) ?>" alt="<?= htmlspecialchars(CourseCover::altFor($course)) ?>">
-    </div>
-<?php endif; ?>
-
-
+<?php /* Le conferme e gli errori subito sotto il titolo: piu' in basso, con il
+         benvenuto completo, sul telefono finirebbero fuori dallo schermo. */ ?>
 <?php if (!empty($_SESSION['flash_success'])): ?>
     <div class="alert alert-success"><?= htmlspecialchars($_SESSION['flash_success']) ?></div>
     <?php unset($_SESSION['flash_success']); ?>
@@ -49,8 +39,26 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
     <?php unset($_SESSION['flash_error']); ?>
 <?php endif; ?>
 
+<?php /*
+ * L'ORDINE DELLA TESTA DEL CORSO (07/10, scelto da Elena su due mockup):
+ * titolo, copertina a fascia, descrizione, benvenuto del tutor, poi il resto.
+ * Tutti i blocchi hanno la larghezza dei moduli: prima erano quattro
+ * larghezze diverse allineate a sinistra (benvenuto 900 px, copertina 569,
+ * descrizione 597, moduli 1016), e la pagina sembrava un collage.
+ */ ?>
+<?php $cover = CourseCover::url($course, false); ?>
+<?php if ($cover !== null): ?>
+    <div class="course-hero">
+        <img src="<?= htmlspecialchars($cover) ?>" alt="<?= htmlspecialchars(CourseCover::altFor($course)) ?>">
+    </div>
+<?php endif; ?>
+
 <?php if (!empty($course['description'])): ?>
     <p class="course-description"><?= nl2br(htmlspecialchars($course['description'])) ?></p>
+<?php endif; ?>
+
+<?php if (!empty($welcome)): ?>
+    <?php require __DIR__ . '/_welcome.php'; ?>
 <?php endif; ?>
 
 <?php if ($certificate !== null && $certificate['revoked_at'] === null): ?>

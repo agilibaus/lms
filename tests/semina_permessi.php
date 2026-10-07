@@ -430,6 +430,22 @@ function benvenutoDiProva(PDO $pdo, int $corso, int $tutor, string $lettera): in
 }
 
 $a['benvenuto'] = benvenutoDiProva($pdo, $a['corso'], $tutorA, 'A');
+
+// Una copertina e una descrizione al corso del mondo A (07/10): la testa
+// della pagina del corso — copertina a fascia, descrizione, benvenuto — si
+// controlla solo se c'e' tutta. Prima i blocchi avevano quattro larghezze
+// diverse e nessun controllo lo vedeva, perche' il corso di prova non aveva
+// copertina.
+$copertina = 'course-covers/prova-permessi.jpg';
+if (!is_dir(__DIR__ . '/../storage/course-covers')) {
+    mkdir(__DIR__ . '/../storage/course-covers', 0775, true);
+}
+$img = imagecreatetruecolor(1600, 900);
+imagefill($img, 0, 0, imagecolorallocate($img, 79, 114, 86));
+imagejpeg($img, __DIR__ . '/../storage/' . $copertina, 80);
+imagedestroy($img);
+$pdo->prepare('UPDATE courses SET cover_image = :c, description = :d WHERE id = :id')
+    ->execute(['c' => $copertina, 'd' => 'Il corso di prova del mondo A, con una descrizione di una riga.', 'id' => $a['corso']]);
 $b['benvenuto'] = benvenutoDiProva($pdo, $b['corso'], $tutorB, 'B');
 
 // Un gruppo con abbastanza persone da fare un cerchio, per i controlli di

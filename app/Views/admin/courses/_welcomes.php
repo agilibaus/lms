@@ -43,13 +43,13 @@ $maxAudioMb = (int) (TutorWelcome::AUDIO_MAX_BYTES / 1024 / 1024);
         $c = 'benv-' . $tutorId;
         $esiste = $w['welcome_id'] !== null;
         ?>
-        <div class="benvenuto-admin">
+        <div class="tutor-benvenuto-admin">
             <h3><?= htmlspecialchars((string) $w['tutor_name']) ?></h3>
             <p class="card-meta">Tutor di: <?= htmlspecialchars((string) $w['groups']) ?></p>
 
             <?php if ($esiste): ?>
-                <div class="benvenuto-anteprima">
-                    <img class="benvenuto-anteprima-foto" src="/benvenuti/<?= (int) $w['welcome_id'] ?>/foto" alt="">
+                <div class="tutor-benvenuto-anteprima">
+                    <img class="tutor-benvenuto-anteprima-foto" src="/benvenuti/<?= (int) $w['welcome_id'] ?>/foto" alt="">
                     <audio controls preload="none" src="/benvenuti/<?= (int) $w['welcome_id'] ?>/audio"
                            aria-label="Benvenuto di <?= htmlspecialchars((string) $w['tutor_name'], ENT_QUOTES) ?>"></audio>
                 </div>

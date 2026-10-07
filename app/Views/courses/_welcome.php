@@ -20,18 +20,18 @@ $wid = (int) $welcome['id'];
 $nome = htmlspecialchars((string) $welcome['tutor_name']);
 $foto = '/benvenuti/' . $wid . '/foto';
 
-$scheda = '<section class="benvenuto" aria-labelledby="benvenuto-titolo">'
-    . '<div class="benvenuto-media">'
-    . '<img class="benvenuto-foto" src="' . $foto . '" alt="">'
+$scheda = '<section class="tutor-benvenuto" aria-labelledby="tutor-benvenuto-titolo">'
+    . '<div class="tutor-benvenuto-media">'
+    . '<img class="tutor-benvenuto-foto" src="' . $foto . '" alt="">'
     . '<audio controls preload="none" src="/benvenuti/' . $wid . '/audio"'
     . ' aria-label="Benvenuto di ' . $nome . '"'
     . ' data-ascoltato="/benvenuti/' . $wid . '/ascoltato"'
     . ' data-token="' . htmlspecialchars(Csrf::token(), ENT_QUOTES) . '"></audio>'
     . '</div>'
-    . '<div class="benvenuto-testo">'
-    . '<h2 id="benvenuto-titolo">Il benvenuto di ' . $nome . '</h2>'
-    . '<p class="benvenuto-sotto">Tutor del tuo gruppo in questo corso.</p>'
-    . '<details class="benvenuto-trascrizione"><summary>Leggi il testo</summary>'
+    . '<div class="tutor-benvenuto-testo">'
+    . '<h2 id="tutor-benvenuto-titolo">Il benvenuto di ' . $nome . '</h2>'
+    . '<p class="tutor-benvenuto-sotto">Tutor del tuo gruppo in questo corso.</p>'
+    . '<details class="tutor-benvenuto-trascrizione"><summary>Leggi il testo</summary>'
     . '<p>' . nl2br(htmlspecialchars((string) $welcome['transcript']), false) . '</p>'
     . '</details>'
     . '</div>'
@@ -40,11 +40,11 @@ $scheda = '<section class="benvenuto" aria-labelledby="benvenuto-titolo">'
 <?php if ($welcome['modo'] === 'completo'): ?>
     <?= $scheda ?>
 <?php else: ?>
-    <details class="benvenuto-ridotto">
+    <details class="tutor-benvenuto-ridotto">
         <summary>
-            <img class="benvenuto-miniatura" src="<?= $foto ?>" alt="">
-            <span class="benvenuto-ridotto-nome">Il benvenuto di <?= $nome ?></span>
-            <span class="benvenuto-riascolta">Riascolta</span>
+            <img class="tutor-benvenuto-miniatura" src="<?= $foto ?>" alt="">
+            <span class="tutor-benvenuto-ridotto-nome">Il benvenuto di <?= $nome ?></span>
+            <span class="tutor-benvenuto-riascolta">Riascolta</span>
         </summary>
         <?= $scheda ?>
     </details>

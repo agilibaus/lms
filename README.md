@@ -812,6 +812,18 @@ piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
 - **Sostituire un file cancella quello vecchio**, come per la copertina del corso; «Rimuovi
   benvenuto» toglie la riga e i due file.
 
+**La testa della pagina del corso** è una colonna sola (scelta su due mockup il 07/10): titolo,
+eventuali conferme, **copertina a fascia** (16:5, larga quanto i moduli: l'immagine caricata in
+16:9 mostra la fascia centrale), descrizione, benvenuto, poi certificato e moduli. **Copertina,
+benvenuto e moduli hanno gli stessi bordi**; prima erano 569, 900 e 1016 px allineati solo a
+sinistra. La descrizione resta a 62 caratteri di riga, perché è un testo da leggere e non un
+riquadro. `accessibilita.js` controlla che i tre blocchi abbiano gli stessi bordi.
+
+**I nomi delle classi della scheda cominciano con `tutor-benvenuto`.** Nella prima versione la
+scheda si chiamava `.benvenuto`, che era già la classe della pagina del video di benvenuto: le
+due si prendevano lo stile a vicenda, e la pagina del video, che deve essere un blocco centrato,
+diventava un riquadro con il bordo allineato a sinistra.
+
 ## Video di benvenuto
 
 Uno studente che accede per la **prima volta** vede una pagina con un video, un pulsante
@@ -960,7 +972,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.250 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente (il numero dipende dai dati)
+node tests/accessibilita.js         # circa 2.280 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente (il numero dipende dai dati)
 node tests/permessi.js              # 152 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero

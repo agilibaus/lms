@@ -599,7 +599,7 @@ async function entra(page) {
  * aggiunto anche qui, o i controlli non lo guardano.
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
-    + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .benvenuto-riascolta';
+    + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1229,11 +1229,29 @@ async function giroBenvenuto(browser) {
 
         await esamina(page, url, 'Corso con benvenuto completo (studente)', BERSAGLIO_MINIMO, daTelefono);
         const completo = await page.evaluate(() => ({
-            scheda: document.querySelectorAll('section.benvenuto').length,
-            ridotto: document.querySelectorAll('details.benvenuto-ridotto').length,
-            audio: !!document.querySelector('section.benvenuto audio[controls][aria-label]'),
-            testo: !!document.querySelector('section.benvenuto details.benvenuto-trascrizione'),
+            scheda: document.querySelectorAll('section.tutor-benvenuto').length,
+            ridotto: document.querySelectorAll('details.tutor-benvenuto-ridotto').length,
+            audio: !!document.querySelector('section.tutor-benvenuto audio[controls][aria-label]'),
+            testo: !!document.querySelector('section.tutor-benvenuto details.tutor-benvenuto-trascrizione'),
         }));
+        // La testa del corso in una colonna sola (07/10, scelto da Elena):
+        // copertina, benvenuto e moduli con gli stessi bordi. Prima erano
+        // 569, 900 e 1016 px, allineati solo a sinistra.
+        const bordi = await page.evaluate(() => [
+            ['copertina', '.course-hero'],
+            ['benvenuto', 'section.tutor-benvenuto'],
+            ['primo modulo', '.module-card'],
+        ].map(([nome, sel]) => {
+            const e = document.querySelector(sel);
+            const r = e ? e.getBoundingClientRect() : null;
+            return { nome, sinistra: r ? Math.round(r.left) : null, destra: r ? Math.round(r.right) : null };
+        }));
+        const riferimento = bordi[bordi.length - 1];
+        const storti = bordi.filter((b) => b.sinistra === null
+            || Math.abs(b.sinistra - riferimento.sinistra) > 1 || Math.abs(b.destra - riferimento.destra) > 1);
+        check('copertina, benvenuto e moduli hanno gli stessi bordi', storti.length === 0,
+            bordi.map((b) => b.nome + ' ' + b.sinistra + '–' + b.destra));
+
         check('prima visita: il benvenuto è completo, con il lettore e il testo',
             completo.scheda === 1 && completo.ridotto === 0 && completo.audio && completo.testo, [JSON.stringify(completo)]);
 
@@ -1243,7 +1261,7 @@ async function giroBenvenuto(browser) {
         // Senza riga ridotta si segnala e si prosegue: un controllo che si
         // interrompe fa perdere tutti quelli dopo (§5 del promemoria).
         const ridotto = await page.evaluate(() => {
-            const riga = document.querySelector('details.benvenuto-ridotto:not([open]) > summary');
+            const riga = document.querySelector('details.tutor-benvenuto-ridotto:not([open]) > summary');
             return { riga: riga !== null, altezza: riga ? Math.round(riga.getBoundingClientRect().height) : null };
         });
         check('quarta visita: il benvenuto è ridotto a una riga', ridotto.riga && ridotto.altezza < 80,
@@ -1251,9 +1269,9 @@ async function giroBenvenuto(browser) {
 
         if (ridotto.riga) {
             // «Riascolta» lo riapre, senza JavaScript: e' un `details`.
-            await page.click('details.benvenuto-ridotto > summary');
+            await page.click('details.tutor-benvenuto-ridotto > summary');
             const riaperto = await page.evaluate(() => ({
-                aperto: !!document.querySelector('details.benvenuto-ridotto[open] section.benvenuto audio'),
+                aperto: !!document.querySelector('details.tutor-benvenuto-ridotto[open] section.tutor-benvenuto audio'),
                 sfora: document.documentElement.scrollWidth - document.documentElement.clientWidth,
             }));
             check('«Riascolta» riapre la scheda completa, senza sforare', riaperto.aperto && riaperto.sfora <= 0,
