@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 use App\Controllers\Admin\TutorWelcomeController;
+use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\TutorWelcome;
 
 /**
  * Il benvenuto dei tutor all'inizio del corso (07/10). Uno per ciascun
  * tutor dei gruppi a cui il corso e' assegnato: lo studente sente quello
- * del proprio tutor. Lo carica solo l'admin (permesso `course.welcome`).
+ * del proprio tutor. Il tutor vede e carica solo il proprio
+ * (`course.welcome_own`); l'admin quello di tutti (`course.welcome`).
  *
  * Un form per tutor, separato dagli altri: porta due file, e un errore su
  * un tutor non deve far perdere quello che si stava scrivendo per un altro.
@@ -20,14 +22,15 @@ use App\Core\TutorWelcome;
 
 $courseId = (int) $course['id'];
 $maxAudioMb = (int) (TutorWelcome::AUDIO_MAX_BYTES / 1024 / 1024);
+$tutti = Auth::can('course.welcome');
 ?>
 <section class="card" id="benvenuti">
-    <h2>Benvenuto dei tutor</h2>
+    <h2><?= $tutti ? 'Benvenuto dei tutor' : 'Il tuo benvenuto' ?></h2>
     <p class="card-meta">
-        Una foto a mezzo busto e un breve audio in cima alla pagina del corso. Ogni studente sente
-        il tutor del proprio gruppo; chi non è in un gruppo con un tutor non vede niente. Completo
-        nelle prime <?= TutorWelcome::VISITE_COMPLETE ?> visite, poi ridotto a una riga; prima,
-        se lo studente l'ha già ascoltato fino in fondo.
+        Una foto a mezzo busto e un breve audio in cima alla pagina del corso, con l'email per gli
+        studenti e il link al gruppo WhatsApp. Ogni studente vede il tutor del proprio gruppo. Ogni
+        corso deve averne uno. Completo nelle prime <?= TutorWelcome::VISITE_COMPLETE ?> visite, poi
+        ridotto a una riga; prima, se lo studente l'ha già ascoltato fino in fondo.
     </p>
 
     <?php if ($welcomes === []): ?>
@@ -45,7 +48,14 @@ $maxAudioMb = (int) (TutorWelcome::AUDIO_MAX_BYTES / 1024 / 1024);
         ?>
         <div class="tutor-benvenuto-admin">
             <h3><?= htmlspecialchars((string) $w['tutor_name']) ?></h3>
-            <p class="card-meta">Tutor di: <?= htmlspecialchars((string) $w['groups']) ?></p>
+            <p class="card-meta">
+                Tutor di: <?= htmlspecialchars((string) $w['groups']) ?>.
+                Email per gli studenti:
+                <?= $w['contact_email'] !== null && $w['contact_email'] !== ''
+                    ? htmlspecialchars((string) $w['contact_email'])
+                    : 'nessuna (si imposta nel profilo del tutor)' ?>.
+                Il link WhatsApp si imposta nella pagina di ciascun gruppo.
+            </p>
 
             <?php if ($esiste): ?>
                 <div class="tutor-benvenuto-anteprima">
@@ -54,7 +64,7 @@ $maxAudioMb = (int) (TutorWelcome::AUDIO_MAX_BYTES / 1024 / 1024);
                            aria-label="Benvenuto di <?= htmlspecialchars((string) $w['tutor_name'], ENT_QUOTES) ?>"></audio>
                 </div>
             <?php else: ?>
-                <p class="empty-state">Nessun benvenuto: i suoi studenti non vedono niente in cima al corso.</p>
+                <p class="empty-state">Manca il benvenuto: gli studenti di questo tutor non vedono niente in cima al corso.</p>
             <?php endif; ?>
 
             <form action="/admin/courses/<?= $courseId ?>/benvenuti/<?= $tutorId ?>" method="post"

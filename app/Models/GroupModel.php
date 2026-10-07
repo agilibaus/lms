@@ -189,6 +189,16 @@ class GroupModel
     }
 
     /**
+     * Il link di invito al gruppo WhatsApp (07/10), gia' controllato da
+     * `TutorWelcome::whatsappUrl()`. Null: nessun link.
+     */
+    public static function updateWhatsapp(int $id, ?string $url): void
+    {
+        Database::connection()->prepare('UPDATE `groups` SET whatsapp_url = :u WHERE id = :id')
+            ->execute(['u' => $url, 'id' => $id]);
+    }
+
+    /**
      * Logo: aggiornato a parte perche' il modulo dei dati non porta il file,
      * e salvare il nome del gruppo non deve cancellarne l'immagine.
      */

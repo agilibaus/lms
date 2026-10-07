@@ -896,12 +896,20 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/questions/' + A.domanda + '/delete', [], 'negato', 'togliere una domanda'],
                 ['/admin/users/' + d.utenti.studenteA + '/delete', [], 'negato', 'cancellare un utente'],
             ]],
-            // Solo l'admin carica e toglie i benvenuti (07/10), anche il tutor
-            // per il proprio corso no. Il tutor e lo studente sono quelli del
-            // mondo A: il benvenuto e' il loro.
-            ['tutor1@test.it', 'tutor A (benvenuto)', [
+            // Il benvenuto lo carica il tutor, il proprio; l'admin quello di
+            // tutti (07/10). Il tutor di A non tocca quello del tutor di B, lo
+            // studente nessuno. L'ultima prova toglie davvero il benvenuto del
+            // tutor di A: e' l'ultima apposta, e la semina del giro dopo lo
+            // rimette.
+            ['stud@test.it', 'studente A (benvenuto)', [
                 ['/admin/courses/' + A.corso + '/benvenuti/' + d.utenti.tutorA + '/elimina', [], 'negato',
-                    'togliere il proprio benvenuto'],
+                    'togliere il benvenuto del proprio tutor'],
+            ]],
+            ['tutor1@test.it', 'tutor A (benvenuto)', [
+                ['/admin/courses/' + B.corso + '/benvenuti/' + d.utenti.tutorB + '/elimina', [], 'negato',
+                    'togliere il benvenuto di un collega'],
+                ['/admin/courses/' + A.corso + '/benvenuti/' + d.utenti.tutorA + '/elimina', [], 'consentito',
+                    'togliere il proprio benvenuto: lo carica lui'],
             ]],
         ];
 

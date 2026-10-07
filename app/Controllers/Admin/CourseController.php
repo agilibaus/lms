@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Controllers\Admin\TutorWelcomeController;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Core\CourseCover;
@@ -94,7 +95,14 @@ class CourseController extends AdminController
                 static fn (array $u): bool => !in_array((int) $u['id'], $enrolledIds, true)
             )),
             'canDelete' => Auth::can('course.delete'),
-            'welcomes' => Auth::can('course.welcome') ? TutorWelcomeModel::tutorsForCourse((int) $course['id']) : null,
+            // L'admin vede il blocco di ogni tutor del corso, il tutor solo il
+            // proprio; chi non ne puo' gestire nessuno, la sezione non la vede.
+            'welcomes' => Auth::can('course.welcome') || Auth::can('course.welcome_own')
+                ? array_values(array_filter(
+                    TutorWelcomeModel::tutorsForCourse((int) $course['id']),
+                    static fn (array $w): bool => TutorWelcomeController::puoGestire((int) $w['tutor_id'])
+                ))
+                : null,
         ]);
     }
 

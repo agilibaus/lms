@@ -12,8 +12,11 @@ use App\Models\CourseModel;
 use App\Models\TutorWelcomeModel;
 
 /**
- * Il benvenuto del tutor all'inizio di un corso (07/10). Lo carica solo
- * l'admin, dalla pagina di modifica del corso (permesso `course.welcome`).
+ * Il benvenuto del tutor all'inizio di un corso (07/10). Lo carica il tutor,
+ * il proprio, dalla pagina di modifica dei corsi dei suoi gruppi (permesso
+ * `course.welcome_own`); l'admin lo carica per qualunque tutor
+ * (`course.welcome`). Prima versione: solo l'admin; Elena ha precisato che
+ * e' il tutor a caricarlo, e che ogni corso deve averne uno.
  *
  * Foto e audio si servono passando di qui, mai da un indirizzo pubblico: li
  * ricevono l'admin, il tutor del benvenuto, e gli studenti per cui quel
@@ -27,10 +30,9 @@ class TutorWelcomeController extends AdminController
 
     public function save(array $params): void
     {
-        Auth::requirePermission('course.welcome');
-
         $courseId = (int) $params['id'];
         $tutorId = (int) $params['tutorId'];
+        self::requireGestione($tutorId);
         $redirect = '/admin/courses/' . $courseId . '/edit#benvenuti';
 
         if (CourseModel::find($courseId) === null || !$this->tutorDelCorso($courseId, $tutorId)) {
@@ -91,9 +93,8 @@ class TutorWelcomeController extends AdminController
 
     public function destroy(array $params): void
     {
-        Auth::requirePermission('course.welcome');
-
         $courseId = (int) $params['id'];
+        self::requireGestione((int) $params['tutorId']);
         $current = TutorWelcomeModel::findFor($courseId, (int) $params['tutorId']);
 
         if ($current === null) {
@@ -189,6 +190,29 @@ class TutorWelcomeController extends AdminController
         }
 
         return $welcome;
+    }
+
+    /**
+     * Chi puo' caricare o togliere il benvenuto di questo tutor: l'admin per
+     * chiunque, il tutor per se stesso. Come `group.manage` e
+     * `group.manage_own`: la differenza fra «tutti» e «il proprio» sta nei
+     * permessi, e il confronto con l'utente qui.
+     */
+    public static function puoGestire(int $tutorId): bool
+    {
+        return Auth::can('course.welcome')
+            || (Auth::can('course.welcome_own') && (int) Auth::id() === $tutorId);
+    }
+
+    private static function requireGestione(int $tutorId): void
+    {
+        Auth::requireLogin();
+
+        if (!self::puoGestire($tutorId)) {
+            http_response_code(403);
+            echo 'Non puoi modificare il benvenuto di questo tutor.';
+            exit;
+        }
     }
 
     private function tutorDelCorso(int $courseId, int $tutorId): bool

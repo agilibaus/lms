@@ -168,6 +168,7 @@ danni. Le piu' recenti:
 | `2026_10_05_benvenuto.sql` | video di benvenuto: chi l'ha gia' visto |
 | `2026_10_05_importazione_utenti.sql` | la coda degli inviti per gli utenti importati |
 | `2026_10_07_benvenuto_tutor.sql` | il benvenuto del tutor nei corsi, le visite che lo riducono, il permesso `course.welcome` |
+| `2026_10_07_benvenuto_contatti.sql` | il permesso `course.welcome_own` al tutor, l'email per gli studenti, il link WhatsApp del gruppo |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -782,8 +783,8 @@ righe di cron, ed è nell'elenco delle cose da fare prima di aprire agli student
 ## Il benvenuto del tutor nel corso
 
 In cima alla pagina di un corso lo studente trova **il benvenuto del tutor del suo gruppo**: una
-foto a mezzo busto con un breve audio subito sotto, e accanto il nome e il testo di quello che
-il tutor dice («Leggi il testo»). È diverso dal video di benvenuto qui sotto: quello è della
+foto a mezzo busto con un breve audio subito sotto, e accanto il nome, **l'email del tutor**,
+**il link al gruppo WhatsApp** e il testo di quello che il tutor dice («Leggi il testo»). È diverso dal video di benvenuto qui sotto: quello è della
 piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
 
 - **Uno per tutor e per corso.** Un corso seguito da più gruppi con tutor diversi ha più
@@ -793,12 +794,24 @@ piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
   per nome: un ordine fisso invece di uno che cambia fra le visite.
 - **Completo, poi ridotto a una riga.** Completo nelle prime tre visite alla pagina del corso;
   dalla quarta, **o appena l'audio è stato ascoltato fino in fondo** (la prima delle due cose),
-  diventa una riga con la miniatura, il nome e «Riascolta», che riapre la scheda. La riga è un
+  diventa una riga con la miniatura, il nome e «Mostra», che riapre la scheda. La riga è un
   `details`, quindi si apre senza JavaScript; lo script (`benvenuto.js`) serve solo a dire al
   server che l'audio è finito. Senza, vale il conto delle visite.
-- **Lo carica solo l'admin**, dalla pagina di modifica del corso, sezione «Benvenuto dei tutor»:
-  un blocco per ogni tutor dei gruppi a cui il corso è assegnato. Permesso `course.welcome`,
-  spostabile dalla matrice dei permessi.
+- **Lo carica il tutor**, il proprio, dalla pagina di modifica dei corsi dei suoi gruppi
+  (sezione «Il tuo benvenuto», permesso `course.welcome_own`). L'admin lo carica per qualunque
+  tutor (sezione «Benvenuto dei tutor», un blocco per ogni tutor del corso, permesso
+  `course.welcome`). È lo schema di `group.manage` e `group.manage_own`. **Ogni corso deve
+  averne uno**: è una regola di chi organizza i corsi, e la sezione segnala quando manca.
+- **I contatti stanno solo dentro il benvenuto**, e nella riga ridotta non si vedono: si vedono
+  riaprendola con **«Mostra»**. Ciascuno compare solo se c'è:
+  - **l'email per gli studenti** è un campo del profilo del tutor, «Email per gli studenti»,
+    diverso dall'email con cui accede, che non viene mai mostrata;
+  - **il link WhatsApp** è un campo della pagina del gruppo, «Link di invito in WhatsApp», che
+    impostano l'admin e il tutor del gruppo. Si accettano solo inviti di WhatsApp
+    (`https://chat.whatsapp.com/…`). Lo studente vede il link del proprio gruppo, quello con
+    quel tutor in quel corso, e si apre in una scheda nuova. Il link è una chiave d'accesso al
+    gruppo WhatsApp: non compare in nessun'altra pagina.
+  Le icone sono disegni generici, una busta e un fumetto, non il logo di WhatsApp.
 - **Il testo è obbligatorio**: senza, l'audio non è accessibile a chi non sente o non può
   ascoltare in quel momento (WCAG 1.2.1).
 - **I file stanno in `storage/welcomes/`**, fuori dal repository, e si servono da
@@ -972,8 +985,8 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.280 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente (il numero dipende dai dati)
-node tests/permessi.js              # 152 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
+node tests/accessibilita.js         # circa 2.350 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 154 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

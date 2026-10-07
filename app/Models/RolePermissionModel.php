@@ -45,7 +45,8 @@ class RolePermissionModel
                 'course.create' => 'Creare nuovi corsi',
                 'course.edit' => 'Modificare corsi, moduli e lezioni',
                 'course.delete' => 'Eliminare corsi',
-                'course.welcome' => 'Caricare il benvenuto dei tutor all\'inizio dei corsi',
+                'course.welcome' => 'Caricare il benvenuto di qualunque tutor all\'inizio dei corsi',
+                'course.welcome_own' => 'Caricare il proprio benvenuto nei corsi dei propri gruppi',
             ],
             'Questionari' => [
                 'quiz.take' => 'Svolgere i questionari',

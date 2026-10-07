@@ -148,6 +148,52 @@ final class TutorWelcome
         return Upload::store($file, 'welcomes/' . $courseId, self::AUDIO_EXTENSIONS, self::AUDIO_MAX_BYTES)['stored_path'];
     }
 
+    /**
+     * Il link di invito al gruppo WhatsApp, come lo scrive chi gestisce il
+     * gruppo. Vuoto vuol dire nessun link. Si accettano solo gli inviti di
+     * WhatsApp (`https://chat.whatsapp.com/…`): un errore di copia e incolla
+     * non deve mandare gli studenti su un altro sito.
+     *
+     * @throws \InvalidArgumentException con la frase da mostrare
+     */
+    public static function whatsappUrl(string $valore): ?string
+    {
+        $valore = trim($valore);
+
+        if ($valore === '') {
+            return null;
+        }
+
+        if (!preg_match('~^https://chat\.whatsapp\.com/[A-Za-z0-9_-]{6,}(?:\?[^\s]*)?$~', $valore) || mb_strlen($valore) > 255) {
+            throw new \InvalidArgumentException(
+                'Il link di invito in WhatsApp deve cominciare con https://chat.whatsapp.com/ ed è quello '
+                . 'che WhatsApp dà con «Invita tramite link».'
+            );
+        }
+
+        return $valore;
+    }
+
+    /**
+     * L'email che il tutor da' ai suoi studenti. Vuota vuol dire nessuna.
+     *
+     * @throws \InvalidArgumentException con la frase da mostrare
+     */
+    public static function contactEmail(string $valore): ?string
+    {
+        $valore = trim($valore);
+
+        if ($valore === '') {
+            return null;
+        }
+
+        if (filter_var($valore, FILTER_VALIDATE_EMAIL) === false || mb_strlen($valore) > 255) {
+            throw new \InvalidArgumentException('L\'email per gli studenti non è un indirizzo valido.');
+        }
+
+        return $valore;
+    }
+
     public static function audioMime(string $relativePath): string
     {
         return strtolower(pathinfo($relativePath, PATHINFO_EXTENSION)) === 'm4a' ? 'audio/mp4' : 'audio/mpeg';

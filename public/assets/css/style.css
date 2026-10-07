@@ -315,14 +315,16 @@ h3 { font-size: 1.05rem; }
    posto nuovo si aggiunge qui, o sul telefono resta senza segnale. */
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
-    .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta):is(:hover, :focus-visible) {
+    .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
+    .tutor-benvenuto-contatti a):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
 
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
-        .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta) {
+        .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
+    .tutor-benvenuto-contatti a) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -4806,6 +4808,67 @@ fieldset.checkbox-group legend {
     margin: 0 0 0.8rem;
     color: var(--color-text-muted);
     font-size: 0.92rem;
+}
+
+/* I contatti del tutor (07/10): l'email per gli studenti e il link al
+   gruppo WhatsApp, ciascuno con un'icona in un cerchio del colore tenue
+   della tavolozza. Disegni generici, non il logo di WhatsApp. */
+.tutor-benvenuto-contatti {
+    list-style: none;
+    margin: 0.2rem 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.tutor-benvenuto-contatti li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.95rem;
+    min-width: 0;
+}
+
+.tutor-benvenuto-contatti a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    min-width: 0;
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+}
+
+.tutor-benvenuto-icona {
+    position: relative;
+    flex-shrink: 0;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 50%;
+    background: var(--color-primary-soft);
+}
+
+.tutor-benvenuto-icona::before {
+    content: "";
+    position: absolute;
+    inset: 0.5rem;
+    background: var(--color-primary);
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.tutor-benvenuto-icona-email::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E");
+}
+
+.tutor-benvenuto-icona-chat::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z'/%3E%3Cpath d='M8.5 11h7M8.5 14h4'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z'/%3E%3Cpath d='M8.5 11h7M8.5 14h4'/%3E%3C/svg%3E");
 }
 
 .tutor-benvenuto-trascrizione summary {

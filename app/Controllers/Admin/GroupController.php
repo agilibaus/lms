@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\TutorWelcome;
 use App\Auth\Auth;
 use App\Core\GroupLogo;
 use App\Core\Upload;
@@ -55,7 +56,14 @@ class GroupController extends AdminController
             $this->fail('Il nome del gruppo è obbligatorio.', '/admin/groups/create');
         }
 
+        try {
+            $whatsapp = TutorWelcome::whatsappUrl((string) ($_POST['whatsapp_url'] ?? ''));
+        } catch (\InvalidArgumentException $e) {
+            $this->fail($e->getMessage(), '/admin/groups/create');
+        }
+
         $groupId = GroupModel::create($data['name'], $data['description'], $data['tutor_id']);
+        GroupModel::updateWhatsapp($groupId, $whatsapp);
 
         // Il logo si salva dopo la creazione: il percorso contiene l'id, che
         // prima di questo momento non esiste.
@@ -121,7 +129,14 @@ class GroupController extends AdminController
         // Chi gestisce solo i propri gruppi non puo' cederne la titolarita'.
         $tutorId = Auth::can('group.manage') ? $data['tutor_id'] : (int) $group['tutor_id'];
 
+        try {
+            $whatsapp = TutorWelcome::whatsappUrl((string) ($_POST['whatsapp_url'] ?? ''));
+        } catch (\InvalidArgumentException $e) {
+            $this->fail($e->getMessage(), $redirect);
+        }
+
         GroupModel::update((int) $group['id'], $data['name'], $data['description'], $tutorId);
+        GroupModel::updateWhatsapp((int) $group['id'], $whatsapp);
 
         $errore = $this->storeLogo((int) $group['id'], $group['logo_path'] ?? null);
 

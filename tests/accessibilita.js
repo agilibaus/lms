@@ -599,7 +599,8 @@ async function entra(page) {
  * aggiunto anche qui, o i controlli non lo guardano.
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
-    + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta';
+    + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
+    + '.tutor-benvenuto-contatti a';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1233,6 +1234,10 @@ async function giroBenvenuto(browser) {
             ridotto: document.querySelectorAll('details.tutor-benvenuto-ridotto').length,
             audio: !!document.querySelector('section.tutor-benvenuto audio[controls][aria-label]'),
             testo: !!document.querySelector('section.tutor-benvenuto details.tutor-benvenuto-trascrizione'),
+            // I contatti (07/10): l'email del tutor e il link del gruppo, che
+            // porta fuori da Pistacchio e si apre in una scheda nuova.
+            email: !!document.querySelector('.tutor-benvenuto-contatti a[href^="mailto:"]'),
+            whatsapp: !!document.querySelector('.tutor-benvenuto-contatti a[href^="https://chat.whatsapp.com/"][target="_blank"][rel~="noopener"]'),
         }));
         // La testa del corso in una colonna sola (07/10, scelto da Elena):
         // copertina, benvenuto e moduli con gli stessi bordi. Prima erano
@@ -1254,6 +1259,8 @@ async function giroBenvenuto(browser) {
 
         check('prima visita: il benvenuto è completo, con il lettore e il testo',
             completo.scheda === 1 && completo.ridotto === 0 && completo.audio && completo.testo, [JSON.stringify(completo)]);
+        check('nel benvenuto completo ci sono l\'email del tutor e il link al gruppo WhatsApp',
+            completo.email && completo.whatsapp, [JSON.stringify(completo)]);
 
         await page.goto(BASE + url);
         await page.goto(BASE + url);
@@ -1262,10 +1269,21 @@ async function giroBenvenuto(browser) {
         // interrompe fa perdere tutti quelli dopo (§5 del promemoria).
         const ridotto = await page.evaluate(() => {
             const riga = document.querySelector('details.tutor-benvenuto-ridotto:not([open]) > summary');
-            return { riga: riga !== null, altezza: riga ? Math.round(riga.getBoundingClientRect().height) : null };
+            const contatti = document.querySelector('.tutor-benvenuto-contatti');
+            return {
+                riga: riga !== null,
+                altezza: riga ? Math.round(riga.getBoundingClientRect().height) : null,
+                comando: riga ? riga.querySelector('.tutor-benvenuto-riascolta').textContent.trim() : null,
+                // Nella riga i contatti non si vedono: si vedono riaprendo (Elena).
+                // `checkVisibility()` e non i rettangoli: Chromium dispone il
+                // contenuto di un `details` chiuso anche se non lo mostra.
+                contattiVisibili: contatti !== null && contatti.checkVisibility(),
+            };
         });
         check('quarta visita: il benvenuto è ridotto a una riga', ridotto.riga && ridotto.altezza < 80,
             [JSON.stringify(ridotto)]);
+        check('nella riga il comando si chiama «Mostra», e i contatti non si vedono',
+            ridotto.comando === 'Mostra' && !ridotto.contattiVisibili, [JSON.stringify(ridotto)]);
 
         if (ridotto.riga) {
             // «Riascolta» lo riapre, senza JavaScript: e' un `details`.
@@ -1274,11 +1292,32 @@ async function giroBenvenuto(browser) {
                 aperto: !!document.querySelector('details.tutor-benvenuto-ridotto[open] section.tutor-benvenuto audio'),
                 sfora: document.documentElement.scrollWidth - document.documentElement.clientWidth,
             }));
-            check('«Riascolta» riapre la scheda completa, senza sforare', riaperto.aperto && riaperto.sfora <= 0,
+            check('«Mostra» riapre la scheda completa, senza sforare', riaperto.aperto && riaperto.sfora <= 0,
                 [JSON.stringify(riaperto)]);
         }
 
         await ctx.close();
+
+        // Il tutor (07/10): carica il proprio benvenuto dalla pagina di
+        // modifica del corso, e nel profilo ha il campo dell'email per gli
+        // studenti. Due pagine che l'admin vede diverse.
+        const ctxTutor = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+        const tp = await ctxTutor.newPage();
+        await tp.goto(BASE + '/login');
+        await tp.fill('input[name="email"]', 'tutor1@test.it');
+        await tp.fill('input[name="password"]', PASS);
+        await tp.click('form.auth-form button[type="submit"]');
+        await tp.waitForLoadState('load');
+
+        await esamina(tp, '/profilo', 'Profilo (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        check('nel profilo del tutor c\'è il campo «Email per gli studenti»',
+            await tp.locator('input#contact_email').count() === 1);
+
+        await esamina(tp, '/admin/courses/' + corso + '/edit', 'Modifica corso (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        const blocchi = await tp.locator('#benvenuti .tutor-benvenuto-admin').count();
+        check('nella pagina del corso il tutor vede solo il proprio benvenuto', blocchi === 1, ['blocchi: ' + blocchi]);
+
+        await ctxTutor.close();
     }
 }
 

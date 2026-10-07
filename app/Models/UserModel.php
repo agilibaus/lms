@@ -34,7 +34,7 @@ class UserModel
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, full_name, role, is_active, email_verified_at,
+            'SELECT id, email, contact_email, full_name, role, is_active, email_verified_at,
                     bio, phone, city, avatar_path, created_at
              FROM users WHERE id = :id LIMIT 1'
         );
@@ -59,6 +59,16 @@ class UserModel
             'city' => $city,
             'id' => $id,
         ]);
+    }
+
+    /**
+     * L'email che il tutor da' ai suoi studenti nel benvenuto dei corsi
+     * (07/10), gia' controllata. Null: nessuna.
+     */
+    public static function updateContactEmail(int $id, ?string $email): void
+    {
+        Database::connection()->prepare('UPDATE users SET contact_email = :e WHERE id = :id')
+            ->execute(['e' => $email, 'id' => $id]);
     }
 
     /**

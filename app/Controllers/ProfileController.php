@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\TutorWelcome;
 use App\Auth\Auth;
 use App\Auth\GroupPeers;
 use App\Core\AvatarImage;
@@ -68,6 +69,21 @@ class ProfileController
             $this->back();
         }
 
+        // L'email per gli studenti (07/10): solo per chi carica il proprio
+        // benvenuto, cioe' i tutor. Compare nel benvenuto in cima ai corsi.
+        // Si controlla prima di scrivere qualunque cosa: un indirizzo
+        // sbagliato non deve salvare a meta' il profilo.
+        $contatto = false;
+
+        if (Auth::can('course.welcome_own')) {
+            try {
+                $contatto = TutorWelcome::contactEmail((string) ($_POST['contact_email'] ?? ''));
+            } catch (\InvalidArgumentException $e) {
+                $_SESSION['flash_error'] = $e->getMessage();
+                $this->back();
+            }
+        }
+
         UserModel::updateProfile(
             $userId,
             mb_substr($fullName, 0, 150),
@@ -75,6 +91,10 @@ class ProfileController
             $this->optional('phone', 40),
             $this->optional('city', 120)
         );
+
+        if ($contatto !== false) {
+            UserModel::updateContactEmail($userId, $contatto);
+        }
 
         // Il nome compare nella barra laterale a ogni pagina: senza questo
         // aggiornamento resterebbe quello vecchio fino al prossimo accesso.

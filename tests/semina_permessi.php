@@ -448,6 +448,16 @@ $pdo->prepare('UPDATE courses SET cover_image = :c, description = :d WHERE id = 
     ->execute(['c' => $copertina, 'd' => 'Il corso di prova del mondo A, con una descrizione di una riga.', 'id' => $a['corso']]);
 $b['benvenuto'] = benvenutoDiProva($pdo, $b['corso'], $tutorB, 'B');
 
+// I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
+// studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
+// no, e nel loro benvenuto non deve comparire niente. Si riscrivono a ogni
+// semina, cosi' un controllo che li cambia non lascia tracce al giro dopo.
+$pdo->prepare('UPDATE users SET contact_email = :e WHERE id = :id')
+    ->execute(['e' => 'tutor.uno.studenti@example.invalid', 'id' => $tutorA]);
+$pdo->prepare('UPDATE users SET contact_email = NULL WHERE id = :id')->execute(['id' => $tutorB]);
+$pdo->prepare('UPDATE `groups` SET whatsapp_url = :u WHERE id = :id')
+    ->execute(['u' => 'https://chat.whatsapp.com/ProvaPermessiMondoA', 'id' => $a['gruppo']]);
+
 // Un gruppo con abbastanza persone da fare un cerchio, per i controlli di
 // accessibilita': con il solo studente del mondo A ci sarebbe un punto, non
 // un cerchio, e i nomi sui due fianchi non si vedrebbero mai. Otto

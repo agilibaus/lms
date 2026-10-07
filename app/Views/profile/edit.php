@@ -91,6 +91,19 @@ $hasAvatar = !empty($user['avatar_path']);
         <input type="text" id="phone" name="phone" maxlength="40"
                value="<?= htmlspecialchars((string) ($user['phone'] ?? '')) ?>">
 
+        <?php if (Auth::can('course.welcome_own')): ?>
+            <?php /* Solo per chi carica il proprio benvenuto (07/10): e' l'indirizzo
+                     che i suoi studenti vedono nel benvenuto in cima ai corsi, e puo'
+                     essere diverso da quello con cui accede. */ ?>
+            <label for="contact_email">Email per gli studenti</label>
+            <input type="email" id="contact_email" name="contact_email" maxlength="255"
+                   value="<?= htmlspecialchars((string) ($user['contact_email'] ?? '')) ?>">
+            <p class="form-hint">
+                Facoltativa. Compare ai tuoi studenti nel tuo benvenuto, in cima ai corsi dei tuoi gruppi.
+                Può essere diversa dall'email con cui accedi, che non viene mai mostrata.
+            </p>
+        <?php endif; ?>
+
         <?php
         /*
          * Il contatore e' quello delle risposte aperte dei questionari

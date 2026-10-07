@@ -19,13 +19,13 @@ final class TutorWelcomeModel
      * lista della pagina di modifica del corso: un benvenuto si carica per un
      * tutor che il corso lo segue davvero.
      *
-     * @return list<array{tutor_id:int, tutor_name:string, groups:string, welcome_id:?int,
+     * @return list<array{tutor_id:int, tutor_name:string, contact_email:?string, groups:string, welcome_id:?int,
      *                    photo_path:?string, audio_path:?string, transcript:?string, updated_at:?string}>
      */
     public static function tutorsForCourse(int $courseId): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT t.id AS tutor_id, t.full_name AS tutor_name,
+            "SELECT t.id AS tutor_id, t.full_name AS tutor_name, t.contact_email,
                     GROUP_CONCAT(DISTINCT g.name ORDER BY g.name SEPARATOR ', ') AS `groups`,
                     w.id AS welcome_id, w.photo_path, w.audio_path, w.transcript, w.updated_at
              FROM group_course_access gca
@@ -33,7 +33,7 @@ final class TutorWelcomeModel
              INNER JOIN users t ON t.id = g.tutor_id
              LEFT JOIN course_tutor_welcomes w ON w.course_id = gca.course_id AND w.tutor_id = t.id
              WHERE gca.course_id = :course
-             GROUP BY t.id, t.full_name, w.id, w.photo_path, w.audio_path, w.transcript, w.updated_at
+             GROUP BY t.id, t.full_name, t.contact_email, w.id, w.photo_path, w.audio_path, w.transcript, w.updated_at
              ORDER BY t.full_name, t.email"
         );
         $stmt->execute(['course' => $courseId]);
@@ -51,27 +51,26 @@ final class TutorWelcomeModel
      * entrambi un benvenuto, sente quello del tutor che viene prima per nome:
      * un caso raro, e un ordine fisso invece di uno che cambia fra le visite.
      *
-     * @return array{id:int, course_id:int, tutor_id:int, tutor_name:string, photo_path:string,
-     *               audio_path:string, transcript:string}|null
+     * @return array{id:int, course_id:int, tutor_id:int, tutor_name:string, contact_email:?string,
+     *               photo_path:string, audio_path:string, transcript:string,
+     *               group_name:string, whatsapp_url:?string}|null
      */
     public static function forStudent(int $courseId, int $userId): ?array
     {
+        // Il gruppo e' quello attraverso cui lo studente ha il tutor in questo
+        // corso: da li' vengono il nome e il link WhatsApp (07/10). Con due
+        // gruppi dello stesso tutor nello stesso corso, il primo per nome.
         $stmt = Database::connection()->prepare(
-            'SELECT w.id, w.course_id, w.tutor_id, t.full_name AS tutor_name,
-                    w.photo_path, w.audio_path, w.transcript
+            'SELECT w.id, w.course_id, w.tutor_id, t.full_name AS tutor_name, t.contact_email,
+                    w.photo_path, w.audio_path, w.transcript,
+                    g.name AS group_name, g.whatsapp_url
              FROM course_tutor_welcomes w
              INNER JOIN users t ON t.id = w.tutor_id
+             INNER JOIN group_members gm ON gm.user_id = :user
+             INNER JOIN `groups` g ON g.id = gm.group_id AND g.tutor_id = w.tutor_id
+             INNER JOIN group_course_access gca ON gca.group_id = g.id AND gca.course_id = w.course_id
              WHERE w.course_id = :course
-               AND EXISTS (
-                   SELECT 1
-                   FROM group_members gm
-                   INNER JOIN `groups` g ON g.id = gm.group_id
-                   INNER JOIN group_course_access gca ON gca.group_id = g.id
-                   WHERE gm.user_id = :user
-                     AND gca.course_id = w.course_id
-                     AND g.tutor_id = w.tutor_id
-               )
-             ORDER BY t.full_name, t.email
+             ORDER BY t.full_name, t.email, g.name, g.id
              LIMIT 1'
         );
         $stmt->execute(['course' => $courseId, 'user' => $userId]);

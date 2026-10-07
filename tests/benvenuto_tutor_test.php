@@ -43,6 +43,32 @@ check('ascoltato fino in fondo: ridotto anche alla seconda visita', TutorWelcome
 check('ascoltato e alla prima visita: ridotto', TutorWelcome::modo(1, true) === 'ridotto');
 check('le visite complete sono tre', TutorWelcome::VISITE_COMPLETE === 3);
 
+echo PHP_EOL . 'I campi dei contatti' . PHP_EOL;
+
+$whatsapp = static function (string $u): string {
+    try {
+        return (string) TutorWelcome::whatsappUrl($u);
+    } catch (\InvalidArgumentException) {
+        return 'rifiutato';
+    }
+};
+check('link WhatsApp vuoto: nessun link', $whatsapp('  ') === '');
+check('link di invito di WhatsApp: accettato', $whatsapp('https://chat.whatsapp.com/AbCdEf123456') === 'https://chat.whatsapp.com/AbCdEf123456');
+check('senza https: rifiutato', $whatsapp('http://chat.whatsapp.com/AbCdEf123456') === 'rifiutato');
+check('un sito che si finge WhatsApp: rifiutato', $whatsapp('https://chat.whatsapp.com.esempio.it/AbCdEf123') === 'rifiutato');
+check('un link a una persona (wa.me), non a un gruppo: rifiutato', $whatsapp('https://wa.me/393331234567') === 'rifiutato');
+
+$email = static function (string $e): string {
+    try {
+        return (string) TutorWelcome::contactEmail($e);
+    } catch (\InvalidArgumentException) {
+        return 'rifiutata';
+    }
+};
+check('email per gli studenti vuota: nessuna', $email('') === '');
+check('email valida: accettata', $email(' tutor@example.it ') === 'tutor@example.it');
+check('email non valida: rifiutata', $email('tutor@') === 'rifiutata');
+
 echo PHP_EOL . 'Chi sente quale benvenuto' . PHP_EOL;
 
 $db = Database::connection();
@@ -108,7 +134,21 @@ try {
     check('in due gruppi con due tutor: quello che viene prima per nome',
         $sente !== null && (int) $sente['tutor_id'] === $aldi);
 
-    TutorWelcomeModel::save($corso, $bianchi, 'welcomes/x/b2.jpg', 'welcomes/x/b2.mp3', 'Testo nuovo');
+    echo PHP_EOL . 'I contatti: email del tutor e WhatsApp del gruppo dello studente' . PHP_EOL;
+
+    $db->prepare('UPDATE users SET contact_email = :e WHERE id = :id')->execute(['e' => 'aldi@example.invalid', 'id' => $aldi]);
+    $db->prepare('UPDATE `groups` SET whatsapp_url = :u WHERE id = :id')
+        ->execute(['u' => 'https://chat.whatsapp.com/GruppoAldi', 'id' => $gruppoAldi]);
+    $db->prepare('UPDATE `groups` SET whatsapp_url = :u WHERE id = :id')
+        ->execute(['u' => 'https://chat.whatsapp.com/GruppoBianchi', 'id' => $gruppoBianchi]);
+    $sente = TutorWelcomeModel::forStudent($corso, $studente);
+    check('arriva l\'email per gli studenti del tutor', ($sente['contact_email'] ?? null) === 'aldi@example.invalid');
+    check('arriva il link del gruppo dello studente con quel tutor, non di un altro gruppo',
+        ($sente['whatsapp_url'] ?? null) === 'https://chat.whatsapp.com/GruppoAldi'
+        && ($sente['group_name'] ?? null) === 'Gruppo di prova ' . $gruppoAldi,
+        json_encode([$sente['whatsapp_url'] ?? null, $sente['group_name'] ?? null]));
+
+        TutorWelcomeModel::save($corso, $bianchi, 'welcomes/x/b2.jpg', 'welcomes/x/b2.mp3', 'Testo nuovo');
     $riga = TutorWelcomeModel::findFor($corso, $bianchi);
     check('salvare di nuovo aggiorna, non duplica', $riga !== null && $riga['transcript'] === 'Testo nuovo'
         && (int) $db->query('SELECT COUNT(*) FROM course_tutor_welcomes WHERE course_id = ' . $corso)->fetchColumn() === 2);

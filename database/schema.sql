@@ -12,6 +12,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE users (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     email           VARCHAR(190) NOT NULL UNIQUE,
+    contact_email   VARCHAR(255) NULL,       -- l'email che il tutor da' ai suoi studenti (benvenuto del corso)
     password_hash   VARCHAR(255) NOT NULL,
     -- Quando la password e' stata cambiata l'ultima volta. La sessione ne
     -- tiene una copia presa all'accesso: se le due non combaciano piu', la
@@ -75,7 +76,7 @@ INSERT INTO role_permissions (role, permission_key) VALUES
     ('admin','report.view'), ('admin','certificate.issue'),
     ('admin','settings.manage'), ('admin','course.welcome'),
     ('tutor','course.edit'), ('tutor','quiz.grade'), ('tutor','report.view'),
-    ('tutor','group.manage_own'),
+    ('tutor','group.manage_own'), ('tutor','course.welcome_own'),
     ('assistente','quiz.grade_assigned'), ('assistente','report.view_assigned'),
     ('studente','course.view'), ('studente','quiz.take'), ('studente','certificate.view_own');
 
@@ -111,6 +112,7 @@ CREATE TABLE `groups` (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name            VARCHAR(150) NOT NULL,
     description     TEXT,
+    whatsapp_url    VARCHAR(255) NULL,       -- link di invito al gruppo WhatsApp (benvenuto del corso)
     -- Logo del gruppo: PNG quadrato in /storage/group-logos, servito da
     -- /admin/groups/{id}/logo. NULL = riquadro con le iniziali.
     logo_path       VARCHAR(255),
