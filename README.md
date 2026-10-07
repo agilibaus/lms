@@ -1650,8 +1650,8 @@ scelta: è una pagina che si apre ogni tanto, non un luogo dove si torna.
 
 - **Su computer** i partecipanti stanno **in cerchio**, con il tutor al centro e i nomi verso
   l'esterno: di fianco sui due lati, sopra in cima e sotto in fondo.
-- **Le foto dei partecipanti hanno un bordo sottile**, 1 px del colore principale della
-  tavolozza; quella del tutor no. È un'ombra (`box-shadow`) e non un bordo, così non cambia la
+- **Tutte le foto hanno un bordo sottile**, tutor compreso: 1 px del colore principale
+  della tavolozza. È un'ombra (`box-shadow`) e non un bordo, così non cambia la
   misura della foto né sposta il cerchio.
 - **Sul telefono**, e su computer **oltre 20 partecipanti**, una griglia di foto con il nome
   sotto, con il tutor da solo nella prima riga.
