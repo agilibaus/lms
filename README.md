@@ -582,9 +582,13 @@ ha il mouse. **L'elenco dei comandi sta nel foglio di stile, sotto `.link-btn`, 
 `tests/accessibilita.js`**: un comando nuovo in un posto nuovo va aggiunto in tutti e due, o
 sul telefono resta senza segnale e i controlli non lo guardano.
 
+`.link-btn` ha `font-family: inherit`: un pulsante non eredita il carattere della pagina, e
+«Elimina» in Arial accanto a «Modifica» nel carattere di sistema, su Windows (Segoe UI),
+stava più in alto.
+
 `accessibilita.js` verifica su ogni pagina che i collegamenti nelle frasi siano sottolineati e
 di un altro colore, che con il mouse i comandi siano neutri a riposo e che i comandi di una
-stessa fila abbiano il testo sulla stessa riga; poi rifà il giro con un telefono simulato
+stessa fila abbiano il testo sulla stessa riga e lo stesso carattere; poi rifà il giro con un telefono simulato
 **senza mouse** e verifica che ogni comando sia sottolineato. Il giro «telefono» normale non
 basta: cambia la larghezza, ma il browser ha ancora il mouse.
 
@@ -899,7 +903,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.000 controlli su 60 pagine, a tre larghezze più un giro senza mouse (il numero dipende dai dati)
+node tests/accessibilita.js         # circa 2.150 controlli su 60 pagine, a tre larghezze più un giro senza mouse (il numero dipende dai dati)
 node tests/permessi.js              # 143 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero

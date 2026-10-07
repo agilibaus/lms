@@ -619,6 +619,21 @@ async function comeSiRiconoscono(page) {
         // il testo alla stessa altezza. «Elimina» nei comandi del modulo
         // stava 4 px piu' in basso degli altri, da prima del 06/10.
         const sfalsati = [];
+        // E lo stesso carattere. Un pulsante non eredita il carattere della
+        // pagina: «Elimina» era in Arial accanto a «Modifica» nel carattere di
+        // sistema, e su Windows (Segoe UI) stava piu' in alto. Qui il
+        // carattere di sistema ha le proporzioni di Arial e lo scarto non si
+        // misura: il carattere diverso invece si legge ovunque.
+        const caratteri = [];
+        for (const fila of document.querySelectorAll('.row-actions, .module-card-actions')) {
+            const famiglie = [...fila.querySelectorAll('a, button')].filter(visibile)
+                .map((e) => ({ t: testo(e), f: getComputedStyle(e).fontFamily }));
+            for (const v of famiglie.slice(1)) {
+                if (v.f !== famiglie[0].f && /\S/.test(v.t) && /\S/.test(famiglie[0].t) && !/^[↑↓]$/.test(v.t) && !/^[↑↓]$/.test(famiglie[0].t)) {
+                    caratteri.push('«' + v.t + '» in ' + v.f.split(',')[0] + ', «' + famiglie[0].t + '» in ' + famiglie[0].f.split(',')[0]);
+                }
+            }
+        }
         for (const fila of document.querySelectorAll('.row-actions, .module-card-actions')) {
             const voci = [...fila.querySelectorAll('a, button')].filter(visibile).map((e) => {
                 const rg = document.createRange();
@@ -642,6 +657,7 @@ async function comeSiRiconoscono(page) {
             sottolineatiARiposo: comandi.filter(sottolineato).map((e) => '«' + testo(e) + '»'),
             senzaSottolineatura: comandi.filter((e) => !sottolineato(e)).map((e) => '«' + testo(e) + '»'),
             sfalsati,
+            caratteri: [...new Set(caratteri)],
         };
     }, [COMANDI, NELLE_FRASI]);
 }
@@ -685,6 +701,7 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     const segni = await comeSiRiconoscono(page);
     check(nome + ': i collegamenti nelle frasi sono sottolineati e colorati', segni.frasi.length === 0, segni.frasi);
     check(nome + ': i comandi di una fila hanno il testo sulla stessa riga', segni.sfalsati.length === 0, segni.sfalsati);
+    check(nome + ': i comandi di una fila usano lo stesso carattere', segni.caratteri.length === 0, segni.caratteri);
     if (segni.conMouse) {
         check(nome + ': con il mouse i comandi sono neutri a riposo',
             segni.sottolineatiARiposo.length === 0, segni.sottolineatiARiposo);

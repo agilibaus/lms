@@ -275,6 +275,13 @@ h3 { font-size: 1.05rem; }
     padding: 0;
     color: var(--color-text);
     font-size: 0.85rem;
+    /* Un pulsante non eredita il carattere della pagina (la trappola di
+       Albert Sans, §4 del promemoria): «Elimina» era in Arial accanto a
+       «Modifica» nel carattere di sistema, e sul Windows di Elena, dove il
+       carattere di sistema e' Segoe UI, le proporzioni diverse lo facevano
+       stare piu' in alto. Nel contenitore di sviluppo Segoe UI non c'e' e il
+       difetto non si vedeva. */
+    font-family: inherit;
     cursor: pointer;
     /* Neutro a riposo come i collegamenti che gli stanno accanto: fino al
        06/10 era l'unico comando sottolineato, e in grigio, e nella stessa
