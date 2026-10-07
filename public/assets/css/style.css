@@ -4006,6 +4006,10 @@ fieldset.checkbox-group legend {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
+    /* La misura di ogni altro comando di una riga (0107): a 16 px, quella
+       del testo, «Aggiungi al calendario» pesava quanto il titolo
+       dell'incontro accanto (Elena, 07/10). */
+    font-size: 0.85rem;
 }
 
 .agenda-passati {

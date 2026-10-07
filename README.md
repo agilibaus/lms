@@ -565,6 +565,10 @@ Tre regole, decise il 06/10, uguali in ogni pagina e senza elementi in più:
 | **Comandi** — nelle righe delle tabelle, fra i comandi di un modulo, nelle liste di assegnazione, nell'Agenda, e quelli isolati in una pagina | neutri, nel colore del testo; sottolineati al passaggio del mouse e con il fuoco della tastiera | sempre sottolineati |
 | **Collegamenti dentro una frase** | verdi e sempre sottolineati | verdi e sempre sottolineati |
 
+Fuori dalle tabelle i comandi stanno a **0,85 rem**, come stabilito con la 0107; dentro una
+cella prendono la misura della cella. Anche «Aggiungi al calendario» dell'Agenda, che fino al
+07/10 era alto quanto il testo e pesava quanto il titolo dell'incontro accanto.
+
 I comandi che **fanno perdere qualcosa** sono rossi (`.link-btn-danger`), con le stesse regole
 degli altri. Il criterio: **rosso se si perde qualcosa che ripetere il gesto contrario non
 restituisce**. «Rimuovi» uno studente da un corso è rosso (cancella progresso, tentativi e
