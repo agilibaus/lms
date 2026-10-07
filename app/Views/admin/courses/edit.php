@@ -172,13 +172,16 @@ $enrollments = $ordineIscritti->applica($enrollments);
 </section>
 
 <?php if ($canDelete): ?>
-    <section class="card">
-        <h2 class="danger-heading">Elimina corso</h2>
+    <?php /* Solo il comando e una breve spiegazione, senza titolo (Elena,
+                 07/10): un titolo «Elimina …» sopra un comando «Elimina
+                 definitivamente» diceva la stessa cosa due volte. Un `div` e non
+                 una `section`: senza titolo non e' una sezione della pagina. */ ?>
+    <div class="card">
         <p class="card-meta">Vengono rimossi anche moduli, lezioni, questionari, tentativi, iscrizioni e certificati collegati.</p>
         <form action="/admin/courses/<?= $courseId ?>/delete" method="post"
               onsubmit="return confirm('Eliminare definitivamente questo corso e tutti i dati collegati?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Elimina definitivamente</button>
+            <button type="submit" class="link-btn link-btn-danger">Elimina corso</button>
         </form>
-    </section>
+    </div>
 <?php endif; ?>

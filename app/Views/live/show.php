@@ -189,13 +189,16 @@ $apribile = (bool) ($session['joinable'] ?? false);
         <?php endif; ?>
     </section>
 
-    <section class="card">
-        <h2 class="danger-heading">Elimina sessione</h2>
+    <?php /* Solo il comando e una breve spiegazione, senza titolo (Elena,
+                 07/10): un titolo «Elimina …» sopra un comando «Elimina
+                 definitivamente» diceva la stessa cosa due volte. Un `div` e non
+                 una `section`: senza titolo non e' una sezione della pagina. */ ?>
+    <div class="card">
         <p class="card-meta">Viene rimosso anche l’evento su Google Calendar, se collegato.</p>
         <form action="/live/<?= $id ?>/delete" method="post"
               onsubmit="return confirm('Eliminare questa sessione e le presenze registrate?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Elimina definitivamente</button>
+            <button type="submit" class="link-btn link-btn-danger">Elimina sessione</button>
         </form>
-    </section>
+    </div>
 <?php endif; ?>

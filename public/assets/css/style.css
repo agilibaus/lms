@@ -3131,10 +3131,6 @@ body.has-focus-video {
     text-align: center;
 }
 
-.danger-heading {
-    color: var(--color-danger);
-}
-
 .form select,
 .form textarea {
     display: block;
