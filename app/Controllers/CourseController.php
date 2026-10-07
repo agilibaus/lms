@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\TutorWelcome;
+use App\Models\TutorWelcomeModel;
 use App\Auth\Auth;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
@@ -147,8 +149,23 @@ class CourseController
             }
         }
 
+        // Il benvenuto del tutor (07/10): solo per lo studente, e solo se il
+        // tutor del suo gruppo ne ha uno. La visita si registra qui, e da
+        // lei dipende se il benvenuto e' completo o ridotto a una riga.
+        $welcome = null;
+
+        if ($isStudent) {
+            $dati = TutorWelcomeModel::forStudent($courseId, $userId);
+
+            if ($dati !== null) {
+                $stato = TutorWelcomeModel::recordVisit($userId, $courseId);
+                $welcome = $dati + ['modo' => TutorWelcome::modo($stato['visits'], $stato['listened'])];
+            }
+        }
+
         View::render('courses/show', [
             'pageTitle' => $course['title'],
+            'welcome' => $welcome,
             'course' => $course,
             'modules' => $modules,
             'lessonsByModule' => $lessonsByModule,

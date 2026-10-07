@@ -27,6 +27,10 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
     <h1><?= htmlspecialchars($course['title']) ?></h1>
 </div>
 
+<?php if (!empty($welcome)): ?>
+    <?php require __DIR__ . '/_welcome.php'; ?>
+<?php endif; ?>
+
 <?php $cover = CourseCover::url($course, false); ?>
 <?php if ($cover !== null): ?>
     <div class="course-hero">
@@ -50,9 +54,14 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <?php endif; ?>
 
 <?php if ($certificate !== null && $certificate['revoked_at'] === null): ?>
+    <?php /* In un paragrafo, come ogni frase con un collegamento dentro (0117):
+             cosi' «scarica il PDF» si legge come parte della frase, e' verde e
+             sottolineato (0125), e le WCAG lo esentano dalla misura minima. */ ?>
     <div class="alert alert-success">
-        Hai completato il corso: certificato <code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code> —
-        <a href="/certificates/<?= (int) $certificate['id'] ?>/download">scarica il PDF</a>.
+        <p>
+            Hai completato il corso: certificato <code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code> —
+            <a href="/certificates/<?= (int) $certificate['id'] ?>/download">scarica il PDF</a>.
+        </p>
     </div>
 <?php elseif ($eligibility !== null && !$eligibility['eligible']): ?>
     <p class="course-progress-hint">

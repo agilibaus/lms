@@ -407,10 +407,16 @@ async function fuocoInvisibile(page) {
                 // tabulatore — ma attenzione: un rettangolo di dimensione
                 // zero non basta a riconoscerlo, perche' Chromium quei
                 // comandi li dispone lo stesso. Va guardato l'antenato.
-                const dettaglio = el.closest('details');
+                // Si guardano **tutti** i `details` antenati, non solo il
+                // piu' vicino: il `summary` di un `details` chiuso si
+                // raggiunge, ma se quel `details` sta dentro un altro chiuso
+                // no (07/10: «Leggi il testo» dentro il benvenuto ridotto).
+                for (let d = el.closest('details'); d !== null; d = d.parentElement ? d.parentElement.closest('details') : null) {
+                    const eIlSuoSummary = el.tagName === 'SUMMARY' && el.parentElement === d;
 
-                if (dettaglio !== null && !dettaglio.open && el.tagName !== 'SUMMARY') {
-                    return false;
+                    if (!d.open && !eIlSuoSummary) {
+                        return false;
+                    }
                 }
 
                 return r.width > 0 && r.height > 0 && s.visibility !== 'hidden'
@@ -575,6 +581,8 @@ PAGINE_INTERNE.push(
     // Il gruppo da otto con il tutor al centro: e' il solo che fa un cerchio
     // vero, con nomi sui due fianchi, in alto e in basso, e uno lungo.
     ['/gruppi/' + SEMINA.gruppo_cerchio, 'Pagina del gruppo (semina)'],
+    // La sezione dei benvenuti dei tutor (07/10), con un benvenuto caricato.
+    ['/admin/courses/' + SEMINATI.corso + '/edit', 'Modifica corso con benvenuto (semina)'],
 );
 
 async function entra(page) {
@@ -587,11 +595,11 @@ async function entra(page) {
 
 /*
  * COMANDI E COLLEGAMENTI (06/10, deciso con Elena). L'elenco dei comandi e'
- * lo stesso del foglio di stile, sotto `.link-btn`: se se ne aggiunge uno la',
- * va aggiunto anche qui, o i controlli non lo guardano.
+ * lo stesso del foglio di stile, sotto `.link-btn`: un comando nuovo va
+ * aggiunto anche qui, o i controlli non lo guardano.
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
-    + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn)';
+    + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .benvenuto-riascolta';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1195,6 +1203,67 @@ async function giroSenzaMouse(browser) {
     await ctx.close();
 }
 
+/*
+ * IL BENVENUTO DEL TUTOR VISTO DALLO STUDENTE (07/10). Tutti gli altri giri
+ * entrano come admin, e l'admin il benvenuto in cima al corso non lo vede:
+ * e' per lo studente del gruppo del tutor. Qui entra lo studente del mondo
+ * A, a due larghezze, e guarda la pagina del corso completa (prima visita) e
+ * ridotta (quarta visita), poi la riapre. Ogni larghezza riparte da una
+ * semina nuova, perche' le visite si contano e la seconda larghezza
+ * troverebbe il benvenuto gia' ridotto.
+ */
+async function giroBenvenuto(browser) {
+    for (const [larghezza, altezza, daTelefono] of [[1280, 900, false], [390, 844, true]]) {
+        console.log('\n=== benvenuto del tutor, da studente (' + larghezza + '×' + altezza + ') ===');
+
+        const corso = semina().A.corso;
+        const ctx = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+        const page = await ctx.newPage();
+        await page.goto(BASE + '/login');
+        await page.fill('input[name="email"]', 'stud@test.it');
+        await page.fill('input[name="password"]', PASS);
+        await page.click('form.auth-form button[type="submit"]');
+        await page.waitForLoadState('load');
+
+        const url = '/courses/' + corso;
+
+        await esamina(page, url, 'Corso con benvenuto completo (studente)', BERSAGLIO_MINIMO, daTelefono);
+        const completo = await page.evaluate(() => ({
+            scheda: document.querySelectorAll('section.benvenuto').length,
+            ridotto: document.querySelectorAll('details.benvenuto-ridotto').length,
+            audio: !!document.querySelector('section.benvenuto audio[controls][aria-label]'),
+            testo: !!document.querySelector('section.benvenuto details.benvenuto-trascrizione'),
+        }));
+        check('prima visita: il benvenuto è completo, con il lettore e il testo',
+            completo.scheda === 1 && completo.ridotto === 0 && completo.audio && completo.testo, [JSON.stringify(completo)]);
+
+        await page.goto(BASE + url);
+        await page.goto(BASE + url);
+        await esamina(page, url, 'Corso con benvenuto ridotto (studente)', BERSAGLIO_MINIMO, daTelefono);
+        // Senza riga ridotta si segnala e si prosegue: un controllo che si
+        // interrompe fa perdere tutti quelli dopo (§5 del promemoria).
+        const ridotto = await page.evaluate(() => {
+            const riga = document.querySelector('details.benvenuto-ridotto:not([open]) > summary');
+            return { riga: riga !== null, altezza: riga ? Math.round(riga.getBoundingClientRect().height) : null };
+        });
+        check('quarta visita: il benvenuto è ridotto a una riga', ridotto.riga && ridotto.altezza < 80,
+            [JSON.stringify(ridotto)]);
+
+        if (ridotto.riga) {
+            // «Riascolta» lo riapre, senza JavaScript: e' un `details`.
+            await page.click('details.benvenuto-ridotto > summary');
+            const riaperto = await page.evaluate(() => ({
+                aperto: !!document.querySelector('details.benvenuto-ridotto[open] section.benvenuto audio'),
+                sfora: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            }));
+            check('«Riascolta» riapre la scheda completa, senza sforare', riaperto.aperto && riaperto.sfora <= 0,
+                [JSON.stringify(riaperto)]);
+        }
+
+        await ctx.close();
+    }
+}
+
 // ---------------------------------------------------------------
 
 (async () => {
@@ -1226,6 +1295,7 @@ async function giroSenzaMouse(browser) {
 
         await giroLarghezzeEstreme(browser);
         await giroSenzaMouse(browser);
+        await giroBenvenuto(browser);
     } finally {
         await browser.close();
     }

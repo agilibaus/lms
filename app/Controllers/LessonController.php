@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Core\FileStream;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\HtmlSanitizer;
@@ -618,7 +619,7 @@ class LessonController
             return;
         }
 
-        $this->streamFileWithRangeSupport($absolute);
+        FileStream::send($absolute);
     }
 
     public function complete(array $params): void
@@ -903,46 +904,5 @@ class LessonController
                 $stored['size']
             );
         }
-    }
-
-    private function streamFileWithRangeSupport(string $absolutePath): void
-    {
-        $size = filesize($absolutePath);
-        $mime = mime_content_type($absolutePath) ?: 'application/octet-stream';
-
-        $start = 0;
-        $end = $size - 1;
-
-        header('Accept-Ranges: bytes');
-        header('Content-Type: ' . $mime);
-
-        if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d*)-(\d*)/', $_SERVER['HTTP_RANGE'], $matches)) {
-            $start = $matches[1] === '' ? 0 : (int) $matches[1];
-            $end = $matches[2] === '' ? $size - 1 : min((int) $matches[2], $size - 1);
-
-            if ($start > $end || $start >= $size) {
-                header('Content-Range: bytes */' . $size);
-                http_response_code(416);
-                return;
-            }
-
-            http_response_code(206);
-            header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
-        }
-
-        header('Content-Length: ' . ($end - $start + 1));
-
-        $stream = fopen($absolutePath, 'rb');
-        fseek($stream, $start);
-        $bytesLeft = $end - $start + 1;
-
-        while ($bytesLeft > 0 && !feof($stream)) {
-            $read = (int) min(1024 * 1024, $bytesLeft);
-            echo fread($stream, $read);
-            flush();
-            $bytesLeft -= $read;
-        }
-
-        fclose($stream);
     }
 }

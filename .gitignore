@@ -7,6 +7,7 @@
 /storage/google/*
 /storage/group-logos/*
 /storage/certificates/*
+/storage/welcomes/*
 /storage/installed.lock
 /storage/mail/*
 !/storage/mail/.gitkeep
@@ -18,6 +19,7 @@
 !/storage/google/.gitkeep
 !/storage/group-logos/.gitkeep
 !/storage/certificates/.gitkeep
+!/storage/welcomes/.gitkeep
 .env
 .env.local
 *.log

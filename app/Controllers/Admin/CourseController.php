@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\EnrollmentRequestModel;
+use App\Models\TutorWelcomeModel;
 use App\Models\UserModel;
 
 /**
@@ -93,6 +94,7 @@ class CourseController extends AdminController
                 static fn (array $u): bool => !in_array((int) $u['id'], $enrolledIds, true)
             )),
             'canDelete' => Auth::can('course.delete'),
+            'welcomes' => Auth::can('course.welcome') ? TutorWelcomeModel::tutorsForCourse((int) $course['id']) : null,
         ]);
     }
 

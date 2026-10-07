@@ -10,6 +10,7 @@ use App\Core\Ordinamento;
 /** @var array $enrollments */
 /** @var array $availableStudents */
 /** @var bool $canDelete */
+/** @var list<array<string, mixed>>|null $welcomes null se chi guarda non puo' caricare benvenuti */
 
 $courseId = (int) $course['id'];
 
@@ -52,6 +53,10 @@ $enrollments = $ordineIscritti->applica($enrollments);
 </section>
 
 <?php require __DIR__ . '/_cover.php'; ?>
+
+<?php if ($welcomes !== null): ?>
+    <?php require __DIR__ . '/_welcomes.php'; ?>
+<?php endif; ?>
 
 <?php if ($requests !== []): ?>
     <section class="card">

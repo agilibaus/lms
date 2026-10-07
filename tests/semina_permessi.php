@@ -392,6 +392,46 @@ $presentazione->execute(['id' => $tutorA, 'b' => "Presentazione del tutor del mo
 $presentazione->execute(['id' => $studenteA, 'b' => 'Presentazione dello studente del mondo A.']);
 $presentazione->execute(['id' => $studenteB, 'b' => 'Presentazione dello studente del mondo B, che A non deve leggere.']);
 
+// Il benvenuto del tutor (07/10): uno per il tutor di ciascun mondo, nel
+// suo corso, con file veri sul disco — una foto verticale e un audio. Come
+// per le foto del profilo: senza file, un rifiuto sarebbe verde per il
+// motivo sbagliato. L'audio non e' un MP3 che si possa ascoltare: ai
+// controlli serve che esista e che arrivi a chi deve.
+function benvenutoDiProva(PDO $pdo, int $corso, int $tutor, string $lettera): int
+{
+    $cartella = __DIR__ . '/../storage/welcomes/' . $corso;
+
+    if (!is_dir($cartella)) {
+        mkdir($cartella, 0775, true);
+    }
+
+    $foto = 'welcomes/' . $corso . '/prova-permessi.jpg';
+    $img = imagecreatetruecolor(300, 400);
+    imagefill($img, 0, 0, imagecolorallocate($img, 217, 223, 217));
+    imagefilledellipse($img, 150, 150, 140, 140, imagecolorallocate($img, 169, 181, 170));
+    imagefilledellipse($img, 150, 420, 260, 300, imagecolorallocate($img, 169, 181, 170));
+    imagejpeg($img, __DIR__ . '/../storage/' . $foto, 85);
+    imagedestroy($img);
+
+    $audio = 'welcomes/' . $corso . '/prova-permessi.mp3';
+    file_put_contents(__DIR__ . '/../storage/' . $audio, "ID3\x03\x00\x00\x00\x00\x00\x00" . str_repeat("\x00", 2048));
+
+    $pdo->prepare('INSERT INTO course_tutor_welcomes (course_id, tutor_id, photo_path, audio_path, transcript)
+                   VALUES (:c, :t, :p, :a, :x)')
+        ->execute([
+            'c' => $corso,
+            't' => $tutor,
+            'p' => $foto,
+            'a' => $audio,
+            'x' => "Benvenuti nel corso del mondo " . $lettera . ".\nSono il vostro tutor.",
+        ]);
+
+    return (int) $pdo->lastInsertId();
+}
+
+$a['benvenuto'] = benvenutoDiProva($pdo, $a['corso'], $tutorA, 'A');
+$b['benvenuto'] = benvenutoDiProva($pdo, $b['corso'], $tutorB, 'B');
+
 // Un gruppo con abbastanza persone da fare un cerchio, per i controlli di
 // accessibilita': con il solo studente del mondo A ci sarebbe un punto, non
 // un cerchio, e i nomi sui due fianchi non si vedrebbero mai. Otto

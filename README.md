@@ -167,6 +167,7 @@ danni. Le piu' recenti:
 | `2026_10_04_agenda_calendario_date.sql` | da quando esiste e quando e' stato letto |
 | `2026_10_05_benvenuto.sql` | video di benvenuto: chi l'ha gia' visto |
 | `2026_10_05_importazione_utenti.sql` | la coda degli inviti per gli utenti importati |
+| `2026_10_07_benvenuto_tutor.sql` | il benvenuto del tutor nei corsi, le visite che lo riducono, il permesso `course.welcome` |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -778,6 +779,39 @@ partono al primo giro utile, oppure a mano dalla pagina Utenti.
 repository, nessun deploy la copia. Sull'hosting Linux vanno rifatte da zero tutte e due come
 righe di cron, ed è nell'elenco delle cose da fare prima di aprire agli studenti.
 
+## Il benvenuto del tutor nel corso
+
+In cima alla pagina di un corso lo studente trova **il benvenuto del tutor del suo gruppo**: una
+foto a mezzo busto con un breve audio subito sotto, e accanto il nome e il testo di quello che
+il tutor dice («Leggi il testo»). È diverso dal video di benvenuto qui sotto: quello è della
+piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
+
+- **Uno per tutor e per corso.** Un corso seguito da più gruppi con tutor diversi ha più
+  benvenuti, e ogni studente sente quello del proprio tutor. **Chi non è in un gruppo con un
+  tutor** (iscritto dal catalogo) **non vede niente**. Uno studente in due gruppi dello stesso
+  corso, con due tutor che hanno entrambi un benvenuto, sente quello del tutor che viene prima
+  per nome: un ordine fisso invece di uno che cambia fra le visite.
+- **Completo, poi ridotto a una riga.** Completo nelle prime tre visite alla pagina del corso;
+  dalla quarta, **o appena l'audio è stato ascoltato fino in fondo** (la prima delle due cose),
+  diventa una riga con la miniatura, il nome e «Riascolta», che riapre la scheda. La riga è un
+  `details`, quindi si apre senza JavaScript; lo script (`benvenuto.js`) serve solo a dire al
+  server che l'audio è finito. Senza, vale il conto delle visite.
+- **Lo carica solo l'admin**, dalla pagina di modifica del corso, sezione «Benvenuto dei tutor»:
+  un blocco per ogni tutor dei gruppi a cui il corso è assegnato. Permesso `course.welcome`,
+  spostabile dalla matrice dei permessi.
+- **Il testo è obbligatorio**: senza, l'audio non è accessibile a chi non sente o non può
+  ascoltare in quel momento (WCAG 1.2.1).
+- **I file stanno in `storage/welcomes/`**, fuori dal repository, e si servono da
+  `/benvenuti/{id}/foto` e `/benvenuti/{id}/audio` solo all'admin, al tutor del benvenuto e ai
+  suoi studenti in quel corso; agli altri rispondono 404, come un benvenuto che non c'è. L'audio
+  si consegna anche a pezzi (`Range`, `App\Core\FileStream`), che Safari pretende.
+- **L'audio è breve**: MP3 o M4A fino a 5 MB. Servito da PHP occupa un processo mentre si
+  scarica, e per pochi secondi va bene; un audio di mezz'ora no (lo stesso ragionamento dei
+  video, che stanno su Bunny). La foto, JPG, PNG o WebP fino a 8 MB, si salva ridotta a 900 px
+  sul lato lungo e ricodificata in JPEG, che toglie anche i dati nascosti dello scatto.
+- **Sostituire un file cancella quello vecchio**, come per la copertina del corso; «Rimuovi
+  benvenuto» toglie la riga e i due file.
+
 ## Video di benvenuto
 
 Uno studente che accede per la **prima volta** vede una pagina con un video, un pulsante
@@ -907,6 +941,7 @@ php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto d
 php tests/quiz_scoring_test.php     # punteggio dei quattro tipi di domanda
 php tests/importazione_test.php     # 27 prove: codifiche, separatori e righe del file utenti
 php tests/inviti_test.php          # coda degli inviti: chi conosce una password non viene sovrascritto
+php tests/benvenuto_tutor_test.php # benvenuto del tutor: chi sente quale, completo o ridotto, le visite
 php tests/password_test.php         # regola della password e generatore
 php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
 php tests/live_session_mail_test.php   # testi delle email degli incontri
@@ -925,8 +960,8 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.150 controlli su 60 pagine, a tre larghezze più un giro senza mouse (il numero dipende dai dati)
-node tests/permessi.js              # 143 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
+node tests/accessibilita.js         # circa 2.250 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente (il numero dipende dai dati)
+node tests/permessi.js              # 152 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

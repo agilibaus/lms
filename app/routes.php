@@ -8,6 +8,7 @@ use App\Controllers\Admin\PermissionController as AdminPermissionController;
 use App\Controllers\Admin\SettingsController;
 use App\Controllers\Admin\UserController as AdminUserController;
 use App\Controllers\Admin\UserImportController;
+use App\Controllers\Admin\TutorWelcomeController;
 use App\Controllers\AgendaController;
 use App\Controllers\AuthController;
 use App\Controllers\CatalogController;
@@ -208,6 +209,15 @@ $router->post('/admin/courses/{id}/delete', [AdminCourseController::class, 'dest
 $router->post('/admin/courses/{id}/move', [AdminCourseController::class, 'move']);
 $router->post('/admin/courses/{id}/copertina', [AdminCourseController::class, 'updateCover']);
 $router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::class, 'deleteCover']);
+
+// Il benvenuto del tutor all'inizio del corso (07/10): lo carica l'admin per
+// ciascun tutor dei gruppi del corso; foto e audio li ricevono solo l'admin,
+// il tutor e i suoi studenti in quel corso.
+$router->post('/admin/courses/{id}/benvenuti/{tutorId}', [TutorWelcomeController::class, 'save']);
+$router->post('/admin/courses/{id}/benvenuti/{tutorId}/elimina', [TutorWelcomeController::class, 'destroy']);
+$router->get('/benvenuti/{id}/foto', [TutorWelcomeController::class, 'photo']);
+$router->get('/benvenuti/{id}/audio', [TutorWelcomeController::class, 'audio']);
+$router->post('/benvenuti/{id}/ascoltato', [TutorWelcomeController::class, 'listened']);
 
 // --- Configurazione: posta elettronica e Google Meet ---
 $router->get('/admin/settings', [SettingsController::class, 'index']);

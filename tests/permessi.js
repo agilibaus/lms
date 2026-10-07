@@ -241,6 +241,13 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 'il tutor del suo gruppo: sta al centro del cerchio'],
             ['/utenti/' + d.utenti.studenteB + '/immagine', 'negato',
                 'nessun gruppo in comune: prima bastava aver fatto accesso'],
+
+            // Il benvenuto del tutor (07/10): lo studente riceve quello del
+            // tutor del suo gruppo, non quello di un altro corso. I file
+            // esistono tutti (li mette la semina).
+            ['/benvenuti/' + A.benvenuto + '/foto', 'consentito', 'la foto del benvenuto del suo tutor'],
+            ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'l\'audio del benvenuto del suo tutor'],
+            ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un altro tutor, in un altro corso'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
@@ -270,6 +277,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/gruppi/' + B.gruppo, 'negato', 'gruppo di un collega'],
             ['/utenti/' + d.utenti.studenteA + '/immagine', 'consentito', 'studente di un suo gruppo'],
             ['/utenti/' + d.utenti.studenteB + '/immagine', 'negato', 'studente del gruppo di un collega'],
+            ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'il proprio benvenuto'],
+            ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un collega'],
         ]],
 
         ['assist@test.it', 'assistente del tutor A', [
@@ -288,6 +297,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/utenti/' + d.utenti.studenteA + '/immagine', 'negato',
                 'l\'assistente non è fra chi vede le foto'],
             ['/gruppi/' + A.gruppo, 'negato', 'né la pagina del gruppo'],
+            ['/benvenuti/' + A.benvenuto + '/audio', 'negato', 'il benvenuto non è per lo staff che non lo carica'],
         ]],
 
         ['admin@test.it', 'amministratore', [
@@ -303,6 +313,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/gruppi/' + B.gruppo, 'consentito', 'l\'admin vede ogni gruppo'],
             ['/utenti/' + d.utenti.studenteB + '/immagine', 'consentito',
                 'controprova: la foto di B esiste, quindi chi la rifiuta lo fa per la regola'],
+            ['/benvenuti/' + B.benvenuto + '/audio', 'consentito',
+                'controprova: l\'audio di B esiste, e l\'admin carica i benvenuti'],
         ]],
     ];
 
@@ -884,6 +896,13 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/questions/' + A.domanda + '/delete', [], 'negato', 'togliere una domanda'],
                 ['/admin/users/' + d.utenti.studenteA + '/delete', [], 'negato', 'cancellare un utente'],
             ]],
+            // Solo l'admin carica e toglie i benvenuti (07/10), anche il tutor
+            // per il proprio corso no. Il tutor e lo studente sono quelli del
+            // mondo A: il benvenuto e' il loro.
+            ['tutor1@test.it', 'tutor A (benvenuto)', [
+                ['/admin/courses/' + A.corso + '/benvenuti/' + d.utenti.tutorA + '/elimina', [], 'negato',
+                    'togliere il proprio benvenuto'],
+            ]],
         ];
 
         for (const [email, chi, prove] of AZIONI) {
@@ -918,6 +937,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             '/admin/users',
             '/admin/permissions',
             '/profilo',
+            '/benvenuti/' + A.benvenuto + '/audio',
         ]) {
             const r = await esitoGet(page, url);
             check('anonimo → ' + url + ': negato', r.esito === 'negato', r.esito === 'negato' ? [] : ['ottenuto 200']);
