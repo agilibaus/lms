@@ -220,7 +220,7 @@ $provider = $lesson['video_provider'] ?? 'none';
     <form action="/lessons/<?= $lessonId ?>/delete" method="post"
           onsubmit="return confirm('Eliminare definitivamente questa lezione? I file caricati (video, materiali, immagini) restano sul server e non saranno più collegati a nessuna lezione.');">
         <?= Csrf::field() ?>
-        <button type="submit" class="link-btn">Elimina lezione</button>
+        <button type="submit" class="link-btn link-btn-danger">Elimina lezione</button>
     </form>
 <?php endif; ?>
 

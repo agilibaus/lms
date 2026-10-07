@@ -556,6 +556,38 @@ spazio che la tabella ha davvero, non alla larghezza della finestra. Dove le sch
 senso (la matrice dei permessi, che ha una colonna per permesso) c'è il ripiego: scorrimento
 orizzontale **dentro il proprio riquadro**, senza trascinarsi dietro la pagina.
 
+## Comandi e collegamenti: come si riconoscono
+
+Tre regole, decise il 06/10, uguali in ogni pagina e senza elementi in più:
+
+| | Con il mouse | Senza mouse (telefono, tablet) |
+|---|---|---|
+| **Comandi** — nelle righe delle tabelle, fra i comandi di un modulo, nelle liste di assegnazione, nell'Agenda, e quelli isolati in una pagina | neutri, nel colore del testo; sottolineati al passaggio del mouse e con il fuoco della tastiera | sempre sottolineati |
+| **Collegamenti dentro una frase** | verdi e sempre sottolineati | verdi e sempre sottolineati |
+
+I comandi che **fanno perdere qualcosa** sono rossi (`.link-btn-danger`), con le stesse regole
+degli altri. Il criterio: **rosso se si perde qualcosa che ripetere il gesto contrario non
+restituisce**. «Rimuovi» uno studente da un corso è rosso (cancella progresso, tentativi e
+certificato); «Rimuovi» un membro da un gruppo no (le iscrizioni restano). Il pericolo non lo
+dice il solo colore: lo dicono anche la parola e la conferma che compare prima.
+
+Fino al 06/10 i comandi che inviano un modulo (`.link-btn`: «Elimina», «Revoca», «Rimuovi»…)
+erano gli unici sottolineati, e in grigio e di mezzo pixel più piccoli dei collegamenti nella
+stessa riga: una differenza tecnica, invisibile a chi usa la piattaforma, che si vedeva lo
+stesso. E i collegamenti dentro le frasi avevano il colore del testo e nessuna sottolineatura,
+cioè erano indistinguibili.
+
+«Senza mouse» è il dispositivo, non la larghezza (`@media (hover: none)`): un portatile stretto
+ha il mouse. **L'elenco dei comandi sta nel foglio di stile, sotto `.link-btn`, e uguale in
+`tests/accessibilita.js`**: un comando nuovo in un posto nuovo va aggiunto in tutti e due, o
+sul telefono resta senza segnale e i controlli non lo guardano.
+
+`accessibilita.js` verifica su ogni pagina che i collegamenti nelle frasi siano sottolineati e
+di un altro colore, che con il mouse i comandi siano neutri a riposo e che i comandi di una
+stessa fila abbiano il testo sulla stessa riga; poi rifà il giro con un telefono simulato
+**senza mouse** e verifica che ogni comando sia sottolineato. Il giro «telefono» normale non
+basta: cambia la larghezza, ma il browser ha ancora il mouse.
+
 ## Tabelle ordinabili
 
 **Ogni tabella in cui l'ordine è un dato si ordina cliccando sul nome della colonna.** Il
@@ -867,7 +899,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 1.600 controlli su 60 pagine, a tre larghezze (il numero dipende dai dati)
+node tests/accessibilita.js         # circa 2.000 controlli su 60 pagine, a tre larghezze più un giro senza mouse (il numero dipende dai dati)
 node tests/permessi.js              # 143 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero

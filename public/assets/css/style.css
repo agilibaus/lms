@@ -273,10 +273,78 @@ h3 { font-size: 1.05rem; }
     background: none;
     border: none;
     padding: 0;
-    color: var(--color-text-muted);
+    color: var(--color-text);
     font-size: 0.85rem;
     cursor: pointer;
+    /* Neutro a riposo come i collegamenti che gli stanno accanto: fino al
+       06/10 era l'unico comando sottolineato, e in grigio, e nella stessa
+       riga si leggeva diverso da «Modifica» senza che la differenza
+       volesse dire qualcosa (era tecnica: invia un modulo invece di aprire
+       una pagina). Le regole comuni a tutti i comandi stanno sotto. */
+    text-decoration: none;
+}
+
+/* ---------- Comandi e collegamenti: come si riconoscono ----------
+
+   Deciso con Elena il 06/10. Tre regole, nessun elemento in piu':
+
+   1. I COMANDI — nelle righe delle tabelle, fra i comandi di un modulo, nelle
+      liste di assegnazione, e quelli isolati in una pagina — sono neutri a
+      riposo, nel colore del testo, e si sottolineano al passaggio del mouse e
+      con il fuoco della tastiera. La posizione dice gia' che sono comandi.
+   2. SUL TELEFONO (e ovunque non ci sia il passaggio del mouse) gli stessi
+      comandi sono SEMPRE sottolineati: senza il mouse la sottolineatura e'
+      l'unico segnale universale di «questo si tocca». `hover: none` e' il
+      dispositivo, non la larghezza: un portatile stretto ha il mouse.
+   3. I COLLEGAMENTI DENTRO UNA FRASE sono sempre sottolineati e verdi, su ogni
+      dispositivo (sotto, «nelle frasi»).
+
+   I comandi che fanno perdere qualcosa sono rossi (`.link-btn-danger`), con
+   le stesse regole: rosso se si perde qualcosa che ripetere il gesto
+   contrario non restituisce. Il pericolo non lo dice il solo colore: lo dicono
+   anche la parola e la conferma che compare prima.
+
+   L'elenco dei comandi qui sotto va tenuto in pari: un comando nuovo in un
+   posto nuovo si aggiunge qui, o sul telefono resta senza segnale. */
+
+:is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
+    .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn)):is(:hover, :focus-visible) {
     text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+@media (hover: none) {
+    :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
+        .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn)) {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+    }
+}
+
+/* In una cella un comando-pulsante ha la misura dei collegamenti accanto:
+   in Certificati «Revoca» stava a 13,6 px vicino a «PDF» a 14,1. */
+.data-table td .link-btn {
+    font-size: inherit;
+}
+
+/* NELLE FRASI. Un collegamento in mezzo al testo e' circondato da parole
+   uguali a lui: senza un segno proprio scompare. Fino al 06/10 aveva il
+   colore del testo e nessuna sottolineatura, cioe' era indistinguibile per
+   chiunque («Modifica lezione» nell'avviso della fruizione) — e le WCAG
+   (1.4.1) chiedono piu' del solo colore. Verde, cioe' il colore principale,
+   che §4 del promemoria indica gia' per i collegamenti, e sottolineato
+   sempre; al passaggio la sottolineatura si ispessisce.
+   Solo i collegamenti senza classe: quelli con una classe sono componenti
+   (pulsanti, comandi) con regole proprie. */
+:is(p, .alert, .form-hint, .lesson-content) a:not([class]) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+}
+
+:is(p, .alert, .form-hint, .lesson-content) a:not([class]):is(:hover, :focus-visible) {
+    text-decoration-thickness: 2px;
 }
 
 .main-content {
@@ -1482,22 +1550,31 @@ h3 { font-size: 1.05rem; }
     flex-wrap: wrap;
     gap: 0.75rem;
     row-gap: 0.4rem;
+    align-items: center;
     /* 0.85rem come `.link-btn`, che in questa riga e' «Elimina»: gli altri
        comandi stavano a 0.82, cioe' 13,12 px contro 13,6. Mezzo pixel: non
        si sa nominare e si vede lo stesso. */
     font-size: 0.85rem;
 }
 
+/* Neutri come ogni comando: al passaggio si sottolineano (regole comuni
+   sotto `.link-btn`), invece di diventare verdi come fino al 06/10. */
 .module-card-actions a {
-    color: var(--color-text-muted);
+    color: var(--color-text);
+    /* Alti quanto un bersaglio: con la fila allineata al centro non si
+       allungano piu' fino all'altezza delle frecce, e da soli sarebbero
+       alti quanto la riga di testo, 15 px. */
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
 }
 
-.module-card-actions a:hover {
-    color: var(--color-primary);
-}
-
+/* Il modulo che contiene «Elimina» e' un contenitore flessibile, e la fila
+   allinea al centro: con il modulo `inline` il pulsante cadeva sulla riga
+   di testo del modulo, e la sua scritta stava 4 px piu' in basso di quelle
+   accanto. C'era da prima; diventando rosso (06/10) si sarebbe notato. */
 .module-card-actions form {
-    display: inline;
+    display: flex;
 }
 
 .lesson-list {

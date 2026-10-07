@@ -126,7 +126,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                             <form action="/modules/<?= $moduleId ?>/delete" method="post"
                                   onsubmit="return confirm('Eliminare questo modulo e tutte le sue lezioni?');">
                                 <?= Csrf::field() ?>
-                                <button type="submit" class="link-btn">Elimina</button>
+                                <button type="submit" class="link-btn link-btn-danger">Elimina</button>
                             </form>
                         </div>
                     <?php endif; ?>

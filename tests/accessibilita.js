@@ -585,6 +585,67 @@ async function entra(page) {
     await page.waitForLoadState('load');
 }
 
+/*
+ * COMANDI E COLLEGAMENTI (06/10, deciso con Elena). L'elenco dei comandi e'
+ * lo stesso del foglio di stile, sotto `.link-btn`: se se ne aggiunge uno la',
+ * va aggiunto anche qui, o i controlli non lo guardano.
+ */
+const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
+    + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn)';
+const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
+
+/**
+ * Le tre regole lette dalla pagina com'e' adesso. `conMouse` dice se il
+ * dispositivo ha il passaggio del mouse: con il mouse i comandi sono neutri
+ * a riposo, senza devono essere sottolineati.
+ */
+async function comeSiRiconoscono(page) {
+    // Il puntatore lontano da tutto: un comando sotto il mouse e'
+    // sottolineato per regola, e il controllo lo scambierebbe per un errore.
+    await page.mouse.move(0, 0);
+
+    return page.evaluate(([COMANDI, NELLE_FRASI]) => {
+        const visibile = (e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+        const sottolineato = (e) => getComputedStyle(e).textDecorationLine.includes('underline');
+        const testo = (e) => (e.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+
+        const frasi = [...document.querySelectorAll(NELLE_FRASI)].filter(visibile)
+            .filter((a) => !sottolineato(a) || getComputedStyle(a).color === getComputedStyle(a.parentElement).color)
+            .map((a) => '«' + testo(a) + '»');
+
+        const comandi = [...document.querySelectorAll(COMANDI)].filter(visibile);
+
+        // I comandi di una stessa fila: chi sta sulla stessa riga deve avere
+        // il testo alla stessa altezza. «Elimina» nei comandi del modulo
+        // stava 4 px piu' in basso degli altri, da prima del 06/10.
+        const sfalsati = [];
+        for (const fila of document.querySelectorAll('.row-actions, .module-card-actions')) {
+            const voci = [...fila.querySelectorAll('a, button')].filter(visibile).map((e) => {
+                const rg = document.createRange();
+                rg.selectNodeContents(e);
+                const r = rg.getClientRects()[0];
+                return r ? { t: testo(e), alto: r.top, basso: r.bottom } : null;
+            }).filter(Boolean);
+            for (let i = 1; i < voci.length; i++) {
+                const a = voci[0];
+                const b = voci[i];
+                const stessaRiga = Math.abs(a.alto - b.alto) < 12;
+                if (stessaRiga && Math.abs(a.basso - b.basso) > 1) {
+                    sfalsati.push('«' + b.t + '» ' + Math.round(b.basso - a.basso) + ' px rispetto a «' + a.t + '»');
+                }
+            }
+        }
+
+        return {
+            conMouse: !matchMedia('(hover: none)').matches,
+            frasi,
+            sottolineatiARiposo: comandi.filter(sottolineato).map((e) => '«' + testo(e) + '»'),
+            senzaSottolineatura: comandi.filter((e) => !sottolineato(e)).map((e) => '«' + testo(e) + '»'),
+            sfalsati,
+        };
+    }, [COMANDI, NELLE_FRASI]);
+}
+
 async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     const risposta = await page.goto(BASE + url);
 
@@ -620,6 +681,14 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
 
     const ritagliati = await pannelliRitagliati(page);
     check(nome + ': i pannelli che si aprono non vengono ritagliati', ritagliati.length === 0, ritagliati);
+
+    const segni = await comeSiRiconoscono(page);
+    check(nome + ': i collegamenti nelle frasi sono sottolineati e colorati', segni.frasi.length === 0, segni.frasi);
+    check(nome + ': i comandi di una fila hanno il testo sulla stessa riga', segni.sfalsati.length === 0, segni.sfalsati);
+    if (segni.conMouse) {
+        check(nome + ': con il mouse i comandi sono neutri a riposo',
+            segni.sottolineatiARiposo.length === 0, segni.sottolineatiARiposo);
+    }
 
     /*
      * Solo alla larghezza del telefono, e non per pignoleria: Pistacchio si
@@ -1053,6 +1122,35 @@ async function giroLarghezzeEstreme(browser) {
     }
 }
 
+/*
+ * UN TELEFONO VERO, cioe' senza mouse (06/10). Il giro «telefono» qui sopra
+ * cambia solo la larghezza: il browser ha ancora il passaggio del mouse, e la
+ * regola che sul telefono sottolinea i comandi non scatta. Qui il contesto
+ * dichiara schermo tattile, e ogni comando di ogni pagina dev'essere
+ * sottolineato: senza mouse e' l'unico segnale di «questo si tocca».
+ */
+async function giroSenzaMouse(browser) {
+    console.log('\n=== telefono senza mouse (390×844, tattile) — come si riconoscono i comandi ===');
+
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await ctx.newPage();
+    await entra(page);
+
+    for (const [url, nome] of PAGINE_INTERNE) {
+        const risposta = await page.goto(BASE + url);
+
+        if (risposta && risposta.status() >= 400) {
+            continue;
+        }
+
+        const segni = await comeSiRiconoscono(page);
+        check(nome + ': senza mouse ogni comando è sottolineato', !segni.conMouse && segni.senzaSottolineatura.length === 0,
+            segni.conMouse ? ['il contesto dice di avere il mouse'] : segni.senzaSottolineatura);
+    }
+
+    await ctx.close();
+}
+
 // ---------------------------------------------------------------
 
 (async () => {
@@ -1083,6 +1181,7 @@ async function giroLarghezzeEstreme(browser) {
         }
 
         await giroLarghezzeEstreme(browser);
+        await giroSenzaMouse(browser);
     } finally {
         await browser.close();
     }

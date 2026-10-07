@@ -156,7 +156,7 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
                         <form action="/questions/<?= (int) $question['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare questa domanda?');">
                             <?= Csrf::field() ?>
-                            <button type="submit" class="link-btn">Elimina</button>
+                            <button type="submit" class="link-btn link-btn-danger">Elimina</button>
                         </form>
                     </div>
                 </li>
