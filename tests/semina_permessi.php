@@ -78,13 +78,15 @@ $studenteB = utente($pdo, 'strano@test.it');
 // accesso. Lo crea la semina se non c'e': e' roba sua, non una delle sei
 // utenze che il pacchetto si aspetta di trovare.
 $pdo->prepare(
-    'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at)
-     VALUES (:e, :p, :n, "studente", 1, NOW())
+    'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at)
+     VALUES (:e, :p, :n, :c, "studente", 1, NOW())
      ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), is_active = 1'
 )->execute([
     'e' => 'nuovo@test.it',
     'p' => password_hash('Password1!', PASSWORD_DEFAULT),
-    'n' => MARCHIO . ' studente al primo accesso',
+    // Nome e cognome separati dal 07/10: `full_name` e' calcolato.
+    'n' => MARCHIO,
+    'c' => 'studente al primo accesso',
 ]);
 $studenteNuovo = utente($pdo, 'nuovo@test.it');
 
@@ -476,20 +478,26 @@ $pdo->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')
 
 for ($n = 1; $n <= 7; $n++) {
     $pdo->prepare(
-        'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at, welcome_seen_at)
-         VALUES (:e, :p, :nome, "studente", 1, NOW(), NOW())
-         ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)'
+        'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at)
+         VALUES (:e, :p, :nome, :cognome, "studente", 1, NOW(), NOW())
+         ON DUPLICATE KEY UPDATE first_name = VALUES(first_name), last_name = VALUES(last_name)'
     )->execute([
         'e' => 'compagno' . $n . '@test.it',
         'p' => password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT),
-        'nome' => $n === 3
-            ? 'Compagna con un nome davvero molto lungo Bartolomeo-Castiglioni'
-            : 'Compagno ' . $n,
+        'nome' => $n === 3 ? 'Compagna' : 'Compagno',
+        'cognome' => $n === 3 ? 'con un nome davvero molto lungo Bartolomeo-Castiglioni' : (string) $n,
     ]);
 
     $pdo->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')
         ->execute(['g' => $gruppoCerchio, 'u' => utente($pdo, 'compagno' . $n . '@test.it')]);
 }
+
+// Come compaiono agli altri studenti (07/10): il compagno 5 ha scelto le
+// sole iniziali, il 6 il solo nome, gli altri il predefinito. Si riscrive a
+// ogni semina, cosi' una prova che lo cambia non lascia tracce.
+$pdo->exec("UPDATE users SET name_display = 'full' WHERE email LIKE 'compagno%@test.it' OR email = 'stud@test.it'");
+$pdo->exec("UPDATE users SET name_display = 'initials' WHERE email = 'compagno5@test.it'");
+$pdo->exec("UPDATE users SET name_display = 'first' WHERE email = 'compagno6@test.it'");
 
 // La compagna dal nome lungo ha anche la presentazione piu' lunga possibile,
 // mille caratteri e una parola senza spazi: e' lei che deve stare nella

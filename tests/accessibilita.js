@@ -1226,6 +1226,12 @@ async function giroBenvenuto(browser) {
         await page.click('form.auth-form button[type="submit"]');
         await page.waitForLoadState('load');
 
+        // Il profilo dello studente (07/10): nome e cognome separati, e la
+        // scelta di come compare agli altri studenti, con l'anteprima.
+        await esamina(page, '/profilo', 'Profilo (studente)', BERSAGLIO_MINIMO, daTelefono);
+        const scelte = await page.locator('fieldset.scelta-nome input[name="name_display"]').count();
+        check('nel profilo dello studente ci sono le tre scelte di come compare', scelte === 3, ['scelte: ' + scelte]);
+
         const url = '/courses/' + corso;
 
         await esamina(page, url, 'Corso con benvenuto completo (studente)', BERSAGLIO_MINIMO, daTelefono);

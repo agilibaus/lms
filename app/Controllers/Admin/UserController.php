@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\PersonName;
 use App\Auth\Auth;
 use App\Core\Csv;
 use App\Core\Mail\MailException;
@@ -96,10 +97,10 @@ class UserController extends AdminController
     {
         $this->requireUserAccess();
 
-        $data = $this->dataFromPost();
+        $data = $this->dataFromPost('/admin/users/create');
 
-        if ($data['email'] === '' || $data['full_name'] === '') {
-            $this->fail('Nome ed email sono obbligatori.', '/admin/users/create');
+        if ($data['email'] === '') {
+            $this->fail('L\'email è obbligatoria.', '/admin/users/create');
         }
 
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -118,7 +119,8 @@ class UserController extends AdminController
         $newId = UserModel::create(
             $data['email'],
             $password,
-            $data['full_name'],
+            $data['first_name'],
+            $data['last_name'],
             $data['role'],
             $data['is_active'],
             true,
@@ -199,10 +201,10 @@ class UserController extends AdminController
 
         $id = (int) $user['id'];
         $redirect = '/admin/users/' . $id . '/edit';
-        $data = $this->dataFromPost();
+        $data = $this->dataFromPost($redirect);
 
-        if ($data['email'] === '' || $data['full_name'] === '') {
-            $this->fail('Nome ed email sono obbligatori.', $redirect);
+        if ($data['email'] === '') {
+            $this->fail('L\'email è obbligatoria.', $redirect);
         }
 
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -230,7 +232,8 @@ class UserController extends AdminController
         UserModel::update(
             $id,
             $data['email'],
-            $data['full_name'],
+            $data['first_name'],
+            $data['last_name'],
             $data['role'],
             $data['is_active']
         );
@@ -570,10 +573,23 @@ class UserController extends AdminController
     }
 
     /**
-     * @return array{email: string, full_name: string, role: string, tutor_ids: int[], is_active: bool}
+     * Nome e cognome si controllano qui (07/10): un errore rimanda a
+     * `$siSbaglia` con la frase di `PersonName::clean()`.
+     *
+     * @return array{email: string, first_name: string, last_name: string, full_name: string,
+     *               role: string, tutor_ids: int[], is_active: bool}
      */
-    private function dataFromPost(): array
+    private function dataFromPost(string $siSbaglia): array
     {
+        try {
+            [$firstName, $lastName] = PersonName::clean(
+                (string) ($_POST['first_name'] ?? ''),
+                (string) ($_POST['last_name'] ?? '')
+            );
+        } catch (\InvalidArgumentException $e) {
+            $this->fail($e->getMessage(), $siSbaglia);
+        }
+
         $role = (string) ($_POST['role'] ?? 'studente');
         $roles = $this->assignableRoles();
 
@@ -595,7 +611,9 @@ class UserController extends AdminController
 
         return [
             'email' => trim((string) ($_POST['email'] ?? '')),
-            'full_name' => trim((string) ($_POST['full_name'] ?? '')),
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'full_name' => $firstName . ' ' . $lastName,
             'role' => $role,
             'tutor_ids' => $tutorIds,
             'is_active' => isset($_POST['is_active']),

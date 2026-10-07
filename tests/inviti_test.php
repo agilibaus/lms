@@ -97,8 +97,8 @@ $mettiInCoda = static function () use ($db, $id): void {
 
 $db->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => $id]);
 $db->prepare(
-    'INSERT INTO users (id, email, password_hash, full_name, role, email_verified_at, invite_pending)
-     VALUES (:id, :email, :hash, :nome, "studente", NOW(), 1)'
+    'INSERT INTO users (id, email, password_hash, first_name, last_name, role, email_verified_at, invite_pending)
+     VALUES (:id, :email, :hash, :nome, "di prova", "studente", NOW(), 1)'
 )->execute([
     'id' => $id,
     'email' => $email,

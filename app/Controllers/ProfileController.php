@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\PersonName;
 use App\Core\TutorWelcome;
 use App\Auth\Auth;
 use App\Auth\GroupPeers;
@@ -62,12 +63,19 @@ class ProfileController
         Auth::requireLogin();
 
         $userId = (int) Auth::id();
-        $fullName = trim((string) ($_POST['full_name'] ?? ''));
 
-        if ($fullName === '') {
-            $_SESSION['flash_error'] = 'Il nome è obbligatorio.';
+        // Nome e cognome separati (07/10).
+        try {
+            [$firstName, $lastName] = PersonName::clean(
+                (string) ($_POST['first_name'] ?? ''),
+                (string) ($_POST['last_name'] ?? '')
+            );
+        } catch (\InvalidArgumentException $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
             $this->back();
         }
+
+        $fullName = $firstName . ' ' . $lastName;
 
         // L'email per gli studenti (07/10): solo per chi carica il proprio
         // benvenuto, cioe' i tutor. Compare nel benvenuto in cima ai corsi.
@@ -86,7 +94,8 @@ class ProfileController
 
         UserModel::updateProfile(
             $userId,
-            mb_substr($fullName, 0, 150),
+            $firstName,
+            $lastName,
             $this->optional('bio', self::MAX_BIO_CHARS),
             $this->optional('phone', 40),
             $this->optional('city', 120)
@@ -94,6 +103,12 @@ class ProfileController
 
         if ($contatto !== false) {
             UserModel::updateContactEmail($userId, $contatto);
+        }
+
+        // Come lo studente compare agli altri studenti (07/10). Solo per gli
+        // studenti: tutor e admin compaiono sempre con nome e cognome.
+        if (Auth::hasRole('studente') && isset($_POST['name_display'])) {
+            UserModel::updateNameDisplay($userId, (string) $_POST['name_display']);
         }
 
         // Il nome compare nella barra laterale a ogni pagina: senza questo

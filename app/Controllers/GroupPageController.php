@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\GroupPeers;
+use App\Core\PersonName;
 use App\Core\View;
 use App\Models\GroupModel;
 
@@ -38,11 +39,29 @@ class GroupPageController
             return;
         }
 
+        // Come compaiono gli studenti (07/10): ciascuno come ha scelto nel
+        // profilo — nome e cognome, solo il nome, solo le iniziali — tranne
+        // per lo staff, che vede sempre tutto, e per se stessi. Il nome
+        // mostrato prende il posto di `full_name`, cosi' la vista, le
+        // iniziali della foto e la scheda della presentazione usano tutti lo
+        // stesso. Il tutor al centro compare sempre per intero.
+        $chiGuarda = (int) Auth::id();
+        $vedeTutto = Auth::hasRole('admin', 'tutor');
+        $people = array_map(
+            static fn (array $p): array => ['full_name' => PersonName::shown($p, $chiGuarda, $vedeTutto)] + $p,
+            GroupModel::peopleForPage((int) $group['id'])
+        );
+
+        // In ordine di nome mostrato, non di nome vero: chi ha scelto le
+        // iniziali non deve finire in mezzo a chi ha il suo stesso cognome.
+        usort($people, static fn (array $a, array $b): int
+            => strcmp(mb_strtolower((string) $a['full_name']), mb_strtolower((string) $b['full_name'])) ?: ((int) $a['id'] <=> (int) $b['id']));
+
         View::render('profile/group', [
             'pageTitle' => self::titolo((string) $group['name']),
             'group' => $group,
             'tutor' => GroupModel::tutorForPage((int) $group['id']),
-            'people' => GroupModel::peopleForPage((int) $group['id']),
+            'people' => $people,
         ]);
     }
 

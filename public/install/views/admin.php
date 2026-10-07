@@ -20,9 +20,13 @@ defined('LMS_INSTALLER') || exit('Accesso diretto non consentito.');
 <form method="post" action="?step=admin" class="form">
     <input type="hidden" name="_token" value="<?= htmlspecialchars($token) ?>">
 
-    <label for="full_name">Nome e cognome</label>
-    <input type="text" id="full_name" name="full_name" required maxlength="150"
-           value="<?= htmlspecialchars($data['admin_name'] ?? '') ?>">
+    <label for="first_name">Nome</label>
+    <input type="text" id="first_name" name="first_name" required maxlength="100"
+           value="<?= htmlspecialchars($data['admin_first_name'] ?? '') ?>">
+
+    <label for="last_name">Cognome</label>
+    <input type="text" id="last_name" name="last_name" required maxlength="100"
+           value="<?= htmlspecialchars($data['admin_last_name'] ?? '') ?>">
 
     <label for="email">Email</label>
     <input type="email" id="email" name="email" required maxlength="190"

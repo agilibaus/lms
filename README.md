@@ -169,6 +169,7 @@ danni. Le piu' recenti:
 | `2026_10_05_importazione_utenti.sql` | la coda degli inviti per gli utenti importati |
 | `2026_10_07_benvenuto_tutor.sql` | il benvenuto del tutor nei corsi, le visite che lo riducono, il permesso `course.welcome` |
 | `2026_10_07_benvenuto_contatti.sql` | il permesso `course.welcome_own` al tutor, l'email per gli studenti, il link WhatsApp del gruppo |
+| `2026_10_07_nome_cognome.sql` | nome e cognome separati, `full_name` calcolato, la scelta di come comparire agli altri studenti |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -665,9 +666,11 @@ Si carica un **CSV**, si guarda l'anteprima, si conferma. Finché non si preme �
 viene scritta una riga: con duecento persone vere la differenza fra vedere prima cosa
 succederà e scoprirlo dopo è un pomeriggio di telefonate.
 
-Il file ha una riga di intestazione, in qualunque ordine: `email` (obbligatoria), il nome
-— come `nome completo` oppure `nome` e `cognome` separati — e `gruppo`, facoltativo. Gli
-utenti nascono come **studenti**. Massimo 1.000 righe per file.
+Il file ha una riga di intestazione, in qualunque ordine: `email` (obbligatoria), `nome` e
+`cognome` (obbligatori, meglio in due colonne) e `gruppo`, facoltativo. Si accetta anche il
+nome in una colonna sola — `nome completo`, oppure `nome` senza `cognome` —, che si divide
+con la prima parola come nome: i nomi doppi si dividono male, e la pagina lo dice. Una riga
+senza cognome si scarta. Gli utenti nascono come **studenti**. Massimo 1.000 righe per file.
 
 `App\Core\UserImport` legge e giudica, **non scrive**: è per questo che tutta la parte che
 sbaglia davvero si prova con delle stringhe (`php tests/importazione_test.php`). Le tre cose
@@ -968,6 +971,7 @@ php tests/quiz_scoring_test.php     # punteggio dei quattro tipi di domanda
 php tests/importazione_test.php     # 27 prove: codifiche, separatori e righe del file utenti
 php tests/inviti_test.php          # coda degli inviti: chi conosce una password non viene sovrascritto
 php tests/benvenuto_tutor_test.php # benvenuto del tutor: chi sente quale, completo o ridotto, le visite
+php tests/nome_test.php            # nome e cognome: divisione, iniziali, chi vede cosa, importazione
 php tests/password_test.php         # regola della password e generatore
 php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
 php tests/live_session_mail_test.php   # testi delle email degli incontri
@@ -986,8 +990,8 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.350 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 154 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
+node tests/accessibilita.js         # circa 2.390 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 157 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
@@ -1689,6 +1693,29 @@ risponde 404 come per una foto che non c'è, così non si può scoprire chi l'ha
 06/10 bastava aver fatto accesso, e con un numero a caso nell'indirizzo si vedeva la foto di
 chiunque. Sotto il caricamento, nel profilo, un avviso dice che foto e presentazione sono
 facoltative e dove compariranno: la frase e la regola vanno cambiate insieme.
+
+### Nome e cognome, e come compaiono gli studenti agli altri
+
+Dal 07/10 **nome e cognome sono due campi** (`first_name`, `last_name`), obbligatori tutti e
+due in registrazione, nel profilo e nel pannello. **`full_name` resta**, ma è una colonna
+**calcolata dal database** (nome + cognome): le pagine e i report che lo leggono non sono
+cambiati, e nessuno lo scrive più. Una scrittura dimenticata su `full_name` dà errore subito.
+
+**Lo studente sceglie nel profilo come lo vedono gli altri studenti**: nome e cognome (il
+predefinito), solo il nome, o solo le iniziali («M. R.»: una per parola, il trattino separa,
+l'apostrofo no). Ogni scelta mostra l'anteprima del proprio nome. **Tutor e admin vedono
+sempre nome e cognome**, ognuno vede se stesso per intero, e il certificato e i report li
+riportano per intero. Oggi la pagina del gruppo è l'unico posto in cui uno studente vede gli
+altri studenti: lì il nome mostrato prende il posto di quello vero anche per le iniziali della
+foto e per la scheda della presentazione, e l'ordine segue il nome mostrato. **La foto è una
+scelta a parte**: chi non la carica compare con le iniziali di quello che ha scelto di mostrare.
+
+La regola sta in `App\Core\PersonName` (`shown()`), provata da `tests/nome_test.php`. La
+migrazione divide i nomi che c'erano già con la prima parola come nome, e alla fine **stampa
+chi ha più di due parole**, da controllare a mano.
+
+**Una pagina nuova che mostri a uno studente il nome di un altro studente deve passare da
+`PersonName::shown()`.**
 
 ### La presentazione
 

@@ -134,8 +134,8 @@ $idProva = 999123;
 
 $db->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => $idProva]);
 $db->prepare(
-    'INSERT INTO users (id, email, password_hash, full_name, role, email_verified_at)
-     VALUES (:id, :email, :hash, :nome, \'studente\', NOW())'
+    'INSERT INTO users (id, email, password_hash, first_name, last_name, role, email_verified_at)
+     VALUES (:id, :email, :hash, :nome, \'di prova\', \'studente\', NOW())'
 )->execute([
     'id' => $idProva,
     'email' => 'prova-password-' . $idProva . '@example.invalid',

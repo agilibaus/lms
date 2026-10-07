@@ -79,7 +79,7 @@ class GroupModel
     public static function peopleForPage(int $groupId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT u.id, u.full_name, u.avatar_path, u.bio
+            'SELECT u.id, u.full_name, u.first_name, u.last_name, u.name_display, u.avatar_path, u.bio
              FROM group_members gm
              INNER JOIN users u ON u.id = gm.user_id
              WHERE gm.group_id = :group_id

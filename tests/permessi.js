@@ -508,6 +508,33 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
 
+        // --- come compaiono gli studenti (07/10) ---------------------------
+        //
+        // Il compagno 5 ha scelto le iniziali, il 6 il solo nome. Lo
+        // studente di A li vede cosi', e il loro nome intero non deve stare
+        // nemmeno nell'HTML; il tutor del gruppo li vede per intero.
+
+        console.log('\n--- come compaiono gli studenti agli altri');
+
+        for (const [email, chi, intero] of [['stud@test.it', 'studente', false], ['tutor1@test.it', 'tutor del gruppo', true]]) {
+            const { ctx, page } = await entra(browser, email);
+            await page.goto(BASE + '/gruppi/' + d.gruppo_cerchio);
+            const nomi = await page.$$eval('.gruppo-cerchio .persona-nome', (ns) => ns.map((n) => n.childNodes[0].textContent.trim()));
+            const html = await page.content();
+
+            if (intero) {
+                check(chi + ' → vede per intero chi ha scelto le iniziali o il solo nome',
+                    nomi.includes('Compagno 5') && nomi.includes('Compagno 6'), [JSON.stringify(nomi)]);
+            } else {
+                check(chi + ' → vede le iniziali di chi le ha scelte, e il solo nome di chi ha scelto quello',
+                    nomi.includes('C. 5.') && nomi.includes('Compagno') && !nomi.includes('Compagno 6'), [JSON.stringify(nomi)]);
+                check(chi + ' → il nome intero di chi ha scelto le iniziali non c\'è nemmeno nell\'HTML',
+                    !html.includes('Compagno 5'), html.includes('Compagno 5') ? ['trovato «Compagno 5»'] : []);
+            }
+
+            await ctx.close();
+        }
+
         console.log('\n--- il video di benvenuto');
 
         {

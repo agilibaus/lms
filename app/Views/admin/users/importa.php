@@ -52,11 +52,13 @@ use App\Core\UserImport;
             <td data-label="Note">È l'account: lì arriva la password. Si accetta anche «e-mail».</td>
         </tr>
         <tr>
-            <td data-label="Colonna"><code>nome completo</code></td>
+            <td data-label="Colonna"><code>nome</code> e <code>cognome</code></td>
             <td data-label="Serve?">Sì</td>
             <td data-label="Note">
-                Oppure due colonne <code>nome</code> e <code>cognome</code>. Si accetta anche
-                «nome e cognome».
+                Meglio in due colonne separate. Si accetta anche una colonna sola, <code>nome completo</code>
+                (o «nome e cognome», o <code>nome</code> senza <code>cognome</code>): allora la prima parola
+                diventa il nome e il resto il cognome, e i nomi doppi si dividono male («Maria Grazia
+                Rossi» diventa nome «Maria», cognome «Grazia Rossi»). Il cognome serve: senza, la riga si scarta.
             </td>
         </tr>
         <tr>

@@ -29,9 +29,13 @@ $currentRole = $user['role'] ?? 'studente';
 <form action="<?= htmlspecialchars($action) ?>" method="post" class="form" data-user-form>
     <?= Csrf::field() ?>
 
-    <label for="full_name">Nome e cognome</label>
-    <input type="text" id="full_name" name="full_name" maxlength="150" required
-           value="<?= htmlspecialchars((string) ($user['full_name'] ?? '')) ?>">
+    <label for="first_name">Nome</label>
+    <input type="text" id="first_name" name="first_name" maxlength="100" required
+           value="<?= htmlspecialchars((string) ($user['first_name'] ?? '')) ?>">
+
+    <label for="last_name">Cognome</label>
+    <input type="text" id="last_name" name="last_name" maxlength="100" required
+           value="<?= htmlspecialchars((string) ($user['last_name'] ?? '')) ?>">
 
     <label for="email">Email</label>
     <input type="email" id="email" name="email" maxlength="190" required

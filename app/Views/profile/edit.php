@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\PersonName;
 use App\Controllers\ProfileController;
 use App\Core\Csrf;
 use App\Core\GroupLogo;
@@ -33,7 +34,7 @@ $hasAvatar = !empty($user['avatar_path']);
             <img class="avatar avatar-lg" src="/utenti/<?= $userId ?>/immagine" alt="La tua immagine del profilo">
         <?php else: ?>
             <span class="avatar avatar-lg avatar-placeholder" aria-hidden="true">
-                <?= htmlspecialchars(mb_strtoupper(mb_substr((string) $user['full_name'], 0, 1))) ?>
+                <?= htmlspecialchars(mb_strtoupper(mb_substr((string) $user['first_name'], 0, 1))) ?>
             </span>
         <?php endif; ?>
 
@@ -72,9 +73,45 @@ $hasAvatar = !empty($user['avatar_path']);
     <form action="/profilo" method="post" class="form">
         <?= Csrf::field() ?>
 
-        <label for="full_name">Nome e cognome</label>
-        <input type="text" id="full_name" name="full_name" maxlength="150" required
-               value="<?= htmlspecialchars((string) $user['full_name']) ?>">
+        <label for="first_name">Nome</label>
+        <input type="text" id="first_name" name="first_name" maxlength="100" required autocomplete="given-name"
+               value="<?= htmlspecialchars((string) $user['first_name']) ?>">
+
+        <label for="last_name">Cognome</label>
+        <input type="text" id="last_name" name="last_name" maxlength="100" required autocomplete="family-name"
+               value="<?= htmlspecialchars((string) $user['last_name']) ?>">
+
+        <?php if (Auth::hasRole('studente')): ?>
+            <?php
+            /*
+             * Come compare agli altri studenti (07/10, chiesto da Elena). Ogni
+             * scelta mostra come si vedrebbe il proprio nome, cosi' non serve
+             * immaginarlo. Tutor e admin vedono sempre nome e cognome, e lo
+             * dice la frase sotto: chi sceglie le iniziali deve sapere per chi
+             * vale.
+             */
+            $scelta = PersonName::display((string) ($user['name_display'] ?? PersonName::FULL));
+            $esempi = [
+                PersonName::FULL => trim($user['first_name'] . ' ' . $user['last_name']),
+                PersonName::FIRST => (string) $user['first_name'],
+                PersonName::INITIALS => PersonName::initials((string) $user['first_name'], (string) $user['last_name']),
+            ];
+            ?>
+            <fieldset class="checkbox-group scelta-nome">
+                <legend>Come ti vedono gli altri studenti</legend>
+                <?php foreach (PersonName::SCELTE as $valore => $etichetta): ?>
+                    <label class="checkbox-label">
+                        <input type="radio" name="name_display" value="<?= $valore ?>" <?= $valore === $scelta ? 'checked' : '' ?>>
+                        <span><?= htmlspecialchars($etichetta) ?> <span class="scelta-nome-esempio">— «<?= htmlspecialchars($esempi[$valore]) ?>»</span></span>
+                    </label>
+                <?php endforeach; ?>
+                <p class="form-hint">
+                    Vale per gli altri studenti, per esempio nella pagina del gruppo. Il tutor e
+                    l'amministrazione vedono sempre nome e cognome, e il certificato li riporta per intero.
+                    La foto è una scelta a parte: se non la carichi, al suo posto compaiono le iniziali.
+                </p>
+            </fieldset>
+        <?php endif; ?>
 
         <label for="email">Email</label>
         <input type="email" id="email" value="<?= htmlspecialchars((string) $user['email']) ?>" disabled>

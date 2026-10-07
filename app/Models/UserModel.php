@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use App\Core\PersonName;
 
 /**
  * Accesso dati per la tabella `users`.
@@ -34,7 +35,7 @@ class UserModel
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, contact_email, full_name, role, is_active, email_verified_at,
+            'SELECT id, email, contact_email, first_name, last_name, name_display, full_name, role, is_active, email_verified_at,
                     bio, phone, city, avatar_path, created_at
              FROM users WHERE id = :id LIMIT 1'
         );
@@ -47,18 +48,34 @@ class UserModel
     /**
      * Dati del profilo compilati dall'utente stesso.
      */
-    public static function updateProfile(int $id, string $fullName, ?string $bio, ?string $phone, ?string $city): void
+    /**
+     * `full_name` non si scrive: e' calcolato dal database da nome e cognome
+     * (migrazione 2026_10_07_nome_cognome.sql).
+     */
+    public static function updateProfile(int $id, string $firstName, string $lastName, ?string $bio, ?string $phone, ?string $city): void
     {
         $stmt = Database::connection()->prepare(
-            'UPDATE users SET full_name = :full_name, bio = :bio, phone = :phone, city = :city WHERE id = :id'
+            'UPDATE users SET first_name = :first_name, last_name = :last_name,
+                              bio = :bio, phone = :phone, city = :city WHERE id = :id'
         );
         $stmt->execute([
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'bio' => $bio,
             'phone' => $phone,
             'city' => $city,
             'id' => $id,
         ]);
+    }
+
+    /**
+     * Come lo studente compare agli altri studenti (07/10): `PersonName::FULL`,
+     * `FIRST` o `INITIALS`.
+     */
+    public static function updateNameDisplay(int $id, string $scelta): void
+    {
+        Database::connection()->prepare('UPDATE users SET name_display = :d WHERE id = :id')
+            ->execute(['d' => PersonName::display($scelta), 'id' => $id]);
     }
 
     /**
@@ -252,19 +269,22 @@ class UserModel
     public static function update(
         int $id,
         string $email,
-        string $fullName,
+        string $firstName,
+        string $lastName,
         string $role,
         bool $isActive
     ): void {
         // I tutor di un assistente non stanno piu' qui: vedi setAssistantTutors().
         $stmt = Database::connection()->prepare(
             'UPDATE users
-             SET email = :email, full_name = :full_name, role = :role, is_active = :is_active
+             SET email = :email, first_name = :first_name, last_name = :last_name,
+                 role = :role, is_active = :is_active
              WHERE id = :id'
         );
         $stmt->execute([
             'email' => $email,
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'role' => $role,
             'is_active' => $isActive ? 1 : 0,
             'id' => $id,
@@ -417,7 +437,8 @@ class UserModel
     public static function create(
         string $email,
         string $password,
-        string $fullName,
+        string $firstName,
+        string $lastName,
         string $role = 'studente',
         bool $isActive = true,
         bool $emailVerified = true,
@@ -425,16 +446,17 @@ class UserModel
     ): int {
         $stmt = Database::connection()->prepare(
             'INSERT INTO users (email, password_hash, password_changed_at, must_change_password,
-                                full_name, role, is_active, email_verified_at)
+                                first_name, last_name, role, is_active, email_verified_at)
              VALUES (:email, :password_hash, NOW(), :must_change,
-                     :full_name, :role, :is_active,
+                     :first_name, :last_name, :role, :is_active,
                      CASE WHEN :email_verified = 1 THEN NOW() ELSE NULL END)'
         );
         $stmt->execute([
             'email' => $email,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'must_change' => $mustChangePassword ? 1 : 0,
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'role' => $role,
             'is_active' => $isActive ? 1 : 0,
             // Un account creato dallo staff ha un indirizzo gia' noto: chiedere
@@ -461,17 +483,18 @@ class UserModel
      * password dovra' sceglierne una sua, come per ogni account creato
      * dallo staff.
      */
-    public static function createPendingInvite(string $email, string $fullName): int
+    public static function createPendingInvite(string $email, string $firstName, string $lastName): int
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO users (email, password_hash, password_changed_at, must_change_password,
-                                full_name, role, is_active, email_verified_at, invite_pending)
-             VALUES (:email, :hash, NOW(), 1, :full_name, "studente", 1, NOW(), 1)'
+                                first_name, last_name, role, is_active, email_verified_at, invite_pending)
+             VALUES (:email, :hash, NOW(), 1, :first_name, :last_name, "studente", 1, NOW(), 1)'
         );
         $stmt->execute([
             'email' => $email,
             'hash' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT),
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
         ]);
 
         return (int) Database::connection()->lastInsertId();

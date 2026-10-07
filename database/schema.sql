@@ -30,7 +30,14 @@ CREATE TABLE users (
     -- Nessuna password viene conservata in attesa: si genera al momento
     -- dell'invio.
     invite_pending TINYINT(1) NOT NULL DEFAULT 0,
-    full_name       VARCHAR(150) NOT NULL,
+    -- Nome e cognome separati (migrazione 2026_10_07_nome_cognome.sql): il nome
+    -- completo e' calcolato, e nessuno lo scrive. `name_display` e' come lo
+    -- studente compare agli altri studenti: nome e cognome, solo il nome, o le
+    -- sole iniziali. Tutor e admin vedono sempre nome e cognome.
+    first_name      VARCHAR(100) NOT NULL DEFAULT '',
+    last_name       VARCHAR(100) NOT NULL DEFAULT '',
+    name_display    ENUM('full','first','initials') NOT NULL DEFAULT 'full',
+    full_name       VARCHAR(201) AS (TRIM(CONCAT(first_name, ' ', last_name))) STORED,
     role            ENUM('admin','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)
     is_active       TINYINT(1) NOT NULL DEFAULT 1,

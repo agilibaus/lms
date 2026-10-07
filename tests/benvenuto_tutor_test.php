@@ -92,9 +92,10 @@ $pulisci();
 try {
     foreach ([[$bianchi, 'Zeta Bianchi', 'tutor'], [$aldi, 'Anna Aldi', 'tutor'],
               [$studente, 'Studente di prova', 'studente'], [$senzaGruppo, 'Senza gruppo', 'studente']] as [$id, $nome, $ruolo]) {
-        $db->prepare('INSERT INTO users (id, email, password_hash, full_name, role, email_verified_at)
-                      VALUES (:id, :e, :h, :n, :r, NOW())')
-            ->execute(['id' => $id, 'e' => 'benvenuto-' . $id . '@example.invalid', 'h' => 'x', 'n' => $nome, 'r' => $ruolo]);
+        [$primo, $cognome] = \App\Core\PersonName::split($nome);
+        $db->prepare('INSERT INTO users (id, email, password_hash, first_name, last_name, role, email_verified_at)
+                      VALUES (:id, :e, :h, :n, :c, :r, NOW())')
+            ->execute(['id' => $id, 'e' => 'benvenuto-' . $id . '@example.invalid', 'h' => 'x', 'n' => $primo, 'c' => $cognome, 'r' => $ruolo]);
     }
 
     $db->prepare('INSERT INTO courses (id, title, slug, created_by) VALUES (:id, :t, :s, :a)')

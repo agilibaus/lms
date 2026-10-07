@@ -20,9 +20,17 @@ ob_start();
 <form action="/register" method="post" class="auth-form">
     <?= Csrf::field() ?>
 
-    <label for="full_name">Nome e cognome</label>
-    <input type="text" id="full_name" name="full_name" required maxlength="150" autofocus
-           value="<?= htmlspecialchars((string) ($old['full_name'] ?? '')) ?>">
+    <?php /* Nome e cognome separati (07/10): dal profilo lo studente potra'
+             scegliere di comparire agli altri con il solo nome o le iniziali. */ ?>
+    <label for="first_name">Nome</label>
+    <input type="text" id="first_name" name="first_name" required maxlength="100" autofocus
+           autocomplete="given-name"
+           value="<?= htmlspecialchars((string) ($old['first_name'] ?? '')) ?>">
+
+    <label for="last_name">Cognome</label>
+    <input type="text" id="last_name" name="last_name" required maxlength="100"
+           autocomplete="family-name"
+           value="<?= htmlspecialchars((string) ($old['last_name'] ?? '')) ?>">
 
     <label for="email">Email</label>
     <input type="email" id="email" name="email" required maxlength="190" autocomplete="email"

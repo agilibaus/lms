@@ -365,16 +365,18 @@ class Installer
     // Amministratore e configurazione
     // ---------------------------------------------------------------
 
-    public function createAdmin(\PDO $pdo, string $email, string $password, string $fullName): void
+    public function createAdmin(\PDO $pdo, string $email, string $password, string $firstName, string $lastName): void
     {
+        // `full_name` non si scrive: lo calcola il database da nome e cognome.
         $stmt = $pdo->prepare(
-            'INSERT INTO users (email, password_hash, full_name, role, is_active, email_verified_at)
-             VALUES (:email, :password_hash, :full_name, \'admin\', 1, NOW())'
+            'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at)
+             VALUES (:email, :password_hash, :first_name, :last_name, \'admin\', 1, NOW())'
         );
         $stmt->execute([
             'email' => $email,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
         ]);
     }
 

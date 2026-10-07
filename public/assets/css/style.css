@@ -4979,3 +4979,9 @@ fieldset.checkbox-group legend {
     width: 16rem;
     max-width: 100%;
 }
+
+/* La scelta di come comparire agli altri studenti, nel profilo (07/10):
+   accanto a ogni scelta il proprio nome come lo vedrebbero gli altri. */
+.scelta-nome-esempio {
+    color: var(--color-text-muted);
+}

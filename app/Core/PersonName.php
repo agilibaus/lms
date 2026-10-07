@@ -1,0 +1,122 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core;
+
+/**
+ * Nome e cognome, e come compare una persona agli altri (07/10, chiesto da
+ * Elena).
+ *
+ * LO STUDENTE SCEGLIE nel profilo come lo vedono gli altri studenti: con
+ * nome e cognome (il predefinito), con il solo nome, o con le sole
+ * iniziali. **Tutor e admin vedono sempre nome e cognome**, e ognuno vede
+ * se stesso per intero. La scelta riguarda solo il nome: la foto resta una
+ * scelta a parte, e chi non la carica compare con le iniziali di quello che
+ * ha scelto di mostrare.
+ *
+ * Restano sempre completi i documenti ufficiali (certificato, report per la
+ * Regione) e tutto cio' che vede lo staff.
+ */
+final class PersonName
+{
+    public const FULL = 'full';
+    public const FIRST = 'first';
+    public const INITIALS = 'initials';
+
+    /** Le tre scelte, con l'etichetta del profilo. */
+    public const SCELTE = [
+        self::FULL => 'Nome e cognome',
+        self::FIRST => 'Solo il nome',
+        self::INITIALS => 'Solo le iniziali',
+    ];
+
+    public const MAX_CHARS = 100;
+
+    /**
+     * Divide un nome completo: la prima parola e' il nome, il resto il
+     * cognome. Sbaglia con i nomi doppi («Maria Grazia Rossi»), ed e' per
+     * questo che i moduli chiedono i due campi separati: si usa solo dove
+     * arriva un nome tutto insieme (un file da importare con la sola
+     * colonna «nome», e la migrazione degli utenti che c'erano gia').
+     *
+     * @return array{0: string, 1: string}
+     */
+    public static function split(string $completo): array
+    {
+        $parole = preg_split('/\s+/u', trim($completo), 2) ?: [''];
+
+        return [$parole[0], $parole[1] ?? ''];
+    }
+
+    /**
+     * Nome e cognome come li scrive una persona, ripuliti. Tutti e due
+     * obbligatori: e' formazione finanziata, e il cognome serve.
+     *
+     * @return array{0: string, 1: string}
+     * @throws \InvalidArgumentException con la frase da mostrare
+     */
+    public static function clean(string $nome, string $cognome): array
+    {
+        $nome = trim((string) preg_replace('/\s+/u', ' ', $nome));
+        $cognome = trim((string) preg_replace('/\s+/u', ' ', $cognome));
+
+        if ($nome === '') {
+            throw new \InvalidArgumentException('Il nome è obbligatorio.');
+        }
+
+        if ($cognome === '') {
+            throw new \InvalidArgumentException('Il cognome è obbligatorio.');
+        }
+
+        if (mb_strlen($nome) > self::MAX_CHARS || mb_strlen($cognome) > self::MAX_CHARS) {
+            throw new \InvalidArgumentException('Nome e cognome possono essere lunghi al massimo ' . self::MAX_CHARS . ' caratteri.');
+        }
+
+        return [$nome, $cognome];
+    }
+
+    public static function display(string $scelta): string
+    {
+        return array_key_exists($scelta, self::SCELTE) ? $scelta : self::FULL;
+    }
+
+    /**
+     * Le iniziali, con il punto: «M. R.». Una per ogni parola del nome e
+     * del cognome che si mostrano, cosi' «Maria Grazia Rossi» resta
+     * riconoscibile come «M. G. R.» a chi la conosce e a nessun altro.
+     */
+    public static function initials(string $nome, string $cognome): string
+    {
+        $iniziali = [];
+
+        // Spazi e trattini separano le parole, l'apostrofo no: «D'Amico» e'
+        // una parola sola, «D.», e non «D. A.».
+        foreach (preg_split('/[\s-]+/u', trim($nome . ' ' . $cognome)) ?: [] as $parola) {
+            if ($parola !== '') {
+                $iniziali[] = mb_strtoupper(mb_substr($parola, 0, 1)) . '.';
+            }
+        }
+
+        return implode(' ', $iniziali);
+    }
+
+    /**
+     * Il nome di una persona come lo vede chi guarda.
+     *
+     * @param array{id:int, first_name:string, last_name:string, full_name:string, name_display?:string} $persona
+     * @param bool $vedeTutto vero per lo staff, che vede sempre nome e cognome
+     */
+    public static function shown(array $persona, int $chiGuarda, bool $vedeTutto): string
+    {
+        if ($vedeTutto || (int) $persona['id'] === $chiGuarda) {
+            return (string) $persona['full_name'];
+        }
+
+        return match (self::display((string) ($persona['name_display'] ?? self::FULL))) {
+            self::FIRST => (string) $persona['first_name'],
+            self::INITIALS => self::initials((string) $persona['first_name'], (string) $persona['last_name']),
+            default => (string) $persona['full_name'],
+        };
+    }
+}

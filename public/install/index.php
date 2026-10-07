@@ -74,13 +74,15 @@ switch ($step) {
         requireDatabase($data);
 
         if ($method === 'POST') {
-            $data['admin_name'] = trim((string) ($_POST['full_name'] ?? ''));
+            // Nome e cognome separati (07/10): `full_name` e' calcolato dal database.
+            $data['admin_first_name'] = trim((string) ($_POST['first_name'] ?? ''));
+            $data['admin_last_name'] = trim((string) ($_POST['last_name'] ?? ''));
             $data['admin_email'] = trim((string) ($_POST['email'] ?? ''));
             $password = (string) ($_POST['password'] ?? '');
             $confirm = (string) ($_POST['password_confirm'] ?? '');
 
-            if ($data['admin_name'] === '' || $data['admin_email'] === '') {
-                $error = 'Nome ed email sono obbligatori.';
+            if ($data['admin_first_name'] === '' || $data['admin_last_name'] === '' || $data['admin_email'] === '') {
+                $error = 'Nome, cognome ed email sono obbligatori.';
             } elseif (!filter_var($data['admin_email'], FILTER_VALIDATE_EMAIL)) {
                 $error = 'Indirizzo email non valido.';
             } elseif (strlen($password) < Installer::MIN_PASSWORD) {
@@ -227,7 +229,7 @@ function finish(Installer $installer, array $data): ?string
         $pdo = $installer->connect($data['DB_HOST'], $data['DB_NAME'], $data['DB_USER'], $data['DB_PASS']);
 
         if (!$installer->hasUsers($pdo)) {
-            $installer->createAdmin($pdo, $data['admin_email'], $data['admin_password'], $data['admin_name']);
+            $installer->createAdmin($pdo, $data['admin_email'], $data['admin_password'], $data['admin_first_name'], $data['admin_last_name']);
         }
     } catch (\PDOException $e) {
         return 'Creazione dell\'amministratore non riuscita: ' . friendlyPdoMessage($e);

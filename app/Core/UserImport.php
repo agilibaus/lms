@@ -54,7 +54,8 @@ class UserImport
      *        quando il file ne nomina uno che non c'e'
      * @return array{
      *     colonne: array<string, int>,
-     *     righe: list<array{numero: int, email: string, nome: string, gruppo: string, errore: ?string}>,
+     *     righe: list<array{numero: int, email: string, nome: string, first_name: string, last_name: string,
+     *                       gruppo: string, errore: ?string}>,
      *     errore: ?string
      * }
      */
@@ -110,7 +111,8 @@ class UserImport
         foreach ($dati as $i => $linea) {
             $campi = str_getcsv($linea, $separatore, '"', '\\');
             $email = mb_strtolower(trim(self::campo($campi, $colonne, 'email')));
-            $nome = self::nome($campi, $colonne);
+            [$primo, $cognome] = self::nome($campi, $colonne);
+            $nome = trim($primo . ' ' . $cognome);
             $gruppo = trim(self::campo($campi, $colonne, 'gruppo'));
             $errore = null;
 
@@ -123,8 +125,12 @@ class UserImport
                 // non scoperto dal database, che direbbe solo «esiste gia'»
                 // senza spiegare che l'hai scritto tu due volte.
                 $errore = 'ripetuta nel file (riga ' . $visti[$email] . ')';
-            } elseif ($nome === '') {
+            } elseif ($primo === '') {
                 $errore = 'manca il nome';
+            } elseif ($cognome === '') {
+                // Il cognome serve (07/10): da lui si ricavano le iniziali
+                // per chi sceglie di comparire cosi'.
+                $errore = 'manca il cognome';
             } elseif ($gruppo !== '' && !isset($gruppi[self::normalizza($gruppo)])) {
                 // Il gruppo non si crea al volo: un refuso creerebbe un
                 // gruppo nuovo invece di segnalare l'errore, e nessuno se ne
@@ -143,6 +149,8 @@ class UserImport
                 'numero' => $i + 2,
                 'email' => $email,
                 'nome' => $nome,
+                'first_name' => $primo,
+                'last_name' => $cognome,
                 'gruppo' => $gruppo === '' ? '' : ($gruppi[self::normalizza($gruppo)] ?? $gruppo),
                 'errore' => $errore,
             ];
@@ -240,23 +248,33 @@ class UserImport
     }
 
     /**
-     * Il nome, da una colonna sola o da due.
+     * Nome e cognome, da una colonna sola o da due (07/10: nome e cognome
+     * sono due campi). Un nome tutto insieme — colonna «nome completo», o
+     * una colonna «nome» senza la colonna «cognome» — si divide con
+     * `PersonName::split()`: la prima parola e' il nome, il resto il
+     * cognome. Sbaglia con i nomi doppi, ed e' per questo che il formato
+     * consigliato ha le due colonne.
      *
      * @param list<string> $campi
      * @param array<string, int> $colonne
+     * @return array{0: string, 1: string}
      */
-    private static function nome(array $campi, array $colonne): string
+    private static function nome(array $campi, array $colonne): array
     {
         $completo = trim(self::campo($campi, $colonne, 'nome_completo'));
 
-        if ($completo !== '') {
-            return $completo;
+        if ($completo === '' && !isset($colonne['cognome'])) {
+            $completo = trim(self::campo($campi, $colonne, 'nome'));
         }
 
-        $nome = trim(self::campo($campi, $colonne, 'nome'));
-        $cognome = trim(self::campo($campi, $colonne, 'cognome'));
+        if ($completo !== '') {
+            return PersonName::split((string) preg_replace('/\s+/u', ' ', $completo));
+        }
 
-        return trim($nome . ' ' . $cognome);
+        return [
+            trim((string) preg_replace('/\s+/u', ' ', self::campo($campi, $colonne, 'nome'))),
+            trim((string) preg_replace('/\s+/u', ' ', self::campo($campi, $colonne, 'cognome'))),
+        ];
     }
 
     private static function normalizza(string $s): string

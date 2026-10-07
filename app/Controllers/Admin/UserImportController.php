@@ -137,7 +137,7 @@ class UserImportController extends AdminController
             }
 
             try {
-                $id = UserModel::createPendingInvite($email, (string) $riga['nome']);
+                $id = UserModel::createPendingInvite($email, (string) $riga['first_name'], (string) $riga['last_name']);
             } catch (\Throwable $e) {
                 error_log('[Import] ' . $e->getMessage());
                 $falliti[] = $email . ' — non è stato possibile crearlo';

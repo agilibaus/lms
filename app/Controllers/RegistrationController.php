@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\PersonName;
 use App\Auth\Auth;
 use App\Core\Env;
 use App\Core\Mail\MailException;
@@ -51,15 +52,26 @@ class RegistrationController
             $this->redirect('/');
         }
 
-        $fullName = trim((string) ($_POST['full_name'] ?? ''));
+        $firstName = (string) ($_POST['first_name'] ?? '');
+        $lastName = (string) ($_POST['last_name'] ?? '');
         $email = strtolower(trim((string) ($_POST['email'] ?? '')));
         $password = (string) ($_POST['password'] ?? '');
         $confirm = (string) ($_POST['password_confirm'] ?? '');
 
-        $_SESSION['register_old'] = ['full_name' => $fullName, 'email' => $email];
+        $_SESSION['register_old'] = ['first_name' => $firstName, 'last_name' => $lastName, 'email' => $email];
 
-        if ($fullName === '' || $email === '') {
-            $this->fail('Nome ed email sono obbligatori.');
+        // Nome e cognome separati (07/10): servono a mostrare agli altri
+        // studenti solo il nome o le iniziali, se lo studente lo sceglie.
+        try {
+            [$firstName, $lastName] = PersonName::clean($firstName, $lastName);
+        } catch (\InvalidArgumentException $e) {
+            $this->fail($e->getMessage());
+        }
+
+        $fullName = $firstName . ' ' . $lastName;
+
+        if ($email === '') {
+            $this->fail('L\'email è obbligatoria.');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -82,7 +94,7 @@ class RegistrationController
         $existing = UserModel::findByEmail($email);
 
         if ($existing === null) {
-            $userId = UserModel::create($email, $password, $fullName, 'studente', true, false);
+            $userId = UserModel::create($email, $password, $firstName, $lastName, 'studente', true, false);
             $this->sendVerification($userId, $email, $fullName);
         } elseif (($existing['email_verified_at'] ?? null) === null) {
             // Registrazione ripetuta di un account mai confermato: nuovo link.
