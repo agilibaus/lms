@@ -660,7 +660,16 @@ async function comeSiRiconoscono(page) {
             }
         }
 
+        // Un modulo subito dopo un altro modulo stacca di 1,5 rem (07/10):
+        // «Rimuovi copertina» stava a 0 px da «Salva copertina».
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+        const attaccati = [...document.querySelectorAll('form.form + form')].filter(visibile).map((f) => {
+            const sopra = f.previousElementSibling.getBoundingClientRect().bottom;
+            return { t: testo(f), d: Math.round(f.getBoundingClientRect().top - sopra) };
+        }).filter((x) => x.d < 1.5 * rem - 1).map((x) => '«' + x.t + '» a ' + x.d + ' px');
+
         return {
+            attaccati,
             conMouse: !matchMedia('(hover: none)').matches,
             frasi,
             sottolineatiARiposo: comandi.filter(sottolineato).map((e) => '«' + testo(e) + '»'),
@@ -711,6 +720,7 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     check(nome + ': i collegamenti nelle frasi sono sottolineati e colorati', segni.frasi.length === 0, segni.frasi);
     check(nome + ': i comandi di una fila hanno il testo sulla stessa riga', segni.sfalsati.length === 0, segni.sfalsati);
     check(nome + ': i comandi di una fila usano lo stesso carattere', segni.caratteri.length === 0, segni.caratteri);
+    check(nome + ': un modulo che segue un altro modulo ne sta staccato', segni.attaccati.length === 0, segni.attaccati);
     if (segni.conMouse) {
         check(nome + ': con il mouse i comandi sono neutri a riposo',
             segni.sottolineatiARiposo.length === 0, segni.sottolineatiARiposo);

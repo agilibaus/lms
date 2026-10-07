@@ -1304,6 +1304,14 @@ h3 { font-size: 1.05rem; }
     margin-top: 1.5rem;
 }
 
+/* E un modulo che segue un altro modulo: «Rimuovi copertina» sotto «Salva
+   copertina», «Rimuovi immagine» sotto il logo del gruppo, «Rimuovi la
+   chiave» sotto le impostazioni di Meet. Attaccato al pulsante, il comando
+   per togliere sembrava parte del salvataggio (Elena, 07/10). */
+form.form + form {
+    margin-top: 1.5rem;
+}
+
 /* Due campi sulla stessa riga, nome e cognome nella registrazione (07/10).
    Niente soglia di larghezza: ogni campo vuole almeno 8 rem, e quando la
    riga non ne contiene due il secondo va sotto da solo. */
