@@ -1296,6 +1296,14 @@ h3 { font-size: 1.05rem; }
     margin-top: 0.6rem;
 }
 
+/* Una riga di comandi che segue una tabella stacca di 1,5 rem, come i
+   riquadri dopo una tabella (0109, 0110): attaccata, «Aggiungi al gruppo»
+   sembrava l'ultima riga della tabella dei membri (Elena, 07/10). */
+.tabella-schede + .form-inline,
+.data-table + .form-inline {
+    margin-top: 1.5rem;
+}
+
 /* Due campi sulla stessa riga, nome e cognome nella registrazione (07/10).
    Niente soglia di larghezza: ogni campo vuole almeno 8 rem, e quando la
    riga non ne contiene due il secondo va sotto da solo. */

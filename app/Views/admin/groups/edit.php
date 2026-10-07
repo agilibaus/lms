@@ -154,11 +154,15 @@ $members = $ordineMembri->applica($members);
     <?php endif; ?>
 </section>
 
-<section class="card">
-    <h2 class="danger-heading">Elimina gruppo</h2>
+<?php /* Solo il comando, senza titolo (Elena, 07/10): un titolo «Elimina
+         gruppo» sopra un comando «Elimina definitivamente» diceva la stessa
+         cosa due volte, e sembrava una sezione con qualcosa dentro. La
+         conferma prima di eliminare resta. Un `div` e non una `section`:
+         senza titolo non e' una sezione della pagina. */ ?>
+<div class="card">
     <form action="/admin/groups/<?= $groupId ?>/delete" method="post"
           onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
         <?= Csrf::field() ?>
-        <button type="submit" class="link-btn link-btn-danger">Elimina definitivamente</button>
+        <button type="submit" class="link-btn link-btn-danger">Elimina gruppo</button>
     </form>
-</section>
+</div>
