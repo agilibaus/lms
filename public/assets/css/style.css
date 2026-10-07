@@ -4508,10 +4508,12 @@ fieldset.checkbox-group legend {
    principale e cambia con la tavolozza. */
 .persona-fumetto {
     position: absolute;
-    right: -0.15rem;
-    bottom: -0.15rem;
-    width: 1.35rem;
-    height: 1.35rem;
+    right: -0.2rem;
+    bottom: -0.2rem;
+    /* 1,6 rem (chiesto da Elena il 07/10; era 1,35): sulla foto da 64 px
+       il segno si notava appena. */
+    width: 1.6rem;
+    height: 1.6rem;
     border-radius: 50%;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -4520,7 +4522,7 @@ fieldset.checkbox-group legend {
 .persona-fumetto::before {
     content: "";
     position: absolute;
-    inset: 0.25rem;
+    inset: 0.3rem;
     /* Verde, cioe' il colore principale (chiesto da Elena): cambia con la
        tavolozza. Resta la forma a dire che c'e' una presentazione, il
        colore la accompagna soltanto. */
