@@ -67,7 +67,11 @@ $scheda = '<section class="tutor-benvenuto" aria-labelledby="tutor-benvenuto-tit
         <summary>
             <img class="tutor-benvenuto-miniatura" src="<?= $foto ?>" alt="">
             <span class="tutor-benvenuto-ridotto-nome">Il benvenuto di <?= $nome ?></span>
-            <span class="tutor-benvenuto-riascolta">Mostra</span>
+            <?php /* «Mostra» da chiuso, «Nascondi» da aperto (Elena, 07/10): le
+                     scambia lo stile sullo stato del `details`, quindi anche
+                     senza JavaScript. Quella nascosta e' `display: none`, e un
+                     lettore di schermo legge solo l'altra. */ ?>
+            <span class="tutor-benvenuto-riascolta"><span class="tutor-benvenuto-se-chiuso">Mostra</span><span class="tutor-benvenuto-se-aperto">Nascondi</span></span>
         </summary>
         <?= $scheda ?>
     </details>

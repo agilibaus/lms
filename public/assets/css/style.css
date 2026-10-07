@@ -4938,8 +4938,13 @@ fieldset.checkbox-group legend {
     color: var(--color-text);
 }
 
-.tutor-benvenuto-ridotto[open] .tutor-benvenuto-riascolta {
+.tutor-benvenuto-se-aperto,
+.tutor-benvenuto-ridotto[open] .tutor-benvenuto-se-chiuso {
     display: none;
+}
+
+.tutor-benvenuto-ridotto[open] .tutor-benvenuto-se-aperto {
+    display: inline;
 }
 
 /* Nella pagina di modifica del corso, un blocco per tutor. */

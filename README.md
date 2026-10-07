@@ -794,7 +794,8 @@ piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
   per nome: un ordine fisso invece di uno che cambia fra le visite.
 - **Completo, poi ridotto a una riga.** Completo nelle prime tre visite alla pagina del corso;
   dalla quarta, **o appena l'audio è stato ascoltato fino in fondo** (la prima delle due cose),
-  diventa una riga con la miniatura, il nome e «Mostra», che riapre la scheda. La riga è un
+  diventa una riga con la miniatura, il nome e «Mostra», che riapre la scheda; da aperta il
+  comando dice «Nascondi» e la richiude. Le due parole le scambia lo stile. La riga è un
   `details`, quindi si apre senza JavaScript; lo script (`benvenuto.js`) serve solo a dire al
   server che l'audio è finito. Senza, vale il conto delle visite.
 - **Lo carica il tutor**, il proprio, dalla pagina di modifica dei corsi dei suoi gruppi

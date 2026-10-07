@@ -1273,7 +1273,10 @@ async function giroBenvenuto(browser) {
             return {
                 riga: riga !== null,
                 altezza: riga ? Math.round(riga.getBoundingClientRect().height) : null,
-                comando: riga ? riga.querySelector('.tutor-benvenuto-riascolta').textContent.trim() : null,
+                // `innerText`, non `textContent`: conta solo la parola che si
+                // vede, «Mostra» da chiuso, e non anche «Nascondi», che c'e' ma
+                // e' nascosta.
+                comando: riga ? riga.querySelector('.tutor-benvenuto-riascolta').innerText.trim() : null,
                 // Nella riga i contatti non si vedono: si vedono riaprendo (Elena).
                 // `checkVisibility()` e non i rettangoli: Chromium dispone il
                 // contenuto di un `details` chiuso anche se non lo mostra.
@@ -1291,9 +1294,20 @@ async function giroBenvenuto(browser) {
             const riaperto = await page.evaluate(() => ({
                 aperto: !!document.querySelector('details.tutor-benvenuto-ridotto[open] section.tutor-benvenuto audio'),
                 sfora: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+                comando: document.querySelector('details.tutor-benvenuto-ridotto[open] .tutor-benvenuto-riascolta').innerText.trim(),
             }));
             check('«Mostra» riapre la scheda completa, senza sforare', riaperto.aperto && riaperto.sfora <= 0,
                 [JSON.stringify(riaperto)]);
+            check('da aperto il comando dice «Nascondi»', riaperto.comando === 'Nascondi', [JSON.stringify(riaperto)]);
+
+            // E «Nascondi» la richiude, tornando a «Mostra».
+            await page.click('details.tutor-benvenuto-ridotto > summary');
+            const richiuso = await page.evaluate(() => {
+                const d = document.querySelector('details.tutor-benvenuto-ridotto');
+                return { aperto: d.open, comando: d.querySelector('.tutor-benvenuto-riascolta').innerText.trim() };
+            });
+            check('«Nascondi» la richiude e torna «Mostra»', !richiuso.aperto && richiuso.comando === 'Mostra',
+                [JSON.stringify(richiuso)]);
         }
 
         await ctx.close();
