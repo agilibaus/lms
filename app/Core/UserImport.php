@@ -35,9 +35,11 @@ class UserImport
     /**
      * I nomi che riconosciamo per ogni colonna, gia' normalizzati.
      *
-     * L'ordine conta per il nome: «nome completo» va provato prima di
-     * «nome», altrimenti un file con una colonna sola chiamata «nome
-     * completo» finirebbe interpretato come il solo nome di battesimo.
+     * NOME E COGNOME IN DUE COLONNE, sempre (deciso da Elena il 07/10). Una
+     * colonna sola non si accetta: dividerla vorrebbe dire indovinare dove
+     * finisce il nome («Maria Grazia Rossi»), e spiegarlo nella pagina
+     * confondeva piu' di quanto aiutasse. Le intestazioni di una colonna
+     * unica si riconoscono solo per dire che cosa fare (`COLONNA_UNICA`).
      */
     private const INTESTAZIONI = [
         'email' => ['email', 'e-mail', 'mail', 'indirizzo email', 'posta elettronica'],
@@ -76,15 +78,14 @@ class UserImport
         if (!isset($colonne['email'])) {
             return self::vuoto(
                 'Manca la colonna «email». La prima riga del file deve contenere i nomi '
-                . 'delle colonne: email, nome (oppure nome e cognome separati) e gruppo.'
+                . 'delle colonne: email, nome, cognome e gruppo.'
             );
         }
 
-        if (!isset($colonne['nome_completo']) && !isset($colonne['nome'])) {
-            return self::vuoto(
-                'Manca la colonna con il nome. Serve «nome completo», oppure «nome» e '
-                . '«cognome» in due colonne separate.'
-            );
+        if (!isset($colonne['nome']) || !isset($colonne['cognome'])) {
+            return self::vuoto(isset($colonne['nome_completo'])
+                ? 'Nome e cognome devono stare in due colonne separate, «nome» e «cognome».'
+                : 'Mancano le colonne «nome» e «cognome»: servono tutte e due.');
         }
 
         $dati = array_slice($linee, 1);
@@ -248,12 +249,7 @@ class UserImport
     }
 
     /**
-     * Nome e cognome, da una colonna sola o da due (07/10: nome e cognome
-     * sono due campi). Un nome tutto insieme — colonna «nome completo», o
-     * una colonna «nome» senza la colonna «cognome» — si divide con
-     * `PersonName::split()`: la prima parola e' il nome, il resto il
-     * cognome. Sbaglia con i nomi doppi, ed e' per questo che il formato
-     * consigliato ha le due colonne.
+     * Nome e cognome, dalle loro due colonne, ripuliti dagli spazi in piu'.
      *
      * @param list<string> $campi
      * @param array<string, int> $colonne
@@ -261,16 +257,6 @@ class UserImport
      */
     private static function nome(array $campi, array $colonne): array
     {
-        $completo = trim(self::campo($campi, $colonne, 'nome_completo'));
-
-        if ($completo === '' && !isset($colonne['cognome'])) {
-            $completo = trim(self::campo($campi, $colonne, 'nome'));
-        }
-
-        if ($completo !== '') {
-            return PersonName::split((string) preg_replace('/\s+/u', ' ', $completo));
-        }
-
         return [
             trim((string) preg_replace('/\s+/u', ' ', self::campo($campi, $colonne, 'nome'))),
             trim((string) preg_replace('/\s+/u', ' ', self::campo($campi, $colonne, 'cognome'))),

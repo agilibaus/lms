@@ -666,11 +666,11 @@ Si carica un **CSV**, si guarda l'anteprima, si conferma. Finché non si preme �
 viene scritta una riga: con duecento persone vere la differenza fra vedere prima cosa
 succederà e scoprirlo dopo è un pomeriggio di telefonate.
 
-Il file ha una riga di intestazione, in qualunque ordine: `email` (obbligatoria), `nome` e
-`cognome` (obbligatori, meglio in due colonne) e `gruppo`, facoltativo. Si accetta anche il
-nome in una colonna sola — `nome completo`, oppure `nome` senza `cognome` —, che si divide
-con la prima parola come nome: i nomi doppi si dividono male, e la pagina lo dice. Una riga
-senza cognome si scarta. Gli utenti nascono come **studenti**. Massimo 1.000 righe per file.
+Il file ha una riga di intestazione, in qualunque ordine: `email`, `nome` e `cognome`
+(obbligatorie) e `gruppo`, facoltativo. **Nome e cognome stanno sempre in due colonne
+separate** (deciso da Elena il 07/10): un file con il nome in una colonna sola si rifiuta per
+intero, e il messaggio dice di separarla. Una riga senza cognome si scarta. Gli utenti nascono
+come **studenti**. Massimo 1.000 righe per file.
 
 `App\Core\UserImport` legge e giudica, **non scrive**: è per questo che tutta la parte che
 sbaglia davvero si prova con delle stringhe (`php tests/importazione_test.php`). Le tre cose
@@ -1697,7 +1697,8 @@ facoltative e dove compariranno: la frase e la regola vanno cambiate insieme.
 ### Nome e cognome, e come compaiono gli studenti agli altri
 
 Dal 07/10 **nome e cognome sono due campi** (`first_name`, `last_name`), obbligatori tutti e
-due in registrazione, nel profilo e nel pannello. **`full_name` resta**, ma è una colonna
+due in registrazione, nel profilo, nel pannello e nell'importazione. Nella registrazione stanno
+affiancati, e vanno uno sotto l'altro da soli quando lo spazio non basta (`.campi-affiancati`). **`full_name` resta**, ma è una colonna
 **calcolata dal database** (nome + cognome): le pagine e i report che lo leggono non sono
 cambiati, e nessuno lo scrive più. Una scrittura dimenticata su `full_name` dà errore subito.
 

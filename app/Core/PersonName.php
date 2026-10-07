@@ -36,11 +36,10 @@ final class PersonName
     /**
      * Divide un nome completo: la prima parola e' il nome, il resto il
      * cognome. Sbaglia con i nomi doppi («Maria Grazia Rossi»), ed e' per
-     * questo che i moduli chiedono i due campi separati: si usa solo dove
-     * arriva un nome tutto insieme (un file da importare con la sola
-     * colonna «nome», e la migrazione degli utenti che c'erano gia').
-     *
-     * @return array{0: string, 1: string}
+     * questo che moduli e importazione vogliono i due campi separati. E' la
+     * stessa divisione che la migrazione 2026_10_07_nome_cognome.sql ha fatto
+     * in SQL sui nomi che c'erano gia'; qui serve ai test che partono da un
+     * nome solo.
      */
     public static function split(string $completo): array
     {

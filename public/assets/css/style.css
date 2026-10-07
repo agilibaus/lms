@@ -1296,6 +1296,22 @@ h3 { font-size: 1.05rem; }
     margin-top: 0.6rem;
 }
 
+/* Due campi sulla stessa riga, nome e cognome nella registrazione (07/10).
+   Niente soglia di larghezza: ogni campo vuole almeno 8 rem, e quando la
+   riga non ne contiene due il secondo va sotto da solo. */
+.campi-affiancati {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+}
+
+.campi-affiancati > div {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 8rem;
+    min-width: 0;
+}
+
 .auth-form input:focus {
     outline: none;
     border-color: var(--color-primary);

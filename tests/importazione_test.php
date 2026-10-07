@@ -67,7 +67,7 @@ $GRUPPI = ['Classe A', 'Marzo 2027'];
 
 echo PHP_EOL . 'Le codifiche' . PHP_EOL;
 
-$conNome = "email,nome completo\nnicolo@x.it,Nicolò Dall'Acqua\n";
+$conNome = "email,nome,cognome\nnicolo@x.it,Nicolò,Dall'Acqua\n";
 
 $utf8 = UserImport::leggi($conNome, $GRUPPI);
 check('UTF-8 semplice: la riga passa', $utf8['errore'] === null && count(UserImport::buone($utf8['righe'])) === 1);
@@ -134,7 +134,7 @@ check(
 
 echo PHP_EOL . 'Le intestazioni' . PHP_EOL;
 
-$sinonimi = UserImport::leggi("E-Mail; Nome e Cognome ;Classe\nmario@x.it;Mario Rossi;Classe A\n", $GRUPPI);
+$sinonimi = UserImport::leggi("E-Mail; Nome ; COGNOME ;Classe\nmario@x.it;Mario;Rossi;Classe A\n", $GRUPPI);
 check(
     'si riconoscono i sinonimi, le maiuscole e gli spazi di troppo',
     $sinonimi['errore'] === null && count(UserImport::buone($sinonimi['righe'])) === 1,
@@ -149,16 +149,22 @@ check(
 );
 
 $senzaNome = UserImport::leggi("email;gruppo\nmario@x.it;Classe A\n", $GRUPPI);
-check('senza la colonna del nome si rifiuta il file', $senzaNome['errore'] !== null);
+check('senza le colonne del nome si rifiuta il file', $senzaNome['errore'] !== null);
 
-// «nome completo» prima di «nome»: con l'ordine rovesciato una colonna
-// «nome completo» verrebbe presa per il solo nome di battesimo e il
-// cognome sparirebbe senza che nessuno dia errore.
+// Nome e cognome in due colonne, sempre (07/10). Un file con il nome in una
+// colonna sola si rifiuta per intero, dicendo che cosa fare: dividerlo
+// vorrebbe dire indovinare dove finisce il nome.
 $completo = UserImport::leggi("email;nome completo\nmario@x.it;Mario Rossi\n", $GRUPPI);
 check(
-    '«nome completo» vince su «nome»',
-    ($completo['righe'][0]['nome'] ?? '') === 'Mario Rossi',
-    'letto: ' . ($completo['righe'][0]['nome'] ?? '—')
+    'una colonna «nome completo» si rifiuta, e il messaggio dice di separarla',
+    $completo['righe'] === [] && str_contains((string) $completo['errore'], 'due colonne separate'),
+    'errore: ' . (string) $completo['errore']
+);
+$soloNome = UserImport::leggi("email;nome\nmario@x.it;Mario Rossi\n", $GRUPPI);
+check(
+    'una colonna «nome» senza «cognome» si rifiuta',
+    $soloNome['righe'] === [] && str_contains((string) $soloNome['errore'], '«cognome»'),
+    'errore: ' . (string) $soloNome['errore']
 );
 
 // ---------------------------------------------------------------
@@ -215,7 +221,7 @@ check(
 // Il gruppo scritto con un'altra combinazione di maiuscole e' lo stesso
 // gruppo, e viene restituito con il nome vero: quello che finisce scritto
 // nel database e' il nome del gruppo, non quello che ha battuto l'utente.
-$gruppoCaso = UserImport::leggi("email;nome completo;gruppo\nx@x.it;Tizio Caio;  classe   a \n", $GRUPPI);
+$gruppoCaso = UserImport::leggi("email;nome;cognome;gruppo\nx@x.it;Tizio;Caio;  classe   a \n", $GRUPPI);
 check(
     'il gruppo si riconosce a prescindere da maiuscole e spazi',
     ($gruppoCaso['righe'][0]['gruppo'] ?? '') === 'Classe A',
@@ -230,7 +236,7 @@ echo PHP_EOL . 'I limiti' . PHP_EOL;
 
 check('un file vuoto si rifiuta con una frase', UserImport::leggi('', $GRUPPI)['errore'] !== null);
 
-$troppe = "email;nome completo\n" . str_repeat("a@x.it;Tizio Caio\n", UserImport::MAX_RIGHE + 1);
+$troppe = "email;nome;cognome\n" . str_repeat("a@x.it;Tizio;Caio\n", UserImport::MAX_RIGHE + 1);
 $esito = UserImport::leggi($troppe, $GRUPPI);
 check(
     'oltre il massimo di righe il file si rifiuta, invece di importarne una parte',

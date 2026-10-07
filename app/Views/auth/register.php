@@ -22,15 +22,22 @@ ob_start();
 
     <?php /* Nome e cognome separati (07/10): dal profilo lo studente potra'
              scegliere di comparire agli altri con il solo nome o le iniziali. */ ?>
-    <label for="first_name">Nome</label>
-    <input type="text" id="first_name" name="first_name" required maxlength="100" autofocus
-           autocomplete="given-name"
-           value="<?= htmlspecialchars((string) ($old['first_name'] ?? '')) ?>">
-
-    <label for="last_name">Cognome</label>
-    <input type="text" id="last_name" name="last_name" required maxlength="100"
-           autocomplete="family-name"
-           value="<?= htmlspecialchars((string) ($old['last_name'] ?? '')) ?>">
+    <?php /* Affiancati (Elena, 07/10): uno sopra l'altro allungavano il modulo
+             senza bisogno. Dove lo spazio non basta vanno a capo da soli. */ ?>
+    <div class="campi-affiancati">
+        <div>
+            <label for="first_name">Nome</label>
+            <input type="text" id="first_name" name="first_name" required maxlength="100" autofocus
+                   autocomplete="given-name"
+                   value="<?= htmlspecialchars((string) ($old['first_name'] ?? '')) ?>">
+        </div>
+        <div>
+            <label for="last_name">Cognome</label>
+            <input type="text" id="last_name" name="last_name" required maxlength="100"
+                   autocomplete="family-name"
+                   value="<?= htmlspecialchars((string) ($old['last_name'] ?? '')) ?>">
+        </div>
+    </div>
 
     <label for="email">Email</label>
     <input type="email" id="email" name="email" required maxlength="190" autocomplete="email"

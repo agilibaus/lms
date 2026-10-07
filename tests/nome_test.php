@@ -75,27 +75,23 @@ check('una scelta sconosciuta vale «nome e cognome», non un nome vuoto', $vede
 check('senza scelta salvata: nome e cognome (il predefinito)',
     PersonName::shown($mario, 9, false) === 'Mario Rossi');
 
-echo PHP_EOL . 'L\'importazione: i tre formati' . PHP_EOL;
+echo PHP_EOL . 'L\'importazione: nome e cognome in due colonne' . PHP_EOL;
 
-$riga = static fn (string $csv): array => UserImport::leggi($csv)['righe'][0] ?? [];
+$leggi = static fn (string $csv): array => UserImport::leggi($csv);
 
-$r = $riga("email;nome;cognome\nmario@example.it;Maria Grazia;Rossi\n");
+$r = $leggi("email;nome;cognome\nmario@example.it;Maria Grazia;Rossi\n")['righe'][0] ?? [];
 check('colonne «nome» e «cognome»: prese come sono',
     ($r['first_name'] ?? '') === 'Maria Grazia' && ($r['last_name'] ?? '') === 'Rossi', json_encode($r));
 
-$r = $riga("email;nome completo\nmario@example.it;Mario Rossi\n");
-check('colonna «nome completo»: divisa',
-    ($r['first_name'] ?? '') === 'Mario' && ($r['last_name'] ?? '') === 'Rossi', json_encode($r));
+$e = $leggi("email;nome completo\nmario@example.it;Mario Rossi\n");
+check('colonna unica «nome completo»: il file si rifiuta (deciso da Elena)',
+    $e['righe'] === [] && $e['errore'] !== null, (string) $e['errore']);
 
-$r = $riga("email;nome\nmario@example.it;Mario Rossi\n");
-check('colonna «nome» senza «cognome»: è il nome completo, e si divide',
-    ($r['first_name'] ?? '') === 'Mario' && ($r['last_name'] ?? '') === 'Rossi', json_encode($r));
+$e = $leggi("email;nome\nmario@example.it;Mario Rossi\n");
+check('colonna «nome» senza «cognome»: il file si rifiuta', $e['righe'] === [] && $e['errore'] !== null, (string) $e['errore']);
 
-$r = $riga("email;nome;cognome\nmario@example.it;Mario;\n");
-check('cognome vuoto: la riga si scarta dicendo perché', ($r['errore'] ?? '') === 'manca il cognome', json_encode($r));
-
-$r = $riga("email;nome completo\nmario@example.it;Mario\n");
-check('nome completo di una parola sola: manca il cognome', ($r['errore'] ?? '') === 'manca il cognome', json_encode($r));
+$r = $leggi("email;nome;cognome\nmario@example.it;Mario;\n")['righe'][0] ?? [];
+check('cognome vuoto in una riga: quella riga si scarta dicendo perché', ($r['errore'] ?? '') === 'manca il cognome', json_encode($r));
 
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail === 0 ? 0 : 1);
