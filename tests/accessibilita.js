@@ -762,6 +762,27 @@ const EXTRA = {
             altezzeChiuse.length > 0 && altezzeChiuse.every((h) => h === 0),
             ['altezze: ' + altezzeChiuse.join(', ')]);
 
+        // Il bordo di 1 px del colore principale sulle foto dei partecipanti,
+        // non su quella del tutor (07/10, scelto da Elena su un mockup).
+        const bordi = await page.evaluate(() => {
+            const sonda = document.createElement('span');
+            sonda.style.color = 'var(--color-primary)';
+            document.body.appendChild(sonda);
+            const verde = getComputedStyle(sonda).color;
+            sonda.remove();
+            const ombra = (e) => getComputedStyle(e).boxShadow;
+
+            return {
+                senza: [...document.querySelectorAll('.persona:not(.persona-tutor) .persona-foto')]
+                    .filter((f) => !(ombra(f).includes(verde) && ombra(f).includes('0px 0px 0px 1px')))
+                    .map((f) => ombra(f)),
+                tutor: [...document.querySelectorAll('.persona-tutor .persona-foto')].map(ombra).filter((o) => o !== 'none'),
+            };
+        });
+        check(nome + ': le foto dei partecipanti hanno il bordo sottile del colore principale',
+            bordi.senza.length === 0, bordi.senza.slice(0, 3));
+        check(nome + ': la foto del tutor non ha il bordo', bordi.tutor.length === 0, bordi.tutor);
+
         const problemi = { apre: [], fuori: [], scorre: [], scorreV: [], chiudi: [], esc: [], fuoco: [], virgolette: [], corsivo: [] };
 
         // Il fumetto e' verde, cioe' del colore principale (06/10).

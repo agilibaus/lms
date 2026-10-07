@@ -4374,6 +4374,16 @@ fieldset.checkbox-group legend {
     font-size: 1.35rem;
 }
 
+/* Un bordo sottile, 1 px del colore principale, attorno alle foto dei
+   partecipanti (Elena, 07/10, scelto su un mockup). Il tutor al centro ne
+   resta senza: e' un'altra cosa, e la differenza aiuta a vederlo.
+   `box-shadow` e non `border`: il bordo si aggiunge fuori dalla foto senza
+   cambiarne la misura, e quindi senza spostare il cerchio, il fumetto o i
+   nomi. Segue la tavolozza scelta. */
+.persona:not(.persona-tutor) .persona-foto {
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
 .persona-tutor .persona-foto {
     width: 88px;
     height: 88px;
