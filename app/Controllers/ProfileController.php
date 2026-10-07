@@ -105,11 +105,6 @@ class ProfileController
             UserModel::updateContactEmail($userId, $contatto);
         }
 
-        // Come lo studente compare agli altri studenti (07/10). Solo per gli
-        // studenti: tutor e admin compaiono sempre con nome e cognome.
-        if (Auth::hasRole('studente') && isset($_POST['name_display'])) {
-            UserModel::updateNameDisplay($userId, (string) $_POST['name_display']);
-        }
 
         // Il nome compare nella barra laterale a ogni pagina: senza questo
         // aggiornamento resterebbe quello vecchio fino al prossimo accesso.
@@ -216,6 +211,26 @@ class ProfileController
     // ---------------------------------------------------------------
 
     // ---------------------------------------------------------------
+    /**
+     * Come lo studente compare agli altri studenti (07/10): un riquadro suo
+     * nel profilo, con il suo salvataggio. Solo per gli studenti: tutor e
+     * admin compaiono sempre con nome e cognome.
+     */
+    public function updateNameDisplay(array $params = []): void
+    {
+        Auth::requireLogin();
+
+        if (!Auth::hasRole('studente')) {
+            http_response_code(403);
+            echo 'Questa scelta riguarda solo gli studenti.';
+            return;
+        }
+
+        UserModel::updateNameDisplay((int) Auth::id(), (string) ($_POST['name_display'] ?? PersonName::FULL));
+        $_SESSION['flash_success'] = 'Scelta salvata.';
+        $this->back();
+    }
+
     // Cambio password
     // ---------------------------------------------------------------
 

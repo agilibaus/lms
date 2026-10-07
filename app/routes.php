@@ -60,6 +60,7 @@ $router->post('/benvenuto/visto', [WelcomeController::class, 'seen']);
 // --- Profilo dell'utente ----------------------------------------------
 $router->get('/profilo', [ProfileController::class, 'show']);
 $router->post('/profilo', [ProfileController::class, 'update']);
+$router->post('/profilo/come-ti-vedono', [ProfileController::class, 'updateNameDisplay']);
 $router->get('/profilo/password', [ProfileController::class, 'passwordForm']);
 $router->post('/profilo/password', [ProfileController::class, 'changePassword']);
 $router->post('/profilo/immagine', [ProfileController::class, 'updateAvatar']);

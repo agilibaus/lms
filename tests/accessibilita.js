@@ -1242,6 +1242,23 @@ async function giroBenvenuto(browser) {
         const scelte = await page.locator('fieldset.scelta-nome input[name="name_display"]').count();
         check('nel profilo dello studente ci sono le tre scelte di come compare', scelte === 3, ['scelte: ' + scelte]);
 
+        // In un riquadro suo, con il titolo sopra le scelte per misura e per
+        // peso (07/10: prima la `legend` era a 0,90 rem e le scelte a 0,95,
+        // e in grassetto tutte e due).
+        const gerarchia = await page.evaluate(() => {
+            const riquadro = document.querySelector('fieldset.scelta-nome').closest('.card');
+            const h = getComputedStyle(riquadro.querySelector('h2'));
+            const o = getComputedStyle(riquadro.querySelector('.checkbox-label'));
+            return {
+                soloLei: riquadro.querySelectorAll('input:not([type=hidden]):not([type=radio])').length === 0,
+                titolo: parseFloat(h.fontSize), opzione: parseFloat(o.fontSize),
+                pesoTitolo: parseInt(h.fontWeight, 10), pesoOpzione: parseInt(o.fontWeight, 10),
+            };
+        });
+        check('la scelta sta in un riquadro suo, senza i dati anagrafici', gerarchia.soloLei, [JSON.stringify(gerarchia)]);
+        check('il titolo del riquadro è più grande e più marcato delle scelte',
+            gerarchia.titolo > gerarchia.opzione && gerarchia.pesoTitolo > gerarchia.pesoOpzione, [JSON.stringify(gerarchia)]);
+
         const url = '/courses/' + corso;
 
         await esamina(page, url, 'Corso con benvenuto completo (studente)', BERSAGLIO_MINIMO, daTelefono);

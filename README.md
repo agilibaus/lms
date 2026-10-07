@@ -1704,7 +1704,10 @@ cambiati, e nessuno lo scrive più. Una scrittura dimenticata su `full_name` dà
 
 **Lo studente sceglie nel profilo come lo vedono gli altri studenti**: nome e cognome (il
 predefinito), solo il nome, o solo le iniziali («M. R.»: una per parola, il trattino separa,
-l'apostrofo no). Ogni scelta mostra l'anteprima del proprio nome. **Tutor e admin vedono
+l'apostrofo no). La scelta ha un riquadro suo, «Come ti vedono gli altri studenti», separato
+dai dati anagrafici e con il suo salvataggio (`POST /profilo/come-ti-vedono`, solo per gli
+studenti); il titolo è quello di ogni riquadro, sopra le scelte per misura e per peso. Ogni
+scelta mostra l'anteprima del proprio nome. **Tutor e admin vedono
 sempre nome e cognome**, ognuno vede se stesso per intero, e il certificato e i report li
 riportano per intero. Oggi la pagina del gruppo è l'unico posto in cui uno studente vede gli
 altri studenti: lì il nome mostrato prende il posto di quello vero anche per le iniziali della

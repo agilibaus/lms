@@ -5013,3 +5013,10 @@ fieldset.checkbox-group legend {
 .scelta-nome-esempio {
     color: var(--color-text-muted);
 }
+
+/* Le scelte sono testo normale, non nomi di campo: in grassetto, come ogni
+   etichetta di un modulo, si confondevano con il titolo del riquadro, che
+   deve stare sopra di loro per misura e per peso (Elena, 07/10). */
+.form .scelta-nome .checkbox-label {
+    font-weight: 400;
+}

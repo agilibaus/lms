@@ -81,38 +81,6 @@ $hasAvatar = !empty($user['avatar_path']);
         <input type="text" id="last_name" name="last_name" maxlength="100" required autocomplete="family-name"
                value="<?= htmlspecialchars((string) $user['last_name']) ?>">
 
-        <?php if (Auth::hasRole('studente')): ?>
-            <?php
-            /*
-             * Come compare agli altri studenti (07/10, chiesto da Elena). Ogni
-             * scelta mostra come si vedrebbe il proprio nome, cosi' non serve
-             * immaginarlo. Tutor e admin vedono sempre nome e cognome, e lo
-             * dice la frase sotto: chi sceglie le iniziali deve sapere per chi
-             * vale.
-             */
-            $scelta = PersonName::display((string) ($user['name_display'] ?? PersonName::FULL));
-            $esempi = [
-                PersonName::FULL => trim($user['first_name'] . ' ' . $user['last_name']),
-                PersonName::FIRST => (string) $user['first_name'],
-                PersonName::INITIALS => PersonName::initials((string) $user['first_name'], (string) $user['last_name']),
-            ];
-            ?>
-            <fieldset class="checkbox-group scelta-nome">
-                <legend>Come ti vedono gli altri studenti</legend>
-                <?php foreach (PersonName::SCELTE as $valore => $etichetta): ?>
-                    <label class="checkbox-label">
-                        <input type="radio" name="name_display" value="<?= $valore ?>" <?= $valore === $scelta ? 'checked' : '' ?>>
-                        <span><?= htmlspecialchars($etichetta) ?> <span class="scelta-nome-esempio">— «<?= htmlspecialchars($esempi[$valore]) ?>»</span></span>
-                    </label>
-                <?php endforeach; ?>
-                <p class="form-hint">
-                    Vale per gli altri studenti, per esempio nella pagina del gruppo. Il tutor e
-                    l'amministrazione vedono sempre nome e cognome, e il certificato li riporta per intero.
-                    La foto è una scelta a parte: se non la carichi, al suo posto compaiono le iniziali.
-                </p>
-            </fieldset>
-        <?php endif; ?>
-
         <label for="email">Email</label>
         <input type="email" id="email" value="<?= htmlspecialchars((string) $user['email']) ?>" disabled>
         <p class="form-hint">
@@ -180,6 +148,52 @@ $hasAvatar = !empty($user['avatar_path']);
         </div>
     </form>
 </section>
+
+<?php if (Auth::hasRole('studente')): ?>
+    <?php
+    /*
+     * Come compare agli altri studenti (07/10). Un riquadro suo, con il suo
+     * salvataggio, e non piu' dentro i dati anagrafici (Elena: troppe cose
+     * in un riquadro solo). Il titolo e' quello di ogni riquadro, 1 rem,
+     * piu' grande delle scelte a 0,95: con la `legend` di prima era il
+     * contrario, 0,90 contro 0,95.
+     *
+     * Ogni scelta mostra come si vedrebbe il proprio nome, cosi' non serve
+     * immaginarlo. Il `fieldset` resta per raggruppare le tre scelte, con la
+     * `legend` per i lettori di schermo; a vista il titolo e' quello del
+     * riquadro.
+     */
+    $scelta = PersonName::display((string) ($user['name_display'] ?? PersonName::FULL));
+    $esempi = [
+        PersonName::FULL => trim($user['first_name'] . ' ' . $user['last_name']),
+        PersonName::FIRST => (string) $user['first_name'],
+        PersonName::INITIALS => PersonName::initials((string) $user['first_name'], (string) $user['last_name']),
+    ];
+    ?>
+    <section class="card">
+        <h2>Come ti vedono gli altri studenti</h2>
+        <form action="/profilo/come-ti-vedono" method="post" class="form">
+            <?= Csrf::field() ?>
+            <fieldset class="checkbox-group scelta-nome">
+                <legend class="sr-only">Come ti vedono gli altri studenti</legend>
+                <?php foreach (PersonName::SCELTE as $valore => $etichetta): ?>
+                    <label class="checkbox-label">
+                        <input type="radio" name="name_display" value="<?= $valore ?>" <?= $valore === $scelta ? 'checked' : '' ?>>
+                        <span><?= htmlspecialchars($etichetta) ?> <span class="scelta-nome-esempio">— «<?= htmlspecialchars($esempi[$valore]) ?>»</span></span>
+                    </label>
+                <?php endforeach; ?>
+            </fieldset>
+            <p class="form-hint">
+                Vale per gli altri studenti, per esempio nella pagina del gruppo. Il tutor e
+                l'amministrazione vedono sempre nome e cognome, e il certificato li riporta per intero.
+                La foto è una scelta a parte: se non la carichi, al suo posto compaiono le iniziali.
+            </p>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Salva</button>
+            </div>
+        </form>
+    </section>
+<?php endif; ?>
 
 <section class="card">
     <h2>Password</h2>

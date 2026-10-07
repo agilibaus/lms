@@ -932,6 +932,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/admin/courses/' + A.corso + '/benvenuti/' + d.utenti.tutorA + '/elimina', [], 'negato',
                     'togliere il benvenuto del proprio tutor'],
             ]],
+            // Come compaiono agli altri studenti: e' una scelta solo degli
+            // studenti (07/10). Il tutor compare sempre per intero.
+            ['tutor2@test.it', 'tutor B (come ti vedono)', [
+                ['/profilo/come-ti-vedono', [['name_display', 'initials']], 'negato',
+                    'il tutor non sceglie come compare: compare sempre per intero'],
+            ]],
             ['tutor1@test.it', 'tutor A (benvenuto)', [
                 ['/admin/courses/' + B.corso + '/benvenuti/' + d.utenti.tutorB + '/elimina', [], 'negato',
                     'togliere il benvenuto di un collega'],
