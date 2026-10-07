@@ -454,7 +454,7 @@ class UserController extends AdminController
     {
         $intestazione = [
             'ID', 'Nome', 'Email', 'Ruolo', 'Stato', 'Email verificata',
-            'Tutor affiancati', 'Telefono', 'Citta', 'Immagine',
+            'Tutor di riferimento', 'Telefono', 'Citta', 'Immagine',
             'Registrato il', 'Ultima modifica',
         ];
 
@@ -474,7 +474,7 @@ class UserController extends AdminController
                 Auth::roleLabel($utente['role'] ?? null),
                 (int) $utente['is_active'] === 1 ? 'attivo' : 'disattivato',
                 $utente['email_verified_at'],
-                (string) ($utente['supervising_tutor_name'] ?? ''),
+                (string) ($utente['tutor_riferimento'] ?? ''),
                 (string) ($utente['phone'] ?? ''),
                 (string) ($utente['city'] ?? ''),
                 ($utente['avatar_path'] ?? null) === null ? 'no' : 'si',

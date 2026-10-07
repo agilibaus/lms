@@ -394,6 +394,52 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         // faccia parte del gruppo. Lo studente di B non deve comparire
         // nemmeno come nome.
 
+        // --- la colonna Tutor dell'elenco utenti (06/10) ----------------
+        //
+        // Il tutor di riferimento dipende dal ruolo: per lo studente i tutor
+        // dei suoi gruppi, per l'assistente i tutor che affianca, per il tutor
+        // nessuno. Lo studente di A sta in due gruppi dello stesso tutor (A e
+        // «cerchio»), quindi il nome deve comparire una volta sola.
+
+        console.log('\n--- l\'elenco utenti: la colonna Tutor');
+
+        {
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            await page.goto(BASE + '/admin/users');
+
+            const riga = async (email) => page.evaluate((email) => {
+                const tr = [...document.querySelectorAll('tbody tr')]
+                    .find((r) => r.querySelector('td[data-label="Email"]')?.textContent.trim() === email);
+
+                return tr ? {
+                    nome: tr.querySelector('td[data-label="Nome"]').textContent.trim(),
+                    tutor: tr.querySelector('td[data-label="Tutor"]').textContent.trim(),
+                } : null;
+            }, email);
+
+            const tutorA = await riga('tutor1@test.it');
+            const studente = await riga('stud@test.it');
+            const assistente = await riga('assist@test.it');
+
+            check(
+                'admin → lo studente ha come tutor quello dei suoi gruppi, una volta sola',
+                tutorA !== null && studente !== null && studente.tutor === tutorA.nome,
+                studente === null ? ['riga dello studente non trovata'] : ['trovato: «' + studente.tutor + '»']
+            );
+            check(
+                'admin → l\'assistente ha come tutor quello che affianca',
+                tutorA !== null && assistente !== null && assistente.tutor === tutorA.nome,
+                assistente === null ? ['riga dell\'assistente non trovata'] : ['trovato: «' + assistente.tutor + '»']
+            );
+            check(
+                'admin → un tutor non ha un tutor di riferimento',
+                tutorA !== null && tutorA.tutor === '—',
+                tutorA === null ? ['riga del tutor non trovata'] : ['trovato: «' + tutorA.tutor + '»']
+            );
+
+            await ctx.close();
+        }
+
         console.log('\n--- la pagina del gruppo: che cosa c\'è dentro');
 
         {

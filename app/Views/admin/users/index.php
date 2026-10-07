@@ -17,7 +17,7 @@ $ordine = Ordinamento::daRichiesta([
     'nome' => ['full_name', Ordinamento::TESTO, 'email'],
     'email' => ['email', Ordinamento::TESTO],
     'ruolo' => ['role', Ordinamento::TESTO],
-    'tutor' => ['supervising_tutor_name', Ordinamento::TESTO],
+    'tutor' => ['tutor_riferimento', Ordinamento::TESTO],
     // Lo stato e' 0 o 1: ordinando per numero, un clic raggruppa i
     // disattivati in fondo e il clic opposto li porta in cima.
     'stato' => ['is_active', Ordinamento::NUMERO],
@@ -111,7 +111,7 @@ $users = $ordine->applica($users);
                     <td role="cell" data-label="Nome"><?= htmlspecialchars((string) $user['full_name']) ?></td>
                     <td role="cell" data-label="Email"><?= htmlspecialchars((string) $user['email']) ?></td>
                     <td role="cell" data-label="Ruolo"><?= htmlspecialchars(Auth::roleLabel($user['role'] ?? 'assistente')) ?></td>
-                    <td role="cell" data-label="Tutor"><?= htmlspecialchars((string) ($user['supervising_tutor_name'] ?? '—')) ?></td>
+                    <td role="cell" data-label="Tutor"><?= htmlspecialchars((string) ($user['tutor_riferimento'] ?? '—')) ?></td>
                     <td role="cell" data-label="Stato">
                         <?php if ((int) $user['is_active'] === 1): ?>
                             <span class="badge badge-success">attivo</span>

@@ -71,18 +71,53 @@ class UserModel
     }
 
     /**
-     * Elenco utenti, ordinato per nome (per pannello admin/gestione utenti).
-     * Include il nome del tutor supervisore, dove presente.
+     * Il «tutor di riferimento» di un utente, come lo mostra la colonna Tutor
+     * dell'elenco utenti e lo scaricamento CSV/XLSX. Dipende dal ruolo
+     * (deciso con Elena il 06/10):
+     *
+     *   - uno **studente** ha come riferimento i tutor dei gruppi di cui fa
+     *     parte: e' il legame vero, dalla 0044 in poi;
+     *   - un **assistente**, i tutor che affianca (`assistant_tutors`);
+     *   - tutor e amministratori nessuno.
+     *
+     * Piu' tutor si elencano in ordine alfabetico, separati da virgola, e
+     * ciascuno una volta sola: lo stesso tutor che segue due gruppi dello
+     * studente non compare due volte.
+     *
+     * STORIA. Fino al 30/09 la colonna mostrava `users.supervising_tutor_id`,
+     * il «tutor supervisore». La 0044 ha tolto il campo e la query era stata
+     * riscritta sui soli assistenti, cosi' la colonna restava vuota proprio
+     * sulle righe degli studenti, dove la si guarda.
+     *
+     * Frammento SQL, con `u` come alias dell'utente. Fra virgolette doppie
+     * perche' contiene stringhe letterali (trappola di §5 del promemoria).
+     */
+    private const TUTOR_DI_RIFERIMENTO = "CASE u.role
+            WHEN 'studente' THEN (
+                SELECT GROUP_CONCAT(DISTINCT t.full_name ORDER BY t.full_name SEPARATOR ', ')
+                FROM group_members gm
+                INNER JOIN `groups` g ON g.id = gm.group_id
+                INNER JOIN users t ON t.id = g.tutor_id
+                WHERE gm.user_id = u.id
+            )
+            WHEN 'assistente' THEN (
+                SELECT GROUP_CONCAT(DISTINCT t.full_name ORDER BY t.full_name SEPARATOR ', ')
+                FROM assistant_tutors at
+                INNER JOIN users t ON t.id = at.tutor_id
+                WHERE at.assistant_id = u.id
+            )
+        END";
+
+    /**
+     * Elenco utenti, ordinato per nome (per pannello admin/gestione utenti),
+     * con il tutor di riferimento di ciascuno.
      */
     public static function all(): array
     {
         return Database::connection()->query(
             'SELECT u.id, u.email, u.full_name, u.role, u.is_active, u.created_at,
-                    GROUP_CONCAT(t.full_name ORDER BY t.full_name SEPARATOR \', \') AS supervising_tutor_name
+                    ' . self::TUTOR_DI_RIFERIMENTO . ' AS tutor_riferimento
              FROM users u
-             LEFT JOIN assistant_tutors at ON at.assistant_id = u.id
-             LEFT JOIN users t ON t.id = at.tutor_id
-             GROUP BY u.id
              ORDER BY u.full_name, u.email'
         )->fetchAll();
     }
@@ -100,11 +135,8 @@ class UserModel
         return Database::connection()->query(
             'SELECT u.id, u.full_name, u.email, u.role, u.is_active, u.email_verified_at,
                     u.phone, u.city, u.avatar_path, u.created_at, u.updated_at,
-                    GROUP_CONCAT(t.full_name ORDER BY t.full_name SEPARATOR \', \') AS supervising_tutor_name
+                    ' . self::TUTOR_DI_RIFERIMENTO . ' AS tutor_riferimento
              FROM users u
-             LEFT JOIN assistant_tutors at ON at.assistant_id = u.id
-             LEFT JOIN users t ON t.id = at.tutor_id
-             GROUP BY u.id
              ORDER BY u.full_name, u.email'
         )->fetchAll();
     }
@@ -136,7 +168,8 @@ class UserModel
     public static function assistantsForTutor(int $tutorId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT u.id, u.email, u.full_name, u.is_active
+            'SELECT u.id, u.email, u.full_name, u.is_active, u.role,
+                    ' . self::TUTOR_DI_RIFERIMENTO . ' AS tutor_riferimento
              FROM assistant_tutors at
              INNER JOIN users u ON u.id = at.assistant_id AND u.role = \'assistente\'
              WHERE at.tutor_id = :tutor_id

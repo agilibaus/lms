@@ -868,7 +868,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 1.600 controlli su 60 pagine, a tre larghezze (il numero dipende dai dati)
-node tests/permessi.js              # 140 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
+node tests/permessi.js              # 143 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto e le presentazioni
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
@@ -1361,6 +1361,14 @@ Due migrazioni, in quest'ordine. `2026_09_29_tutor_assistenti.sql` crea `assista
 vi trasferisce i legami esistenti di `users.supervising_tutor_id` e toglie il permesso al
 tutor; `2026_09_30_rimozione_supervising_tutor_id.sql` **elimina la colonna**, che nel
 frattempo non la leggeva più nessuno. Entrambe si possono rieseguire senza danni.
+
+**La colonna Tutor dell'elenco utenti** — e la colonna «Tutor di riferimento» dello
+scaricamento CSV/XLSX — mostra il tutor di riferimento **secondo il ruolo**: per uno studente
+i tutor dei gruppi di cui fa parte, per un assistente i tutor che affianca, per tutor e admin
+nessuno («—»). Più tutor si elencano in ordine alfabetico, ciascuno una volta sola.
+L'espressione sta in `UserModel::TUTOR_DI_RIFERIMENTO` e la usano tutti e tre gli elenchi
+(admin, tutor, scaricamento). Fino al 06/10, dopo la rimozione del tutor supervisore, la
+colonna guardava solo gli assistenti e restava vuota sulle righe degli studenti.
 
 ## Ordine dei corsi
 
