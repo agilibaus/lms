@@ -762,7 +762,7 @@ const EXTRA = {
             altezzeChiuse.length > 0 && altezzeChiuse.every((h) => h === 0),
             ['altezze: ' + altezzeChiuse.join(', ')]);
 
-        const problemi = { apre: [], fuori: [], scorre: [], scorreV: [], chiudi: [], esc: [], fuoco: [], virgolette: [] };
+        const problemi = { apre: [], fuori: [], scorre: [], scorreV: [], chiudi: [], esc: [], fuoco: [], virgolette: [], corsivo: [] };
 
         // Il fumetto e' verde, cioe' del colore principale (06/10).
         const fumetto = await page.evaluate(() => {
@@ -807,6 +807,7 @@ const EXTRA = {
                     scorreV: b.height < parseFloat(getComputedStyle(s).maxHeight) - 1
                         ? s.scrollHeight - s.clientHeight : 0,
                     chiudi: Math.min(c.width, c.height),
+                    corsivo: getComputedStyle(s.querySelector('.presentazione-testo')).fontStyle === 'italic',
                     // Le virgolette (06/10): quella che apre accanto alla
                     // prima riga, quella che chiude accanto all'ultima. Sono
                     // forme con la scatola uguale al segno, quindi la loro
@@ -834,6 +835,7 @@ const EXTRA = {
             if (r.scorre > 0) problemi.scorre.push(id + ' di ' + r.scorre + ' px');
             if (r.scorreV > 0) problemi.scorreV.push(id + ' di ' + r.scorreV + ' px');
             if (r.chiudi < 24) problemi.chiudi.push(id + ': ' + r.chiudi + ' px');
+            if (!r.corsivo) problemi.corsivo.push(id);
             if (Math.abs(r.virgolette.apre) > 6 || Math.abs(r.virgolette.chiude) > 6) {
                 problemi.virgolette.push(id + ': apre a ' + r.virgolette.apre + ' px dalla prima riga, chiude a '
                     + r.virgolette.chiude + ' px dall\'ultima');
@@ -859,6 +861,8 @@ const EXTRA = {
         check(nome + ': una presentazione corta non scorre in verticale', problemi.scorreV.length === 0, problemi.scorreV);
         check(nome + ': il comando per chiudere è almeno 24 px', problemi.chiudi.length === 0, problemi.chiudi);
         check(nome + ': le virgolette stanno accanto alla prima e all\'ultima riga', problemi.virgolette.length === 0, problemi.virgolette);
+        // In corsivo (07/10, Elena): un racconto detto a voce.
+        check(nome + ': il testo della presentazione è in corsivo', problemi.corsivo.length === 0, problemi.corsivo);
         check(nome + ': Esc chiude la presentazione', problemi.esc.length === 0, problemi.esc);
         check(nome + ': chiusa la presentazione, il fuoco torna sulla persona', problemi.fuoco.length === 0, problemi.fuoco);
     },

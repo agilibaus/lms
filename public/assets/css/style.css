@@ -4589,6 +4589,10 @@ fieldset.checkbox-group legend {
     padding: 0.2rem 3.4rem 0.3rem 3.6rem;
     line-height: 1.55;
     overflow-wrap: anywhere;
+    /* In corsivo, chiesto da Elena il 07/10: fra le virgolette e' la
+       persona che parla di se', e il corsivo lo fa leggere come un racconto
+       detto a voce piu' che come un testo da consultare. */
+    font-style: italic;
 }
 
 /* LE VIRGOLETTE GIGANTI (chieste da Elena).

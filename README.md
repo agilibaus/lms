@@ -1659,8 +1659,9 @@ delle foto, nella stessa classe.
 **La presentazione si apre sopra la pagina.** Chi ne ha scritta una è un pulsante — foto e
 nome insieme — con un piccolo fumetto verde sull'angolo della foto (è la forma a dirlo; il
 colore principale la accompagna e cambia con la tavolozza).
-Toccandolo si apre una scheda con foto, nome e il testo fra due **virgolette giganti**, che si
-chiude con la ✕, con Esc o toccando fuori; il cerchio non si sposta.
+Toccandolo si apre una scheda con foto, nome e il testo **in corsivo** fra due **virgolette
+giganti** — un racconto detto a voce più che un testo da consultare —, che si chiude con la ✕,
+con Esc o toccando fuori; il cerchio non si sposta.
 
 Le virgolette sono **forme, non caratteri**: due maschere CSS ricavate dalle virgolette di
 Noto Serif (SIL Open Font License 1.1), del colore principale. La prima versione usava “ e ”
