@@ -71,19 +71,6 @@ unset($_SESSION['domande_aperte']);
     <div class="qa-contenuto">
     <p class="qa-intro">Le domande degli studenti di questo corso, con la risposta dei tutor.</p>
 
-    <?php /* La ricerca e' un GET sulla pagina del corso e torna all'archivio
-             (#domande): funziona senza JavaScript, e l'indirizzo si puo'
-             condividere. */ ?>
-    <form method="get" action="/courses/<?= $courseId ?>#domande" class="form-inline qa-cerca" role="search">
-        <label for="qa-cerca" class="sr-only">Cerca nelle domande e nelle risposte</label>
-        <input type="search" id="qa-cerca" name="cerca" maxlength="100" placeholder="Cerca nelle domande e nelle risposte"
-               value="<?= htmlspecialchars($cerca) ?>">
-        <button type="submit" class="btn btn-secondary">Cerca</button>
-        <?php if ($cerca !== ''): ?>
-            <a href="/courses/<?= $courseId ?>#domande" class="link-btn">Mostra tutte</a>
-        <?php endif; ?>
-    </form>
-
     <?php if ($archivio === []): ?>
         <p class="empty-state">
             <?= $cerca !== ''
@@ -124,6 +111,27 @@ unset($_SESSION['domande_aperte']);
         </ul>
     <?php endforeach; ?>
 
+    <?php /* In fondo all'archivio (Elena, 08/10): «non hai trovato quello
+             che cercavi?». Dopo una ricerca i risultati stanno sopra, e
+             accanto c'e' «Mostra tutte». */ ?>
+        <?php /* La ricerca e' un GET sulla pagina del corso e torna all'archivio
+                 (#domande): funziona senza JavaScript, e l'indirizzo si puo'
+                 condividere. */ ?>
+        <form method="get" action="/courses/<?= $courseId ?>#domande" class="form-inline qa-cerca" role="search">
+            <label for="qa-cerca" class="sr-only">Cerca nelle domande e nelle risposte</label>
+            <input type="search" id="qa-cerca" name="cerca" maxlength="100" placeholder="Cerca nelle domande e nelle risposte"
+                   value="<?= htmlspecialchars($cerca) ?>">
+            <button type="submit" class="btn btn-secondary">Cerca</button>
+            <?php if ($cerca !== ''): ?>
+                <a href="/courses/<?= $courseId ?>#domande" class="link-btn">Mostra tutte</a>
+            <?php endif; ?>
+        </form>
+    </div>
+    </details>
+
+    <?php /* Il secondo riquadro, staccato: chiedere, e le proprie domande
+             (Elena, 08/10). Fuori dal `details` perche' e' un riquadro suo;
+             lo stile lo nasconde quando la sezione e' chiusa. */ ?>
     <?php if ($domande['puoChiedere']): ?>
         <div class="card qa-chiedi">
             <h2>Fai una domanda al tutor</h2>
@@ -167,6 +175,4 @@ unset($_SESSION['domande_aperte']);
             <?php endif; ?>
         </div>
     <?php endif; ?>
-    </div>
-    </details>
 </section>

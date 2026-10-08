@@ -1477,6 +1477,39 @@ async function giroBenvenuto(browser) {
         const cercata = await qa();
         check('una ricerca le apre da sola', cercata.aperta, [JSON.stringify(cercata)]);
 
+        // Come un modulo del corso (08/10, Elena, su un mockup): il titolo
+        // della sezione e' grande come quello di un modulo, una domanda chiusa
+        // come una lezione; la ricerca sta in fondo all'archivio; il riquadro
+        // per chiedere sta fuori e sparisce con la sezione chiusa.
+        const forma = await page.evaluate(() => {
+            const fs = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e).fontSize : null; };
+            // Dopo una ricerca le domande trovate sono aperte: si confronta la
+            // misura, non il peso (aperta e' in grassetto apposta).
+            const domanda = document.querySelector('.qa-voce > summary');
+            const lezione = document.querySelector('.module-card .lesson-link, .module-card a');
+            const contenuto = document.querySelector('.qa-contenuto');
+            const chiedi = document.querySelector('.qa-chiedi');
+            return {
+                titolo: fs('.qa-riga h2'), titoloModulo: fs('.module-card-header h2'),
+                domanda: domanda ? getComputedStyle(domanda).fontSize : null,
+                lezione: lezione ? getComputedStyle(lezione).fontSize : null,
+                cercaInFondo: contenuto.lastElementChild.matches('form.qa-cerca'),
+                chiediFuori: chiedi !== null && chiedi.previousElementSibling === document.querySelector('details.qa-apri'),
+            };
+        });
+        check('domande e risposte alle misure dei moduli: titolo come un modulo, domanda come una lezione',
+            forma.titolo === forma.titoloModulo && forma.domanda !== null && forma.domanda === forma.lezione, [JSON.stringify(forma)]);
+        check('la ricerca sta in fondo all\'archivio, e il riquadro per chiedere fuori, dopo la sezione',
+            forma.cercaInFondo && forma.chiediFuori, [JSON.stringify(forma)]);
+        await page.goto(BASE + url);
+        const chiediChiusa = await page.evaluate(() => {
+            const c = document.querySelector('.qa-chiedi');
+            // checkVisibility e non i rettangoli: dentro un details chiuso
+            // Chromium li calcola lo stesso (trappola gia' scritta, 0135).
+            return c ? c.checkVisibility() : null;
+        });
+        check('con la sezione chiusa il riquadro per chiedere non si vede', chiediChiusa === false, ['visibile: ' + chiediChiusa]);
+
         await ctx.close();
 
         // Lo studente che non ha mai visto il video di benvenuto (08/10): con

@@ -5058,16 +5058,25 @@ fieldset.checkbox-group legend {
    «Mostra»/«Nascondi», come il benvenuto ridotto. Il titolo resta un h2,
    dentro la riga: per i lettori di schermo la sezione ha ancora il suo
    titolo, e il `summary` dice se e' aperta o chiusa. */
+/* LA SEZIONE E' UN RIQUADRO, come un modulo del corso (08/10, Elena,
+   scelto su un mockup): la riga del titolo ne e' la testata, sotto ci sono
+   l'archivio e, in fondo, la ricerca. Le misure sono quelle dei moduli:
+   titolo 1,05 rem, voci e testi 0,9 rem. Il secondo riquadro, «Fai una
+   domanda al tutor» con «Le tue domande», sta staccato sotto (.qa-chiedi). */
+.qa-apri {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
 .qa-riga {
     display: flex;
     align-items: center;
     gap: 0.8rem;
     min-height: var(--tap-target);
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
     list-style: none;
     cursor: pointer;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
 }
 
@@ -5094,13 +5103,13 @@ fieldset.checkbox-group legend {
 }
 
 .qa-riga h2 {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     margin: 0;
 }
 
 .qa-conteggio {
     color: var(--color-text-muted);
-    font-size: 0.92rem;
+    font-size: 0.9rem;
 }
 
 .qa-comando {
@@ -5130,17 +5139,17 @@ fieldset.checkbox-group legend {
 }
 
 .qa-contenuto {
-    margin-top: 1.25rem;
+    padding: 0 1.25rem 1.25rem;
 }
 
 .qa-intro {
     color: var(--color-text-muted);
-    margin: 0 0 1rem;
-    font-size: 0.95rem;
+    margin: 0 0 0.8rem;
+    font-size: 0.9rem;
 }
 
 .qa-cerca {
-    margin-bottom: 1.25rem;
+    margin-top: 1.25rem;
 }
 
 .qa-cerca input[type="search"] {
@@ -5149,8 +5158,8 @@ fieldset.checkbox-group legend {
 }
 
 .qa-modulo {
-    font-size: 1rem;
-    margin: 1.5rem 0 0.6rem;
+    font-size: 0.9rem;
+    margin: 1rem 0 0.5rem;
 }
 
 .qa-elenco {
@@ -5163,7 +5172,7 @@ fieldset.checkbox-group legend {
 }
 
 .qa-voce {
-    background: var(--color-surface);
+    background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
 }
@@ -5173,8 +5182,11 @@ fieldset.checkbox-group legend {
     align-items: baseline;
     gap: 0.6rem;
     min-height: var(--tap-target);
-    padding: 0.85rem 1rem;
-    font-weight: 600;
+    padding: 0.65rem 0.9rem;
+    /* Alla misura e al peso delle lezioni; quella aperta in grassetto, per
+       vedere quale si sta leggendo. */
+    font-size: 0.9rem;
+    font-weight: 400;
     list-style: none;
     cursor: pointer;
     overflow-wrap: anywhere;
@@ -5193,6 +5205,10 @@ fieldset.checkbox-group legend {
     font-weight: 700;
 }
 
+.qa-voce[open] > summary {
+    font-weight: 600;
+}
+
 .qa-voce[open] > summary::before {
     content: "\2212";
 }
@@ -5208,7 +5224,7 @@ fieldset.checkbox-group legend {
 
 .qa-chi {
     color: var(--color-text-muted);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin: 0 0 0.7rem;
 }
 
@@ -5219,20 +5235,32 @@ fieldset.checkbox-group legend {
 
 .qa-risposta p {
     margin: 0 0 0.4rem;
+    font-size: 0.9rem;
     line-height: 1.55;
     overflow-wrap: anywhere;
 }
 
 .qa-risposta .qa-chi {
     margin: 0;
+    font-size: 0.8rem;
 }
 
 .qa-chiedi {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
+}
+
+.qa-chiedi h2 {
+    font-size: 1.05rem;
+}
+
+/* Con la sezione chiusa resta solo la sua testata: il riquadro per
+   chiedere sta fuori dal `details`, e si nasconde con lui. */
+.qa-apri:not([open]) + .qa-chiedi {
+    display: none;
 }
 
 .qa-mie-titolo {
-    font-size: 1rem;
+    font-size: 0.9rem;
     margin: 1.5rem 0 0.4rem;
 }
 
@@ -5249,7 +5277,7 @@ fieldset.checkbox-group legend {
     gap: 1rem;
     padding: 0.55rem 0;
     border-top: 1px solid var(--color-border);
-    font-size: 0.92rem;
+    font-size: 0.9rem;
 }
 
 .qa-mie-testo {

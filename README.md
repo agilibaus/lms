@@ -871,6 +871,13 @@ diventa «Nascondi». È un `details`, senza JavaScript. **Si apre da sola** dop
 l'invio di una domanda e dopo un invio respinto; alla visita successiva riparte chiusa. Il comando
 ha sempre lo spazio della parola più lunga, così la riga non cambia forma aprendola.
 
+**Aperta, si legge come due moduli in più del corso** (08/10, scelta di Elena su un mockup). Il
+primo riquadro è la sezione stessa: la riga del titolo è la sua testata, sotto c'è l'archivio
+diviso per modulo e, **in fondo, la ricerca**. Il secondo, staccato di 1,5 rem, è **«Fai una
+domanda al tutor» con «Le tue domande»**: sta fuori dal `details` e lo stile lo nasconde quando
+la sezione è chiusa. **Le misure sono quelle dei moduli**: titoli 1,05 rem, domande, risposte e
+testi 0,9 rem come le lezioni, i dettagli 0,8 rem; una domanda aperta passa in grassetto.
+
 - **Lo studente fa una domanda al tutor** su un modulo del corso o sul corso in generale, e
   vede le sue con lo stato: in attesa, pubblicata, non pubblicata. Se c'è un errore il testo
   resta nel campo.
