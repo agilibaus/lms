@@ -32,6 +32,14 @@ class PasswordPolicy
         . 'servono almeno una lettera e almeno una cifra.';
 
     /**
+     * La stessa regola, in breve, per la pagina «Primo accesso» (08/10,
+     * Elena: il modulo era troppo alto). Sta qui, accanto alla frase lunga e
+     * al controllo, perche' le frasi non dicano una cosa diversa dalla
+     * regola: chi la cambia, le cambia insieme.
+     */
+    public const HINT_BREVE = 'Minimo ' . self::MIN_LENGTH . ' caratteri: almeno una lettera e un numero.';
+
+    /**
      * Il motivo per cui la password non va bene, oppure null se va bene.
      *
      * Restituisce una frase e non un booleano perche' chi chiama deve poter

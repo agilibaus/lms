@@ -41,6 +41,14 @@ final class PersonName
     public const PREDEFINITO = self::INITIALS;
 
     /**
+     * La scelta gia' selezionata nei moduli in cui lo studente sceglie (08/10,
+     * Elena): «Solo il nome». E' un'altra cosa dal predefinito qui sopra:
+     * quello e' cio' che vedono gli altri finche' lo studente non sceglie,
+     * questa e' la proposta che trova quando sceglie.
+     */
+    public const PRESELEZIONATA = self::FIRST;
+
+    /**
      * Divide un nome completo: la prima parola e' il nome, il resto il
      * cognome. Sbaglia con i nomi doppi («Maria Grazia Rossi»), ed e' per
      * questo che moduli e importazione vogliono i due campi separati. E' la

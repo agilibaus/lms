@@ -163,7 +163,7 @@ $hasAvatar = !empty($user['avatar_path']);
      * `legend` per i lettori di schermo; a vista il titolo e' quello del
      * riquadro.
      */
-    $scelta = ($user['name_display'] ?? '') === '' ? PersonName::PREDEFINITO : PersonName::display((string) $user['name_display']);
+    $scelta = ($user['name_display'] ?? '') === '' ? PersonName::PRESELEZIONATA : PersonName::display((string) $user['name_display']);
     $esempi = [
         PersonName::FULL => trim($user['first_name'] . ' ' . $user['last_name']),
         PersonName::FIRST => (string) $user['first_name'],

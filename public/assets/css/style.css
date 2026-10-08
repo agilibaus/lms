@@ -5374,8 +5374,8 @@ fieldset.checkbox-group legend {
    Il saluto dopo l'accesso (08/10)
    ==========================================================
 
-   «Che bello rivederti, Marta! 🌸», in alto al centro, per 4 secondi
-   (Elena: 3 erano pochi): entra, resta, sparisce. Tutto nello stile, senza
+   «Che bello rivederti, Marta! 🌸», in alto al centro, per 5 secondi
+   (Elena: prima 3, poi 4): entra, resta, sparisce. Tutto nello stile, senza
    JavaScript.
 
    - Si adatta al nome: la larghezza segue il testo fino al massimo dello
@@ -5417,7 +5417,7 @@ fieldset.checkbox-group legend {
        impaziente di quella provata per prima, che faceva quasi tutto il
        movimento nei primi 100 ms, ingresso di 0,9 s). Durante il ritardo
        resta invisibile (`both`). L'uscita resta com'era. */
-    animation: saluto 4s ease both;
+    animation: saluto 5s ease both;
     animation-delay: 0.2s;
 }
 
@@ -5429,13 +5429,13 @@ fieldset.checkbox-group legend {
         animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
     }
 
-    22.5% {
+    18% {
         opacity: 1;
         transform: translate(-50%, 0) scale(1);
         visibility: visible;
     }
 
-    85% {
+    88% {
         opacity: 1;
         transform: translate(-50%, 0) scale(1);
         visibility: visible;
@@ -5460,7 +5460,9 @@ fieldset.checkbox-group legend {
         animation-name: saluto-fermo;
     }
 
-    /* Senza movimento, ma comunque in dissolvenza: entra in 0,9 s invece
+    /* Le percentuali tengono l'ingresso a 0,9 s (18% di 5 s) e l'uscita a
+       0,6 s (dall'88%), come quando il saluto durava 4 s.
+       Senza movimento, ma comunque in dissolvenza: entra in 0,9 s invece
        di comparire di colpo. */
     @keyframes saluto-fermo {
         0% {
@@ -5468,8 +5470,8 @@ fieldset.checkbox-group legend {
             visibility: visible;
         }
 
-        22.5%,
-        85% {
+        18%,
+        88% {
             opacity: 1;
             visibility: visible;
         }
@@ -5504,8 +5506,17 @@ fieldset.checkbox-group legend {
     align-items: center;
     gap: 0.55rem;
     min-height: var(--tap-target);
-    margin: 0.1rem 0;
+    margin: 0.2rem 0;
     font-weight: 400;
+}
+
+/* Il pallino prendeva l'altezza minima di ogni campo di un modulo (2,5 rem,
+   0076), e ogni scelta era alta 43 px: le tre opzioni stavano lontane
+   (Elena, 08/10). Un pallino e' alto quanto e' largo. */
+.auth-form .primo-accesso-opzione input[type="radio"] {
+    min-height: 0;
+    height: auto;
+    margin: 0;
 }
 
 .primo-accesso-esempio {

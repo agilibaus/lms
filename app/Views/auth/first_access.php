@@ -13,9 +13,9 @@ use App\Core\PersonName;
  * Il titolo, «Ciao, Marta», e' quello della pagina e lo stampa _card.php;
  * e' senza genere: Pistacchio non sa se dire
  * «benvenuta» o «benvenuto» (la stessa scelta del saluto dopo l'accesso).
- * La scelta parte da «Solo le iniziali», che e' anche quello che vale finche'
- * non si sceglie: chi preme «Continua» senza toccare niente lascia le cose
- * come stanno.
+ * La scelta parte da «Solo il nome» (Elena, 08/10). Finche' lo studente non
+ * preme «Continua», gli altri lo vedono con le sole iniziali (la protezione
+ * predefinita, PersonName::PREDEFINITO).
  *
  * @var string $nome
  * @var string $cognome
@@ -72,10 +72,8 @@ ob_start();
             </label>
         <?php endforeach; ?>
     </fieldset>
-    <p class="form-hint">
-        Vale per gli altri studenti, per esempio nella pagina del gruppo. Il tutor e l'amministrazione
-        vedono sempre nome e cognome. Puoi cambiare idea quando vuoi, dal profilo.
-    </p>
+    <?php /* Corta, per un modulo meno alto (Elena, 08/10). */ ?>
+    <p class="form-hint">Tutor e amministratore vedono sempre nome e cognome. Puoi cambiare idea quando vuoi, dal profilo.</p>
 
     <button type="submit" class="btn btn-primary btn-block">Continua</button>
 </form>

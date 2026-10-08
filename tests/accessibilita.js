@@ -1313,7 +1313,7 @@ async function giroBenvenuto(browser) {
             const a = document.querySelector('.saluto').getAnimations()[0];
             return a ? { durata: a.effect.getTiming().duration, adesso: a.currentTime } : null;
         });
-        check('il saluto dura 4 secondi (Elena)', tempi !== null && tempi.durata === 4000, [JSON.stringify(tempi)]);
+        check('il saluto dura 5 secondi (Elena)', tempi !== null && tempi.durata === 5000, [JSON.stringify(tempi)]);
         await page.waitForTimeout(Math.max(0, (tempi ? tempi.durata - tempi.adesso : 4000) + 300));
         const dopo = await saluto();
         check('alla fine il saluto è sparito', dopo !== null && dopo.visibile === 'hidden', [JSON.stringify(dopo)]);
@@ -1568,6 +1568,30 @@ async function giroBenvenuto(browser) {
             check(email + ': ' + (conPassword ? 'con' : 'senza') + ' i campi della password',
                 campi === (conPassword ? 3 : 0), ['campi: ' + campi]);
             await esamina(pp, '/primo-accesso', 'Primo accesso ' + (conPassword ? 'con' : 'senza') + ' password', BERSAGLIO_MINIMO, daTelefono);
+            // Le modifiche del 08/10 (Elena): la scelta parte da «Solo il
+            // nome»; le frasi sono quelle corte; le tre opzioni stanno vicine
+            // (il pallino prendeva l'altezza di un campo, 40 px, e ogni
+            // opzione era alta 43).
+            const modulo = await pp.evaluate(() => {
+                const opzioni = [...document.querySelectorAll('.primo-accesso-opzione')];
+                const aiuti = [...document.querySelectorAll('form.auth-form .form-hint')].map((p) => p.textContent.trim());
+                return {
+                    scelta: (document.querySelector('input[name="name_display"]:checked') || {}).value,
+                    // Il pallino e lo spazio fra le opzioni, non l'altezza: con
+                    // un nome lungo l'anteprima va a capo, ed e' giusto.
+                    pallini: opzioni.map((o) => Math.round(o.querySelector('input').getBoundingClientRect().height)),
+                    spazi: opzioni.slice(1).map((o, i) => Math.round(o.getBoundingClientRect().top - opzioni[i].getBoundingClientRect().bottom)),
+                    aiuti,
+                };
+            });
+            check(email + ': la scelta parte da «Solo il nome»', modulo.scelta === 'first', [JSON.stringify(modulo)]);
+            check(email + ': le tre opzioni sono vicine: pallini non più alti di 20 px, spazi non più di 8',
+                modulo.pallini.length === 3 && modulo.pallini.every((h) => h <= 20) && modulo.spazi.every((s) => s <= 8),
+                [JSON.stringify({ pallini: modulo.pallini, spazi: modulo.spazi })]);
+            check(email + ': le frasi corte',
+                modulo.aiuti.includes('Tutor e amministratore vedono sempre nome e cognome. Puoi cambiare idea quando vuoi, dal profilo.')
+                && (!conPassword || modulo.aiuti.includes('Minimo 8 caratteri: almeno una lettera e un numero.')),
+                [JSON.stringify(modulo.aiuti)]);
             await pp.goto(BASE + '/profilo');
             check(email + ': le altre pagine riportano al primo accesso', dove() === '/primo-accesso', ['pagina: ' + dove()]);
 

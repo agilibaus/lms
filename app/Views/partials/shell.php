@@ -198,7 +198,7 @@ use App\Core\Csrf;
     /*
      * Il saluto dopo l'accesso (08/10): «Che bello rivederti, Marta! 🌸»,
      * sulla prima pagina, una volta sola, solo agli studenti (lo prepara
-     * AuthController::login). Compare e sparisce da solo in 4 secondi, con
+     * AuthController::login). Compare e sparisce da solo in 5 secondi, con
      * un'animazione di solo stile: funziona anche senza JavaScript. E' un
      * `role="status"`, quindi un lettore di schermo lo legge una volta senza
      * interrompere; non si clicca e non copre niente che si debba toccare.

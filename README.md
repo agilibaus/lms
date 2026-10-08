@@ -855,7 +855,14 @@ quello che serve davvero.
   La password ricevuta si chiede, come in ogni cambio password, perché è ciò che impedisce a chi
   trova una sessione aperta di prendersi l'account.
 - **Chi si è registrato da sé** trova solo la scelta: «Una cosa prima di cominciare».
-- La scelta parte da **«Solo le iniziali»**, che è anche quello che vale finché non si sceglie.
+- La scelta parte da **«Solo il nome»** (`PersonName::PRESELEZIONATA`, anche nel profilo). È la
+  proposta di chi sceglie; finché non sceglie, gli altri lo vedono con le iniziali
+  (`PersonName::PREDEFINITO`). Sono due costanti diverse apposta.
+- **Il modulo è corto** (08/10): sotto la password «Minimo 8 caratteri: almeno una lettera e un
+  numero.» (`PasswordPolicy::HINT_BREVE`, accanto alla frase lunga e alla regola, che il resto
+  della piattaforma continua a usare), sotto la scelta «Tutor e amministratore vedono sempre nome
+  e cognome. Puoi cambiare idea quando vuoi, dal profilo.», e le tre opzioni vicine: il pallino
+  non prende più l'altezza di un campo (2,5 rem), e il modulo passa da 634 a 547 px.
 - Un solo «Continua»: tutto si controlla prima di scrivere, e un errore sulla password non
   salva la scelta a metà. Poi il video di benvenuto, se c'è, e i corsi. «Esci» resta sempre.
 
@@ -870,7 +877,7 @@ rivederti» non compare al primo accesso.
 ## Il saluto dopo l'accesso
 
 A ogni accesso lo studente trova in alto **«Che bello rivederti, Marta! 🌸»**, con il suo nome
-di battesimo, per 4 secondi (08/10, chiesto da Elena). Il fiore è decorativo (`aria-hidden`):
+di battesimo, per 5 secondi (08/10, chiesto da Elena). Il fiore è decorativo (`aria-hidden`):
 un lettore di schermo legge solo la frase. **Una frase senza genere**, scelta di Elena:
 Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nome sbaglierebbe.
 
