@@ -1537,24 +1537,56 @@ async function giroBenvenuto(browser) {
 
         await ctx.close();
 
-        // Lo studente che non ha mai visto il video di benvenuto (08/10): con
-        // il video configurato finisce sulla pagina del video, senza saluto;
-        // senza video riceve il saluto come tutti. Prima riceveva il saluto
-        // solo chi il video l'aveva visto, e senza video nessuno lo vede mai:
-        // gli studenti arrivati dopo la 0112 restavano senza (Elena).
-        if (!daTelefono) {
-            const ctxNuovo = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
-            const np = await ctxNuovo.newPage();
-            await np.goto(BASE + '/login');
-            await np.fill('input[name="email"]', 'nuovo@test.it');
-            await np.fill('input[name="password"]', PASS);
-            await np.click('form.auth-form button[type="submit"]');
-            await np.waitForLoadState('load');
-            const sulVideo = new URL(np.url()).pathname === '/benvenuto';
-            const haSaluto = await np.locator('.saluto').count() === 1;
-            check('lo studente che non ha visto il video: saluto se il video non c\'è, pagina del video se c\'è',
-                sulVideo ? !haSaluto : haSaluto, ['pagina: ' + new URL(np.url()).pathname + ', saluto: ' + haSaluto]);
-            await ctxNuovo.close();
+        // Il primo accesso (08/10). Chi non ha ancora scelto come lo vedono
+        // gli altri finisce sulla pagina «Primo accesso», senza saluto, da
+        // qualunque pagina; con una password temporanea la pagina chiede anche
+        // quella. Le due versioni si misurano come le altre pagine.
+        // Poi, dopo «Continua», lo studente che non ha visto il video di
+        // benvenuto rientra: con il video configurato va al video, senza, ha
+        // il saluto (il caso di Carlo, 0150).
+        for (const [email, conPassword] of [['primo@test.it', true], ['nuovo@test.it', false]]) {
+            const ctxPrimo = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+            const pp = await ctxPrimo.newPage();
+            const accedi = async (password) => {
+                await pp.goto(BASE + '/login');
+                await pp.fill('input[name="email"]', email);
+                await pp.fill('input[name="password"]', password);
+                await pp.click('form.auth-form button[type="submit"]');
+                await pp.waitForLoadState('load');
+            };
+            await accedi(PASS);
+            const dove = () => new URL(pp.url()).pathname;
+            check(email + ': al primo accesso finisce su «Primo accesso», senza saluto',
+                dove() === '/primo-accesso' && await pp.locator('.saluto').count() === 0, ['pagina: ' + dove()]);
+            if (dove() !== '/primo-accesso') {
+                // Segnalato qui sopra; il resto del percorso non ha senso, e
+                // un controllo che si interrompe fa perdere tutti quelli dopo.
+                await ctxPrimo.close();
+                continue;
+            }
+            const campi = await pp.locator('form.auth-form input[type="password"]').count();
+            check(email + ': ' + (conPassword ? 'con' : 'senza') + ' i campi della password',
+                campi === (conPassword ? 3 : 0), ['campi: ' + campi]);
+            await esamina(pp, '/primo-accesso', 'Primo accesso ' + (conPassword ? 'con' : 'senza') + ' password', BERSAGLIO_MINIMO, daTelefono);
+            await pp.goto(BASE + '/profilo');
+            check(email + ': le altre pagine riportano al primo accesso', dove() === '/primo-accesso', ['pagina: ' + dove()]);
+
+            if (conPassword) {
+                await pp.fill('#current_password', PASS);
+                await pp.fill('#new_password', 'NuovaPass9');
+                await pp.fill('#confirm_password', 'NuovaPass9');
+            }
+            await pp.click('form.auth-form button[type="submit"]');
+            await pp.waitForLoadState('load');
+            check(email + ': «Continua» porta avanti', dove() !== '/primo-accesso', ['pagina: ' + dove()]);
+
+            await ctxPrimo.clearCookies();
+            await accedi(conPassword ? 'NuovaPass9' : PASS);
+            const sulVideo = dove() === '/benvenuto';
+            const haSaluto = await pp.locator('.saluto').count() === 1;
+            check(email + ': rientrando, saluto se il video non c\'è, pagina del video se c\'è',
+                sulVideo ? !haSaluto : (dove() === '/' && haSaluto), ['pagina: ' + dove() + ', saluto: ' + haSaluto]);
+            await ctxPrimo.close();
         }
 
         // Il tutor (07/10): carica il proprio benvenuto dalla pagina di

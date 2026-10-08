@@ -21,6 +21,7 @@ use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
 use App\Controllers\PasswordResetController;
 use App\Controllers\ProfileController;
+use App\Controllers\FirstAccessController;
 use App\Controllers\QuestionController;
 use App\Controllers\WelcomeController;
 use App\Controllers\QuizController;
@@ -62,6 +63,11 @@ $router->post('/benvenuto/visto', [WelcomeController::class, 'seen']);
 $router->get('/profilo', [ProfileController::class, 'show']);
 $router->post('/profilo', [ProfileController::class, 'update']);
 $router->post('/profilo/come-ti-vedono', [ProfileController::class, 'updateNameDisplay']);
+
+// Il primo accesso dello studente (08/10): la scelta di come lo vedono gli
+// altri e, se serve, la nuova password, in una pagina sola.
+$router->get('/primo-accesso', [FirstAccessController::class, 'show']);
+$router->post('/primo-accesso', [FirstAccessController::class, 'save']);
 $router->get('/profilo/password', [ProfileController::class, 'passwordForm']);
 $router->post('/profilo/password', [ProfileController::class, 'changePassword']);
 $router->post('/profilo/immagine', [ProfileController::class, 'updateAvatar']);

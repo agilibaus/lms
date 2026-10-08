@@ -532,7 +532,25 @@ for ($n = 1; $n <= 7; $n++) {
 // Come compaiono agli altri studenti (07/10): il compagno 5 ha scelto le
 // sole iniziali, il 6 il solo nome, gli altri il predefinito. Si riscrive a
 // ogni semina, cosi' una prova che lo cambia non lascia tracce.
-$pdo->exec("UPDATE users SET name_display = 'full' WHERE email LIKE 'compagno%@test.it' OR email = 'stud@test.it'");
+$pdo->exec("UPDATE users SET name_display = 'full' WHERE email LIKE 'compagno%@test.it' OR email IN ('stud@test.it', 'strano@test.it')");
+
+// Il primo accesso (08/10): chi non ha ancora scelto come lo vedono gli
+// altri va alla pagina «Primo accesso». Gli studenti delle prove hanno gia'
+// scelto (qui sopra); lo studente «al primo accesso» no, e «primo@test.it»
+// ha in piu' una password temporanea da cambiare, come chi riceve le
+// credenziali per email. Si rimettono cosi' a ogni semina.
+$pdo->exec("UPDATE users SET name_display = NULL WHERE email = 'nuovo@test.it'");
+$pdo->prepare(
+    'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, must_change_password, name_display)
+     VALUES (:e, :p, :n, :c, "studente", 1, NOW(), 1, NULL)
+     ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), must_change_password = 1, name_display = NULL,
+                             password_changed_at = NULL, welcome_seen_at = NULL'
+)->execute([
+    'e' => 'primo@test.it',
+    'p' => password_hash('Password1!', PASSWORD_DEFAULT),
+    'n' => 'Marta',
+    'c' => 'Rossi',
+]);
 $pdo->exec("UPDATE users SET name_display = 'initials' WHERE email = 'compagno5@test.it'");
 $pdo->exec("UPDATE users SET name_display = 'first' WHERE email = 'compagno6@test.it'");
 

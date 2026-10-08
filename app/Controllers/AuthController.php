@@ -83,7 +83,10 @@ class AuthController
         // «da accogliere» e senza saluto (Elena, 08/10: Carlo, Lucia...).
         $videoAdesso = Auth::welcomePending() && Welcome::configurato();
 
-        if (Auth::hasRole('studente') && !$videoAdesso && !Auth::mustChangePassword()) {
+        // E non al primo accesso (08/10): chi entra per la prima volta passa
+        // dalla pagina «Primo accesso», e un «Che bello rivederti» li' non ha
+        // senso.
+        if (Auth::hasRole('studente') && !$videoAdesso && !Auth::mustChangePassword() && !Auth::primoAccessoPending()) {
             $_SESSION['saluto'] = (string) (UserModel::find((int) Auth::id())['first_name'] ?? '');
         }
 

@@ -24,6 +24,13 @@ class Auth
     public const PASSWORD_PAGE = '/profilo/password';
 
     /**
+     * La pagina «Primo accesso» (08/10): lo studente che non ha ancora scelto
+     * come lo vedono gli altri studenti sceglie qui, e se ha una password
+     * temporanea la cambia nella stessa pagina.
+     */
+    public const PRIMO_ACCESSO = '/primo-accesso';
+
+    /**
      * Come il ruolo si scrive quando lo legge una persona.
      *
      * In tabella e nel codice i ruoli restano minuscoli: sono valori, non
@@ -231,7 +238,20 @@ class Auth
             $_SESSION[self::SESSION_PASSWORD_STAMP] = $stato['password_changed_at'];
         }
 
-        if ((int) $stato['must_change_password'] === 1 && !self::onPasswordPage()) {
+        // 2. Il primo accesso dello studente (08/10, Elena): finche' non ha
+        //    scelto come lo vedono gli altri studenti, ogni pagina porta alla
+        //    pagina «Primo accesso». Viene prima del cambio password perche'
+        //    lo comprende: chi ha una password temporanea la cambia li', nella
+        //    stessa pagina, invece di passare da due schermate obbligate.
+        if (self::primoAccessoPending() && !self::suPrimoAccesso()) {
+            header('Location: ' . self::PRIMO_ACCESSO);
+            exit;
+        }
+
+        // Chi sta facendo il primo accesso cambia la password nella pagina
+        // del primo accesso: rimandarlo qui farebbe un giro senza fine fra le
+        // due pagine (e' successo, il primo giro di prova del 08/10).
+        if ((int) $stato['must_change_password'] === 1 && !self::onPasswordPage() && !self::primoAccessoPending()) {
             header('Location: ' . self::PASSWORD_PAGE);
             exit;
         }
@@ -244,8 +264,13 @@ class Auth
         //    Solo gli studenti: lo staff entra per lavorare, e un video di
         //    benvenuto davanti all'amministratore che deve sistemare un corso
         //    e' un ostacolo, non un'accoglienza.
+        //    E dopo il primo accesso (08/10): finche' lo studente non ha
+        //    scelto, il cancello del primo accesso lo porta alla sua pagina, e
+        //    questo lo rimanderebbe al video, in un giro senza fine fra le due
+        //    pagine (lo ha trovato permessi.js, con il video configurato).
         if (
             $stato['welcome_seen_at'] === null
+            && !self::primoAccessoPending()
             && self::hasRole('studente')
             && !Welcome::paginaEsente(self::percorsoCorrente())
             && Welcome::configurato()
@@ -253,6 +278,30 @@ class Auth
             header('Location: ' . Welcome::PAGE);
             exit;
         }
+    }
+
+    /**
+     * Vero per lo studente che non ha ancora scelto come lo vedono gli altri
+     * studenti: e' il suo primo accesso (08/10). Lo staff non sceglie: compare
+     * sempre per intero.
+     */
+    public static function primoAccessoPending(): bool
+    {
+        if (!self::check() || !self::hasRole('studente')) {
+            return false;
+        }
+
+        $stato = self::passwordState();
+
+        return $stato !== null && ($stato['name_display'] ?? null) === null;
+    }
+
+    /** Le sole pagine raggiungibili prima di aver completato il primo accesso. */
+    private static function suPrimoAccesso(): bool
+    {
+        $percorso = self::percorsoCorrente();
+
+        return $percorso === self::PRIMO_ACCESSO || $percorso === '/logout';
     }
 
     /**
@@ -354,7 +403,7 @@ class Auth
             return false;
         }
 
-        return (int) $stato['must_change_password'] !== 1;
+        return (int) $stato['must_change_password'] !== 1 && !self::primoAccessoPending();
     }
 
     /**

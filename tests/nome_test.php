@@ -72,8 +72,14 @@ check('scelta «solo le iniziali»: vede «M. R.»', $vede('initials', 9, false)
 check('lo staff vede sempre nome e cognome', $vede('initials', 9, true) === 'Mario Rossi');
 check('ognuno vede se stesso per intero', $vede('initials', 5, false) === 'Mario Rossi');
 check('una scelta sconosciuta vale «nome e cognome», non un nome vuoto', $vede('boh', 9, false) === 'Mario Rossi');
-check('senza scelta salvata: nome e cognome (il predefinito)',
-    PersonName::shown($mario, 9, false) === 'Mario Rossi');
+// Dal 08/10 chi non ha ancora scelto compare con le sole iniziali: e' la
+// protezione predefinita. Anche quando il valore mancante e' diventato una
+// stringa vuota (la pagina del corso lo legge cosi').
+check('senza scelta salvata: le sole iniziali (protezione predefinita)',
+    PersonName::shown($mario, 9, false) === 'M. R.' && PersonName::shown($mario + ['name_display' => null], 9, false) === 'M. R.');
+check('una scelta vuota vale come non fatta: le sole iniziali, non il nome intero',
+    PersonName::shown($mario + ['name_display' => ''], 9, false) === 'M. R.');
+check('lo staff vede per intero anche chi non ha scelto', PersonName::shown($mario, 9, true) === 'Mario Rossi');
 
 echo PHP_EOL . 'L\'importazione: nome e cognome in due colonne' . PHP_EOL;
 

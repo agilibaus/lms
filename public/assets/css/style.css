@@ -5480,3 +5480,43 @@ fieldset.checkbox-group legend {
         }
     }
 }
+
+/* ==========================================================
+   La pagina «Primo accesso» (08/10)
+   ========================================================== */
+
+.primo-accesso-scelta {
+    border: 0;
+    padding: 0;
+    margin: 0.9rem 0 0;
+    min-width: 0;
+}
+
+.primo-accesso-scelta legend {
+    padding: 0;
+    margin: 0 0 0.4rem;
+    font-weight: 600;
+}
+
+/* Le scelte sono testo normale, non nomi di campo (come nel profilo, 0142). */
+.auth-form .primo-accesso-opzione {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: var(--tap-target);
+    margin: 0.1rem 0;
+    font-weight: 400;
+}
+
+.primo-accesso-esempio {
+    color: var(--color-text-muted);
+}
+
+/* Il fuoco sulle scelte. `.auth-form input:focus` toglie il contorno e
+   disegna il fuoco con il bordo e un'ombra, pensando ai campi di testo: su
+   un pallino non si vede niente, e il controllo del fuoco l'ha trovato
+   (08/10). Qui il contorno torna. */
+.auth-form .primo-accesso-opzione input[type="radio"]:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}

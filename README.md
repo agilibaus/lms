@@ -171,6 +171,7 @@ danni. Le piu' recenti:
 | `2026_10_07_benvenuto_contatti.sql` | il permesso `course.welcome_own` al tutor, l'email per gli studenti, il link WhatsApp del gruppo |
 | `2026_10_07_nome_cognome.sql` | nome e cognome separati, `full_name` calcolato, la scelta di come comparire agli altri studenti |
 | `2026_10_07_domande.sql` | le domande degli studenti al tutor e l'archivio delle risposte; i permessi `question.answer` e `question.answer_own` |
+| `2026_10_08_primo_accesso.sql` | `name_display` facoltativo: NULL vuol dire «non ancora scelto», e vale come «solo le iniziali» |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -841,6 +842,30 @@ riquadro. `accessibilita.js` controlla che i tre blocchi abbiano gli stessi bord
 scheda si chiamava `.benvenuto`, che era già la classe della pagina del video di benvenuto: le
 due si prendevano lo stile a vicenda, e la pagina del video, che deve essere un blocco centrato,
 diventava un riquadro con il bordo allineato a sinistra.
+
+## Il primo accesso
+
+Al primo accesso lo studente arriva sulla pagina **«Primo accesso»** (`/primo-accesso`, 08/10,
+chiesto da Elena): una pagina sola, nell'aspetto delle pagine di accesso e senza menu, con
+quello che serve davvero.
+
+- **«Ciao, Marta»**, senza genere, come il saluto dopo l'accesso.
+- **Chi ha ricevuto le credenziali per email** trova la password ricevuta, la nuova password e
+  la sua conferma, e **«Come ti vedono gli altri studenti»**: «Due cose prima di cominciare».
+  La password ricevuta si chiede, come in ogni cambio password, perché è ciò che impedisce a chi
+  trova una sessione aperta di prendersi l'account.
+- **Chi si è registrato da sé** trova solo la scelta: «Una cosa prima di cominciare».
+- La scelta parte da **«Solo le iniziali»**, che è anche quello che vale finché non si sceglie.
+- Un solo «Continua»: tutto si controlla prima di scrivere, e un errore sulla password non
+  salva la scelta a metà. Poi il video di benvenuto, se c'è, e i corsi. «Esci» resta sempre.
+
+**«Primo accesso» vuol dire «non ha ancora scelto»** (`name_display` NULL). È un cancello di
+`Auth::guardSession`, nell'ordine: sessione valida → **primo accesso** (che comprende il
+cambio password) → password temporanea da cambiare (per chi ha già scelto, per esempio dopo una
+password data dall'admin) → video di benvenuto. Il cancello della password e quello del video
+lasciano passare chi sta facendo il primo accesso: senza, si rimandavano a vicenda all'infinito
+(il secondo caso con il video configurato, trovato da `permessi.js`). Il saluto «Che bello
+rivederti» non compare al primo accesso.
 
 ## Il saluto dopo l'accesso
 
@@ -1776,8 +1801,11 @@ affiancati, e vanno uno sotto l'altro da soli quando lo spazio non basta (`.camp
 **calcolata dal database** (nome + cognome): le pagine e i report che lo leggono non sono
 cambiati, e nessuno lo scrive più. Una scrittura dimenticata su `full_name` dà errore subito.
 
-**Lo studente sceglie nel profilo come lo vedono gli altri studenti**: nome e cognome (il
-predefinito), solo il nome, o solo le iniziali («M. R.»: una per parola, il trattino separa,
+**Lo studente sceglie come lo vedono gli altri studenti**: nome e cognome, solo il nome, o solo
+le iniziali. **Finché non sceglie, gli altri lo vedono con le sole iniziali** (protezione
+predefinita, dal 08/10): nessuno è esposto con nome e cognome senza averlo deciso, nemmeno chi
+non ha ancora fatto accesso. La prima scelta si fa nella pagina «Primo accesso» (qui sotto),
+le successive nel profilo («M. R.»: una per parola, il trattino separa,
 l'apostrofo no). La scelta ha un riquadro suo, «Come ti vedono gli altri studenti», separato
 dai dati anagrafici e con il suo salvataggio (`POST /profilo/come-ti-vedono`, solo per gli
 studenti); il titolo è quello di ogni riquadro, sopra le scelte per misura e per peso. Ogni

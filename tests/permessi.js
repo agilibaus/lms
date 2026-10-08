@@ -631,10 +631,29 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 return new URL(page.url()).pathname;
             };
 
+            // Dal 08/10 lo studente al primo accesso sceglie prima come lo
+            // vedono gli altri, nella pagina «Primo accesso»: qui la si
+            // completa, e da li' in poi le prove del video sono quelle di prima.
+            const completaPrimoAccesso = async (page, password = null) => {
+                if (new URL(page.url()).pathname !== '/primo-accesso') {
+                    await page.goto(BASE + '/primo-accesso');
+                }
+                if (new URL(page.url()).pathname !== '/primo-accesso') {
+                    return;
+                }
+                if (password !== null) {
+                    await page.fill('#current_password', PASSWORD);
+                    await page.fill('#new_password', password);
+                    await page.fill('#confirm_password', password);
+                }
+                await Promise.all([page.waitForNavigation(), page.click('form.auth-form button[type="submit"]')]);
+            };
+
             // 1. Senza video non si dirotta nessuno: il benvenuto si accende
             //    mettendo il video, non con un interruttore a parte.
             await configura('none', '');
             const nuovoSenza = await entra(browser, 'nuovo@test.it');
+            await completaPrimoAccesso(nuovoSenza.page);
             const senza = await dove(nuovoSenza.page, '/');
             check(
                 'senza video configurato nessuno viene portato al benvenuto',
@@ -655,6 +674,21 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     finito === '/benvenuto',
                     finito === '/benvenuto' ? [] : ['e finito su ' + finito]
                 );
+            }
+
+            // 2b. Il primo accesso con il video configurato (08/10): prima la
+            //     pagina «Primo accesso», poi il video. Al primo giro i due
+            //     cancelli si rimandavano a vicenda senza fine.
+            {
+                const primo = await entra(browser, 'primo@test.it');
+                const prima = new URL(primo.page.url()).pathname;
+                check('primo accesso con il video: prima la pagina «Primo accesso»', prima === '/primo-accesso',
+                    prima === '/primo-accesso' ? [] : ['e finito su ' + prima]);
+                await completaPrimoAccesso(primo.page, 'NuovaPass9');
+                const poi = new URL(primo.page.url()).pathname;
+                check('primo accesso con il video: dopo «Continua», il video', poi === '/benvenuto',
+                    poi === '/benvenuto' ? [] : ['e finito su ' + poi]);
+                await primo.ctx.close();
             }
 
             // 3. Il pulsante registra la visione e libera la navigazione.

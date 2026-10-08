@@ -358,7 +358,7 @@ class UserModel
         // una query per richiesta per ogni persona collegata (§7.2: il
         // vincolo vero sono i 20 processi PHP, non il database).
         $stmt = Database::connection()->prepare(
-            'SELECT password_changed_at, must_change_password, welcome_seen_at
+            'SELECT password_changed_at, must_change_password, welcome_seen_at, name_display
                FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);

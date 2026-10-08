@@ -34,6 +34,13 @@ final class PersonName
     public const MAX_CHARS = 100;
 
     /**
+     * Come compare agli altri chi non ha ancora scelto (08/10, Elena): con le
+     * sole iniziali. Protezione predefinita: nessuno e' esposto con nome e
+     * cognome senza averlo deciso.
+     */
+    public const PREDEFINITO = self::INITIALS;
+
+    /**
      * Divide un nome completo: la prima parola e' il nome, il resto il
      * cognome. Sbaglia con i nomi doppi («Maria Grazia Rossi»), ed e' per
      * questo che moduli e importazione vogliono i due campi separati. E' la
@@ -112,7 +119,11 @@ final class PersonName
             return (string) $persona['full_name'];
         }
 
-        return match (self::display((string) ($persona['name_display'] ?? self::FULL))) {
+        // Non ancora scelto (NULL, o la stringa vuota in cui qualcuno l'ha
+        // trasformato): le sole iniziali, la protezione predefinita (08/10).
+        $scelta = (string) ($persona['name_display'] ?? '');
+
+        return match ($scelta === '' ? self::INITIALS : self::display($scelta)) {
             self::FIRST => (string) $persona['first_name'],
             self::INITIALS => self::initials((string) $persona['first_name'], (string) $persona['last_name']),
             default => (string) $persona['full_name'],

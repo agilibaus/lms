@@ -36,7 +36,9 @@ CREATE TABLE users (
     -- sole iniziali. Tutor e admin vedono sempre nome e cognome.
     first_name      VARCHAR(100) NOT NULL DEFAULT '',
     last_name       VARCHAR(100) NOT NULL DEFAULT '',
-    name_display    ENUM('full','first','initials') NOT NULL DEFAULT 'full',
+    -- NULL: lo studente non ha ancora scelto, e gli altri lo vedono con le
+    -- sole iniziali (migrazione 2026_10_08_primo_accesso.sql).
+    name_display    ENUM('full','first','initials') NULL DEFAULT NULL,
     full_name       VARCHAR(201) AS (TRIM(CONCAT(first_name, ' ', last_name))) STORED,
     role            ENUM('admin','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)
