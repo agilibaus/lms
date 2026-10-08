@@ -1286,13 +1286,13 @@ async function giroBenvenuto(browser) {
         check('il titolo del riquadro è più grande e più marcato delle scelte',
             gerarchia.titolo > gerarchia.opzione && gerarchia.pesoTitolo > gerarchia.pesoOpzione, [JSON.stringify(gerarchia)]);
 
-        // Le stesse spaziature del riquadro «Dati» (08/10): dal titolo al
+        // Le stesse spaziature del riquadro «Dati personali» (08/10): dal titolo al
         // primo elemento, e dall'ultimo elemento all'aiuto. Prima erano 29 e
         // 21 px contro 14 e 8.
         const spazi = await page.evaluate(() => {
             const riquadro = (titolo) => [...document.querySelectorAll('main .card')]
                 .find((c) => c.querySelector('h2') && c.querySelector('h2').textContent.trim() === titolo);
-            const dati = riquadro('Dati');
+            const dati = riquadro('Dati personali');
             const scelta = document.querySelector('fieldset.scelta-nome').closest('.card');
             const sopra = (c, el) => Math.round(el.getBoundingClientRect().top - c.querySelector('h2').getBoundingClientRect().bottom);
             const etichette = scelta.querySelectorAll('.checkbox-label');
@@ -1306,7 +1306,7 @@ async function giroBenvenuto(browser) {
                     - etichette[etichette.length - 1].getBoundingClientRect().bottom),
             };
         });
-        check('«Come ti vedono gli altri studenti» ha le spaziature del riquadro «Dati»',
+        check('«Come ti vedono gli altri studenti» ha le spaziature del riquadro «Dati personali»',
             Math.abs(spazi.titoloDati - spazi.titoloScelta) <= 1 && Math.abs(spazi.aiutoDati - spazi.aiutoScelta) <= 1,
             [JSON.stringify(spazi)]);
 

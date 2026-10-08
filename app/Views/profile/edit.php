@@ -69,7 +69,7 @@ $hasAvatar = !empty($user['avatar_path']);
 </section>
 
 <section class="card">
-    <h2>Dati</h2>
+    <h2>Dati personali</h2>
     <form action="/profilo" method="post" class="form">
         <?= Csrf::field() ?>
 
