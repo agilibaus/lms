@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Welcome;
 use App\Models\UserModel;
 use App\Auth\Auth;
 use App\Core\View;
@@ -74,7 +75,15 @@ class AuthController
         // temporanea da cambiare. Si annota qui il nome; lo mostra, una volta
         // sola, la prima pagina che si apre. Una frase senza genere, scelta
         // di Elena: Pistacchio non sa se dire «bentornata» o «bentornato».
-        if (Auth::hasRole('studente') && !Auth::welcomePending() && !Auth::mustChangePassword()) {
+        //
+        // «Ha il video da vedere» si chiede come lo chiede il cancello del
+        // video (Auth::guardSession): non solo se non l'ha ancora visto, ma
+        // se un video c'e'. Senza video configurato nessuno lo vede mai, e
+        // chi e' arrivato dopo la migrazione della 0112 restava per sempre
+        // «da accogliere» e senza saluto (Elena, 08/10: Carlo, Lucia...).
+        $videoAdesso = Auth::welcomePending() && Welcome::configurato();
+
+        if (Auth::hasRole('studente') && !$videoAdesso && !Auth::mustChangePassword()) {
             $_SESSION['saluto'] = (string) (UserModel::find((int) Auth::id())['first_name'] ?? '');
         }
 

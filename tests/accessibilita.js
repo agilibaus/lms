@@ -1448,6 +1448,26 @@ async function giroBenvenuto(browser) {
 
         await ctx.close();
 
+        // Lo studente che non ha mai visto il video di benvenuto (08/10): con
+        // il video configurato finisce sulla pagina del video, senza saluto;
+        // senza video riceve il saluto come tutti. Prima riceveva il saluto
+        // solo chi il video l'aveva visto, e senza video nessuno lo vede mai:
+        // gli studenti arrivati dopo la 0112 restavano senza (Elena).
+        if (!daTelefono) {
+            const ctxNuovo = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+            const np = await ctxNuovo.newPage();
+            await np.goto(BASE + '/login');
+            await np.fill('input[name="email"]', 'nuovo@test.it');
+            await np.fill('input[name="password"]', PASS);
+            await np.click('form.auth-form button[type="submit"]');
+            await np.waitForLoadState('load');
+            const sulVideo = new URL(np.url()).pathname === '/benvenuto';
+            const haSaluto = await np.locator('.saluto').count() === 1;
+            check('lo studente che non ha visto il video: saluto se il video non c\'è, pagina del video se c\'è',
+                sulVideo ? !haSaluto : haSaluto, ['pagina: ' + new URL(np.url()).pathname + ', saluto: ' + haSaluto]);
+            await ctxNuovo.close();
+        }
+
         // Il tutor (07/10): carica il proprio benvenuto dalla pagina di
         // modifica del corso, e nel profilo ha il campo dell'email per gli
         // studenti. Due pagine che l'admin vede diverse.

@@ -849,8 +849,9 @@ di battesimo, per 4 secondi (08/10, chiesto da Elena). Il fiore è decorativo (`
 un lettore di schermo legge solo la frase. **Una frase senza genere**, scelta di Elena:
 Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nome sbaglierebbe.
 
-- **Solo agli studenti**, e non al primo accesso in assoluto (c'è il video di benvenuto) né
-  quando c'è una password temporanea da cambiare. Lo decide `AuthController::login`, che annota
+- **Solo agli studenti**, e non quando stanno per vedere il video di benvenuto né quando c'è una
+  password temporanea da cambiare. «Stanno per vedere il video» si chiede come il cancello del
+  video: non visto **e** configurato. Senza video configurato il saluto lo ricevono tutti. Lo decide `AuthController::login`, che annota
   il nome in sessione; lo mostra una volta sola la prima pagina (`partials/shell.php`).
 - **Entra con calma** (08/10, Elena: «appare un po' bruscamente»): aspetta 0,2 secondi che la
   pagina si sia disegnata, poi scende dall'alto in 0,9 secondi con un accenno di ingrandimento e
