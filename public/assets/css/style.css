@@ -5234,3 +5234,90 @@ fieldset.checkbox-group legend {
     line-height: 1.4rem;
     text-align: center;
 }
+
+/* ==========================================================
+   Il saluto dopo l'accesso (08/10)
+   ==========================================================
+
+   «Che bello rivederti, Marta», in alto al centro, per 3 secondi: entra,
+   resta, sparisce. Tutto nello stile, senza JavaScript.
+
+   - Si adatta al nome: la larghezza segue il testo fino al massimo dello
+     schermo meno i margini, e un nome lunghissimo va a capo invece di
+     uscire.
+   - Sul telefono sta sotto la fascia del pulsante del menu, che e' fissa in
+     alto (§4 del promemoria), e non la copre.
+   - `pointer-events: none`: non si clicca, e anche mentre e' visibile non
+     impedisce di toccare quello che c'e' sotto.
+   - Alla fine resta `visibility: hidden`: sparisce anche per i lettori di
+     schermo e per la tastiera, non solo per gli occhi.
+   - Con «riduci movimento» del sistema compare e sparisce senza scivolare. */
+
+.saluto {
+    position: fixed;
+    z-index: 60;
+    top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    padding: 0.85rem 1.4rem;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    color: var(--color-text);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: center;
+    overflow-wrap: anywhere;
+    pointer-events: none;
+    animation: saluto 3s ease forwards;
+}
+
+@keyframes saluto {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -0.6rem);
+        visibility: visible;
+    }
+
+    10%,
+    85% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+        visibility: visible;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -0.6rem);
+        visibility: hidden;
+    }
+}
+
+@media (max-width: 768px) {
+    .saluto {
+        top: calc(env(safe-area-inset-top, 0px) + 4.6rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .saluto {
+        animation-name: saluto-fermo;
+    }
+
+    @keyframes saluto-fermo {
+        0%,
+        85% {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        100% {
+            opacity: 0;
+            visibility: hidden;
+        }
+    }
+}

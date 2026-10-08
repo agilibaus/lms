@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Models\UserModel;
 use App\Auth\Auth;
 use App\Core\View;
 
@@ -65,6 +66,16 @@ class AuthController
 
             header('Location: /login');
             exit;
+        }
+
+        // Il saluto «Che bello rivederti, Marta» (08/10, chiesto da Elena):
+        // solo agli studenti, a ogni accesso tranne il primo in assoluto, che
+        // ha il video di benvenuto, e tranne quando c'e' una password
+        // temporanea da cambiare. Si annota qui il nome; lo mostra, una volta
+        // sola, la prima pagina che si apre. Una frase senza genere, scelta
+        // di Elena: Pistacchio non sa se dire «bentornata» o «bentornato».
+        if (Auth::hasRole('studente') && !Auth::welcomePending() && !Auth::mustChangePassword()) {
+            $_SESSION['saluto'] = (string) (UserModel::find((int) Auth::id())['first_name'] ?? '');
         }
 
         header('Location: /');

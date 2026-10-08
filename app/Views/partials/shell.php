@@ -194,6 +194,22 @@ use App\Core\Csrf;
         </div>
     </aside>
 
+    <?php
+    /*
+     * Il saluto dopo l'accesso (08/10): «Che bello rivederti, Marta», sulla
+     * prima pagina, una volta sola, solo agli studenti (lo prepara
+     * AuthController::login). Compare e sparisce da solo in 3 secondi, con
+     * un'animazione di solo stile: funziona anche senza JavaScript. E' un
+     * `role="status"`, quindi un lettore di schermo lo legge una volta senza
+     * interrompere; non si clicca e non copre niente che si debba toccare.
+     */
+    $saluto = $_SESSION['saluto'] ?? null;
+    unset($_SESSION['saluto']);
+    ?>
+    <?php if (is_string($saluto) && $saluto !== ''): ?>
+        <div class="saluto" role="status">Che bello rivederti, <?= htmlspecialchars($saluto) ?></div>
+    <?php endif; ?>
+
     <main class="main-content">
         <?= $content ?>
     </main>

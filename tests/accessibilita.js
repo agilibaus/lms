@@ -1263,6 +1263,27 @@ async function giroBenvenuto(browser) {
         await page.click('form.auth-form button[type="submit"]');
         await page.waitForLoadState('load');
 
+        // Il saluto dopo l'accesso (08/10): c'e', con il nome, si annuncia ai
+        // lettori di schermo, non esce dallo schermo, e dopo 3 secondi e'
+        // sparito anche per loro (visibility, non solo opacita').
+        const saluto = () => page.evaluate(() => {
+            const s = document.querySelector('.saluto');
+            if (!s) return null;
+            const r = s.getBoundingClientRect();
+            return {
+                testo: s.textContent.trim(), ruolo: s.getAttribute('role'),
+                visibile: getComputedStyle(s).visibility,
+                dentro: r.left >= 0 && r.right <= document.documentElement.clientWidth,
+            };
+        });
+        const appena = await saluto();
+        check('dopo l\'accesso lo studente trova «Che bello rivederti» con il suo nome, annunciato',
+            appena !== null && /^Che bello rivederti, \S/.test(appena.testo) && appena.ruolo === 'status' && appena.dentro,
+            [JSON.stringify(appena)]);
+        await page.waitForTimeout(3500);
+        const dopo = await saluto();
+        check('dopo 3 secondi il saluto è sparito', dopo !== null && dopo.visibile === 'hidden', [JSON.stringify(dopo)]);
+
         // Il profilo dello studente (07/10): nome e cognome separati, e la
         // scelta di come compare agli altri studenti, con l'anteprima.
         await esamina(page, '/profilo', 'Profilo (studente)', BERSAGLIO_MINIMO, daTelefono);
@@ -1406,6 +1427,9 @@ async function giroBenvenuto(browser) {
         await tp.fill('input[name="password"]', PASS);
         await tp.click('form.auth-form button[type="submit"]');
         await tp.waitForLoadState('load');
+
+        check('il tutor non riceve il saluto, che è per gli studenti',
+            await tp.locator('.saluto').count() === 0);
 
         await esamina(tp, '/profilo', 'Profilo (tutor)', BERSAGLIO_MINIMO, daTelefono);
         check('nel profilo del tutor c\'è il campo «Email per gli studenti»',
