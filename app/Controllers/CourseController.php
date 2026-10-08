@@ -190,6 +190,9 @@ class CourseController
             'welcome' => $welcome,
             'domande' => [
                 'archivio' => $archivio,
+                // Il numero accanto al titolo ripiegato: tutte le pubblicate,
+                // anche durante una ricerca, che ne mostra solo alcune.
+                'totale' => $cerca === '' ? count($archivio) : count(QuestionModel::published($courseId)),
                 'cerca' => $cerca,
                 'mie' => $isStudent ? QuestionModel::ofStudent($courseId, $userId) : [],
                 'puoChiedere' => $isStudent,

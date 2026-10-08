@@ -26,6 +26,7 @@ $archivio = $domande['archivio'];
 $cerca = $domande['cerca'];
 // Il testo e il modulo di una domanda respinta, per non doverli rifare. Su
 // un modulo nuovo il modulo e' null, e il menu parte dalla prima voce.
+$respinta = isset($_SESSION['question_old']);
 $vecchio = $_SESSION['question_old'] ?? ['text' => '', 'module' => null];
 unset($_SESSION['question_old']);
 
@@ -44,8 +45,30 @@ $stati = [
     QuestionModel::DISCARDED => ['Non pubblicata', 'qa-stato-scartata'],
 ];
 ?>
+<?php
+/*
+ * Ripiegata in una riga, che si apre con «Mostra» e si chiude con
+ * «Nascondi» (08/10, Elena: aperta occupava tanto spazio sotto il
+ * programma). E' un `details`, come il benvenuto ridotto: senza JavaScript.
+ *
+ * Si apre da sola nei tre casi in cui chi arriva deve vedere qualcosa che
+ * sta dentro: dopo una ricerca (i risultati), dopo aver inviato una domanda
+ * («Le tue domande»), dopo un invio respinto (il testo da correggere).
+ * Alla visita dopo riparte chiusa: la scelta non si ricorda.
+ */
+$aperta = $cerca !== '' || $respinta || !empty($_SESSION['domande_aperte']);
+unset($_SESSION['domande_aperte']);
+?>
 <section class="qa" id="domande" aria-labelledby="qa-titolo">
-    <h2 id="qa-titolo">Domande e risposte</h2>
+    <details class="qa-apri"<?= $aperta ? ' open' : '' ?>>
+    <summary class="qa-riga">
+        <span class="qa-riga-testo">
+            <h2 id="qa-titolo">Domande e risposte</h2>
+            <span class="qa-conteggio"><?= (int) $domande['totale'] === 1 ? '1 domanda' : (int) $domande['totale'] . ' domande' ?></span>
+        </span>
+        <span class="qa-comando"><span class="qa-se-chiusa">Mostra</span><span class="qa-se-aperta">Nascondi</span></span>
+    </summary>
+    <div class="qa-contenuto">
     <p class="qa-intro">Le domande degli studenti di questo corso, con la risposta dei tutor.</p>
 
     <?php /* La ricerca e' un GET sulla pagina del corso e torna all'archivio
@@ -144,4 +167,6 @@ $stati = [
             <?php endif; ?>
         </div>
     <?php endif; ?>
+    </div>
+    </details>
 </section>

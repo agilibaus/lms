@@ -865,7 +865,11 @@ Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nom
 
 ## Domande e risposte
 
-In fondo a ogni corso c'è **«Domande e risposte»** (07/10, chiesto da Elena).
+In fondo a ogni corso c'è **«Domande e risposte»** (07/10, chiesto da Elena). **Parte ripiegata
+in una riga** (08/10): il titolo, il numero delle domande pubblicate e «Mostra», che la apre e
+diventa «Nascondi». È un `details`, senza JavaScript. **Si apre da sola** dopo una ricerca, dopo
+l'invio di una domanda e dopo un invio respinto; alla visita successiva riparte chiusa. Il comando
+ha sempre lo spazio della parola più lunga, così la riga non cambia forma aprendola.
 
 - **Lo studente fa una domanda al tutor** su un modulo del corso o sul corso in generale, e
   vede le sue con lo stato: in attesa, pubblicata, non pubblicata. Se c'è un errore il testo

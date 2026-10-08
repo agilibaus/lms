@@ -316,7 +316,7 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-modifica a):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-modifica a, .qa-comando):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +324,7 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-modifica a) {
+    .tutor-benvenuto-contatti a, .qa-modifica a, .qa-comando) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -5049,12 +5049,88 @@ fieldset.checkbox-group legend {
    ========================================================== */
 
 .qa {
-    margin-top: 2.5rem;
+    /* 1,5 rem come ogni elemento che stacca da quello sopra (0109, 0110):
+       ripiegata e' una riga sola, e con 2,5 sembrava scollegata (08/10). */
+    margin-top: 1.5rem;
 }
 
-.qa > h2 {
+/* Ripiegata in una riga (08/10): titolo, numero delle domande e
+   «Mostra»/«Nascondi», come il benvenuto ridotto. Il titolo resta un h2,
+   dentro la riga: per i lettori di schermo la sezione ha ancora il suo
+   titolo, e il `summary` dice se e' aperta o chiusa. */
+.qa-riga {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-height: var(--tap-target);
+    padding: 0.75rem 1rem;
+    list-style: none;
+    cursor: pointer;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.qa-riga::-webkit-details-marker {
+    display: none;
+}
+
+.qa-riga:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* A sinistra titolo e numero, che vanno a capo fra loro se lo spazio non
+   basta; a destra il comando, che non si sposta mai. Sul telefono
+   «Nascondi», piu' lungo di «Mostra», scendeva sotto e la riga cambiava
+   altezza proprio mentre la si toccava (08/10). */
+.qa-riga-testo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.8rem;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.qa-riga h2 {
     font-size: 1.15rem;
-    margin: 0 0 0.3rem;
+    margin: 0;
+}
+
+.qa-conteggio {
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+}
+
+.qa-comando {
+    flex: 0 0 auto;
+    display: inline-grid;
+    justify-items: end;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+/* «Mostra» e «Nascondi» nella stessa cella, una sopra l'altra: il comando
+   e' sempre largo quanto la parola piu' lunga, e la riga non cambia forma
+   aprendola. Quella che non serve e' nascosta con `visibility`, che le
+   lascia lo spazio e la toglie anche ai lettori di schermo. */
+.qa-comando > span {
+    grid-area: 1 / 1;
+}
+
+.qa-se-aperta,
+.qa-apri[open] .qa-se-chiusa {
+    visibility: hidden;
+}
+
+.qa-apri[open] .qa-se-aperta {
+    visibility: visible;
+}
+
+.qa-contenuto {
+    margin-top: 1.25rem;
 }
 
 .qa-intro {

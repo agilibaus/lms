@@ -68,7 +68,10 @@ class QuestionController
 
         $this->avvisa($tutorId, (string) (UserModel::find($userId)['full_name'] ?? ''), (string) $course['title'], $moduleId, $testo);
 
-        $this->torna($redirect, 'Domanda inviata al tutor: la trovi qui sotto, in «Le tue domande».', true);
+        // La sezione delle domande si riapre da sola, per far vedere la
+        // domanda appena inviata in «Le tue domande» (08/10).
+        $_SESSION['domande_aperte'] = true;
+        $this->torna($redirect, 'Domanda inviata al tutor: la trovi in «Le tue domande», in fondo alla pagina.', true);
     }
 
     public function index(array $params = []): void

@@ -606,7 +606,7 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a, .qa-modifica a';
+    + '.tutor-benvenuto-contatti a, .qa-modifica a, .qa-comando';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1448,6 +1448,34 @@ async function giroBenvenuto(browser) {
             check('«Nascondi» la richiude e torna «Mostra»', !richiuso.aperto && richiuso.comando === 'Mostra',
                 [JSON.stringify(richiuso)]);
         }
+
+        // Domande e risposte ripiegate in una riga (08/10): chiuse all'arrivo,
+        // «Mostra» le apre e diventa «Nascondi»; una ricerca le apre da sola.
+        // Aperte con la ricerca, l'archivio si misura come il resto: chiuso,
+        // i controlli non lo vedrebbero.
+        const qa = () => page.evaluate(() => {
+            const d = document.querySelector('details.qa-apri');
+            return d ? { aperta: d.open, comando: d.querySelector('.qa-comando').innerText.trim(),
+                         conteggio: d.querySelector('.qa-conteggio').innerText.trim() } : null;
+        });
+        await page.goto(BASE + url);
+        const chiusa = await qa();
+        check('domande e risposte: chiuse all\'arrivo, con il numero e «Mostra»',
+            chiusa !== null && !chiusa.aperta && chiusa.comando === 'Mostra' && /^\d+ domand[ae]$/.test(chiusa.conteggio),
+            [JSON.stringify(chiusa)]);
+        const altezzaRiga = () => page.evaluate(() => Math.round(document.querySelector('.qa-riga').getBoundingClientRect().height));
+        const primaDiAprire = await altezzaRiga();
+        await page.click('details.qa-apri > summary');
+        const aperta = await qa();
+        check('«Mostra» le apre e il comando diventa «Nascondi»', aperta.aperta && aperta.comando === 'Nascondi', [JSON.stringify(aperta)]);
+        // La riga non cambia forma aprendola: «Nascondi», piu' lungo, la
+        // faceva crescere sul telefono proprio mentre la si toccava (08/10).
+        const dopoAverAperto = await altezzaRiga();
+        check('aprendole, la riga non cambia altezza', primaDiAprire === dopoAverAperto,
+            ['chiusa ' + primaDiAprire + ' px, aperta ' + dopoAverAperto + ' px']);
+        await esamina(page, url + '?cerca=Domanda#domande', 'Corso con le domande aperte da una ricerca (studente)', BERSAGLIO_MINIMO, daTelefono);
+        const cercata = await qa();
+        check('una ricerca le apre da sola', cercata.aperta, [JSON.stringify(cercata)]);
 
         await ctx.close();
 
