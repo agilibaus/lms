@@ -668,7 +668,30 @@ async function comeSiRiconoscono(page) {
             return { t: testo(f), d: Math.round(f.getBoundingClientRect().top - sopra) };
         }).filter((x) => x.d < 1.5 * rem - 1).map((x) => '«' + x.t + '» a ' + x.d + ' px');
 
+        // Nei moduli delle pagine pubbliche ogni etichetta sta alla stessa
+        // distanza dal suo campo (07/10: «Nome» e «Cognome» affiancati
+        // stavano a 0 px, gli altri a 4,8). Si misurano solo le coppie con il
+        // campo sotto l'etichetta.
+        const distanze = [];
+        for (const f of document.querySelectorAll('form.auth-form')) {
+            const misure = [...f.querySelectorAll('label[for]')].map((l) => {
+                const c = document.getElementById(l.getAttribute('for'));
+                if (!c || !visibile(c) || !visibile(l)) return null;
+                const lr = l.getBoundingClientRect();
+                const cr = c.getBoundingClientRect();
+                return cr.top >= lr.bottom - 1 ? { t: testo(l), d: Math.round((cr.top - lr.bottom) * 10) / 10 } : null;
+            }).filter(Boolean);
+            if (misure.length > 1) {
+                const minimo = Math.min(...misure.map((m) => m.d));
+                const massimo = Math.max(...misure.map((m) => m.d));
+                if (massimo - minimo > 1) {
+                    distanze.push(misure.map((m) => '«' + m.t + '» ' + m.d + ' px').join(', '));
+                }
+            }
+        }
+
         return {
+            distanze,
             attaccati,
             conMouse: !matchMedia('(hover: none)').matches,
             frasi,
@@ -721,6 +744,7 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     check(nome + ': i comandi di una fila hanno il testo sulla stessa riga', segni.sfalsati.length === 0, segni.sfalsati);
     check(nome + ': i comandi di una fila usano lo stesso carattere', segni.caratteri.length === 0, segni.caratteri);
     check(nome + ': un modulo che segue un altro modulo ne sta staccato', segni.attaccati.length === 0, segni.attaccati);
+    check(nome + ': nei moduli pubblici ogni etichetta sta alla stessa distanza dal suo campo', segni.distanze.length === 0, segni.distanze);
     if (segni.conMouse) {
         check(nome + ': con il mouse i comandi sono neutri a riposo',
             segni.sottolineatiARiposo.length === 0, segni.sottolineatiARiposo);
