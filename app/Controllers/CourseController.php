@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Models\QuestionModel;
+use App\Core\PersonName;
 use App\Core\TutorWelcome;
 use App\Models\TutorWelcomeModel;
 use App\Auth\Auth;
@@ -163,9 +165,35 @@ class CourseController
             }
         }
 
+        // Le domande e risposte in fondo al corso (07/10): l'archivio per
+        // chiunque veda il corso, con la ricerca; il campo per chiedere e le
+        // proprie domande solo per lo studente. Il nome degli autori lo
+        // decide chi guarda (`PersonName::shown()`).
+        $cerca = trim((string) ($_GET['cerca'] ?? ''));
+        $vedeTutto = Auth::hasRole('admin', 'tutor', 'assistente');
+        $archivio = array_map(
+            static fn (array $q): array => $q + ['autore' => $q['student_id'] === null
+                ? 'uno studente'
+                : PersonName::shown(
+                    ['id' => (int) $q['student_id'], 'first_name' => (string) $q['first_name'],
+                     'last_name' => (string) $q['last_name'], 'full_name' => (string) $q['full_name'],
+                     'name_display' => (string) $q['name_display']],
+                    $userId,
+                    $vedeTutto
+                )],
+            QuestionModel::published($courseId, mb_substr($cerca, 0, 100))
+        );
+
         View::render('courses/show', [
             'pageTitle' => $course['title'],
             'welcome' => $welcome,
+            'domande' => [
+                'archivio' => $archivio,
+                'cerca' => $cerca,
+                'mie' => $isStudent ? QuestionModel::ofStudent($courseId, $userId) : [],
+                'puoChiedere' => $isStudent,
+                'moduli' => ModuleModel::forCourse($courseId),
+            ],
             'course' => $course,
             'modules' => $modules,
             'lessonsByModule' => $lessonsByModule,

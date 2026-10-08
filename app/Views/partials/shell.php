@@ -127,6 +127,15 @@ use App\Core\Csrf;
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
                 <a href="/reports" class="nav-link<?= $voce('/reports') ?>">Report</a>
             <?php endif; ?>
+            <?php if (Auth::canAny('question.answer', 'question.answer_own')): ?>
+                <?php
+                /* Le domande degli studenti (07/10), con il numero di quelle in
+                   attesa: si vede che ce ne sono senza aprire la pagina. */
+                $inAttesa = \App\Models\QuestionModel::pendingCount((int) Auth::id(), Auth::can('question.answer'));
+                ?>
+                <a href="/domande" class="nav-link<?= $voce('/domande') ?>">Domande<?php if ($inAttesa > 0): ?>
+                    <span class="nav-conteggio"><?= $inAttesa ?><span class="sr-only"> in attesa</span></span><?php endif; ?></a>
+            <?php endif; ?>
             <?php /* L'Agenda sta sopra a «Sessioni live» perche' risponde a
                      una domanda piu' frequente — «che cosa mi aspetta» — e
                      perche' le sessioni sono una delle cose che contiene.

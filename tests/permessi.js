@@ -248,6 +248,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/benvenuti/' + A.benvenuto + '/foto', 'consentito', 'la foto del benvenuto del suo tutor'],
             ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'l\'audio del benvenuto del suo tutor'],
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un altro tutor, in un altro corso'],
+            ['/domande', 'negato', 'la pagina delle domande è di chi risponde'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
@@ -279,6 +280,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/utenti/' + d.utenti.studenteB + '/immagine', 'negato', 'studente del gruppo di un collega'],
             ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'il proprio benvenuto'],
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un collega'],
+            ['/domande', 'consentito', 'risponde alle domande dei suoi studenti'],
         ]],
 
         ['assist@test.it', 'assistente del tutor A', [
@@ -298,6 +300,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 'l\'assistente non è fra chi vede le foto'],
             ['/gruppi/' + A.gruppo, 'negato', 'né la pagina del gruppo'],
             ['/benvenuti/' + A.benvenuto + '/audio', 'negato', 'il benvenuto non è per lo staff che non lo carica'],
+            ['/domande', 'negato', 'l\'assistente non risponde alle domande'],
         ]],
 
         ['admin@test.it', 'amministratore', [
@@ -532,6 +535,35 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     !html.includes('Compagno 5'), html.includes('Compagno 5') ? ['trovato «Compagno 5»'] : []);
             }
 
+            await ctx.close();
+        }
+
+        // --- le domande: che cosa c'e' dentro (07/10) ----------------------
+        //
+        // Lo studente di A trova nel suo corso l'archivio con le due
+        // pubblicate della semina, divise per modulo, e non quelle in attesa
+        // o scartate; il tutor di A ha nel menu il numero di quelle in attesa.
+
+        console.log('\n--- le domande: che cosa c\'è dentro');
+
+        {
+            const { ctx, page } = await entra(browser, 'stud@test.it');
+            await page.goto(BASE + '/courses/' + A.corso);
+            const archivio = await page.$$eval('#domande .qa-voce summary', (s) => s.map((x) => x.textContent.trim()));
+            check('studente → nell\'archivio ci sono le pubblicate, e non quelle in attesa o scartate',
+                archivio.some((q) => q.includes('pubblicata sul modulo')) && archivio.some((q) => q.includes('corso in generale'))
+                    && !archivio.some((q) => q.includes('scartata')),
+                [JSON.stringify(archivio)]);
+            const moduli = await page.$$eval('#domande .qa-modulo', (h) => h.map((x) => x.textContent.trim()));
+            check('studente → l\'archivio è diviso per modulo, il corso in generale in fondo',
+                moduli.length >= 2 && moduli[moduli.length - 1] === 'Il corso in generale', [JSON.stringify(moduli)]);
+            await ctx.close();
+        }
+        {
+            const { ctx, page } = await entra(browser, 'tutor1@test.it');
+            await page.goto(BASE + '/');
+            const voce = (await page.locator('a.nav-link[href="/domande"]').innerText()).replace(/\s+/g, ' ').trim();
+            check('tutor → nel menu, «Domande» con il numero di quelle in attesa', /^Domande \d+ in attesa$/.test(voce), ['voce: ' + voce]);
             await ctx.close();
         }
 
@@ -932,6 +964,30 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/admin/courses/' + A.corso + '/benvenuti/' + d.utenti.tutorA + '/elimina', [], 'negato',
                     'togliere il benvenuto del proprio tutor'],
             ]],
+            // Le domande (07/10). Lo studente di B non chiede nel corso di A,
+            // il tutor di B non pubblica ne' scarta la domanda assegnata al
+            // tutor di A, lo studente non pubblica. Poi le due cose che
+            // riescono: il tutor di A pubblica la sua, lo studente di A
+            // chiede (e la notifica al tutor si controlla dopo).
+            ['strano@test.it', 'studente B (domande)', [
+                ['/courses/' + A.corso + '/domande', [['question', 'Domanda in un corso non mio'], ['module_id', '']], 'negato',
+                    'fare una domanda in un corso a cui non è iscritto'],
+            ]],
+            ['tutor2@test.it', 'tutor B (domande)', [
+                ['/domande/' + A.domanda_in_attesa + '/pubblica', [['question', 'x'], ['answer', 'y'], ['module_id', '']], 'negato',
+                    'pubblicare la domanda di uno studente di un collega'],
+                ['/domande/' + A.domanda_in_attesa + '/scarta', [], 'negato', 'scartarla'],
+            ]],
+            ['stud@test.it', 'studente A (domande)', [
+                ['/domande/' + A.domanda_in_attesa + '/scarta', [], 'negato', 'scartare una domanda: lo fa il tutor'],
+                ['/courses/' + A.corso + '/domande', [['question', 'Domanda di permessi.js sul corso?'], ['module_id', '']], 'consentito',
+                    'fare una domanda nel proprio corso'],
+            ]],
+            ['tutor1@test.it', 'tutor A (domande)', [
+                ['/domande/' + A.domanda_in_attesa + '/pubblica',
+                    [['question', 'Domanda in attesa del mondo A?'], ['answer', 'Risposta di permessi.js.'], ['module_id', '']], 'consentito',
+                    'pubblicare la domanda di un suo studente'],
+            ]],
             // Come compaiono agli altri studenti: e' una scelta solo degli
             // studenti (07/10). Il tutor compare sempre per intero.
             ['tutor2@test.it', 'tutor B (come ti vedono)', [
@@ -962,6 +1018,23 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         }
 
         // --- senza aver fatto l'accesso -----------------------------------
+        // La notifica al tutor (07/10, Elena: da subito). L'azione qui sopra
+        // ha fatto una domanda come studente di A: nella posta del contenitore
+        // (MAIL_TRANSPORT=log, un file per messaggio) ci dev'essere l'email
+        // al tutor di A con il testo della domanda.
+        {
+            const fs = require('fs');
+            const cartella = path.join(__dirname, '..', 'storage', 'mail');
+            const arrivata = fs.existsSync(cartella) && fs.readdirSync(cartella)
+                .filter((f) => f.includes('tutor1'))
+                .some((f) => {
+                    const testo = fs.readFileSync(path.join(cartella, f), 'utf8');
+                    return testo.includes('Subject: Nuova domanda') && testo.includes('Domanda di permessi.js sul corso?');
+                });
+            check('la domanda nuova arriva per email al tutor del gruppo dello studente', arrivata,
+                arrivata ? [] : ['nessuna email «Nuova domanda» al tutor di A in storage/mail']);
+        }
+
         console.log('\n--- chi non ha fatto l\'accesso');
 
         const ctx = await browser.newContext();

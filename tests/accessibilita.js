@@ -583,6 +583,9 @@ PAGINE_INTERNE.push(
     ['/gruppi/' + SEMINA.gruppo_cerchio, 'Pagina del gruppo (semina)'],
     // La sezione dei benvenuti dei tutor (07/10), con un benvenuto caricato.
     ['/admin/courses/' + SEMINATI.corso + '/edit', 'Modifica corso con benvenuto (semina)'],
+    // Le domande in attesa, per chi risponde (07/10): la semina ne lascia una
+    // per mondo, e l'admin le vede tutte con il tutor assegnato.
+    ['/domande', 'Domande in attesa (semina)'],
 );
 
 async function entra(page) {

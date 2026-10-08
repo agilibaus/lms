@@ -170,6 +170,7 @@ danni. Le piu' recenti:
 | `2026_10_07_benvenuto_tutor.sql` | il benvenuto del tutor nei corsi, le visite che lo riducono, il permesso `course.welcome` |
 | `2026_10_07_benvenuto_contatti.sql` | il permesso `course.welcome_own` al tutor, l'email per gli studenti, il link WhatsApp del gruppo |
 | `2026_10_07_nome_cognome.sql` | nome e cognome separati, `full_name` calcolato, la scelta di come comparire agli altri studenti |
+| `2026_10_07_domande.sql` | le domande degli studenti al tutor e l'archivio delle risposte; i permessi `question.answer` e `question.answer_own` |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -841,6 +842,36 @@ scheda si chiamava `.benvenuto`, che era già la classe della pagina del video d
 due si prendevano lo stile a vicenda, e la pagina del video, che deve essere un blocco centrato,
 diventava un riquadro con il bordo allineato a sinistra.
 
+## Domande e risposte
+
+In fondo a ogni corso c'è **«Domande e risposte»** (07/10, chiesto da Elena).
+
+- **Lo studente fa una domanda al tutor** su un modulo del corso o sul corso in generale, e
+  vede le sue con lo stato: in attesa, pubblicata, non pubblicata. Se c'è un errore il testo
+  resta nel campo.
+- **La riceve il tutor del suo gruppo**, con **un'email per ogni domanda nuova** (corso,
+  modulo, nome, testo intero); se lo studente non ha un tutor, l'email va agli amministratori.
+  Lo studente non riceve avvisi: trova la risposta tornando al corso.
+- **Il tutor e l'admin** rispondono dalla pagina **«Domande»**, una voce della barra laterale
+  con il numero di quelle in attesa. Il tutor vede quelle assegnate a lui, l'admin tutte, e per
+  ognuna **il tutor a cui è assegnata**. Prima di pubblicare si possono correggere il testo,
+  per esempio per togliere dettagli personali, e il modulo. **Ogni risposta si pubblica**:
+  non ci sono risposte private. Una domanda doppia, fuori tema o troppo personale si
+  **scarta**, e lo studente la vede «Non pubblicata».
+- **L'archivio lo vedono tutti gli iscritti al corso, di ogni gruppo**, diviso per modulo
+  nell'ordine del corso con «Il corso in generale» in fondo, ciascuna domanda in un `details`.
+  L'autore compare **come ha scelto nel profilo** (`PersonName::shown()`); lo staff lo vede
+  per intero. **La ricerca** cerca nelle domande e nelle risposte, senza JavaScript
+  (`?cerca=` sulla pagina del corso); `%` e `_` si cercano come testo.
+- **Niente risposte fra studenti, commenti o voti**: è la decisione di non fare messaggistica
+  fra studenti, e in mezzo c'è sempre il tutor.
+
+Le regole stanno in `App\Models\QuestionModel`, i permessi nel controller: `question.answer`
+(admin, tutte) e `question.answer_own` (tutor, le sue). «Scarta» è un modulo a sé, nella riga di
+«Pubblica» con l'attributo `form`: dentro il modulo di pubblicazione diventerebbe il suo invio
+predefinito. `tests/domande_test.php` prova assegnazione, attesa, pubblicazione e archivio;
+`permessi.js` chi può fare che cosa, l'archivio e l'email al tutor.
+
 ## Video di benvenuto
 
 Uno studente che accede per la **prima volta** vede una pagina con un video, un pulsante
@@ -972,6 +1003,7 @@ php tests/importazione_test.php     # 27 prove: codifiche, separatori e righe de
 php tests/inviti_test.php          # coda degli inviti: chi conosce una password non viene sovrascritto
 php tests/benvenuto_tutor_test.php # benvenuto del tutor: chi sente quale, completo o ridotto, le visite
 php tests/nome_test.php            # nome e cognome: divisione, iniziali, chi vede cosa, importazione
+php tests/domande_test.php         # domande: a chi vanno, chi le vede, pubblicare e scartare, archivio e ricerca
 php tests/password_test.php         # regola della password e generatore
 php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
 php tests/live_session_mail_test.php   # testi delle email degli incontri
@@ -990,8 +1022,8 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.390 controlli su 61 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 157 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
+node tests/accessibilita.js         # circa 2.700 controlli su 62 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 171 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

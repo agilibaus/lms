@@ -226,3 +226,5 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
+
+<?php require __DIR__ . '/_questions.php'; ?>

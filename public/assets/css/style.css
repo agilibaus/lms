@@ -835,7 +835,9 @@ h3 { font-size: 1.05rem; }
    altri e deve essere alto e vestito come gli altri: entra nel blocco
    comune invece di avere una regola sua, che e' il modo in cui i tre
    sistemi erano derivati. */
-.report-ricerca-riga input[type="search"] {
+.report-ricerca-riga input[type="search"],
+/* E per la stessa ragione la ricerca nelle domande e risposte (07/10). */
+.qa-cerca input[type="search"] {
     padding: 0.55rem 0.65rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -5023,4 +5025,195 @@ fieldset.checkbox-group legend {
    deve stare sopra di loro per misura e per peso (Elena, 07/10). */
 .form .scelta-nome .checkbox-label {
     font-weight: 400;
+}
+
+/* ==========================================================
+   Domande e risposte (07/10)
+   ========================================================== */
+
+.qa {
+    margin-top: 2.5rem;
+}
+
+.qa > h2 {
+    font-size: 1.15rem;
+    margin: 0 0 0.3rem;
+}
+
+.qa-intro {
+    color: var(--color-text-muted);
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+}
+
+.qa-cerca {
+    margin-bottom: 1.25rem;
+}
+
+.qa-cerca input[type="search"] {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.qa-modulo {
+    font-size: 1rem;
+    margin: 1.5rem 0 0.6rem;
+}
+
+.qa-elenco {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.qa-voce {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.qa-voce > summary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    min-height: var(--tap-target);
+    padding: 0.85rem 1rem;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.qa-voce > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Il segno + e − dice se la domanda e' aperta: una forma, non un colore. */
+.qa-voce > summary::before {
+    content: "+";
+    flex-shrink: 0;
+    width: 1rem;
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.qa-voce[open] > summary::before {
+    content: "\2212";
+}
+
+.qa-voce > summary:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.qa-corpo {
+    padding: 0 1rem 1rem 2.6rem;
+}
+
+.qa-chi {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin: 0 0 0.7rem;
+}
+
+.qa-risposta {
+    border-left: 3px solid var(--color-primary);
+    padding: 0.2rem 0 0.2rem 0.9rem;
+}
+
+.qa-risposta p {
+    margin: 0 0 0.4rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.qa-risposta .qa-chi {
+    margin: 0;
+}
+
+.qa-chiedi {
+    margin-top: 2rem;
+}
+
+.qa-mie-titolo {
+    font-size: 1rem;
+    margin: 1.5rem 0 0.4rem;
+}
+
+.qa-mie {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.qa-mie li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 0;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.92rem;
+}
+
+.qa-mie-testo {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Lo stato dice la parola, il colore la accompagna. */
+.qa-stato {
+    flex-shrink: 0;
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.qa-stato-attesa {
+    background: #f3efe2;
+    color: #5c4d17;
+}
+
+.qa-stato-pubblicata {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.qa-stato-scartata {
+    background: #f1e4e4;
+    color: #7f2828;
+}
+
+/* Nella pagina «Domande»: «Pubblica» e «Scarta» sulla stessa riga. */
+.qa-azioni {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Il modulo di «Scarta» contiene solo il token: il suo pulsante sta nella
+   riga di «Pubblica» con l'attributo `form`. Nascosto, non occupa spazio
+   (e la regola dei moduli consecutivi non gli aggiunge 1,5 rem). */
+.qa-gestione form.qa-scarta {
+    display: none;
+}
+
+/* Il numero di domande in attesa accanto alla voce del menu. */
+.nav-conteggio {
+    display: inline-block;
+    min-width: 1.4rem;
+    margin-left: 0.4rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.4rem;
+    text-align: center;
 }

@@ -81,9 +81,9 @@ INSERT INTO role_permissions (role, permission_key) VALUES
     ('admin','course.create'), ('admin','course.edit'), ('admin','course.delete'),
     ('admin','user.manage'), ('admin','group.manage'), ('admin','quiz.grade'),
     ('admin','report.view'), ('admin','certificate.issue'),
-    ('admin','settings.manage'), ('admin','course.welcome'),
+    ('admin','settings.manage'), ('admin','course.welcome'), ('admin','question.answer'),
     ('tutor','course.edit'), ('tutor','quiz.grade'), ('tutor','report.view'),
-    ('tutor','group.manage_own'), ('tutor','course.welcome_own'),
+    ('tutor','group.manage_own'), ('tutor','course.welcome_own'), ('tutor','question.answer_own'),
     ('assistente','quiz.grade_assigned'), ('assistente','report.view_assigned'),
     ('studente','course.view'), ('studente','quiz.take'), ('studente','certificate.view_own');
 
@@ -490,6 +490,36 @@ CREATE TABLE course_welcome_views (
     PRIMARY KEY (user_id, course_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Le domande degli studenti e l'archivio delle risposte (migrazione
+-- 2026_10_07_domande.sql).
+CREATE TABLE course_questions (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    course_id       INT UNSIGNED NOT NULL,
+    -- NULL: il corso in generale. Se il modulo viene eliminato la domanda
+    -- resta, e passa al corso in generale.
+    module_id       INT UNSIGNED NULL,
+    -- NULL se lo studente viene eliminato: la domanda pubblicata resta, senza
+    -- autore.
+    student_id      INT UNSIGNED NULL,
+    -- Il tutor del gruppo dello studente quando ha fatto la domanda. NULL:
+    -- nessun tutor (iscritto dal catalogo), la vede solo l'admin.
+    tutor_id        INT UNSIGNED NULL,
+    question        TEXT NOT NULL,
+    answer          TEXT NULL,
+    status          ENUM('pending', 'published', 'discarded') NOT NULL DEFAULT 'pending',
+    answered_by     INT UNSIGNED NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    answered_at     DATETIME NULL,
+    KEY idx_course_status (course_id, status),
+    KEY idx_tutor_status (tutor_id, status),
+    KEY idx_student (student_id),
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE SET NULL,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (tutor_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (answered_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

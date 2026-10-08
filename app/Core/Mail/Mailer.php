@@ -259,6 +259,31 @@ class Mailer
         );
     }
 
+    /**
+     * Una domanda nuova di uno studente (07/10): al tutor del suo gruppo, o
+     * agli amministratori se lo studente non ha un tutor. Con il testo
+     * intero, cosi' si capisce dall'email se e' urgente.
+     */
+    public static function newQuestion(
+        string $email,
+        string $name,
+        string $studentName,
+        string $courseTitle,
+        string $moduleTitle,
+        string $question,
+        string $link
+    ): Message {
+        return new Message(
+            $email,
+            $name,
+            'Nuova domanda: ' . $courseTitle,
+            "Ciao {$name},\n\n"
+            . "{$studentName} ha fatto una domanda nel corso \"{$courseTitle}\" ({$moduleTitle}):\n\n"
+            . $question . "\n\n"
+            . "Puoi rispondere e pubblicarla, o scartarla, qui:\n{$link}\n"
+        );
+    }
+
     public static function enrollmentRejected(string $email, string $name, string $courseTitle): Message
     {
         return new Message(

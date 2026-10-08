@@ -21,6 +21,7 @@ use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
 use App\Controllers\PasswordResetController;
 use App\Controllers\ProfileController;
+use App\Controllers\QuestionController;
 use App\Controllers\WelcomeController;
 use App\Controllers\QuizController;
 use App\Controllers\RegistrationController;
@@ -219,6 +220,12 @@ $router->post('/admin/courses/{id}/benvenuti/{tutorId}/elimina', [TutorWelcomeCo
 $router->get('/benvenuti/{id}/foto', [TutorWelcomeController::class, 'photo']);
 $router->get('/benvenuti/{id}/audio', [TutorWelcomeController::class, 'audio']);
 $router->post('/benvenuti/{id}/ascoltato', [TutorWelcomeController::class, 'listened']);
+
+// Le domande degli studenti al tutor e l'archivio delle risposte (07/10).
+$router->post('/courses/{id}/domande', [QuestionController::class, 'store']);
+$router->get('/domande', [QuestionController::class, 'index']);
+$router->post('/domande/{id}/pubblica', [QuestionController::class, 'publish']);
+$router->post('/domande/{id}/scarta', [QuestionController::class, 'discard']);
 
 // --- Configurazione: posta elettronica e Google Meet ---
 $router->get('/admin/settings', [SettingsController::class, 'index']);

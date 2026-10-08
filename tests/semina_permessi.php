@@ -450,6 +450,38 @@ $pdo->prepare('UPDATE courses SET cover_image = :c, description = :d WHERE id = 
     ->execute(['c' => $copertina, 'd' => 'Il corso di prova del mondo A, con una descrizione di una riga.', 'id' => $a['corso']]);
 $b['benvenuto'] = benvenutoDiProva($pdo, $b['corso'], $tutorB, 'B');
 
+// Le domande (07/10): in ciascun corso una pubblicata sul primo modulo, una
+// pubblicata sul corso in generale, una in attesa assegnata al tutor del
+// mondo e una scartata. L'archivio, la pagina «Domande» e i permessi hanno
+// sempre qualcosa da mostrare e da negare.
+function domandeDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, string $lettera): void
+{
+    $ins = $pdo->prepare(
+        'INSERT INTO course_questions (course_id, module_id, student_id, tutor_id, question, answer, status, answered_by, answered_at)
+         VALUES (:c, :m, :s, :t, :q, :a, :st, :by, :at)'
+    );
+    $righe = [
+        [$mondo['modulo'], 'Domanda pubblicata sul modulo del mondo ' . $lettera . '?', 'Risposta del tutor del mondo ' . $lettera . '.', 'published'],
+        [null, 'Domanda pubblicata sul corso in generale del mondo ' . $lettera . '?', 'Risposta generale del mondo ' . $lettera . '.', 'published'],
+        [$mondo['modulo'], 'Domanda in attesa del mondo ' . $lettera . '?', null, 'pending'],
+        [null, 'Domanda scartata del mondo ' . $lettera . '?', null, 'discarded'],
+    ];
+    foreach ($righe as [$modulo, $domanda, $risposta, $stato]) {
+        $ins->execute([
+            'c' => $mondo['corso'], 'm' => $modulo, 's' => $studente, 't' => $tutor, 'q' => $domanda, 'a' => $risposta,
+            'st' => $stato, 'by' => $stato === 'pending' ? null : $tutor, 'at' => $stato === 'pending' ? null : date('Y-m-d H:i:s'),
+        ]);
+        if ($stato === 'pending') {
+            $GLOBALS['domandaInAttesa'][$lettera] = (int) $pdo->lastInsertId();
+        }
+    }
+}
+
+domandeDiProva($pdo, $a, $studenteA, $tutorA, 'A');
+domandeDiProva($pdo, $b, $studenteB, $tutorB, 'B');
+$a['domanda_in_attesa'] = $GLOBALS['domandaInAttesa']['A'];
+$b['domanda_in_attesa'] = $GLOBALS['domandaInAttesa']['B'];
+
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
 // no, e nel loro benvenuto non deve comparire niente. Si riscrivono a ogni
