@@ -5274,26 +5274,42 @@ fieldset.checkbox-group legend {
     text-align: center;
     overflow-wrap: anywhere;
     pointer-events: none;
-    animation: saluto 4s ease forwards;
+    /* L'ingresso morbido (Elena, 08/10: «appare un po' bruscamente»):
+       parte 0,2 s dopo che la pagina si e' disegnata, invece che insieme a
+       lei; scende di 1 rem con un accenno di ingrandimento; e dura 0,9 s
+       con una curva che rallenta all'arrivo (la si dichiara dentro il
+       fotogramma, perche' valga solo per quel tratto: una curva meno
+       impaziente di quella provata per prima, che faceva quasi tutto il
+       movimento nei primi 100 ms, ingresso di 0,9 s). Durante il ritardo
+       resta invisibile (`both`). L'uscita resta com'era. */
+    animation: saluto 4s ease both;
+    animation-delay: 0.2s;
 }
 
 @keyframes saluto {
     0% {
         opacity: 0;
-        transform: translate(-50%, -0.6rem);
+        transform: translate(-50%, -1rem) scale(0.97);
+        visibility: visible;
+        animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    22.5% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
         visibility: visible;
     }
 
-    10%,
     85% {
         opacity: 1;
-        transform: translate(-50%, 0);
+        transform: translate(-50%, 0) scale(1);
         visibility: visible;
+        animation-timing-function: ease-in;
     }
 
     100% {
         opacity: 0;
-        transform: translate(-50%, -0.6rem);
+        transform: translate(-50%, -0.6rem) scale(1);
         visibility: hidden;
     }
 }
@@ -5309,8 +5325,15 @@ fieldset.checkbox-group legend {
         animation-name: saluto-fermo;
     }
 
+    /* Senza movimento, ma comunque in dissolvenza: entra in 0,9 s invece
+       di comparire di colpo. */
     @keyframes saluto-fermo {
-        0%,
+        0% {
+            opacity: 0;
+            visibility: visible;
+        }
+
+        22.5%,
         85% {
             opacity: 1;
             visibility: visible;

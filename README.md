@@ -852,6 +852,9 @@ Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nom
 - **Solo agli studenti**, e non al primo accesso in assoluto (c'è il video di benvenuto) né
   quando c'è una password temporanea da cambiare. Lo decide `AuthController::login`, che annota
   il nome in sessione; lo mostra una volta sola la prima pagina (`partials/shell.php`).
+- **Entra con calma** (08/10, Elena: «appare un po' bruscamente»): aspetta 0,2 secondi che la
+  pagina si sia disegnata, poi scende dall'alto in 0,9 secondi con un accenno di ingrandimento e
+  una curva che rallenta all'arrivo.
 - **Compare e sparisce con un'animazione di solo stile**, senza JavaScript; alla fine resta
   `visibility: hidden`, quindi sparisce anche per i lettori di schermo, che lo leggono una
   volta (`role="status"`). Con «riduci movimento» non scivola.
