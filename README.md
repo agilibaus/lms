@@ -880,7 +880,10 @@ testi 0,9 rem come le lezioni, i dettagli 0,8 rem; una domanda aperta passa in g
 
 - **Lo studente fa una domanda al tutor** su un modulo del corso o sul corso in generale, e
   vede le sue con lo stato: in attesa, pubblicata, non pubblicata. Se c'è un errore il testo
-  resta nel campo.
+  resta nel campo. **La domanda è lunga al massimo 1.000 caratteri**, con il contatore sopra
+  l'angolo in alto a destra del campo («1000 caratteri rimasti», a scalare): lo stesso della
+  presentazione del profilo e delle risposte aperte, con lo stesso script. Il limite vale anche
+  senza JavaScript (`maxlength`) e sul server.
 - **La riceve il tutor del suo gruppo**, con **un'email per ogni domanda nuova** (corso,
   modulo, nome, testo intero); se lo studente non ha un tutor, l'email va agli amministratori.
   Lo studente non riceve avvisi: trova la risposta tornando al corso.

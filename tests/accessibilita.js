@@ -1510,6 +1510,31 @@ async function giroBenvenuto(browser) {
         });
         check('con la sezione chiusa il riquadro per chiedere non si vede', chiediChiusa === false, ['visibile: ' + chiediChiusa]);
 
+        // Il contatore sopra il campo della domanda (08/10, Elena): «1000
+        // caratteri rimasti» all'apertura, sopra l'angolo in alto a destra,
+        // sulla riga dell'etichetta, e scende mentre si scrive.
+        await page.click('details.qa-apri > summary');
+        const contatore = async () => page.evaluate(() => {
+            const k = document.querySelector('#qa-domanda-resta');
+            const c = document.querySelector('#qa-domanda');
+            const l = document.querySelector('label[for="qa-domanda"]');
+            if (!k || !c || !l) return null;
+            const kr = k.getBoundingClientRect(), cr = c.getBoundingClientRect(), lr = l.getBoundingClientRect();
+            return {
+                testo: k.textContent.trim(),
+                allineato: Math.abs(kr.right - cr.right) <= 1,
+                sopra: kr.bottom <= cr.top + 1,
+                rigaEtichetta: Math.abs((kr.top + kr.bottom) / 2 - (lr.top + lr.bottom) / 2) < 4,
+            };
+        });
+        const iniziale = await contatore();
+        check('sopra la domanda «1000 caratteri rimasti», allineato al campo a destra, sulla riga dell\'etichetta',
+            iniziale !== null && iniziale.testo === '1000 caratteri rimasti' && iniziale.allineato && iniziale.sopra && iniziale.rigaEtichetta,
+            [JSON.stringify(iniziale)]);
+        await page.fill('#qa-domanda', 'Una domanda di prova.');
+        const scritto = await contatore();
+        check('il contatore scende mentre si scrive', scritto !== null && scritto.testo === '979 caratteri rimasti', [JSON.stringify(scritto)]);
+
         await ctx.close();
 
         // Lo studente che non ha mai visto il video di benvenuto (08/10): con

@@ -28,8 +28,12 @@ final class QuestionModel
     public const PUBLISHED = 'published';
     public const DISCARDED = 'discarded';
 
-    /** Quanto puo' essere lunga una domanda, e una risposta. */
-    public const MAX_QUESTION_CHARS = 2000;
+    /**
+     * Quanto puo' essere lunga una domanda, e una risposta. La domanda a 1.000
+     * caratteri (08/10, Elena, con il contatore sopra il campo, come la
+     * presentazione del profilo); era 2.000.
+     */
+    public const MAX_QUESTION_CHARS = 1000;
     public const MAX_ANSWER_CHARS = 5000;
 
     /**

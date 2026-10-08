@@ -148,10 +148,27 @@ unset($_SESSION['domande_aperte']);
                     <option value="" <?= $vecchio['module'] === '' ? 'selected' : '' ?>>Il corso in generale</option>
                 </select>
 
-                <label for="qa-domanda">La tua domanda</label>
-                <textarea id="qa-domanda" name="question" rows="3" required
-                          maxlength="<?= QuestionModel::MAX_QUESTION_CHARS ?>"><?= htmlspecialchars((string) $vecchio['text']) ?></textarea>
-                <p class="form-hint">
+                <?php
+                /* Il contatore sopra l'angolo in alto a destra, sulla riga
+                   dell'etichetta (08/10, Elena): lo stesso della presentazione
+                   del profilo e delle risposte aperte, con lo stesso script.
+                   Parte dai caratteri gia' scritti, che ci sono dopo un invio
+                   respinto. Senza JavaScript resta fermo, e il limite vale
+                   lo stesso: `maxlength` nel campo e il controllo sul server. */
+                $restano = max(0, QuestionModel::MAX_QUESTION_CHARS - mb_strlen((string) $vecchio['text']));
+                ?>
+                <div class="quiz-open-wrap campo-contato">
+                    <div class="campo-contato-testa">
+                        <label for="qa-domanda">La tua domanda</label>
+                        <span class="quiz-open-count" id="qa-domanda-resta" data-max="<?= QuestionModel::MAX_QUESTION_CHARS ?>">
+                            <?= $restano ?> <?= $restano === 1 ? 'carattere rimasto' : 'caratteri rimasti' ?>
+                        </span>
+                    </div>
+                    <textarea id="qa-domanda" name="question" rows="3" required class="quiz-open-answer"
+                              aria-describedby="qa-domanda-resta qa-domanda-aiuto"
+                              maxlength="<?= QuestionModel::MAX_QUESTION_CHARS ?>"><?= htmlspecialchars((string) $vecchio['text']) ?></textarea>
+                </div>
+                <p class="form-hint" id="qa-domanda-aiuto">
                     La legge il tuo tutor. Se la pubblica, compare qui sopra con la risposta, con il tuo nome come
                     hai scelto nel profilo. Prima di pubblicarla può correggerla.
                 </p>
@@ -176,3 +193,6 @@ unset($_SESSION['domande_aperte']);
         </div>
     <?php endif; ?>
 </section>
+<?php if ($domande['puoChiedere']): ?>
+    <script src="/assets/js/quiz-open-count.js"></script>
+<?php endif; ?>
