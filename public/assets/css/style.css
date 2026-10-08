@@ -5027,6 +5027,23 @@ fieldset.checkbox-group legend {
     font-weight: 400;
 }
 
+/* Le spaziature come nel resto del profilo (Elena, 08/10). Le scelte
+   prendevano i margini di un'etichetta di campo e il gruppo il suo margine
+   sotto: dal titolo alla prima scelta c'erano 29 px invece di 14, e
+   dall'ultima scelta all'aiuto 21 invece di 8. Fra una scelta e l'altra
+   restano 14 px, come fra un campo e l'altro. */
+.form fieldset.scelta-nome {
+    margin-bottom: 0;
+}
+
+.form .scelta-nome .checkbox-label:first-of-type {
+    margin-top: 0;
+}
+
+.form .scelta-nome .checkbox-label:last-of-type {
+    margin-bottom: 0;
+}
+
 /* ==========================================================
    Domande e risposte (07/10)
    ========================================================== */
