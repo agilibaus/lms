@@ -844,8 +844,9 @@ diventava un riquadro con il bordo allineato a sinistra.
 
 ## Il saluto dopo l'accesso
 
-A ogni accesso lo studente trova in alto **«Che bello rivederti, Marta»**, con il suo nome di
-battesimo, per 3 secondi (08/10, chiesto da Elena). **Una frase senza genere**, scelta di Elena:
+A ogni accesso lo studente trova in alto **«Che bello rivederti, Marta! 🌸»**, con il suo nome
+di battesimo, per 4 secondi (08/10, chiesto da Elena). Il fiore è decorativo (`aria-hidden`):
+un lettore di schermo legge solo la frase. **Una frase senza genere**, scelta di Elena:
 Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nome sbaglierebbe.
 
 - **Solo agli studenti**, e non al primo accesso in assoluto (c'è il video di benvenuto) né

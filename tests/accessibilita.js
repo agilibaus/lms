@@ -1263,26 +1263,38 @@ async function giroBenvenuto(browser) {
         await page.click('form.auth-form button[type="submit"]');
         await page.waitForLoadState('load');
 
-        // Il saluto dopo l'accesso (08/10): c'e', con il nome, si annuncia ai
-        // lettori di schermo, non esce dallo schermo, e dopo 3 secondi e'
-        // sparito anche per loro (visibility, non solo opacita').
+        // Il saluto dopo l'accesso (08/10): c'e', con il nome e il punto
+        // esclamativo, si annuncia ai lettori di schermo (il fiore no: e'
+        // decorativo), non esce dallo schermo, e dopo 4 secondi e' sparito
+        // anche per loro (visibility, non solo opacita').
         const saluto = () => page.evaluate(() => {
             const s = document.querySelector('.saluto');
             if (!s) return null;
             const r = s.getBoundingClientRect();
+            const fiore = s.querySelector('[aria-hidden="true"]');
             return {
                 testo: s.textContent.trim(), ruolo: s.getAttribute('role'),
+                fioreDecorativo: fiore !== null && fiore.textContent.trim() === '🌸',
                 visibile: getComputedStyle(s).visibility,
                 dentro: r.left >= 0 && r.right <= document.documentElement.clientWidth,
             };
         });
         const appena = await saluto();
         check('dopo l\'accesso lo studente trova «Che bello rivederti» con il suo nome, annunciato',
-            appena !== null && /^Che bello rivederti, \S/.test(appena.testo) && appena.ruolo === 'status' && appena.dentro,
+            appena !== null && /^Che bello rivederti, \S.*! 🌸$/u.test(appena.testo) && appena.ruolo === 'status'
+                && appena.fioreDecorativo && appena.dentro,
             [JSON.stringify(appena)]);
-        await page.waitForTimeout(3500);
+        // La durata si chiede all'animazione, e si aspetta fino a dopo la sua
+        // fine contando dal punto in cui e' davvero: misurare a occhio da fuori
+        // sbagliava di qualche decimo, e non distingueva 3 secondi da 4.
+        const tempi = await page.evaluate(() => {
+            const a = document.querySelector('.saluto').getAnimations()[0];
+            return a ? { durata: a.effect.getTiming().duration, adesso: a.currentTime } : null;
+        });
+        check('il saluto dura 4 secondi (Elena)', tempi !== null && tempi.durata === 4000, [JSON.stringify(tempi)]);
+        await page.waitForTimeout(Math.max(0, (tempi ? tempi.durata - tempi.adesso : 4000) + 300));
         const dopo = await saluto();
-        check('dopo 3 secondi il saluto è sparito', dopo !== null && dopo.visibile === 'hidden', [JSON.stringify(dopo)]);
+        check('alla fine il saluto è sparito', dopo !== null && dopo.visibile === 'hidden', [JSON.stringify(dopo)]);
 
         // Il profilo dello studente (07/10): nome e cognome separati, e la
         // scelta di come compare agli altri studenti, con l'anteprima.

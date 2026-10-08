@@ -68,7 +68,7 @@ class AuthController
             exit;
         }
 
-        // Il saluto «Che bello rivederti, Marta» (08/10, chiesto da Elena):
+        // Il saluto «Che bello rivederti, Marta! 🌸» (08/10, chiesto da Elena):
         // solo agli studenti, a ogni accesso tranne il primo in assoluto, che
         // ha il video di benvenuto, e tranne quando c'e' una password
         // temporanea da cambiare. Si annota qui il nome; lo mostra, una volta

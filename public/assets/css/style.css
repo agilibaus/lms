@@ -5239,8 +5239,9 @@ fieldset.checkbox-group legend {
    Il saluto dopo l'accesso (08/10)
    ==========================================================
 
-   «Che bello rivederti, Marta», in alto al centro, per 3 secondi: entra,
-   resta, sparisce. Tutto nello stile, senza JavaScript.
+   «Che bello rivederti, Marta! 🌸», in alto al centro, per 4 secondi
+   (Elena: 3 erano pochi): entra, resta, sparisce. Tutto nello stile, senza
+   JavaScript.
 
    - Si adatta al nome: la larghezza segue il testo fino al massimo dello
      schermo meno i margini, e un nome lunghissimo va a capo invece di
@@ -5273,7 +5274,7 @@ fieldset.checkbox-group legend {
     text-align: center;
     overflow-wrap: anywhere;
     pointer-events: none;
-    animation: saluto 3s ease forwards;
+    animation: saluto 4s ease forwards;
 }
 
 @keyframes saluto {
