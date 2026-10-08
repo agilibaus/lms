@@ -1589,7 +1589,7 @@ async function giroBenvenuto(browser) {
                 modulo.pallini.length === 3 && modulo.pallini.every((h) => h <= 20) && modulo.spazi.every((s) => s <= 8),
                 [JSON.stringify({ pallini: modulo.pallini, spazi: modulo.spazi })]);
             check(email + ': le frasi corte',
-                modulo.aiuti.includes('Tutor e amministratore vedono sempre nome e cognome. Puoi cambiare idea quando vuoi, dal profilo.')
+                modulo.aiuti.includes('Tutor e admin vedono sempre nome e cognome. Scelta modificabile dal profilo.')
                 && (!conPassword || modulo.aiuti.includes('Minimo 8 caratteri: almeno una lettera e un numero.')),
                 [JSON.stringify(modulo.aiuti)]);
             await pp.goto(BASE + '/profilo');

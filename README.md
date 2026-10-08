@@ -860,8 +860,8 @@ quello che serve davvero.
   (`PersonName::PREDEFINITO`). Sono due costanti diverse apposta.
 - **Il modulo è corto** (08/10): sotto la password «Minimo 8 caratteri: almeno una lettera e un
   numero.» (`PasswordPolicy::HINT_BREVE`, accanto alla frase lunga e alla regola, che il resto
-  della piattaforma continua a usare), sotto la scelta «Tutor e amministratore vedono sempre nome
-  e cognome. Puoi cambiare idea quando vuoi, dal profilo.», e le tre opzioni vicine: il pallino
+  della piattaforma continua a usare), sotto la scelta «Tutor e admin vedono sempre nome e cognome.
+  Scelta modificabile dal profilo.», e le tre opzioni vicine: il pallino
   non prende più l'altezza di un campo (2,5 rem), e il modulo passa da 634 a 547 px.
 - Un solo «Continua»: tutto si controlla prima di scrivere, e un errore sulla password non
   salva la scelta a metà. Poi il video di benvenuto, se c'è, e i corsi. «Esci» resta sempre.
