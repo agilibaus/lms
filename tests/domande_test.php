@@ -126,6 +126,36 @@ try {
     check('una ricerca che non trova niente: archivio vuoto', $trovate('zzz-nessuna') === 0);
     check('l\'autore arriva con i campi per decidere come mostrarlo',
         array_key_exists('name_display', Q::published($corso)[0]) && array_key_exists('first_name', Q::published($corso)[0]));
+
+    echo PHP_EOL . 'Correggere una pubblicata e toglierla dall\'archivio (08/10)' . PHP_EOL;
+
+    $tutteDelCorso = static fn (int $chi, bool $tutte): array => array_map(
+        static fn (array $q): int => (int) $q['id'],
+        array_values(array_filter(Q::publishedFor($chi, $tutte), static fn (array $q): bool => (int) $q['course_id'] === $corso))
+    );
+    check('il tutor A ha da gestire solo le pubblicate assegnate a lui', $tutteDelCorso($tutorA, false) === [$d1, $d4] || $tutteDelCorso($tutorA, false) === [$d4, $d1],
+        json_encode($tutteDelCorso($tutorA, false)));
+    check('l\'admin tutte', count($tutteDelCorso($admin, true)) === 3);
+
+    check('correggere testo, modulo e risposta di una pubblicata', Q::update($d4, 'Domanda corretta dopo?', null, 'Risposta corretta dopo.'));
+    $riga = Q::find($d4);
+    check('la correzione è salvata, e chi aveva risposto resta lo stesso',
+        $riga['question'] === 'Domanda corretta dopo?' && $riga['module_id'] === null && $riga['answer'] === 'Risposta corretta dopo.'
+        && (int) $riga['answered_by'] === $tutorA);
+    check('salvare senza cambiare niente non è un errore', Q::update($d4, 'Domanda corretta dopo?', null, 'Risposta corretta dopo.'));
+    $attesa = Q::create($corso, null, $studente1, $tutorA, 'Ancora in attesa?');
+    check('una domanda in attesa non si «corregge»: si pubblica', !Q::update($attesa, 'x', null, 'y') && Q::find($attesa)['status'] === 'pending');
+
+    check('togliere dall\'archivio', Q::withdraw($d4));
+    $riga = Q::find($d4);
+    check('torna «Non pubblicata», con la risposta e chi l\'aveva data',
+        $riga['status'] === 'discarded' && $riga['answer'] === 'Risposta corretta dopo.' && (int) $riga['answered_by'] === $tutorA);
+    check('non è più nell\'archivio', !in_array($d4, array_map(static fn (array $q): int => (int) $q['id'], Q::published($corso)), true));
+    check('lo studente la vede ancora fra le sue, «Non pubblicata» (Elena)',
+        in_array('discarded', array_column(array_values(array_filter(Q::ofStudent($corso, $studente1),
+            static fn (array $q): bool => (int) $q['id'] === $d4)), 'status'), true));
+    check('una tolta non si toglie una seconda volta, né si corregge', !Q::withdraw($d4) && !Q::update($d4, 'x', null, 'y'));
+    check('una in attesa non si toglie dall\'archivio', !Q::withdraw($attesa));
 } finally {
     $pulisci();
 }

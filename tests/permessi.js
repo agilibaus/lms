@@ -557,6 +557,23 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const moduli = await page.$$eval('#domande .qa-modulo', (h) => h.map((x) => x.textContent.trim()));
             check('studente → l\'archivio è diviso per modulo, il corso in generale in fondo',
                 moduli.length >= 2 && moduli[moduli.length - 1] === 'Il corso in generale', [JSON.stringify(moduli)]);
+            const modificheStudente = await page.locator('#domande .qa-modifica').count();
+            check('studente → nell\'archivio nessun «Modifica»', modificheStudente === 0, ['trovati: ' + modificheStudente]);
+            await ctx.close();
+        }
+        {
+            // Il tutor di A vede «Modifica» accanto alle domande del suo
+            // corso, e il collegamento porta alla domanda gia' aperta (08/10).
+            const { ctx, page } = await entra(browser, 'tutor1@test.it');
+            await page.goto(BASE + '/courses/' + A.corso);
+            const link = page.locator('#domande .qa-modifica a').first();
+            const quanti = await page.locator('#domande .qa-modifica').count();
+            check('tutor → «Modifica» accanto alle domande pubblicate del suo corso', quanti >= 2, ['trovati: ' + quanti]);
+            if (quanti > 0) {
+                await page.goto(BASE + (await link.getAttribute('href')));
+                const aperte = await page.locator('.qa-pubblicate details[open]').count();
+                check('tutor → «Modifica» porta alla domanda, già aperta', aperte === 1, ['aperte: ' + aperte]);
+            }
             await ctx.close();
         }
         {
@@ -977,9 +994,15 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/domande/' + A.domanda_in_attesa + '/pubblica', [['question', 'x'], ['answer', 'y'], ['module_id', '']], 'negato',
                     'pubblicare la domanda di uno studente di un collega'],
                 ['/domande/' + A.domanda_in_attesa + '/scarta', [], 'negato', 'scartarla'],
+                // Le pubblicate (08/10): correggerle e toglierle dall'archivio
+                // segue la stessa regola.
+                ['/domande/' + A.domanda_pubblicata + '/modifica', [['question', 'x'], ['answer', 'y'], ['module_id', '']], 'negato',
+                    'correggere una pubblicata di un collega'],
+                ['/domande/' + A.domanda_pubblicata + '/togli', [], 'negato', 'toglierla dall\'archivio'],
             ]],
             ['stud@test.it', 'studente A (domande)', [
                 ['/domande/' + A.domanda_in_attesa + '/scarta', [], 'negato', 'scartare una domanda: lo fa il tutor'],
+                ['/domande/' + A.domanda_pubblicata + '/togli', [], 'negato', 'togliere una domanda dall\'archivio'],
                 ['/courses/' + A.corso + '/domande', [['question', 'Domanda di permessi.js sul corso?'], ['module_id', '']], 'consentito',
                     'fare una domanda nel proprio corso'],
             ]],
@@ -987,6 +1010,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/domande/' + A.domanda_in_attesa + '/pubblica',
                     [['question', 'Domanda in attesa del mondo A?'], ['answer', 'Risposta di permessi.js.'], ['module_id', '']], 'consentito',
                     'pubblicare la domanda di un suo studente'],
+                ['/domande/' + A.domanda_pubblicata + '/modifica',
+                    [['question', 'Domanda pubblicata sul modulo del mondo A?'], ['answer', 'Risposta corretta da permessi.js.'], ['module_id', '']],
+                    'consentito', 'correggere una sua pubblicata'],
+                ['/domande/' + A.domanda_pubblicata + '/togli', [], 'consentito', 'toglierla dall\'archivio'],
             ]],
             // Come compaiono agli altri studenti: e' una scelta solo degli
             // studenti (07/10). Il tutor compare sempre per intero.

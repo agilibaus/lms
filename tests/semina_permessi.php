@@ -474,6 +474,9 @@ function domandeDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, strin
         if ($stato === 'pending') {
             $GLOBALS['domandaInAttesa'][$lettera] = (int) $pdo->lastInsertId();
         }
+        if ($stato === 'published' && $modulo !== null) {
+            $GLOBALS['domandaPubblicata'][$lettera] = (int) $pdo->lastInsertId();
+        }
     }
 }
 
@@ -481,6 +484,8 @@ domandeDiProva($pdo, $a, $studenteA, $tutorA, 'A');
 domandeDiProva($pdo, $b, $studenteB, $tutorB, 'B');
 $a['domanda_in_attesa'] = $GLOBALS['domandaInAttesa']['A'];
 $b['domanda_in_attesa'] = $GLOBALS['domandaInAttesa']['B'];
+$a['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['A'];
+$b['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['B'];
 
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo

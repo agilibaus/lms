@@ -109,7 +109,7 @@ final class QuestionModel
      */
     public static function published(int $courseId, string $cerca = ''): array
     {
-        $sql = 'SELECT q.id, q.question, q.answer, q.module_id, q.created_at, q.answered_at,
+        $sql = 'SELECT q.id, q.question, q.answer, q.module_id, q.tutor_id, q.created_at, q.answered_at,
                        m.title AS module_title, m.position AS module_position,
                        s.id AS student_id, s.first_name, s.last_name, s.full_name, s.name_display,
                        r.full_name AS answered_by_name
@@ -175,6 +175,40 @@ final class QuestionModel
         return $stmt->fetchAll();
     }
 
+    /**
+     * Le domande pubblicate che chi guarda puo' correggere o togliere
+     * dall'archivio (08/10): tutte per l'admin, quelle assegnate a lui per
+     * il tutor, come per le domande in attesa. Divise per corso e, dentro un
+     * corso, nell'ordine dell'archivio.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function publishedFor(int $viewerId, bool $tutte): array
+    {
+        $sql = "SELECT q.id, q.course_id, q.module_id, q.question, q.answer, q.created_at, q.answered_at, q.tutor_id,
+                       c.title AS course_title, s.full_name AS student_name, t.full_name AS tutor_name,
+                       r.full_name AS answered_by_name
+                FROM course_questions q
+                INNER JOIN courses c ON c.id = q.course_id
+                LEFT JOIN modules m ON m.id = q.module_id
+                LEFT JOIN users s ON s.id = q.student_id
+                LEFT JOIN users t ON t.id = q.tutor_id
+                LEFT JOIN users r ON r.id = q.answered_by
+                WHERE q.status = 'published'";
+        $parametri = [];
+
+        if (!$tutte) {
+            $sql .= ' AND q.tutor_id = :viewer';
+            $parametri['viewer'] = $viewerId;
+        }
+
+        $sql .= ' ORDER BY c.title, c.id, (q.module_id IS NULL), m.position, m.id, q.answered_at DESC, q.id DESC';
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($parametri);
+
+        return $stmt->fetchAll();
+    }
+
     public static function pendingCount(int $viewerId, bool $tutte): int
     {
         $sql = "SELECT COUNT(*) FROM course_questions WHERE status = 'pending'";
@@ -205,6 +239,41 @@ final class QuestionModel
               WHERE id = :id AND status = 'pending'"
         );
         $stmt->execute(['q' => $question, 'm' => $moduleId, 'a' => $answer, 'by' => $answeredBy, 'id' => $id]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Corregge una domanda gia' pubblicata: testo, modulo e risposta (08/10).
+     * Solo se e' ancora pubblicata: una tolta nel frattempo non torna
+     * nell'archivio per una modifica. Chi ha risposto e la data della
+     * risposta restano quelli della pubblicazione.
+     */
+    public static function update(int $id, string $question, ?int $moduleId, string $answer): bool
+    {
+        $stmt = Database::connection()->prepare(
+            "UPDATE course_questions SET question = :q, module_id = :m, answer = :a
+              WHERE id = :id AND status = 'published'"
+        );
+        $stmt->execute(['q' => $question, 'm' => $moduleId, 'a' => $answer, 'id' => $id]);
+
+        // `rowCount` conta le righe cambiate: salvare senza toccare niente
+        // da' 0, ma non e' un errore se la domanda e' pubblicata.
+        return $stmt->rowCount() === 1 || (self::find($id)['status'] ?? null) === self::PUBLISHED;
+    }
+
+    /**
+     * Toglie una domanda dall'archivio (08/10): torna «Non pubblicata», come
+     * una scartata, e lo studente continua a vederla fra le sue con quello
+     * stato (scelta di Elena). La risposta resta salvata, e chi l'aveva data
+     * pure: si cambia solo lo stato.
+     */
+    public static function withdraw(int $id): bool
+    {
+        $stmt = Database::connection()->prepare(
+            "UPDATE course_questions SET status = 'discarded' WHERE id = :id AND status = 'published'"
+        );
+        $stmt->execute(['id' => $id]);
 
         return $stmt->rowCount() === 1;
     }

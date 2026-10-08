@@ -84,6 +84,16 @@ $stati = [
                                     <p class="qa-chi">Risposta di <?= htmlspecialchars((string) $q['answered_by_name']) ?></p>
                                 <?php endif; ?>
                             </div>
+                            <?php if (!empty($q['gestibile'])): ?>
+                                <?php /* Per chi la puo' gestire (08/10): porta alla domanda,
+                                         gia' aperta, nella pagina «Domande». Un `div` e non
+                                         un `p`: e' un comando, non un collegamento dentro una
+                                         frase, e in un paragrafo prenderebbe il verde e la
+                                         sottolineatura delle frasi (0125). */ ?>
+                                <div class="qa-modifica">
+                                    <a href="/domande?apri=<?= (int) $q['id'] ?>#pubblicata-<?= (int) $q['id'] ?>">Modifica</a>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </details>
                 </li>

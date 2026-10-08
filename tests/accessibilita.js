@@ -586,6 +586,9 @@ PAGINE_INTERNE.push(
     // Le domande in attesa, per chi risponde (07/10): la semina ne lascia una
     // per mondo, e l'admin le vede tutte con il tutor assegnato.
     ['/domande', 'Domande in attesa (semina)'],
+    // E con una pubblicata aperta per correggerla, come quando si arriva dal
+    // «Modifica» dell'archivio (08/10): chiusa, il suo modulo non si misura.
+    ['/domande?apri=' + SEMINATI.domanda_pubblicata, 'Domande con una pubblicata aperta (semina)'],
 );
 
 async function entra(page) {
@@ -603,7 +606,7 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a';
+    + '.tutor-benvenuto-contatti a, .qa-modifica a';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**

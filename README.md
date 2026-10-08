@@ -884,6 +884,13 @@ In fondo a ogni corso c'è **«Domande e risposte»** (07/10, chiesto da Elena).
   L'autore compare **come ha scelto nel profilo** (`PersonName::shown()`); lo staff lo vede
   per intero. **La ricerca** cerca nelle domande e nelle risposte, senza JavaScript
   (`?cerca=` sulla pagina del corso); `%` e `_` si cercano come testo.
+- **Correggere e togliere** (08/10). Nella pagina «Domande», sotto quelle in attesa, la parte
+  **«Pubblicate»**, divisa per corso: ogni domanda si apre per correggere domanda, modulo e
+  risposta («Salva»), o per **toglierla dall'archivio**. Tolta, torna «Non pubblicata», con la
+  risposta e chi l'aveva data, e lo studente la vede ancora fra le sue con quello stato. Nell'archivio
+  del corso, **chi può gestire una domanda vede «Modifica»**, che porta lì con la domanda già
+  aperta (`/domande?apri=`). La regola di chi può è una sola, `QuestionController::puoGestire()`:
+  l'admin tutte, il tutor quelle assegnate a lui.
 - **Niente risposte fra studenti, commenti o voti**: è la decisione di non fare messaggistica
   fra studenti, e in mezzo c'è sempre il tutor.
 
@@ -1043,8 +1050,8 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.700 controlli su 62 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 171 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
+node tests/accessibilita.js         # circa 2.750 controlli su 63 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 179 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Controllers\QuestionController;
 use App\Models\QuestionModel;
 use App\Core\PersonName;
 use App\Core\TutorWelcome;
@@ -172,7 +173,7 @@ class CourseController
         $cerca = trim((string) ($_GET['cerca'] ?? ''));
         $vedeTutto = Auth::hasRole('admin', 'tutor', 'assistente');
         $archivio = array_map(
-            static fn (array $q): array => $q + ['autore' => $q['student_id'] === null
+            static fn (array $q): array => $q + ['gestibile' => QuestionController::puoGestire($q), 'autore' => $q['student_id'] === null
                 ? 'uno studente'
                 : PersonName::shown(
                     ['id' => (int) $q['student_id'], 'first_name' => (string) $q['first_name'],

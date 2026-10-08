@@ -316,7 +316,7 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-modifica a):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +324,7 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a) {
+    .tutor-benvenuto-contatti a, .qa-modifica a) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -5215,9 +5215,40 @@ fieldset.checkbox-group legend {
 
 /* Il modulo di «Scarta» contiene solo il token: il suo pulsante sta nella
    riga di «Pubblica» con l'attributo `form`. Nascosto, non occupa spazio
-   (e la regola dei moduli consecutivi non gli aggiunge 1,5 rem). */
-.qa-gestione form.qa-scarta {
+   (e la regola dei moduli consecutivi non gli aggiunge 1,5 rem). Lo stesso
+   per «Togli dall'archivio» nelle pubblicate (08/10). */
+.qa-gestione form.qa-scarta,
+.qa-pubblicate form.qa-scarta {
     display: none;
+}
+
+/* Le pubblicate, nella pagina «Domande» (08/10): staccate dalle domande in
+   attesa, con il titolo della sezione alla misura di quello dell'archivio. */
+.qa-pubblicate {
+    margin-top: 2.5rem;
+}
+
+.qa-pubblicate > h2 {
+    font-size: 1.15rem;
+    margin: 0 0 0.3rem;
+}
+
+.qa-pubblicate .qa-corpo .form {
+    margin-top: 0.4rem;
+}
+
+/* «Modifica» accanto a una domanda dell'archivio, per chi la puo' gestire.
+   Un comando: la misura di ogni altro comando (0107), e l'aspetto dei
+   comandi (0125), neutro a riposo con il mouse. */
+.qa-modifica {
+    margin: 0.6rem 0 0;
+    font-size: 0.85rem;
+}
+
+.qa-modifica a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
 }
 
 /* Il numero di domande in attesa accanto alla voce del menu. */

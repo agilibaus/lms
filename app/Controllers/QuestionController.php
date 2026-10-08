@@ -22,6 +22,8 @@ use App\Models\UserModel;
  *   - Risponde, pubblicando, o scarta: l'admin per tutte
  *     (`question.answer`), il tutor per quelle che gli sono assegnate
  *     (`question.answer_own`). Una domanda senza tutor la vede solo l'admin.
+ *   - Le stesse persone, con la stessa regola, correggono una domanda gia'
+ *     pubblicata o la tolgono dall'archivio (08/10).
  */
 class QuestionController
 {
@@ -81,42 +83,96 @@ class QuestionController
 
         $tutte = Auth::can('question.answer');
         $domande = QuestionModel::pending((int) Auth::id(), $tutte);
+        $pubblicate = QuestionModel::publishedFor((int) Auth::id(), $tutte);
         $moduli = [];
 
-        foreach (array_unique(array_map(static fn (array $q): int => (int) $q['course_id'], $domande)) as $courseId) {
+        foreach (array_unique(array_map(static fn (array $q): int => (int) $q['course_id'], [...$domande, ...$pubblicate])) as $courseId) {
             $moduli[$courseId] = ModuleModel::forCourse($courseId);
         }
 
         View::render('questions/index', [
             'pageTitle' => 'Domande',
             'domande' => $domande,
+            'pubblicate' => $pubblicate,
             'moduli' => $moduli,
             'tutte' => $tutte,
+            // La pubblicata da aprire, arrivando dal «Modifica» dell'archivio.
+            'apri' => (int) ($_GET['apri'] ?? 0),
         ]);
     }
 
     public function publish(array $params): void
     {
         $domanda = $this->daGestire((int) $params['id']);
+        [$testo, $moduleId, $risposta] = $this->campi($domanda, '/domande#domanda-' . (int) $domanda['id']);
+
+        $fatto = QuestionModel::publish((int) $domanda['id'], $testo, $moduleId, $risposta, (int) Auth::id());
+        $this->torna('/domande', $fatto ? 'Domanda pubblicata.' : 'Questa domanda era già stata gestita.', $fatto);
+    }
+
+    /** Corregge una domanda gia' pubblicata (08/10). */
+    public function update(array $params): void
+    {
+        $domanda = $this->daGestire((int) $params['id']);
+        $qui = '/domande?apri=' . (int) $domanda['id'] . '#pubblicata-' . (int) $domanda['id'];
+        [$testo, $moduleId, $risposta] = $this->campi($domanda, $qui);
+
+        $fatto = QuestionModel::update((int) $domanda['id'], $testo, $moduleId, $risposta);
+        $this->torna($fatto ? $qui : '/domande', $fatto ? 'Modifica salvata.' : 'Questa domanda non è più pubblicata.', $fatto);
+    }
+
+    /**
+     * Toglie una domanda dall'archivio (08/10): torna «Non pubblicata», e lo
+     * studente la vede ancora fra le sue con quello stato (Elena).
+     */
+    public function withdraw(array $params): void
+    {
+        $domanda = $this->daGestire((int) $params['id']);
+        $fatto = QuestionModel::withdraw((int) $domanda['id']);
+        $this->torna('/domande', $fatto ? 'Domanda tolta dall\'archivio.' : 'Questa domanda non è più pubblicata.', $fatto);
+    }
+
+    /**
+     * Chi puo' gestire una domanda: l'admin tutte, il tutor quelle assegnate
+     * a lui. Una regola sola per la pagina «Domande», per le azioni e per il
+     * «Modifica» dell'archivio del corso.
+     *
+     * @param array<string, mixed> $domanda
+     */
+    public static function puoGestire(array $domanda): bool
+    {
+        return Auth::can('question.answer')
+            || (Auth::can('question.answer_own') && $domanda['tutor_id'] !== null && (int) $domanda['tutor_id'] === (int) Auth::id());
+    }
+
+    /**
+     * Domanda, modulo e risposta dal modulo, controllati: gli stessi per
+     * pubblicare e per correggere. Se qualcosa non va, torna a `$dove` con
+     * l'errore.
+     *
+     * @param array<string, mixed> $domanda
+     * @return array{0: string, 1: ?int, 2: string}
+     */
+    private function campi(array $domanda, string $dove): array
+    {
         $testo = trim(str_replace("\r\n", "\n", (string) ($_POST['question'] ?? '')));
         $risposta = trim(str_replace("\r\n", "\n", (string) ($_POST['answer'] ?? '')));
 
         if ($testo === '' || $risposta === '') {
-            $this->torna('/domande#domanda-' . (int) $domanda['id'], 'Per pubblicare servono la domanda e la risposta.', false);
+            $this->torna($dove, 'Servono la domanda e la risposta.', false);
         }
 
         if (mb_strlen($testo) > QuestionModel::MAX_QUESTION_CHARS || mb_strlen($risposta) > QuestionModel::MAX_ANSWER_CHARS) {
-            $this->torna('/domande#domanda-' . (int) $domanda['id'], 'La domanda o la risposta sono troppo lunghe.', false);
+            $this->torna($dove, 'La domanda o la risposta sono troppo lunghe.', false);
         }
 
         $moduleId = $this->moduloDelCorso((string) ($_POST['module_id'] ?? ''), (int) $domanda['course_id']);
 
         if ($moduleId === false) {
-            $this->torna('/domande', 'Il modulo scelto non è di questo corso.', false);
+            $this->torna($dove, 'Il modulo scelto non è di questo corso.', false);
         }
 
-        $fatto = QuestionModel::publish((int) $domanda['id'], $testo, $moduleId, $risposta, (int) Auth::id());
-        $this->torna('/domande', $fatto ? 'Domanda pubblicata.' : 'Questa domanda era già stata gestita.', $fatto);
+        return [$testo, $moduleId, $risposta];
     }
 
     public function discard(array $params): void
@@ -137,10 +193,7 @@ class QuestionController
         Auth::requireLogin();
 
         $domanda = QuestionModel::find($id);
-        $puo = $domanda !== null && (
-            Auth::can('question.answer')
-            || (Auth::can('question.answer_own') && $domanda['tutor_id'] !== null && (int) $domanda['tutor_id'] === (int) Auth::id())
-        );
+        $puo = $domanda !== null && self::puoGestire($domanda);
 
         if (!$puo) {
             http_response_code(403);

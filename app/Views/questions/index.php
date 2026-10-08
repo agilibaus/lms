@@ -19,6 +19,8 @@ use App\Models\QuestionModel;
  * @var list<array<string, mixed>> $domande
  * @var array<int, list<array<string, mixed>>> $moduli
  * @var bool $tutte
+ * @var list<array<string, mixed>> $pubblicate
+ * @var int $apri
  */
 
 $quante = count($domande);
@@ -90,3 +92,82 @@ $quante = count($domande);
         </form>
     </section>
 <?php endforeach; ?>
+
+<?php
+/*
+ * Le domande pubblicate, da correggere o da togliere dall'archivio (08/10).
+ * Divise per corso; ogni domanda e' un `details` chiuso, che si apre per
+ * modificarla. Quella su cui si arriva dal «Modifica» dell'archivio del
+ * corso (`?apri=`) e' gia' aperta. «Togli dall'archivio» la riporta a «Non
+ * pubblicata»: lo studente la vede ancora fra le sue (Elena).
+ *
+ * @var list<array<string, mixed>> $pubblicate
+ * @var int $apri
+ */
+$perCorso = [];
+foreach ($pubblicate as $q) {
+    $perCorso[(int) $q['course_id']]['titolo'] ??= (string) $q['course_title'];
+    $perCorso[(int) $q['course_id']]['voci'][] = $q;
+}
+?>
+<?php if ($pubblicate !== []): ?>
+    <section class="qa-pubblicate" aria-labelledby="pubblicate-titolo">
+        <h2 id="pubblicate-titolo">Pubblicate</h2>
+        <p class="qa-intro">Apri una domanda per correggerla, o per toglierla dall'archivio del corso.</p>
+
+        <?php foreach ($perCorso as $corso): ?>
+            <h3 class="qa-modulo"><?= htmlspecialchars($corso['titolo']) ?></h3>
+            <ul class="qa-elenco" role="list">
+                <?php foreach ($corso['voci'] as $q): ?>
+                    <?php $qid = (int) $q['id']; ?>
+                    <li id="pubblicata-<?= $qid ?>">
+                        <details class="qa-voce"<?= $apri === $qid ? ' open' : '' ?>>
+                            <summary><?= htmlspecialchars((string) $q['question']) ?></summary>
+                            <div class="qa-corpo">
+                                <p class="qa-chi">
+                                    Da <?= htmlspecialchars((string) ($q['student_name'] ?? 'uno studente non più iscritto')) ?>
+                                    · risposta di <?= htmlspecialchars((string) ($q['answered_by_name'] ?? '—')) ?>
+                                    <?php if ($tutte): ?>
+                                        · assegnata a <?= $q['tutor_name'] !== null ? htmlspecialchars((string) $q['tutor_name']) : 'nessun tutor' ?>
+                                    <?php endif; ?>
+                                </p>
+
+                                <form action="/domande/<?= $qid ?>/modifica" method="post" class="form">
+                                    <?= Csrf::field() ?>
+
+                                    <label for="pubblicata-<?= $qid ?>-modulo">Parte del corso</label>
+                                    <select id="pubblicata-<?= $qid ?>-modulo" name="module_id">
+                                        <?php foreach ($moduli[(int) $q['course_id']] ?? [] as $m): ?>
+                                            <option value="<?= (int) $m['id'] ?>" <?= (int) $m['id'] === (int) $q['module_id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars((string) $m['title']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                        <option value="" <?= $q['module_id'] === null ? 'selected' : '' ?>>Il corso in generale</option>
+                                    </select>
+
+                                    <label for="pubblicata-<?= $qid ?>-testo">Domanda</label>
+                                    <textarea id="pubblicata-<?= $qid ?>-testo" name="question" rows="3" required
+                                              maxlength="<?= QuestionModel::MAX_QUESTION_CHARS ?>"><?= htmlspecialchars((string) $q['question']) ?></textarea>
+
+                                    <label for="pubblicata-<?= $qid ?>-risposta">Risposta</label>
+                                    <textarea id="pubblicata-<?= $qid ?>-risposta" name="answer" rows="5" required
+                                              maxlength="<?= QuestionModel::MAX_ANSWER_CHARS ?>"><?= htmlspecialchars((string) $q['answer']) ?></textarea>
+
+                                    <div class="form-actions qa-azioni">
+                                        <button type="submit" class="btn btn-primary">Salva</button>
+                                        <button type="submit" form="pubblicata-<?= $qid ?>-togli" class="link-btn link-btn-danger">Togli dall'archivio</button>
+                                    </div>
+                                </form>
+
+                                <form id="pubblicata-<?= $qid ?>-togli" action="/domande/<?= $qid ?>/togli" method="post" class="qa-scarta"
+                                      onsubmit="return confirm('Togliere questa domanda dall\'archivio? Lo studente la vedrà come «Non pubblicata».');">
+                                    <?= Csrf::field() ?>
+                                </form>
+                            </div>
+                        </details>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endforeach; ?>
+    </section>
+<?php endif; ?>

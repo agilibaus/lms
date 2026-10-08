@@ -226,6 +226,8 @@ $router->post('/courses/{id}/domande', [QuestionController::class, 'store']);
 $router->get('/domande', [QuestionController::class, 'index']);
 $router->post('/domande/{id}/pubblica', [QuestionController::class, 'publish']);
 $router->post('/domande/{id}/scarta', [QuestionController::class, 'discard']);
+$router->post('/domande/{id}/modifica', [QuestionController::class, 'update']);
+$router->post('/domande/{id}/togli', [QuestionController::class, 'withdraw']);
 
 // --- Configurazione: posta elettronica e Google Meet ---
 $router->get('/admin/settings', [SettingsController::class, 'index']);
