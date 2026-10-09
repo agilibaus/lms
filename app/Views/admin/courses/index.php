@@ -39,14 +39,17 @@ $courses = $ordine->applica($courses);
 <?php if ($courses === []): ?>
     <p class="empty-state">Nessun corso.</p>
 <?php else: ?>
-    <table class="data-table">
-        <thead>
-        <tr><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><th></th></tr>
+    <?php /* Sotto i 50 rem diventa un elenco di schede, come i gruppi: a 320 px
+             titolo, due etichette e tre comandi non stanno in tre colonne. */ ?>
+    <div class="tabella-schede">
+    <table class="data-table" role="table">
+        <thead role="rowgroup">
+        <tr role="row"><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th></tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
         <?php foreach ($courses as $course): ?>
-            <tr>
-                <td>
+            <tr role="row">
+                <td role="cell" data-label="Titolo">
                     <?php if (CourseRights::canEdit((int) $course['id'])): ?>
                         <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
                     <?php else: ?>
@@ -56,7 +59,7 @@ $courses = $ordine->applica($courses);
                     <?php endif; ?>
                     <span class="cell-sub">/<?= htmlspecialchars((string) $course['slug']) ?></span>
                 </td>
-                <td>
+                <td role="cell" data-label="Stato">
                     <?php if ((int) $course['is_published'] === 1): ?>
                         <span class="badge badge-success">pubblicato</span>
                     <?php else: ?>
@@ -72,7 +75,7 @@ $courses = $ordine->applica($courses);
                         <?= htmlspecialchars(CourseModel::enrollmentLabel($mode)) ?>
                     </span>
                 </td>
-                <td class="row-actions">
+                <td role="cell" class="row-actions">
                     <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
                     <?php if (CourseRights::canEdit((int) $course['id'])): ?>
                         <a href="/reports/courses/<?= (int) $course['id'] ?>">Report</a>
@@ -89,6 +92,7 @@ $courses = $ordine->applica($courses);
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 <?php endif; ?>
 
 <?php

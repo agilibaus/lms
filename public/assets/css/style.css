@@ -3300,7 +3300,13 @@ fieldset.checkbox-group legend {
 /* La matrice della fruizione ha una colonna per lezione: con molte lezioni
    diventa più larga dello schermo. Meglio farla scorrere che stringere le
    colonne fino a renderle illeggibili. */
+/* `position: relative` non sposta niente: rende il riquadro il contenitore
+   dei testi `.sr-only` delle intestazioni ordinabili, che sono `absolute`.
+   Senza, il loro contenitore era la pagina, il riquadro non li ritagliava e
+   l'ultimo («ordina per questa colonna» del tempo totale) allargava la
+   pagina intera di 60 px a 320 px, mentre la tabella scorreva al suo posto. */
 .tabella-larga {
+    position: relative;
     overflow-x: auto;
     margin-bottom: 1rem;
 }
