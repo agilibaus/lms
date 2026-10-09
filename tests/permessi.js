@@ -528,16 +528,32 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // Sotto il proprio nome, solo per se', come lo vedono gli altri
             // (08/10): lo studente ne ha una sola, sotto il suo nome intero;
             // lo staff nessuna, perche' compare sempre per intero.
-            const righe = await page.$$eval('.persona-come-ti-vedono', (r) => r.map((x) => ({
-                testo: x.textContent.trim(),
-                nome: x.closest('.persona-nome').childNodes[0].textContent.trim(),
-            })));
+            const righe = await page.$$eval('.persona-come-ti-vedono', (r) => r.map((x) => {
+                // Il testo, non il riquadro: su una riga sola puo' sporgere
+                // dal suo spazio, e deve farlo verso l'esterno, non sulla foto.
+                const rg = document.createRange();
+                rg.selectNodeContents(x);
+                const tr = rg.getBoundingClientRect();
+                const f = x.closest('.persona').querySelector('.persona-foto').getBoundingClientRect();
+                return {
+                    testo: x.textContent.trim(),
+                    nome: x.closest('.persona-nome').childNodes[0].textContent.trim(),
+                    cerchio: x.closest('.usa-cerchio') !== null && getComputedStyle(x.closest('.gruppo-cerchio')).display === 'block',
+                    unaRiga: tr.height <= parseFloat(getComputedStyle(x).fontSize) * 1.6,
+                    sullaFoto: !(tr.right <= f.left || tr.left >= f.right || tr.bottom <= f.top || tr.top >= f.bottom),
+                };
+            }));
             if (intero) {
                 check(chi + ' → nessuna riga «Gli altri ti vedono come»: lo staff compare sempre per intero',
                     righe.length === 0, [JSON.stringify(righe)]);
             } else {
                 check(chi + ' → sotto il proprio nome intero, e solo lì, «Gli altri ti vedono come …»',
                     righe.length === 1 && righe[0].testo.startsWith('Gli altri ti vedono come «') && righe[0].nome.startsWith('Studente Prova'),
+                    [JSON.stringify(righe)]);
+                // Nel cerchio su una riga sola, e mai sulla foto (09/10, Elena;
+                // la prima versione su una riga sporgeva sotto la foto).
+                check(chi + ' → la riga non finisce sulla foto, e nel cerchio sta su una riga sola',
+                    righe.length === 1 && !righe[0].sullaFoto && (!righe[0].cerchio || righe[0].unaRiga),
                     [JSON.stringify(righe)]);
             }
 

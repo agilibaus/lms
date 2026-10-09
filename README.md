@@ -1830,6 +1830,8 @@ chi ha più di due parole**, da controllare a mano.
 **Ognuno vede se stesso per intero**, in tutta la piattaforma (anche accanto a «Esci»). Per
 poter verificare la propria scelta, **nella pagina del gruppo, sotto il proprio nome e visibile
 solo a lui, lo studente legge «Gli altri ti vedono come «Franco»»** (08/10, Elena), in piccolo.
+Nel cerchio sta su una riga sola, e sporge verso l'esterno, mai sulla foto; nella griglia del
+telefono e del tablet, dove le colonne sono strette, va a capo. I nomi del gruppo sono a 16 px.
 È testo e non un collegamento: il nome può stare dentro il pulsante della presentazione, e un
 collegamento dentro un pulsante non si raggiunge. Lo staff non la vede: compare sempre intero.
 

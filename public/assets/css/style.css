@@ -4435,8 +4435,9 @@ fieldset.checkbox-group legend {
     font-size: 1.8rem;
 }
 
+/* 16 px, la misura del testo (09/10, Elena: a 14,4 li trovava piccoli). */
 .persona-nome {
-    font-size: 0.9rem;
+    font-size: 1rem;
     line-height: 1.3;
     overflow-wrap: anywhere;
 }
@@ -4458,6 +4459,35 @@ fieldset.checkbox-group legend {
 }
 
 @container gruppo (min-width: 52rem) {
+    /* Nel cerchio «Gli altri ti vedono come …» sta su una riga sola (Elena,
+       09/10): accanto alla foto c'e' spazio. Nella griglia del telefono e del
+       tablet le colonne sono strette (110 px) e la riga va a capo: su una
+       riga sola sconfinava sulla persona accanto e, a 320 px, faceva scorrere
+       la pagina di lato. */
+    .gruppo-cerchio.usa-cerchio .persona-come-ti-vedono {
+        display: flex;
+        white-space: nowrap;
+    }
+
+    /* Su una riga sola la frase puo' essere piu' larga dello spazio del nome:
+       deve sporgere verso l'esterno del cerchio, non verso la foto. Come
+       elemento flessibile, con l'allineamento del suo lato, sporge dalla parte
+       giusta (a sinistra per chi sta a sinistra, da tutte e due le parti per
+       chi sta sopra o sotto). Senza, sporgeva sempre a destra, e a sinistra
+       finiva sotto la foto (09/10, visto nella fotografia). */
+    .gruppo-cerchio.usa-cerchio .persona-lato-sinistra .persona-come-ti-vedono {
+        justify-content: flex-end;
+    }
+
+    .gruppo-cerchio.usa-cerchio .persona-lato-destra .persona-come-ti-vedono {
+        justify-content: flex-start;
+    }
+
+    .gruppo-cerchio.usa-cerchio .persona-lato-sopra .persona-come-ti-vedono,
+    .gruppo-cerchio.usa-cerchio .persona-lato-sotto .persona-come-ti-vedono {
+        justify-content: center;
+    }
+
     .gruppo-cerchio.usa-cerchio {
         display: block;
         position: relative;
