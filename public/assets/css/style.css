@@ -4441,6 +4441,14 @@ fieldset.checkbox-group legend {
     overflow-wrap: anywhere;
 }
 
+/* Sotto il proprio nome, solo per se', come lo vedono gli altri (08/10):
+   piccola, come il ruolo del tutor, ma senza maiuscolo. */
+.persona-come-ti-vedono {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
 .persona-ruolo {
     display: block;
     font-size: 0.75rem;

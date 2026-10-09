@@ -48,7 +48,16 @@ class GroupPageController
         $chiGuarda = (int) Auth::id();
         $vedeTutto = Auth::hasRole('admin', 'tutor');
         $people = array_map(
-            static fn (array $p): array => ['full_name' => PersonName::shown($p, $chiGuarda, $vedeTutto)] + $p,
+            static fn (array $p): array => [
+                'full_name' => PersonName::shown($p, $chiGuarda, $vedeTutto),
+                // Lo studente vede se stesso per intero (come in tutta la
+                // piattaforma), e sotto, solo lui, come lo vedono gli altri
+                // (08/10, Elena): e' l'unico modo di verificare la propria
+                // scelta. Allo staff no: compare sempre per intero.
+                'come_ti_vedono' => (int) $p['id'] === $chiGuarda && !$vedeTutto
+                    ? PersonName::shown($p, 0, false)
+                    : null,
+            ] + $p,
             GroupModel::peopleForPage((int) $group['id'])
         );
 

@@ -104,6 +104,14 @@ $conPresentazione = array_values(array_filter(
                     <?= $voce($persona, '<span class="persona-nome">'
                         . htmlspecialchars((string) $persona['full_name'])
                         . ($haPresentazione($persona) ? '<span class="sr-only">, leggi la presentazione</span>' : '')
+                        // Solo sotto il proprio nome (08/10): come lo vedono gli
+                        // altri. Testo e non un collegamento: il nome puo' stare
+                        // dentro il pulsante della presentazione, e un
+                        // collegamento dentro un pulsante non si raggiunge.
+                        . (!empty($persona['come_ti_vedono'])
+                            ? '<span class="persona-come-ti-vedono">Gli altri ti vedono come «'
+                                . htmlspecialchars((string) $persona['come_ti_vedono']) . '»</span>'
+                            : '')
                         . '</span>') ?>
                 </li>
             <?php endforeach; ?>

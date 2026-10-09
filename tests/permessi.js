@@ -525,6 +525,22 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const nomi = await page.$$eval('.gruppo-cerchio .persona-nome', (ns) => ns.map((n) => n.childNodes[0].textContent.trim()));
             const html = await page.content();
 
+            // Sotto il proprio nome, solo per se', come lo vedono gli altri
+            // (08/10): lo studente ne ha una sola, sotto il suo nome intero;
+            // lo staff nessuna, perche' compare sempre per intero.
+            const righe = await page.$$eval('.persona-come-ti-vedono', (r) => r.map((x) => ({
+                testo: x.textContent.trim(),
+                nome: x.closest('.persona-nome').childNodes[0].textContent.trim(),
+            })));
+            if (intero) {
+                check(chi + ' → nessuna riga «Gli altri ti vedono come»: lo staff compare sempre per intero',
+                    righe.length === 0, [JSON.stringify(righe)]);
+            } else {
+                check(chi + ' → sotto il proprio nome intero, e solo lì, «Gli altri ti vedono come …»',
+                    righe.length === 1 && righe[0].testo.startsWith('Gli altri ti vedono come «') && righe[0].nome.startsWith('Studente Prova'),
+                    [JSON.stringify(righe)]);
+            }
+
             if (intero) {
                 check(chi + ' → vede per intero chi ha scelto le iniziali o il solo nome',
                     nomi.includes('Compagno 5') && nomi.includes('Compagno 6'), [JSON.stringify(nomi)]);
