@@ -1847,6 +1847,8 @@ poter verificare la propria scelta, **nella pagina del gruppo, sotto il proprio 
 solo a lui, lo studente legge «Gli altri ti vedono come «Franco»»** (08/10, Elena), in piccolo.
 Nel cerchio sta su una riga sola, e sporge verso l'esterno, mai sulla foto; nella griglia del
 telefono e del tablet, dove le colonne sono strette, va a capo. I nomi del gruppo sono a 16 px.
+La foto del tutor è di 104 px, quella degli studenti di 64 (09/10): una misura sola,
+`--foto-tutor`, per la griglia e per il cerchio.
 È testo e non un collegamento: il nome può stare dentro il pulsante della presentazione, e un
 collegamento dentro un pulsante non si raggiunge. Lo staff non la vede: compare sempre intero.
 

@@ -4429,10 +4429,17 @@ fieldset.checkbox-group legend {
     box-shadow: 0 0 0 1px var(--color-primary);
 }
 
+/* La foto del tutor: 104 px (09/10, Elena: «leggermente piu' grande»; era
+   88). Una misura sola per la griglia e per il cerchio, che la usano tutti e
+   due; le iniziali crescono nella stessa proporzione. */
+.gruppo-cerchio {
+    --foto-tutor: 104px;
+}
+
 .persona-tutor .persona-foto {
-    width: 88px;
-    height: 88px;
-    font-size: 1.8rem;
+    width: var(--foto-tutor);
+    height: var(--foto-tutor);
+    font-size: 2.1rem;
 }
 
 /* 16 px, la misura del testo (09/10, Elena: a 14,4 li trovava piccoli). */
@@ -4512,8 +4519,8 @@ fieldset.checkbox-group legend {
     .usa-cerchio .persona-tutor {
         left: 50%;
         top: 50%;
-        width: 88px;
-        height: 88px;
+        width: var(--foto-tutor);
+        height: var(--foto-tutor);
     }
 
     /* Il nome esce dalla foto verso l'esterno: di fianco sui due lati,
