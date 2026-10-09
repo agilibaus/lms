@@ -1257,7 +1257,8 @@ async function giroBenvenuto(browser) {
     for (const [larghezza, altezza, daTelefono] of [[1280, 900, false], [390, 844, true]]) {
         console.log('\n=== benvenuto del tutor, da studente (' + larghezza + '×' + altezza + ') ===');
 
-        const corso = semina().A.corso;
+        const seme = semina();
+        const corso = seme.A.corso;
         const ctx = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
         const page = await ctx.newPage();
         await page.goto(BASE + '/login');
@@ -1453,6 +1454,45 @@ async function giroBenvenuto(browser) {
             check('«Nascondi» la richiude e torna «Mostra»', !richiuso.aperto && richiuso.comando === 'Mostra',
                 [JSON.stringify(richiuso)]);
         }
+
+        // L'introduzione del corso larga quanto i moduli, e il capolettera
+        // (09/10, Elena): alto tre righe, nel verde del progetto, all'inizio
+        // della descrizione del corso e del testo della lezione, e solo li':
+        // non all'inizio del secondo paragrafo.
+        const capo = async () => page.evaluate(() => {
+            const verde = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+            const prova = document.createElement('span');
+            prova.style.color = verde;
+            document.body.appendChild(prova);
+            const rgbVerde = getComputedStyle(prova).color;
+            prova.remove();
+            const lettera = (el) => {
+                if (!el) return null;
+                const s = getComputedStyle(el, '::first-letter');
+                const righe = s.getPropertyValue('initial-letter') || s.getPropertyValue('-webkit-initial-letter');
+                return { verde: s.color === rgbVerde, tre: righe.trim().startsWith('3') || s.float === 'left' };
+            };
+            const descr = document.querySelector('.course-description');
+            const modulo = document.querySelector('.module-card');
+            const paragrafi = document.querySelectorAll('.lesson-content > p');
+            return {
+                larghezza: descr && modulo ? [Math.round(descr.getBoundingClientRect().width), Math.round(modulo.getBoundingClientRect().width)] : null,
+                descrizione: lettera(descr),
+                lezione: lettera(paragrafi[0] || null),
+                secondo: paragrafi[1] ? getComputedStyle(paragrafi[1], '::first-letter').color === getComputedStyle(paragrafi[1]).color : null,
+            };
+        });
+        await page.goto(BASE + url);
+        const nelCorso = await capo();
+        check('l\'introduzione del corso è larga quanto i moduli',
+            nelCorso.larghezza !== null && Math.abs(nelCorso.larghezza[0] - nelCorso.larghezza[1]) <= 1, [JSON.stringify(nelCorso)]);
+        check('la descrizione del corso comincia con il capolettera verde, alto tre righe',
+            nelCorso.descrizione !== null && nelCorso.descrizione.verde && nelCorso.descrizione.tre, [JSON.stringify(nelCorso)]);
+        await page.goto(BASE + '/lessons/' + seme.A.lezione);
+        const nellaLezione = await capo();
+        check('il testo della lezione comincia con il capolettera, e il secondo paragrafo no',
+            nellaLezione.lezione !== null && nellaLezione.lezione.verde && nellaLezione.lezione.tre && nellaLezione.secondo === true,
+            [JSON.stringify(nellaLezione)]);
 
         // Domande e risposte ripiegate in una riga (08/10): chiuse all'arrivo,
         // «Mostra» le apre e diventa «Nascondi»; una ricerca le apre da sola.

@@ -898,6 +898,16 @@ Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nom
   lunghissimo va a capo. Sul telefono sta sotto la fascia del menu. Non si clicca e non
   impedisce di toccare quello che c'è sotto.
 
+## Il capolettera
+
+La **descrizione del corso** e il **testo di ogni lezione** cominciano con un capolettera alto tre
+righe, nel verde del progetto (09/10, Elena). Solo all'inizio del blocco intero, non di ogni
+paragrafo, e solo se il blocco comincia con un paragrafo: su un titolo, un'immagine o un elenco
+non va. È solo aspetto (`::first-letter`): il testo e quello che legge un lettore di schermo non
+cambiano. Dove il browser ha `initial-letter` (Chrome, Edge, Safari) la lettera si allinea da sola
+su tre righe; altrove (Firefox) scorre a sinistra con misure calcolate, e l'allineamento è
+approssimato. La descrizione del corso è larga quanto gli altri blocchi della pagina.
+
 ## Domande e risposte
 
 In fondo a ogni corso c'è **«Domande e risposte»** (07/10, chiesto da Elena). **Parte ripiegata

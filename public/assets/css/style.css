@@ -648,9 +648,9 @@ h3 { font-size: 1.05rem; }
 .course-description {
     color: var(--color-text-muted);
     line-height: 1.55;
-    /* Un testo, non un riquadro: resta a una lunghezza di riga comoda da
-       leggere anche se i blocchi intorno sono piu' larghi. */
-    max-width: 62ch;
+    /* Larga quanto gli altri blocchi della pagina (09/10, Elena). Fino alla
+       0162 restava a 62 caratteri per la comodita' delle righe, una scelta
+       mia mai discussa: l'introduzione sembrava dimenticata indietro. */
     margin: 0 0 1.4rem;
 }
 
@@ -5568,4 +5568,45 @@ fieldset.checkbox-group legend {
 .auth-form .primo-accesso-opzione input[type="radio"]:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+}
+
+/* ==========================================================
+   Il capolettera (09/10)
+   ==========================================================
+
+   All'inizio della descrizione del corso e del testo di ogni lezione
+   (Elena), alto tre righe, nel verde del progetto. Solo all'inizio del
+   blocco intero, non di ogni paragrafo; e solo se il blocco comincia con
+   un paragrafo: su un titolo, un'immagine o un elenco non va.
+
+   E' solo aspetto: `::first-letter` non cambia il testo, e un lettore di
+   schermo lo legge com'e'.
+
+   Due modi. Dove c'e' `initial-letter` (Chrome, Edge, Safari) il browser
+   allinea la lettera esattamente su tre righe. Altrove (Firefox, al 09/10)
+   la lettera scorre a sinistra e il testo le gira intorno, con misure
+   calcolate per tre righe di 1,6 di interlinea: la lettera e' alta 3 x 1,6
+   = 4,8 volte il testo, meno lo spazio sopra le maiuscole. */
+.course-description::first-letter,
+.lesson-content > p:first-child::first-letter {
+    float: left;
+    margin: 0.06em 0.08em 0 0;
+    font-size: 4.1em;
+    line-height: 0.82;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+@supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
+    .course-description::first-letter,
+    .lesson-content > p:first-child::first-letter {
+        float: none;
+        /* Con initial-letter il margine e' lo spazio fra la lettera e il
+           testo che le gira intorno: a 0,12 la «U» toccava la «n». */
+        margin: 0 0.3em 0 0;
+        font-size: inherit;
+        line-height: inherit;
+        -webkit-initial-letter: 3;
+        initial-letter: 3;
+    }
 }

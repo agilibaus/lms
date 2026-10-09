@@ -162,7 +162,10 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
 
     $pdo->prepare('INSERT INTO lessons (module_id, title, content_html, position)
                    VALUES (:m, :t, :h, 0)')
-        ->execute(['m' => $modulo, 't' => $nome . ' lezione', 'h' => '<p>Contenuto.</p>']);
+        // Due paragrafi (09/10): il capolettera va solo all'inizio del primo,
+        // e accessibilita.js lo verifica.
+        ->execute(['m' => $modulo, 't' => $nome . ' lezione',
+                   'h' => '<p>Contenuto della lezione, primo paragrafo.</p><p>Secondo paragrafo.</p>']);
     $lezione = (int) $pdo->lastInsertId();
 
     $pdo->prepare('INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (:m, :t, 60)')
