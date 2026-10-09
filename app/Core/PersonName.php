@@ -26,12 +26,13 @@ final class PersonName
 
     /** Le tre scelte, con l'etichetta del profilo. */
     public const SCELTE = [
-        // In quest'ordine in ogni pagina che le mostra, dalla piu' riservata
-        // alla piu' aperta (09/10, Elena: il profilo e il primo accesso le
-        // mostravano in ordine opposto, perche' ciascuno aveva il suo).
-        self::INITIALS => 'Solo le iniziali',
-        self::FIRST => 'Solo il nome',
+        // In quest'ordine in ogni pagina che le mostra, da «Nome e cognome»
+        // in alto a «Solo le iniziali» in basso (09/10, Elena). Prima il
+        // profilo e il primo accesso le mostravano in ordine opposto, perche'
+        // ciascuno aveva il suo elenco: ora lo leggono tutti e due da qui.
         self::FULL => 'Nome e cognome',
+        self::FIRST => 'Solo il nome',
+        self::INITIALS => 'Solo le iniziali',
     ];
 
     public const MAX_CHARS = 100;

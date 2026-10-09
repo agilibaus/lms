@@ -1324,10 +1324,10 @@ async function giroBenvenuto(browser) {
         const scelte = await page.locator('fieldset.scelta-nome input[name="name_display"]').count();
         check('nel profilo dello studente ci sono le tre scelte di come compare', scelte === 3, ['scelte: ' + scelte]);
         // Nello stesso ordine della pagina «Primo accesso» (09/10, Elena):
-        // dalla piu' riservata alla piu' aperta.
+        // da «Nome e cognome» a «Solo le iniziali».
         const ordineProfilo = await page.$$eval('fieldset.scelta-nome input[name="name_display"]', (i) => i.map((x) => x.value));
-        check('nel profilo le scelte vanno dalla più riservata alla più aperta, come al primo accesso',
-            JSON.stringify(ordineProfilo) === JSON.stringify(['initials', 'first', 'full']), [JSON.stringify(ordineProfilo)]);
+        check('nel profilo le scelte vanno da «Nome e cognome» a «Solo le iniziali», come al primo accesso',
+            JSON.stringify(ordineProfilo) === JSON.stringify(['full', 'first', 'initials']), [JSON.stringify(ordineProfilo)]);
 
         // In un riquadro suo, con il titolo sopra le scelte per misura e per
         // peso (07/10: prima la `legend` era a 0,90 rem e le scelte a 0,95,
@@ -1591,8 +1591,8 @@ async function giroBenvenuto(browser) {
             });
             check(email + ': la scelta parte da «Solo il nome»', modulo.scelta === 'first', [JSON.stringify(modulo)]);
             const ordinePrimo = await pp.$$eval('input[name="name_display"]', (i) => i.map((x) => x.value));
-            check(email + ': le scelte vanno dalla più riservata alla più aperta, come nel profilo',
-                JSON.stringify(ordinePrimo) === JSON.stringify(['initials', 'first', 'full']), [JSON.stringify(ordinePrimo)]);
+            check(email + ': le scelte vanno da «Nome e cognome» a «Solo le iniziali», come nel profilo',
+                JSON.stringify(ordinePrimo) === JSON.stringify(['full', 'first', 'initials']), [JSON.stringify(ordinePrimo)]);
             check(email + ': le tre opzioni sono vicine: pallini non più alti di 20 px, spazi non più di 8',
                 modulo.pallini.length === 3 && modulo.pallini.every((h) => h <= 20) && modulo.spazi.every((s) => s <= 8),
                 [JSON.stringify({ pallini: modulo.pallini, spazi: modulo.spazi })]);

@@ -1808,9 +1808,10 @@ affiancati, e vanno uno sotto l'altro da soli quando lo spazio non basta (`.camp
 **calcolata dal database** (nome + cognome): le pagine e i report che lo leggono non sono
 cambiati, e nessuno lo scrive più. Una scrittura dimenticata su `full_name` dà errore subito.
 
-**Lo studente sceglie come lo vedono gli altri studenti**: solo le iniziali, solo il nome, o nome
-e cognome. In quest'ordine, dalla più riservata alla più aperta, in ogni pagina che le mostra:
-l'ordine è quello di `PersonName::SCELTE`, e le pagine lo leggono da lì (09/10). **Finché non sceglie, gli altri lo vedono con le sole iniziali** (protezione
+**Lo studente sceglie come lo vedono gli altri studenti**: nome e cognome, solo il nome, o solo
+le iniziali. In quest'ordine, da «Nome e cognome» in alto a «Solo le iniziali» in basso, in ogni
+pagina che le mostra: l'ordine è quello di `PersonName::SCELTE`, e le pagine lo leggono da lì
+(09/10). **Finché non sceglie, gli altri lo vedono con le sole iniziali** (protezione
 predefinita, dal 08/10): nessuno è esposto con nome e cognome senza averlo deciso, nemmeno chi
 non ha ancora fatto accesso. La prima scelta si fa nella pagina «Primo accesso» (qui sotto),
 le successive nel profilo («M. R.»: una per parola, il trattino separa,
