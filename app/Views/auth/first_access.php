@@ -31,9 +31,7 @@ $esempi = [
     PersonName::FIRST => $nome,
     PersonName::INITIALS => PersonName::initials($nome, $cognome),
 ];
-// L'ordine della pagina: dalla piu' riservata alla piu' aperta, cominciando
-// da quella che vale finche' non si sceglie.
-$ordine = [PersonName::INITIALS, PersonName::FIRST, PersonName::FULL];
+// L'ordine e' quello di PersonName::SCELTE, lo stesso del profilo.
 
 ob_start();
 ?>
@@ -64,7 +62,7 @@ ob_start();
 
     <fieldset class="primo-accesso-scelta">
         <legend>Come ti vedono gli altri studenti</legend>
-        <?php foreach ($ordine as $valore): ?>
+        <?php foreach (array_keys(PersonName::SCELTE) as $valore): ?>
             <label class="primo-accesso-opzione">
                 <input type="radio" name="name_display" value="<?= $valore ?>" <?= $valore === $scelta ? 'checked' : '' ?>>
                 <span><?= htmlspecialchars(PersonName::SCELTE[$valore]) ?>
