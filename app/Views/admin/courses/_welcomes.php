@@ -88,6 +88,17 @@ $tutti = Auth::can('course.welcome');
                     Quello che il tutor dice nell'audio. Obbligatorio: lo legge chi non sente, o chi in
                     quel momento non può ascoltare.
                 </p>
+                <?php /* La trascrizione dell'audio (09/10, Elena): con 7-8 tutor e un
+                         minuto di audio ciascuno, un servizio da usare a mano costa meno
+                         di un collegamento automatico. Si apre in una scheda nuova, per
+                         non perdere il modulo, e senza dire a TurboScribe da quale
+                         pagina di Pistacchio si arriva (`noreferrer`). Il testo va
+                         riletto: la trascrizione sbaglia nomi propri e punteggiatura. */ ?>
+                <p class="form-hint">
+                    Per ottenerlo puoi trascrivere l'audio con
+                    <a href="https://turboscribe.ai/it/" target="_blank" rel="noopener noreferrer">TurboScribe<span class="sr-only"> (si apre in una nuova scheda)</span></a>,
+                    poi incollare qui il testo e rileggerlo.
+                </p>
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary"><?= $esiste ? 'Salva benvenuto' : 'Carica benvenuto' ?></button>

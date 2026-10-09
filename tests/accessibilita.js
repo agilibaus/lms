@@ -1642,6 +1642,10 @@ async function giroBenvenuto(browser) {
         await esamina(tp, '/admin/courses/' + corso + '/edit', 'Modifica corso (tutor)', BERSAGLIO_MINIMO, daTelefono);
         const blocchi = await tp.locator('#benvenuti .tutor-benvenuto-admin').count();
         check('nella pagina del corso il tutor vede solo il proprio benvenuto', blocchi === 1, ['blocchi: ' + blocchi]);
+        // Il collegamento a TurboScribe per trascrivere l'audio (09/10, Elena):
+        // in una scheda nuova, senza dire da dove si arriva.
+        const turbo = await tp.locator('#benvenuti a[href="https://turboscribe.ai/it/"][target="_blank"][rel~="noopener"][rel~="noreferrer"]').count();
+        check('sotto il testo del benvenuto, il collegamento a TurboScribe in una scheda nuova', turbo >= 1, ['trovati: ' + turbo]);
 
         await ctxTutor.close();
     }

@@ -819,7 +819,10 @@ piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
     gruppo WhatsApp: non compare in nessun'altra pagina.
   Le icone sono disegni generici, una busta e un fumetto, non il logo di WhatsApp.
 - **Il testo è obbligatorio**: senza, l'audio non è accessibile a chi non sente o non può
-  ascoltare in quel momento (WCAG 1.2.1).
+  ascoltare in quel momento (WCAG 1.2.1). Sotto il campo c'è un collegamento a **TurboScribe** (09/10, Elena),
+  per trascrivere l'audio a mano e incollare qui il testo da rileggere: con 7-8 tutor e un minuto
+  di audio ciascuno, costa meno di un collegamento automatico, e non chiede chiavi né codice. Si
+  apre in una scheda nuova, con `noreferrer`.
 - **I file stanno in `storage/welcomes/`**, fuori dal repository, e si servono da
   `/benvenuti/{id}/foto` e `/benvenuti/{id}/audio` solo all'admin, al tutor del benvenuto e ai
   suoi studenti in quel corso; agli altri rispondono 404, come un benvenuto che non c'è. L'audio
