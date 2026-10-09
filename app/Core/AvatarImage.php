@@ -23,6 +23,21 @@ class AvatarImage
     public const EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
     /**
+     * Il tutor ha sempre una foto del profilo (09/10, decisione di
+     * Alessandro): e' la stessa nella pagina del gruppo, nel benvenuto in cima
+     * ai corsi e ovunque compaia, cosi' lo studente lo riconosce. Per gli
+     * altri ruoli la foto resta facoltativa.
+     *
+     * Da qui passano tutti i punti in cui un tutor potrebbe restare senza:
+     * la creazione e la modifica dal pannello, e «Rimuovi immagine» nel
+     * profilo, che al tutor non viene offerto e risponde 403.
+     */
+    public static function obbligatoria(string $ruolo): bool
+    {
+        return $ruolo === 'tutor';
+    }
+
+    /**
      * @param array{name:string,type:string,tmp_name:string,error:int,size:int} $file entry di $_FILES
      * @return string percorso relativo a /storage
      * @throws \RuntimeException se il file non è un'immagine utilizzabile

@@ -148,6 +148,15 @@ class ProfileController
         $userId = (int) Auth::id();
         $user = UserModel::find($userId);
 
+        // Il tutor la sostituisce, non la toglie (09/10): il comando non gli
+        // viene offerto, e una richiesta scritta a mano riceve 403, come la
+        // scelta di come compaiono gli studenti chiesta da chi non lo e'.
+        if (AvatarImage::obbligatoria((string) ($user['role'] ?? ''))) {
+            http_response_code(403);
+            echo 'Un tutor ha sempre una foto del profilo: puoi sostituirla, non toglierla.';
+            return;
+        }
+
         $this->deleteFile($user['avatar_path'] ?? null);
         UserModel::updateAvatar($userId, null);
         Auth::setAvatar(null);

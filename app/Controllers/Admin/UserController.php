@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Core\PersonName;
 use App\Auth\Auth;
+use App\Core\AvatarImage;
 use App\Core\Csv;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
@@ -111,6 +112,9 @@ class UserController extends AdminController
             $this->fail('Esiste già un utente con questa email.', '/admin/users/create');
         }
 
+        $foto = $this->fotoNelModulo();
+        $this->controllaFoto($data['role'], $foto, false, '/admin/users/create');
+
         // La password iniziale la genera la piattaforma e la manda all'utente,
         // come la temporanea di un account esistente: l'admin non la sceglie e
         // non la vede, e chi entra deve sceglierne una sua.
@@ -126,6 +130,20 @@ class UserController extends AdminController
             true,
             true
         );
+
+        // La foto si salva nella cartella dell'utente, quindi dopo averlo
+        // creato. Se non si salva, l'utente si toglie: un tutor senza foto non
+        // deve esistere nemmeno per un momento, e nessuna email e' ancora
+        // partita.
+        if ($foto) {
+            try {
+                UserModel::updateAvatar($newId, AvatarImage::store($_FILES['avatar'], $newId));
+            } catch (\RuntimeException $e) {
+                UserModel::delete($newId);
+                $this->fail($e->getMessage() . ' L\'utente non è stato creato.', '/admin/users/create');
+            }
+        }
+
         UserModel::setAssistantTutors($newId, $data['role'], $data['tutor_ids']);
 
         // Qui l'ordine e' rovesciato rispetto alla password temporanea di un
@@ -229,6 +247,21 @@ class UserController extends AdminController
             $this->fail('Deve restare almeno un amministratore attivo.', $redirect);
         }
 
+        $foto = $this->fotoNelModulo();
+        $this->controllaFoto($data['role'], $foto, !empty($user['avatar_path']), $redirect);
+
+        // Prima la foto nuova sul disco, poi la tabella, e solo alla fine si
+        // toglie la vecchia: un errore in mezzo non lascia l'utente senza.
+        $nuovaFoto = null;
+
+        if ($foto) {
+            try {
+                $nuovaFoto = AvatarImage::store($_FILES['avatar'], $id);
+            } catch (\RuntimeException $e) {
+                $this->fail($e->getMessage(), $redirect);
+            }
+        }
+
         UserModel::update(
             $id,
             $data['email'],
@@ -238,6 +271,14 @@ class UserController extends AdminController
             $data['is_active']
         );
         UserModel::setAssistantTutors($id, $data['role'], $data['tutor_ids']);
+
+        if ($nuovaFoto !== null) {
+            UserModel::updateAvatar($id, $nuovaFoto);
+
+            if (!empty($user['avatar_path'])) {
+                @unlink(Upload::absolutePath((string) $user['avatar_path']));
+            }
+        }
 
         $this->success('Utente aggiornato.', '/admin/users');
     }
@@ -490,6 +531,44 @@ class UserController extends AdminController
     }
 
     // ---------------------------------------------------------------
+
+    /**
+     * Se il modulo porta una foto del profilo (09/10). La carica solo chi ha
+     * `user.manage`: chi gestisce i propri assistenti non vede il campo, e
+     * un file mandato lo stesso viene ignorato.
+     */
+    private function fotoNelModulo(): bool
+    {
+        return Auth::can('user.manage') && !empty($_FILES['avatar']['name']);
+    }
+
+    /**
+     * Le due regole della foto dal pannello (09/10, decise da Alessandro):
+     *
+     *   - **un tutor ha sempre una foto del profilo** (`AvatarImage::obbligatoria()`):
+     *     non si crea, e non si fa diventare tutor, un utente senza;
+     *   - **dal pannello la foto si carica solo ai tutor.** Per gli altri ruoli
+     *     e' facoltativa e la sceglie la persona dal proprio profilo: l'admin
+     *     non mette una faccia a uno studente.
+     */
+    private function controllaFoto(string $ruolo, bool $haFile, bool $haGia, string $siSbaglia): void
+    {
+        if ($haFile && !AvatarImage::obbligatoria($ruolo)) {
+            $this->fail(
+                'Dal pannello la foto si carica solo ai tutor: per gli altri ruoli è facoltativa, '
+                . 'e la persona la sceglie dal proprio profilo.',
+                $siSbaglia
+            );
+        }
+
+        if (AvatarImage::obbligatoria($ruolo) && !$haFile && !$haGia) {
+            $this->fail(
+                'Un tutor deve avere una foto del profilo: caricala nel campo «Foto del profilo». '
+                . 'È quella che i suoi studenti vedono nella pagina del gruppo e nel benvenuto in cima ai corsi.',
+                $siSbaglia
+            );
+        }
+    }
 
     private function requireUserAccess(): void
     {

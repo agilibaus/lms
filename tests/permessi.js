@@ -247,7 +247,6 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // Il benvenuto del tutor (07/10): lo studente riceve quello del
             // tutor del suo gruppo, non quello di un altro corso. I file
             // esistono tutti (li mette la semina).
-            ['/benvenuti/' + A.benvenuto + '/foto', 'consentito', 'la foto del benvenuto del suo tutor'],
             ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'l\'audio del benvenuto del suo tutor'],
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un altro tutor, in un altro corso'],
             ['/domande', 'negato', 'la pagina delle domande è di chi risponde'],
@@ -1022,6 +1021,116 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
 
+        // --- la foto del tutor (09/10) -----------------------------------
+        //
+        // Un tutor ha una foto sola, quella del profilo, e ne ha sempre una
+        // (decisione di Alessandro, `AvatarImage::obbligatoria()`). Il
+        // benvenuto in cima al corso mostra quella; dal pannello non si crea,
+        // e non si fa diventare tutor, un utente senza foto, e la foto si
+        // carica solo ai tutor; il tutor la sostituisce ma non la toglie (la
+        // prova della POST sta fra le azioni).
+        //
+        // Le richieste al pannello sono moduli multiparte mandati da dentro
+        // la pagina, senza passare dallo script che nasconde il campo: e' il
+        // giro di chi non ha JavaScript, e quello che il server deve reggere
+        // da solo. L'esito si legge nel database, non nel messaggio.
+
+        console.log('\n--- la foto del tutor: una sola, e sempre');
+
+        {
+            const { ctx, page } = await entra(browser, 'stud@test.it');
+            await page.goto(BASE + '/courses/' + A.corso);
+            const foto = await page.$$eval('img.tutor-benvenuto-foto, img.tutor-benvenuto-miniatura',
+                (imgs) => imgs.map((i) => ({ src: i.getAttribute('src'), caricata: i.complete && i.naturalWidth > 0 })));
+            const attesa = '/utenti/' + d.utenti.tutorA + '/immagine';
+            check('nel benvenuto la foto è quella del profilo del tutor, la stessa della pagina del gruppo',
+                foto.length > 0 && foto.every((f) => f.src === attesa && f.caricata), [JSON.stringify(foto)]);
+            await ctx.close();
+        }
+        {
+            const { ctx, page } = await entra(browser, 'tutor1@test.it');
+            await page.goto(BASE + '/profilo');
+            const rimuovi = await page.locator('form[action="/profilo/immagine/elimina"]').count();
+            const sostituisci = await page.locator('form[action="/profilo/immagine"] input[type=file]').count();
+            check('profilo del tutor: la foto si sostituisce, «Rimuovi immagine» non c\'è',
+                rimuovi === 0 && sostituisci === 1, ['rimuovi: ' + rimuovi + ', sostituisci: ' + sostituisci]);
+            await ctx.close();
+        }
+        {
+            const radice = path.join(__dirname, '..');
+            const png = execFileSync('php', ['-r',
+                '$i=imagecreatetruecolor(120,120);imagefill($i,0,0,imagecolorallocate($i,90,120,90));imagepng($i);']).toString('base64');
+            const leggi = (email) => JSON.parse(execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";'
+                + '$s=App\\Core\\Database::connection()->prepare("SELECT id, role, avatar_path FROM users WHERE email = ?");'
+                + '$s->execute([$argv[1]]); echo json_encode($s->fetch() ?: null);', '--', email],
+            { cwd: radice, encoding: 'utf8' }));
+
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            const invia = async (url, campi, conFoto) => {
+                await page.goto(BASE + '/admin/users/create');
+                await page.evaluate(async ([url, campi, png]) => {
+                    const dati = new FormData();
+                    dati.append('_token', document.querySelector('input[name="_token"]').value);
+                    for (const [k, v] of campi) dati.append(k, v);
+                    if (png !== null) {
+                        const byte = Uint8Array.from(atob(png), (c) => c.charCodeAt(0));
+                        dati.append('avatar', new Blob([byte], { type: 'image/png' }), 'foto.png');
+                    }
+                    await fetch(url, { method: 'POST', body: dati, credentials: 'same-origin' });
+                }, [url, campi, conFoto ? png : null]);
+            };
+            // Un indirizzo per caso: un utente creato per sbaglio in un caso
+            // non deve cambiare l'esito di quello dopo.
+            const giro = Date.now();
+            const persona = (caso, ruolo) => [['first_name', 'Foto'], ['last_name', 'Di Prova'],
+                ['email', 'foto-' + caso + '-' + giro + '@test.it'], ['role', ruolo], ['is_active', '1']];
+            const chi = (caso) => leggi('foto-' + caso + '-' + giro + '@test.it');
+            const creati = [];
+
+            await invia('/admin/users', persona('a', 'tutor'), false);
+            creati.push(chi('a'));
+            check('pannello: un tutor senza foto non si crea', chi('a') === null);
+
+            await invia('/admin/users', persona('b', 'studente'), true);
+            creati.push(chi('b'));
+            check('pannello: la foto si carica solo ai tutor, non a uno studente', chi('b') === null);
+
+            await invia('/admin/users', persona('c', 'studente'), false);
+            const studente = chi('c');
+            creati.push(studente);
+            check('pannello: uno studente senza foto si crea (la controprova)',
+                studente !== null && studente.role === 'studente' && studente.avatar_path === null);
+
+            if (studente !== null) {
+                await invia('/admin/users/' + studente.id, persona('c', 'tutor'), false);
+                const dopo = chi('c');
+                check('pannello: uno studente senza foto non diventa tutor', dopo !== null && dopo.role === 'studente',
+                    [JSON.stringify(dopo)]);
+
+                await invia('/admin/users/' + studente.id, persona('c', 'tutor'), true);
+                const tutor = chi('c');
+                check('pannello: con la foto nello stesso invio diventa tutor, e la foto è la sua',
+                    tutor !== null && tutor.role === 'tutor' && String(tutor.avatar_path).startsWith('avatars/' + studente.id + '/'),
+                    [JSON.stringify(tutor)]);
+
+                await page.goto(BASE + '/admin/users/' + studente.id + '/edit');
+                const campo = await page.locator('[data-foto-field]').isVisible();
+                await page.selectOption('#role', 'studente');
+                const nascosto = !(await page.locator('[data-foto-field]').isVisible());
+                check('modifica utente: il campo della foto si vede per un tutor, e sparisce scegliendo un altro ruolo',
+                    campo && nascosto, ['visibile da tutor: ' + campo + ', nascosto da studente: ' + nascosto]);
+            }
+
+            // Pulizia: via chi e' stato creato, anche per sbaglio.
+            for (const u of creati.filter((x) => x !== null)) {
+                await esitoPost(page, '/admin/users/' + u.id + '/delete', [], '/admin/users/' + u.id + '/edit');
+            }
+            check('pulizia: gli utenti di prova si tolgono', ['a', 'b', 'c'].every((caso) => chi(caso) === null));
+
+            await ctx.close();
+        }
+
         // --- le azioni, cioè la metà che fa danno ------------------------
         //
         // Girano per ultime perché provano a scrivere e a cancellare. Se una
@@ -1108,6 +1217,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['tutor2@test.it', 'tutor B (come ti vedono)', [
                 ['/profilo/come-ti-vedono', [['name_display', 'initials']], 'negato',
                     'il tutor non sceglie come compare: compare sempre per intero'],
+            ]],
+            // La foto del tutor (09/10): la sostituisce, non la toglie.
+            ['tutor1@test.it', 'tutor A (foto)', [
+                ['/profilo/immagine/elimina', [], 'negato', 'togliere la propria foto: un tutor ce l\'ha sempre'],
             ]],
             ['tutor1@test.it', 'tutor A (benvenuto)', [
                 ['/admin/courses/' + B.corso + '/benvenuti/' + d.utenti.tutorB + '/elimina', [], 'negato',

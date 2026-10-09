@@ -361,8 +361,9 @@ $pdo->prepare('INSERT INTO assistant_tutors (assistant_id, tutor_id) VALUES (:a,
 // **vere sul disco**: senza file la richiesta risponderebbe 404 per la foto
 // mancante, cioe' un rifiuto che il controllo conterebbe come buono senza
 // aver provato la regola — lo stesso verde falso del materiale chiuso. Per
-// questo ce l'hanno lo studente di A, lo studente di B e il tutor di A, e
-// l'admin fa la controprova sulla foto di B.
+// questo ce l'hanno lo studente di A, lo studente di B e i due tutor (dal
+// 09/10 un tutor ha sempre una foto, e la sua e' anche quella del benvenuto),
+// e l'admin fa la controprova sulla foto di B.
 
 function fotoDiProva(PDO $pdo, int $userId, array $colore): void
 {
@@ -387,6 +388,7 @@ function fotoDiProva(PDO $pdo, int $userId, array $colore): void
 fotoDiProva($pdo, $studenteA, [79, 114, 86]);
 fotoDiProva($pdo, $studenteB, [160, 90, 60]);
 fotoDiProva($pdo, $tutorA, [70, 90, 140]);
+fotoDiProva($pdo, $tutorB, [140, 70, 90]);
 
 // Le presentazioni (06/10). Il tutor e lo studente di A ne hanno una, e una
 // la ha lo studente di B: e' quella che la pagina del gruppo di A non deve
@@ -398,10 +400,10 @@ $presentazione->execute(['id' => $studenteA, 'b' => 'Presentazione dello student
 $presentazione->execute(['id' => $studenteB, 'b' => 'Presentazione dello studente del mondo B, che A non deve leggere.']);
 
 // Il benvenuto del tutor (07/10): uno per il tutor di ciascun mondo, nel
-// suo corso, con file veri sul disco — una foto verticale e un audio. Come
-// per le foto del profilo: senza file, un rifiuto sarebbe verde per il
-// motivo sbagliato. L'audio non e' un MP3 che si possa ascoltare: ai
-// controlli serve che esista e che arrivi a chi deve.
+// suo corso, con l'audio vero sul disco; la foto e' quella del profilo
+// (09/10), seminata qui sopra. Come per le foto del profilo: senza file, un
+// rifiuto sarebbe verde per il motivo sbagliato. L'audio non e' un MP3 che si
+// possa ascoltare: ai controlli serve che esista e che arrivi a chi deve.
 function benvenutoDiProva(PDO $pdo, int $corso, int $tutor, string $lettera): int
 {
     $cartella = __DIR__ . '/../storage/welcomes/' . $corso;
@@ -410,23 +412,14 @@ function benvenutoDiProva(PDO $pdo, int $corso, int $tutor, string $lettera): in
         mkdir($cartella, 0775, true);
     }
 
-    $foto = 'welcomes/' . $corso . '/prova-permessi.jpg';
-    $img = imagecreatetruecolor(300, 400);
-    imagefill($img, 0, 0, imagecolorallocate($img, 217, 223, 217));
-    imagefilledellipse($img, 150, 150, 140, 140, imagecolorallocate($img, 169, 181, 170));
-    imagefilledellipse($img, 150, 420, 260, 300, imagecolorallocate($img, 169, 181, 170));
-    imagejpeg($img, __DIR__ . '/../storage/' . $foto, 85);
-    imagedestroy($img);
-
     $audio = 'welcomes/' . $corso . '/prova-permessi.mp3';
     file_put_contents(__DIR__ . '/../storage/' . $audio, "ID3\x03\x00\x00\x00\x00\x00\x00" . str_repeat("\x00", 2048));
 
-    $pdo->prepare('INSERT INTO course_tutor_welcomes (course_id, tutor_id, photo_path, audio_path, transcript)
-                   VALUES (:c, :t, :p, :a, :x)')
+    $pdo->prepare('INSERT INTO course_tutor_welcomes (course_id, tutor_id, audio_path, transcript)
+                   VALUES (:c, :t, :a, :x)')
         ->execute([
             'c' => $corso,
             't' => $tutor,
-            'p' => $foto,
             'a' => $audio,
             'x' => "Benvenuti nel corso del mondo " . $lettera . ".\nSono il vostro tutor.",
         ]);

@@ -16,13 +16,18 @@ use App\Core\Csrf;
  * ascoltato fino in fondo, cosi' dalla visita dopo il benvenuto e' ridotto.
  * Senza, vale il conto delle visite.
  *
- * @var array{id:int, tutor_name:string, contact_email:?string, transcript:string,
- *            group_name:string, whatsapp_url:?string, modo:string} $welcome
+ * La foto e' quella del profilo del tutor (09/10), la stessa della pagina
+ * del gruppo: un tutor ha sempre una foto (`AvatarImage::obbligatoria()`).
+ * Se mancasse lo stesso — un tutor rimasto senza da prima della regola —
+ * la scheda resta senza immagine invece di mostrarne una rotta.
+ *
+ * @var array{id:int, tutor_id:int, tutor_name:string, contact_email:?string, avatar_path:?string,
+ *            transcript:string, group_name:string, whatsapp_url:?string, modo:string} $welcome
  */
 
 $wid = (int) $welcome['id'];
 $nome = htmlspecialchars((string) $welcome['tutor_name']);
-$foto = '/benvenuti/' . $wid . '/foto';
+$foto = !empty($welcome['avatar_path']) ? '/utenti/' . (int) $welcome['tutor_id'] . '/immagine' : null;
 
 // I contatti: l'email che il tutor ha scritto nel profilo e il link del
 // gruppo WhatsApp dello studente. Ciascuno solo se c'e'. Le icone sono
@@ -44,7 +49,7 @@ if (!empty($welcome['whatsapp_url'])) {
 
 $scheda = '<section class="tutor-benvenuto" aria-labelledby="tutor-benvenuto-titolo">'
     . '<div class="tutor-benvenuto-media">'
-    . '<img class="tutor-benvenuto-foto" src="' . $foto . '" alt="">'
+    . ($foto !== null ? '<img class="tutor-benvenuto-foto" src="' . $foto . '" alt="">' : '')
     . '<audio controls preload="none" src="/benvenuti/' . $wid . '/audio"'
     . ' aria-label="Benvenuto di ' . $nome . '"'
     . ' data-ascoltato="/benvenuti/' . $wid . '/ascoltato"'
@@ -65,7 +70,9 @@ $scheda = '<section class="tutor-benvenuto" aria-labelledby="tutor-benvenuto-tit
 <?php else: ?>
     <details class="tutor-benvenuto-ridotto">
         <summary>
-            <img class="tutor-benvenuto-miniatura" src="<?= $foto ?>" alt="">
+            <?php if ($foto !== null): ?>
+                <img class="tutor-benvenuto-miniatura" src="<?= $foto ?>" alt="">
+            <?php endif; ?>
             <span class="tutor-benvenuto-ridotto-nome">Il benvenuto di <?= $nome ?></span>
             <?php /* «Mostra» da chiuso, «Nascondi» da aperto (Elena, 07/10): le
                      scambia lo stile sullo stato del `details`, quindi anche

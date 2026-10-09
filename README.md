@@ -173,6 +173,7 @@ danni. Le piu' recenti:
 | `2026_10_07_domande.sql` | le domande degli studenti al tutor e l'archivio delle risposte; i permessi `question.answer` e `question.answer_own` |
 | `2026_10_08_primo_accesso.sql` | `name_display` facoltativo: NULL vuol dire «non ancora scelto», e vale come «solo le iniziali» |
 | `2026_10_09_esperto.sql` | risponde l'esperto (l'admin): tolto `question.answer_own` ai tutor, le domande in attesa senza tutor |
+| `2026_10_09_foto_tutor.sql` | una foto sola per il tutor: la foto del suo benvenuto diventa quella del profilo, e la colonna `course_tutor_welcomes.photo_path` si toglie |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -427,6 +428,15 @@ restare almeno un admin attivo; un utente che risulta autore di corsi non è eli
 (`courses.created_by` è `ON DELETE RESTRICT`) e va semmai disattivato. L'eliminazione di un
 utente rimuove a cascata iscrizioni, progressi, tentativi e certificati: per conservare lo
 storico è preferibile disattivarlo.
+
+**Un tutor ha sempre una foto del profilo** (09/10, `AvatarImage::obbligatoria()`): è la stessa
+nella pagina del gruppo, nel benvenuto in cima ai corsi e ovunque compaia, così i suoi studenti
+lo riconoscono. Nel modulo dell'utente c'è il campo «Foto del profilo (per i tutor)», solo con
+`user.manage`: non si crea un tutor, e non si fa diventare tutor un utente, senza una foto, che
+si può caricare nello stesso invio. Dal pannello la foto si carica **solo ai tutor**: per gli
+altri ruoli è facoltativa e la sceglie la persona dal proprio profilo. Il tutor, dal profilo, la
+sostituisce ma non la toglie. Il campo lo mostra uno script solo quando il ruolo scelto è
+«Tutor»; senza JavaScript resta visibile, e le regole le fa rispettare il server.
 
 La scheda dell'utente mostra anche **i gruppi a cui partecipa** (tutor e numero di corsi del
 gruppo), e permette di aggiungerlo o toglierlo da lì: le stesse azioni della scheda del gruppo,
@@ -788,11 +798,16 @@ righe di cron, ed è nell'elenco delle cose da fare prima di aprire agli student
 
 ## Il benvenuto del tutor nel corso
 
-In cima alla pagina di un corso lo studente trova **il benvenuto del tutor del suo gruppo**: una
-foto a mezzo busto con un breve audio subito sotto, e accanto il nome, **l'email del tutor**,
+In cima alla pagina di un corso lo studente trova **il benvenuto del tutor del suo gruppo**: la
+foto del tutor con un breve audio subito sotto, e accanto il nome, **l'email del tutor**,
 **il link al gruppo WhatsApp** e il testo di quello che il tutor dice («Leggi il testo»). È diverso dal video di benvenuto qui sotto: quello è della
 piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
 
+- **La foto è quella del profilo del tutor** (09/10), la stessa della pagina del gruppo e della
+  riga ridotta: un tutor ha un volto solo in tutta la piattaforma. Fino alla 0167 il benvenuto
+  aveva una foto sua, caricata apposta e una per corso, e lo stesso tutor poteva comparire con
+  due facce diverse. Qui la foto si vede e non si carica: si cambia dal profilo del tutor o, per
+  l'admin, da «Modifica utente». **Un tutor ha sempre una foto** (vedi Utenti).
 - **Uno per tutor e per corso.** Un corso seguito da più gruppi con tutor diversi ha più
   benvenuti, e ogni studente sente quello del proprio tutor. **Chi non è in un gruppo con un
   tutor** (iscritto dal catalogo) **non vede niente**. Uno studente in due gruppi dello stesso
@@ -824,16 +839,17 @@ piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
   per trascrivere l'audio a mano e incollare qui il testo da rileggere: con 7-8 tutor e un minuto
   di audio ciascuno, costa meno di un collegamento automatico, e non chiede chiavi né codice. Si
   apre in una scheda nuova, con `noreferrer`.
-- **I file stanno in `storage/welcomes/`**, fuori dal repository, e si servono da
-  `/benvenuti/{id}/foto` e `/benvenuti/{id}/audio` solo all'admin, al tutor del benvenuto e ai
-  suoi studenti in quel corso; agli altri rispondono 404, come un benvenuto che non c'è. L'audio
+- **L'audio sta in `storage/welcomes/`**, fuori dal repository, e si serve da
+  `/benvenuti/{id}/audio` solo all'admin, al tutor del benvenuto e ai suoi studenti in quel
+  corso; agli altri risponde 404, come un benvenuto che non c'è. La foto si serve da
+  `/utenti/{id}/immagine`, con la regola di tutte le foto del profilo (`GroupPeers`), che la
+  lascia vedere agli studenti dei gruppi del tutor. L'audio
   si consegna anche a pezzi (`Range`, `App\Core\FileStream`), che Safari pretende.
 - **L'audio è breve**: MP3 o M4A fino a 5 MB. Servito da PHP occupa un processo mentre si
   scarica, e per pochi secondi va bene; un audio di mezz'ora no (lo stesso ragionamento dei
-  video, che stanno su Bunny). La foto, JPG, PNG o WebP fino a 8 MB, si salva ridotta a 900 px
-  sul lato lungo e ricodificata in JPEG, che toglie anche i dati nascosti dello scatto.
-- **Sostituire un file cancella quello vecchio**, come per la copertina del corso; «Rimuovi
-  benvenuto» toglie la riga e i due file.
+  video, che stanno su Bunny).
+- **Sostituire l'audio cancella quello vecchio**, come per la copertina del corso; «Rimuovi
+  benvenuto» toglie la riga e l'audio, e la foto del profilo resta.
 
 **La testa della pagina del corso** è una colonna sola (scelta su due mockup il 07/10): titolo,
 eventuali conferme, **copertina a fascia** (16:5, larga quanto i moduli: l'immagine caricata in
@@ -1118,7 +1134,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 3.000 controlli su 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 189 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
+node tests/permessi.js              # 198 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

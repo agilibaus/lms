@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\AvatarImage;
 use App\Core\PersonName;
 use App\Controllers\ProfileController;
 use App\Core\Csrf;
@@ -15,6 +16,9 @@ use App\Core\Welcome;
 
 $userId = (int) $user['id'];
 $hasAvatar = !empty($user['avatar_path']);
+// Il tutor ha sempre una foto (09/10, `AvatarImage::obbligatoria()`): la
+// sostituisce, non la toglie.
+$fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
 ?>
 <div class="page-header">
     <h1>Il mio profilo</h1>
@@ -52,12 +56,23 @@ $hasAvatar = !empty($user['avatar_path']);
                      prima dove andra' a finire. La frase dice esattamente il
                      perimetro di `GroupPeers`, che e' la regola che lo fa
                      rispettare: se cambia una, va cambiata l'altra. */ ?>
-            <p class="form-hint">
-                La foto e la presentazione sono facoltative. Se le inserisci, compariranno nella pagina
-                dei tuoi gruppi, dove le vedono i compagni di gruppo, il tutor e l'amministratore.
-            </p>
+            <?php if ($fotoObbligatoria): ?>
+                <?php /* Per il tutor la frase dice lo stesso perimetro di `GroupPeers`
+                         visto dalla sua parte: i compagni dei suoi gruppi sono i suoi
+                         studenti, e il benvenuto lo vedono solo loro. */ ?>
+                <p class="form-hint">
+                    Per un tutor la foto è obbligatoria, e si può sostituire ma non togliere: è la
+                    stessa nella pagina dei tuoi gruppi e nel tuo benvenuto in cima ai corsi, dove la
+                    vedono i tuoi studenti e l'amministratore. La presentazione è facoltativa.
+                </p>
+            <?php else: ?>
+                <p class="form-hint">
+                    La foto e la presentazione sono facoltative. Se le inserisci, compariranno nella pagina
+                    dei tuoi gruppi, dove le vedono i compagni di gruppo, il tutor e l'amministratore.
+                </p>
+            <?php endif; ?>
 
-            <?php if ($hasAvatar): ?>
+            <?php if ($hasAvatar && !$fotoObbligatoria): ?>
                 <form action="/profilo/immagine/elimina" method="post"
                       onsubmit="return confirm('Rimuovere l’immagine del profilo?');">
                     <?= Csrf::field() ?>

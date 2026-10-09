@@ -18,10 +18,14 @@ use App\Models\TutorWelcomeModel;
  * (`course.welcome`). Prima versione: solo l'admin; Elena ha precisato che
  * e' il tutor a caricarlo, e che ogni corso deve averne uno.
  *
- * Foto e audio si servono passando di qui, mai da un indirizzo pubblico: li
+ * L'audio si serve passando di qui, mai da un indirizzo pubblico: lo
  * ricevono l'admin, il tutor del benvenuto, e gli studenti per cui quel
  * benvenuto e' il loro (`TutorWelcomeModel::forStudent()`). A tutti gli altri
  * l'indirizzo risponde 404, come a un benvenuto che non c'e'.
+ *
+ * La foto non e' piu' del benvenuto (09/10): e' quella del profilo del tutor,
+ * la stessa della pagina del gruppo, servita da `/utenti/{id}/immagine` con
+ * la regola di `GroupPeers`, che i suoi studenti la lascia vedere.
  */
 class TutorWelcomeController extends AdminController
 {
@@ -42,7 +46,6 @@ class TutorWelcomeController extends AdminController
 
         $current = TutorWelcomeModel::findFor($courseId, $tutorId);
         $transcript = trim(str_replace("\r\n", "\n", (string) ($_POST['transcript'] ?? '')));
-        $hasPhoto = !empty($_FILES['photo']['name']);
         $hasAudio = !empty($_FILES['audio']['name']);
 
         if ($transcript === '') {
@@ -53,37 +56,25 @@ class TutorWelcomeController extends AdminController
             $this->fail('Il testo supera i ' . self::TRANSCRIPT_MAX_CHARS . ' caratteri.', $redirect);
         }
 
-        if ($current === null && (!$hasPhoto || !$hasAudio)) {
-            $this->fail('Per un benvenuto nuovo servono sia la foto sia l\'audio.', $redirect);
+        if ($current === null && !$hasAudio) {
+            $this->fail('Per un benvenuto nuovo serve l\'audio.', $redirect);
         }
 
-        $photo = $current['photo_path'] ?? null;
         $audio = $current['audio_path'] ?? null;
-        $nuovi = [];
 
         try {
-            if ($hasPhoto) {
-                $photo = $nuovi[] = TutorWelcome::storePhoto($_FILES['photo'], $courseId);
-            }
             if ($hasAudio) {
-                $audio = $nuovi[] = TutorWelcome::storeAudio($_FILES['audio'], $courseId);
+                $audio = TutorWelcome::storeAudio($_FILES['audio'], $courseId);
             }
         } catch (\RuntimeException $e) {
-            // Un file salvato e l'altro no: il primo non e' legato a niente.
-            foreach ($nuovi as $orfano) {
-                TutorWelcome::delete($orfano);
-            }
             $this->fail($e->getMessage(), $redirect);
         }
 
-        // Prima si scrive in tabella, poi si cancellano i file vecchi: al
+        // Prima si scrive in tabella, poi si cancella il file vecchio: al
         // contrario, un errore in mezzo lascerebbe la riga che punta al nulla
         // (lo stesso ordine della copertina del corso).
-        TutorWelcomeModel::save($courseId, $tutorId, (string) $photo, (string) $audio, $transcript);
+        TutorWelcomeModel::save($courseId, $tutorId, (string) $audio, $transcript);
 
-        if ($hasPhoto) {
-            TutorWelcome::delete($current['photo_path'] ?? null);
-        }
         if ($hasAudio) {
             TutorWelcome::delete($current['audio_path'] ?? null);
         }
@@ -103,25 +94,9 @@ class TutorWelcomeController extends AdminController
         }
 
         TutorWelcomeModel::delete((int) $current['id']);
-        TutorWelcome::delete((string) $current['photo_path']);
         TutorWelcome::delete((string) $current['audio_path']);
 
         $this->success('Benvenuto rimosso.', '/admin/courses/' . $courseId . '/edit#benvenuti');
-    }
-
-    public function photo(array $params): void
-    {
-        $welcome = $this->accessibile((int) $params['id'], 'photo_path');
-
-        if ($welcome === null) {
-            return;
-        }
-
-        $absolute = Upload::absolutePath((string) $welcome['photo_path']);
-        header('Content-Type: image/jpeg');
-        header('Cache-Control: private, max-age=86400');
-        header('Content-Length: ' . filesize($absolute));
-        readfile($absolute);
     }
 
     public function audio(array $params): void

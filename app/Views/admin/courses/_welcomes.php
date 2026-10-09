@@ -27,8 +27,8 @@ $tutti = Auth::can('course.welcome');
 <section class="card" id="benvenuti">
     <h2><?= $tutti ? 'Benvenuto dei tutor' : 'Il tuo benvenuto' ?></h2>
     <p class="card-meta">
-        Una foto a mezzo busto e un breve audio in cima alla pagina del corso, con l'email per gli
-        studenti e il link al gruppo WhatsApp. Ogni studente vede il tutor del proprio gruppo. Ogni
+        La foto del profilo del tutor e un breve audio in cima alla pagina del corso, con l'email per
+        gli studenti e il link al gruppo WhatsApp. Ogni studente vede il tutor del proprio gruppo. Ogni
         corso deve averne uno. Completo nelle prime <?= TutorWelcome::VISITE_COMPLETE ?> visite, poi
         ridotto a una riga; prima, se lo studente l'ha già ascoltato fino in fondo.
     </p>
@@ -57,9 +57,18 @@ $tutti = Auth::can('course.welcome');
                 Il link WhatsApp si imposta nella pagina di ciascun gruppo.
             </p>
 
+            <?php /* La foto e' quella del profilo (09/10): qui si vede, non si
+                     carica. Si cambia dal profilo del tutor o, per l'admin, da
+                     «Modifica utente». */ ?>
+            <p class="card-meta">
+                La foto è quella del profilo<?= $tutti ? ' del tutor: si cambia dal suo profilo o da «Modifica utente».' : ': si cambia dal tuo profilo.' ?>
+            </p>
+
             <?php if ($esiste): ?>
                 <div class="tutor-benvenuto-anteprima">
-                    <img class="tutor-benvenuto-anteprima-foto" src="/benvenuti/<?= (int) $w['welcome_id'] ?>/foto" alt="">
+                    <?php if (!empty($w['avatar_path'])): ?>
+                        <img class="tutor-benvenuto-anteprima-foto" src="/utenti/<?= $tutorId ?>/immagine" alt="">
+                    <?php endif; ?>
                     <audio controls preload="none" src="/benvenuti/<?= (int) $w['welcome_id'] ?>/audio"
                            aria-label="Benvenuto di <?= htmlspecialchars((string) $w['tutor_name'], ENT_QUOTES) ?>"></audio>
                 </div>
@@ -70,11 +79,6 @@ $tutti = Auth::can('course.welcome');
             <form action="/admin/courses/<?= $courseId ?>/benvenuti/<?= $tutorId ?>" method="post"
                   class="form" enctype="multipart/form-data">
                 <?= Csrf::field() ?>
-
-                <label for="<?= $c ?>-foto"><?= $esiste ? 'Sostituisci la foto' : 'Foto a mezzo busto' ?></label>
-                <input type="file" id="<?= $c ?>-foto" name="photo" accept="image/jpeg,image/png,image/webp"
-                       <?= $esiste ? '' : 'required' ?>>
-                <p class="form-hint">JPG, PNG o WebP, fino a 8 MB. Verticale: si vede la parte alta, viso e spalle.</p>
 
                 <label for="<?= $c ?>-audio"><?= $esiste ? 'Sostituisci l\'audio' : 'Audio' ?></label>
                 <input type="file" id="<?= $c ?>-audio" name="audio" accept=".mp3,.m4a,audio/mpeg,audio/mp4"
@@ -107,7 +111,7 @@ $tutti = Auth::can('course.welcome');
 
             <?php if ($esiste): ?>
                 <form action="/admin/courses/<?= $courseId ?>/benvenuti/<?= $tutorId ?>/elimina" method="post"
-                      onsubmit="return confirm('Rimuovere il benvenuto di questo tutor? Foto e audio vengono cancellati.');">
+                      onsubmit="return confirm('Rimuovere il benvenuto di questo tutor? L’audio viene cancellato; la foto del profilo resta.');">
                     <?= Csrf::field() ?>
                     <button type="submit" class="link-btn link-btn-danger">Rimuovi benvenuto</button>
                 </form>

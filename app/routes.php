@@ -223,7 +223,6 @@ $router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::c
 // il tutor e i suoi studenti in quel corso.
 $router->post('/admin/courses/{id}/benvenuti/{tutorId}', [TutorWelcomeController::class, 'save']);
 $router->post('/admin/courses/{id}/benvenuti/{tutorId}/elimina', [TutorWelcomeController::class, 'destroy']);
-$router->get('/benvenuti/{id}/foto', [TutorWelcomeController::class, 'photo']);
 $router->get('/benvenuti/{id}/audio', [TutorWelcomeController::class, 'audio']);
 $router->post('/benvenuti/{id}/ascoltato', [TutorWelcomeController::class, 'listened']);
 

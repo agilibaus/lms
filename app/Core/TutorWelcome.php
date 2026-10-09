@@ -6,20 +6,24 @@ namespace App\Core;
 
 /**
  * Il benvenuto del tutor all'inizio di un corso (07/10, chiesto da Elena):
- * una foto a mezzo busto, un breve audio con il testo scritto, in cima alla
+ * la foto del tutor, un breve audio con il testo scritto, in cima alla
  * pagina del corso.
  *
- * LE DECISIONI DI ELENA
+ * LE DECISIONI
  *   - **Uno per tutor e per corso.** Lo studente sente il tutor del proprio
  *     gruppo (`TutorWelcomeModel::forStudent()`); senza un tutor, cioe'
  *     iscritto dal catalogo senza gruppo, non vede niente.
- *   - **Una foto caricata apposta**, non quella del profilo.
+ *   - **La foto e' quella del profilo** (09/10, Alessandro; fino alla 0167
+ *     era una foto caricata apposta, una per corso): il tutor ha un volto
+ *     solo in tutta la piattaforma, e ne ha sempre uno
+ *     (`AvatarImage::obbligatoria()`).
  *   - **Completo all'inizio, poi ridotto a una riga**: dalla quarta visita,
  *     o appena l'audio e' stato ascoltato fino in fondo — la prima delle due.
- *   - **Lo carica solo l'admin** (permesso `course.welcome`).
+ *   - **Lo carica il tutor**, il proprio (`course.welcome_own`), e l'admin
+ *     per tutti (`course.welcome`): cosi' dalla 0135.
  *
  * Qui stanno la regola completo/ridotto, senza database, e il salvataggio
- * dei due file. Come per la copertina del corso, sostituire un file cancella
+ * dell'audio. Come per la copertina del corso, sostituire l'audio cancella
  * quello vecchio: e' un file che appartiene a una riga sola, e una volta
  * sostituito non serve a nessuno.
  */
@@ -43,13 +47,6 @@ final class TutorWelcome
      */
     private const AUDIO_MIME = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'video/mp4', 'application/octet-stream'];
 
-    public const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
-
-    public const PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
-
-    /** Il lato lungo della foto salvata: basta per il riquadro e per uno schermo denso. */
-    private const PHOTO_LATO = 900;
-
     /**
      * Completo o ridotto, per la visita appena registrata.
      *
@@ -59,76 +56,6 @@ final class TutorWelcome
     public static function modo(int $visite, bool $ascoltato): string
     {
         return !$ascoltato && $visite <= self::VISITE_COMPLETE ? 'completo' : 'ridotto';
-    }
-
-    /**
-     * Salva la foto ridimensionata e ricodificata in JPEG, che toglie anche i
-     * dati nascosti dell'immagine (posizione GPS, modello del telefono).
-     *
-     * @param array{name:string,type:string,tmp_name:string,error:int,size:int} $file
-     * @return string percorso relativo a /storage
-     */
-    public static function storePhoto(array $file, int $courseId): string
-    {
-        if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
-            throw new \RuntimeException('Caricamento della foto non riuscito.');
-        }
-
-        if ((int) $file['size'] > self::PHOTO_MAX_BYTES) {
-            throw new \RuntimeException('La foto supera gli 8 MB.');
-        }
-
-        $info = @getimagesize($file['tmp_name']);
-
-        if ($info === false) {
-            throw new \RuntimeException('Il file della foto non è un\'immagine valida.');
-        }
-
-        $subDir = 'welcomes/' . $courseId;
-
-        if (!extension_loaded('gd')) {
-            return Upload::store($file, $subDir, self::PHOTO_EXTENSIONS, self::PHOTO_MAX_BYTES)['stored_path'];
-        }
-
-        $source = match ((int) $info[2]) {
-            IMAGETYPE_JPEG => @imagecreatefromjpeg($file['tmp_name']),
-            IMAGETYPE_PNG => @imagecreatefrompng($file['tmp_name']),
-            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($file['tmp_name']) : false,
-            default => false,
-        };
-
-        if (!$source instanceof \GdImage) {
-            throw new \RuntimeException('Formato della foto non supportato: usa JPG, PNG o WebP.');
-        }
-
-        $w = imagesx($source);
-        $h = imagesy($source);
-        $scala = min(1.0, self::PHOTO_LATO / max($w, $h));
-        $nw = max(1, (int) round($w * $scala));
-        $nh = max(1, (int) round($h * $scala));
-
-        $dest = imagecreatetruecolor($nw, $nh);
-        // Un PNG trasparente diventerebbe nero: si parte da un fondo bianco.
-        imagefill($dest, 0, 0, imagecolorallocate($dest, 255, 255, 255));
-        imagecopyresampled($dest, $source, 0, 0, 0, 0, $nw, $nh, $w, $h);
-        imagedestroy($source);
-
-        $directory = Upload::absolutePath($subDir);
-
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            imagedestroy($dest);
-            throw new \RuntimeException('Impossibile creare la cartella dei benvenuti sul server.');
-        }
-
-        $relative = $subDir . '/' . bin2hex(random_bytes(16)) . '.jpg';
-        $saved = imagejpeg($dest, Upload::absolutePath($relative), 85);
-        imagedestroy($dest);
-
-        if (!$saved) {
-            throw new \RuntimeException('Impossibile salvare la foto sul server.');
-        }
-
-        return $relative;
     }
 
     /**

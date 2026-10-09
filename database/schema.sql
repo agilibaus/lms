@@ -463,11 +463,11 @@ CREATE TABLE live_session_attendance (
 
 -- Il benvenuto del tutor all'inizio di un corso, e le visite che decidono se
 -- mostrarlo completo o ridotto (migrazione 2026_10_07_benvenuto_tutor.sql).
+-- La foto non sta qui: e' quella del profilo del tutor (2026_10_09_foto_tutor.sql).
 CREATE TABLE course_tutor_welcomes (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     course_id       INT UNSIGNED NOT NULL,
     tutor_id        INT UNSIGNED NOT NULL,
-    photo_path      VARCHAR(255) NOT NULL,
     audio_path      VARCHAR(255) NOT NULL,
     -- Il testo di quello che il tutor dice: senza, l'audio non e' accessibile
     -- a chi non sente o non puo' ascoltare in quel momento (WCAG 1.2.1).

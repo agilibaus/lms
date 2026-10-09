@@ -117,12 +117,12 @@ try {
     check('nessun benvenuto caricato: lo studente non sente niente',
         TutorWelcomeModel::forStudent($corso, $studente) === null);
 
-    TutorWelcomeModel::save($corso, $aldi, 'welcomes/x/a.jpg', 'welcomes/x/a.mp3', 'Testo di Aldi');
+    TutorWelcomeModel::save($corso, $aldi, 'welcomes/x/a.mp3', 'Testo di Aldi');
     check('c\'è il benvenuto di un altro tutor: lo studente non lo sente',
         TutorWelcomeModel::forStudent($corso, $studente) === null,
         'lo studente sta nel gruppo di Bianchi, non di Aldi');
 
-    TutorWelcomeModel::save($corso, $bianchi, 'welcomes/x/b.jpg', 'welcomes/x/b.mp3', 'Testo di Bianchi');
+    TutorWelcomeModel::save($corso, $bianchi, 'welcomes/x/b.mp3', 'Testo di Bianchi');
     $sente = TutorWelcomeModel::forStudent($corso, $studente);
     check('sente il tutor del proprio gruppo', $sente !== null && (int) $sente['tutor_id'] === $bianchi);
 
@@ -144,12 +144,20 @@ try {
         ->execute(['u' => 'https://chat.whatsapp.com/GruppoBianchi', 'id' => $gruppoBianchi]);
     $sente = TutorWelcomeModel::forStudent($corso, $studente);
     check('arriva l\'email per gli studenti del tutor', ($sente['contact_email'] ?? null) === 'aldi@example.invalid');
+
+    // La foto e' quella del profilo (09/10): il benvenuto non ne ha una sua.
+    $db->prepare('UPDATE users SET avatar_path = :p WHERE id = :id')->execute(['p' => 'avatars/x/aldi.jpg', 'id' => $aldi]);
+    $sente = TutorWelcomeModel::forStudent($corso, $studente);
+    check('la foto del benvenuto è quella del profilo del tutor', ($sente['avatar_path'] ?? null) === 'avatars/x/aldi.jpg',
+        json_encode($sente['avatar_path'] ?? null));
+    $nellElenco = array_column(TutorWelcomeModel::tutorsForCourse($corso), 'avatar_path', 'tutor_id');
+    check('anche nella pagina di modifica del corso', ($nellElenco[$aldi] ?? null) === 'avatars/x/aldi.jpg');
     check('arriva il link del gruppo dello studente con quel tutor, non di un altro gruppo',
         ($sente['whatsapp_url'] ?? null) === 'https://chat.whatsapp.com/GruppoAldi'
         && ($sente['group_name'] ?? null) === 'Gruppo di prova ' . $gruppoAldi,
         json_encode([$sente['whatsapp_url'] ?? null, $sente['group_name'] ?? null]));
 
-        TutorWelcomeModel::save($corso, $bianchi, 'welcomes/x/b2.jpg', 'welcomes/x/b2.mp3', 'Testo nuovo');
+        TutorWelcomeModel::save($corso, $bianchi, 'welcomes/x/b2.mp3', 'Testo nuovo');
     $riga = TutorWelcomeModel::findFor($corso, $bianchi);
     check('salvare di nuovo aggiorna, non duplica', $riga !== null && $riga['transcript'] === 'Testo nuovo'
         && (int) $db->query('SELECT COUNT(*) FROM course_tutor_welcomes WHERE course_id = ' . $corso)->fetchColumn() === 2);

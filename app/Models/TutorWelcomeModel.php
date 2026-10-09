@@ -19,21 +19,24 @@ final class TutorWelcomeModel
      * lista della pagina di modifica del corso: un benvenuto si carica per un
      * tutor che il corso lo segue davvero.
      *
-     * @return list<array{tutor_id:int, tutor_name:string, contact_email:?string, groups:string, welcome_id:?int,
-     *                    photo_path:?string, audio_path:?string, transcript:?string, updated_at:?string}>
+     * La foto e' quella del profilo del tutor (09/10): `avatar_path`, non un
+     * campo del benvenuto.
+     *
+     * @return list<array{tutor_id:int, tutor_name:string, contact_email:?string, avatar_path:?string, groups:string,
+     *                    welcome_id:?int, audio_path:?string, transcript:?string, updated_at:?string}>
      */
     public static function tutorsForCourse(int $courseId): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT t.id AS tutor_id, t.full_name AS tutor_name, t.contact_email,
+            "SELECT t.id AS tutor_id, t.full_name AS tutor_name, t.contact_email, t.avatar_path,
                     GROUP_CONCAT(DISTINCT g.name ORDER BY g.name SEPARATOR ', ') AS `groups`,
-                    w.id AS welcome_id, w.photo_path, w.audio_path, w.transcript, w.updated_at
+                    w.id AS welcome_id, w.audio_path, w.transcript, w.updated_at
              FROM group_course_access gca
              INNER JOIN `groups` g ON g.id = gca.group_id
              INNER JOIN users t ON t.id = g.tutor_id
              LEFT JOIN course_tutor_welcomes w ON w.course_id = gca.course_id AND w.tutor_id = t.id
              WHERE gca.course_id = :course
-             GROUP BY t.id, t.full_name, t.contact_email, w.id, w.photo_path, w.audio_path, w.transcript, w.updated_at
+             GROUP BY t.id, t.full_name, t.contact_email, t.avatar_path, w.id, w.audio_path, w.transcript, w.updated_at
              ORDER BY t.full_name, t.email"
         );
         $stmt->execute(['course' => $courseId]);
@@ -52,7 +55,7 @@ final class TutorWelcomeModel
      * un caso raro, e un ordine fisso invece di uno che cambia fra le visite.
      *
      * @return array{id:int, course_id:int, tutor_id:int, tutor_name:string, contact_email:?string,
-     *               photo_path:string, audio_path:string, transcript:string,
+     *               avatar_path:?string, audio_path:string, transcript:string,
      *               group_name:string, whatsapp_url:?string}|null
      */
     public static function forStudent(int $courseId, int $userId): ?array
@@ -62,7 +65,7 @@ final class TutorWelcomeModel
         // gruppi dello stesso tutor nello stesso corso, il primo per nome.
         $stmt = Database::connection()->prepare(
             'SELECT w.id, w.course_id, w.tutor_id, t.full_name AS tutor_name, t.contact_email,
-                    w.photo_path, w.audio_path, w.transcript,
+                    t.avatar_path, w.audio_path, w.transcript,
                     g.name AS group_name, g.whatsapp_url
              FROM course_tutor_welcomes w
              INNER JOIN users t ON t.id = w.tutor_id
@@ -105,15 +108,14 @@ final class TutorWelcomeModel
         return $row ?: null;
     }
 
-    public static function save(int $courseId, int $tutorId, string $photo, string $audio, string $transcript): void
+    public static function save(int $courseId, int $tutorId, string $audio, string $transcript): void
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO course_tutor_welcomes (course_id, tutor_id, photo_path, audio_path, transcript)
-             VALUES (:c, :t, :p, :a, :x)
-             ON DUPLICATE KEY UPDATE photo_path = VALUES(photo_path), audio_path = VALUES(audio_path),
-                                     transcript = VALUES(transcript)'
+            'INSERT INTO course_tutor_welcomes (course_id, tutor_id, audio_path, transcript)
+             VALUES (:c, :t, :a, :x)
+             ON DUPLICATE KEY UPDATE audio_path = VALUES(audio_path), transcript = VALUES(transcript)'
         );
-        $stmt->execute(['c' => $courseId, 't' => $tutorId, 'p' => $photo, 'a' => $audio, 'x' => $transcript]);
+        $stmt->execute(['c' => $courseId, 't' => $tutorId, 'a' => $audio, 'x' => $transcript]);
     }
 
     public static function delete(int $id): void

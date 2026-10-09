@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\AvatarImage;
 use App\Core\Csrf;
 
 /** @var array|null $user */
@@ -18,6 +19,10 @@ $isEdit = $user !== null;
 $userId = (int) ($user['id'] ?? 0);
 $action = $isEdit ? '/admin/users/' . $userId : '/admin/users';
 $currentRole = $user['role'] ?? 'studente';
+// La foto dal pannello (09/10): solo con `user.manage`, e solo per i tutor,
+// che devono averne sempre una (`AvatarImage::obbligatoria()`).
+$puoCaricareFoto = Auth::can('user.manage');
+$haFoto = !empty($user['avatar_path']);
 ?>
 <div class="page-header">
     <a href="/admin/users" class="back-link">&larr; Utenti</a>
@@ -26,7 +31,8 @@ $currentRole = $user['role'] ?? 'studente';
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
-<form action="<?= htmlspecialchars($action) ?>" method="post" class="form" data-user-form>
+<form action="<?= htmlspecialchars($action) ?>" method="post" class="form" data-user-form
+      enctype="multipart/form-data">
     <?= Csrf::field() ?>
 
     <label for="first_name">Nome</label>
@@ -71,6 +77,32 @@ $currentRole = $user['role'] ?? 'studente';
                 <?php endforeach; ?>
                 <p class="form-hint">Vede i report degli studenti dei gruppi di tutti i tutor selezionati.</p>
             </fieldset>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($puoCaricareFoto): ?>
+        <?php /* Nell'HTML il campo c'e' sempre: senza JavaScript chi sceglie
+                 «Tutor» deve poter caricare la foto nello stesso invio. Lo
+                 script lo nasconde quando il ruolo non e' tutor. */ ?>
+        <?php /* La stessa disposizione del riquadro «Immagine» del profilo
+                 (`.avatar-editor`): la foto a sinistra, il campo e l'aiuto
+                 accanto. */ ?>
+        <div data-foto-field>
+            <label for="avatar">Foto del profilo (per i tutor)</label>
+            <div class="avatar-editor">
+                <?php if ($haFoto): ?>
+                    <img class="avatar avatar-lg" src="/utenti/<?= $userId ?>/immagine" alt="Foto del profilo attuale">
+                <?php endif; ?>
+                <div class="avatar-editor-actions">
+                    <input type="file" id="avatar" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp"
+                           aria-describedby="avatar-aiuto">
+                    <p class="form-hint" id="avatar-aiuto">
+                        Obbligatoria per un tutor: la vedono i suoi studenti nella pagina del gruppo e nel
+                        benvenuto. JPG, PNG, GIF o WebP fino a <?= (int) (AvatarImage::MAX_BYTES / 1024 / 1024) ?>&nbsp;MB,
+                        ritagliata quadrata. Agli altri ruoli non si carica da qui: la scelgono dal profilo.
+                    </p>
+                </div>
+            </div>
         </div>
     <?php endif; ?>
 
@@ -168,13 +200,34 @@ $currentRole = $user['role'] ?? 'studente';
     document.querySelectorAll('[data-user-form]').forEach(function (form) {
         var select = form.querySelector('[data-role-select]');
         var field = form.querySelector('[data-tutor-field]');
+        var foto = form.querySelector('[data-foto-field]');
 
-        if (!select || !field) {
+        if (!select) {
             return;
         }
 
+        // La foto si mostra solo per un tutor; nascondendola si toglie anche
+        // il file scelto, che il server per gli altri ruoli rifiuterebbe.
+        function aggiornaFoto() {
+            if (!foto) {
+                return;
+            }
+
+            foto.hidden = select.value !== 'tutor';
+
+            if (foto.hidden) {
+                foto.querySelector('input[type=file]').value = '';
+            }
+        }
+
+        aggiornaFoto();
+
         select.addEventListener('change', function () {
-            field.hidden = select.value !== 'assistente';
+            if (field) {
+                field.hidden = select.value !== 'assistente';
+            }
+
+            aggiornaFoto();
         });
     });
 </script>
