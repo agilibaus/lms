@@ -249,6 +249,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'l\'audio del benvenuto del suo tutor'],
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un altro tutor, in un altro corso'],
             ['/domande', 'negato', 'la pagina delle domande è di chi risponde'],
+            ['/domande-e-risposte', 'consentito', 'l\'archivio delle domande e risposte dei suoi corsi'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
@@ -281,6 +282,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'il proprio benvenuto'],
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un collega'],
             ['/domande', 'consentito', 'risponde alle domande dei suoi studenti'],
+            ['/domande-e-risposte', 'negato', 'l\'archivio da studente: lo staff ha «Domande»'],
         ]],
 
         ['assist@test.it', 'assistente del tutor A', [
@@ -572,40 +574,39 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
         // --- le domande: che cosa c'e' dentro (07/10) ----------------------
         //
-        // Lo studente di A trova nel suo corso l'archivio con le due
-        // pubblicate della semina, divise per modulo, e non quelle in attesa
-        // o scartate; il tutor di A ha nel menu il numero di quelle in attesa.
+        // Dal 09/10 l'archivio sta nella pagina «Domande e risposte», non piu'
+        // in fondo al corso. Lo studente di A trova le due pubblicate della
+        // semina, divise per modulo, e non quelle in attesa o scartate; nella
+        // pagina del corso l'archivio non c'e' piu'. Lo studente di B, che
+        // scrive a mano il corso di A nell'indirizzo, non vede le sue domande.
+        // Il tutor non ha la pagina: ha «Domande», con il numero di quelle in
+        // attesa.
 
         console.log('\n--- le domande: che cosa c\'è dentro');
 
         {
             const { ctx, page } = await entra(browser, 'stud@test.it');
-            await page.goto(BASE + '/courses/' + A.corso);
-            const archivio = await page.$$eval('#domande .qa-voce summary', (s) => s.map((x) => x.textContent.trim()));
+            await page.goto(BASE + '/domande-e-risposte?corso=' + A.corso);
+            const archivio = await page.$$eval('.qa-voce summary', (s) => s.map((x) => x.textContent.trim()));
             check('studente → nell\'archivio ci sono le pubblicate, e non quelle in attesa o scartate',
                 archivio.some((q) => q.includes('pubblicata sul modulo')) && archivio.some((q) => q.includes('corso in generale'))
-                    && !archivio.some((q) => q.includes('scartata')),
+                    && !archivio.some((q) => q.includes('scartata')) && !archivio.some((q) => q.includes('in attesa')),
                 [JSON.stringify(archivio)]);
-            const moduli = await page.$$eval('#domande .qa-modulo', (h) => h.map((x) => x.textContent.trim()));
+            const moduli = await page.$$eval('.qa-modulo', (h) => h.map((x) => x.textContent.trim()));
             check('studente → l\'archivio è diviso per modulo, il corso in generale in fondo',
                 moduli.length >= 2 && moduli[moduli.length - 1] === 'Il corso in generale', [JSON.stringify(moduli)]);
-            const modificheStudente = await page.locator('#domande .qa-modifica').count();
-            check('studente → nell\'archivio nessun «Modifica»', modificheStudente === 0, ['trovati: ' + modificheStudente]);
+            await page.goto(BASE + '/courses/' + A.corso);
+            const nelCorso = await page.locator('#domande .qa-voce').count();
+            check('studente → nella pagina del corso l\'archivio non c\'è più', nelCorso === 0, ['domande: ' + nelCorso]);
             await ctx.close();
         }
         {
-            // Il tutor di A vede «Modifica» accanto alle domande del suo
-            // corso, e il collegamento porta alla domanda gia' aperta (08/10).
-            const { ctx, page } = await entra(browser, 'tutor1@test.it');
-            await page.goto(BASE + '/courses/' + A.corso);
-            const link = page.locator('#domande .qa-modifica a').first();
-            const quanti = await page.locator('#domande .qa-modifica').count();
-            check('tutor → «Modifica» accanto alle domande pubblicate del suo corso', quanti >= 2, ['trovati: ' + quanti]);
-            if (quanti > 0) {
-                await page.goto(BASE + (await link.getAttribute('href')));
-                const aperte = await page.locator('.qa-pubblicate details[open]').count();
-                check('tutor → «Modifica» porta alla domanda, già aperta', aperte === 1, ['aperte: ' + aperte]);
-            }
+            const { ctx, page } = await entra(browser, 'strano@test.it');
+            await page.goto(BASE + '/domande-e-risposte?corso=' + A.corso);
+            const diA = await page.locator('.qa-voce', { hasText: 'mondo A' }).count();
+            const titolo = ((await page.locator('.qa-archivio h2').textContent().catch(() => '')) || '').trim();
+            check('studente B → chiedendo a mano il corso di A, non ne vede le domande', diA === 0 && !titolo.includes('mondo A'),
+                ['domande di A: ' + diA + ', corso aperto: ' + titolo]);
             await ctx.close();
         }
         {

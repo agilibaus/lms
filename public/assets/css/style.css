@@ -316,7 +316,7 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-modifica a, .qa-comando):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-comando):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +324,7 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-modifica a, .qa-comando) {
+    .tutor-benvenuto-contatti a, .qa-comando) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -836,8 +836,10 @@ h3 { font-size: 1.05rem; }
    comune invece di avere una regola sua, che e' il modo in cui i tre
    sistemi erano derivati. */
 .report-ricerca-riga input[type="search"],
-/* E per la stessa ragione la ricerca nelle domande e risposte (07/10). */
-.qa-cerca input[type="search"] {
+/* E per la stessa ragione la ricerca nelle domande e risposte (07/10), e
+   il menu del corso nella loro pagina (09/10). */
+.qa-cerca input[type="search"],
+.qa-scegli-corso select {
     padding: 0.55rem 0.65rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -5103,11 +5105,11 @@ fieldset.checkbox-group legend {
    «Mostra»/«Nascondi», come il benvenuto ridotto. Il titolo resta un h2,
    dentro la riga: per i lettori di schermo la sezione ha ancora il suo
    titolo, e il `summary` dice se e' aperta o chiusa. */
-/* LA SEZIONE E' UN RIQUADRO, come un modulo del corso (08/10, Elena,
-   scelto su un mockup): la riga del titolo ne e' la testata, sotto ci sono
-   l'archivio e, in fondo, la ricerca. Le misure sono quelle dei moduli:
-   titolo 1,05 rem, voci e testi 0,9 rem. Il secondo riquadro, «Fai una
-   domanda al tutor» con «Le tue domande», sta staccato sotto (.qa-chiedi). */
+/* LA SEZIONE E' UN RIQUADRO, come un modulo del corso (0153): la riga del
+   titolo, «Fai una domanda al tutor», ne e' la testata; sotto il modulo per
+   chiedere, il collegamento all'archivio e «Le tue domande». Dal 09/10
+   l'archivio sta nella pagina «Domande e risposte». Le misure sono quelle
+   dei moduli: titolo 1,05 rem, voci e testi 0,9 rem. */
 .qa-apri {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -5150,11 +5152,6 @@ fieldset.checkbox-group legend {
 .qa-riga h2 {
     font-size: 1.05rem;
     margin: 0;
-}
-
-.qa-conteggio {
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
 }
 
 .qa-comando {
@@ -5290,18 +5287,34 @@ fieldset.checkbox-group legend {
     font-size: 0.8rem;
 }
 
-.qa-chiedi {
-    margin-top: 1.5rem;
+/* Il collegamento all'archivio del corso, sotto il modulo per chiedere
+   (09/10): prima di chiedere, si controlla se qualcuno l'ha gia' fatto. */
+.qa-vai-archivio {
+    margin: 1.25rem 0 0;
+    font-size: 0.9rem;
 }
 
-.qa-chiedi h2 {
+/* La pagina «Domande e risposte» (09/10): il menu del corso sopra, e
+   l'archivio in un riquadro con il titolo del corso, alle misure dei moduli
+   come quando stava nel corso (0153). */
+.qa-scegli-corso {
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.qa-scegli-corso label {
+    font-weight: 600;
+}
+
+.qa-scegli-corso select {
+    flex: 1 1 14rem;
+    min-width: 0;
+    max-width: 30rem;
+}
+
+.qa-archivio h2 {
     font-size: 1.05rem;
-}
-
-/* Con la sezione chiusa resta solo la sua testata: il riquadro per
-   chiedere sta fuori dal `details`, e si nasconde con lui. */
-.qa-apri:not([open]) + .qa-chiedi {
-    display: none;
+    margin: 0 0 0.3rem;
 }
 
 .qa-mie-titolo {
@@ -5384,20 +5397,6 @@ fieldset.checkbox-group legend {
 
 .qa-pubblicate .qa-corpo .form {
     margin-top: 0.4rem;
-}
-
-/* «Modifica» accanto a una domanda dell'archivio, per chi la puo' gestire.
-   Un comando: la misura di ogni altro comando (0107), e l'aspetto dei
-   comandi (0125), neutro a riposo con il mouse. */
-.qa-modifica {
-    margin: 0.6rem 0 0;
-    font-size: 0.85rem;
-}
-
-.qa-modifica a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--tap-target);
 }
 
 /* Il numero di domande in attesa accanto alla voce del menu. */

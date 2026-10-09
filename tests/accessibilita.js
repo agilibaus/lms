@@ -606,7 +606,7 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a, .qa-modifica a, .qa-comando';
+    + '.tutor-benvenuto-contatti a, .qa-comando';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1494,66 +1494,67 @@ async function giroBenvenuto(browser) {
             nellaLezione.lezione !== null && nellaLezione.lezione.verde && nellaLezione.lezione.tre && nellaLezione.secondo === true,
             [JSON.stringify(nellaLezione)]);
 
-        // Domande e risposte ripiegate in una riga (08/10): chiuse all'arrivo,
-        // «Mostra» le apre e diventa «Nascondi»; una ricerca le apre da sola.
-        // Aperte con la ricerca, l'archivio si misura come il resto: chiuso,
-        // i controlli non lo vedrebbero.
+        // «Fai una domanda al tutor» in fondo al corso (dal 09/10 senza
+        // l'archivio, che ha una pagina sua): chiusa all'arrivo, senza numero,
+        // «Mostra» la apre e diventa «Nascondi», la riga non cambia altezza, il
+        // titolo e' grande come quello di un modulo, e dentro c'e' il
+        // collegamento all'archivio di questo corso.
         const qa = () => page.evaluate(() => {
             const d = document.querySelector('details.qa-apri');
-            return d ? { aperta: d.open, comando: d.querySelector('.qa-comando').innerText.trim(),
-                         conteggio: d.querySelector('.qa-conteggio').innerText.trim() } : null;
+            return d ? { aperta: d.open, titolo: d.querySelector('.qa-riga h2').innerText.trim(),
+                         comando: d.querySelector('.qa-comando').innerText.trim() } : null;
         });
         await page.goto(BASE + url);
         const chiusa = await qa();
-        check('domande e risposte: chiuse all\'arrivo, con il numero e «Mostra»',
-            chiusa !== null && !chiusa.aperta && chiusa.comando === 'Mostra' && /^\d+ domand[ae]$/.test(chiusa.conteggio),
+        check('in fondo al corso «Fai una domanda al tutor», chiusa, con «Mostra»',
+            chiusa !== null && !chiusa.aperta && chiusa.titolo === 'Fai una domanda al tutor' && chiusa.comando === 'Mostra',
             [JSON.stringify(chiusa)]);
         const altezzaRiga = () => page.evaluate(() => Math.round(document.querySelector('.qa-riga').getBoundingClientRect().height));
         const primaDiAprire = await altezzaRiga();
         await page.click('details.qa-apri > summary');
         const aperta = await qa();
-        check('«Mostra» le apre e il comando diventa «Nascondi»', aperta.aperta && aperta.comando === 'Nascondi', [JSON.stringify(aperta)]);
-        // La riga non cambia forma aprendola: «Nascondi», piu' lungo, la
-        // faceva crescere sul telefono proprio mentre la si toccava (08/10).
+        check('«Mostra» la apre e il comando diventa «Nascondi»', aperta.aperta && aperta.comando === 'Nascondi', [JSON.stringify(aperta)]);
         const dopoAverAperto = await altezzaRiga();
-        check('aprendole, la riga non cambia altezza', primaDiAprire === dopoAverAperto,
+        check('aprendola, la riga non cambia altezza', primaDiAprire === dopoAverAperto,
             ['chiusa ' + primaDiAprire + ' px, aperta ' + dopoAverAperto + ' px']);
-        await esamina(page, url + '?cerca=Domanda#domande', 'Corso con le domande aperte da una ricerca (studente)', BERSAGLIO_MINIMO, daTelefono);
-        const cercata = await qa();
-        check('una ricerca le apre da sola', cercata.aperta, [JSON.stringify(cercata)]);
+        const forma = await page.evaluate(() => ({
+            titolo: getComputedStyle(document.querySelector('.qa-riga h2')).fontSize,
+            titoloModulo: getComputedStyle(document.querySelector('.module-card-header h2')).fontSize,
+            archivioQui: document.querySelectorAll('#domande .qa-voce').length,
+            collegamento: (document.querySelector('.qa-vai-archivio a') || {}).getAttribute
+                ? document.querySelector('.qa-vai-archivio a').getAttribute('href') : null,
+        }));
+        check('il titolo è grande come quello di un modulo, e l\'archivio non è più qui',
+            forma.titolo === forma.titoloModulo && forma.archivioQui === 0, [JSON.stringify(forma)]);
+        check('dentro, il collegamento all\'archivio di questo corso',
+            forma.collegamento === '/domande-e-risposte?corso=' + corso, [JSON.stringify(forma)]);
 
-        // Come un modulo del corso (08/10, Elena, su un mockup): il titolo
-        // della sezione e' grande come quello di un modulo, una domanda chiusa
-        // come una lezione; la ricerca sta in fondo all'archivio; il riquadro
-        // per chiedere sta fuori e sparisce con la sezione chiusa.
-        const forma = await page.evaluate(() => {
-            const fs = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e).fontSize : null; };
-            // Dopo una ricerca le domande trovate sono aperte: si confronta la
-            // misura, non il peso (aperta e' in grassetto apposta).
+        // La pagina «Domande e risposte» (09/10): voce del menu prima di
+        // «Certificati»; l'archivio alle misure dei moduli, con la ricerca in
+        // fondo; si misura com'e', e aperta da una ricerca.
+        await page.goto(BASE + '/domande-e-risposte');
+        const pagina = await page.evaluate(() => {
+            const voci = [...document.querySelectorAll('.sidebar-nav a.nav-link')].map((a) => a.textContent.trim());
+            const archivio = document.querySelector('.qa-archivio');
             const domanda = document.querySelector('.qa-voce > summary');
-            const lezione = document.querySelector('.module-card .lesson-link, .module-card a');
-            const contenuto = document.querySelector('.qa-contenuto');
-            const chiedi = document.querySelector('.qa-chiedi');
             return {
-                titolo: fs('.qa-riga h2'), titoloModulo: fs('.module-card-header h2'),
+                primaDiCertificati: voci.indexOf('Domande e risposte') === voci.indexOf('Certificati') - 1,
+                attiva: (document.querySelector('.nav-link-active') || {}).textContent,
+                cercaInFondo: archivio !== null && archivio.lastElementChild.matches('form.qa-cerca'),
                 domanda: domanda ? getComputedStyle(domanda).fontSize : null,
-                lezione: lezione ? getComputedStyle(lezione).fontSize : null,
-                cercaInFondo: contenuto.lastElementChild.matches('form.qa-cerca'),
-                chiediFuori: chiedi !== null && chiedi.previousElementSibling === document.querySelector('details.qa-apri'),
+                testo: getComputedStyle(document.documentElement).fontSize,
             };
         });
-        check('domande e risposte alle misure dei moduli: titolo come un modulo, domanda come una lezione',
-            forma.titolo === forma.titoloModulo && forma.domanda !== null && forma.domanda === forma.lezione, [JSON.stringify(forma)]);
-        check('la ricerca sta in fondo all\'archivio, e il riquadro per chiedere fuori, dopo la sezione',
-            forma.cercaInFondo && forma.chiediFuori, [JSON.stringify(forma)]);
+        check('nel menu «Domande e risposte», prima di «Certificati», ed evidenziata',
+            pagina.primaDiCertificati && (pagina.attiva || '').trim() === 'Domande e risposte', [JSON.stringify(pagina)]);
+        check('l\'archivio con la ricerca in fondo, e le domande alla misura delle lezioni (0,9 rem)',
+            pagina.cercaInFondo && pagina.domanda !== null
+                && Math.abs(parseFloat(pagina.domanda) - 0.9 * parseFloat(pagina.testo)) < 0.5,
+            [JSON.stringify(pagina)]);
+        await esamina(page, '/domande-e-risposte', 'Domande e risposte (studente)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(page, '/domande-e-risposte?corso=' + corso + '&cerca=Domanda', 'Domande e risposte dopo una ricerca (studente)',
+            BERSAGLIO_MINIMO, daTelefono);
         await page.goto(BASE + url);
-        const chiediChiusa = await page.evaluate(() => {
-            const c = document.querySelector('.qa-chiedi');
-            // checkVisibility e non i rettangoli: dentro un details chiuso
-            // Chromium li calcola lo stesso (trappola gia' scritta, 0135).
-            return c ? c.checkVisibility() : null;
-        });
-        check('con la sezione chiusa il riquadro per chiedere non si vede', chiediChiusa === false, ['visibile: ' + chiediChiusa]);
 
         // Il contatore sopra il campo della domanda (08/10, Elena): «1000
         // caratteri rimasti» all'apertura, sopra l'angolo in alto a destra,

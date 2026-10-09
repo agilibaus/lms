@@ -144,6 +144,12 @@ use App\Core\Csrf;
                      si guardano. */ ?>
             <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
             <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
+            <?php if (Auth::hasRole('studente')): ?>
+                <?php /* L'archivio delle domande e risposte (09/10, Elena), prima
+                         di «Certificati». Solo per gli studenti: lo staff ha
+                         «Domande», dove risponde e corregge. */ ?>
+                <a href="/domande-e-risposte" class="nav-link<?= $voce('/domande-e-risposte') ?>">Domande e risposte</a>
+            <?php endif; ?>
             <a href="/certificates" class="nav-link<?= $voce('/certificates') ?>">Certificati</a>
             <a href="/profilo" class="nav-link<?= $voce('/profilo') ?>">Profilo</a>
 

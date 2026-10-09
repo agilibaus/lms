@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Controllers\QuestionController;
 use App\Models\QuestionModel;
-use App\Core\PersonName;
 use App\Core\TutorWelcome;
 use App\Models\TutorWelcomeModel;
 use App\Auth\Auth;
@@ -166,34 +164,12 @@ class CourseController
             }
         }
 
-        // Le domande e risposte in fondo al corso (07/10): l'archivio per
-        // chiunque veda il corso, con la ricerca; il campo per chiedere e le
-        // proprie domande solo per lo studente. Il nome degli autori lo
-        // decide chi guarda (`PersonName::shown()`).
-        $cerca = trim((string) ($_GET['cerca'] ?? ''));
-        $vedeTutto = Auth::hasRole('admin', 'tutor', 'assistente');
-        $archivio = array_map(
-            static fn (array $q): array => $q + ['gestibile' => QuestionController::puoGestire($q), 'autore' => $q['student_id'] === null
-                ? 'uno studente'
-                : PersonName::shown(
-                    ['id' => (int) $q['student_id'], 'first_name' => (string) $q['first_name'],
-                     'last_name' => (string) $q['last_name'], 'full_name' => (string) $q['full_name'],
-                     'name_display' => (string) $q['name_display']],
-                    $userId,
-                    $vedeTutto
-                )],
-            QuestionModel::published($courseId, mb_substr($cerca, 0, 100))
-        );
-
         View::render('courses/show', [
             'pageTitle' => $course['title'],
             'welcome' => $welcome,
+            // «Fai una domanda al tutor» (dal 09/10 l'archivio ha una pagina
+            // sua, «Domande e risposte»): solo per lo studente.
             'domande' => [
-                'archivio' => $archivio,
-                // Il numero accanto al titolo ripiegato: tutte le pubblicate,
-                // anche durante una ricerca, che ne mostra solo alcune.
-                'totale' => $cerca === '' ? count($archivio) : count(QuestionModel::published($courseId)),
-                'cerca' => $cerca,
                 'mie' => $isStudent ? QuestionModel::ofStudent($courseId, $userId) : [],
                 'puoChiedere' => $isStudent,
                 'moduli' => ModuleModel::forCourse($courseId),

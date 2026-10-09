@@ -230,6 +230,8 @@ $router->post('/benvenuti/{id}/ascoltato', [TutorWelcomeController::class, 'list
 // Le domande degli studenti al tutor e l'archivio delle risposte (07/10).
 $router->post('/courses/{id}/domande', [QuestionController::class, 'store']);
 $router->get('/domande', [QuestionController::class, 'index']);
+// L'archivio delle domande e risposte, per lo studente (09/10).
+$router->get('/domande-e-risposte', [QuestionController::class, 'archive']);
 $router->post('/domande/{id}/pubblica', [QuestionController::class, 'publish']);
 $router->post('/domande/{id}/scarta', [QuestionController::class, 'discard']);
 $router->post('/domande/{id}/modifica', [QuestionController::class, 'update']);

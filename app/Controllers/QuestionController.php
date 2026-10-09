@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\PersonName;
 use App\Auth\Auth;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
@@ -72,6 +73,68 @@ class QuestionController
         // domanda appena inviata in «Le tue domande» (08/10).
         $_SESSION['domande_aperte'] = true;
         $this->torna($redirect, 'Domanda inviata al tutor: la trovi in «Le tue domande», in fondo alla pagina.', true);
+    }
+
+    /**
+     * La pagina «Domande e risposte» dello studente (09/10, Elena): l'archivio
+     * di un corso alla volta, scelto con un menu fra quelli a cui e' iscritto.
+     * Solo per gli studenti: lo staff ha «Domande», dove risponde e corregge.
+     * Un corso a cui lo studente non e' iscritto, chiesto a mano
+     * nell'indirizzo, non si apre: si mostra il primo dei suoi.
+     */
+    public function archive(array $params = []): void
+    {
+        Auth::requireLogin();
+
+        if (!Auth::hasRole('studente')) {
+            http_response_code(403);
+            echo 'Questa pagina e\' per gli studenti: le domande si gestiscono da «Domande».';
+            return;
+        }
+
+        $userId = (int) Auth::id();
+        $corsi = CourseModel::enrolledForUser($userId);
+        $chiesto = (int) ($_GET['corso'] ?? 0);
+        $corso = null;
+
+        foreach ($corsi as $c) {
+            if ((int) $c['id'] === $chiesto) {
+                $corso = $c;
+            }
+        }
+
+        $corso ??= $corsi[0] ?? null;
+        $cerca = trim((string) ($_GET['cerca'] ?? ''));
+
+        View::render('questions/archive', [
+            'pageTitle' => 'Domande e risposte',
+            'corsi' => $corsi,
+            'corso' => $corso,
+            'cerca' => $cerca,
+            'archivio' => $corso === null ? [] : self::archivio((int) $corso['id'], $cerca, $userId),
+        ]);
+    }
+
+    /**
+     * Le pubblicate di un corso, con il nome dell'autore come lo vede chi
+     * guarda (PersonName::shown): per uno studente, come l'autore ha scelto.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function archivio(int $courseId, string $cerca, int $chiGuarda): array
+    {
+        return array_map(
+            static fn (array $q): array => $q + ['autore' => $q['student_id'] === null
+                ? 'uno studente'
+                : PersonName::shown(
+                    ['id' => (int) $q['student_id'], 'first_name' => (string) $q['first_name'],
+                     'last_name' => (string) $q['last_name'], 'full_name' => (string) $q['full_name'],
+                     'name_display' => (string) $q['name_display']],
+                    $chiGuarda,
+                    false
+                )],
+            QuestionModel::published($courseId, mb_substr($cerca, 0, 100))
+        );
     }
 
     public function index(array $params = []): void

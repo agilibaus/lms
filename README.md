@@ -910,18 +910,23 @@ approssimato. La descrizione del corso è larga quanto gli altri blocchi della p
 
 ## Domande e risposte
 
-In fondo a ogni corso c'è **«Domande e risposte»** (07/10, chiesto da Elena). **Parte ripiegata
-in una riga** (08/10): il titolo, il numero delle domande pubblicate e «Mostra», che la apre e
-diventa «Nascondi». È un `details`, senza JavaScript. **Si apre da sola** dopo una ricerca, dopo
-l'invio di una domanda e dopo un invio respinto; alla visita successiva riparte chiusa. Il comando
-ha sempre lo spazio della parola più lunga, così la riga non cambia forma aprendola.
+Due posti (dal 09/10, chiesto da Elena):
 
-**Aperta, si legge come due moduli in più del corso** (08/10, scelta di Elena su un mockup). Il
-primo riquadro è la sezione stessa: la riga del titolo è la sua testata, sotto c'è l'archivio
-diviso per modulo e, **in fondo, la ricerca**. Il secondo, staccato di 1,5 rem, è **«Fai una
-domanda al tutor» con «Le tue domande»**: sta fuori dal `details` e lo stile lo nasconde quando
-la sezione è chiusa. **Le misure sono quelle dei moduli**: titoli 1,05 rem, domande, risposte e
-testi 0,9 rem come le lezioni, i dettagli 0,8 rem; una domanda aperta passa in grassetto.
+- **La pagina «Domande e risposte»** (`/domande-e-risposte`), una voce del menu dello studente
+  prima di «Certificati»: l'archivio di **un corso alla volta**, con un menu per scegliere il
+  corso fra quelli a cui è iscritto (con un corso solo il menu non c'è). Un corso non suo,
+  scritto a mano nell'indirizzo, non si apre: si mostra il primo dei suoi. Solo per gli
+  studenti: tutor e admin hanno «Domande».
+- **In fondo a ogni corso, «Fai una domanda al tutor»**, ripiegata in una riga con «Mostra»,
+  che la apre e diventa «Nascondi» (un `details`, senza JavaScript). Dentro il modulo per
+  chiedere, il collegamento «Leggi le domande e risposte di questo corso» e «Le tue domande».
+  **Si apre da sola** dopo l'invio di una domanda e dopo un invio respinto; alla visita
+  successiva riparte chiusa. Il comando ha sempre lo spazio della parola più lunga, così la
+  riga non cambia forma aprendola.
+
+**Le misure sono quelle dei moduli** (0153): titoli 1,05 rem, domande, risposte e testi 0,9 rem
+come le lezioni, i dettagli 0,8 rem; una domanda aperta passa in grassetto. Nell'archivio la
+ricerca sta in fondo.
 
 - **Lo studente fa una domanda al tutor** su un modulo del corso o sul corso in generale, e
   vede le sue con lo stato: in attesa, pubblicata, non pubblicata. Se c'è un errore il testo
@@ -942,14 +947,14 @@ testi 0,9 rem come le lezioni, i dettagli 0,8 rem; una domanda aperta passa in g
   nell'ordine del corso con «Il corso in generale» in fondo, ciascuna domanda in un `details`.
   L'autore compare **come ha scelto nel profilo** (`PersonName::shown()`); lo staff lo vede
   per intero. **La ricerca** cerca nelle domande e nelle risposte, senza JavaScript
-  (`?cerca=` sulla pagina del corso); `%` e `_` si cercano come testo.
+  (`?corso=…&cerca=…` sulla pagina «Domande e risposte»); `%` e `_` si cercano come testo.
 - **Correggere e togliere** (08/10). Nella pagina «Domande», sotto quelle in attesa, la parte
   **«Pubblicate»**, divisa per corso: ogni domanda si apre per correggere domanda, modulo e
   risposta («Salva»), o per **toglierla dall'archivio**. Tolta, torna «Non pubblicata», con la
-  risposta e chi l'aveva data, e lo studente la vede ancora fra le sue con quello stato. Nell'archivio
-  del corso, **chi può gestire una domanda vede «Modifica»**, che porta lì con la domanda già
-  aperta (`/domande?apri=`). La regola di chi può è una sola, `QuestionController::puoGestire()`:
-  l'admin tutte, il tutor quelle assegnate a lui.
+  risposta e chi l'aveva data, e lo studente la vede ancora fra le sue con quello stato.
+  (Il collegamento «Modifica» che c'era nell'archivio del corso è sparito con lui, il 09/10:
+  `/domande?apri=` apre comunque una pubblicata.) La regola di chi può è una sola,
+  `QuestionController::puoGestire()`: l'admin tutte, il tutor quelle assegnate a lui.
 - **Niente risposte fra studenti, commenti o voti**: è la decisione di non fare messaggistica
   fra studenti, e in mezzo c'è sempre il tutor.
 
@@ -1109,8 +1114,8 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.750 controlli su 63 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 179 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
+node tests/accessibilita.js         # circa 2.960 controlli su 64 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 185 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```
