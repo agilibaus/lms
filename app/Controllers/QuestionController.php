@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\CourseRights;
 use App\Core\PersonName;
 use App\Auth\Auth;
 use App\Core\Mail\Mailer;
@@ -16,15 +17,17 @@ use App\Models\QuestionModel;
 use App\Models\UserModel;
 
 /**
- * Le domande degli studenti al tutor (07/10). Le regole stanno in
- * `QuestionModel`; qui chi puo' fare che cosa.
+ * Le domande degli studenti all'esperto (07/10; dal 09/10 risponde
+ * l'esperto, cioe' l'admin, non piu' il tutor del gruppo). Le regole stanno
+ * in `QuestionModel`; qui chi puo' fare che cosa.
  *
  *   - Fa una domanda lo studente iscritto al corso.
- *   - Risponde, pubblicando, o scarta: l'admin per tutte
- *     (`question.answer`), il tutor per quelle che gli sono assegnate
- *     (`question.answer_own`). Una domanda senza tutor la vede solo l'admin.
- *   - Le stesse persone, con la stessa regola, correggono una domanda gia'
- *     pubblicata o la tolgono dall'archivio (08/10).
+ *   - Risponde, pubblicando, scarta, corregge e toglie dall'archivio solo chi
+ *     ha `question.answer`: l'admin, l'esperto. La domanda arriva a lui, con
+ *     un'email agli amministratori.
+ *   - L'archivio, «L'esperto risponde», lo leggono gli studenti dei loro
+ *     corsi e i tutor dei corsi dei loro gruppi, «esattamente come uno
+ *     studente» (Elena): in sola lettura.
  */
 class QuestionController
 {
@@ -63,11 +66,11 @@ class QuestionController
             $this->torna($redirect, 'Il modulo scelto non è di questo corso.', false);
         }
 
-        $tutorId = QuestionModel::tutorFor($courseId, $userId);
-        QuestionModel::create($courseId, $moduleId, $userId, $tutorId, $testo);
+        // Nessun tutor assegnato: la domanda va all'esperto, l'admin (09/10).
+        QuestionModel::create($courseId, $moduleId, $userId, null, $testo);
         unset($_SESSION['question_old']);
 
-        $this->avvisa($tutorId, (string) (UserModel::find($userId)['full_name'] ?? ''), (string) $course['title'], $moduleId, $testo);
+        $this->avvisa((string) (UserModel::find($userId)['full_name'] ?? ''), (string) $course['title'], $moduleId, $testo);
 
         // La sezione delle domande si riapre da sola, per far vedere la
         // domanda appena inviata in «Le tue domande» (08/10).
@@ -86,14 +89,24 @@ class QuestionController
     {
         Auth::requireLogin();
 
-        if (!Auth::hasRole('studente')) {
+        $studente = Auth::hasRole('studente');
+
+        if (!$studente && !Auth::hasRole('tutor')) {
             http_response_code(403);
-            echo 'Questa pagina e\' per gli studenti: le domande si gestiscono da «Domande».';
+            echo 'Questa pagina e\' per gli studenti e i tutor: le domande si gestiscono da «Domande».';
             return;
         }
 
         $userId = (int) Auth::id();
-        $corsi = CourseModel::enrolledForUser($userId);
+        // Lo studente vede i corsi a cui e' iscritto; il tutor quelli dei suoi
+        // gruppi (CourseRights::courseIdsFor), in sola lettura.
+        $corsi = $studente
+            ? CourseModel::enrolledForUser($userId)
+            : array_values(array_filter(array_map(
+                static fn (int $id): ?array => CourseModel::find($id),
+                CourseRights::courseIdsFor($userId)
+            )));
+        usort($corsi, static fn (array $a, array $b): int => strcasecmp((string) $a['title'], (string) $b['title']));
         $chiesto = (int) ($_GET['corso'] ?? 0);
         $corso = null;
 
@@ -107,11 +120,12 @@ class QuestionController
         $cerca = trim((string) ($_GET['cerca'] ?? ''));
 
         View::render('questions/archive', [
-            'pageTitle' => 'Domande e risposte',
+            'pageTitle' => "L'esperto risponde",
             'corsi' => $corsi,
             'corso' => $corso,
             'cerca' => $cerca,
-            'archivio' => $corso === null ? [] : self::archivio((int) $corso['id'], $cerca, $userId),
+            // Il tutor vede gli autori per intero, come lo staff ovunque.
+            'archivio' => $corso === null ? [] : self::archivio((int) $corso['id'], $cerca, $userId, !$studente),
         ]);
     }
 
@@ -121,7 +135,7 @@ class QuestionController
      *
      * @return list<array<string, mixed>>
      */
-    private static function archivio(int $courseId, string $cerca, int $chiGuarda): array
+    private static function archivio(int $courseId, string $cerca, int $chiGuarda, bool $vedeTutto): array
     {
         return array_map(
             static fn (array $q): array => $q + ['autore' => $q['student_id'] === null
@@ -131,7 +145,7 @@ class QuestionController
                      'last_name' => (string) $q['last_name'], 'full_name' => (string) $q['full_name'],
                      'name_display' => (string) $q['name_display']],
                     $chiGuarda,
-                    false
+                    $vedeTutto
                 )],
             QuestionModel::published($courseId, mb_substr($cerca, 0, 100))
         );
@@ -141,7 +155,7 @@ class QuestionController
     {
         Auth::requireLogin();
 
-        if (!Auth::canAny('question.answer', 'question.answer_own')) {
+        if (!Auth::can('question.answer')) {
             http_response_code(403);
             echo 'Non hai accesso alle domande degli studenti.';
             return;
@@ -207,8 +221,7 @@ class QuestionController
      */
     public static function puoGestire(array $domanda): bool
     {
-        return Auth::can('question.answer')
-            || (Auth::can('question.answer_own') && $domanda['tutor_id'] !== null && (int) $domanda['tutor_id'] === (int) Auth::id());
+        return Auth::can('question.answer');
     }
 
     /**
@@ -286,28 +299,16 @@ class QuestionController
     }
 
     /**
-     * La notifica di una domanda nuova (Elena: da subito): al tutor, o agli
-     * amministratori se non c'e' un tutor. Se la posta non parte la domanda
-     * resta comunque salvata e in attesa: si vede nella pagina «Domande».
+     * La notifica di una domanda nuova (Elena: da subito): agli
+     * amministratori, cioe' all'esperto (09/10). Se la posta non parte la
+     * domanda resta comunque salvata e in attesa: si vede in «Domande».
      */
-    private function avvisa(?int $tutorId, string $studente, string $corso, ?int $moduleId, string $testo): void
+    private function avvisa(string $studente, string $corso, ?int $moduleId, string $testo): void
     {
         $modulo = $moduleId !== null ? (string) (ModuleModel::find($moduleId)['title'] ?? 'modulo') : 'il corso in generale';
         $link = Url::to('/domande');
-        $destinatari = [];
 
-        if ($tutorId !== null) {
-            $tutor = UserModel::find($tutorId);
-            if ($tutor !== null) {
-                $destinatari[] = ['email' => (string) $tutor['email'], 'full_name' => (string) $tutor['full_name']];
-            }
-        }
-
-        if ($destinatari === []) {
-            $destinatari = QuestionModel::adminRecipients();
-        }
-
-        foreach ($destinatari as $d) {
+        foreach (QuestionModel::adminRecipients() as $d) {
             Mailer::sendQuietly(Mailer::newQuestion($d['email'], $d['full_name'], $studente, $corso, $modulo, $testo, $link));
         }
     }

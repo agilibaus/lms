@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 /**
- * La pagina «Domande e risposte» dello studente (09/10, Elena): l'archivio
+ * La pagina «L'esperto risponde» (09/10, Elena; prima «Domande e
+ * risposte»), per lo studente e per il tutor: l'archivio
  * di un corso alla volta, con un menu per scegliere il corso fra quelli a cui
  * e' iscritto. Con un corso solo il menu non serve e non c'e'.
  *
@@ -14,11 +15,11 @@ declare(strict_types=1);
  */
 ?>
 <div class="page-header">
-    <h1>Domande e risposte</h1>
+    <h1>L'esperto risponde</h1>
 </div>
 
 <?php if ($corso === null): ?>
-    <p class="empty-state">Non sei ancora iscritto a nessun corso.</p>
+    <p class="empty-state">Non ci sono ancora corsi da mostrare.</p>
 <?php else: ?>
     <?php if (count($corsi) > 1): ?>
         <?php /* Un GET con il suo pulsante: funziona senza JavaScript. */ ?>

@@ -127,11 +127,11 @@ use App\Core\Csrf;
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
                 <a href="/reports" class="nav-link<?= $voce('/reports') ?>">Report</a>
             <?php endif; ?>
-            <?php if (Auth::canAny('question.answer', 'question.answer_own')): ?>
+            <?php if (Auth::can('question.answer')): ?>
                 <?php
                 /* Le domande degli studenti (07/10), con il numero di quelle in
                    attesa: si vede che ce ne sono senza aprire la pagina. */
-                $inAttesa = \App\Models\QuestionModel::pendingCount((int) Auth::id(), Auth::can('question.answer'));
+                $inAttesa = \App\Models\QuestionModel::pendingCount((int) Auth::id(), true);
                 ?>
                 <a href="/domande" class="nav-link<?= $voce('/domande') ?>">Domande<?php if ($inAttesa > 0): ?>
                     <span class="nav-conteggio"><?= $inAttesa ?><span class="sr-only"> in attesa</span></span><?php endif; ?></a>
@@ -144,11 +144,12 @@ use App\Core\Csrf;
                      si guardano. */ ?>
             <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
             <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
-            <?php if (Auth::hasRole('studente')): ?>
-                <?php /* L'archivio delle domande e risposte (09/10, Elena), prima
-                         di «Certificati». Solo per gli studenti: lo staff ha
-                         «Domande», dove risponde e corregge. */ ?>
-                <a href="/domande-e-risposte" class="nav-link<?= $voce('/domande-e-risposte') ?>">Domande e risposte</a>
+            <?php if (Auth::hasRole('studente', 'tutor')): ?>
+                <?php /* L'archivio delle domande, «L'esperto risponde» (09/10,
+                         Elena), prima di «Certificati». Per gli studenti e per i
+                         tutor, che lo leggono come uno studente; l'admin, che e'
+                         l'esperto, ha «Domande». */ ?>
+                <a href="/domande-e-risposte" class="nav-link<?= $voce('/domande-e-risposte') ?>">L'esperto risponde</a>
             <?php endif; ?>
             <a href="/certificates" class="nav-link<?= $voce('/certificates') ?>">Certificati</a>
             <a href="/profilo" class="nav-link<?= $voce('/profilo') ?>">Profilo</a>

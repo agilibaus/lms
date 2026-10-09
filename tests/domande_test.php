@@ -68,29 +68,25 @@ try {
         $db->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')->execute(['g' => $g, 'u' => $s]);
     }
 
-    echo PHP_EOL . 'A chi va una domanda' . PHP_EOL;
+    echo PHP_EOL . 'A chi va una domanda: all\'esperto (09/10)' . PHP_EOL;
 
-    check('lo studente del gruppo A: al tutor A', Q::tutorFor($corso, $studente1) === $tutorA);
-    check('lo studente del gruppo B: al tutor B', Q::tutorFor($corso, $studente2) === $tutorB);
-    check('chi non è in un gruppo: a nessun tutor, la vede l\'admin', Q::tutorFor($corso, $senzaGruppo) === null);
+    // Dal 09/10 risponde l'esperto, cioe' l'admin: le domande nascono senza
+    // tutor (QuestionController::store), e le vede tutte chi ha
+    // question.answer.
+    $d1 = Q::create($corso, $modulo1, $studente1, null, 'Prima domanda del gruppo A?');
+    $d2 = Q::create($corso, null, $studente2, null, 'Domanda del gruppo B?');
+    $d3 = Q::create($corso, $modulo2, $senzaGruppo, null, 'Domanda senza gruppo?');
 
-    $d1 = Q::create($corso, $modulo1, $studente1, $tutorA, 'Prima domanda del gruppo A?');
-    $d2 = Q::create($corso, null, $studente2, $tutorB, 'Domanda del gruppo B?');
-    $d3 = Q::create($corso, $modulo2, $senzaGruppo, null, 'Domanda senza tutor?');
-
-    echo PHP_EOL . 'Chi le vede in attesa' . PHP_EOL;
-
-    $mie = static fn (int $chi, bool $tutte): array => array_map(
+    $inAttesa = array_map(
         static fn (array $q): int => (int) $q['id'],
-        array_values(array_filter(Q::pending($chi, $tutte), static fn (array $q): bool => (int) $q['course_id'] === $corso))
+        array_values(array_filter(Q::pending($admin, true), static fn (array $q): bool => (int) $q['course_id'] === $corso))
     );
-    check('il tutor A vede solo la sua', $mie($tutorA, false) === [$d1], json_encode($mie($tutorA, false)));
-    check('il tutor B vede solo la sua', $mie($tutorB, false) === [$d2], json_encode($mie($tutorB, false)));
-    check('l\'admin le vede tutte, anche quella senza tutor', count($mie($admin, true)) === 3, json_encode($mie($admin, true)));
+    check('l\'esperto le vede tutte, di ogni gruppo e anche di chi non ha gruppo', $inAttesa === [$d1, $d2, $d3],
+        json_encode($inAttesa));
     $perAdmin = array_values(array_filter(Q::pending($admin, true), static fn (array $q): bool => (int) $q['id'] === $d1))[0] ?? [];
-    check('l\'admin vede a quale tutor è assegnata (Elena)', ($perAdmin['tutor_name'] ?? '') === 'Anna Tutor', json_encode($perAdmin));
-    check('e lo staff vede lo studente per intero, con il gruppo',
+    check('e vede lo studente per intero, con il gruppo',
         ($perAdmin['student_name'] ?? '') === 'Mario Rossi' && ($perAdmin['group_names'] ?? '') === 'Gruppo ' . $gruppoA);
+    check('il conteggio nel menu dell\'esperto le conta', Q::pendingCount($admin, true) >= 3);
 
     echo PHP_EOL . 'Pubblicare e scartare' . PHP_EOL;
 
@@ -133,9 +129,7 @@ try {
         static fn (array $q): int => (int) $q['id'],
         array_values(array_filter(Q::publishedFor($chi, $tutte), static fn (array $q): bool => (int) $q['course_id'] === $corso))
     );
-    check('il tutor A ha da gestire solo le pubblicate assegnate a lui', $tutteDelCorso($tutorA, false) === [$d1, $d4] || $tutteDelCorso($tutorA, false) === [$d4, $d1],
-        json_encode($tutteDelCorso($tutorA, false)));
-    check('l\'admin tutte', count($tutteDelCorso($admin, true)) === 3);
+    check('l\'esperto ha da gestire tutte le pubblicate', count($tutteDelCorso($admin, true)) === 3);
 
     check('correggere testo, modulo e risposta di una pubblicata', Q::update($d4, 'Domanda corretta dopo?', null, 'Risposta corretta dopo.'));
     $riga = Q::find($d4);

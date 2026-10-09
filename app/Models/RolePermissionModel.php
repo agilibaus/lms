@@ -47,8 +47,7 @@ class RolePermissionModel
                 'course.delete' => 'Eliminare corsi',
                 'course.welcome' => 'Caricare il benvenuto di qualunque tutor all\'inizio dei corsi',
                 'course.welcome_own' => 'Caricare il proprio benvenuto nei corsi dei propri gruppi',
-                'question.answer' => 'Rispondere a tutte le domande degli studenti',
-                'question.answer_own' => 'Rispondere alle domande degli studenti dei propri gruppi',
+                'question.answer' => "Rispondere alle domande degli studenti (l'esperto)",
             ],
             'Questionari' => [
                 'quiz.take' => 'Svolgere i questionari',

@@ -85,7 +85,7 @@ INSERT INTO role_permissions (role, permission_key) VALUES
     ('admin','report.view'), ('admin','certificate.issue'),
     ('admin','settings.manage'), ('admin','course.welcome'), ('admin','question.answer'),
     ('tutor','course.edit'), ('tutor','quiz.grade'), ('tutor','report.view'),
-    ('tutor','group.manage_own'), ('tutor','course.welcome_own'), ('tutor','question.answer_own'),
+    ('tutor','group.manage_own'), ('tutor','course.welcome_own'),
     ('assistente','quiz.grade_assigned'), ('assistente','report.view_assigned'),
     ('studente','course.view'), ('studente','quiz.take'), ('studente','certificate.view_own');
 

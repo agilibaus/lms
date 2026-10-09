@@ -44,6 +44,8 @@ const path = require('node:path');
 
 const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const PASSWORD = process.env.LMS_PASS || 'Password1!';
+// Per riconoscere i messaggi scritti da questo giro nella cartella della posta.
+const INIZIO_GIRO = Date.now() - 1000;
 
 let ok = 0;
 let fail = 0;
@@ -281,8 +283,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/utenti/' + d.utenti.studenteB + '/immagine', 'negato', 'studente del gruppo di un collega'],
             ['/benvenuti/' + A.benvenuto + '/audio', 'consentito', 'il proprio benvenuto'],
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un collega'],
-            ['/domande', 'consentito', 'risponde alle domande dei suoi studenti'],
-            ['/domande-e-risposte', 'negato', 'l\'archivio da studente: lo staff ha «Domande»'],
+            ['/domande', 'negato', 'risponde l\'esperto, l\'admin (09/10)'],
+            ['/domande-e-risposte', 'consentito', 'legge «L\'esperto risponde» come uno studente'],
         ]],
 
         ['assist@test.it', 'assistente del tutor A', [
@@ -610,10 +612,20 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
         {
-            const { ctx, page } = await entra(browser, 'tutor1@test.it');
+            // Il numero di quelle in attesa lo vede l'esperto, l'admin (09/10).
+            const { ctx, page } = await entra(browser, 'admin@test.it');
             await page.goto(BASE + '/');
             const voce = (await page.locator('a.nav-link[href="/domande"]').innerText()).replace(/\s+/g, ' ').trim();
-            check('tutor → nel menu, «Domande» con il numero di quelle in attesa', /^Domande \d+ in attesa$/.test(voce), ['voce: ' + voce]);
+            check('admin → nel menu, «Domande» con il numero di quelle in attesa', /^Domande \d+ in attesa$/.test(voce), ['voce: ' + voce]);
+            await ctx.close();
+        }
+        {
+            // Il tutor non ha «Domande», e ha «L'esperto risponde».
+            const { ctx, page } = await entra(browser, 'tutor1@test.it');
+            await page.goto(BASE + '/');
+            const voci = await page.$$eval('.sidebar-nav a.nav-link', (a) => a.map((x) => x.textContent.trim()));
+            check('tutor → nel menu «L\'esperto risponde» e non «Domande»',
+                voci.includes('L\'esperto risponde') && !voci.some((v) => v.startsWith('Domande')), [JSON.stringify(voci)]);
             await ctx.close();
         }
 
@@ -1073,13 +1085,22 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/courses/' + A.corso + '/domande', [['question', 'Domanda di permessi.js sul corso?'], ['module_id', '']], 'consentito',
                     'fare una domanda nel proprio corso'],
             ]],
+            // Dal 09/10 risponde l'esperto, cioe' l'admin: il tutor del gruppo
+            // non pubblica ne' corregge piu' le domande dei suoi studenti; lo
+            // fa l'admin.
             ['tutor1@test.it', 'tutor A (domande)', [
                 ['/domande/' + A.domanda_in_attesa + '/pubblica',
+                    [['question', 'x'], ['answer', 'y'], ['module_id', '']], 'negato',
+                    'pubblicare la domanda di un suo studente: risponde l\'esperto'],
+                ['/domande/' + A.domanda_pubblicata + '/togli', [], 'negato', 'togliere una pubblicata dall\'archivio'],
+            ]],
+            ['admin@test.it', 'admin, l\'esperto (domande)', [
+                ['/domande/' + A.domanda_in_attesa + '/pubblica',
                     [['question', 'Domanda in attesa del mondo A?'], ['answer', 'Risposta di permessi.js.'], ['module_id', '']], 'consentito',
-                    'pubblicare la domanda di un suo studente'],
+                    'pubblicare la domanda di uno studente'],
                 ['/domande/' + A.domanda_pubblicata + '/modifica',
                     [['question', 'Domanda pubblicata sul modulo del mondo A?'], ['answer', 'Risposta corretta da permessi.js.'], ['module_id', '']],
-                    'consentito', 'correggere una sua pubblicata'],
+                    'consentito', 'correggere una pubblicata'],
                 ['/domande/' + A.domanda_pubblicata + '/togli', [], 'consentito', 'toglierla dall\'archivio'],
             ]],
             // Come compaiono agli altri studenti: e' una scelta solo degli
@@ -1115,18 +1136,21 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         // La notifica al tutor (07/10, Elena: da subito). L'azione qui sopra
         // ha fatto una domanda come studente di A: nella posta del contenitore
         // (MAIL_TRANSPORT=log, un file per messaggio) ci dev'essere l'email
-        // al tutor di A con il testo della domanda.
+        // all'esperto, l'admin, con il testo della domanda; e dal 09/10 non al
+        // tutor. Si guardano solo i messaggi di questo giro: nella cartella
+        // restano quelli dei giri prima.
         {
             const fs = require('fs');
             const cartella = path.join(__dirname, '..', 'storage', 'mail');
-            const arrivata = fs.existsSync(cartella) && fs.readdirSync(cartella)
-                .filter((f) => f.includes('tutor1'))
+            const diQuestoGiro = (chi) => (fs.existsSync(cartella) ? fs.readdirSync(cartella) : [])
+                .filter((f) => f.includes(chi) && fs.statSync(path.join(cartella, f)).mtimeMs >= INIZIO_GIRO)
                 .some((f) => {
                     const testo = fs.readFileSync(path.join(cartella, f), 'utf8');
                     return testo.includes('Subject: Nuova domanda') && testo.includes('Domanda di permessi.js sul corso?');
                 });
-            check('la domanda nuova arriva per email al tutor del gruppo dello studente', arrivata,
-                arrivata ? [] : ['nessuna email «Nuova domanda» al tutor di A in storage/mail']);
+            check('la domanda nuova arriva per email all\'esperto, l\'admin', diQuestoGiro('admin'),
+                ['nessuna email «Nuova domanda» all\'admin in storage/mail']);
+            check('e non al tutor del gruppo', !diQuestoGiro('tutor1'), ['il tutor l\'ha ricevuta']);
         }
 
         console.log('\n--- chi non ha fatto l\'accesso');

@@ -172,6 +172,7 @@ danni. Le piu' recenti:
 | `2026_10_07_nome_cognome.sql` | nome e cognome separati, `full_name` calcolato, la scelta di come comparire agli altri studenti |
 | `2026_10_07_domande.sql` | le domande degli studenti al tutor e l'archivio delle risposte; i permessi `question.answer` e `question.answer_own` |
 | `2026_10_08_primo_accesso.sql` | `name_display` facoltativo: NULL vuol dire «non ancora scelto», e vale come «solo le iniziali» |
+| `2026_10_09_esperto.sql` | risponde l'esperto (l'admin): tolto `question.answer_own` ai tutor, le domande in attesa senza tutor |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -908,18 +909,20 @@ cambiano. Dove il browser ha `initial-letter` (Chrome, Edge, Safari) la lettera 
 su tre righe; altrove (Firefox) scorre a sinistra con misure calcolate, e l'allineamento è
 approssimato. La descrizione del corso è larga quanto gli altri blocchi della pagina.
 
-## Domande e risposte
+## L'esperto risponde (domande e risposte)
 
-Due posti (dal 09/10, chiesto da Elena):
+**Risponde l'esperto, cioè l'admin** (dal 09/10, Elena; prima il tutor del gruppo). Due posti:
 
-- **La pagina «Domande e risposte»** (`/domande-e-risposte`), una voce del menu dello studente
-  prima di «Certificati»: l'archivio di **un corso alla volta**, con un menu per scegliere il
-  corso fra quelli a cui è iscritto (con un corso solo il menu non c'è). Un corso non suo,
-  scritto a mano nell'indirizzo, non si apre: si mostra il primo dei suoi. Solo per gli
-  studenti: tutor e admin hanno «Domande».
-- **In fondo a ogni corso, «Fai una domanda al tutor»**, ripiegata in una riga con «Mostra»,
+- **La pagina «L'esperto risponde»** (`/domande-e-risposte`), una voce del menu prima di
+  «Certificati», per gli studenti e per i tutor: l'archivio di **un corso alla volta**, con un
+  menu per scegliere il corso (lo studente fra quelli a cui è iscritto, il tutor fra quelli dei
+  suoi gruppi; con un corso solo il menu non c'è). Un corso non suo, scritto a mano
+  nell'indirizzo, non si apre: si mostra il primo dei suoi. Il tutor la legge come uno studente,
+  in sola lettura, e vede gli autori per intero come lo staff ovunque. L'admin ha «Domande».
+- **In fondo a ogni corso, «Fai una domanda all'esperto»**, ripiegata in una riga con «Mostra»,
   che la apre e diventa «Nascondi» (un `details`, senza JavaScript). Dentro il modulo per
-  chiedere, il collegamento «Leggi le domande e risposte di questo corso» e «Le tue domande».
+  chiedere («La legge l'esperto…»), il collegamento «Leggi le risposte dell'esperto per questo
+  corso» e «Le tue domande».
   **Si apre da sola** dopo l'invio di una domanda e dopo un invio respinto; alla visita
   successiva riparte chiusa. Il comando ha sempre lo spazio della parola più lunga, così la
   riga non cambia forma aprendola.
@@ -928,18 +931,17 @@ Due posti (dal 09/10, chiesto da Elena):
 come le lezioni, i dettagli 0,8 rem; una domanda aperta passa in grassetto. Nell'archivio la
 ricerca sta in fondo.
 
-- **Lo studente fa una domanda al tutor** su un modulo del corso o sul corso in generale, e
+- **Lo studente fa una domanda all'esperto** su un modulo del corso o sul corso in generale, e
   vede le sue con lo stato: in attesa, pubblicata, non pubblicata. Se c'è un errore il testo
   resta nel campo. **La domanda è lunga al massimo 1.000 caratteri**, con il contatore sopra
   l'angolo in alto a destra del campo («1000 caratteri rimasti», a scalare): lo stesso della
   presentazione del profilo e delle risposte aperte, con lo stesso script. Il limite vale anche
   senza JavaScript (`maxlength`) e sul server.
-- **La riceve il tutor del suo gruppo**, con **un'email per ogni domanda nuova** (corso,
-  modulo, nome, testo intero); se lo studente non ha un tutor, l'email va agli amministratori.
+- **La riceve l'esperto**, con **un'email per ogni domanda nuova** agli amministratori (corso,
+  modulo, nome, testo intero). Non c'è più un tutor assegnato.
   Lo studente non riceve avvisi: trova la risposta tornando al corso.
-- **Il tutor e l'admin** rispondono dalla pagina **«Domande»**, una voce della barra laterale
-  con il numero di quelle in attesa. Il tutor vede quelle assegnate a lui, l'admin tutte, e per
-  ognuna **il tutor a cui è assegnata**. Prima di pubblicare si possono correggere il testo,
+- **L'esperto** risponde dalla pagina **«Domande»**, una voce della sua barra laterale con il
+  numero di quelle in attesa. Prima di pubblicare si possono correggere il testo,
   per esempio per togliere dettagli personali, e il modulo. **Ogni risposta si pubblica**:
   non ci sono risposte private. Una domanda doppia, fuori tema o troppo personale si
   **scarta**, e lo studente la vede «Non pubblicata».
@@ -947,22 +949,23 @@ ricerca sta in fondo.
   nell'ordine del corso con «Il corso in generale» in fondo, ciascuna domanda in un `details`.
   L'autore compare **come ha scelto nel profilo** (`PersonName::shown()`); lo staff lo vede
   per intero. **La ricerca** cerca nelle domande e nelle risposte, senza JavaScript
-  (`?corso=…&cerca=…` sulla pagina «Domande e risposte»); `%` e `_` si cercano come testo.
+  (`?corso=…&cerca=…` sulla pagina «L'esperto risponde»); `%` e `_` si cercano come testo.
 - **Correggere e togliere** (08/10). Nella pagina «Domande», sotto quelle in attesa, la parte
   **«Pubblicate»**, divisa per corso: ogni domanda si apre per correggere domanda, modulo e
   risposta («Salva»), o per **toglierla dall'archivio**. Tolta, torna «Non pubblicata», con la
   risposta e chi l'aveva data, e lo studente la vede ancora fra le sue con quello stato.
   (Il collegamento «Modifica» che c'era nell'archivio del corso è sparito con lui, il 09/10:
   `/domande?apri=` apre comunque una pubblicata.) La regola di chi può è una sola,
-  `QuestionController::puoGestire()`: l'admin tutte, il tutor quelle assegnate a lui.
+  `QuestionController::puoGestire()`: chi ha `question.answer`, l'admin.
 - **Niente risposte fra studenti, commenti o voti**: è la decisione di non fare messaggistica
-  fra studenti, e in mezzo c'è sempre il tutor.
+  fra studenti, e in mezzo c'è sempre l'esperto.
 
-Le regole stanno in `App\Models\QuestionModel`, i permessi nel controller: `question.answer`
-(admin, tutte) e `question.answer_own` (tutor, le sue). «Scarta» è un modulo a sé, nella riga di
-«Pubblica» con l'attributo `form`: dentro il modulo di pubblicazione diventerebbe il suo invio
-predefinito. `tests/domande_test.php` prova assegnazione, attesa, pubblicazione e archivio;
-`permessi.js` chi può fare che cosa, l'archivio e l'email al tutor.
+Le regole stanno in `App\Models\QuestionModel`, il permesso nel controller: `question.answer`,
+dell'admin. Il permesso `question.answer_own` del tutor è stato tolto il 09/10 (migrazione
+`2026_10_09_esperto.sql`). «Scarta» è un modulo a sé, nella riga di «Pubblica» con l'attributo
+`form`: dentro il modulo di pubblicazione diventerebbe il suo invio predefinito.
+`tests/domande_test.php` prova attesa, pubblicazione e archivio; `permessi.js` chi può fare che
+cosa, l'archivio e l'email all'esperto, e non al tutor.
 
 ## Video di benvenuto
 
@@ -1114,8 +1117,8 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 2.960 controlli su 64 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 185 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
+node tests/accessibilita.js         # circa 3.000 controlli su 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 189 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni e il benvenuto del tutor
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

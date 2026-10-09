@@ -471,7 +471,8 @@ function domandeDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, strin
     ];
     foreach ($righe as [$modulo, $domanda, $risposta, $stato]) {
         $ins->execute([
-            'c' => $mondo['corso'], 'm' => $modulo, 's' => $studente, 't' => $tutor, 'q' => $domanda, 'a' => $risposta,
+            // In attesa senza tutor: dal 09/10 risponde l'esperto, l'admin.
+            'c' => $mondo['corso'], 'm' => $modulo, 's' => $studente, 't' => $stato === 'pending' ? null : $tutor, 'q' => $domanda, 'a' => $risposta,
             'st' => $stato, 'by' => $stato === 'pending' ? null : $tutor, 'at' => $stato === 'pending' ? null : date('Y-m-d H:i:s'),
         ]);
         if ($stato === 'pending') {

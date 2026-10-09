@@ -6,9 +6,9 @@ use App\Core\Csrf;
 use App\Models\QuestionModel;
 
 /**
- * Le domande in attesa, per chi risponde (07/10). Il tutor vede quelle degli
- * studenti dei suoi gruppi; l'admin tutte, e per ognuna a quale tutor e'
- * assegnata (Elena). Lo staff vede sempre gli studenti per intero.
+ * Le domande in attesa, per chi risponde: l'esperto, cioe' l'admin (dal
+ * 09/10; prima anche il tutor, per le domande dei suoi gruppi). Lo staff vede
+ * sempre gli studenti per intero.
  *
  * Per ognuna: la domanda correggibile, come verra' pubblicata — per togliere
  * dettagli personali —, il modulo, la risposta, «Pubblica» e «Scarta».
@@ -51,11 +51,6 @@ $quante = count($domande);
             Da <?= htmlspecialchars((string) ($q['student_name'] ?? 'uno studente non più iscritto')) ?><?php
             if (!empty($q['group_names'])): ?>, gruppo <?= htmlspecialchars((string) $q['group_names']) ?><?php endif; ?>
             · <?= date('j/n/Y H:i', strtotime((string) $q['created_at'])) ?>
-            <?php if ($tutte): ?>
-                <br>Assegnata a: <?= $q['tutor_name'] !== null
-                    ? htmlspecialchars((string) $q['tutor_name'])
-                    : 'nessun tutor (lo studente non è in un gruppo con un tutor)' ?>
-            <?php endif; ?>
         </p>
 
         <form action="/domande/<?= $qid ?>/pubblica" method="post" class="form">
@@ -127,9 +122,6 @@ foreach ($pubblicate as $q) {
                                 <p class="qa-chi">
                                     Da <?= htmlspecialchars((string) ($q['student_name'] ?? 'uno studente non più iscritto')) ?>
                                     · risposta di <?= htmlspecialchars((string) ($q['answered_by_name'] ?? '—')) ?>
-                                    <?php if ($tutte): ?>
-                                        · assegnata a <?= $q['tutor_name'] !== null ? htmlspecialchars((string) $q['tutor_name']) : 'nessun tutor' ?>
-                                    <?php endif; ?>
                                 </p>
 
                                 <form action="/domande/<?= $qid ?>/modifica" method="post" class="form">

@@ -1506,8 +1506,8 @@ async function giroBenvenuto(browser) {
         });
         await page.goto(BASE + url);
         const chiusa = await qa();
-        check('in fondo al corso «Fai una domanda al tutor», chiusa, con «Mostra»',
-            chiusa !== null && !chiusa.aperta && chiusa.titolo === 'Fai una domanda al tutor' && chiusa.comando === 'Mostra',
+        check('in fondo al corso «Fai una domanda all\'esperto», chiusa, con «Mostra»',
+            chiusa !== null && !chiusa.aperta && chiusa.titolo === 'Fai una domanda all\'esperto' && chiusa.comando === 'Mostra',
             [JSON.stringify(chiusa)]);
         const altezzaRiga = () => page.evaluate(() => Math.round(document.querySelector('.qa-riga').getBoundingClientRect().height));
         const primaDiAprire = await altezzaRiga();
@@ -1538,21 +1538,21 @@ async function giroBenvenuto(browser) {
             const archivio = document.querySelector('.qa-archivio');
             const domanda = document.querySelector('.qa-voce > summary');
             return {
-                primaDiCertificati: voci.indexOf('Domande e risposte') === voci.indexOf('Certificati') - 1,
+                primaDiCertificati: voci.indexOf('L\'esperto risponde') === voci.indexOf('Certificati') - 1,
                 attiva: (document.querySelector('.nav-link-active') || {}).textContent,
                 cercaInFondo: archivio !== null && archivio.lastElementChild.matches('form.qa-cerca'),
                 domanda: domanda ? getComputedStyle(domanda).fontSize : null,
                 testo: getComputedStyle(document.documentElement).fontSize,
             };
         });
-        check('nel menu «Domande e risposte», prima di «Certificati», ed evidenziata',
-            pagina.primaDiCertificati && (pagina.attiva || '').trim() === 'Domande e risposte', [JSON.stringify(pagina)]);
+        check('nel menu «L\'esperto risponde», prima di «Certificati», ed evidenziata',
+            pagina.primaDiCertificati && (pagina.attiva || '').trim() === 'L\'esperto risponde', [JSON.stringify(pagina)]);
         check('l\'archivio con la ricerca in fondo, e le domande alla misura delle lezioni (0,9 rem)',
             pagina.cercaInFondo && pagina.domanda !== null
                 && Math.abs(parseFloat(pagina.domanda) - 0.9 * parseFloat(pagina.testo)) < 0.5,
             [JSON.stringify(pagina)]);
-        await esamina(page, '/domande-e-risposte', 'Domande e risposte (studente)', BERSAGLIO_MINIMO, daTelefono);
-        await esamina(page, '/domande-e-risposte?corso=' + corso + '&cerca=Domanda', 'Domande e risposte dopo una ricerca (studente)',
+        await esamina(page, '/domande-e-risposte', 'L\'esperto risponde (studente)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(page, '/domande-e-risposte?corso=' + corso + '&cerca=Domanda', 'L\'esperto risponde dopo una ricerca (studente)',
             BERSAGLIO_MINIMO, daTelefono);
         await page.goto(BASE + url);
 
@@ -1675,6 +1675,9 @@ async function giroBenvenuto(browser) {
 
         check('il tutor non riceve il saluto, che è per gli studenti',
             await tp.locator('.saluto').count() === 0);
+
+        // Il tutor legge «L'esperto risponde» come uno studente (09/10).
+        await esamina(tp, '/domande-e-risposte', 'L\'esperto risponde (tutor)', BERSAGLIO_MINIMO, daTelefono);
 
         await esamina(tp, '/profilo', 'Profilo (tutor)', BERSAGLIO_MINIMO, daTelefono);
         check('nel profilo del tutor c\'è il campo «Email per gli studenti»',

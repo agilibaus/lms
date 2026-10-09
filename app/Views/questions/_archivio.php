@@ -27,7 +27,7 @@ foreach ($archivio as $q) {
 $data = static fn (?string $d): string => $d === null ? '' : date('j/n/Y', strtotime($d));
 $tutte = $indirizzo . ($campiNascosti !== [] ? '?' . http_build_query($campiNascosti) : '');
 ?>
-<p class="qa-intro">Le domande degli studenti di questo corso, con la risposta dei tutor.</p>
+<p class="qa-intro">Le domande degli studenti di questo corso, con la risposta dell'esperto.</p>
 
 <?php if ($archivio === []): ?>
     <p class="empty-state">

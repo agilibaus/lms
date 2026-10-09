@@ -6,8 +6,9 @@ use App\Core\Csrf;
 use App\Models\QuestionModel;
 
 /**
- * «Fai una domanda al tutor», in fondo al corso (07/10; dal 09/10 senza
- * l'archivio, che ha una pagina sua, «Domande e risposte», nel menu).
+ * «Fai una domanda all'esperto», in fondo al corso (07/10; dal 09/10 senza
+ * l'archivio, che ha una pagina sua, «L'esperto risponde», nel menu, e con
+ * l'esperto, l'admin, al posto del tutor).
  *
  * Ripiegata in una riga, che si apre con «Mostra» e si chiude con
  * «Nascondi» (0152): e' un `details`, senza JavaScript. Dentro il modulo per
@@ -46,7 +47,7 @@ $stati = [
     <details class="qa-apri"<?= $aperta ? ' open' : '' ?>>
     <summary class="qa-riga">
         <span class="qa-riga-testo">
-            <h2 id="qa-titolo">Fai una domanda al tutor</h2>
+            <h2 id="qa-titolo">Fai una domanda all'esperto</h2>
         </span>
         <span class="qa-comando"><span class="qa-se-chiusa">Mostra</span><span class="qa-se-aperta">Nascondi</span></span>
     </summary>
@@ -83,7 +84,7 @@ $stati = [
                           maxlength="<?= QuestionModel::MAX_QUESTION_CHARS ?>"><?= htmlspecialchars((string) $vecchio['text']) ?></textarea>
             </div>
             <p class="form-hint" id="qa-domanda-aiuto">
-                La legge il tuo tutor. Se la pubblica, compare con la risposta in «Domande e risposte», con il tuo
+                La legge l'esperto. Se la pubblica, compare con la risposta in «L'esperto risponde», con il tuo
                 nome come hai scelto nel profilo. Prima di pubblicarla può correggerla.
             </p>
 
@@ -94,7 +95,7 @@ $stati = [
 
         <?php /* Prima di chiedere, si controlla se qualcuno l'ha gia' fatto. */ ?>
         <p class="qa-vai-archivio">
-            <a href="/domande-e-risposte?corso=<?= $courseId ?>">Leggi le domande e risposte di questo corso</a>
+            <a href="/domande-e-risposte?corso=<?= $courseId ?>">Leggi le risposte dell'esperto per questo corso</a>
         </p>
 
         <?php if ($domande['mie'] !== []): ?>

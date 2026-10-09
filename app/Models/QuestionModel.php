@@ -12,8 +12,8 @@ use App\Core\Database;
  *
  * LE DECISIONI DI ELENA
  *   - lo studente fa una domanda su un modulo, o sul corso in generale;
- *   - la riceve il tutor del suo gruppo, e l'admin; senza tutor la vede
- *     solo l'admin;
+ *   - la riceve l'esperto, cioe' l'admin (dal 09/10; prima il tutor del
+ *     gruppo); il tutor legge l'archivio come uno studente;
  *   - il tutor la puo' correggere e la pubblica con la risposta, oppure la
  *     scarta; nessuna risposta privata;
  *   - le pubblicate le vedono tutti gli iscritti al corso, di ogni gruppo,
@@ -35,30 +35,6 @@ final class QuestionModel
      */
     public const MAX_QUESTION_CHARS = 1000;
     public const MAX_ANSWER_CHARS = 5000;
-
-    /**
-     * Il tutor a cui va la domanda di uno studente in un corso: il tutor del
-     * gruppo attraverso cui lo studente ha il corso. Con piu' gruppi con
-     * tutor diversi, il primo per nome, come per il benvenuto. Null: nessun
-     * tutor, e la domanda la vede solo l'admin.
-     */
-    public static function tutorFor(int $courseId, int $studentId): ?int
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT g.tutor_id
-             FROM group_members gm
-             INNER JOIN `groups` g ON g.id = gm.group_id
-             INNER JOIN group_course_access gca ON gca.group_id = g.id
-             INNER JOIN users t ON t.id = g.tutor_id
-             WHERE gm.user_id = :student AND gca.course_id = :course
-             ORDER BY t.full_name, t.email
-             LIMIT 1'
-        );
-        $stmt->execute(['student' => $studentId, 'course' => $courseId]);
-        $id = $stmt->fetchColumn();
-
-        return $id === false ? null : (int) $id;
-    }
 
     public static function create(int $courseId, ?int $moduleId, int $studentId, ?int $tutorId, string $question): int
     {
