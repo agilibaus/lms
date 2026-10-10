@@ -4072,7 +4072,7 @@ fieldset.checkbox-group legend {
 
 .agenda-gruppo h2 {
     font-size: 1.05rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.8rem;
 }
 
 .agenda-elenco {
@@ -4193,12 +4193,16 @@ fieldset.checkbox-group legend {
     margin: 0;
 }
 
-/* Aperto, lo Storico stacca le sue voci dal comando che le ha aperte:
-   senza, la prima voce comincia esattamente dove finisce «Storico» e le
-   due cose sembrano una sola. Solo da aperto — a cassetto chiuso quel
-   margine sarebbe spazio vuoto in fondo alla pagina. */
-.agenda-passati[open] > summary {
-    margin-bottom: 1.5rem;
+/* Aperto, lo Storico stacca le sue voci dal titolo con lo stesso margine
+   dei titoli dei gruppi qui sopra, 0,8 rem sull'h2 (10/10, Alessandro): le
+   due distanze, dal titolo alla prima voce, misurano tutte e due 13 px.
+   Prima erano 8 e 26, perche' qui il distacco era un margine di 1,5 rem sul
+   `summary`, che ora e' a zero: con tutti e due la distanza sarebbe 37 px.
+   Solo da aperto — a cassetto chiuso il margine allungherebbe la riga di
+   «Storico» e spingerebbe il titolo fuori dal centro, con dello spazio
+   vuoto in fondo alla pagina. `accessibilita.js` confronta le due distanze. */
+.agenda-passati[open] > summary h2 {
+    margin-bottom: 0.8rem;
 }
 
 /* Le voci gia' passate non si cancellano, si spengono: servono a

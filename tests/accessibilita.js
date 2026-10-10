@@ -1231,6 +1231,53 @@ const EXTRA = {
 // risposte aperte (06/10), e si guarda con lo stesso controllo.
 EXTRA['Profilo'] = EXTRA['Quiz da svolgere'];
 
+/*
+ * L'Agenda (10/10, Alessandro): dal titolo di un gruppo alla sua prima voce,
+ * e da «Storico» aperto alla sua, la stessa distanza a occhio. Si misura dal
+ * fondo della riga di testo del titolo, non dal suo riquadro: lo Storico e'
+ * un `summary` con un'altezza minima, e due margini uguali sui due h2 non
+ * davano la stessa distanza (erano 8 e 26 px). E chiuso, «Storico» resta una
+ * riga sola, alta quanto il bersaglio, con il titolo al centro.
+ */
+EXTRA['Agenda'] = async (page, nome) => {
+    const esito = await page.evaluate(() => {
+        const storico = document.querySelector('details.agenda-passati');
+
+        if (storico === null) {
+            return null;
+        }
+
+        const fondoTesto = (h) => {
+            const r = document.createRange();
+            r.selectNodeContents(h);
+            const rr = [...r.getClientRects()];
+            return rr[rr.length - 1].bottom;
+        };
+        const s = storico.querySelector(':scope > summary');
+        const chiusa = Math.round(s.getBoundingClientRect().height);
+        const gruppi = [...document.querySelectorAll('.agenda-gruppo')]
+            .map((g) => [g.querySelector('h2'), g.querySelector('.agenda-voce')])
+            .filter(([h, v]) => h && v)
+            .map(([h, v]) => Math.round(v.getBoundingClientRect().top - fondoTesto(h)));
+
+        storico.open = true;
+        const voce = storico.querySelector('.agenda-voce');
+        const daStorico = voce ? Math.round(voce.getBoundingClientRect().top - fondoTesto(s.querySelector('h2'))) : null;
+        storico.open = false;
+
+        return { gruppi, daStorico, chiusa };
+    });
+
+    if (esito === null || esito.gruppi.length === 0 || esito.daStorico === null) {
+        console.log('  --   ' + nome + ': manca un gruppo o lo Storico con delle voci, distanze non confrontate');
+        return;
+    }
+
+    check(nome + ': dal titolo alla prima voce, la stessa distanza nei gruppi e nello Storico',
+        esito.gruppi.every((d) => Math.abs(d - esito.daStorico) <= 1), [JSON.stringify(esito)]);
+    check(nome + ': «Storico» chiuso resta una riga sola', esito.chiusa <= 26, ['alta ' + esito.chiusa + ' px']);
+};
+
 // E la descrizione del corso (10/10), nella creazione e nella modifica.
 EXTRA['Nuovo corso'] = EXTRA['Quiz da svolgere'];
 EXTRA['Modifica corso'] = EXTRA['Quiz da svolgere'];

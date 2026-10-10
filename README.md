@@ -1140,6 +1140,11 @@ la pagina «Sessioni live», l'agenda e il calendario esterno. Prima stava dentr
 delle sessioni come metodi privati, e andava bene finché gli incontri si guardavano da una
 pagina sola.
 
+**Dal titolo alla prima voce c'è la stessa distanza** nei gruppi (Oggi, Nei prossimi sette giorni,
+Pianificato) e nello Storico aperto: 0,8 rem sotto il titolo (10/10). Nello Storico il margine
+c'è solo da aperto, perché il titolo sta in un `summary`: da chiuso allungherebbe la riga.
+`accessibilita.js` confronta le due distanze, misurate dal fondo della riga di testo del titolo.
+
 ### Il calendario nel proprio programma
 
 Due modi, dalla stessa pagina:
