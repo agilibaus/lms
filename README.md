@@ -461,6 +461,12 @@ Creazione (`course.create`), modifica e iscrizioni (`course.edit`), eliminazione
 (moduli, lezioni, questionari) restano nella scheda del corso. La rimozione di un'iscrizione cancella
 progresso e certificato di quel corso: viene chiesta conferma.
 
+**La descrizione è lunga al massimo 3.000 caratteri** (10/10), con il contatore sulla riga
+dell'etichetta, allineato al bordo destro del campo: lo stesso della presentazione nel profilo e
+della domanda all'esperto. Il limite è doppio, `maxlength` nel campo e il taglio in
+`Admin\CourseController::MAX_DESCRIPTION_CHARS`, e gli a capo valgono un carattere in tutti e
+due. `accessibilita.js` controlla il contatore in «Nuovo corso» e «Modifica corso».
+
 ### Permessi (`/admin/permissions`)
 Matrice ruoli × permessi su `role_permissions`, con le chiavi effettivamente controllate dal
 codice (`RolePermissionModel::catalog()`). Le modifiche hanno effetto immediato.

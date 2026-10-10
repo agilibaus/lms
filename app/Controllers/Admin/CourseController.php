@@ -25,6 +25,15 @@ use App\Models\UserModel;
  */
 class CourseController extends AdminController
 {
+    /**
+     * Quanto puo' essere lunga la descrizione del corso: 3.000 caratteri,
+     * chiesto da Alessandro il 10/10. Il limite e' doppio come per la
+     * presentazione e le risposte aperte: `maxlength` nel campo, con il
+     * contatore, e il taglio qui, perche' un `maxlength` si toglie dagli
+     * strumenti per sviluppatori.
+     */
+    public const MAX_DESCRIPTION_CHARS = 3000;
+
     public function index(array $params = []): void
     {
         Auth::requirePermission('course.create', 'course.edit', 'course.delete');
@@ -404,7 +413,15 @@ class CourseController extends AdminController
      */
     private function dataFromPost(): array
     {
-        $description = trim((string) ($_POST['description'] ?? ''));
+        // Gli a capo arrivano come \r\n, e per `maxlength` e per il contatore
+        // valgono un carattere: si contano allo stesso modo prima di tagliare,
+        // o il taglio porterebbe via la fine di un testo che il campo aveva
+        // accettato.
+        $description = mb_substr(
+            trim(str_replace("\r\n", "\n", (string) ($_POST['description'] ?? ''))),
+            0,
+            self::MAX_DESCRIPTION_CHARS
+        );
         $mode = (string) ($_POST['enrollment_mode'] ?? 'closed');
 
         return [

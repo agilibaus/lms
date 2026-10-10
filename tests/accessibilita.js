@@ -1193,6 +1193,11 @@ const EXTRA = {
 // risposte aperte (06/10), e si guarda con lo stesso controllo.
 EXTRA['Profilo'] = EXTRA['Quiz da svolgere'];
 
+// E la descrizione del corso (10/10), nella creazione e nella modifica.
+EXTRA['Nuovo corso'] = EXTRA['Quiz da svolgere'];
+EXTRA['Modifica corso'] = EXTRA['Quiz da svolgere'];
+EXTRA['Modifica corso con benvenuto (semina)'] = EXTRA['Quiz da svolgere'];
+
 /**
  * Nessuno scorrimento orizzontale, e quando c'e' il nome dell'elemento che
  * lo causa: «la pagina e' larga» da sola non si sa da dove prenderla.
