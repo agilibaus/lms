@@ -502,8 +502,11 @@ due. `accessibilita.js` controlla il contatore in «Nuovo corso» e «Modifica c
 corsi» e in «Esplora corsi» (`CourseModel::estratto()`). Nel catalogo lo studente non è ancora
 iscritto e la pagina del corso non la può aprire, quindi sotto l'estratto c'è **«Leggi tutto»**,
 che apre la descrizione intera dentro la scheda; «Chiudi», sotto il testo, la richiude (10/10).
+I due comandi stanno attaccati al testo, e il numero delle lezioni con il pulsante sta staccato,
+con lo spazio e senza linea.
 È un `details`, senza JavaScript. `accessibilita.js` controlla nel catalogo che una descrizione
-lunga non si veda intera da chiusa, e che aperta si legga tutta.
+lunga non si veda intera da chiusa, che aperta si legga tutta, e che il comando stia più vicino al
+testo che alle lezioni.
 
 **Il messaggio della richiesta di iscrizione** — «Due righe su di te (facoltativo)», nel
 catalogo sotto un corso con l'iscrizione su richiesta, che lo staff legge nella tabella delle

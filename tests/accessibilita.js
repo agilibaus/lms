@@ -1276,9 +1276,28 @@ EXTRA['Catalogo'] = async (page, nome) => {
                 problemi.push(titolo + ': chiusa non mostra solo l\'estratto con i puntini (visibili ' + piuLunga + ' caratteri)');
             }
 
+            // «Leggi tutto» e «Chiudi» stanno con il testo che aprono, non con
+            // le lezioni sotto (variante C, 10/10): prima erano a 14 px dalla
+            // descrizione e a 3 dalle lezioni.
+            const lezioni = c.querySelector('.catalogo-lezioni');
+            const vicini = (sopra, comando) => {
+                const a = sopra.getBoundingClientRect(), b = comando.getBoundingClientRect(), l = lezioni.getBoundingClientRect();
+                return { col_testo: Math.round(b.top - a.bottom), con_lezioni: Math.round(l.top - b.bottom) };
+            };
+            const chiusa = vicini(c.querySelector('.catalogo-estratto'), leggi.querySelector(':scope > summary'));
+
+            if (lezioni === null || chiusa.col_testo >= chiusa.con_lezioni) {
+                problemi.push(titolo + ': «Leggi tutto» non sta piu\' vicino alla descrizione che alle lezioni ' + JSON.stringify(chiusa));
+            }
+
             leggi.open = true;
             const testo = leggi.querySelector(':scope > p');
             const s = leggi.querySelector(':scope > summary');
+            const aperta = vicini(testo, s);
+
+            if (aperta.col_testo >= aperta.con_lezioni) {
+                problemi.push(titolo + ': «Chiudi» non sta piu\' vicino al testo che alle lezioni ' + JSON.stringify(aperta));
+            }
 
             if (c.querySelector('.catalogo-estratto').checkVisibility()) {
                 problemi.push(titolo + ': aperta, l\'estratto resta sopra il testo intero');
@@ -1296,7 +1315,7 @@ EXTRA['Catalogo'] = async (page, nome) => {
         return { lunghe, problemi };
     });
 
-    check(nome + ': le descrizioni lunghe sono tagliate, e «Leggi tutto» le apre', esito.problemi.length === 0, esito.problemi);
+    check(nome + ': le descrizioni lunghe sono tagliate, e «Leggi tutto» le apre, vicino al testo', esito.problemi.length === 0, esito.problemi);
     check(nome + ': c\'è almeno una descrizione lunga da provare', esito.lunghe > 0,
         ['nessuna scheda con «Leggi tutto»: la prova qui sopra non ha visto niente']);
 };

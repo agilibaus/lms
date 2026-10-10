@@ -70,7 +70,7 @@ use App\Models\EnrollmentRequestModel;
                     </div>
                 <?php endif; ?>
 
-                <p class="card-meta"><?= (int) $course['lesson_count'] ?> lezioni</p>
+                <p class="card-meta catalogo-lezioni"><?= (int) $course['lesson_count'] ?> lezioni</p>
 
                 <?php if ($pending): ?>
                     <p class="form-hint">Richiesta inviata: sarà valutata da un tutor.</p>

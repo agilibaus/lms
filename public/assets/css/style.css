@@ -643,7 +643,25 @@ h3 { font-size: 1.05rem; }
 }
 
 /* La descrizione lunga nel catalogo (10/10): l'estratto con i tre puntini e
-   «Leggi tutto», che apre il resto dentro la scheda. */
+   «Leggi tutto», che apre il resto dentro la scheda.
+
+   «Leggi tutto» e «Chiudi» stanno attaccati al testo che aprono e chiudono,
+   e il numero delle lezioni con il pulsante sta staccato, con lo spazio e
+   senza linea (variante C del mockup, scelta da Alessandro il 10/10). Prima
+   «Leggi tutto» era a 14 px dalla descrizione e a 3 dalle lezioni, e si
+   leggeva come parte del blocco sotto. `accessibilita.js` controlla che il
+   comando stia piu' vicino al testo che alle lezioni, chiuso e aperto. */
+/* Dentro la scheda: `.card-meta`, che sta piu' sotto nel foglio, darebbe
+   ancora i suoi 0,9 rem. */
+.catalog-card .catalogo-estratto,
+.catalogo-leggi[open] > p.card-meta {
+    margin-bottom: 0.1rem;
+}
+
+.catalog-card .catalogo-lezioni {
+    margin-top: 1.4rem;
+}
+
 .catalogo-leggi > summary {
     display: inline-flex;
     align-items: center;
