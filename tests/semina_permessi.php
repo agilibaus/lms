@@ -132,8 +132,13 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
     $nome = MARCHIO . ' mondo ' . $lettera;
 
     $pdo->prepare('INSERT INTO courses (title, slug, description, is_published, enrollment_mode, created_by)
-                   VALUES (:t, :s, :d, 1, "open", :a)')
+                   VALUES (:t, :s, :d, 1, :m, :a)')
         ->execute([
+            // Il corso di B e' «su richiesta» (10/10): in Gestione corsi la
+            // colonna «Stato» ha cosi' due modalita' da mettere in ordine, e
+            // nel catalogo dell'admin c'e' il modulo della richiesta, con il
+            // contatore di «Due righe su di te» da misurare.
+            'm' => $lettera === 'B' ? 'request' : 'open',
             't' => $nome,
             's' => 'prova-permessi-' . strtolower($lettera) . '-' . bin2hex(random_bytes(4)),
             'd' => 'Corso creato dalla verifica dei permessi.',

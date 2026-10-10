@@ -15,8 +15,13 @@ use App\Models\CourseModel;
 
 $ordine = Ordinamento::daRichiesta([
     'titolo' => ['title', Ordinamento::TESTO],
-    // Pubblicato o bozza: un clic raggruppa le bozze da una parte.
-    'stato' => ['is_published', Ordinamento::NUMERO],
+    // Pubblicato o bozza: un clic raggruppa le bozze da una parte. A parita',
+    // la modalita' di iscrizione (10/10, Alessandro): la colonna le mostra
+    // tutte e due, e ordinata sulla sola prima l'ordine dentro «pubblicato»
+    // sembrava casuale. Si ordina sul dato, `enrollment_mode`: closed, open,
+    // request cade nello stesso ordine delle etichette (chiusa, libera, su
+    // richiesta), e `ordinamento_pagine.js` lo verifica sul testo mostrato.
+    'stato' => ['is_published', Ordinamento::NUMERO, 'enrollment_mode'],
 ]);
 $courses = $ordine->applica($courses);
 ?>

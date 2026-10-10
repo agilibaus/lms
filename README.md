@@ -722,6 +722,10 @@ Cinque cose da sapere prima di aggiungerne una:
   due volte e l'altro mai. L'email è unica ed è scritta sotto il nome, quindi l'ordine è
   sempre lo stesso e si vede. Per la stessa ragione **le query che ordinano persone per nome
   finiscono con `, u.email`**: è l'ordine delle pagine aperte senza aver cliccato niente.
+- **Una colonna che mostra due dati si ordina su tutti e due.** «Stato» in Gestione corsi
+  dice se il corso è pubblicato e come ci si iscrive: si ordina per pubblicato e, a parità,
+  per modalità di iscrizione (10/10), cioè chiusa, libera, su richiesta. Prima a parità di stato
+  l'ordine sembrava casuale.
 
 Sul telefono, dove la tabella diventa un elenco di schede, l'intestazione non sparisce: torna
 come **una fila di comandi sopra alle schede**. Nasconderla del tutto avrebbe tolto
