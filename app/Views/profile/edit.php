@@ -138,7 +138,9 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
          * sopra una presentazione gia' scritta sarebbe falso.
          */
         $bio = (string) ($user['bio'] ?? '');
-        $restano = max(0, ProfileController::MAX_BIO_CHARS - mb_strlen($bio));
+        // Gli a capo contati uno, come li conta il campo: una presentazione
+        // salvata prima del 10/10 puo' averli ancora come \r\n.
+        $restano = max(0, ProfileController::MAX_BIO_CHARS - mb_strlen(str_replace("\r\n", "\n", $bio)));
         ?>
         <?php /* Etichetta e contatore sulla stessa riga (chiesto da Elena):
                  messo sopra il campo, il contatore spingeva l'etichetta una

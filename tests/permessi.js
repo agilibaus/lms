@@ -1266,6 +1266,63 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             check('e non al tutor del gruppo', !diQuestoGiro('tutor1'), ['il tutor l\'ha ricevuta']);
         }
 
+        // --- gli a capo nei campi con il limite (10/10) --------------------
+        //
+        // Il campo conta un a capo come un carattere, il browser lo invia come
+        // due (\r\n). Il taglio sul server deve contarlo uno, o un testo pieno
+        // con degli a capo perde la fine, un carattere per a capo. Succedeva
+        // nella presentazione del profilo e nelle risposte aperte: si scrive
+        // un testo lungo esattamente il limite, con un a capo ogni cento
+        // caratteri e «FINE.» in fondo, e si controlla che si salvi intero.
+        // Le risposte aperte si guardano nel database, dopo un tentativo vero:
+        // per questo la prova sta in fondo, e alla domanda aperta la aggiunge
+        // qui al questionario del mondo A, che la semina ricrea a ogni giro.
+
+        console.log('\n--- gli a capo nei campi con il limite');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const pieno = (massimo) => ('a'.repeat(99) + '\n').repeat(Math.floor(massimo / 100) - 1) + 'a'.repeat(95) + 'FINE.';
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php"; $db = App\\Core\\Database::connection();' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+
+            const { ctx, page } = await entra(browser, 'stud@test.it');
+
+            await page.goto(BASE + '/profilo');
+            const prima = await page.$eval('#bio', (t) => t.value);
+            const bio = pieno(1000);
+            await page.fill('#bio', bio);
+            await Promise.all([page.waitForNavigation(), page.click('form[action="/profilo"] button[type=submit]')]);
+            const salvata = await page.$eval('#bio', (t) => t.value);
+            check('presentazione: 1.000 caratteri con 9 a capo si salvano interi',
+                salvata.length === 1000 && salvata.endsWith('FINE.'),
+                ['nel campo ' + bio.length + ', salvati ' + salvata.length + ', finisce con «' + salvata.slice(-5) + '»']);
+            // La presentazione di prima torna al suo posto: la pagina del
+            // gruppo, piu' sotto nei giri dopo, la cerca.
+            await page.fill('#bio', prima);
+            await Promise.all([page.waitForNavigation(), page.click('form[action="/profilo"] button[type=submit]')]);
+
+            php('$db->prepare("INSERT INTO quiz_questions (quiz_id, question_text, question_type, position) VALUES (?, ?, \'open\', 9)")'
+                + '->execute([$argv[1], "Domanda aperta di permessi.js"]);', A.quiz);
+            await page.goto(BASE + '/quizzes/' + A.quiz);
+            const risposta = pieno(3000);
+            await page.$$eval('.quiz-form input[type=radio]', (r) => {
+                const visti = new Set();
+                r.forEach((x) => { if (!visti.has(x.name)) { visti.add(x.name); x.checked = true; } });
+            });
+            await page.fill('.quiz-form textarea.quiz-open-answer', risposta);
+            await Promise.all([page.waitForNavigation(), page.click('.quiz-form button[type=submit]')]);
+            const scritta = php('$s = $db->prepare("SELECT a.answer_text FROM quiz_attempt_answers a JOIN quiz_attempts t ON t.id = a.attempt_id'
+                + ' WHERE t.quiz_id = ? AND a.answer_text IS NOT NULL ORDER BY a.id DESC LIMIT 1"); $s->execute([$argv[1]]);'
+                + ' echo (string) $s->fetchColumn();', A.quiz);
+            check('risposta aperta: 3.000 caratteri con 29 a capo si salvano interi',
+                [...scritta].length === 3000 && scritta.endsWith('FINE.'),
+                ['nel campo ' + risposta.length + ', salvati ' + [...scritta].length + ', finisce con «' + scritta.slice(-5) + '»']);
+
+            await ctx.close();
+        }
+
         console.log('\n--- chi non ha fatto l\'accesso');
 
         const ctx = await browser.newContext();

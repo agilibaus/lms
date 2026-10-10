@@ -306,8 +306,13 @@ massimo 12.000, quindi non serve nessuna migrazione.
 
 Fuori resta solo il testo delle lezioni, che è testo formattato nell'editor. I campi più recenti
 passano da `App\Core\CampoContato`, che tiene insieme le due metà del limite: `html()` scrive il
-campo con il contatore e `taglia()` taglia sul server, con gli a capo contati come li conta il
-campo. `accessibilita.js` lo controlla su ogni pagina: un'area di testo con
+campo con il contatore e `taglia()` taglia sul server.
+
+**Gli a capo valgono un carattere, in tutti i campi.** Il campo li conta uno, ma il browser li
+invia come due (`\r\n`): ogni taglio sul server li converte prima di contare, o un testo pieno
+con degli a capo perderebbe la fine, un carattere per a capo. Fino al 10/10 succedeva nella
+presentazione del profilo e nelle risposte aperte; `permessi.js` ora salva in tutti e due un
+testo lungo esattamente il limite, con molti a capo, e controlla che arrivi intero. `accessibilita.js` lo controlla su ogni pagina: un'area di testo con
 `maxlength` senza contatore è un rilievo, e su ogni contatore verifica che stia sopra il campo a
 destra, che ne sia la descrizione e che dichiari lo stesso limite del campo. Lo script
 (`quiz-open-count.js`) si può caricare più volte nella stessa pagina: ogni campo si collega una
@@ -1190,7 +1195,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 3.000 controlli su 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 198 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto
+node tests/permessi.js              # 200 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto, e gli a capo nei campi con il limite
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

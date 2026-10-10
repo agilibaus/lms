@@ -9,6 +9,7 @@ use App\Core\TutorWelcome;
 use App\Auth\Auth;
 use App\Auth\GroupPeers;
 use App\Core\AvatarImage;
+use App\Core\CampoContato;
 use App\Core\Mail\Mailer;
 use App\Core\PasswordPolicy;
 use App\Core\Upload;
@@ -334,11 +335,17 @@ class ProfileController
         return is_string($value) ? $value : null;
     }
 
+    /**
+     * Un campo facoltativo, tagliato al suo limite. Passa da
+     * `CampoContato::taglia()` (10/10): gli a capo arrivano come \r\n e il
+     * campo li conta uno, quindi si convertono prima di tagliare. Prima una
+     * presentazione di 1.000 caratteri con 9 a capo perdeva gli ultimi 9.
+     */
     private function optional(string $field, int $maxLength): ?string
     {
-        $value = trim((string) ($_POST[$field] ?? ''));
+        $value = CampoContato::taglia((string) ($_POST[$field] ?? ''), $maxLength);
 
-        return $value === '' ? null : mb_substr($value, 0, $maxLength);
+        return $value === '' ? null : $value;
     }
 
     private function deleteFile(?string $relativePath): void

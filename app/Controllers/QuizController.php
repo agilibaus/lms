@@ -396,7 +396,10 @@ class QuizController
 
             // --- risposta aperta: si raccoglie, non si corregge ----------
             if ($tipo === 'open') {
-                $testo = trim((string) ($testi[$questionId] ?? ''));
+                // Tagliato con gli a capo contati come li conta il campo
+                // (10/10): prima una risposta piena con degli a capo
+                // perdeva la fine, uno per a capo.
+                $testo = CampoContato::taglia((string) ($testi[$questionId] ?? ''), self::MAX_OPEN_CHARS);
 
                 if ($testo === '') {
                     $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il quiz.';
@@ -406,9 +409,9 @@ class QuizController
                 $answers[] = [
                     'question_id' => $questionId,
                     'selected_option_id' => null,
-                    // Tagliato per non lasciare che il corpo della richiesta
-                    // decida quanto spazio occupare nel database.
-                    'answer_text' => mb_substr($testo, 0, self::MAX_OPEN_CHARS),
+                    // Tagliato qui sopra, per non lasciare che il corpo della
+                    // richiesta decida quanto spazio occupare nel database.
+                    'answer_text' => $testo,
                     // Non e' «sbagliata»: e' fuori dal punteggio. Il valore
                     // nella colonna non viene letto per le aperte, e vale 0
                     // perche' la colonna non ammette nulla.
