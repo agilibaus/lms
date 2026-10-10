@@ -498,6 +498,13 @@ della domanda all'esperto. Il limite è doppio, `maxlength` nel campo e il tagli
 `Admin\CourseController::MAX_DESCRIPTION_CHARS`, e gli a capo valgono un carattere in tutti e
 due. `accessibilita.js` controlla il contatore in «Nuovo corso» e «Modifica corso».
 
+**Nelle schede dei corsi la descrizione è un estratto** con i tre puntini, lo stesso in «I miei
+corsi» e in «Esplora corsi» (`CourseModel::estratto()`). Nel catalogo lo studente non è ancora
+iscritto e la pagina del corso non la può aprire, quindi sotto l'estratto c'è **«Leggi tutto»**,
+che apre la descrizione intera dentro la scheda; «Chiudi», sotto il testo, la richiude (10/10).
+È un `details`, senza JavaScript. `accessibilita.js` controlla nel catalogo che una descrizione
+lunga non si veda intera da chiusa, e che aperta si legga tutta.
+
 **Il messaggio della richiesta di iscrizione** — «Due righe su di te (facoltativo)», nel
 catalogo sotto un corso con l'iscrizione su richiesta, che lo staff legge nella tabella delle
 richieste in «Modifica corso» — è lungo al massimo **1.000 caratteri** (10/10, prima 500), con lo

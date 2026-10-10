@@ -50,8 +50,24 @@ use App\Models\EnrollmentRequestModel;
                     </span>
                 </div>
 
-                <?php if (!empty($course['description'])): ?>
-                    <p class="card-meta"><?= nl2br(htmlspecialchars((string) $course['description'])) ?></p>
+                <?php $descrizione = (string) ($course['description'] ?? ''); ?>
+                <?php if ($descrizione !== '' && !CourseModel::estrattoTaglia($descrizione)): ?>
+                    <p class="card-meta"><?= nl2br(htmlspecialchars($descrizione)) ?></p>
+                <?php elseif ($descrizione !== ''): ?>
+                    <?php /* L'inizio con i tre puntini, come in «I miei corsi» (10/10). Qui
+                             pero' lo studente non e' ancora iscritto e la pagina del corso
+                             non la puo' aprire: la scheda e' l'unico posto dove legge la
+                             descrizione prima di iscriversi. Per questo «Leggi tutto» la apre
+                             dentro la scheda, e «Chiudi» la richiude (scelta di Alessandro).
+                             E' un `details`: funziona senza JavaScript. Aperto, l'estratto
+                             sparisce e «Chiudi» va sotto il testo. */ ?>
+                    <div class="catalogo-descrizione">
+                        <p class="card-meta catalogo-estratto"><?= htmlspecialchars(CourseModel::estratto($descrizione)) ?></p>
+                        <details class="catalogo-leggi">
+                            <summary><span class="catalogo-leggi-comando"><span class="catalogo-se-chiuso">Leggi tutto</span><span class="catalogo-se-aperto">Chiudi</span></span></summary>
+                            <p class="card-meta"><?= nl2br(htmlspecialchars($descrizione)) ?></p>
+                        </details>
+                    </div>
                 <?php endif; ?>
 
                 <p class="card-meta"><?= (int) $course['lesson_count'] ?> lezioni</p>

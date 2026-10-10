@@ -304,6 +304,26 @@ class CourseModel
      * modo suo, e una terza modalita' non comparirebbe da nessuna parte per
      * dimenticanza.
      */
+    /**
+     * L'inizio della descrizione nelle schede dei corsi, con i tre puntini:
+     * lo stesso in «I miei corsi» e in «Esplora corsi» (10/10). Prima il
+     * taglio stava scritto nella sola pagina dei propri corsi, e il catalogo
+     * mostrava la descrizione intera. La larghezza e' quella di
+     * `mb_strimwidth()`, come e' sempre stata.
+     */
+    public const ESTRATTO_LARGHEZZA = 90;
+
+    public static function estratto(string $descrizione): string
+    {
+        return mb_strimwidth($descrizione, 0, self::ESTRATTO_LARGHEZZA, '…');
+    }
+
+    /** Se l'estratto lascia fuori qualcosa: solo allora serve «Leggi tutto». */
+    public static function estrattoTaglia(string $descrizione): bool
+    {
+        return mb_strwidth($descrizione) > self::ESTRATTO_LARGHEZZA;
+    }
+
     public static function enrollmentLabel(?string $mode): string
     {
         return match ($mode) {

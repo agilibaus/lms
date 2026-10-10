@@ -606,7 +606,7 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a, .qa-comando';
+    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1239,7 +1239,67 @@ EXTRA['Modifica corso con benvenuto (semina)'] = EXTRA['Quiz da svolgere'];
 // E «Due righe su di te» nella richiesta di iscrizione (10/10). Il campo c'e'
 // solo sotto un corso con l'iscrizione su richiesta: la semina ne crea uno, il
 // corso del mondo B; dove non ce n'e' nessuno il controllo lo dice e salta.
-EXTRA['Catalogo'] = EXTRA['Quiz da svolgere'];
+EXTRA['Catalogo'] = async (page, nome) => {
+    await EXTRA['Quiz da svolgere'](page, nome);
+
+    /*
+     * La descrizione nelle schede (10/10). Chiusa, una descrizione lunga si
+     * vede come in «I miei corsi»: l'estratto con i tre puntini, e niente del
+     * resto. «Leggi tutto» la apre dentro la scheda: l'estratto sparisce, il
+     * testo intero si vede, e «Chiudi» sta sotto il testo. Era il difetto
+     * segnalato da Alessandro: qui la descrizione si vedeva tutta.
+     */
+    const esito = await page.evaluate(async () => {
+        const schede = [...document.querySelectorAll('.catalog-card')];
+        const problemi = [];
+        let lunghe = 0;
+
+        for (const c of schede) {
+            const titolo = c.querySelector('h2').textContent.trim();
+            const leggi = c.querySelector('.catalogo-leggi');
+            const visibili = [...c.querySelectorAll('p.card-meta')].filter((p) => p.checkVisibility())
+                .map((p) => p.textContent.trim());
+            const piuLunga = Math.max(0, ...visibili.map((t) => t.length));
+
+            if (leggi === null) {
+                // Senza «Leggi tutto» la descrizione deve stare nell'estratto.
+                if (piuLunga > 91) {
+                    problemi.push(titolo + ': descrizione di ' + piuLunga + ' caratteri, intera e senza «Leggi tutto»');
+                }
+                continue;
+            }
+
+            lunghe++;
+            const estratto = c.querySelector('.catalogo-estratto').textContent.trim();
+
+            if (!estratto.endsWith('…') || piuLunga > 91) {
+                problemi.push(titolo + ': chiusa non mostra solo l\'estratto con i puntini (visibili ' + piuLunga + ' caratteri)');
+            }
+
+            leggi.open = true;
+            const testo = leggi.querySelector(':scope > p');
+            const s = leggi.querySelector(':scope > summary');
+
+            if (c.querySelector('.catalogo-estratto').checkVisibility()) {
+                problemi.push(titolo + ': aperta, l\'estratto resta sopra il testo intero');
+            }
+            if (!testo.checkVisibility() || testo.textContent.trim().length <= estratto.length) {
+                problemi.push(titolo + ': aperta, il testo intero non si vede');
+            }
+            if (s.getBoundingClientRect().top < testo.getBoundingClientRect().bottom - 1) {
+                problemi.push(titolo + ': aperta, «Chiudi» non sta sotto il testo');
+            }
+
+            leggi.open = false;
+        }
+
+        return { lunghe, problemi };
+    });
+
+    check(nome + ': le descrizioni lunghe sono tagliate, e «Leggi tutto» le apre', esito.problemi.length === 0, esito.problemi);
+    check(nome + ': c\'è almeno una descrizione lunga da provare', esito.lunghe > 0,
+        ['nessuna scheda con «Leggi tutto»: la prova qui sopra non ha visto niente']);
+};
 
 // E la pagina «Domande» dell'esperto: domanda e risposta, in attesa e
 // pubblicate (10/10).

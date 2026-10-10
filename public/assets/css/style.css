@@ -316,7 +316,7 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +324,7 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -640,6 +640,61 @@ h3 { font-size: 1.05rem; }
 .catalog-card-cover .course-card-cover-placeholder {
     width: 100%;
     height: 100%;
+}
+
+/* La descrizione lunga nel catalogo (10/10): l'estratto con i tre puntini e
+   «Leggi tutto», che apre il resto dentro la scheda. */
+.catalogo-leggi > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    list-style: none;
+    cursor: pointer;
+}
+
+.catalogo-leggi > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Un comando, non un collegamento in una frase (0125): neutro, sottolineato
+   al passaggio e sul telefono. Le due parole nella stessa cella, come
+   «Mostra» e «Nascondi»: il comando e' largo quanto la piu' lunga. */
+.catalogo-leggi-comando {
+    display: inline-grid;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+.catalogo-leggi-comando > span {
+    grid-area: 1 / 1;
+}
+
+.catalogo-se-aperto,
+.catalogo-leggi[open] .catalogo-se-chiuso {
+    visibility: hidden;
+}
+
+.catalogo-leggi[open] .catalogo-se-aperto {
+    visibility: visible;
+}
+
+/* Aperto: l'estratto sparisce, perche' il testo intero comincia allo stesso
+   modo, e «Chiudi» va sotto il testo, dove finisce la lettura. Il `display`
+   si da' solo al `details` aperto (la trappola dei `details` chiusi). Dove
+   `:has()` o un `details` flessibile non ci sono, il ripiego e' l'estratto
+   che resta e «Chiudi» sopra il testo: si legge lo stesso. */
+.catalogo-descrizione:has(> .catalogo-leggi[open]) > .catalogo-estratto {
+    display: none;
+}
+
+.catalogo-leggi[open] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.catalogo-leggi[open] > summary {
+    order: 2;
 }
 
 /* Anteprima nel pannello di amministrazione. */

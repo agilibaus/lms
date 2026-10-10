@@ -141,7 +141,12 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
             'm' => $lettera === 'B' ? 'request' : 'open',
             't' => $nome,
             's' => 'prova-permessi-' . strtolower($lettera) . '-' . bin2hex(random_bytes(4)),
-            'd' => 'Corso creato dalla verifica dei permessi.',
+            // Quella di B e' piu' lunga dell'estratto delle schede (10/10): nel
+            // catalogo dell'admin compare con i tre puntini e «Leggi tutto».
+            'd' => $lettera === 'B'
+                ? "Corso creato dalla verifica dei permessi. Ha una descrizione lunga apposta, su due paragrafi:\n\n"
+                    . 'nel catalogo deve comparire tagliata, con i tre puntini, e «Leggi tutto» la apre per intero.'
+                : 'Corso creato dalla verifica dei permessi.',
             'a' => $admin,
         ]);
     $corso = (int) $pdo->lastInsertId();

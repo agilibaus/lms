@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Auth\Auth;
 use App\Core\CourseCover;
 use App\Core\Csrf;
+use App\Models\CourseModel;
 
 /** @var array $courses */
 /** @var string $heading */
@@ -44,7 +45,7 @@ use App\Core\Csrf;
                     <h2><?= htmlspecialchars($course['title']) ?></h2>
                     <?php if (!empty($course['description'])): ?>
                         <p class="course-card-excerpt">
-                            <?= htmlspecialchars(mb_strimwidth($course['description'], 0, 90, '…')) ?>
+                            <?= htmlspecialchars(CourseModel::estratto((string) $course['description'])) ?>
                         </p>
                     <?php endif; ?>
 
