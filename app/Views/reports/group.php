@@ -21,7 +21,7 @@ $ordine = Ordinamento::daRichiesta([
 $rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link">&larr; Report</a>
+    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         Tutor: <?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?> ·

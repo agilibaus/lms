@@ -74,7 +74,7 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
 };
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link">&larr; Report</a>
+    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1><?= $esc((string) $sezione['titolo']) ?></h1>
     <p class="page-subtitle"><?= $esc((string) $sezione['occhiello']) ?></p>
     <?php if ($restricted): ?>

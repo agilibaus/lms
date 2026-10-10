@@ -7,7 +7,7 @@ use App\Core\Csrf;
 /** @var array|null $course */
 ?>
 <div class="page-header">
-    <a href="/admin/courses" class="back-link">&larr; Gestione corsi</a>
+    <a href="/admin/courses" class="back-link"><span class="back-link-testo">Gestione corsi</span></a>
     <h1>Nuovo corso</h1>
 </div>
 

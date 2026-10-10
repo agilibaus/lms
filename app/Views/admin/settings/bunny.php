@@ -16,7 +16,7 @@ use App\Core\Csrf;
  */
 ?>
 <div class="page-header">
-    <a href="/admin/settings" class="back-link">← Impostazioni</a>
+    <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Bunny Stream</h1>
     <p class="page-subtitle">
         Dove stanno i video dei corsi, e come si impedisce che un indirizzo copiato dagli

@@ -23,7 +23,7 @@ $correct = (int) round($scorePct / 100 * $scoredCount);
 $soloAperte = $scoredCount === 0;
 ?>
 <div class="page-header">
-    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link">&larr; <?= htmlspecialchars($course['title'] ?? 'Corso') ?></a>
+    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
     <h1>Esito: <?= htmlspecialchars($quiz['title']) ?></h1>
 </div>
 

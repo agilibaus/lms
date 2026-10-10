@@ -612,6 +612,23 @@ stessa fila abbiano il testo sulla stessa riga e lo stesso carattere; poi rifà 
 **senza mouse** e verifica che ogni comando sia sottolineato. Il giro «telefono» normale non
 basta: cambia la larghezza, ma il browser ha ancora il mouse.
 
+### Il collegamento «indietro»
+
+In cima a molte pagine, sopra il titolo, il collegamento alla pagina da cui si arriva
+(`.back-link`): grigio come il testo secondario e verde con il mouse, a **0,90 rem su desktop** e
+0,85 sul telefono. Davanti al testo c'è un **triangolo pieno** (10/10, scelto su un mockup), al
+posto della freccia «←», che era quasi invisibile. Il triangolo è una forma, non un carattere, ed è
+**alto quanto le maiuscole** del carattere in uso (`1cap`, appoggiato sulla linea di base): così è
+uguale su Windows e altrove, e quando il collegamento va a capo resta sulla prima riga. Si scrive
+così, senza freccia:
+
+```php
+<a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
+```
+
+`accessibilita.js` controlla su ogni pagina che ci sia il triangolo, alto quanto le maiuscole, e
+che non sia rimasta una freccia scritta.
+
 ## Tabelle ordinabili
 
 **Ogni tabella in cui l'ordine è un dato si ordina cliccando sul nome della colonna.** Il

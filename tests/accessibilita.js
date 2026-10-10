@@ -614,6 +614,63 @@ const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])'
  * dispositivo ha il passaggio del mouse: con il mouse i comandi sono neutri
  * a riposo, senza devono essere sottolineati.
  */
+/**
+ * Il collegamento «indietro» (10/10, Alessandro): al posto della freccia «←»,
+ * quasi invisibile, un triangolo pieno disegnato come forma davanti al testo
+ * (`.back-link-testo::before`), alto quanto le maiuscole del carattere in uso.
+ * Una pagina nuova scritta alla vecchia maniera — `&larr;` senza lo span —
+ * avrebbe la freccia e nessun triangolo: qui diventa un rilievo.
+ *
+ * L'altezza si confronta con un segnaposto alto `1cap` appoggiato sulla
+ * linea di base, misurato nello stesso punto; null se la pagina non ha il
+ * collegamento.
+ */
+async function collegamentoIndietro(page) {
+    return page.evaluate(() => {
+        const link = [...document.querySelectorAll('.back-link')];
+
+        if (link.length === 0) {
+            return null;
+        }
+
+        const problemi = [];
+
+        link.forEach((a) => {
+            const nome = '«' + a.textContent.trim().slice(0, 40) + '»';
+            const testo = a.querySelector(':scope > .back-link-testo');
+
+            if (/^[\s]*(←|⟵|&larr;)/.test(a.textContent)) {
+                problemi.push(nome + ': c\'è ancora la freccia scritta');
+            }
+
+            if (testo === null) {
+                problemi.push(nome + ': manca .back-link-testo, quindi manca il triangolo');
+                return;
+            }
+
+            const prima = getComputedStyle(testo, '::before');
+
+            if (prima.content === 'none' || parseFloat(prima.width) <= 0) {
+                problemi.push(nome + ': il triangolo non c\'è');
+                return;
+            }
+
+            const s = document.createElement('span');
+            s.style.cssText = 'display:inline-block;width:0;height:1cap;vertical-align:baseline';
+            testo.appendChild(s);
+            const maiuscole = s.getBoundingClientRect().height;
+            s.remove();
+
+            if (Math.abs(parseFloat(prima.height) - maiuscole) > 0.25) {
+                problemi.push(nome + ': triangolo alto ' + parseFloat(prima.height).toFixed(2)
+                    + 'px, maiuscole ' + maiuscole.toFixed(2) + 'px');
+            }
+        });
+
+        return problemi;
+    });
+}
+
 async function comeSiRiconoscono(page) {
     // Il puntatore lontano da tutto: un comando sotto il mouse e'
     // sottolineato per regola, e il controllo lo scambierebbe per un errore.
@@ -750,6 +807,12 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     check(nome + ': i comandi di una fila hanno il testo sulla stessa riga', segni.sfalsati.length === 0, segni.sfalsati);
     check(nome + ': i comandi di una fila usano lo stesso carattere', segni.caratteri.length === 0, segni.caratteri);
     check(nome + ': un modulo che segue un altro modulo ne sta staccato', segni.attaccati.length === 0, segni.attaccati);
+
+    const indietro = await collegamentoIndietro(page);
+    if (indietro !== null) {
+        check(nome + ': il collegamento «indietro» ha il triangolo alto quanto le maiuscole, e nessuna freccia scritta',
+            indietro.length === 0, indietro);
+    }
     check(nome + ': nei moduli pubblici ogni etichetta sta alla stessa distanza dal suo campo', segni.distanze.length === 0, segni.distanze);
     if (segni.conMouse) {
         check(nome + ': con il mouse i comandi sono neutri a riposo',

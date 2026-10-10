@@ -26,7 +26,7 @@ $ordine = Ordinamento::daRichiesta([
 $righe = $ordine->applica($righe);
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link">&larr; Report</a>
+    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1>Fruizione dei video</h1>
     <p class="page-subtitle"><?= htmlspecialchars((string) $course['title']) ?></p>
     <div class="page-actions">

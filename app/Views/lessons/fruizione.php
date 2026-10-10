@@ -47,7 +47,7 @@ $quando = static function (?string $data): string {
 ?>
 <div class="page-header">
     <a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="back-link">
-        &larr; <?= htmlspecialchars($course['title']) ?> &mdash; <?= htmlspecialchars($lesson['title']) ?>
+        <span class="back-link-testo"><?= htmlspecialchars($course['title']) ?> &mdash; <?= htmlspecialchars($lesson['title']) ?></span>
     </a>
     <h1>Fruizione del video</h1>
     <p class="page-subtitle">

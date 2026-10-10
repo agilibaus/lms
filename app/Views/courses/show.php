@@ -23,7 +23,7 @@ use App\Core\Csrf;
 $isStaff = CourseRights::canEdit((int) $course['id']);
 ?>
 <div class="page-header">
-    <a href="/" class="back-link">&larr; <?= Auth::hasRole('admin', 'tutor', 'assistente') ? 'Tutti i corsi' : 'I miei corsi' ?></a>
+    <a href="/" class="back-link"><span class="back-link-testo"><?= Auth::hasRole('admin', 'tutor', 'assistente') ? 'Tutti i corsi' : 'I miei corsi' ?></span></a>
     <h1><?= htmlspecialchars($course['title']) ?></h1>
 </div>
 

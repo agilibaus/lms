@@ -19,7 +19,7 @@ $action = $isEdit ? '/lessons/' . $lessonId : '/modules/' . $module['id'] . '/le
 $provider = $lesson['video_provider'] ?? 'none';
 ?>
 <div class="page-header">
-    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link">&larr; Torna al corso</a>
+    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo">Torna al corso</span></a>
     <h1><?= $isEdit ? 'Modifica lezione' : 'Nuova lezione' ?> &mdash; <?= htmlspecialchars($module['title']) ?></h1>
 </div>
 

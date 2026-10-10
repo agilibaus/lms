@@ -34,7 +34,7 @@ $campi = [
 ];
 ?>
 <div class="page-header">
-    <a href="/admin/settings" class="back-link">← Impostazioni</a>
+    <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Inviti alle sessioni live</h1>
     <p class="page-subtitle">
         Oggetto e testo delle email che i partecipanti ricevono per gli incontri dal vivo.

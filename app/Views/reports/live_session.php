@@ -40,7 +40,7 @@ $ordine = Ordinamento::daRichiesta([
 $rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link">&larr; Report</a>
+    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1><?= htmlspecialchars((string) $session['title']) ?></h1>
     <p class="page-subtitle">
         <?= htmlspecialchars($inizio->format('d/m/Y H:i')) ?>–<?= htmlspecialchars($fine->format('H:i')) ?>

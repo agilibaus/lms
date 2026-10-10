@@ -62,7 +62,7 @@ $conPresentazione = array_values(array_filter(
 ));
 ?>
 <div class="page-header">
-    <a href="/profilo" class="back-link">&larr; Profilo</a>
+    <a href="/profilo" class="back-link"><span class="back-link-testo">Profilo</span></a>
     <h1><?= htmlspecialchars(GroupPageController::titolo((string) $group['name'])) ?></h1>
     <p class="page-subtitle">
         <?= $quanti === 1 ? '1 partecipante' : $quanti . ' partecipanti' ?>

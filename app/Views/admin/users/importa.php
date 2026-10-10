@@ -12,7 +12,7 @@ use App\Core\UserImport;
  */
 ?>
 <div class="page-header">
-    <a href="/admin/users" class="back-link">← Utenti</a>
+    <a href="/admin/users" class="back-link"><span class="back-link-testo">Utenti</span></a>
     <h1>Importa utenti</h1>
     <p class="page-subtitle">
         Un file CSV con un elenco di persone. Vengono create come studenti, e la password

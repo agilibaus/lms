@@ -14,7 +14,7 @@ use App\Core\Csrf;
  */
 ?>
 <div class="page-header">
-    <a href="/admin/users/importa" class="back-link">← Importa utenti</a>
+    <a href="/admin/users/importa" class="back-link"><span class="back-link-testo">Importa utenti</span></a>
     <h1>Anteprima</h1>
     <p class="page-subtitle">
         <?= htmlspecialchars($nomeFile) ?> — <?= count($righe) ?> righe lette.

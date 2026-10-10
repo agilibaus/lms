@@ -44,7 +44,7 @@ $liveSessions = $ordineIncontri->applica(array_map(
 ));
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link">&larr; Report</a>
+    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1><?= htmlspecialchars((string) $student['full_name']) ?></h1>
     <p class="page-subtitle"><?= htmlspecialchars((string) $student['email']) ?> · <?= htmlspecialchars(Auth::roleLabel((string) $student['role'])) ?></p>
     <?php if ($liveAttendance['total'] > 0): ?>

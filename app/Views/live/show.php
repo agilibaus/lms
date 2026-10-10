@@ -46,7 +46,7 @@ $isPast = $endsAt < $now;
 $apribile = (bool) ($session['joinable'] ?? false);
 ?>
 <div class="page-header">
-    <a href="/live" class="back-link">&larr; Sessioni live</a>
+    <a href="/live" class="back-link"><span class="back-link-testo">Sessioni live</span></a>
     <h1><?= htmlspecialchars((string) $session['title']) ?></h1>
     <p class="page-subtitle">
         <?= htmlspecialchars($startsAt->format('d/m/Y H:i')) ?>–<?= htmlspecialchars($endsAt->format('H:i')) ?>

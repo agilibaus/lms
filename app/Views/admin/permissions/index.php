@@ -12,7 +12,7 @@ use App\Core\Csrf;
 /** @var string[] $extraKeys */
 ?>
 <div class="page-header">
-    <a href="/admin/settings" class="back-link">← Impostazioni</a>
+    <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Permessi</h1>
     <p class="page-subtitle">
         I privilegi vivono nella tabella <code>role_permissions</code>: si cambiano da qui, senza toccare il codice.

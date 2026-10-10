@@ -16,7 +16,7 @@ use App\Core\Csrf;
  */
 ?>
 <div class="page-header">
-    <a href="/admin/settings" class="back-link">← Impostazioni</a>
+    <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Google Meet</h1>
     <p class="page-subtitle">
         Serve a creare il link Meet insieme all'evento di calendario quando programmi una sessione live.

@@ -27,7 +27,7 @@ $minutoSecondo = static function (int $secondi): string {
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $course['id'] ?>" class="back-link">
-        &larr; <?= htmlspecialchars($course['title']) ?> &mdash; <?= htmlspecialchars($module['title']) ?>
+        <span class="back-link-testo"><?= htmlspecialchars($course['title']) ?> &mdash; <?= htmlspecialchars($module['title']) ?></span>
     </a>
     <h1 class="lesson-title">
         <?= htmlspecialchars($lesson['title']) ?>

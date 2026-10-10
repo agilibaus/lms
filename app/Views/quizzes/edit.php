@@ -14,7 +14,7 @@ use App\Core\QuizScoring;
 /** @var int $maxOptions */
 ?>
 <div class="page-header">
-    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link">&larr; <?= htmlspecialchars($course['title'] ?? 'Corso') ?></a>
+    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
     <h1><?= htmlspecialchars($quiz['title']) ?></h1>
     <p class="page-subtitle">
         Modulo: <?= htmlspecialchars($module['title']) ?> ·

@@ -16,7 +16,7 @@ use App\Core\Csrf;
 $fromFile = static fn (string $key): bool => ($sources[$key] ?? '') === 'file';
 ?>
 <div class="page-header">
-    <a href="/admin/settings" class="back-link">← Impostazioni</a>
+    <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Posta elettronica</h1>
     <p class="page-subtitle">
         Come la piattaforma invia verifiche dell'indirizzo, recuperi password e avvisi di iscrizione.

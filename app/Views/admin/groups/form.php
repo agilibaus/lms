@@ -9,7 +9,7 @@ use App\Core\Csrf;
 /** @var bool $canChooseTutor */
 ?>
 <div class="page-header">
-    <a href="/admin/groups" class="back-link">&larr; Gruppi</a>
+    <a href="/admin/groups" class="back-link"><span class="back-link-testo">Gruppi</span></a>
     <h1>Nuovo gruppo</h1>
 </div>
 

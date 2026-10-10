@@ -32,7 +32,7 @@ use App\Core\Theme;
  */
 ?>
 <div class="page-header">
-    <a href="/admin/settings" class="back-link">← Impostazioni</a>
+    <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Aspetto</h1>
     <p class="page-subtitle">
         Le impostazioni sono divise per <strong>dove fanno effetto</strong>: prima quelle

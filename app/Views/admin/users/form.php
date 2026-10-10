@@ -25,7 +25,7 @@ $puoCaricareFoto = Auth::can('user.manage');
 $haFoto = !empty($user['avatar_path']);
 ?>
 <div class="page-header">
-    <a href="/admin/users" class="back-link">&larr; Utenti</a>
+    <a href="/admin/users" class="back-link"><span class="back-link-testo">Utenti</span></a>
     <h1><?= $isEdit ? 'Modifica utente' : 'Nuovo utente' ?></h1>
 </div>
 

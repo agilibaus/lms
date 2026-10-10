@@ -489,6 +489,39 @@ h3 { font-size: 1.05rem; }
     color: var(--color-primary);
 }
 
+/* Il collegamento «indietro» (10/10, Alessandro, variante A del mockup):
+   0,90 rem su desktop, 0,85 sul telefono; al posto della freccia «←», quasi
+   invisibile, un triangolo pieno nel colore del testo, che col mouse diventa
+   verde con lui.
+
+   Il triangolo e' una forma, non un carattere (la regola delle virgolette
+   giganti): un carattere cade in un punto diverso con ogni carattere
+   installato. Sta davanti al testo, dentro `.back-link-testo` e non come
+   elemento della riga flessibile, per due motivi misurati: appoggiato sulla
+   linea di base e alto `1cap` e' alto esattamente quanto le maiuscole, con
+   qualunque carattere (Segoe UI su Windows, il ripiego qui); e quando il
+   collegamento va a capo resta sulla prima riga, dove centrato nella riga
+   flessibile finiva a meta' fra le due. `0.7em` e' il ripiego dei browser
+   che non conoscono `cap`. */
+@media (min-width: 769px) {
+    .back-link {
+        font-size: 0.90rem;
+    }
+}
+
+.back-link-testo::before {
+    content: '';
+    display: inline-block;
+    height: 0.7em;
+    height: 1cap;
+    aspect-ratio: 10 / 12;
+    margin-right: 0.45em;
+    vertical-align: baseline;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 12'%3E%3Cpolygon points='10,0 10,12 0,6'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 12'%3E%3Cpolygon points='10,0 10,12 0,6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
 /* ---------- Course grid / cards ---------- */
 
 .course-grid {

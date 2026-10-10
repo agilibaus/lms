@@ -22,7 +22,7 @@ $toInput = static function (?string $value): string {
 };
 ?>
 <div class="page-header">
-    <a href="/live" class="back-link">&larr; Sessioni live</a>
+    <a href="/live" class="back-link"><span class="back-link-testo">Sessioni live</span></a>
     <h1><?= $isEdit ? 'Modifica sessione' : 'Nuova sessione live' ?></h1>
 </div>
 

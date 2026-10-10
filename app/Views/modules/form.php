@@ -13,7 +13,7 @@ $moduleId = (int) ($module['id'] ?? 0);
 $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/modules';
 ?>
 <div class="page-header">
-    <a href="/courses/<?= (int) $course['id'] ?>" class="back-link">&larr; <?= htmlspecialchars($course['title']) ?></a>
+    <a href="/courses/<?= (int) $course['id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title']) ?></span></a>
     <h1><?= $isEdit ? 'Modifica modulo' : 'Nuovo modulo' ?></h1>
 </div>
 

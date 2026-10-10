@@ -24,7 +24,7 @@ $ordineMembri = Ordinamento::daRichiesta([
 $members = $ordineMembri->applica($members);
 ?>
 <div class="page-header">
-    <a href="/admin/groups" class="back-link">&larr; Gruppi</a>
+    <a href="/admin/groups" class="back-link"><span class="back-link-testo">Gruppi</span></a>
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         <?= count($members) ?> membri · <?= count($courses) ?> corsi assegnati ·

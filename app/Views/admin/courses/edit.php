@@ -30,7 +30,7 @@ $ordineIscritti = Ordinamento::daRichiesta([
 $enrollments = $ordineIscritti->applica($enrollments);
 ?>
 <div class="page-header">
-    <a href="/admin/courses" class="back-link">&larr; Gestione corsi</a>
+    <a href="/admin/courses" class="back-link"><span class="back-link-testo">Gestione corsi</span></a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
         <?= count($enrollments) ?> iscritti ·
