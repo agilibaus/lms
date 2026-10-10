@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Core\CampoContato;
 use App\Auth\CourseRights;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
@@ -41,6 +42,9 @@ class QuizController
      * Nessuna migrazione.
      */
     public const MAX_OPEN_CHARS = 3000;
+
+    /** Il testo di una domanda del questionario: 500 caratteri (10/10, Alessandro). */
+    public const MAX_QUESTION_CHARS = 500;
 
     // ---------------------------------------------------------------
     // Gestione quiz — admin/tutor
@@ -586,7 +590,7 @@ class QuizController
      */
     private function questionFromPost(): array
     {
-        $text = trim($_POST['question_text'] ?? '');
+        $text = CampoContato::taglia((string) ($_POST['question_text'] ?? ''), self::MAX_QUESTION_CHARS);
 
         if ($text === '') {
             throw new \RuntimeException('Il testo della domanda è obbligatorio.');

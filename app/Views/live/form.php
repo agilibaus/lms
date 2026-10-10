@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Controllers\LiveSessionController;
+use App\Core\CampoContato;
 use App\Core\Csrf;
 
 /** @var array|null $session */
@@ -42,8 +44,9 @@ $toInput = static function (?string $value): string {
     <input type="text" id="title" name="title" maxlength="200" required
            value="<?= htmlspecialchars((string) ($session['title'] ?? '')) ?>">
 
-    <label for="description">Descrizione</label>
-    <textarea id="description" name="description" rows="3"><?= htmlspecialchars((string) ($session['description'] ?? '')) ?></textarea>
+    <?= CampoContato::html('description', 'Descrizione', 'description', LiveSessionController::MAX_DESCRIPTION_CHARS,
+        (string) ($session['description'] ?? ''), 3) ?>
+    <script src="/assets/js/quiz-open-count.js"></script>
 
     <label for="starts_at">Inizio</label>
     <input type="datetime-local" id="starts_at" name="starts_at" required

@@ -19,6 +19,14 @@ namespace App\Core;
  */
 class AuthLayout
 {
+    /**
+     * Titolo e testo della presentazione nella pagina di accesso affiancata
+     * (10/10, Alessandro): 300 e 500 caratteri, con il contatore.
+     */
+    public const MAX_TITOLO = 300;
+
+    public const MAX_TESTO = 500;
+
     /** Riquadro centrato sul fondo crema con i cerchi: com'e' sempre stato. */
     public const GUSCIO = 'guscio';
 

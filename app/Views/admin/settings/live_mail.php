@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Core\CampoContato;
 use App\Core\Csrf;
+use App\Core\Mail\LiveSessionMail;
 
 /**
  * @var array<string, string> $values
@@ -89,9 +91,8 @@ $campi = [
                    value="<?= htmlspecialchars($values[$campo['oggetto']]) ?>"
                    placeholder="<?= htmlspecialchars($defaults[$campo['oggetto']]) ?>">
 
-            <label for="<?= $campo['testo'] ?>">Testo</label>
-            <textarea id="<?= $campo['testo'] ?>" name="<?= $campo['testo'] ?>" rows="15"
-                      placeholder="<?= htmlspecialchars($defaults[$campo['testo']]) ?>"><?= htmlspecialchars($values[$campo['testo']]) ?></textarea>
+            <?= CampoContato::html($campo['testo'], 'Testo', $campo['testo'], LiveSessionMail::MAX_BODY_CHARS,
+                (string) $values[$campo['testo']], 15, false, (string) $defaults[$campo['testo']]) ?>
             <p class="form-hint">Lasciando vuoto vale il testo che vedi in grigio.</p>
         </section>
     <?php endforeach; ?>
@@ -100,6 +101,7 @@ $campi = [
         <button type="submit" class="btn btn-primary">Salva</button>
     </div>
 </form>
+<script src="/assets/js/quiz-open-count.js"></script>
 
 <?php if ($lastUpdate !== null): ?>
     <p class="card-meta">

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Controllers\QuizController;
+use App\Core\CampoContato;
 use App\Core\QuizScoring;
 
 /**
@@ -45,8 +47,11 @@ if ($type === 'true_false') {
    una risposta corretta sola in un tipo che ne vuole piu' d'una. */
 $perTipo = static fn (string $tipo): array => $type === $tipo ? $valori : [];
 ?>
-<label for="<?= $formId ?>-text">Testo della domanda</label>
-<textarea id="<?= $formId ?>-text" name="question_text" rows="2" required><?= htmlspecialchars($question['question_text'] ?? '') ?></textarea>
+<?= CampoContato::html($formId . '-text', 'Testo della domanda', 'question_text', QuizController::MAX_QUESTION_CHARS,
+    (string) ($question['question_text'] ?? ''), 2, true) ?>
+<?php /* Lo script collega ogni campo una volta sola: la pagina del
+         questionario include questi campi una volta per domanda. */ ?>
+<script src="/assets/js/quiz-open-count.js"></script>
 
 <label for="<?= $formId ?>-type">Tipo</label>
 <select id="<?= $formId ?>-type" name="question_type" data-question-type>

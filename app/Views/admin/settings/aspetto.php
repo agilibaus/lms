@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\AuthLayout;
+use App\Core\CampoContato;
 use App\Core\Csrf;
 use App\Core\Theme;
 
@@ -308,17 +310,16 @@ use App\Core\Theme;
             Su schermo stretto si riducono in proporzione alla misura scelta.
         </p>
 
-        <label for="AUTH_SPLIT_TITLE">Titolo</label>
-        <textarea id="AUTH_SPLIT_TITLE" name="AUTH_SPLIT_TITLE" rows="2"
-                  placeholder="<?= htmlspecialchars($defaults['AUTH_SPLIT_TITLE']) ?>"><?= htmlspecialchars($values['AUTH_SPLIT_TITLE']) ?></textarea>
+        <?= CampoContato::html('AUTH_SPLIT_TITLE', 'Titolo', 'AUTH_SPLIT_TITLE', AuthLayout::MAX_TITOLO,
+            (string) $values['AUTH_SPLIT_TITLE'], 2, false, (string) $defaults['AUTH_SPLIT_TITLE']) ?>
         <p class="form-hint">
             Gli a capo che scrivi qui valgono anche nella pagina: servono a decidere tu dove
             spezza il titolo, invece di lasciarlo alla larghezza della finestra.
         </p>
 
-        <label for="AUTH_SPLIT_TEXT">Testo sotto il titolo</label>
-        <textarea id="AUTH_SPLIT_TEXT" name="AUTH_SPLIT_TEXT" rows="3"
-                  placeholder="<?= htmlspecialchars($defaults['AUTH_SPLIT_TEXT']) ?>"><?= htmlspecialchars($values['AUTH_SPLIT_TEXT']) ?></textarea>
+        <?= CampoContato::html('AUTH_SPLIT_TEXT', 'Testo sotto il titolo', 'AUTH_SPLIT_TEXT', AuthLayout::MAX_TESTO,
+            (string) $values['AUTH_SPLIT_TEXT'], 3, false, (string) $defaults['AUTH_SPLIT_TEXT']) ?>
+        <script src="/assets/js/quiz-open-count.js"></script>
     </section>
 
     </div>

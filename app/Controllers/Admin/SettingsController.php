@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Core\CampoContato;
 use App\Core\AuthLayout;
 use App\Core\BunnyToken;
 use App\Core\ElementStyle;
@@ -235,6 +236,12 @@ class SettingsController extends AdminController
         foreach (Settings::LIVE_MAIL_KEYS as $key) {
             $value = trim(str_replace("\r\n", "\n", (string) ($_POST[$key] ?? '')));
 
+            // I testi, non gli oggetti, hanno il limite di 1.000 caratteri
+            // (10/10); l'oggetto ha gia' il suo nel campo, di 200.
+            if (!in_array($key, LiveSessionMail::SUBJECT_KEYS, true)) {
+                $value = CampoContato::taglia($value, LiveSessionMail::MAX_BODY_CHARS);
+            }
+
             // Un oggetto su piu' righe spezzerebbe l'intestazione del
             // messaggio: si rifiuta qui, dove si puo' ancora correggere.
             if (in_array($key, LiveSessionMail::SUBJECT_KEYS, true) && str_contains($value, "\n")) {
@@ -365,8 +372,8 @@ class SettingsController extends AdminController
         }
 
         Settings::set('AUTH_LAYOUT', $layout, $userId);
-        Settings::set('AUTH_SPLIT_TITLE', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TITLE'] ?? ''))), $userId);
-        Settings::set('AUTH_SPLIT_TEXT', trim(str_replace("\r\n", "\n", (string) ($_POST['AUTH_SPLIT_TEXT'] ?? ''))), $userId);
+        Settings::set('AUTH_SPLIT_TITLE', CampoContato::taglia((string) ($_POST['AUTH_SPLIT_TITLE'] ?? ''), AuthLayout::MAX_TITOLO), $userId);
+        Settings::set('AUTH_SPLIT_TEXT', CampoContato::taglia((string) ($_POST['AUTH_SPLIT_TEXT'] ?? ''), AuthLayout::MAX_TESTO), $userId);
         Settings::set(Theme::KEY_PALETTE, $palette, $userId);
         Settings::set(Theme::KEY_PRIMARY, $primario, $userId);
         Settings::set(Theme::KEY_RADIUS, $raggio, $userId);

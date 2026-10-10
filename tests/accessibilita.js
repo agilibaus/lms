@@ -1247,6 +1247,15 @@ EXTRA['Catalogo'] = EXTRA['Quiz da svolgere'];
 // pubblicate (10/10).
 EXTRA['Domande in attesa (semina)'] = EXTRA['Quiz da svolgere'];
 
+// E i campi che hanno avuto il limite il 10/10: descrizione del gruppo e
+// della sessione dal vivo, testo della domanda del questionario, titolo e
+// testo della pagina d'accesso, testi delle tre email degli inviti.
+for (const pagina of ['Nuovo gruppo', 'Modifica gruppo', 'Modifica gruppo con corso (semina)',
+    'Nuovo incontro', 'Modifica incontro', 'Quiz: domande', 'Modifica domanda',
+    'Modifica domanda vero/falso (semina)', 'Aspetto', 'Inviti sessioni live']) {
+    EXTRA[pagina] = EXTRA['Quiz da svolgere'];
+}
+
 /**
  * Nessuno scorrimento orizzontale, e quando c'e' il nome dell'elemento che
  * lo causa: «la pagina e' larga» da sola non si sa da dove prenderla.

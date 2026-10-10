@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Controllers\Admin\GroupController;
+use App\Core\CampoContato;
 use App\Core\GroupLogo;
 
 /**
@@ -29,8 +31,9 @@ use App\Core\GroupLogo;
     lo sfondo trasparente dei PNG viene mantenuto. Senza immagine, il gruppo mostra le proprie iniziali.
 </p>
 
-<label for="description">Descrizione</label>
-<textarea id="description" name="description" rows="3"><?= htmlspecialchars((string) ($group['description'] ?? '')) ?></textarea>
+<?= CampoContato::html('description', 'Descrizione', 'description', GroupController::MAX_DESCRIPTION_CHARS,
+    (string) ($group['description'] ?? ''), 3) ?>
+<script src="/assets/js/quiz-open-count.js"></script>
 
 <?php /* Il link compare agli studenti del gruppo nel benvenuto del tutor, in
          cima ai corsi (07/10). E' una chiave d'accesso al gruppo WhatsApp:

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\CampoContato;
 use App\Core\Csrf;
 use App\Models\QuestionModel;
 
@@ -24,24 +25,6 @@ use App\Models\QuestionModel;
  */
 
 $quante = count($domande);
-
-// Un campo di testo con il limite e il contatore sopra l'angolo in alto a
-// destra (10/10): lo schema della presentazione del profilo, con le stesse
-// classi e lo stesso script. Il numero di partenza lo scrive il server,
-// contando il testo gia' scritto con gli a capo come li conta il campo.
-$campoContato = static function (string $id, string $etichetta, string $nome, int $massimo, string $valore, int $righe): string {
-    $restano = max(0, $massimo - mb_strlen(str_replace("\r\n", "\n", $valore)));
-
-    return '<div class="quiz-open-wrap campo-contato">'
-        . '<div class="campo-contato-testa">'
-        . '<label for="' . $id . '">' . htmlspecialchars($etichetta) . '</label>'
-        . '<span class="quiz-open-count" id="' . $id . '-resta" data-max="' . $massimo . '">'
-        . $restano . ($restano === 1 ? ' carattere rimasto' : ' caratteri rimasti') . '</span>'
-        . '</div>'
-        . '<textarea id="' . $id . '" name="' . $nome . '" rows="' . $righe . '" required maxlength="' . $massimo . '"'
-        . ' class="quiz-open-answer" aria-describedby="' . $id . '-resta">' . htmlspecialchars($valore) . '</textarea>'
-        . '</div>';
-};
 ?>
 <?php foreach ([['flash_success', 'alert-success'], ['flash_error', 'alert-error']] as [$chiave, $classe]): ?>
     <?php if (!empty($_SESSION[$chiave])): ?>
@@ -84,12 +67,12 @@ $campoContato = static function (string $id, string $etichetta, string $nome, in
                 <option value="" <?= $q['module_id'] === null ? 'selected' : '' ?>>Il corso in generale</option>
             </select>
 
-            <?= $campoContato('domanda-' . $qid . '-testo', 'Domanda, come verrà pubblicata', 'question',
-                QuestionModel::MAX_QUESTION_CHARS, (string) $q['question'], 3) ?>
+            <?= CampoContato::html('domanda-' . $qid . '-testo', 'Domanda, come verrà pubblicata', 'question',
+                QuestionModel::MAX_QUESTION_CHARS, (string) $q['question'], 3, true) ?>
             <p class="form-hint">Puoi correggerla prima di pubblicarla, per esempio per togliere dettagli personali.</p>
 
-            <?= $campoContato('domanda-' . $qid . '-risposta', 'Risposta', 'answer',
-                QuestionModel::MAX_ANSWER_CHARS, '', 5) ?>
+            <?= CampoContato::html('domanda-' . $qid . '-risposta', 'Risposta', 'answer',
+                QuestionModel::MAX_ANSWER_CHARS, '', 5, true) ?>
 
             <div class="form-actions qa-azioni">
                 <button type="submit" class="btn btn-primary">Pubblica</button>
@@ -153,11 +136,11 @@ foreach ($pubblicate as $q) {
                                         <option value="" <?= $q['module_id'] === null ? 'selected' : '' ?>>Il corso in generale</option>
                                     </select>
 
-                                    <?= $campoContato('pubblicata-' . $qid . '-testo', 'Domanda', 'question',
-                                        QuestionModel::MAX_QUESTION_CHARS, (string) $q['question'], 3) ?>
+                                    <?= CampoContato::html('pubblicata-' . $qid . '-testo', 'Domanda', 'question',
+                                        QuestionModel::MAX_QUESTION_CHARS, (string) $q['question'], 3, true) ?>
 
-                                    <?= $campoContato('pubblicata-' . $qid . '-risposta', 'Risposta', 'answer',
-                                        QuestionModel::MAX_ANSWER_CHARS, (string) $q['answer'], 5) ?>
+                                    <?= CampoContato::html('pubblicata-' . $qid . '-risposta', 'Risposta', 'answer',
+                                        QuestionModel::MAX_ANSWER_CHARS, (string) $q['answer'], 5, true) ?>
 
                                     <div class="form-actions qa-azioni">
                                         <button type="submit" class="btn btn-primary">Salva</button>

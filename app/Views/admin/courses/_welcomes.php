@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\Admin\TutorWelcomeController;
 use App\Auth\Auth;
+use App\Core\CampoContato;
 use App\Core\Csrf;
 use App\Core\TutorWelcome;
 
@@ -24,23 +25,6 @@ $courseId = (int) $course['id'];
 $maxAudioMb = (int) (TutorWelcome::AUDIO_MAX_BYTES / 1024 / 1024);
 $tutti = Auth::can('course.welcome');
 
-// Un campo di testo con il limite e il contatore sopra l'angolo in alto a
-// destra (10/10): lo schema della presentazione del profilo, con le stesse
-// classi e lo stesso script. Il numero di partenza lo scrive il server,
-// contando il testo gia' scritto con gli a capo come li conta il campo.
-$campoContato = static function (string $id, string $etichetta, string $nome, int $massimo, string $valore, int $righe): string {
-    $restano = max(0, $massimo - mb_strlen(str_replace("\r\n", "\n", $valore)));
-
-    return '<div class="quiz-open-wrap campo-contato">'
-        . '<div class="campo-contato-testa">'
-        . '<label for="' . $id . '">' . htmlspecialchars($etichetta) . '</label>'
-        . '<span class="quiz-open-count" id="' . $id . '-resta" data-max="' . $massimo . '">'
-        . $restano . ($restano === 1 ? ' carattere rimasto' : ' caratteri rimasti') . '</span>'
-        . '</div>'
-        . '<textarea id="' . $id . '" name="' . $nome . '" rows="' . $righe . '" required maxlength="' . $massimo . '"'
-        . ' class="quiz-open-answer" aria-describedby="' . $id . '-resta">' . htmlspecialchars($valore) . '</textarea>'
-        . '</div>';
-};
 ?>
 <section class="card" id="benvenuti">
     <h2><?= $tutti ? 'Benvenuto dei tutor' : 'Il tuo benvenuto' ?></h2>
@@ -103,8 +87,8 @@ $campoContato = static function (string $id, string $etichetta, string $nome, in
                        <?= $esiste ? '' : 'required' ?>>
                 <p class="form-hint">MP3 o M4A, fino a <?= $maxAudioMb ?> MB: un minuto o due.</p>
 
-                <?= $campoContato($c . '-testo', 'Testo del benvenuto', 'transcript',
-                    TutorWelcomeController::TRANSCRIPT_MAX_CHARS, (string) ($w['transcript'] ?? ''), 5) ?>
+                <?= CampoContato::html($c . '-testo', 'Testo del benvenuto', 'transcript',
+                    TutorWelcomeController::TRANSCRIPT_MAX_CHARS, (string) ($w['transcript'] ?? ''), 5, true) ?>
                 <p class="form-hint">
                     Quello che il tutor dice nell'audio. Obbligatorio: lo legge chi non sente, o chi in
                     quel momento non può ascoltare.

@@ -288,10 +288,26 @@ coprirebbe con la propria voce quello che la persona sta scrivendo; il collegame
 `answer_text` è un TEXT da 65.535 byte e 3.000 caratteri accentati in utf8mb4 ne occupano al
 massimo 12.000, quindi non serve nessuna migrazione.
 
-**Un campo di testo con un limite ha sempre questo contatore**, ovunque (10/10): oggi la risposta
-aperta, la presentazione del profilo, la descrizione del corso, il messaggio della richiesta di
-iscrizione, la domanda all'esperto, il testo del benvenuto del tutor e, nella pagina «Domande»,
-domanda e risposta. `accessibilita.js` lo controlla su ogni pagina: un'area di testo con
+**Ogni campo di testo libero ha un limite e questo contatore** (10/10). Con i limiti:
+
+| Campo | Caratteri |
+|---|---|
+| Risposta aperta di un questionario | 3.000 |
+| Presentazione del profilo | 1.000 |
+| Descrizione del corso | 3.000 |
+| Messaggio della richiesta di iscrizione | 1.000 |
+| Domanda all'esperto; nella pagina «Domande», domanda e risposta | 1.000 e 5.000 |
+| Testo del benvenuto del tutor | 4.000 |
+| Descrizione del gruppo | 1.000 |
+| Descrizione della sessione dal vivo | 1.000 |
+| Testo della domanda di un questionario | 500 |
+| Impostazioni › Aspetto: titolo e testo della pagina di accesso affiancata | 300 e 500 |
+| Impostazioni › Inviti alle sessioni: testo di ciascuna email (con i segnaposto) | 1.000 |
+
+Fuori resta solo il testo delle lezioni, che è testo formattato nell'editor. I campi più recenti
+passano da `App\Core\CampoContato`, che tiene insieme le due metà del limite: `html()` scrive il
+campo con il contatore e `taglia()` taglia sul server, con gli a capo contati come li conta il
+campo. `accessibilita.js` lo controlla su ogni pagina: un'area di testo con
 `maxlength` senza contatore è un rilievo, e su ogni contatore verifica che stia sopra il campo a
 destra, che ne sia la descrizione e che dichiari lo stesso limite del campo. Lo script
 (`quiz-open-count.js`) si può caricare più volte nella stessa pagina: ogni campo si collega una

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Core\CampoContato;
 use App\Auth\CourseRights;
 use App\Core\CourseAccess;
 use App\Core\Google\GoogleException;
@@ -29,6 +30,9 @@ use App\Models\ModuleModel;
  */
 class LiveSessionController
 {
+    /** La descrizione della sessione dal vivo: 1.000 caratteri (10/10, Alessandro). */
+    public const MAX_DESCRIPTION_CHARS = 1000;
+
     public function index(array $params = []): void
     {
         Auth::requireLogin();
@@ -459,7 +463,7 @@ class LiveSessionController
     {
         $moduleId = (int) ($_POST['module_id'] ?? 0);
         $groupId = (int) ($_POST['group_id'] ?? 0);
-        $description = trim((string) ($_POST['description'] ?? ''));
+        $description = CampoContato::taglia((string) ($_POST['description'] ?? ''), self::MAX_DESCRIPTION_CHARS);
         $meetLink = trim((string) ($_POST['meet_link'] ?? ''));
 
         return [

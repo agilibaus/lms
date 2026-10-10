@@ -22,6 +22,14 @@ use App\Core\Url;
  */
 class LiveSessionMail
 {
+    /**
+     * Il testo di ciascuna delle tre email (10/10, Alessandro): 1.000
+     * caratteri, con il contatore. Conta il testo come lo si scrive, con i
+     * segnaposto: l'email che parte puo' essere un po' piu' lunga o piu'
+     * corta, secondo il titolo e la data che li sostituiscono.
+     */
+    public const MAX_BODY_CHARS = 1000;
+
     public const SUBJECT_KEYS = [
         'LIVE_INVITE_SUBJECT',
         'LIVE_UPDATE_SUBJECT',

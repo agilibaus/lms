@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Core\TutorWelcome;
 use App\Auth\Auth;
+use App\Core\CampoContato;
 use App\Core\GroupLogo;
 use App\Core\Upload;
 use App\Core\View;
@@ -23,6 +24,9 @@ use App\Models\UserModel;
  */
 class GroupController extends AdminController
 {
+    /** La descrizione del gruppo: 1.000 caratteri (10/10, Alessandro). */
+    public const MAX_DESCRIPTION_CHARS = 1000;
+
     public function index(array $params = []): void
     {
         $this->requireGroupAccess();
@@ -385,7 +389,7 @@ class GroupController extends AdminController
      */
     private function dataFromPost(): array
     {
-        $description = trim((string) ($_POST['description'] ?? ''));
+        $description = CampoContato::taglia((string) ($_POST['description'] ?? ''), self::MAX_DESCRIPTION_CHARS);
         $tutorId = (int) ($_POST['tutor_id'] ?? 0);
 
         // Un tutor che crea un gruppo ne diventa automaticamente responsabile.
