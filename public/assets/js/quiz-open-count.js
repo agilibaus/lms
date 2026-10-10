@@ -28,6 +28,16 @@
     }
 
     function collega(campo) {
+        // Una pagina puo' caricare lo script piu' di una volta (la modifica
+        // del corso: la descrizione e il benvenuto del tutor stanno in due
+        // parti separate, e ciascuna lo porta con se'). Ogni campo si
+        // collega una volta sola.
+        if (campo.hasAttribute('data-contato')) {
+            return;
+        }
+
+        campo.setAttribute('data-contato', '');
+
         // Il contatore e' il **primo** degli id in `aria-describedby`: il
         // campo della presentazione nel profilo ha anche il testo di aiuto,
         // e la lista intera non e' un id.

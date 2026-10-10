@@ -288,6 +288,15 @@ coprirebbe con la propria voce quello che la persona sta scrivendo; il collegame
 `answer_text` è un TEXT da 65.535 byte e 3.000 caratteri accentati in utf8mb4 ne occupano al
 massimo 12.000, quindi non serve nessuna migrazione.
 
+**Un campo di testo con un limite ha sempre questo contatore**, ovunque (10/10): oggi la risposta
+aperta, la presentazione del profilo, la descrizione del corso, il messaggio della richiesta di
+iscrizione, la domanda all'esperto, il testo del benvenuto del tutor e, nella pagina «Domande»,
+domanda e risposta. `accessibilita.js` lo controlla su ogni pagina: un'area di testo con
+`maxlength` senza contatore è un rilievo, e su ogni contatore verifica che stia sopra il campo a
+destra, che ne sia la descrizione e che dichiari lo stesso limite del campo. Lo script
+(`quiz-open-count.js`) si può caricare più volte nella stessa pagina: ogni campo si collega una
+volta sola.
+
 ### Sblocco progressivo dei moduli
 Due regole indipendenti possono chiudere un modulo, e ne basta una. **Lo staff non e' mai
 soggetto al blocco**: un modulo chiuso va preparato prima che si apra.

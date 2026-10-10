@@ -625,6 +625,32 @@ const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])'
  * linea di base, misurato nello stesso punto; null se la pagina non ha il
  * collegamento.
  */
+/**
+ * Un campo di testo con un limite ha sempre il contatore (10/10, la regola
+ * del promemoria resa un controllo): un'area di testo con `maxlength` deve
+ * essere `.quiz-open-answer` e avere il contatore come prima descrizione.
+ * Che il contatore sia giusto lo dicono i controlli del contatore; qui si
+ * guarda che ci sia, anche dove nessuno l'ha ancora messo. Null se la
+ * pagina non ha aree di testo con un limite.
+ */
+async function campiSenzaContatore(page) {
+    return page.evaluate(() => {
+        const campi = [...document.querySelectorAll('textarea[maxlength]')];
+
+        if (campi.length === 0) {
+            return null;
+        }
+
+        return campi.filter((t) => {
+            const primo = (t.getAttribute('aria-describedby') || '').split(/\s+/)[0];
+            const contatore = primo === '' ? null : document.getElementById(primo);
+
+            return !t.classList.contains('quiz-open-answer') || contatore === null
+                || !contatore.classList.contains('quiz-open-count');
+        }).map((t) => (t.id || t.name) + ' (maxlength ' + t.getAttribute('maxlength') + ')');
+    });
+}
+
 async function collegamentoIndietro(page) {
     return page.evaluate(() => {
         const link = [...document.querySelectorAll('.back-link')];
@@ -807,6 +833,11 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     check(nome + ': i comandi di una fila hanno il testo sulla stessa riga', segni.sfalsati.length === 0, segni.sfalsati);
     check(nome + ': i comandi di una fila usano lo stesso carattere', segni.caratteri.length === 0, segni.caratteri);
     check(nome + ': un modulo che segue un altro modulo ne sta staccato', segni.attaccati.length === 0, segni.attaccati);
+
+    const senzaContatore = await campiSenzaContatore(page);
+    if (senzaContatore !== null) {
+        check(nome + ': ogni campo di testo con un limite ha il contatore', senzaContatore.length === 0, senzaContatore);
+    }
 
     const indietro = await collegamentoIndietro(page);
     if (indietro !== null) {
@@ -1017,56 +1048,63 @@ const EXTRA = {
      * distrazione non si vede guardando la pagina.
      */
     'Quiz da svolgere': async (page, nome) => {
-        const esito = await page.evaluate(() => {
-            const campo = document.querySelector('.quiz-open-answer');
-
-            if (campo === null) {
-                return null;
-            }
-
+        // Tutti i campi con il contatore della pagina, non solo il primo
+        // (10/10): nella modifica del corso ci sono la descrizione e il
+        // benvenuto del tutor, nella pagina «Domande» domanda e risposta di
+        // ogni domanda. Si dice quale campo non va.
+        const esiti = await page.evaluate(() => [...document.querySelectorAll('.quiz-open-answer')].map((campo) => {
             // Il primo degli id: nel profilo il campo e' descritto anche dal
             // testo di aiuto, e la lista intera non e' un id.
             const contatore = document.getElementById((campo.getAttribute('aria-describedby') || '').split(/\s+/)[0]);
+            const chi = campo.id || campo.name;
 
             if (contatore === null) {
-                return { collegato: false };
+                return { chi, collegato: false };
+            }
+
+            // Un campo chiuso in un `details` non ha misure: lo si apre per
+            // misurarlo, come farebbe chi lo usa.
+            for (let d = campo.closest('details'); d !== null; d = d.parentElement.closest('details')) {
+                d.open = true;
             }
 
             const c = contatore.getBoundingClientRect();
             const t = campo.getBoundingClientRect();
 
             return {
+                chi,
                 collegato: true,
                 sopra: Math.round(c.bottom) <= Math.round(t.top),
                 aDestra: Math.abs(c.right - t.right) < 2,
                 vivo: contatore.getAttribute('aria-live'),
                 limite: campo.getAttribute('maxlength'),
+                dichiarato: contatore.getAttribute('data-max'),
             };
-        });
+        }));
 
-        if (esito === null) {
+        if (esiti.length === 0) {
             console.log('  --   ' + nome + ': nessun campo con il contatore in questa pagina');
             return;
         }
 
-        check(nome + ': il contatore è descrizione del campo', esito.collegato === true,
-            ['nessun elemento puntato da aria-describedby']);
+        const male = (prova) => esiti.filter((e) => !prova(e)).map((e) => e.chi + ': ' + JSON.stringify(e));
 
-        if (esito.collegato !== true) {
+        const scollegati = male((e) => e.collegato === true);
+        check(nome + ': il contatore è descrizione del campo', scollegati.length === 0,
+            scollegati.length === 0 ? [] : ['nessun elemento puntato da aria-describedby'].concat(scollegati));
+
+        if (scollegati.length > 0) {
             return;
         }
 
-        check(nome + ': il contatore sta sopra il campo, a destra',
-            esito.sopra === true && esito.aDestra === true,
-            ['sopra: ' + esito.sopra + ', allineato a destra: ' + esito.aDestra]);
+        const fuori = male((e) => e.sopra === true && e.aDestra === true);
+        check(nome + ': il contatore sta sopra il campo, a destra', fuori.length === 0, fuori);
 
-        check(nome + ': il contatore non è una regione viva',
-            esito.vivo === null || esito.vivo === 'off',
-            ['aria-live: ' + esito.vivo]);
+        const vivi = male((e) => e.vivo === null || e.vivo === 'off');
+        check(nome + ': il contatore non è una regione viva', vivi.length === 0, vivi);
 
-        check(nome + ': il campo dichiara il limite al browser',
-            esito.limite !== null && Number(esito.limite) > 0,
-            ['maxlength: ' + esito.limite]);
+        const senzaLimite = male((e) => e.limite !== null && Number(e.limite) > 0 && e.limite === e.dichiarato);
+        check(nome + ': il campo dichiara il limite al browser, lo stesso del contatore', senzaLimite.length === 0, senzaLimite);
     },
 
     /*
@@ -1204,6 +1242,10 @@ EXTRA['Modifica corso con benvenuto (semina)'] = EXTRA['Quiz da svolgere'];
 // emergere un'altra cosa — «Stato» in Gestione corsi si ordina solo per
 // «pubblicato» — che e' da decidere a parte.
 EXTRA['Catalogo'] = EXTRA['Quiz da svolgere'];
+
+// E la pagina «Domande» dell'esperto: domanda e risposta, in attesa e
+// pubblicate (10/10).
+EXTRA['Domande in attesa (semina)'] = EXTRA['Quiz da svolgere'];
 
 /**
  * Nessuno scorrimento orizzontale, e quando c'e' il nome dell'elemento che
