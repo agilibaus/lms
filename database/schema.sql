@@ -405,7 +405,7 @@ CREATE TABLE enrollment_requests (
     user_id         INT UNSIGNED NOT NULL,
     course_id       INT UNSIGNED NOT NULL,
     status          ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
-    message         VARCHAR(500) NULL,             -- due righe di presentazione dello studente
+    message         VARCHAR(1000) NULL,            -- due righe di presentazione dello studente (max 1.000, 2026_10_10)
     requested_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     decided_at      DATETIME NULL,
     decided_by      INT UNSIGNED NULL,

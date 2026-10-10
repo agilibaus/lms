@@ -174,6 +174,7 @@ danni. Le piu' recenti:
 | `2026_10_08_primo_accesso.sql` | `name_display` facoltativo: NULL vuol dire «non ancora scelto», e vale come «solo le iniziali» |
 | `2026_10_09_esperto.sql` | risponde l'esperto (l'admin): tolto `question.answer_own` ai tutor, le domande in attesa senza tutor |
 | `2026_10_09_foto_tutor.sql` | una foto sola per il tutor: la foto del suo benvenuto diventa quella del profilo, e la colonna `course_tutor_welcomes.photo_path` si toglie |
+| `2026_10_10_richiesta_iscrizione.sql` | il messaggio della richiesta di iscrizione fino a 1.000 caratteri |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -466,6 +467,13 @@ dell'etichetta, allineato al bordo destro del campo: lo stesso della presentazio
 della domanda all'esperto. Il limite è doppio, `maxlength` nel campo e il taglio in
 `Admin\CourseController::MAX_DESCRIPTION_CHARS`, e gli a capo valgono un carattere in tutti e
 due. `accessibilita.js` controlla il contatore in «Nuovo corso» e «Modifica corso».
+
+**Il messaggio della richiesta di iscrizione** — «Due righe su di te (facoltativo)», nel
+catalogo sotto un corso con l'iscrizione su richiesta, che lo staff legge nella tabella delle
+richieste in «Modifica corso» — è lungo al massimo **1.000 caratteri** (10/10, prima 500), con lo
+stesso contatore. Il limite sta in `EnrollmentRequestModel::MAX_MESSAGE_CHARS`; la colonna è
+larga altrettanto dalla migrazione `2026_10_10_richiesta_iscrizione.sql`. `accessibilita.js`
+controlla il contatore nel catalogo quando c'è un corso su richiesta, e altrimenti lo dice e salta.
 
 ### Permessi (`/admin/permissions`)
 Matrice ruoli × permessi su `role_permissions`, con le chiavi effettivamente controllate dal

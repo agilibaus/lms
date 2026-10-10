@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\CourseCover;
 use App\Core\Csrf;
 use App\Models\CourseModel;
+use App\Models\EnrollmentRequestModel;
 
 /** @var array $courses */
 ?>
@@ -66,9 +67,22 @@ use App\Models\CourseModel;
                         <?= Csrf::field() ?>
 
                         <?php if ($course['enrollment_mode'] === 'request'): ?>
-                            <label for="message-<?= $id ?>">Due righe su di te (facoltativo)</label>
-                            <textarea id="message-<?= $id ?>" name="message" rows="2" maxlength="500"
-                                      placeholder="Perché ti interessa questo corso"></textarea>
+                            <?php /* 1.000 caratteri con il contatore (10/10), come la
+                                     presentazione del profilo: stesse classi e stesso
+                                     script, una scheda per corso con il suo id. */ ?>
+                            <div class="quiz-open-wrap campo-contato">
+                                <div class="campo-contato-testa">
+                                    <label for="message-<?= $id ?>">Due righe su di te (facoltativo)</label>
+                                    <span class="quiz-open-count" id="message-<?= $id ?>-resta"
+                                          data-max="<?= EnrollmentRequestModel::MAX_MESSAGE_CHARS ?>">
+                                        <?= EnrollmentRequestModel::MAX_MESSAGE_CHARS ?> caratteri rimasti
+                                    </span>
+                                </div>
+                                <textarea id="message-<?= $id ?>" name="message" rows="2"
+                                          maxlength="<?= EnrollmentRequestModel::MAX_MESSAGE_CHARS ?>"
+                                          class="quiz-open-answer" aria-describedby="message-<?= $id ?>-resta"
+                                          placeholder="Perché ti interessa questo corso"></textarea>
+                            </div>
                         <?php endif; ?>
 
                         <div class="form-actions">
@@ -81,4 +95,5 @@ use App\Models\CourseModel;
             </section>
         <?php endforeach; ?>
     </div>
+    <script src="/assets/js/quiz-open-count.js"></script>
 <?php endif; ?>

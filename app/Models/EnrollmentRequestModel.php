@@ -15,6 +15,15 @@ use App\Core\Database;
  */
 class EnrollmentRequestModel
 {
+    /**
+     * Quanto puo' essere lungo il messaggio della richiesta di iscrizione
+     * («Due righe su di te»): 1.000 caratteri, deciso da Alessandro il 10/10
+     * (prima 500). Il limite e' doppio, `maxlength` nel campo con il
+     * contatore e il taglio in `CatalogController`; la colonna e' larga
+     * altrettanto (migrazione 2026_10_10_richiesta_iscrizione.sql).
+     */
+    public const MAX_MESSAGE_CHARS = 1000;
+
     public static function find(int $userId, int $courseId): ?array
     {
         $stmt = Database::connection()->prepare(

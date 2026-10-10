@@ -1045,7 +1045,7 @@ const EXTRA = {
         });
 
         if (esito === null) {
-            console.log('  --   ' + nome + ': nessuna risposta aperta in questo quiz');
+            console.log('  --   ' + nome + ': nessun campo con il contatore in questa pagina');
             return;
         }
 
@@ -1197,6 +1197,13 @@ EXTRA['Profilo'] = EXTRA['Quiz da svolgere'];
 EXTRA['Nuovo corso'] = EXTRA['Quiz da svolgere'];
 EXTRA['Modifica corso'] = EXTRA['Quiz da svolgere'];
 EXTRA['Modifica corso con benvenuto (semina)'] = EXTRA['Quiz da svolgere'];
+
+// E «Due righe su di te» nella richiesta di iscrizione (10/10). Il campo c'e'
+// solo sotto un corso con l'iscrizione su richiesta: dove non ce n'e' nessuno
+// il controllo lo dice e salta. La semina non ne crea uno apposta, perche' fa
+// emergere un'altra cosa — «Stato» in Gestione corsi si ordina solo per
+// «pubblicato» — che e' da decidere a parte.
+EXTRA['Catalogo'] = EXTRA['Quiz da svolgere'];
 
 /**
  * Nessuno scorrimento orizzontale, e quando c'e' il nome dell'elemento che

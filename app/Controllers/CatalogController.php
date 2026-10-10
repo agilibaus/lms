@@ -69,8 +69,15 @@ class CatalogController
         }
 
         if ($course['enrollment_mode'] === 'request') {
-            $message = trim((string) ($_POST['message'] ?? ''));
-            EnrollmentRequestModel::create($userId, $courseId, $message === '' ? null : mb_substr($message, 0, 500));
+            // Gli a capo arrivano come \r\n ma per il campo e il contatore
+            // valgono un carattere: si contano allo stesso modo prima di
+            // tagliare, o il taglio porterebbe via la fine del messaggio.
+            $message = mb_substr(
+                trim(str_replace("\r\n", "\n", (string) ($_POST['message'] ?? ''))),
+                0,
+                EnrollmentRequestModel::MAX_MESSAGE_CHARS
+            );
+            EnrollmentRequestModel::create($userId, $courseId, $message === '' ? null : $message);
 
             $this->notifyStaff((string) $course['title'], $courseId);
 
