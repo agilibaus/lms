@@ -117,6 +117,25 @@ class CourseModel
     }
 
     /**
+     * Registra una visita dello studente alla pagina di un corso con un
+     * obiettivo e restituisce quante sono, compresa questa (11/10). Una
+     * scrittura e una lettura; il conto lo fa il database.
+     */
+    public static function registraVisitaObiettivo(int $userId, int $courseId): int
+    {
+        $db = Database::connection();
+        $db->prepare(
+            'INSERT INTO course_objective_views (user_id, course_id, visits) VALUES (:u, :c, 1)
+             ON DUPLICATE KEY UPDATE visits = visits + 1'
+        )->execute(['u' => $userId, 'c' => $courseId]);
+
+        $stmt = $db->prepare('SELECT visits FROM course_objective_views WHERE user_id = :u AND course_id = :c');
+        $stmt->execute(['u' => $userId, 'c' => $courseId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * Copertina e testo alternativo. Separati da update() perche' il form dei
      * dati del corso non porta l'immagine: se passassero di li', salvare il
      * titolo cancellerebbe la copertina.

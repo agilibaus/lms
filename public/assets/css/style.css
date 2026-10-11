@@ -316,7 +316,7 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +324,7 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -821,6 +821,14 @@ h3 { font-size: 1.05rem; }
 .testo-breve ul,
 .testo-breve ol {
     padding-left: 1.4em;
+}
+
+/* Un elenco subito dopo un paragrafo ne e' il seguito («Al termine del
+   corso saprai:» e i punti): attaccato, non staccato di una riga (11/10,
+   come nel mockup degli obiettivi). */
+.testo-breve > p + ul,
+.testo-breve > p + ol {
+    margin-top: 0.3rem;
 }
 
 .course-description {
@@ -5218,6 +5226,153 @@ fieldset.checkbox-group legend {
 
 .tutor-benvenuto-ridotto[open] .tutor-benvenuto-se-aperto {
     display: inline;
+}
+
+/* ==========================================================
+   L'obiettivo del corso e del modulo (11/10, Alessandro)
+   ==========================================================
+
+   Il corso: un riquadro dopo la descrizione, largo quanto i moduli, con il
+   fondo verde chiaro e il bersaglio, perche' non si legga come un modulo.
+   Completo nelle prime tre visite dello studente, poi una riga che si
+   riapre, disegnata come quella del benvenuto del tutor. Il modulo: sotto
+   il titolo, con un filetto a sinistra; completo nel modulo in corso,
+   ridotto negli altri. Lo staff li vede sempre completi. La regola sta in
+   `App\Core\Obiettivo`. */
+.obiettivo-corso {
+    background: var(--color-primary-soft);
+    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
+    border-radius: var(--radius-md);
+    padding: 1.1rem 1.25rem;
+    margin: 0 0 1.6rem;
+}
+
+.obiettivo-corso-testa {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.55rem;
+}
+
+.obiettivo-corso-testa h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.obiettivo-corso .testo-breve {
+    line-height: 1.55;
+}
+
+/* Il bersaglio: una forma, non un carattere (le decorazioni da mettere al
+   pixel, §5): anelli del colore principale disegnati con un gradiente. */
+.bersaglio {
+    width: 2.4rem;
+    height: 2.4rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-primary) 0 18%, var(--color-surface) 19% 38%,
+        var(--color-primary) 39% 56%, var(--color-surface) 57% 100%);
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.bersaglio-piccolo {
+    width: 0.95rem;
+    height: 0.95rem;
+    background: radial-gradient(circle, var(--color-primary) 0 22%, var(--color-surface) 23% 45%,
+        var(--color-primary) 46% 68%, var(--color-surface) 69% 100%);
+}
+
+.obiettivo-ridotto {
+    margin: 0 0 1.6rem;
+}
+
+.obiettivo-ridotto > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    list-style: none;
+    cursor: pointer;
+    background: var(--color-primary-soft);
+    border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.8rem;
+    font-size: 0.92rem;
+}
+
+.obiettivo-ridotto[open] > summary {
+    margin-bottom: 0.8rem;
+}
+
+.obiettivo-ridotto-nome {
+    flex: 1;
+    min-width: 0;
+}
+
+.obiettivo-ridotto > summary::-webkit-details-marker,
+.obiettivo-modulo-ridotto > summary::-webkit-details-marker {
+    display: none;
+}
+
+.obiettivo-ridotto > summary:focus-visible,
+.obiettivo-modulo-ridotto > summary:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.obiettivo-modulo {
+    margin: 0.35rem 0 0.9rem;
+    padding: 0.55rem 0.8rem;
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-bg);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.obiettivo-modulo-etichetta {
+    font-weight: 600;
+}
+
+.obiettivo-modulo-ridotto {
+    margin: 0.2rem 0 0.7rem;
+}
+
+.obiettivo-modulo-ridotto > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: var(--tap-target);
+    list-style: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.obiettivo-modulo-ridotto[open] > summary {
+    margin-bottom: 0.3rem;
+}
+
+/* «Mostra» e «Nascondi» nella stessa cella: il comando e' largo quanto la
+   parola piu' lunga e la riga non cambia toccandola (0152). Neutro, come
+   ogni comando: e' nell'elenco dei comandi in cima al foglio. */
+.obiettivo-comando {
+    display: inline-grid;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+.obiettivo-comando > span {
+    grid-area: 1 / 1;
+}
+
+.obiettivo-se-aperto,
+details[open] > summary .obiettivo-se-chiuso {
+    visibility: hidden;
+}
+
+details[open] > summary .obiettivo-se-aperto {
+    visibility: visible;
 }
 
 /* Nella pagina di modifica del corso, un blocco per tutor. */

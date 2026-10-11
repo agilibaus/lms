@@ -7,6 +7,7 @@ use App\Auth\Auth;
 use App\Core\CourseAccess;
 use App\Core\CourseCover;
 use App\Core\Csrf;
+use App\Core\Obiettivo;
 use App\Core\TestoBreve;
 
 /** @var array $course */
@@ -18,6 +19,9 @@ use App\Core\TestoBreve;
 /** @var array<int, array{motivo: string, available_from: ?string}> $moduleLocks */
 /** @var array|null $certificate */
 /** @var array|null $eligibility */
+/** @var string|null $obiettivoCorso «completo», «ridotto», o null senza obiettivo */
+/** @var bool $tuttiCompleti lo staff vede gli obiettivi sempre completi */
+/** @var int|null $moduloInCorso */
 
 // Chi puo' modificare questo corso: l'admin sempre, il tutor solo se il corso e'
 // assegnato a uno dei suoi gruppi. Gli altri tutor lo vedono in sola lettura.
@@ -58,6 +62,29 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
     <?php /* Qualche tag HTML ammesso dall'11/10: `TestoBreve::html()` ripulisce
              e trasforma gli a capo in paragrafi e righe, come si vedevano. */ ?>
     <div class="course-description testo-breve"><?= TestoBreve::html((string) $course['description']) ?></div>
+<?php endif; ?>
+
+<?php if ($obiettivoCorso !== null): ?>
+    <?php /* L'obiettivo del corso (11/10): dopo la descrizione, prima del
+             benvenuto del tutor. Completo nelle prime tre visite, poi una riga
+             che si riapre con «Mostra», come il benvenuto. */ ?>
+    <?php $schedaObiettivo = '<section class="obiettivo-corso" aria-labelledby="obiettivo-corso-titolo">'
+        . '<div class="obiettivo-corso-testa"><span class="bersaglio" aria-hidden="true"></span>'
+        . '<h2 id="obiettivo-corso-titolo">Obiettivo del corso</h2></div>'
+        . '<div class="testo-breve">' . TestoBreve::html((string) $course['objective']) . '</div>'
+        . '</section>'; ?>
+    <?php if ($obiettivoCorso === 'completo'): ?>
+        <?= $schedaObiettivo ?>
+    <?php else: ?>
+        <details class="obiettivo-ridotto">
+            <summary>
+                <span class="bersaglio" aria-hidden="true"></span>
+                <span class="obiettivo-ridotto-nome">Obiettivo del corso</span>
+                <span class="obiettivo-comando"><span class="obiettivo-se-chiuso">Mostra</span><span class="obiettivo-se-aperto">Nascondi</span></span>
+            </summary>
+            <?= $schedaObiettivo ?>
+        </details>
+    <?php endif; ?>
 <?php endif; ?>
 
 <?php if (!empty($welcome)): ?>
@@ -151,6 +178,26 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <?php /* L'obiettivo del modulo (11/10): completo nel modulo in
+                         corso, ridotto a una riga negli altri; lo staff lo vede
+                         sempre completo. Anche nei moduli chiusi. */ ?>
+                <?php $obiettivoModulo = Obiettivo::htmlModulo($module['objective'] ?? null); ?>
+                <?php if ($obiettivoModulo !== ''): ?>
+                    <?php $bloccoObiettivo = '<div class="obiettivo-modulo testo-breve">' . $obiettivoModulo . '</div>'; ?>
+                    <?php if ($tuttiCompleti || $moduleId === $moduloInCorso): ?>
+                        <?= $bloccoObiettivo ?>
+                    <?php else: ?>
+                        <details class="obiettivo-modulo-ridotto">
+                            <summary>
+                                <span class="bersaglio bersaglio-piccolo" aria-hidden="true"></span>
+                                <span>Obiettivo del modulo ·</span>
+                                <span class="obiettivo-comando"><span class="obiettivo-se-chiuso">Mostra</span><span class="obiettivo-se-aperto">Nascondi</span></span>
+                            </summary>
+                            <?= $bloccoObiettivo ?>
+                        </details>
+                    <?php endif; ?>
+                <?php endif; ?>
 
                 <?php if ($lockedByDate): ?>
                     <p class="empty-state-small">

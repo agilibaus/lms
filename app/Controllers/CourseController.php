@@ -11,6 +11,8 @@ use App\Auth\Auth;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\CourseCover;
+use App\Core\Obiettivo;
+use App\Core\TestoBreve;
 use App\Core\Upload;
 use App\Core\View;
 use App\Models\CertificateModel;
@@ -164,9 +166,26 @@ class CourseController
             }
         }
 
+        // L'obiettivo del corso e dei moduli (11/10, `App\Core\Obiettivo`):
+        // per lo studente il corso e' completo nelle prime tre visite e il
+        // modulo solo se e' quello in corso; lo staff li vede sempre
+        // completi. La visita si conta solo se l'obiettivo c'e'.
+        $obiettivoCorso = null;
+
+        if (TestoBreve::html((string) ($course['objective'] ?? '')) !== '') {
+            $obiettivoCorso = $isStudent
+                ? Obiettivo::modoCorso(CourseModel::registraVisitaObiettivo($userId, $courseId))
+                : 'completo';
+        }
+
         View::render('courses/show', [
             'pageTitle' => $course['title'],
             'welcome' => $welcome,
+            'obiettivoCorso' => $obiettivoCorso,
+            'tuttiCompleti' => !$isStudent,
+            'moduloInCorso' => $isStudent
+                ? Obiettivo::moduloInCorso($modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)
+                : null,
             // «Fai una domanda al tutor» (dal 09/10 l'archivio ha una pagina
             // sua, «Domande e risposte»): solo per lo studente.
             'domande' => [

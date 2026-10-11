@@ -177,6 +177,7 @@ danni. Le piu' recenti:
 | `2026_10_10_richiesta_iscrizione.sql` | il messaggio della richiesta di iscrizione fino a 1.000 caratteri |
 | `2026_10_11_obiettivi.sql` | l'obiettivo del corso e l'obiettivo del modulo (`courses.objective`, `modules.objective`), facoltativi, fino a 1.000 caratteri |
 | `2026_10_11_obiettivi_html.sql` | le due colonne dell'obiettivo diventano TEXT: con i tag HTML il testo salvato può superare i 1.000 caratteri |
+| `2026_10_11_obiettivo_visite.sql` | `course_objective_views`: le visite dello studente alla pagina di un corso con un obiettivo |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -507,8 +508,8 @@ della domanda all'esperto. `accessibilita.js` controlla il contatore in «Nuovo 
 massimo **1.000 caratteri**, con lo stesso contatore. «Obiettivo del corso» sta in «Nuovo corso» e
 «Modifica corso», subito prima della descrizione; «Obiettivo del modulo» in «Nuovo modulo» e
 «Modifica modulo», subito prima di «Disponibile dal». Vuoti, restano NULL: i corsi e i moduli
-creati prima restano senza finché qualcuno non lo scrive. **Per ora si scrivono soltanto**: dove
-compariranno nella pagina del corso e in quella del modulo non è ancora deciso. I limiti stanno in
+creati prima restano senza finché qualcuno non lo scrive. Dove si vedono è più sotto, in
+**L'obiettivo nella pagina del corso**. I limiti stanno in
 `Admin\CourseController::MAX_OBJECTIVE_CHARS` e `ModuleController::MAX_OBJECTIVE_CHARS`; le
 colonne arrivano con `2026_10_11_obiettivi.sql` e diventano TEXT con
 `2026_10_11_obiettivi_html.sql`.
@@ -986,6 +987,31 @@ scheda si chiamava `.benvenuto`, che era già la classe della pagina del video d
 due si prendevano lo stile a vicenda, e la pagina del video, che deve essere un blocco centrato,
 diventava un riquadro con il bordo allineato a sinistra.
 
+## L'obiettivo nella pagina del corso
+
+Scelto da Alessandro l'11/10 su un mockup. Le regole stanno in `App\Core\Obiettivo`.
+
+- **L'obiettivo del corso** ha un riquadro suo, subito dopo la descrizione e prima del benvenuto
+  del tutor, largo quanto i moduli, con il fondo verde chiaro e un bersaglio (una forma, non un
+  carattere), perché non si legga come un modulo. Per lo studente è **completo nelle prime tre
+  visite**, poi diventa una riga, «Obiettivo del corso … Mostra», come quella del benvenuto:
+  «Mostra» lo riapre, «Nascondi» lo richiude. Le visite si contano in `course_objective_views`,
+  e solo quando il corso ha un obiettivo: uno scritto dopo si vede completo anche a chi il corso
+  l'aveva già aperto.
+- **L'obiettivo del modulo** sta sotto il titolo del modulo, con un filetto verde a sinistra e
+  «Obiettivo:» davanti. È **completo nel modulo in corso** e ridotto a una riga, «Obiettivo del
+  modulo · Mostra», in tutti gli altri. Il modulo in corso è il primo, nell'ordine del corso, in
+  cui resta una lezione da completare o un questionario da superare, **anche se è chiuso**: chi ha
+  finito tutto ciò che è aperto legge in anticipo dove andrà. Quando non resta niente, sono tutti
+  ridotti. Nei moduli chiusi l'obiettivo compare sopra la data di apertura.
+- **Lo staff li vede sempre completi**, e lo studente non li può richiudere da sé prima del tempo.
+- Un corso o un modulo senza obiettivo non mostra niente.
+
+`tests/obiettivo_test.php` prova le regole; `accessibilita.js`, nel giro da studente, l'obiettivo
+completo alla prima visita fra descrizione e benvenuto, il modulo in corso completo e quello chiuso
+ridotto, e alla quarta visita la riga che si riapre; da staff, che siano tutti completi. La semina
+dà un obiettivo al corso del mondo A e ai suoi due moduli.
+
 ## Il primo accesso
 
 Al primo accesso lo studente arriva sulla pagina **«Primo accesso»** (`/primo-accesso`, 08/10,
@@ -1235,6 +1261,7 @@ server di sviluppo attivo.
 php tests/google_meet_test.php      # client Google: JWT firmata, richieste, errori 403/404
 php tests/html_sanitizer_test.php   # l'HTML dell'editor non può contenere codice eseguibile
 php tests/testo_breve_test.php      # obiettivo e descrizione con i tag: quali restano, a capo, testo visibile, rifiuto
+php tests/obiettivo_test.php        # obiettivo nella pagina del corso: completo o ridotto, il modulo in corso, «Obiettivo:»
 php tests/course_cover_test.php     # ritaglio 16:9, due misure, testo alternativo (serve GD)
 php tests/bunny_token_test.php      # firma e scadenza degli indirizzi Bunny
 php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto di plausibilità

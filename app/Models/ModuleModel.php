@@ -27,7 +27,7 @@ class ModuleModel
     public static function forCourse(int $courseId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, course_id, title, position, quiz_required, available_from,
+            'SELECT id, course_id, title, objective, position, quiz_required, available_from,
                     (available_from IS NULL OR available_from <= NOW()) AS is_available
              FROM modules WHERE course_id = :course_id ORDER BY position, id'
         );

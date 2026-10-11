@@ -491,6 +491,17 @@ CREATE TABLE course_tutor_welcomes (
 -- mostrarlo completo o ridotto a una riga: completo nelle prime tre visite,
 -- ridotto dalla quarta **o** appena l'ha ascoltato, la prima delle due
 -- (scelta di Elena). Una riga per studente e corso, non una per visita.
+-- Le visite alla pagina del corso con un obiettivo (11/10): l'obiettivo e'
+-- completo nelle prime tre, poi ridotto a una riga (`App\Core\Obiettivo`).
+CREATE TABLE course_objective_views (
+    user_id         INT UNSIGNED NOT NULL,
+    course_id       INT UNSIGNED NOT NULL,
+    visits          INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, course_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE course_welcome_views (
     user_id         INT UNSIGNED NOT NULL,
     course_id       INT UNSIGNED NOT NULL,

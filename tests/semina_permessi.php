@@ -454,6 +454,17 @@ imagejpeg($img, __DIR__ . '/../storage/' . $copertina, 80);
 imagedestroy($img);
 $pdo->prepare('UPDATE courses SET cover_image = :c, description = :d WHERE id = :id')
     ->execute(['c' => $copertina, 'd' => 'Il corso di prova del mondo A, con una descrizione di una riga.', 'id' => $a['corso']]);
+// Gli obiettivi (11/10): nel corso del mondo A quello del corso, con un
+// elenco, e quello di tutti e due i moduli. Lo studente di A non ha fatto
+// niente, quindi il modulo in corso e' il primo: li' l'obiettivo e' completo,
+// nel modulo chiuso ridotto. Il mondo B resta senza, cioe' come un corso di
+// prima.
+$pdo->prepare('UPDATE courses SET objective = :o WHERE id = :id')
+    ->execute(['o' => "Al termine del corso saprai:\n<ul>\n<li>riconoscere i <strong>permessi</strong> di ogni ruolo;</li>\n<li>provarli tutti.</li>\n</ul>", 'id' => $a['corso']]);
+$pdo->prepare('UPDATE modules SET objective = :o WHERE id = :id')
+    ->execute(['o' => 'Conoscere il mondo A e le sue <em>lezioni</em>.', 'id' => $a['modulo']]);
+$pdo->prepare('UPDATE modules SET objective = :o WHERE id = :id')
+    ->execute(['o' => 'Arrivare al modulo che si apre fra trenta giorni.', 'id' => $a['modulo_chiuso']]);
 $b['benvenuto'] = benvenutoDiProva($pdo, $b['corso'], $tutorB, 'B');
 
 // Le domande (07/10): in ciascun corso una pubblicata sul primo modulo, una

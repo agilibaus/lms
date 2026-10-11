@@ -583,6 +583,8 @@ PAGINE_INTERNE.push(
     ['/gruppi/' + SEMINA.gruppo_cerchio, 'Pagina del gruppo (semina)'],
     // La sezione dei benvenuti dei tutor (07/10), con un benvenuto caricato.
     ['/admin/courses/' + SEMINATI.corso + '/edit', 'Modifica corso con benvenuto (semina)'],
+    // Gli obiettivi (11/10): lo staff li vede sempre completi.
+    ['/courses/' + SEMINATI.corso, 'Corso con obiettivi, da staff (semina)'],
     // Le domande in attesa, per chi risponde (07/10): la semina ne lascia una
     // per mondo, e l'admin le vede tutte con il tutor assegnato.
     ['/domande', 'Domande in attesa (semina)'],
@@ -606,7 +608,7 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando';
+    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1370,6 +1372,18 @@ EXTRA['Agenda'] = async (page, nome) => {
     check(nome + ': «Storico» chiuso resta una riga sola', esito.chiusa <= 26, ['alta ' + esito.chiusa + ' px']);
 };
 
+// Gli obiettivi da staff (11/10): quello del corso nel suo riquadro, quelli
+// dei moduli sotto i titoli, tutti completi e nessuno ridotto a una riga.
+EXTRA['Corso con obiettivi, da staff (semina)'] = async (page, nome) => {
+    const stato = await page.evaluate(() => ({
+        corso: document.querySelectorAll('section.obiettivo-corso').length,
+        ridotti: document.querySelectorAll('details.obiettivo-ridotto, details.obiettivo-modulo-ridotto').length,
+        moduli: [...document.querySelectorAll('.module-card')].map((m) => !!m.querySelector(':scope > .obiettivo-modulo')),
+    }));
+    check(nome + ': obiettivo del corso e di ogni modulo completi', stato.corso === 1 && stato.ridotti === 0
+        && stato.moduli.length === 2 && stato.moduli.every(Boolean), [JSON.stringify(stato)]);
+};
+
 // E la descrizione del corso (10/10), nella creazione e nella modifica, e
 // l'obiettivo del corso e del modulo (11/10).
 EXTRA['Nuovo modulo'] = EXTRA['Quiz da svolgere'];
@@ -1736,6 +1750,7 @@ async function giroBenvenuto(browser) {
         // 569, 900 e 1016 px, allineati solo a sinistra.
         const bordi = await page.evaluate(() => [
             ['copertina', '.course-hero'],
+            ['obiettivo del corso', 'section.obiettivo-corso'],
             ['benvenuto', 'section.tutor-benvenuto'],
             ['primo modulo', '.module-card'],
         ].map(([nome, sel]) => {
@@ -1753,6 +1768,32 @@ async function giroBenvenuto(browser) {
             completo.scheda === 1 && completo.ridotto === 0 && completo.audio && completo.testo, [JSON.stringify(completo)]);
         check('nel benvenuto completo ci sono l\'email del tutor e il link al gruppo WhatsApp',
             completo.email && completo.whatsapp, [JSON.stringify(completo)]);
+
+        // Gli obiettivi (11/10). Prima visita: quello del corso completo, nel
+        // suo riquadro fra la descrizione e il benvenuto; quello del modulo
+        // in corso (il primo: lo studente non ha fatto niente) completo,
+        // quello del modulo chiuso ridotto a una riga con «Mostra».
+        const obiettivi = await page.evaluate(() => {
+            const sezione = document.querySelector('section.obiettivo-corso');
+            const moduli = [...document.querySelectorAll('.module-card')];
+            const ridotto = moduli[1] ? moduli[1].querySelector(':scope > details.obiettivo-modulo-ridotto:not([open])') : null;
+            return {
+                corso: sezione !== null && sezione.closest('details') === null,
+                ordine: sezione !== null
+                    && sezione.previousElementSibling !== null && sezione.previousElementSibling.matches('.course-description')
+                    && sezione.nextElementSibling !== null && sezione.nextElementSibling.matches('section.tutor-benvenuto'),
+                elenco: sezione !== null && sezione.querySelectorAll('.testo-breve ul > li').length === 2,
+                inCorso: moduli[0] ? !!moduli[0].querySelector(':scope > .obiettivo-modulo') : false,
+                chiuso: ridotto !== null,
+                comando: ridotto ? ridotto.querySelector('.obiettivo-comando').innerText.trim() : null,
+                testoChiusoVisibile: ridotto ? ridotto.querySelector('.obiettivo-modulo').checkVisibility() : null,
+            };
+        });
+        check('prima visita: l\'obiettivo del corso è completo, fra la descrizione e il benvenuto, con il suo elenco',
+            obiettivi.corso && obiettivi.ordine && obiettivi.elenco, [JSON.stringify(obiettivi)]);
+        check('l\'obiettivo del modulo in corso è completo, quello del modulo chiuso è una riga con «Mostra»',
+            obiettivi.inCorso && obiettivi.chiuso && obiettivi.comando === 'Mostra' && obiettivi.testoChiusoVisibile === false,
+            [JSON.stringify(obiettivi)]);
 
         await page.goto(BASE + url);
         await page.goto(BASE + url);
@@ -1777,6 +1818,37 @@ async function giroBenvenuto(browser) {
         });
         check('quarta visita: il benvenuto è ridotto a una riga', ridotto.riga && ridotto.altezza < 80,
             [JSON.stringify(ridotto)]);
+
+        // Quarta visita anche per l'obiettivo del corso: una riga, «Mostra»
+        // lo riapre, «Nascondi» lo richiude (11/10). Il modulo in corso
+        // resta completo: la sua regola non conta le visite.
+        const obiettivoRidotto = await page.evaluate(() => {
+            const riga = document.querySelector('details.obiettivo-ridotto:not([open]) > summary');
+            return {
+                riga: riga !== null,
+                altezza: riga ? Math.round(riga.getBoundingClientRect().height) : null,
+                comando: riga ? riga.querySelector('.obiettivo-comando').innerText.trim() : null,
+                completoFuori: document.querySelectorAll('section.obiettivo-corso').length
+                    - document.querySelectorAll('details.obiettivo-ridotto section.obiettivo-corso').length,
+                inCorso: !!document.querySelector('.module-card > .obiettivo-modulo'),
+            };
+        });
+        let obiettivoRiaperto = null;
+        if (obiettivoRidotto.riga) {
+            await page.click('details.obiettivo-ridotto > summary');
+            obiettivoRiaperto = await page.evaluate(() => ({
+                visibile: document.querySelector('details.obiettivo-ridotto[open] section.obiettivo-corso').checkVisibility(),
+                comando: document.querySelector('details.obiettivo-ridotto[open] .obiettivo-comando').innerText.trim(),
+            }));
+            await page.click('details.obiettivo-ridotto > summary');
+        }
+        check('quarta visita: l\'obiettivo del corso è una riga con «Mostra», che lo riapre e diventa «Nascondi»',
+            obiettivoRidotto.riga && obiettivoRidotto.altezza < 80 && obiettivoRidotto.comando === 'Mostra'
+                && obiettivoRidotto.completoFuori === 0 && obiettivoRiaperto !== null
+                && obiettivoRiaperto.visibile && obiettivoRiaperto.comando === 'Nascondi',
+            [JSON.stringify({ obiettivoRidotto, obiettivoRiaperto })]);
+        check('quarta visita: l\'obiettivo del modulo in corso resta completo', obiettivoRidotto.inCorso,
+            [JSON.stringify(obiettivoRidotto)]);
         check('nella riga il comando si chiama «Mostra», e i contatti non si vedono',
             ridotto.comando === 'Mostra' && !ridotto.contattiVisibili, [JSON.stringify(ridotto)]);
 
