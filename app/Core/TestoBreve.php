@@ -203,8 +203,10 @@ final class TestoBreve
     /**
      * Il campo con il contatore, come `CampoContato::html()`, ma senza
      * `maxlength` (conterebbe i tag) e con `data-conta="testo"`, che dice al
-     * contatore di contare solo il testo visibile. Sotto, l'aiuto con i tag
-     * che si possono usare.
+     * contatore di contare solo il testo visibile. Sotto, «Tag HTML
+     * consentiti»: un comando che apre l'elenco dei tag sulla stessa riga, e
+     * un secondo clic lo richiude (11/10, Alessandro). E' un `details`, quindi
+     * funziona senza JavaScript; l'aspetto sta in `.tag-consentiti`.
      */
     public static function campo(string $id, string $etichetta, string $nome, int $massimo, string $valore, int $righe): string
     {
@@ -218,12 +220,13 @@ final class TestoBreve
             . '-resta" data-max="' . $massimo . '">' . self::restano($restano) . '</span>'
             . '</div>'
             . '<textarea id="' . $e($id) . '" name="' . $e($nome) . '" rows="' . $righe . '" data-conta="testo"'
-            . ' class="quiz-open-answer" aria-describedby="' . $e($id) . '-resta ' . $e($id) . '-aiuto">'
+            . ' class="quiz-open-answer" aria-describedby="' . $e($id) . '-resta">'
             . $e($valore) . '</textarea>'
             . '</div>'
-            . '<p class="form-hint" id="' . $e($id) . '-aiuto">'
-            . 'Tag ammessi: &lt;strong&gt;, &lt;em&gt;, &lt;u&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a href="…"&gt;. '
-            . 'Una riga vuota apre un paragrafo; il limite conta solo il testo, non i tag.</p>';
+            . '<div class="form-hint tag-consentiti" id="' . $e($id) . '-aiuto">'
+            . '<details><summary class="tag-consentiti-comando">Tag HTML consentiti</summary>'
+            . '<span>: &lt;strong&gt;, &lt;em&gt;, &lt;u&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a href="…"&gt;.</span>'
+            . '</details></div>';
     }
 
     /** «37 caratteri rimasti», «1 carattere rimasto», «12 caratteri in più». */

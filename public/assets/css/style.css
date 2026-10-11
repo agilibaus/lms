@@ -316,7 +316,7 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +324,7 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -677,6 +677,42 @@ h3 { font-size: 1.05rem; }
 /* Un comando, non un collegamento in una frase (0125): neutro, sottolineato
    al passaggio e sul telefono. Le due parole nella stessa cella, come
    «Mostra» e «Nascondi»: il comando e' largo quanto la piu' lunga. */
+.tag-consentiti details {
+    display: inline;
+}
+
+/* «Tag HTML consentiti» sotto obiettivo e descrizione (11/10, Alessandro):
+   un clic apre l'elenco dei tag sulla stessa riga, subito dopo il comando,
+   un secondo clic lo richiude. E' un `details`: il contenuto aperto si mette
+   in riga con `::details-content`, e da chiuso va nascosto di nuovo a mano,
+   perche' un `display` dell'autore batte la regola con cui il browser tiene
+   chiuso un `details` (la trappola di sempre). Dove `::details-content` non
+   c'e', l'elenco si apre sulla riga sotto: e' il ripiego. Il comando e'
+   neutro come «Mostra» (0125), quindi sta nell'elenco dei comandi qui sopra
+   e in quello di `accessibilita.js`. */
+/* In riga ma alto quanto un bersaglio (24 px, `--tap-target`): da solo il
+   testo e' alto 18. */
+.tag-consentiti summary {
+    display: inline-block;
+    min-height: var(--tap-target);
+    line-height: var(--tap-target);
+    list-style: none;
+    cursor: pointer;
+    color: var(--color-text);
+}
+
+.tag-consentiti summary::-webkit-details-marker {
+    display: none;
+}
+
+.tag-consentiti details::details-content {
+    display: inline;
+}
+
+.tag-consentiti details:not([open])::details-content {
+    display: none;
+}
+
 .catalogo-leggi-comando {
     display: inline-grid;
     font-size: 0.85rem;

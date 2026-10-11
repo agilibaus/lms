@@ -531,7 +531,11 @@ Le regole stanno in `App\Core\TestoBreve`:
   stato scritto. Non taglia: un taglio porterebbe via la fine del testo senza avvisi. Un
   salvataggio rifiutato per un'altra ragione (il titolo mancante) il testo non lo ripropone,
   come prima;
-- sotto ciascun campo una riga ricorda i tag ammessi.
+- sotto ciascun campo c'è **«Tag HTML consentiti»**: un clic apre l'elenco dei tag sulla stessa
+  riga, subito dopo («Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">.»),
+  e un secondo clic lo richiude. È un `details`, senza JavaScript; è un comando, quindi neutro
+  come «Mostra». Dove il browser non conosce `::details-content` l'elenco si apre sulla riga sotto.
+  `accessibilita.js` lo apre e lo richiude con il clic vero su ogni pagina che lo ha.
 
 La descrizione si vede con i suoi tag nella pagina del corso e, intera, nel catalogo; gli
 estratti di «I miei corsi» e del catalogo restano testo semplice (`CourseModel::estratto()`).

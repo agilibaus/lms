@@ -141,7 +141,8 @@ $campo = TestoBreve::campo('objective', 'Obiettivo del corso', 'objective', 1000
 check('niente maxlength, che conterebbe i tag', !str_contains($campo, 'maxlength'), $campo);
 check('il contatore conta il testo visibile', str_contains($campo, '998 caratteri rimasti'), $campo);
 check('il campo dice al contatore di contare il testo', str_contains($campo, 'data-conta="testo"'));
-check('il contatore e\' la prima descrizione, l\'aiuto la seconda', str_contains($campo, 'aria-describedby="objective-resta objective-aiuto"'));
+check('il contatore e\' la descrizione del campo', str_contains($campo, 'aria-describedby="objective-resta"'));
+check('sotto, «Tag HTML consentiti» apre l\'elenco dei tag', (bool) preg_match('#<details><summary class="tag-consentiti-comando">Tag HTML consentiti</summary><span>: &lt;strong&gt;, &lt;em&gt;, &lt;u&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a href="…"&gt;\.</span></details>#u', $campo), $campo);
 check('il testo scritto torna com\'e\', i tag visibili nel campo', str_contains($campo, '&lt;em&gt;ab&lt;/em&gt;</textarea>'), $campo);
 $oltre = TestoBreve::campo('objective', 'Obiettivo del corso', 'objective', 1000, str_repeat('x', 1037), 3);
 check('riproposto oltre il limite, il contatore dice quanti in più, in evidenza',

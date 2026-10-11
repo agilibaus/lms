@@ -606,7 +606,7 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando';
+    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1136,6 +1136,41 @@ const EXTRA = {
             leggi(prima);
             return esito;
         }));
+        // «Tag HTML consentiti» (11/10): chiuso l'elenco non si vede; un clic
+        // lo apre sulla stessa riga, subito dopo il comando; un secondo clic
+        // lo richiude. Con il clic vero, come lo fa chi usa la pagina.
+        const comandiTag = await page.$$('.tag-consentiti summary');
+        const tagStorti = [];
+        for (const comando of comandiTag) {
+            const leggi = () => comando.evaluate((s) => {
+                const elenco = s.parentElement.querySelector(':scope > span');
+                const r = elenco.getClientRects()[0];
+                const c = s.getBoundingClientRect();
+                return {
+                    chi: s.closest('.tag-consentiti').id,
+                    visibile: elenco.checkVisibility(),
+                    // Il comando e' alto 24 px, il testo 18: sulla stessa riga vuol dire
+                    // dentro l'altezza del comando.
+                    stessaRiga: r ? r.top >= c.top - 1 && r.bottom <= c.bottom + 1 : null,
+                    subitoDopo: r ? Math.abs(r.left - c.right) < 2 : null,
+                    testo: (s.textContent + elenco.textContent).trim(),
+                };
+            });
+            const chiuso = await leggi();
+            await comando.click();
+            const aperto = await leggi();
+            await comando.click();
+            const richiuso = await leggi();
+            if (chiuso.visibile || !aperto.visibile || !aperto.stessaRiga || !aperto.subitoDopo || richiuso.visibile
+                || aperto.testo !== 'Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">.') {
+                tagStorti.push(JSON.stringify({ chiuso, aperto, richiuso }));
+            }
+        }
+        if (comandiTag.length > 0) {
+            check(nome + ': «Tag HTML consentiti» apre l\'elenco sulla stessa riga, e un secondo clic lo chiude',
+                tagStorti.length === 0, tagStorti);
+        }
+
         if (contaTesto.length > 0) {
             const storti = contaTesto.filter((e) => e.conTag !== e.attesoConTag || e.oltre !== e.attesoOltre)
                 .map((e) => JSON.stringify(e));
