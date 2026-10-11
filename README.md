@@ -175,6 +175,7 @@ danni. Le piu' recenti:
 | `2026_10_09_esperto.sql` | risponde l'esperto (l'admin): tolto `question.answer_own` ai tutor, le domande in attesa senza tutor |
 | `2026_10_09_foto_tutor.sql` | una foto sola per il tutor: la foto del suo benvenuto diventa quella del profilo, e la colonna `course_tutor_welcomes.photo_path` si toglie |
 | `2026_10_10_richiesta_iscrizione.sql` | il messaggio della richiesta di iscrizione fino a 1.000 caratteri |
+| `2026_10_11_obiettivi.sql` | l'obiettivo del corso e l'obiettivo del modulo (`courses.objective`, `modules.objective`), facoltativi, fino a 1.000 caratteri |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -294,6 +295,7 @@ massimo 12.000, quindi non serve nessuna migrazione.
 |---|---|
 | Risposta aperta di un questionario | 3.000 |
 | Presentazione del profilo | 1.000 |
+| Obiettivo del corso; obiettivo del modulo | 1.000 |
 | Descrizione del corso | 3.000 |
 | Messaggio della richiesta di iscrizione | 1.000 |
 | Domanda all'esperto; nella pagina «Domande», domanda e risposta | 1.000 e 5.000 |
@@ -497,6 +499,16 @@ dell'etichetta, allineato al bordo destro del campo: lo stesso della presentazio
 della domanda all'esperto. Il limite è doppio, `maxlength` nel campo e il taglio in
 `Admin\CourseController::MAX_DESCRIPTION_CHARS`, e gli a capo valgono un carattere in tutti e
 due. `accessibilita.js` controlla il contatore in «Nuovo corso» e «Modifica corso».
+
+**L'obiettivo del corso e l'obiettivo del modulo** (11/10) sono due campi facoltativi, lunghi al
+massimo **1.000 caratteri**, con lo stesso contatore. «Obiettivo del corso» sta in «Nuovo corso» e
+«Modifica corso», subito prima della descrizione; «Obiettivo del modulo» in «Nuovo modulo» e
+«Modifica modulo», subito prima di «Disponibile dal». Vuoti, restano NULL: i corsi e i moduli
+creati prima restano senza finché qualcuno non lo scrive. **Per ora si scrivono soltanto**: dove
+compariranno nella pagina del corso e in quella del modulo non è ancora deciso. I limiti stanno in
+`Admin\CourseController::MAX_OBJECTIVE_CHARS` e `ModuleController::MAX_OBJECTIVE_CHARS`, le due
+metà in `CampoContato`; le colonne arrivano con `2026_10_11_obiettivi.sql`. `permessi.js` salva
+in tutti e due un testo pieno con gli a capo, e uno più lungo del limite senza `maxlength`.
 
 **Nelle schede dei corsi la descrizione è un estratto** con i tre puntini, lo stesso in «I miei
 corsi» e in «Esplora corsi» (`CourseModel::estratto()`). Nel catalogo lo studente non è ancora
@@ -1214,7 +1226,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 3.000 controlli su 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 200 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto, e gli a capo nei campi con il limite
+node tests/permessi.js              # 204 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto, gli a capo nei campi con il limite e il taglio dell'obiettivo di corso e modulo
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

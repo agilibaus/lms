@@ -2821,7 +2821,11 @@ body.has-focus-video {
     margin-bottom: 0.3rem;
 }
 
-.form .campo-contato-testa label {
+/* Anche nei moduli `.stacked-form` (l'obiettivo in «Nuovo modulo», 11/10):
+   li' l'etichetta ha un margine suo di 0,7 rem, che si sommava a quello della
+   riga e staccava il campo 53 px dalla casella sopra. */
+.form .campo-contato-testa label,
+.stacked-form .campo-contato-testa label {
     margin: 0;
 }
 

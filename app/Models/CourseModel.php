@@ -67,17 +67,19 @@ class CourseModel
         ?string $description,
         bool $isPublished,
         int $createdBy,
-        string $enrollmentMode = 'closed'
+        string $enrollmentMode = 'closed',
+        ?string $objective = null
     ): int {
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO courses (title, slug, description, is_published, enrollment_mode, created_by)
-             VALUES (:title, :slug, :description, :is_published, :enrollment_mode, :created_by)'
+            'INSERT INTO courses (title, slug, objective, description, is_published, enrollment_mode, created_by)
+             VALUES (:title, :slug, :objective, :description, :is_published, :enrollment_mode, :created_by)'
         );
         $stmt->execute([
             'title' => $title,
             'slug' => $slug,
+            'objective' => $objective,
             'description' => $description,
             'is_published' => $isPublished ? 1 : 0,
             'enrollment_mode' => $enrollmentMode,
@@ -93,17 +95,19 @@ class CourseModel
         string $slug,
         ?string $description,
         bool $isPublished,
-        string $enrollmentMode = 'closed'
+        string $enrollmentMode = 'closed',
+        ?string $objective = null
     ): void {
         $stmt = Database::connection()->prepare(
             'UPDATE courses
-             SET title = :title, slug = :slug, description = :description,
+             SET title = :title, slug = :slug, objective = :objective, description = :description,
                  is_published = :is_published, enrollment_mode = :enrollment_mode
              WHERE id = :id'
         );
         $stmt->execute([
             'title' => $title,
             'slug' => $slug,
+            'objective' => $objective,
             'description' => $description,
             'is_published' => $isPublished ? 1 : 0,
             'enrollment_mode' => $enrollmentMode,

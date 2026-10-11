@@ -67,17 +67,19 @@ class ModuleModel
         int $courseId,
         string $title,
         bool $quizRequired = false,
-        ?string $availableFrom = null
+        ?string $availableFrom = null,
+        ?string $objective = null
     ): int {
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO modules (course_id, title, position, quiz_required, available_from)
-             VALUES (:course_id, :title, :position, :quiz_required, :available_from)'
+            'INSERT INTO modules (course_id, title, objective, position, quiz_required, available_from)
+             VALUES (:course_id, :title, :objective, :position, :quiz_required, :available_from)'
         );
         $stmt->execute([
             'course_id' => $courseId,
             'title' => $title,
+            'objective' => $objective,
             'position' => self::nextPosition($courseId),
             'quiz_required' => $quizRequired ? 1 : 0,
             'available_from' => $availableFrom,
@@ -90,15 +92,18 @@ class ModuleModel
         int $id,
         string $title,
         bool $quizRequired = false,
-        ?string $availableFrom = null
+        ?string $availableFrom = null,
+        ?string $objective = null
     ): void {
         $stmt = Database::connection()->prepare(
             'UPDATE modules
-                SET title = :title, quiz_required = :quiz_required, available_from = :available_from
+                SET title = :title, objective = :objective, quiz_required = :quiz_required,
+                    available_from = :available_from
               WHERE id = :id'
         );
         $stmt->execute([
             'title' => $title,
+            'objective' => $objective,
             'quiz_required' => $quizRequired ? 1 : 0,
             'available_from' => $availableFrom,
             'id' => $id,

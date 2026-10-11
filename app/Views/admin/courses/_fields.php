@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\Admin\CourseController;
+use App\Core\CampoContato;
 
 /**
  * Campi condivisi fra creazione e modifica del corso.
@@ -27,6 +28,13 @@ $restano = max(0, CourseController::MAX_DESCRIPTION_CHARS - mb_strlen(str_replac
 <input type="text" id="slug" name="slug" maxlength="220"
        value="<?= htmlspecialchars((string) ($course['slug'] ?? '')) ?>">
 <p class="form-hint">Se lo lasci vuoto viene generato dal titolo; se è già in uso viene reso univoco con un suffisso.</p>
+
+<?php /* L'obiettivo del corso (11/10): facoltativo, 1.000 caratteri con il
+         contatore. Si scrive qui; dove lo vedranno gli studenti non e'
+         ancora deciso. Lo script del contatore e' incluso sotto la
+         descrizione e collega tutti e due i campi. */ ?>
+<?= CampoContato::html('objective', 'Obiettivo del corso', 'objective', CourseController::MAX_OBJECTIVE_CHARS,
+    (string) ($course['objective'] ?? ''), 3) ?>
 
 <div class="quiz-open-wrap campo-contato">
     <div class="campo-contato-testa">

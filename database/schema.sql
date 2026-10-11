@@ -158,6 +158,8 @@ CREATE TABLE courses (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title           VARCHAR(200) NOT NULL,
     slug            VARCHAR(220) NOT NULL UNIQUE,
+    -- Obiettivo del corso, facoltativo, al massimo 1.000 caratteri (11/10).
+    objective       VARCHAR(1000) NULL DEFAULT NULL,
     description     TEXT,
     -- Percorso relativo a /storage della copertina (misura grande); accanto sta
     -- la misura piccola con lo stesso nome piu' "-card". Un valore http(s)://
@@ -185,6 +187,8 @@ CREATE TABLE modules (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     course_id       INT UNSIGNED NOT NULL,
     title           VARCHAR(200) NOT NULL,
+    -- Obiettivo del modulo, facoltativo, al massimo 1.000 caratteri (11/10).
+    objective       VARCHAR(1000) NULL DEFAULT NULL,
     position        INT UNSIGNED NOT NULL DEFAULT 0,
     -- se 1, i moduli successivi restano bloccati finche' il quiz di questo modulo non e' superato
     quiz_required   TINYINT(1) NOT NULL DEFAULT 0,

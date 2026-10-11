@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\Admin\TutorWelcomeController;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Core\CampoContato;
 use App\Core\CourseCover;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
@@ -33,6 +34,13 @@ class CourseController extends AdminController
      * strumenti per sviluppatori.
      */
     public const MAX_DESCRIPTION_CHARS = 3000;
+
+    /**
+     * L'obiettivo del corso: facoltativo, al massimo 1.000 caratteri, con il
+     * contatore (11/10, Alessandro). Le due meta' del limite stanno in
+     * `CampoContato`. Dove si mostra agli studenti non e' ancora deciso.
+     */
+    public const MAX_OBJECTIVE_CHARS = 1000;
 
     public function index(array $params = []): void
     {
@@ -73,7 +81,8 @@ class CourseController extends AdminController
             $data['description'],
             $data['is_published'],
             (int) Auth::id(),
-            $data['enrollment_mode']
+            $data['enrollment_mode'],
+            $data['objective']
         );
 
         $this->success('Corso creato.', '/admin/courses/' . $courseId . '/edit');
@@ -141,7 +150,8 @@ class CourseController extends AdminController
             CourseModel::uniqueSlug($data['slug'] !== '' ? $data['slug'] : $data['title'], $id),
             $data['description'],
             $data['is_published'],
-            $data['enrollment_mode']
+            $data['enrollment_mode'],
+            $data['objective']
         );
 
         $this->success('Corso aggiornato.', $redirect);
@@ -409,7 +419,7 @@ class CourseController extends AdminController
     // ---------------------------------------------------------------
 
     /**
-     * @return array{title: string, slug: string, description: string|null, is_published: bool, enrollment_mode: string}
+     * @return array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string}
      */
     private function dataFromPost(): array
     {
@@ -422,11 +432,13 @@ class CourseController extends AdminController
             0,
             self::MAX_DESCRIPTION_CHARS
         );
+        $objective = CampoContato::taglia((string) ($_POST['objective'] ?? ''), self::MAX_OBJECTIVE_CHARS);
         $mode = (string) ($_POST['enrollment_mode'] ?? 'closed');
 
         return [
             'title' => trim((string) ($_POST['title'] ?? '')),
             'slug' => trim((string) ($_POST['slug'] ?? '')),
+            'objective' => $objective === '' ? null : $objective,
             'description' => $description === '' ? null : $description,
             'is_published' => isset($_POST['is_published']),
             'enrollment_mode' => in_array($mode, ['open', 'request', 'closed'], true) ? $mode : 'closed',

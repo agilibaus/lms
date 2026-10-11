@@ -1321,6 +1321,42 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['nel campo ' + risposta.length + ', salvati ' + [...scritta].length + ', finisce con «' + scritta.slice(-5) + '»']);
 
             await ctx.close();
+
+            // L'obiettivo del corso e del modulo (11/10): 1.000 caratteri con
+            // il contatore, dal pannello. Due prove per campo: un testo pieno
+            // con gli a capo si salva intero; e senza il `maxlength`, tolto
+            // come lo si toglierebbe dagli strumenti per sviluppatori, il
+            // server taglia a 1.000. Il corso e il modulo sono quelli del
+            // mondo A, che la semina ricrea a ogni giro.
+            const admin = await entra(browser, 'admin@test.it');
+            for (const [nome, indirizzo, modulo] of [
+                ['corso', '/admin/courses/' + A.corso + '/edit', 'form[action="/admin/courses/' + A.corso + '"]'],
+                ['modulo', '/modules/' + A.modulo + '/edit', 'form[action="/modules/' + A.modulo + '"]'],
+            ]) {
+                const salva = async (testo, senzaLimite) => {
+                    await admin.page.goto(BASE + indirizzo);
+                    if (senzaLimite) {
+                        await admin.page.$eval('#objective', (t) => t.removeAttribute('maxlength'));
+                    }
+                    await admin.page.fill('#objective', testo);
+                    await Promise.all([admin.page.waitForNavigation(), admin.page.click(modulo + ' button[type=submit]')]);
+                    await admin.page.goto(BASE + indirizzo);
+                    return admin.page.$eval('#objective', (t) => t.value);
+                };
+                const testo = pieno(1000);
+                const intero = await salva(testo, false);
+                check('obiettivo del ' + nome + ': 1.000 caratteri con 9 a capo si salvano interi',
+                    intero.length === 1000 && intero.endsWith('FINE.'),
+                    ['nel campo ' + testo.length + ', salvati ' + intero.length + ', finisce con «' + intero.slice(-5) + '»']);
+                // Il confronto e' sul testo, non sulla lunghezza: se il server
+                // non tagliasse, il database rifiuterebbe la riga e nel campo
+                // resterebbe il testo di prima, lungo anche lui 1.000.
+                const tagliato = await salva('b'.repeat(1100), true);
+                check('obiettivo del ' + nome + ': senza maxlength il server taglia a 1.000',
+                    tagliato === 'b'.repeat(1000),
+                    ['salvati ' + tagliato.length + ' caratteri, finisce con «' + tagliato.slice(-5) + '»']);
+            }
+            await admin.ctx.close();
         }
 
         console.log('\n--- chi non ha fatto l\'accesso');

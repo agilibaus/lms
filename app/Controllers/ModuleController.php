@@ -6,12 +6,20 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Core\CampoContato;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\ModuleModel;
 
 class ModuleController
 {
+    /**
+     * L'obiettivo del modulo: facoltativo, al massimo 1.000 caratteri, con il
+     * contatore (11/10, Alessandro). Le due meta' del limite stanno in
+     * `CampoContato`. Dove si mostra agli studenti non e' ancora deciso.
+     */
+    public const MAX_OBJECTIVE_CHARS = 1000;
+
     public function createForm(array $params): void
     {
         Auth::requireRole('admin', 'tutor');
@@ -54,7 +62,13 @@ class ModuleController
             exit;
         }
 
-        ModuleModel::create($courseId, $title, isset($_POST['quiz_required']), $this->availableFromPost());
+        ModuleModel::create(
+            $courseId,
+            $title,
+            isset($_POST['quiz_required']),
+            $this->availableFromPost(),
+            $this->objectivePost()
+        );
 
         header('Location: /courses/' . $courseId);
         exit;
@@ -102,12 +116,24 @@ class ModuleController
                 (int) $module['id'],
                 $title,
                 isset($_POST['quiz_required']),
-                $this->availableFromPost()
+                $this->availableFromPost(),
+                $this->objectivePost()
             );
         }
 
         header('Location: /courses/' . $module['course_id']);
         exit;
+    }
+
+    /**
+     * L'obiettivo dal modulo inviato, tagliato al limite con gli a capo
+     * contati uno; vuoto diventa null.
+     */
+    private function objectivePost(): ?string
+    {
+        $value = CampoContato::taglia((string) ($_POST['objective'] ?? ''), self::MAX_OBJECTIVE_CHARS);
+
+        return $value === '' ? null : $value;
     }
 
     /**

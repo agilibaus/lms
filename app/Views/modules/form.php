@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Controllers\ModuleController;
+use App\Core\CampoContato;
 use App\Core\Csrf;
 
 /** @var array $course */
@@ -31,6 +33,13 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
         <input type="checkbox" name="quiz_required" value="1" <?= !empty($module['quiz_required']) ? 'checked' : '' ?>>
         Questionario obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il questionario di questo modulo
     </label>
+
+    <?php /* L'obiettivo del modulo (11/10): facoltativo, 1.000 caratteri con il
+             contatore. Si scrive qui; dove lo vedranno gli studenti non e'
+             ancora deciso. */ ?>
+    <?= CampoContato::html('objective', 'Obiettivo del modulo', 'objective', ModuleController::MAX_OBJECTIVE_CHARS,
+        (string) ($module['objective'] ?? ''), 3) ?>
+    <script src="/assets/js/quiz-open-count.js"></script>
 
     <?php /* Il valore in tabella e' "2026-11-15 09:00:00", il campo del
              browser vuole "2026-11-15T09:00": la T al posto dello spazio e
