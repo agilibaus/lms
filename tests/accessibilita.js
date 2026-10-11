@@ -608,7 +608,7 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando';
+    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1379,9 +1379,12 @@ EXTRA['Corso con obiettivi, da staff (semina)'] = async (page, nome) => {
         corso: document.querySelectorAll('section.obiettivo-corso').length,
         ridotti: document.querySelectorAll('details.obiettivo-ridotto, details.obiettivo-modulo-ridotto').length,
         moduli: [...document.querySelectorAll('.module-card')].map((m) => !!m.querySelector(':scope > .obiettivo-modulo')),
+        // La gerarchia dei moduli (11/10) e' solo per lo studente.
+        gerarchia: document.querySelectorAll('.moduli-barra, details.modulo-riga, .etichetta-modulo, .riprendi, .modulo-in-corso').length,
     }));
     check(nome + ': obiettivo del corso e di ogni modulo completi', stato.corso === 1 && stato.ridotti === 0
-        && stato.moduli.length === 2 && stato.moduli.every(Boolean), [JSON.stringify(stato)]);
+        && stato.moduli.length === 3 && stato.moduli.every(Boolean), [JSON.stringify(stato)]);
+    check(nome + ': tutti i moduli aperti, senza etichette né «Riprendi»', stato.gerarchia === 0, [JSON.stringify(stato)]);
 };
 
 // E la descrizione del corso (10/10), nella creazione e nella modifica, e
@@ -1794,6 +1797,64 @@ async function giroBenvenuto(browser) {
         check('l\'obiettivo del modulo in corso è completo, quello del modulo chiuso è una riga con «Mostra»',
             obiettivi.inCorso && obiettivi.chiuso && obiettivi.comando === 'Mostra' && obiettivi.testoChiusoVisibile === false,
             [JSON.stringify(obiettivi)]);
+
+        // La gerarchia dei moduli (11/10). Lo studente non ha fatto niente:
+        // il primo modulo e' in corso, con «In corso» e «Inizia da…»; quello
+        // chiuso e' il prossimo, aperto, con «Prossimo» e la data; il terzo e'
+        // una riga «1 lezione» che si apre. Sopra, «3 moduli · 0 completati»
+        // e «Mostra tutti i moduli».
+        const gerarchiaModuli = await page.evaluate(() => {
+            const carte = [...document.querySelectorAll('.module-card')];
+            const riga = document.querySelector('details.modulo-riga:not([open])');
+            const barra = document.querySelector('.moduli-barra');
+            const riprendi = carte[0] ? carte[0].querySelector('.riprendi') : null;
+            return {
+                barra: barra ? barra.querySelector('span').textContent.replace(/\s+/g, ' ').trim() : null,
+                comando: barra && barra.querySelector('.moduli-comando') ? barra.querySelector('.moduli-comando').textContent.trim() : null,
+                carte: carte.length,
+                inCorso: carte[0] ? carte[0].classList.contains('modulo-in-corso')
+                    && carte[0].querySelector('h2 .etichetta-modulo').textContent.trim() === 'In corso' : false,
+                riprendi: riprendi ? riprendi.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : null,
+                riprendiVa: riprendi ? !!riprendi.querySelector('a[href^="/lessons/"]') : false,
+                prossimo: carte[1] ? carte[1].querySelector('h2 .etichetta-modulo').textContent.trim() : null,
+                prossimoChiuso: carte[1] ? carte[1].classList.contains('module-locked') : false,
+                riga: riga ? riga.querySelector('.modulo-riga-stato').textContent.trim() : null,
+                rigaComando: riga ? riga.querySelector('.obiettivo-comando').innerText.trim() : null,
+                rigaLezioneVisibile: riga ? riga.querySelector('.lesson-list').checkVisibility() : null,
+            };
+        });
+        check('gerarchia: il primo modulo «In corso» con «Inizia da…», il chiuso «Prossimo», il terzo una riga',
+            gerarchiaModuli.carte === 2 && gerarchiaModuli.inCorso && gerarchiaModuli.riprendiVa
+                && /^Inizia da: .+ · 0 di 1 fatte$/.test(gerarchiaModuli.riprendi || '')
+                && gerarchiaModuli.prossimo === 'Prossimo' && gerarchiaModuli.prossimoChiuso
+                && gerarchiaModuli.riga === '1 lezione' && gerarchiaModuli.rigaComando === 'Mostra' && gerarchiaModuli.rigaLezioneVisibile === false,
+            [JSON.stringify(gerarchiaModuli)]);
+        check('gerarchia: sopra i moduli «3 moduli · 0 completati» e «Mostra tutti i moduli»',
+            gerarchiaModuli.barra === '3 moduli · 0 completati' && gerarchiaModuli.comando === 'Mostra tutti i moduli', [JSON.stringify(gerarchiaModuli)]);
+        if (gerarchiaModuli.riga !== null) {
+            await page.click('details.modulo-riga > summary');
+            const aperta = await page.evaluate(() => ({
+                lezione: document.querySelector('details.modulo-riga[open] .lesson-list').checkVisibility(),
+                comando: document.querySelector('details.modulo-riga[open] .obiettivo-comando').innerText.trim(),
+            }));
+            await page.click('details.modulo-riga > summary');
+            check('gerarchia: la riga si apre con le sue lezioni e il comando diventa «Nascondi»',
+                aperta.lezione && aperta.comando === 'Nascondi', [JSON.stringify(aperta)]);
+        }
+        // «Mostra tutti i moduli» in una scheda a parte, per non toccare le
+        // visite che contano qui sotto: tutto aperto, e il comando torna indietro.
+        {
+            const altra = await page.context().newPage();
+            await altra.goto(BASE + url + '?moduli=tutti');
+            const tutti = await altra.evaluate(() => ({
+                carte: document.querySelectorAll('.module-card').length,
+                righe: document.querySelectorAll('details.modulo-riga').length,
+                comando: document.querySelector('.moduli-comando').textContent.trim(),
+            }));
+            await altra.close();
+            check('gerarchia: «Mostra tutti i moduli» apre tutto, e il comando diventa «Mostra solo il modulo in corso»',
+                tutti.carte === 3 && tutti.righe === 0 && tutti.comando === 'Mostra solo il modulo in corso', [JSON.stringify(tutti)]);
+        }
 
         await page.goto(BASE + url);
         await page.goto(BASE + url);

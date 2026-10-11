@@ -316,7 +316,7 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +324,7 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -5373,6 +5373,172 @@ details[open] > summary .obiettivo-se-chiuso {
 
 details[open] > summary .obiettivo-se-aperto {
     visibility: visible;
+}
+
+/* ==========================================================
+   La gerarchia dei moduli (11/10, Alessandro)
+   ==========================================================
+
+   Per lo studente: il modulo in corso in evidenza (bordo verde, «In
+   corso», «Riprendi da…»), il prossimo aperto con «Prossimo», gli altri
+   righe che si aprono. Lo stato e' sempre detto anche a parole, non dal
+   solo colore. La regola sta in `App\Core\Percorso`. */
+.moduli-barra {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.3rem 1rem;
+    margin: 0 0 0.6rem;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+/* Un comando, non un collegamento in una frase (0125): neutro, ed e'
+   nell'elenco dei comandi in cima al foglio. */
+.moduli-comando {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    font-size: 0.85rem;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.module-card.modulo-in-corso {
+    border: 2px solid var(--color-primary);
+    /* Il pixel in piu' del bordo si toglie al riempimento: il titolo resta
+       allineato a quelli degli altri moduli. */
+    padding: calc(1rem - 1px) calc(1.25rem - 1px);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.etichetta-modulo {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    vertical-align: middle;
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.etichetta-modulo-quieta {
+    background: transparent;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    font-weight: 600;
+}
+
+.riprendi {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+    margin: 0.5rem 0 0.4rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-soft);
+    font-size: 0.92rem;
+}
+
+.riprendi p {
+    margin: 0;
+}
+
+/* Una griglia: la spunta, il titolo, lo stato, il comando. Sul telefono lo
+   stato va sotto il titolo e il comando resta a destra, centrato sulle due
+   righe: con un flex che va a capo «Mostra» finiva da solo sulla riga sotto,
+   a sinistra. La soglia e' sullo spazio della lista, come per le tabelle. */
+.module-list {
+    container: moduli / inline-size;
+}
+
+.modulo-riga > summary {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "spunta titolo stato comando";
+    align-items: center;
+    /* Niente spazio fra le colonne: la spunta c'e' solo nei completati, e
+       una colonna vuota con il suo spazio spostava i titoli degli altri. Lo
+       spazio lo danno i margini. */
+    column-gap: 0;
+    row-gap: 0.1rem;
+    min-height: 2.6rem;
+    list-style: none;
+    cursor: pointer;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1.25rem;
+}
+
+.modulo-riga > summary::-webkit-details-marker {
+    display: none;
+}
+
+.modulo-riga > summary:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.modulo-riga[open] > summary {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.modulo-riga-titolo {
+    grid-area: titolo;
+    margin: 0 0.8rem 0 0;
+    font-size: 1.05rem;
+}
+
+.modulo-riga > summary .obiettivo-comando {
+    grid-area: comando;
+    margin-left: 0.8rem;
+}
+
+/* «Mostra» e «Nascondi» stanno nella stessa cella: qui attaccati al bordo
+   destro, come il comando del benvenuto. */
+.modulo-riga > summary .obiettivo-comando > span {
+    justify-self: end;
+}
+
+@container moduli (max-width: 36rem) {
+    .modulo-riga > summary {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas:
+            "spunta titolo comando"
+            ". stato comando";
+    }
+}
+
+.modulo-riga-completato .modulo-riga-titolo {
+    color: var(--color-text-muted);
+}
+
+.modulo-riga-spunta {
+    grid-area: spunta;
+    margin-right: 0.6rem;
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.modulo-riga-stato {
+    grid-area: stato;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* Aperta, la riga mostra il corpo del modulo sotto, nello stesso riquadro. */
+.modulo-riga-corpo {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-top: 0;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    padding: 0.4rem 1.25rem 1rem;
 }
 
 /* Nella pagina di modifica del corso, un blocco per tutor. */

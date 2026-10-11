@@ -12,6 +12,7 @@ use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\CourseCover;
 use App\Core\Obiettivo;
+use App\Core\Percorso;
 use App\Core\TestoBreve;
 use App\Core\Upload;
 use App\Core\View;
@@ -183,6 +184,12 @@ class CourseController
             'welcome' => $welcome,
             'obiettivoCorso' => $obiettivoCorso,
             'tuttiCompleti' => !$isStudent,
+            // La gerarchia dei moduli (11/10): lo stato di ciascuno per lo
+            // studente; per lo staff null, cioe' tutto aperto.
+            'statiModuli' => $isStudent
+                ? Percorso::stati($modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)
+                : null,
+            'tuttiModuli' => ($_GET['moduli'] ?? '') === Percorso::TUTTI,
             'moduloInCorso' => $isStudent
                 ? Obiettivo::moduloInCorso($modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)
                 : null,

@@ -1012,6 +1012,37 @@ completo alla prima visita fra descrizione e benvenuto, il modulo in corso compl
 ridotto, e alla quarta visita la riga che si riapre; da staff, che siano tutti completi. La semina
 dà un obiettivo al corso del mondo A e ai suoi due moduli.
 
+## La gerarchia dei moduli
+
+Scelta da Alessandro l'11/10 su un mockup. Per lo studente il modulo che sta seguendo conta più
+degli altri, e quando lo finisce conta il successivo. **Una regola sola**, che si adatta da sé al
+numero dei moduli (`App\Core\Percorso`):
+
+- **In corso**: il primo modulo in cui resta una lezione da completare o un questionario da
+  superare, anche se chiuso. Aperto, con il bordo verde, «In corso» accanto al titolo e «Riprendi
+  da: … · 1 di 3 fatte» con il pulsante («Inizia da…» se nel modulo non ha fatto ancora niente).
+  Il conto è sulle lezioni, non sul questionario; con le lezioni tutte fatte resta «Ti resta il
+  questionario».
+- **Prossimo**: il primo modulo non completato dopo quello in corso. Aperto, con «Prossimo»,
+  anche se chiuso per data: si vede quando si apre.
+- **Completato**: lezioni completate e questionario superato. Una riga, «✓ … completato · 3
+  lezioni», che si apre con «Mostra».
+- **Gli altri**: una riga con il numero delle lezioni («nessuna lezione» per un modulo vuoto), la
+  data di apertura («si apre il 15/11/2026») o «si sblocca con il questionario del modulo
+  precedente».
+
+Con due o tre moduli la pagina resta quasi com'era; con otto si vedono il presente, il passo
+dopo e poche righe. Sopra i moduli: «8 moduli · 3 completati» e **«Mostra tutti i moduli»**,
+che apre tutto per quella visita (`?moduli=tutti`, quindi anche senza JavaScript) e diventa
+«Mostra solo il modulo in corso»; alla visita dopo si riparte dalla regola, e la scelta non si
+ricorda. A corso finito non c'è un modulo in corso: sono tutte righe «completato». **Lo staff vede
+tutto aperto**, senza etichette né «Riprendi».
+
+`tests/percorso_test.php` prova gli stati e «Riprendi da»; `accessibilita.js`, nel giro da
+studente, il modulo in corso, il prossimo chiuso, la riga che si apre e «Mostra tutti i moduli»;
+da staff, che non ci sia niente di tutto questo. La semina aggiunge al corso del mondo A un terzo
+modulo, che per lo studente è una riga.
+
 ## Il primo accesso
 
 Al primo accesso lo studente arriva sulla pagina **«Primo accesso»** (`/primo-accesso`, 08/10,
@@ -1262,6 +1293,7 @@ php tests/google_meet_test.php      # client Google: JWT firmata, richieste, err
 php tests/html_sanitizer_test.php   # l'HTML dell'editor non può contenere codice eseguibile
 php tests/testo_breve_test.php      # obiettivo e descrizione con i tag: quali restano, a capo, testo visibile, rifiuto
 php tests/obiettivo_test.php        # obiettivo nella pagina del corso: completo o ridotto, il modulo in corso, «Obiettivo:»
+php tests/percorso_test.php         # gerarchia dei moduli: in corso, prossimo, completati, «Riprendi da»
 php tests/course_cover_test.php     # ritaglio 16:9, due misure, testo alternativo (serve GD)
 php tests/bunny_token_test.php      # firma e scadenza degli indirizzi Bunny
 php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto di plausibilità

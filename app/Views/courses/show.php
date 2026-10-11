@@ -8,6 +8,7 @@ use App\Core\CourseAccess;
 use App\Core\CourseCover;
 use App\Core\Csrf;
 use App\Core\Obiettivo;
+use App\Core\Percorso;
 use App\Core\TestoBreve;
 
 /** @var array $course */
@@ -22,6 +23,8 @@ use App\Core\TestoBreve;
 /** @var string|null $obiettivoCorso «completo», «ridotto», o null senza obiettivo */
 /** @var bool $tuttiCompleti lo staff vede gli obiettivi sempre completi */
 /** @var int|null $moduloInCorso */
+/** @var array<int, string>|null $statiModuli lo stato di ogni modulo per lo studente; null per lo staff */
+/** @var bool $tuttiModuli «Mostra tutti i moduli», per questa visita */
 
 // Chi puo' modificare questo corso: l'admin sempre, il tutor solo se il corso e'
 // assegnato a uno dei suoi gruppi. Gli altri tutor lo vedono in sola lettura.
@@ -115,6 +118,28 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <?php if (empty($modules)): ?>
     <p class="empty-state">Nessun modulo ancora disponibile per questo corso.</p>
 <?php else: ?>
+    <?php /* La gerarchia dei moduli (11/10, `App\Core\Percorso`): per lo
+             studente il modulo in corso e il prossimo sono aperti, gli altri
+             sono righe che si aprono. Sopra, quanti moduli e quanti
+             completati, e il comando che apre tutto per questa visita: un
+             indirizzo, quindi anche senza JavaScript. Lo staff vede tutto
+             aperto e niente di questo. */ ?>
+    <?php if ($statiModuli !== null): ?>
+        <?php
+        $nModuli = count($modules);
+        $nCompletati = count(array_filter($statiModuli, static fn (string $s): bool => $s === Percorso::COMPLETATO));
+        $ciSonoRighe = count(array_filter($statiModuli, static fn (string $s): bool
+            => $s === Percorso::COMPLETATO || $s === Percorso::DA_FARE)) > 0;
+        ?>
+        <div class="moduli-barra" id="moduli">
+            <span><?= $nModuli ?> <?= $nModuli === 1 ? 'modulo' : 'moduli' ?> · <?= $nCompletati ?> <?= $nCompletati === 1 ? 'completato' : 'completati' ?></span>
+            <?php if ($tuttiModuli): ?>
+                <a class="moduli-comando" href="/courses/<?= (int) $course['id'] ?>#moduli"><?= $moduloInCorso !== null ? 'Mostra solo il modulo in corso' : 'Richiudi i moduli' ?></a>
+            <?php elseif ($ciSonoRighe): ?>
+                <a class="moduli-comando" href="/courses/<?= (int) $course['id'] ?>?moduli=<?= Percorso::TUTTI ?>#moduli">Mostra tutti i moduli</a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
     <div class="module-list">
         <?php foreach ($modules as $moduleIndex => $module): ?>
             <?php
@@ -127,11 +152,46 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             // quando si apre dipende da lui.
             $lockedByDate = $isLocked && $lock['motivo'] === CourseAccess::MOTIVO_DATA
                 && $lock['available_from'] !== null;
+            $stato = $statiModuli[$moduleId] ?? null;
+            // Aperto per lo staff, con «Mostra tutti i moduli», e per il
+            // modulo in corso e il prossimo; gli altri sono una riga.
+            $aperto = $stato === null || $tuttiModuli || $stato === Percorso::IN_CORSO || $stato === Percorso::PROSSIMO;
+            $nLezioni = count($lessonsByModule[$moduleId] ?? []);
             ?>
-            <section class="module-card <?= $isLocked ? 'module-locked' : '' ?>" id="modulo-<?= $moduleId ?>">
+            <?php if (!$aperto): ?>
+                <?php
+                if ($stato === Percorso::COMPLETATO) {
+                    $statoRiga = 'completato · ' . Percorso::lezioni($nLezioni);
+                } elseif ($lockedByDate) {
+                    $statoRiga = 'si apre il ' . date('j/n/Y', strtotime((string) $lock['available_from']));
+                } elseif ($isLocked) {
+                    $statoRiga = 'si sblocca con il questionario del modulo precedente';
+                } else {
+                    $statoRiga = Percorso::lezioni($nLezioni);
+                }
+                ?>
+                <details class="modulo-riga <?= $stato === Percorso::COMPLETATO ? 'modulo-riga-completato' : '' ?>" id="modulo-<?= $moduleId ?>">
+                    <summary>
+                        <?php if ($stato === Percorso::COMPLETATO): ?>
+                            <span class="modulo-riga-spunta" aria-hidden="true">&check;</span>
+                        <?php endif; ?>
+                        <h2 class="modulo-riga-titolo"><?= htmlspecialchars($module['title']) ?></h2>
+                        <span class="modulo-riga-stato"><?= htmlspecialchars($statoRiga) ?></span>
+                        <span class="obiettivo-comando"><span class="obiettivo-se-chiuso">Mostra</span><span class="obiettivo-se-aperto">Nascondi</span></span>
+                    </summary>
+                    <div class="modulo-riga-corpo <?= $isLocked ? 'module-locked' : '' ?>">
+            <?php else: ?>
+            <section class="module-card <?= $isLocked ? 'module-locked' : '' ?> <?= $stato === Percorso::IN_CORSO ? 'modulo-in-corso' : '' ?>" id="modulo-<?= $moduleId ?>">
                 <div class="module-card-header">
                     <h2>
                         <?= htmlspecialchars($module['title']) ?>
+                        <?php if ($stato === Percorso::IN_CORSO): ?>
+                            <span class="etichetta-modulo">In corso</span>
+                        <?php elseif ($stato === Percorso::PROSSIMO): ?>
+                            <span class="etichetta-modulo etichetta-modulo-quieta">Prossimo</span>
+                        <?php elseif ($stato === Percorso::COMPLETATO): ?>
+                            <span class="etichetta-modulo etichetta-modulo-quieta"><span aria-hidden="true">&check;</span> Completato</span>
+                        <?php endif; ?>
                         <?php if ($lockedByDate): ?>
                             <span class="badge badge-muted">
                                 dal <?= htmlspecialchars(date('j/n/Y', strtotime((string) $lock['available_from']))) ?>
@@ -178,6 +238,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         </div>
                     <?php endif; ?>
                 </div>
+            <?php endif; ?>
 
                 <?php /* L'obiettivo del modulo (11/10): completo nel modulo in
                          corso, ridotto a una riga negli altri; lo staff lo vede
@@ -196,6 +257,29 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                             </summary>
                             <?= $bloccoObiettivo ?>
                         </details>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php /* «Riprendi da…» nel modulo in corso (11/10): la prima
+                         lezione non completata; il conto e' sulle lezioni, non
+                         sul questionario. Con le lezioni tutte fatte resta il
+                         questionario. In un modulo chiuso niente: c'e' la data. */ ?>
+                <?php if ($stato === Percorso::IN_CORSO && !$isLocked): ?>
+                    <?php $ripresa = Percorso::riprendi($lessonsByModule[$moduleId] ?? [], $completedLessonIds); ?>
+                    <?php if ($ripresa !== null): ?>
+                        <?php $verbo = $ripresa['fatte'] > 0 ? 'Riprendi' : 'Inizia'; ?>
+                        <div class="riprendi">
+                            <p>
+                                <?= $verbo ?> da: <strong><?= htmlspecialchars((string) $ripresa['lezione']['title']) ?></strong>
+                                · <?= $ripresa['fatte'] ?> di <?= $ripresa['totale'] ?> fatte
+                            </p>
+                            <a class="btn btn-primary" href="/lessons/<?= (int) $ripresa['lezione']['id'] ?>"><?= $verbo ?></a>
+                        </div>
+                    <?php elseif ($quiz !== null): ?>
+                        <div class="riprendi">
+                            <p>Lezioni completate · <?= $nLezioni ?> di <?= $nLezioni ?>. Ti resta il questionario.</p>
+                            <a class="btn btn-primary" href="/quizzes/<?= (int) $quiz['id'] ?>">Questionario</a>
+                        </div>
                     <?php endif; ?>
                 <?php endif; ?>
 
@@ -272,7 +356,12 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         </p>
                     <?php endif; ?>
                 <?php endif; ?>
+            <?php if (!$aperto): ?>
+                    </div>
+                </details>
+            <?php else: ?>
             </section>
+            <?php endif; ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>

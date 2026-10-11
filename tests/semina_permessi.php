@@ -465,6 +465,15 @@ $pdo->prepare('UPDATE modules SET objective = :o WHERE id = :id')
     ->execute(['o' => 'Conoscere il mondo A e le sue <em>lezioni</em>.', 'id' => $a['modulo']]);
 $pdo->prepare('UPDATE modules SET objective = :o WHERE id = :id')
     ->execute(['o' => 'Arrivare al modulo che si apre fra trenta giorni.', 'id' => $a['modulo_chiuso']]);
+// La gerarchia dei moduli (11/10): un terzo modulo nel mondo A, aperto e
+// con una lezione. Lo studente di A non ha fatto niente: il primo modulo e'
+// in corso, quello chiuso e' il prossimo (aperto, con la data), e questo e'
+// una riga «1 lezione» che si apre.
+$pdo->prepare('INSERT INTO modules (course_id, title, objective, position) VALUES (:c, :t, :o, 2)')
+    ->execute(['c' => $a['corso'], 't' => '[prova-permessi] mondo A modulo dopo', 'o' => 'Il passo che viene dopo.']);
+$a['modulo_dopo'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO lessons (module_id, title, content_html, position) VALUES (:m, :t, :h, 0)')
+    ->execute(['m' => $a['modulo_dopo'], 't' => '[prova-permessi] mondo A lezione dopo', 'h' => '<p>Una lezione del modulo dopo.</p>']);
 $b['benvenuto'] = benvenutoDiProva($pdo, $b['corso'], $tutorB, 'B');
 
 // Le domande (07/10): in ciascun corso una pubblicata sul primo modulo, una
