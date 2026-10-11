@@ -635,7 +635,9 @@ const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])'
  */
 async function campiSenzaContatore(page) {
     return page.evaluate(() => {
-        const campi = [...document.querySelectorAll('textarea[maxlength]')];
+        // Anche i campi che contano il testo visibile (11/10): non hanno
+        // `maxlength`, che conterebbe i tag, e lo dicono con `data-conta`.
+        const campi = [...document.querySelectorAll('textarea[maxlength], textarea[data-conta]')];
 
         if (campi.length === 0) {
             return null;
@@ -1079,6 +1081,7 @@ const EXTRA = {
                 vivo: contatore.getAttribute('aria-live'),
                 limite: campo.getAttribute('maxlength'),
                 dichiarato: contatore.getAttribute('data-max'),
+                conta: campo.getAttribute('data-conta'),
             };
         }));
 
@@ -1103,8 +1106,42 @@ const EXTRA = {
         const vivi = male((e) => e.vivo === null || e.vivo === 'off');
         check(nome + ': il contatore non è una regione viva', vivi.length === 0, vivi);
 
-        const senzaLimite = male((e) => e.limite !== null && Number(e.limite) > 0 && e.limite === e.dichiarato);
+        // Un campo che conta il testo visibile (obiettivo e descrizione con i
+        // tag, 11/10) non dichiara il limite al browser: `maxlength`
+        // conterebbe anche i tag e fermerebbe la scrittura prima del limite.
+        const senzaLimite = male((e) => (e.conta === 'testo'
+            ? e.limite === null && Number(e.dichiarato) > 0
+            : e.limite !== null && Number(e.limite) > 0 && e.limite === e.dichiarato));
         check(nome + ': il campo dichiara il limite al browser, lo stesso del contatore', senzaLimite.length === 0, senzaLimite);
+
+        // E il contatore di quei campi conta il testo, non i tag, e oltre il
+        // limite dice quanti caratteri sono in piu', con le migliaia
+        // separate come le scrive il server. Il campo torna com'era.
+        const contaTesto = await page.evaluate(() => [...document.querySelectorAll('textarea[data-conta="testo"]')].map((campo) => {
+            const contatore = document.getElementById(campo.id + '-resta');
+            const massimo = Number(contatore.getAttribute('data-max'));
+            const prima = campo.value;
+            const leggi = (valore) => {
+                campo.value = valore;
+                campo.dispatchEvent(new Event('input'));
+                return contatore.textContent.trim();
+            };
+            const esito = {
+                chi: campo.id,
+                conTag: leggi('<strong>ab</strong> &amp;'),
+                attesoConTag: (massimo - 4) + ' caratteri rimasti',
+                oltre: leggi('x'.repeat(massimo + 1200)),
+                attesoOltre: '1.200 caratteri in più',
+            };
+            leggi(prima);
+            return esito;
+        }));
+        if (contaTesto.length > 0) {
+            const storti = contaTesto.filter((e) => e.conTag !== e.attesoConTag || e.oltre !== e.attesoOltre)
+                .map((e) => JSON.stringify(e));
+            check(nome + ': il contatore dei campi con i tag conta il testo, e oltre il limite dice quanti in più',
+                storti.length === 0, storti);
+        }
     },
 
     /*
@@ -1278,7 +1315,10 @@ EXTRA['Agenda'] = async (page, nome) => {
     check(nome + ': «Storico» chiuso resta una riga sola', esito.chiusa <= 26, ['alta ' + esito.chiusa + ' px']);
 };
 
-// E la descrizione del corso (10/10), nella creazione e nella modifica.
+// E la descrizione del corso (10/10), nella creazione e nella modifica, e
+// l'obiettivo del corso e del modulo (11/10).
+EXTRA['Nuovo modulo'] = EXTRA['Quiz da svolgere'];
+EXTRA['Modifica modulo'] = EXTRA['Quiz da svolgere'];
 EXTRA['Nuovo corso'] = EXTRA['Quiz da svolgere'];
 EXTRA['Modifica corso'] = EXTRA['Quiz da svolgere'];
 EXTRA['Modifica corso con benvenuto (semina)'] = EXTRA['Quiz da svolgere'];
@@ -1304,7 +1344,9 @@ EXTRA['Catalogo'] = async (page, nome) => {
         for (const c of schede) {
             const titolo = c.querySelector('h2').textContent.trim();
             const leggi = c.querySelector('.catalogo-leggi');
-            const visibili = [...c.querySelectorAll('p.card-meta')].filter((p) => p.checkVisibility())
+            // `.card-meta` e non `p.card-meta`: dall'11/10 la descrizione e'
+            // un `div`, perche' dentro ci sono i suoi paragrafi.
+            const visibili = [...c.querySelectorAll('.card-meta')].filter((p) => p.checkVisibility())
                 .map((p) => p.textContent.trim());
             const piuLunga = Math.max(0, ...visibili.map((t) => t.length));
 
@@ -1338,7 +1380,7 @@ EXTRA['Catalogo'] = async (page, nome) => {
             }
 
             leggi.open = true;
-            const testo = leggi.querySelector(':scope > p');
+            const testo = leggi.querySelector(':scope > .card-meta');
             const s = leggi.querySelector(':scope > summary');
             const aperta = vicini(testo, s);
 
@@ -1722,7 +1764,9 @@ async function giroBenvenuto(browser) {
                 const righe = s.getPropertyValue('initial-letter') || s.getPropertyValue('-webkit-initial-letter');
                 return { verde: s.color === rgbVerde, tre: righe.trim().startsWith('3') || s.float === 'left' };
             };
-            const descr = document.querySelector('.course-description');
+            // Dall'11/10 la descrizione e' divisa in paragrafi: il capolettera
+            // sta sul primo, se comincia con un paragrafo.
+            const descr = document.querySelector('.course-description > p:first-child');
             const modulo = document.querySelector('.module-card');
             const paragrafi = document.querySelectorAll('.lesson-content > p');
             return {

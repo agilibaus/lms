@@ -3,12 +3,16 @@
 declare(strict_types=1);
 
 use App\Controllers\ModuleController;
-use App\Core\CampoContato;
+use App\Core\TestoBreve;
 use App\Core\Csrf;
 
 /** @var array $course */
 /** @var array|null $module */
+/** @var array|null $riprendi */
 $isEdit = $module !== null;
+// I valori dei campi: quelli del modulo, o quelli appena scritti se il
+// salvataggio e' stato rifiutato per l'obiettivo oltre il limite (11/10).
+$valori = array_merge($module ?? [], $riprendi ?? []);
 // L'id del modulo, 0 quando si sta creando: la vista serve a entrambe le cose,
 // e la riga esiste solo nel secondo caso.
 $moduleId = (int) ($module['id'] ?? 0);
@@ -27,25 +31,25 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
 <form action="<?= htmlspecialchars($action) ?>" method="post" class="stacked-form">
     <?= Csrf::field() ?>
     <label for="title">Titolo del modulo</label>
-    <input type="text" id="title" name="title" required value="<?= htmlspecialchars($module['title'] ?? '') ?>">
+    <input type="text" id="title" name="title" required value="<?= htmlspecialchars((string) ($valori['title'] ?? '')) ?>">
 
     <label class="checkbox-label">
-        <input type="checkbox" name="quiz_required" value="1" <?= !empty($module['quiz_required']) ? 'checked' : '' ?>>
+        <input type="checkbox" name="quiz_required" value="1" <?= !empty($valori['quiz_required']) ? 'checked' : '' ?>>
         Questionario obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il questionario di questo modulo
     </label>
 
-    <?php /* L'obiettivo del modulo (11/10): facoltativo, 1.000 caratteri con il
-             contatore. Si scrive qui; dove lo vedranno gli studenti non e'
-             ancora deciso. */ ?>
-    <?= CampoContato::html('objective', 'Obiettivo del modulo', 'objective', ModuleController::MAX_OBJECTIVE_CHARS,
-        (string) ($module['objective'] ?? ''), 3) ?>
+    <?php /* L'obiettivo del modulo (11/10): facoltativo, 1.000 caratteri di
+             testo visibile con il contatore, e qualche tag HTML. Si scrive
+             qui; dove lo vedranno gli studenti non e' ancora deciso. */ ?>
+    <?= TestoBreve::campo('objective', 'Obiettivo del modulo', 'objective', ModuleController::MAX_OBJECTIVE_CHARS,
+        (string) ($valori['objective'] ?? ''), 3) ?>
     <script src="/assets/js/quiz-open-count.js"></script>
 
     <?php /* Il valore in tabella e' "2026-11-15 09:00:00", il campo del
              browser vuole "2026-11-15T09:00": la T al posto dello spazio e
              senza i secondi. */ ?>
     <?php
-    $availableFrom = $module['available_from'] ?? null;
+    $availableFrom = $valori['available_from'] ?? null;
     $availableFromInput = $availableFrom === null
         ? ''
         : str_replace(' ', 'T', substr((string) $availableFrom, 0, 16));

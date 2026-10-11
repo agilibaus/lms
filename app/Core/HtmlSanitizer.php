@@ -54,8 +54,15 @@ class HtmlSanitizer
     /** Schemi ammessi nei collegamenti. */
     private const LINK_SCHEMES = ['http', 'https', 'mailto', 'tel'];
 
-    public static function clean(?string $html): ?string
+    /**
+     * @param array<string, list<string>>|null $allowed i tag ammessi con i loro
+     *        attributi; senza, quelli delle lezioni. I testi brevi del corso
+     *        ne usano meno (`TestoBreve::TAG`, 11/10).
+     */
+    public static function clean(?string $html, ?array $allowed = null): ?string
     {
+        $allowed ??= self::ALLOWED;
+
         if ($html === null) {
             return null;
         }
@@ -86,7 +93,7 @@ class HtmlSanitizer
         }
 
         self::dropForbidden($document);
-        self::cleanElement($root);
+        self::cleanElement($root, $allowed);
 
         $clean = '';
 
@@ -119,7 +126,8 @@ class HtmlSanitizer
         }
     }
 
-    private static function cleanElement(DOMNode $node): void
+    /** @param array<string, list<string>> $allowed */
+    private static function cleanElement(DOMNode $node, array $allowed): void
     {
         foreach (iterator_to_array($node->childNodes) as $child) {
             if (!$child instanceof DOMElement) {
@@ -128,15 +136,15 @@ class HtmlSanitizer
 
             $tag = strtolower($child->nodeName);
 
-            if (!array_key_exists($tag, self::ALLOWED)) {
+            if (!array_key_exists($tag, $allowed)) {
                 // Tag sconosciuto: si tiene il contenuto e si butta l'involucro.
-                self::cleanElement($child);
+                self::cleanElement($child, $allowed);
                 self::unwrap($child);
 
                 continue;
             }
 
-            self::cleanAttributes($child, $tag);
+            self::cleanAttributes($child, $allowed[$tag]);
 
             if ($tag === 'iframe' && !self::isAllowedIframe($child)) {
                 $child->parentNode?->removeChild($child);
@@ -144,13 +152,14 @@ class HtmlSanitizer
                 continue;
             }
 
-            self::cleanElement($child);
+            self::cleanElement($child, $allowed);
         }
     }
 
-    private static function cleanAttributes(DOMElement $element, string $tag): void
+    /** @param list<string> $allowed */
+    private static function cleanAttributes(DOMElement $element, array $allowed): void
     {
-        $allowed = self::ALLOWED[$tag];
+        $tag = strtolower($element->nodeName);
 
         foreach (iterator_to_array($element->attributes) as $attribute) {
             /** @var DOMAttr $attribute */

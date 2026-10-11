@@ -654,7 +654,7 @@ h3 { font-size: 1.05rem; }
 /* Dentro la scheda: `.card-meta`, che sta piu' sotto nel foglio, darebbe
    ancora i suoi 0,9 rem. */
 .catalog-card .catalogo-estratto,
-.catalogo-leggi[open] > p.card-meta {
+.catalogo-leggi[open] > .card-meta {
     margin-bottom: 0.1rem;
 }
 
@@ -749,6 +749,27 @@ h3 { font-size: 1.05rem; }
     color: var(--color-text-muted);
     margin: 0.25rem 0 0.6rem;
     line-height: 1.4;
+}
+
+/* Un testo breve con qualche tag (obiettivo e descrizione del corso, 11/10):
+   `TestoBreve::html()` lo divide in paragrafi ed elenchi. Fra un blocco e
+   l'altro una riga vuota, cioe' quello che prima facevano due <br> alla
+   riga vuota: le descrizioni scritte senza tag si vedono come prima. Il
+   blocco intero tiene i margini del contenitore, quindi il primo e l'ultimo
+   paragrafo non ne aggiungono. `1lh` dove c'e', altrimenti l'interlinea
+   piu' alta delle due che lo usano. */
+.testo-breve > * {
+    margin: 0;
+}
+
+.testo-breve > * + * {
+    margin-top: 1.55em;
+    margin-top: 1lh;
+}
+
+.testo-breve ul,
+.testo-breve ol {
+    padding-left: 1.4em;
 }
 
 .course-description {
@@ -5713,7 +5734,7 @@ fieldset.checkbox-group legend {
    la lettera scorre a sinistra e il testo le gira intorno, con misure
    calcolate per tre righe di 1,6 di interlinea: la lettera e' alta 3 x 1,6
    = 4,8 volte il testo, meno lo spazio sopra le maiuscole. */
-.course-description::first-letter,
+.course-description > p:first-child::first-letter,
 .lesson-content > p:first-child::first-letter {
     float: left;
     margin: 0.06em 0.08em 0 0;
@@ -5724,7 +5745,7 @@ fieldset.checkbox-group legend {
 }
 
 @supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
-    .course-description::first-letter,
+    .course-description > p:first-child::first-letter,
     .lesson-content > p:first-child::first-letter {
         float: none;
         /* Con initial-letter il margine e' lo spazio fra la lettera e il

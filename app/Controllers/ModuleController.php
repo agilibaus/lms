@@ -6,7 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
-use App\Core\CampoContato;
+use App\Core\TestoBreve;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\ModuleModel;
@@ -15,10 +15,15 @@ class ModuleController
 {
     /**
      * L'obiettivo del modulo: facoltativo, al massimo 1.000 caratteri, con il
-     * contatore (11/10, Alessandro). Le due meta' del limite stanno in
-     * `CampoContato`. Dove si mostra agli studenti non e' ancora deciso.
+     * contatore (11/10, Alessandro). Dove si mostra agli studenti non e'
+     * ancora deciso. Accetta qualche tag HTML (`TestoBreve`) e il limite
+     * conta solo il testo visibile: oltre il limite il salvataggio si
+     * rifiuta e il modulo torna con il testo scritto (`RIPRENDI`).
      */
     public const MAX_OBJECTIVE_CHARS = 1000;
+
+    /** La chiave di sessione del modulo da riproporre dopo un rifiuto. */
+    private const RIPRENDI = 'modulo_da_riprendere';
 
     public function createForm(array $params): void
     {
@@ -37,6 +42,7 @@ class ModuleController
             'pageTitle' => 'Nuovo modulo',
             'course' => $course,
             'module' => null,
+            'riprendi' => self::riprendi('corso', (int) $course['id']),
         ]);
     }
 
@@ -61,6 +67,8 @@ class ModuleController
             header('Location: /courses/' . $courseId . '/modules/create');
             exit;
         }
+
+        $this->rifiutaOltreIlLimite('corso', $courseId, '/courses/' . $courseId . '/modules/create');
 
         ModuleModel::create(
             $courseId,
@@ -93,6 +101,7 @@ class ModuleController
             'pageTitle' => 'Modifica modulo',
             'course' => $course,
             'module' => $module,
+            'riprendi' => self::riprendi('modulo', (int) $module['id']),
         ]);
     }
 
@@ -111,6 +120,8 @@ class ModuleController
 
         $title = trim($_POST['title'] ?? '');
 
+        $this->rifiutaOltreIlLimite('modulo', (int) $module['id'], '/modules/' . (int) $module['id'] . '/edit');
+
         if ($title !== '') {
             ModuleModel::update(
                 (int) $module['id'],
@@ -126,14 +137,63 @@ class ModuleController
     }
 
     /**
-     * L'obiettivo dal modulo inviato, tagliato al limite con gli a capo
-     * contati uno; vuoto diventa null.
+     * L'obiettivo dal modulo inviato, come e' stato scritto (a capo
+     * convertiti); vuoto diventa null. Niente taglio: il limite conta il
+     * testo visibile, e lo controlla `rifiutaOltreIlLimite()`.
      */
     private function objectivePost(): ?string
     {
-        $value = CampoContato::taglia((string) ($_POST['objective'] ?? ''), self::MAX_OBJECTIVE_CHARS);
+        $value = TestoBreve::normalizza((string) ($_POST['objective'] ?? ''));
 
         return $value === '' ? null : $value;
+    }
+
+    /**
+     * Obiettivo oltre il limite: il salvataggio si rifiuta, con una frase che
+     * dice di quanto, e il modulo torna con quello che era stato scritto.
+     * `$chi` dice se l'id e' del corso (modulo nuovo) o del modulo.
+     */
+    private function rifiutaOltreIlLimite(string $chi, int $id, string $redirect): void
+    {
+        $objective = (string) $this->objectivePost();
+        $problema = TestoBreve::problema("L'obiettivo del modulo", $objective, self::MAX_OBJECTIVE_CHARS);
+
+        if ($problema === null) {
+            return;
+        }
+
+        $_SESSION[self::RIPRENDI] = [
+            'chi' => $chi,
+            'id' => $id,
+            'campi' => [
+                'title' => trim((string) ($_POST['title'] ?? '')),
+                'objective' => $objective,
+                'quiz_required' => isset($_POST['quiz_required']) ? 1 : 0,
+                'available_from' => $this->availableFromPost(),
+            ],
+        ];
+        $_SESSION['flash_error'] = $problema;
+
+        header('Location: ' . $redirect);
+        exit;
+    }
+
+    /**
+     * Il modulo rifiutato da riproporre, una volta sola, o null.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function riprendi(string $chi, int $id): ?array
+    {
+        $salvato = $_SESSION[self::RIPRENDI] ?? null;
+        unset($_SESSION[self::RIPRENDI]);
+
+        if (!is_array($salvato) || ($salvato['chi'] ?? '') !== $chi || (int) ($salvato['id'] ?? -1) !== $id
+            || !is_array($salvato['campi'] ?? null)) {
+            return null;
+        }
+
+        return $salvato['campi'];
     }
 
     /**

@@ -176,6 +176,7 @@ danni. Le piu' recenti:
 | `2026_10_09_foto_tutor.sql` | una foto sola per il tutor: la foto del suo benvenuto diventa quella del profilo, e la colonna `course_tutor_welcomes.photo_path` si toglie |
 | `2026_10_10_richiesta_iscrizione.sql` | il messaggio della richiesta di iscrizione fino a 1.000 caratteri |
 | `2026_10_11_obiettivi.sql` | l'obiettivo del corso e l'obiettivo del modulo (`courses.objective`, `modules.objective`), facoltativi, fino a 1.000 caratteri |
+| `2026_10_11_obiettivi_html.sql` | le due colonne dell'obiettivo diventano TEXT: con i tag HTML il testo salvato può superare i 1.000 caratteri |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -295,8 +296,8 @@ massimo 12.000, quindi non serve nessuna migrazione.
 |---|---|
 | Risposta aperta di un questionario | 3.000 |
 | Presentazione del profilo | 1.000 |
-| Obiettivo del corso; obiettivo del modulo | 1.000 |
-| Descrizione del corso | 3.000 |
+| Obiettivo del corso; obiettivo del modulo | 1.000, solo testo visibile |
+| Descrizione del corso | 3.000, solo testo visibile |
 | Messaggio della richiesta di iscrizione | 1.000 |
 | Domanda all'esperto; nella pagina «Domande», domanda e risposta | 1.000 e 5.000 |
 | Testo del benvenuto del tutor | 4.000 |
@@ -306,7 +307,10 @@ massimo 12.000, quindi non serve nessuna migrazione.
 | Impostazioni › Aspetto: titolo e testo della pagina di accesso affiancata | 300 e 500 |
 | Impostazioni › Inviti alle sessioni: testo di ciascuna email (con i segnaposto) | 1.000 |
 
-Fuori resta solo il testo delle lezioni, che è testo formattato nell'editor. I campi più recenti
+Fuori resta solo il testo delle lezioni, che è testo formattato nell'editor. **Obiettivo e
+descrizione del corso e obiettivo del modulo accettano qualche tag HTML** (11/10) e il loro
+limite conta solo il testo visibile: quei campi non hanno `maxlength`, e oltre il limite il
+server rifiuta invece di tagliare (vedi **Corsi e iscrizioni**). I campi più recenti
 passano da `App\Core\CampoContato`, che tiene insieme le due metà del limite: `html()` scrive il
 campo con il contatore e `taglia()` taglia sul server.
 
@@ -496,9 +500,8 @@ progresso e certificato di quel corso: viene chiesta conferma.
 
 **La descrizione è lunga al massimo 3.000 caratteri** (10/10), con il contatore sulla riga
 dell'etichetta, allineato al bordo destro del campo: lo stesso della presentazione nel profilo e
-della domanda all'esperto. Il limite è doppio, `maxlength` nel campo e il taglio in
-`Admin\CourseController::MAX_DESCRIPTION_CHARS`, e gli a capo valgono un carattere in tutti e
-due. `accessibilita.js` controlla il contatore in «Nuovo corso» e «Modifica corso».
+della domanda all'esperto. `accessibilita.js` controlla il contatore in «Nuovo corso» e
+«Modifica corso».
 
 **L'obiettivo del corso e l'obiettivo del modulo** (11/10) sono due campi facoltativi, lunghi al
 massimo **1.000 caratteri**, con lo stesso contatore. «Obiettivo del corso» sta in «Nuovo corso» e
@@ -506,9 +509,36 @@ massimo **1.000 caratteri**, con lo stesso contatore. «Obiettivo del corso» st
 «Modifica modulo», subito prima di «Disponibile dal». Vuoti, restano NULL: i corsi e i moduli
 creati prima restano senza finché qualcuno non lo scrive. **Per ora si scrivono soltanto**: dove
 compariranno nella pagina del corso e in quella del modulo non è ancora deciso. I limiti stanno in
-`Admin\CourseController::MAX_OBJECTIVE_CHARS` e `ModuleController::MAX_OBJECTIVE_CHARS`, le due
-metà in `CampoContato`; le colonne arrivano con `2026_10_11_obiettivi.sql`. `permessi.js` salva
-in tutti e due un testo pieno con gli a capo, e uno più lungo del limite senza `maxlength`.
+`Admin\CourseController::MAX_OBJECTIVE_CHARS` e `ModuleController::MAX_OBJECTIVE_CHARS`; le
+colonne arrivano con `2026_10_11_obiettivi.sql` e diventano TEXT con
+`2026_10_11_obiettivi_html.sql`.
+
+**Obiettivo e descrizione accettano qualche tag HTML scritto a mano** (11/10): `<p>`, `<br>`,
+`<strong>`, `<b>`, `<em>`, `<i>`, `<u>`, `<ul>`, `<ol>`, `<li>` e `<a href="…">`. Gli altri
+si tolgono tenendo il testo, e script, stili e gestori di eventi spariscono, come nelle lezioni.
+Le regole stanno in `App\Core\TestoBreve`:
+
+- **si salva quello che si scrive** e si ripulisce quando si mostra: riaprendo il campo il
+  testo torna com'era, tag compresi;
+- **gli a capo valgono come prima**: Invio va a capo, una riga vuota apre un paragrafo, e
+  vicino a paragrafi ed elenchi non contano, così un elenco scritto su più righe non si riempie
+  di righe vuote. Le descrizioni scritte prima, senza tag, si vedono come si vedevano;
+- **il limite conta solo il testo visibile**, non i tag: i campi non hanno `maxlength`, che
+  conterebbe anche quelli, e il contatore (`data-conta="testo"` in `quiz-open-count.js`) conta
+  come il server. Oltre il limite dice «37 caratteri in più»;
+- **oltre il limite il server rifiuta**, con una frase che dice di quanto («L'obiettivo del
+  corso supera di 37 caratteri il limite di 1.000.»), e ripropone il modulo con quello che era
+  stato scritto. Non taglia: un taglio porterebbe via la fine del testo senza avvisi. Un
+  salvataggio rifiutato per un'altra ragione (il titolo mancante) il testo non lo ripropone,
+  come prima;
+- sotto ciascun campo una riga ricorda i tag ammessi.
+
+La descrizione si vede con i suoi tag nella pagina del corso e, intera, nel catalogo; gli
+estratti di «I miei corsi» e del catalogo restano testo semplice (`CourseModel::estratto()`).
+Il capolettera sta sul primo paragrafo, e solo se la descrizione comincia con un paragrafo.
+`tests/testo_breve_test.php` prova tag, a capo, conto e frasi; `permessi.js` salva in tutti e
+tre i campi un testo pieno con un grassetto e uno oltre il limite, e guarda la descrizione nella
+pagina del corso; `accessibilita.js` controlla che il contatore conti il testo e non i tag.
 
 **Nelle schede dei corsi la descrizione è un estratto** con i tre puntini, lo stesso in «I miei
 corsi» e in «Esplora corsi» (`CourseModel::estratto()`). Nel catalogo lo studente non è ancora
@@ -1198,6 +1228,7 @@ server di sviluppo attivo.
 # logica pura, nessun database
 php tests/google_meet_test.php      # client Google: JWT firmata, richieste, errori 403/404
 php tests/html_sanitizer_test.php   # l'HTML dell'editor non può contenere codice eseguibile
+php tests/testo_breve_test.php      # obiettivo e descrizione con i tag: quali restano, a capo, testo visibile, rifiuto
 php tests/course_cover_test.php     # ritaglio 16:9, due misure, testo alternativo (serve GD)
 php tests/bunny_token_test.php      # firma e scadenza degli indirizzi Bunny
 php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto di plausibilità
@@ -1226,7 +1257,7 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 3.000 controlli su 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 204 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto, gli a capo nei campi con il limite e il taglio dell'obiettivo di corso e modulo
+node tests/permessi.js              # 214 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto, gli a capo nei campi con il limite, e obiettivo e descrizione con i tag: testo pieno, rifiuto oltre il limite, pagina del corso ripulita
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
 ```

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\Admin\CourseController;
-use App\Core\CampoContato;
+use App\Core\TestoBreve;
 
 /**
  * Campi condivisi fra creazione e modifica del corso.
@@ -11,14 +11,11 @@ use App\Core\CampoContato;
  * @var array|null $course
  */
 
-// La descrizione ha un limite di 3.000 caratteri (10/10) e il contatore
-// sopra l'angolo in alto a destra, come la presentazione del profilo e la
-// domanda all'esperto: stesse classi e stesso script. Il numero di partenza
-// lo scrive il server, contando quello che c'e' gia', con gli a capo contati
-// come li conta il campo: senza JavaScript il contatore resta fermo, ma non
-// dice una cosa falsa.
-$descrizione = (string) ($course['description'] ?? '');
-$restano = max(0, CourseController::MAX_DESCRIPTION_CHARS - mb_strlen(str_replace("\r\n", "\n", $descrizione)));
+// Obiettivo e descrizione (11/10) accettano qualche tag HTML scritto a mano,
+// e il limite conta solo il testo visibile: niente `maxlength`, che
+// conterebbe anche i tag, e oltre il limite il server rifiuta e ripropone il
+// testo. Il contatore e l'aiuto sui tag li scrive `TestoBreve::campo()`; lo
+// script del contatore e' lo stesso degli altri campi.
 ?>
 <label for="title">Titolo</label>
 <input type="text" id="title" name="title" maxlength="200" required
@@ -29,23 +26,11 @@ $restano = max(0, CourseController::MAX_DESCRIPTION_CHARS - mb_strlen(str_replac
        value="<?= htmlspecialchars((string) ($course['slug'] ?? '')) ?>">
 <p class="form-hint">Se lo lasci vuoto viene generato dal titolo; se è già in uso viene reso univoco con un suffisso.</p>
 
-<?php /* L'obiettivo del corso (11/10): facoltativo, 1.000 caratteri con il
-         contatore. Si scrive qui; dove lo vedranno gli studenti non e'
-         ancora deciso. Lo script del contatore e' incluso sotto la
-         descrizione e collega tutti e due i campi. */ ?>
-<?= CampoContato::html('objective', 'Obiettivo del corso', 'objective', CourseController::MAX_OBJECTIVE_CHARS,
+<?= TestoBreve::campo('objective', 'Obiettivo del corso', 'objective', CourseController::MAX_OBJECTIVE_CHARS,
     (string) ($course['objective'] ?? ''), 3) ?>
 
-<div class="quiz-open-wrap campo-contato">
-    <div class="campo-contato-testa">
-        <label for="description">Descrizione</label>
-        <span class="quiz-open-count" id="description-resta" data-max="<?= CourseController::MAX_DESCRIPTION_CHARS ?>">
-            <?= $restano ?> <?= $restano === 1 ? 'carattere rimasto' : 'caratteri rimasti' ?>
-        </span>
-    </div>
-    <textarea id="description" name="description" rows="4" maxlength="<?= CourseController::MAX_DESCRIPTION_CHARS ?>"
-              class="quiz-open-answer" aria-describedby="description-resta"><?= htmlspecialchars($descrizione) ?></textarea>
-</div>
+<?= TestoBreve::campo('description', 'Descrizione', 'description', CourseController::MAX_DESCRIPTION_CHARS,
+    (string) ($course['description'] ?? ''), 4) ?>
 <script src="/assets/js/quiz-open-count.js"></script>
 
 <label class="checkbox-label">

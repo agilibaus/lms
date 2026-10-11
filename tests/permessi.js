@@ -1322,40 +1322,77 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             await ctx.close();
 
-            // L'obiettivo del corso e del modulo (11/10): 1.000 caratteri con
-            // il contatore, dal pannello. Due prove per campo: un testo pieno
-            // con gli a capo si salva intero; e senza il `maxlength`, tolto
-            // come lo si toglierebbe dagli strumenti per sviluppatori, il
-            // server taglia a 1.000. Il corso e il modulo sono quelli del
-            // mondo A, che la semina ricrea a ogni giro.
+            // L'obiettivo del corso e del modulo e la descrizione del corso
+            // (11/10): qualche tag HTML, e il limite conta solo il testo
+            // visibile. Per ogni campo: un testo pieno con gli a capo e un
+            // grassetto si salva intero, anche se scritto e' piu' lungo del
+            // limite; oltre il limite il server rifiuta, dice di quanto e
+            // ripropone il testo, e quello salvato prima resta. Il corso e il
+            // modulo sono quelli del mondo A, che la semina ricrea a ogni giro.
             const admin = await entra(browser, 'admin@test.it');
-            for (const [nome, indirizzo, modulo] of [
-                ['corso', '/admin/courses/' + A.corso + '/edit', 'form[action="/admin/courses/' + A.corso + '"]'],
-                ['modulo', '/modules/' + A.modulo + '/edit', 'form[action="/modules/' + A.modulo + '"]'],
+            const migliaia = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            const conTag = (massimo) => pieno(massimo).replace(/a{95}FINE\.$/, '<strong>' + 'a'.repeat(95) + 'FINE.</strong>');
+            for (const [nome, campo, massimo, indirizzo, modulo] of [
+                ['obiettivo del corso', '#objective', 1000, '/admin/courses/' + A.corso + '/edit', 'form[action="/admin/courses/' + A.corso + '"]'],
+                ['descrizione del corso', '#description', 3000, '/admin/courses/' + A.corso + '/edit', 'form[action="/admin/courses/' + A.corso + '"]'],
+                ['obiettivo del modulo', '#objective', 1000, '/modules/' + A.modulo + '/edit', 'form[action="/modules/' + A.modulo + '"]'],
             ]) {
-                const salva = async (testo, senzaLimite) => {
+                const invia = async (testo) => {
                     await admin.page.goto(BASE + indirizzo);
-                    if (senzaLimite) {
-                        await admin.page.$eval('#objective', (t) => t.removeAttribute('maxlength'));
-                    }
-                    await admin.page.fill('#objective', testo);
+                    await admin.page.fill(campo, testo);
                     await Promise.all([admin.page.waitForNavigation(), admin.page.click(modulo + ' button[type=submit]')]);
-                    await admin.page.goto(BASE + indirizzo);
-                    return admin.page.$eval('#objective', (t) => t.value);
                 };
-                const testo = pieno(1000);
-                const intero = await salva(testo, false);
-                check('obiettivo del ' + nome + ': 1.000 caratteri con 9 a capo si salvano interi',
-                    intero.length === 1000 && intero.endsWith('FINE.'),
-                    ['nel campo ' + testo.length + ', salvati ' + intero.length + ', finisce con «' + intero.slice(-5) + '»']);
-                // Il confronto e' sul testo, non sulla lunghezza: se il server
-                // non tagliasse, il database rifiuterebbe la riga e nel campo
-                // resterebbe il testo di prima, lungo anche lui 1.000.
-                const tagliato = await salva('b'.repeat(1100), true);
-                check('obiettivo del ' + nome + ': senza maxlength il server taglia a 1.000',
-                    tagliato === 'b'.repeat(1000),
-                    ['salvati ' + tagliato.length + ' caratteri, finisce con «' + tagliato.slice(-5) + '»']);
+                const salvato = async () => {
+                    await admin.page.goto(BASE + indirizzo);
+                    return admin.page.$eval(campo, (t) => t.value);
+                };
+
+                const testo = conTag(massimo);
+                await invia(testo);
+                const intero = await salvato();
+                check(nome + ': ' + migliaia(massimo) + ' caratteri visibili con gli a capo e un grassetto si salvano interi',
+                    intero === testo, ['scritti ' + testo.length + ' (con i tag), salvati ' + intero.length + ', finisce con «' + intero.slice(-14) + '»']);
+
+                // 37 oltre: il rifiuto, la frase, il testo riproposto. Poi una
+                // pagina nuova: il testo riproposto non resta, quello salvato si'.
+                const troppo = 'c'.repeat(massimo + 37);
+                await invia(troppo);
+                const errore = await admin.page.$eval('.alert-error', (e) => e.textContent.trim()).catch(() => '');
+                const riproposto = await admin.page.$eval(campo, (t) => t.value);
+                const contatore = await admin.page.$eval(campo + '-resta', (c) => c.textContent.trim());
+                check(nome + ': oltre il limite il server rifiuta e dice di quanto',
+                    errore.includes('supera di 37 caratteri il limite di ' + migliaia(massimo)), ['messaggio: «' + errore + '»']);
+                check(nome + ': e ripropone il testo scritto, con il contatore che dice quanti in più',
+                    riproposto === troppo && contatore === '37 caratteri in più',
+                    ['nel campo ' + riproposto.length + ' caratteri, contatore «' + contatore + '»']);
+                const dopo = await salvato();
+                check(nome + ': il testo salvato prima resta', dopo === testo, ['salvati ' + dopo.length + ' caratteri']);
             }
+
+            // Nella pagina del corso la descrizione si vede con i suoi tag,
+            // ripulita: il grassetto c'e', lo script e i gestori di eventi no,
+            // e una riga vuota apre un paragrafo.
+            await admin.page.goto(BASE + '/admin/courses/' + A.corso + '/edit');
+            await admin.page.fill('#description', 'Primo <strong onclick="window.__preso = 1">forte</strong>\n\n'
+                + 'Secondo<script>window.__preso = 2</script>\n<ul>\n<li>uno</li>\n</ul>');
+            await Promise.all([admin.page.waitForNavigation(),
+                admin.page.click('form[action="/admin/courses/' + A.corso + '"] button[type=submit]')]);
+            await admin.page.goto(BASE + '/courses/' + A.corso);
+            const vista = await admin.page.evaluate(() => {
+                const d = document.querySelector('.course-description');
+                return d === null ? null : {
+                    html: d.innerHTML,
+                    paragrafi: d.querySelectorAll(':scope > p').length,
+                    elenco: d.querySelectorAll(':scope > ul > li').length,
+                    preso: window.__preso === undefined ? null : window.__preso,
+                };
+            });
+            check('descrizione nella pagina del corso: grassetto, due paragrafi e un elenco',
+                vista !== null && vista.html.includes('<strong>forte</strong>') && vista.paragrafi === 2 && vista.elenco === 1,
+                [JSON.stringify(vista)]);
+            check('descrizione nella pagina del corso: niente script, niente gestori di eventi',
+                vista !== null && vista.preso === null && !vista.html.includes('onclick') && !vista.html.includes('script'),
+                [JSON.stringify(vista)]);
             await admin.ctx.close();
         }
 

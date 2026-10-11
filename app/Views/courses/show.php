@@ -7,6 +7,7 @@ use App\Auth\Auth;
 use App\Core\CourseAccess;
 use App\Core\CourseCover;
 use App\Core\Csrf;
+use App\Core\TestoBreve;
 
 /** @var array $course */
 /** @var array $modules */
@@ -54,7 +55,9 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <?php endif; ?>
 
 <?php if (!empty($course['description'])): ?>
-    <p class="course-description"><?= nl2br(htmlspecialchars($course['description'])) ?></p>
+    <?php /* Qualche tag HTML ammesso dall'11/10: `TestoBreve::html()` ripulisce
+             e trasforma gli a capo in paragrafi e righe, come si vedevano. */ ?>
+    <div class="course-description testo-breve"><?= TestoBreve::html((string) $course['description']) ?></div>
 <?php endif; ?>
 
 <?php if (!empty($welcome)): ?>

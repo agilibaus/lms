@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\CourseCover;
 use App\Core\Csrf;
+use App\Core\TestoBreve;
 use App\Models\CourseModel;
 use App\Models\EnrollmentRequestModel;
 
@@ -52,7 +53,7 @@ use App\Models\EnrollmentRequestModel;
 
                 <?php $descrizione = (string) ($course['description'] ?? ''); ?>
                 <?php if ($descrizione !== '' && !CourseModel::estrattoTaglia($descrizione)): ?>
-                    <p class="card-meta"><?= nl2br(htmlspecialchars($descrizione)) ?></p>
+                    <div class="card-meta testo-breve"><?= TestoBreve::html($descrizione) ?></div>
                 <?php elseif ($descrizione !== ''): ?>
                     <?php /* L'inizio con i tre puntini, come in «I miei corsi» (10/10). Qui
                              pero' lo studente non e' ancora iscritto e la pagina del corso
@@ -65,7 +66,7 @@ use App\Models\EnrollmentRequestModel;
                         <p class="card-meta catalogo-estratto"><?= htmlspecialchars(CourseModel::estratto($descrizione)) ?></p>
                         <details class="catalogo-leggi">
                             <summary><span class="catalogo-leggi-comando"><span class="catalogo-se-chiuso">Leggi tutto</span><span class="catalogo-se-aperto">Chiudi</span></span></summary>
-                            <p class="card-meta"><?= nl2br(htmlspecialchars($descrizione)) ?></p>
+                            <div class="card-meta testo-breve"><?= TestoBreve::html($descrizione) ?></div>
                         </details>
                     </div>
                 <?php endif; ?>

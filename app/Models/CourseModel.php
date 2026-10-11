@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use App\Core\TestoBreve;
 
 /**
  * Accesso dati per la tabella `courses` (e relative iscrizioni).
@@ -319,13 +320,15 @@ class CourseModel
 
     public static function estratto(string $descrizione): string
     {
-        return mb_strimwidth($descrizione, 0, self::ESTRATTO_LARGHEZZA, '…');
+        // Sul testo, non sull'HTML (11/10): un taglio a meta' di un tag lo
+        // romperebbe, e i tag non si vedono.
+        return mb_strimwidth(TestoBreve::testo($descrizione), 0, self::ESTRATTO_LARGHEZZA, '…');
     }
 
     /** Se l'estratto lascia fuori qualcosa: solo allora serve «Leggi tutto». */
     public static function estrattoTaglia(string $descrizione): bool
     {
-        return mb_strwidth($descrizione) > self::ESTRATTO_LARGHEZZA;
+        return mb_strwidth(TestoBreve::testo($descrizione)) > self::ESTRATTO_LARGHEZZA;
     }
 
     public static function enrollmentLabel(?string $mode): string

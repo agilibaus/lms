@@ -7,9 +7,9 @@ namespace App\Controllers\Admin;
 use App\Controllers\Admin\TutorWelcomeController;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
-use App\Core\CampoContato;
 use App\Core\CourseCover;
 use App\Core\Mail\Mailer;
+use App\Core\TestoBreve;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -28,19 +28,25 @@ class CourseController extends AdminController
 {
     /**
      * Quanto puo' essere lunga la descrizione del corso: 3.000 caratteri,
-     * chiesto da Alessandro il 10/10. Il limite e' doppio come per la
-     * presentazione e le risposte aperte: `maxlength` nel campo, con il
-     * contatore, e il taglio qui, perche' un `maxlength` si toglie dagli
-     * strumenti per sviluppatori.
+     * chiesto da Alessandro il 10/10. Dall'11/10 conta il testo visibile,
+     * perche' la descrizione accetta qualche tag: il controllo e' qui, in
+     * `rifiutaOltreIlLimite()`, e il contatore conta allo stesso modo.
      */
     public const MAX_DESCRIPTION_CHARS = 3000;
 
     /**
      * L'obiettivo del corso: facoltativo, al massimo 1.000 caratteri, con il
-     * contatore (11/10, Alessandro). Le due meta' del limite stanno in
-     * `CampoContato`. Dove si mostra agli studenti non e' ancora deciso.
+     * contatore (11/10, Alessandro). Dove si mostra agli studenti non e'
+     * ancora deciso.
+     *
+     * Obiettivo e descrizione accettano qualche tag HTML (`TestoBreve`), e il
+     * limite conta solo il testo visibile: oltre il limite il salvataggio si
+     * rifiuta e il modulo torna con il testo scritto (`RIPRENDI`).
      */
     public const MAX_OBJECTIVE_CHARS = 1000;
+
+    /** La chiave di sessione del modulo da riproporre dopo un rifiuto. */
+    private const RIPRENDI = 'corso_da_riprendere';
 
     public function index(array $params = []): void
     {
@@ -61,7 +67,7 @@ class CourseController extends AdminController
 
         View::render('admin/courses/form', [
             'pageTitle' => 'Nuovo corso',
-            'course' => null,
+            'course' => self::riprendi(0),
         ]);
     }
 
@@ -74,6 +80,8 @@ class CourseController extends AdminController
         if ($data['title'] === '') {
             $this->fail('Il titolo del corso è obbligatorio.', '/admin/courses/create');
         }
+
+        $this->rifiutaOltreIlLimite($data, 0, '/admin/courses/create');
 
         $courseId = CourseModel::create(
             $data['title'],
@@ -105,7 +113,7 @@ class CourseController extends AdminController
 
         View::render('admin/courses/edit', [
             'pageTitle' => $course['title'],
-            'course' => $course,
+            'course' => array_merge($course, self::riprendi((int) $course['id']) ?? []),
             'requests' => EnrollmentRequestModel::pendingForCourse((int) $course['id']),
             'enrollments' => $enrolled,
             'availableStudents' => array_values(array_filter(
@@ -143,6 +151,8 @@ class CourseController extends AdminController
         if ($data['title'] === '') {
             $this->fail('Il titolo del corso è obbligatorio.', $redirect);
         }
+
+        $this->rifiutaOltreIlLimite($data, $id, $redirect);
 
         CourseModel::update(
             $id,
@@ -423,16 +433,12 @@ class CourseController extends AdminController
      */
     private function dataFromPost(): array
     {
-        // Gli a capo arrivano come \r\n, e per `maxlength` e per il contatore
-        // valgono un carattere: si contano allo stesso modo prima di tagliare,
-        // o il taglio porterebbe via la fine di un testo che il campo aveva
-        // accettato.
-        $description = mb_substr(
-            trim(str_replace("\r\n", "\n", (string) ($_POST['description'] ?? ''))),
-            0,
-            self::MAX_DESCRIPTION_CHARS
-        );
-        $objective = CampoContato::taglia((string) ($_POST['objective'] ?? ''), self::MAX_OBJECTIVE_CHARS);
+        // Obiettivo e descrizione si salvano come sono stati scritti, a capo
+        // convertiti: niente taglio, perche' il limite conta il testo
+        // visibile e un taglio a meta' di un tag romperebbe l'HTML. Il
+        // controllo del limite e' in `rifiutaOltreIlLimite()`.
+        $description = TestoBreve::normalizza((string) ($_POST['description'] ?? ''));
+        $objective = TestoBreve::normalizza((string) ($_POST['objective'] ?? ''));
         $mode = (string) ($_POST['enrollment_mode'] ?? 'closed');
 
         return [
@@ -443,5 +449,58 @@ class CourseController extends AdminController
             'is_published' => isset($_POST['is_published']),
             'enrollment_mode' => in_array($mode, ['open', 'request', 'closed'], true) ? $mode : 'closed',
         ];
+    }
+
+    /**
+     * Obiettivo o descrizione oltre il limite: il salvataggio si rifiuta,
+     * con una frase che dice di quanto, e il modulo torna con quello che
+     * era stato scritto (11/10, Alessandro: «rifiuta, tiene il testo»).
+     * Un salvataggio rifiutato per un'altra ragione, come il titolo
+     * mancante, il testo non lo tiene: e' il comportamento di prima.
+     *
+     * @param array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string} $data
+     */
+    private function rifiutaOltreIlLimite(array $data, int $courseId, string $redirect): void
+    {
+        $problemi = array_filter([
+            TestoBreve::problema("L'obiettivo del corso", (string) $data['objective'], self::MAX_OBJECTIVE_CHARS),
+            TestoBreve::problema('La descrizione', (string) $data['description'], self::MAX_DESCRIPTION_CHARS),
+        ]);
+
+        if ($problemi === []) {
+            return;
+        }
+
+        $_SESSION[self::RIPRENDI] = [
+            'id' => $courseId,
+            'campi' => [
+                'title' => $data['title'],
+                'slug' => $data['slug'],
+                'objective' => $data['objective'],
+                'description' => $data['description'],
+                'is_published' => $data['is_published'] ? 1 : 0,
+                'enrollment_mode' => $data['enrollment_mode'],
+            ],
+        ];
+
+        $this->fail(implode(' ', $problemi), $redirect);
+    }
+
+    /**
+     * Il modulo rifiutato da riproporre, una volta sola: per il corso
+     * indicato (0 per «Nuovo corso»), o null.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function riprendi(int $courseId): ?array
+    {
+        $salvato = $_SESSION[self::RIPRENDI] ?? null;
+        unset($_SESSION[self::RIPRENDI]);
+
+        if (!is_array($salvato) || (int) ($salvato['id'] ?? -1) !== $courseId || !is_array($salvato['campi'] ?? null)) {
+            return null;
+        }
+
+        return $salvato['campi'];
     }
 }
