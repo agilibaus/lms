@@ -681,6 +681,21 @@ h3 { font-size: 1.05rem; }
     display: inline;
 }
 
+/* Attaccato al suo campo (11/10, Alessandro: «troppo distante, crea
+   confusione»). Con il margine degli aiuti (0,5 rem) e i 3 px che il
+   bersaglio da 24 px aggiunge sopra il testo, il comando stava a 11 px dal
+   campo e a 17 dal campo dopo: a meta' strada, e non si capiva di chi
+   fosse. Qui il testo sta a 5 px dal campo, quanto un'etichetta dal suo
+   campo. In `.stacked-form` (il modulo) c'e' anche lo spazio fra le righe
+   del modulo, 0,3 rem, che va tolto. */
+.form-hint.tag-consentiti {
+    margin-top: 0.125rem;
+}
+
+.stacked-form > .form-hint.tag-consentiti {
+    margin-top: -0.175rem;
+}
+
 /* «Tag HTML consentiti» sotto obiettivo e descrizione (11/10, Alessandro):
    un clic apre l'elenco dei tag sulla stessa riga, subito dopo il comando,
    un secondo clic lo richiude. E' un `details`: il contenuto aperto si mette

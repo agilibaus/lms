@@ -1154,6 +1154,26 @@ const EXTRA = {
                     stessaRiga: r ? r.top >= c.top - 1 && r.bottom <= c.bottom + 1 : null,
                     subitoDopo: r ? Math.abs(r.left - c.right) < 2 : null,
                     testo: (s.textContent + elenco.textContent).trim(),
+                    // Attaccato al suo campo (11/10): dal fondo del campo alla
+                    // cima del testo del comando al massimo 6 px, e meno della
+                    // distanza da cio' che viene dopo.
+                    ...(() => {
+                        const aiuto = s.closest('.tag-consentiti');
+                        const campo = aiuto.previousElementSibling.querySelector('textarea');
+                        const rg = document.createRange();
+                        rg.selectNodeContents(s);
+                        const t = rg.getBoundingClientRect();
+                        let dopo = aiuto.nextElementSibling;
+                        while (dopo !== null && (dopo.tagName === 'SCRIPT' || dopo.getBoundingClientRect().height === 0)) {
+                            dopo = dopo.nextElementSibling;
+                        }
+                        const sopra = Math.round(t.top - campo.getBoundingClientRect().bottom);
+                        // Fino all'etichetta del campo dopo, se c'e': il suo
+                        // riquadro comincia piu' in alto del testo che si vede.
+                        const prossimo = dopo === null ? null : (dopo.querySelector('label') || dopo);
+                        const sotto = prossimo === null ? null : Math.round(prossimo.getBoundingClientRect().top - t.bottom);
+                        return { sopra, sotto, vicino: sopra >= 0 && sopra <= 6 && (sotto === null || sopra < sotto) };
+                    })(),
                 };
             });
             const chiuso = await leggi();
@@ -1161,13 +1181,13 @@ const EXTRA = {
             const aperto = await leggi();
             await comando.click();
             const richiuso = await leggi();
-            if (chiuso.visibile || !aperto.visibile || !aperto.stessaRiga || !aperto.subitoDopo || richiuso.visibile
+            if (chiuso.visibile || !chiuso.vicino || !aperto.visibile || !aperto.stessaRiga || !aperto.subitoDopo || richiuso.visibile
                 || aperto.testo !== 'Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">.') {
                 tagStorti.push(JSON.stringify({ chiuso, aperto, richiuso }));
             }
         }
         if (comandiTag.length > 0) {
-            check(nome + ': «Tag HTML consentiti» apre l\'elenco sulla stessa riga, e un secondo clic lo chiude',
+            check(nome + ': «Tag HTML consentiti» sta attaccato al campo, apre l\'elenco sulla stessa riga, e un secondo clic lo chiude',
                 tagStorti.length === 0, tagStorti);
         }
 
