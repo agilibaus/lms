@@ -5310,6 +5310,14 @@ fieldset.checkbox-group legend {
     min-width: 0;
 }
 
+/* «Mostra» e «Nascondi» stanno nella stessa cella, larga quanto
+   «Nascondi»: attaccati al bordo destro, come «Mostra» del benvenuto del
+   tutor subito sotto. Allineati a sinistra, «Mostra» restava 16 px piu'
+   lontano dal bordo (12/10, Alessandro). */
+.obiettivo-ridotto > summary .obiettivo-comando > span {
+    justify-self: end;
+}
+
 .obiettivo-ridotto > summary::-webkit-details-marker,
 .obiettivo-modulo-ridotto > summary::-webkit-details-marker {
     display: none;

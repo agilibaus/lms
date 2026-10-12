@@ -1912,6 +1912,24 @@ async function giroBenvenuto(browser) {
             [JSON.stringify({ obiettivoRidotto, obiettivoRiaperto })]);
         check('quarta visita: l\'obiettivo del modulo in corso resta completo', obiettivoRidotto.inCorso,
             [JSON.stringify(obiettivoRidotto)]);
+
+        // Le due righe una sotto l'altra (12/10, Alessandro): «Mostra» alla
+        // stessa distanza dal bordo destro in tutte e due. Si misura la
+        // parola che si vede, non la cella, che nell'obiettivo e' larga
+        // quanto «Nascondi».
+        const mostraDalBordo = await page.evaluate(() => [
+            ['details.obiettivo-ridotto:not([open]) > summary', '.obiettivo-se-chiuso'],
+            ['details.tutor-benvenuto-ridotto:not([open]) > summary', '.tutor-benvenuto-se-chiuso'],
+        ].map(([riga, parola]) => {
+            const r = document.querySelector(riga);
+            if (!r) return null;
+            const testo = document.createRange();
+            testo.selectNodeContents(r.querySelector(parola));
+            return +(r.getBoundingClientRect().right - testo.getBoundingClientRect().right).toFixed(1);
+        }));
+        check('«Mostra» dell\'obiettivo e del benvenuto alla stessa distanza dal bordo destro',
+            mostraDalBordo[0] !== null && mostraDalBordo[1] !== null && Math.abs(mostraDalBordo[0] - mostraDalBordo[1]) <= 0.5,
+            ['obiettivo, benvenuto: ' + JSON.stringify(mostraDalBordo)]);
         check('nella riga il comando si chiama «Mostra», e i contatti non si vedono',
             ridotto.comando === 'Mostra' && !ridotto.contattiVisibili, [JSON.stringify(ridotto)]);
 

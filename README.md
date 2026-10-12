@@ -1011,7 +1011,8 @@ Scelto da Alessandro l'11/10 su un mockup. Le regole stanno in `App\Core\Obietti
   del tutor, largo quanto i moduli, con il fondo verde chiaro e un bersaglio (una forma, non un
   carattere), perché non si legga come un modulo. Per lo studente è **completo nelle prime tre
   visite**, poi diventa una riga, «Obiettivo del corso … Mostra», come quella del benvenuto:
-  «Mostra» lo riapre, «Nascondi» lo richiude. Le visite si contano in `course_objective_views`,
+  «Mostra» lo riapre, «Nascondi» lo richiude; le due parole stanno attaccate al bordo destro,
+  alla stessa distanza di quelle del benvenuto subito sotto (12/10). Le visite si contano in `course_objective_views`,
   e solo quando il corso ha un obiettivo: uno scritto dopo si vede completo anche a chi il corso
   l'aveva già aperto.
 - **L'obiettivo del modulo** sta sotto il titolo del modulo, con un filetto verde a sinistra e
