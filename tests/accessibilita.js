@@ -1656,9 +1656,10 @@ async function giroBenvenuto(browser) {
         // La durata si chiede all'animazione, e si aspetta fino a dopo la sua
         // fine contando dal punto in cui e' davvero: misurare a occhio da fuori
         // sbagliava di qualche decimo, e non distingueva 3 secondi da 4.
-        // L'ingresso e' morbido (08/10, Elena: «appare un po' bruscamente»):
-        // a 150 ms e' ancora invisibile, perche' aspetta che la pagina si sia
-        // disegnata; a 450 ms sta ancora entrando. Si ferma l'animazione in
+        // L'ingresso e' morbido (08/10, Elena: «appare un po' bruscamente»)
+        // e arriva dopo 2 secondi (12/10, Alessandro: prima si guarda la
+        // pagina): a 1.900 ms e' ancora invisibile; a 2.250 ms sta entrando.
+        // Il tempo dell'animazione conta anche il ritardo. Si ferma l'animazione in
         // quei due istanti e si legge l'opacita', poi la si rimette dov'era.
         const ingresso = await page.evaluate(() => {
             const s = document.querySelector('.saluto');
@@ -1667,20 +1668,20 @@ async function giroBenvenuto(browser) {
             const dove = a.currentTime;
             a.pause();
             const opacita = (ms) => { a.currentTime = ms; return +parseFloat(getComputedStyle(s).opacity).toFixed(2); };
-            const misure = { a150: opacita(150), a450: opacita(450) };
+            const misure = { a1900: opacita(1900), a2250: opacita(2250) };
             a.currentTime = dove;
             a.play();
             return misure;
         });
-        check('il saluto entra con calma: invisibile a 150 ms, ancora in arrivo a 450',
-            ingresso !== null && ingresso.a150 === 0 && ingresso.a450 > 0 && ingresso.a450 < 0.75, [JSON.stringify(ingresso)]);
+        check('il saluto arriva dopo 2 secondi, con calma: invisibile a 1.900 ms, ancora in arrivo a 2.250',
+            ingresso !== null && ingresso.a1900 === 0 && ingresso.a2250 > 0 && ingresso.a2250 < 0.75, [JSON.stringify(ingresso)]);
 
         const tempi = await page.evaluate(() => {
             const a = document.querySelector('.saluto').getAnimations()[0];
-            return a ? { durata: a.effect.getTiming().duration, adesso: a.currentTime } : null;
+            return a ? { durata: a.effect.getTiming().duration, fine: a.effect.getComputedTiming().endTime, adesso: a.currentTime } : null;
         });
         check('il saluto dura 5 secondi (Elena)', tempi !== null && tempi.durata === 5000, [JSON.stringify(tempi)]);
-        await page.waitForTimeout(Math.max(0, (tempi ? tempi.durata - tempi.adesso : 4000) + 300));
+        await page.waitForTimeout(Math.max(0, (tempi ? tempi.fine - tempi.adesso : 7000) + 300));
         const dopo = await saluto();
         check('alla fine il saluto è sparito', dopo !== null && dopo.visibile === 'hidden', [JSON.stringify(dopo)]);
 

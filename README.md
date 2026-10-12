@@ -1101,9 +1101,12 @@ Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nom
   password temporanea da cambiare. «Stanno per vedere il video» si chiede come il cancello del
   video: non visto **e** configurato. Senza video configurato il saluto lo ricevono tutti. Lo decide `AuthController::login`, che annota
   il nome in sessione; lo mostra una volta sola la prima pagina (`partials/shell.php`).
-- **Entra con calma** (08/10, Elena: «appare un po' bruscamente»): aspetta 0,2 secondi che la
-  pagina si sia disegnata, poi scende dall'alto in 0,9 secondi con un accenno di ingrandimento e
-  una curva che rallenta all'arrivo.
+- **Arriva dopo 2 secondi** (12/10, Alessandro): chi entra prima esplora la pagina con lo
+  sguardo e poi si ferma sul saluto; comparendo subito, passava mentre guardava altrove. I 2
+  secondi contano da quando la pagina è disegnata, non dalla fine del caricamento di immagini e
+  video: è un'animazione di solo stile.
+- **Entra con calma** (08/10, Elena: «appare un po' bruscamente»): scende dall'alto in 0,9
+  secondi con un accenno di ingrandimento e una curva che rallenta all'arrivo.
 - **Compare e sparisce con un'animazione di solo stile**, senza JavaScript; alla fine resta
   `visibility: hidden`, quindi sparisce anche per i lettori di schermo, che lo leggono una
   volta (`role="status"`). Con «riduci movimento» non scivola.
