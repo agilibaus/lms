@@ -2103,7 +2103,10 @@ vedono le stesse persone che vedono la foto: i compagni di gruppo, il tutor e l'
 ### La pagina del gruppo
 
 In **I miei gruppi**, nel profilo, il nome di ogni gruppo porta a `/gruppi/{id}`: chi ne fa
-parte, con la foto o le iniziali, **senza email**. Il titolo è «Gruppo» seguito dal nome
+parte, con la foto o le iniziali, **senza email**. Ci si arriva anche dal corso (12/10,
+Alessandro): nel benvenuto del tutor, in «Tutor del **tuo gruppo** in questo corso», le parole
+«tuo gruppo» portano alla pagina del gruppo da cui viene il benvenuto. Un collegamento in una
+frase, quindi verde e sottolineato; c'è solo dove c'è il benvenuto del tutor. Il titolo è «Gruppo» seguito dal nome
 («Gruppo Verde»), perché un nome di una parola da solo non dice di che pagina si tratta; se il
 nome comincia già con «Gruppo», la parola non si ripete. Non c'è una voce nella barra laterale, per
 scelta: è una pagina che si apre ogni tanto, non un luogo dove si torna.

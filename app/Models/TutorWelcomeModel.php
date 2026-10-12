@@ -66,7 +66,7 @@ final class TutorWelcomeModel
         $stmt = Database::connection()->prepare(
             'SELECT w.id, w.course_id, w.tutor_id, t.full_name AS tutor_name, t.contact_email,
                     t.avatar_path, w.audio_path, w.transcript,
-                    g.name AS group_name, g.whatsapp_url
+                    g.id AS group_id, g.name AS group_name, g.whatsapp_url
              FROM course_tutor_welcomes w
              INNER JOIN users t ON t.id = w.tutor_id
              INNER JOIN group_members gm ON gm.user_id = :user

@@ -22,7 +22,7 @@ use App\Core\Csrf;
  * la scheda resta senza immagine invece di mostrarne una rotta.
  *
  * @var array{id:int, tutor_id:int, tutor_name:string, contact_email:?string, avatar_path:?string,
- *            transcript:string, group_name:string, whatsapp_url:?string, modo:string} $welcome
+ *            transcript:string, group_id?:int, group_name:string, whatsapp_url:?string, modo:string} $welcome
  */
 
 $wid = (int) $welcome['id'];
@@ -47,6 +47,14 @@ if (!empty($welcome['whatsapp_url'])) {
         . '<span class="sr-only"> (si apre in una nuova scheda)</span></a></li>';
 }
 
+// «Tutor del tuo gruppo in questo corso»: «tuo gruppo» porta alla pagina del
+// gruppo (12/10, Alessandro), cosi' dal corso la si raggiunge senza passare
+// dal profilo. E' il gruppo da cui viene il benvenuto, quello del corso. Un
+// collegamento in una frase: verde e sottolineato, per la regola generale.
+$tuoGruppo = !empty($welcome['group_id'])
+    ? '<a href="/gruppi/' . (int) $welcome['group_id'] . '">tuo gruppo</a>'
+    : 'tuo gruppo';
+
 $scheda = '<section class="tutor-benvenuto" aria-labelledby="tutor-benvenuto-titolo">'
     . '<div class="tutor-benvenuto-media">'
     . ($foto !== null ? '<img class="tutor-benvenuto-foto" src="' . $foto . '" alt="">' : '')
@@ -57,7 +65,7 @@ $scheda = '<section class="tutor-benvenuto" aria-labelledby="tutor-benvenuto-tit
     . '</div>'
     . '<div class="tutor-benvenuto-testo">'
     . '<h2 id="tutor-benvenuto-titolo">Il benvenuto di ' . $nome . '</h2>'
-    . '<p class="tutor-benvenuto-sotto">Tutor del tuo gruppo in questo corso.</p>'
+    . '<p class="tutor-benvenuto-sotto">Tutor del ' . $tuoGruppo . ' in questo corso.</p>'
     . ($contatti !== '' ? '<ul class="tutor-benvenuto-contatti" role="list">' . $contatti . '</ul>' : '')
     . '<details class="tutor-benvenuto-trascrizione"><summary>Leggi il testo</summary>'
     . '<p>' . nl2br(htmlspecialchars((string) $welcome['transcript']), false) . '</p>'

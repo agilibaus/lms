@@ -1774,6 +1774,23 @@ async function giroBenvenuto(browser) {
         check('nel benvenuto completo ci sono l\'email del tutor e il link al gruppo WhatsApp',
             completo.email && completo.whatsapp, [JSON.stringify(completo)]);
 
+        // «Tutor del tuo gruppo in questo corso» (12/10, Alessandro): «tuo
+        // gruppo» porta alla pagina del gruppo, che lo studente puo' aprire.
+        const tuoGruppo = await page.evaluate(() => {
+            const a = document.querySelector('section.tutor-benvenuto .tutor-benvenuto-sotto a');
+            return a ? { testo: a.textContent.trim(), href: a.getAttribute('href'),
+                frase: a.closest('p').textContent.replace(/\s+/g, ' ').trim() } : null;
+        });
+        let paginaGruppo = null;
+        if (tuoGruppo && /^\/gruppi\/\d+$/.test(tuoGruppo.href)) {
+            const risposta = await page.request.get(BASE + tuoGruppo.href);
+            paginaGruppo = { stato: risposta.status(), cerchio: (await risposta.text()).includes('gruppo-cerchio') };
+        }
+        check('nel benvenuto «tuo gruppo» porta alla pagina del gruppo dello studente',
+            tuoGruppo !== null && tuoGruppo.testo === 'tuo gruppo' && tuoGruppo.frase === 'Tutor del tuo gruppo in questo corso.'
+                && paginaGruppo !== null && paginaGruppo.stato === 200 && paginaGruppo.cerchio,
+            [JSON.stringify({ tuoGruppo, paginaGruppo })]);
+
         // Gli obiettivi (11/10). Prima visita: quello del corso completo, nel
         // suo riquadro fra la descrizione e il benvenuto; quello del modulo
         // in corso (il primo: lo studente non ha fatto niente) completo,
