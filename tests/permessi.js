@@ -1212,6 +1212,38 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     'consentito', 'correggere una pubblicata'],
                 ['/domande/' + A.domanda_pubblicata + '/togli', [], 'consentito', 'toglierla dall\'archivio'],
             ]],
+            // La pagina del gruppo (12/10): la domanda al gruppo la pongono
+            // il tutor del gruppo e l'admin, che moderano anche le risposte;
+            // rispondono e dicono «Ci sarò» i partecipanti. Nessuno scrive
+            // nel gruppo di un altro.
+            ['strano@test.it', 'studente B (gruppo)', [
+                ['/gruppi/' + A.gruppo + '/risposta', [['question_id', '0'], ['answer', 'x']], 'negato',
+                    'rispondere nel gruppo di un altro'],
+                ['/gruppi/' + A.gruppo + '/ci-saro', [['session_id', String(A.incontro_imminente)], ['ci', '1']], 'negato',
+                    'dire «Ci sarò» a un incontro di un altro gruppo'],
+                ['/gruppi/risposte/' + d.risposta_nascosta, [['azione', 'rimetti']], 'negato',
+                    'rimettere una risposta in un gruppo non suo'],
+            ]],
+            ['tutor2@test.it', 'tutor B (gruppo)', [
+                ['/gruppi/' + d.gruppo_cerchio + '/domanda', [['question', 'Domanda in un gruppo non mio?']], 'negato',
+                    'porre una domanda al gruppo di un collega'],
+                ['/gruppi/risposte/' + d.risposta_nascosta, [['azione', 'rimetti']], 'negato',
+                    'moderare le risposte del gruppo di un collega'],
+            ]],
+            ['stud@test.it', 'studente A (gruppo)', [
+                ['/gruppi/' + d.gruppo_cerchio + '/domanda', [['question', 'Domanda di uno studente?']], 'negato',
+                    'porre la domanda al gruppo: la pone il tutor'],
+                ['/gruppi/risposte/' + d.risposta_nascosta, [['azione', 'rimetti']], 'negato',
+                    'rimettere la risposta nascosta di un compagno'],
+                ['/gruppi/' + d.gruppo_cerchio + '/risposta', [['question_id', String(d.domanda_aperta)], ['answer', 'Risposta di permessi.js.']],
+                    'consentito', 'rispondere nel proprio gruppo'],
+                ['/gruppi/' + A.gruppo + '/ci-saro', [['session_id', String(A.incontro_imminente)], ['ci', '1']], 'consentito',
+                    'dire «Ci sarò» al prossimo incontro del proprio gruppo'],
+            ]],
+            ['tutor1@test.it', 'tutor A (gruppo)', [
+                ['/gruppi/risposte/' + d.risposta_nascosta, [['azione', 'nascondi']], 'consentito',
+                    'moderare le risposte del proprio gruppo'],
+            ]],
             // Come compaiono agli altri studenti: e' una scelta solo degli
             // studenti (07/10). Il tutor compare sempre per intero.
             ['tutor2@test.it', 'tutor B (come ti vedono)', [

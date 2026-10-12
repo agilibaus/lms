@@ -151,6 +151,34 @@ CREATE TABLE group_course_access (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- «Il giro del cerchio» nella pagina del gruppo (2026_10_12): la domanda del
+-- tutor o dell'admin, l'ultima e' quella aperta, e le risposte dei partecipanti.
+CREATE TABLE group_questions (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    group_id        INT UNSIGNED NOT NULL,
+    author_id       INT UNSIGNED NULL,
+    question        VARCHAR(300) NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_group_created (group_id, created_at),
+    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE group_answers (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    question_id     INT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NOT NULL,
+    answer          VARCHAR(200) NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NULL DEFAULT NULL,
+    hidden_at       DATETIME NULL DEFAULT NULL,
+    hidden_by       INT UNSIGNED NULL,
+    UNIQUE KEY uq_question_user (question_id, user_id),
+    FOREIGN KEY (question_id) REFERENCES group_questions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (hidden_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ---------------------------------------------------
 -- Corsi
 -- ---------------------------------------------------
@@ -465,6 +493,17 @@ CREATE TABLE live_session_reminders (
     session_id      INT UNSIGNED NOT NULL,
     user_id         INT UNSIGNED NOT NULL,
     sent_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_session_user (session_id, user_id),
+    FOREIGN KEY (session_id) REFERENCES live_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- «Ci sarò» per un incontro dal vivo, dalla pagina del gruppo (2026_10_12)
+CREATE TABLE live_session_rsvps (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    session_id      INT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_session_user (session_id, user_id),
     FOREIGN KEY (session_id) REFERENCES live_sessions(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

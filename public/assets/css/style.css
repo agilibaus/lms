@@ -316,7 +316,8 @@ h3 { font-size: 1.05rem; }
 
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando):is(:hover, :focus-visible) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando,
+    .giro-cambia-comando, .giro-passate-comando):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -324,7 +325,8 @@ h3 { font-size: 1.05rem; }
 @media (hover: none) {
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
-    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando) {
+    .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando,
+    .giro-cambia-comando, .giro-passate-comando) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -5025,6 +5027,244 @@ fieldset.checkbox-group legend {
             padding-bottom: calc(1.2rem + env(safe-area-inset-bottom, 0px));
         }
     }
+}
+
+/* ==========================================================
+   La pagina del gruppo si scalda (12/10, Alessandro)
+   ==========================================================
+
+   Variante B del mockup: in cima il prossimo incontro del gruppo con «Ci
+   sarò», poi il cerchio com'era, poi «Il giro del cerchio»: la domanda del
+   tutor e le risposte intere, una sotto l'altra. Chiara e leggibile prima
+   che calda: regge gruppi di qualunque misura, e nel cerchio resta un solo
+   gesto (la presentazione). */
+
+.gruppo-etichetta {
+    margin: 0 0 0.3rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+}
+
+.gruppo-incontro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem 1.2rem;
+    margin: 1.2rem 0;
+}
+
+.gruppo-incontro-testo {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.gruppo-incontro h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+}
+
+/* Il titolo porta alla pagina dell'incontro: nel colore del testo, ma
+   sottolineato sempre, perche' da solo un titolo non dice di toccarlo. */
+.gruppo-incontro h2 a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--color-text);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+}
+
+.gruppo-incontro-quando {
+    margin: 0.15rem 0 0;
+    font-size: 0.92rem;
+    color: var(--color-text-muted);
+}
+
+.gruppo-incontro-chi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.8rem;
+}
+
+.gruppo-volti {
+    display: inline-flex;
+}
+
+/* I volti di chi ci sara', accavallati, con l'anello del colore principale
+   come le foto del cerchio. */
+.gruppo-volto {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    margin-left: -6px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3px var(--color-primary);
+}
+
+.gruppo-volto:first-child {
+    margin-left: 0;
+}
+
+.gruppo-ci-saranno {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.gruppo-ci-saro {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0;
+}
+
+.gruppo-ci-sarai {
+    font-weight: 600;
+}
+
+.giro {
+    margin: 1.5rem 0;
+}
+
+.giro-testa {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.giro-testa .gruppo-etichetta {
+    margin: 0;
+}
+
+.giro-foto {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.giro-chi {
+    margin: 0;
+    font-size: 0.92rem;
+}
+
+.giro .giro-domanda {
+    margin: 0.7rem 0 0.2rem;
+    font-size: 1.15rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.giro-conto,
+.giro-spiega {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.giro-spiega {
+    margin-bottom: 0.4rem;
+    font-size: 0.92rem;
+}
+
+.giro-modulo {
+    margin-top: 0.9rem;
+}
+
+.giro-cambia,
+.giro-nuova {
+    margin-top: 0.8rem;
+}
+
+.giro-cambia-comando {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    list-style: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.giro-cambia-comando::-webkit-details-marker {
+    display: none;
+}
+
+.giro-risposte {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.giro-risposta {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.giro-risposta-corpo {
+    flex: 1;
+    min-width: 0;
+}
+
+.giro-risposta-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.8rem;
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+}
+
+.giro-modera {
+    margin: 0;
+}
+
+.giro-modera .link-btn {
+    font-size: 0.85rem;
+}
+
+.giro-risposta-testo {
+    margin: 0.15rem 0 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.giro-risposta-nascosta .giro-risposta-testo {
+    color: var(--color-text-muted);
+}
+
+.giro-nascosta-nota {
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--color-text-muted);
+}
+
+.giro-passate {
+    margin: 1rem 0 0;
+}
+
+.giro-passate-comando {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    font-size: 0.9rem;
+    color: var(--color-text);
+    text-decoration: none;
 }
 
 /* ==========================================================

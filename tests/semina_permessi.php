@@ -591,6 +591,32 @@ $presentazione->execute([
     'b' => mb_substr($lunga, 0, 1000),
 ]);
 
+// Il giro del cerchio (12/10): nel gruppo da otto, una domanda passata con
+// una risposta e la domanda aperta del tutor di A, con tre risposte: una
+// normale, una lunga quanto il limite con una parola senza spazi (deve
+// restare nella scheda), e una nascosta dal tutor. Lo studente di A non ha
+// risposto: vede il campo per farlo.
+$pdo->prepare("INSERT INTO group_questions (group_id, author_id, question, created_at)
+               VALUES (:g, :a, 'Com\u{2019}è andata la prima settimana?', NOW() - INTERVAL 7 DAY)")
+    ->execute(['g' => $gruppoCerchio, 'a' => $tutorA]);
+$domandaPassata = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO group_answers (question_id, user_id, answer) VALUES (:q, :u, :r)')
+    ->execute(['q' => $domandaPassata, 'u' => utente($pdo, 'compagno1@test.it'), 'r' => 'Bene, ma la mattina non trovo mai il momento.']);
+$pdo->prepare("INSERT INTO group_questions (group_id, author_id, question)
+               VALUES (:g, :a, 'Che cosa ti porti via dal secondo modulo?')")
+    ->execute(['g' => $gruppoCerchio, 'a' => $tutorA]);
+$domandaAperta = (int) $pdo->lastInsertId();
+$risposta = $pdo->prepare('INSERT INTO group_answers (question_id, user_id, answer, hidden_at, hidden_by)
+                           VALUES (:q, :u, :r, :h, :b)');
+$risposta->execute(['q' => $domandaAperta, 'u' => utente($pdo, 'compagno1@test.it'),
+    'r' => 'Fermarmi un attimo prima di rispondere ai bambini, anche quando ho fretta.', 'h' => null, 'b' => null]);
+$risposta->execute(['q' => $domandaAperta, 'u' => utente($pdo, 'compagno3@test.it'),
+    'r' => mb_substr('Unaparolalunghissimasenzaspazichenonsapreidovemandareacapo' . str_repeat(' e poi ancora qualche parola', 10), 0, 200),
+    'h' => null, 'b' => null]);
+$risposta->execute(['q' => $domandaAperta, 'u' => utente($pdo, 'compagno2@test.it'),
+    'r' => 'Una risposta che il tutor ha nascosto.', 'h' => date('Y-m-d H:i:s'), 'b' => $tutorA]);
+$rispostaNascosta = (int) $pdo->lastInsertId();
+
 echo json_encode([
     'utenti' => [
         'admin' => $admin,
@@ -602,6 +628,8 @@ echo json_encode([
         'studenteNuovo' => $studenteNuovo,
     ],
     'gruppo_cerchio' => $gruppoCerchio,
+    'domanda_aperta' => $domandaAperta,
+    'risposta_nascosta' => $rispostaNascosta,
     'A' => $a,
     'B' => $b,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL;

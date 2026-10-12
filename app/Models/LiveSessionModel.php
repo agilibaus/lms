@@ -261,6 +261,52 @@ class LiveSessionModel
         }
     }
 
+    /**
+     * Il prossimo incontro del gruppo, per la pagina del gruppo (12/10): il
+     * primo non ancora concluso fra quelli legati al gruppo.
+     */
+    public static function prossimoDelGruppo(int $groupId): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id, title, starts_at, ends_at FROM live_sessions
+             WHERE group_id = :g AND ends_at > NOW()
+             ORDER BY starts_at, id LIMIT 1'
+        );
+        $stmt->execute(['g' => $groupId]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    /**
+     * Chi ha detto «Ci sarò», con i campi per il nome e la foto.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function ciSaranno(int $sessionId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.id, u.full_name, u.first_name, u.last_name, u.name_display, u.avatar_path
+             FROM live_session_rsvps r
+             INNER JOIN users u ON u.id = r.user_id
+             WHERE r.session_id = :s AND u.is_active = 1
+             ORDER BY r.created_at, r.id'
+        );
+        $stmt->execute(['s' => $sessionId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /** «Ci sarò» (true) o «Non posso più» (false). */
+    public static function segnaCiSaro(int $sessionId, int $userId, bool $ci): void
+    {
+        Database::connection()->prepare(
+            $ci
+                ? 'INSERT IGNORE INTO live_session_rsvps (session_id, user_id) VALUES (:s, :u)'
+                : 'DELETE FROM live_session_rsvps WHERE session_id = :s AND user_id = :u'
+        )->execute(['s' => $sessionId, 'u' => $userId]);
+    }
+
     /** Il promemoria di questa persona e' gia' partito? (per `bin/avvisi --prova`) */
     public static function giaRicordato(int $sessionId, int $userId): bool
     {

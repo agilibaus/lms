@@ -78,6 +78,12 @@ $router->get('/utenti/{id}/immagine', [ProfileController::class, 'avatar']);
 // attorno. `/gruppi/{id}/immagine` (il logo) ha un segmento in piu', quindi
 // le due rotte non si catturano a vicenda.
 $router->get('/gruppi/{id}', [GroupPageController::class, 'show']);
+// La pagina del gruppo si scalda (12/10): «Il giro del cerchio» e «Ci sarò».
+$router->get('/gruppi/{id}/domande-passate', [GroupPageController::class, 'archive']);
+$router->post('/gruppi/{id}/domanda', [GroupPageController::class, 'ask']);
+$router->post('/gruppi/{id}/risposta', [GroupPageController::class, 'answer']);
+$router->post('/gruppi/{id}/ci-saro', [GroupPageController::class, 'rsvp']);
+$router->post('/gruppi/risposte/{answerId}', [GroupPageController::class, 'moderate']);
 
 // --- Copertina del corso (file in /storage, servito dall'applicazione) --
 $router->get('/corsi/{id}/copertina', [CourseController::class, 'cover']);

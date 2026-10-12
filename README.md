@@ -179,6 +179,7 @@ danni. Le piu' recenti:
 | `2026_10_11_obiettivi_html.sql` | le due colonne dell'obiettivo diventano TEXT: con i tag HTML il testo salvato può superare i 1.000 caratteri |
 | `2026_10_11_obiettivo_visite.sql` | `course_objective_views`: le visite dello studente alla pagina di un corso con un obiettivo |
 | `2026_10_12_promemoria_incontri.sql` | `live_sessions.invites_sent_at` e `live_session_reminders`: il promemoria degli incontri, sette ore prima, solo dopo gli inviti |
+| `2026_10_12_giro_del_cerchio.sql` | `group_questions`, `group_answers` e `live_session_rsvps`: il giro del cerchio e «Ci sarò» nella pagina del gruppo |
 | `2026_10_12_iscrizione_confermata.sql` | `enrollments.confirmation_pending`: l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, in coda per `bin/avvisi`. Va impostato anche il comando, ogni quarto d'ora |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
@@ -1339,6 +1340,7 @@ php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, p
 php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, spareggio, indirizzi
 php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
 php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
+php tests/giro_test.php             # pagina del gruppo: chi pone, risponde e modera; domanda aperta e archivio; «Ci sarò»
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
@@ -2125,6 +2127,30 @@ senza database, ed è provata da `tests/cerchio_test.php`.
 
 La pagina la aprono i partecipanti, il tutor del gruppo e l'amministratore — la stessa regola
 delle foto, nella stessa classe.
+
+**La pagina del gruppo si scalda** (12/10, Alessandro, variante B del mockup: chiara e leggibile
+prima che calda, e regge gruppi di qualunque misura):
+
+- **In cima, il prossimo incontro del gruppo** (il primo non concluso fra quelli legati al
+  gruppo), con il titolo che porta alla sua pagina, il giorno e l'ora, i volti di chi ha detto
+  **«Ci sarò»** e quanti sono. I partecipanti lo dicono con un pulsante, e lo ritirano con
+  «Non posso più» (`live_session_rsvps`).
+- **Sotto il cerchio, «Il giro del cerchio»**: la domanda posta al gruppo, le risposte intere una
+  sotto l'altra, la propria per prima, con la foto e il nome come ciascuno ha scelto di comparire.
+  **Pongono la domanda il tutor del gruppo e l'admin** (300 caratteri); **rispondono i
+  partecipanti**, una volta per domanda (200 caratteri, con il contatore), e possono cambiare o
+  togliere la risposta. **La domanda resta aperta finché non ne arriva una nuova**: la precedente,
+  con le sue risposte, va fra le **domande passate** (`/gruppi/{id}/domande-passate`), che il gruppo
+  legge e basta.
+- **Il tutor e l'admin moderano**: «Nascondi» toglie una risposta alla vista del gruppo senza
+  cancellarla. Chi l'ha scritta la vede ancora, con la nota che è nascosta, e non la può più
+  cambiare; «Rimetti» la rende di nuovo visibile.
+- Nel cerchio resta un gesto solo, la presentazione: la conversazione sta sotto.
+
+Le regole stanno in `App\Core\GiroDelCerchio`, senza database (`tests/giro_test.php`);
+`permessi.js` prova che nessuno scrive nel gruppo di un altro, che lo studente non pone domande
+né modera, e che il tutor di un altro gruppo non modera. **Da aggiornare l'informativa privacy**:
+le risposte le leggono i compagni di gruppo e il tutor, come le presentazioni.
 
 **La presentazione si apre sopra la pagina.** Chi ne ha scritta una è un pulsante — foto e
 nome insieme — con un piccolo fumetto verde sull'angolo della foto (è la forma a dirlo; il

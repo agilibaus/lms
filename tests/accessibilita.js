@@ -582,6 +582,9 @@ PAGINE_INTERNE.push(
     // Il gruppo da otto con il tutor al centro: e' il solo che fa un cerchio
     // vero, con nomi sui due fianchi, in alto e in basso, e uno lungo.
     ['/gruppi/' + SEMINA.gruppo_cerchio, 'Pagina del gruppo (semina)'],
+    // Con il giro del cerchio (12/10): l'admin modera, quindi vede anche la
+    // risposta nascosta, «Nascondi»/«Rimetti» e «Fai una nuova domanda».
+    ['/gruppi/' + SEMINA.gruppo_cerchio + '/domande-passate', 'Domande passate del gruppo (semina)'],
     // La sezione dei benvenuti dei tutor (07/10), con un benvenuto caricato.
     ['/admin/courses/' + SEMINATI.corso + '/edit', 'Modifica corso con benvenuto (semina)'],
     // Gli obiettivi (11/10): lo staff li vede sempre completi.
@@ -609,7 +612,8 @@ async function entra(page) {
  */
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
-    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando';
+    + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando, '
+    + '.giro-cambia-comando, .giro-passate-comando';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -1687,6 +1691,46 @@ async function giroBenvenuto(browser) {
 
         // Il profilo dello studente (07/10): nome e cognome separati, e la
         // scelta di come compare agli altri studenti, con l'anteprima.
+        // La pagina del gruppo che si scalda (12/10, Alessandro). Nel gruppo da
+        // otto: la domanda del tutor, il campo per rispondere (lo studente di
+        // A non ha ancora risposto), le risposte dei compagni, ma non quella
+        // nascosta dal tutor, e le domande passate. Nel gruppo di A: il
+        // prossimo incontro con «Ci sarò». Gli id sono quelli della semina di
+        // questo giro: la semina ricrea i gruppi.
+        await esamina(page, '/gruppi/' + seme.gruppo_cerchio, 'Pagina del gruppo con il giro (studente)', BERSAGLIO_MINIMO, daTelefono);
+        const giro = await page.evaluate(() => {
+            const g = document.querySelector('section.giro');
+            return g ? {
+                domanda: (g.querySelector('.giro-domanda') || {}).textContent,
+                campo: !!g.querySelector('form[action$="/risposta"] textarea[name="answer"]'),
+                risposte: g.querySelectorAll('.giro-risposta').length,
+                nascosta: g.textContent.includes('nascosto'),
+                moderazione: g.querySelectorAll('.giro-modera').length,
+                nuovaDomanda: !!g.querySelector('form[action$="/domanda"]'),
+                passate: (g.querySelector('a.giro-passate-comando') || {}).textContent,
+                dopoIlCerchio: !!document.querySelector('.gruppo-persone ~ section.giro'),
+            } : null;
+        });
+        check('nel gruppo, sotto il cerchio, la domanda del tutor con il campo per rispondere e le risposte dei compagni',
+            giro !== null && giro.domanda === 'Che cosa ti porti via dal secondo modulo?' && giro.campo && giro.risposte === 2
+                && giro.dopoIlCerchio && /^Domande passate \(1\)$/.test((giro.passate || '').trim()),
+            [JSON.stringify(giro)]);
+        check('lo studente non vede la risposta nascosta, né i comandi di chi modera',
+            giro !== null && !giro.nascosta && giro.moderazione === 0 && !giro.nuovaDomanda, [JSON.stringify(giro)]);
+        await esamina(page, '/gruppi/' + seme.gruppo_cerchio + '/domande-passate', 'Domande passate del gruppo (studente)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(page, '/gruppi/' + seme.A.gruppo, 'Pagina del gruppo con l\'incontro (studente)', BERSAGLIO_MINIMO, daTelefono);
+        const incontroGruppo = await page.evaluate(() => {
+            const s = document.querySelector('section.gruppo-incontro');
+            return s ? {
+                primo: s === document.querySelector('.page-header ~ section.card'),
+                titolo: !!s.querySelector('h2 a[href^="/live/"]'),
+                bottone: (s.querySelector('form[action$="/ci-saro"] button') || {}).textContent,
+            } : null;
+        });
+        check('nel gruppo di A, in cima, il prossimo incontro con «Ci sarò»',
+            incontroGruppo !== null && incontroGruppo.primo && incontroGruppo.titolo && (incontroGruppo.bottone || '').trim() === 'Ci sarò',
+            [JSON.stringify(incontroGruppo)]);
+
         await esamina(page, '/profilo', 'Profilo (studente)', BERSAGLIO_MINIMO, daTelefono);
         const scelte = await page.locator('fieldset.scelta-nome input[name="name_display"]').count();
         check('nel profilo dello studente ci sono le tre scelte di come compare', scelte === 3, ['scelte: ' + scelte]);

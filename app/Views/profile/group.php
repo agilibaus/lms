@@ -3,12 +3,28 @@
 declare(strict_types=1);
 
 use App\Controllers\GroupPageController;
+use App\Core\CampoContato;
 use App\Core\CourseCover;
+use App\Core\Csrf;
+use App\Core\GiroDelCerchio;
 use App\Core\GroupCircle;
+use App\Models\GroupQuestionModel;
 
 /** @var array $group */
 /** @var array|null $tutor */
 /** @var array $people */
+/** @var int $partecipanti */
+/** @var bool $modera */
+/** @var bool $partecipa */
+/** @var array|null $domanda */
+/** @var list<array<string, mixed>> $risposte */
+/** @var int $contate */
+/** @var int $archivio */
+/** @var array|null $incontro */
+/** @var list<array<string, mixed>> $ciSaranno */
+/** @var bool $ciSaro */
+/** @var int $chiGuarda */
+/** @var array|null $daRiprendere */
 
 $quanti = count($people);
 $posizioni = GroupCircle::posizioni($quanti);
@@ -72,6 +88,54 @@ $conPresentazione = array_values(array_filter(
     </p>
 </div>
 
+<?php require __DIR__ . '/../admin/_flash.php'; ?>
+
+<?php if ($incontro !== null): ?>
+    <?php /* Il prossimo incontro del gruppo (12/10): in cima, perche' e'
+             l'unica cosa della pagina con una scadenza. «Ci sarò» lo dicono
+             i partecipanti; chi modera vede chi ci sara'. */
+    $quantiCi = count($ciSaranno); ?>
+    <section class="card gruppo-incontro" aria-labelledby="gruppo-incontro-titolo">
+        <div class="gruppo-incontro-testo">
+            <p class="gruppo-etichetta">Prossimo incontro del gruppo</p>
+            <h2 id="gruppo-incontro-titolo"><a href="/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></h2>
+            <p class="gruppo-incontro-quando"><?= htmlspecialchars(GiroDelCerchio::quando((string) $incontro['starts_at'], (string) $incontro['ends_at'])) ?></p>
+        </div>
+        <div class="gruppo-incontro-chi">
+            <?php if ($quantiCi > 0): ?>
+                <span class="gruppo-volti" aria-hidden="true">
+                    <?php foreach (array_slice($ciSaranno, 0, 6) as $p): ?>
+                        <?php if (!empty($p['avatar_path'])): ?>
+                            <img class="gruppo-volto" src="/utenti/<?= (int) $p['id'] ?>/immagine" alt="" loading="lazy">
+                        <?php else: ?>
+                            <span class="gruppo-volto"><?= htmlspecialchars(CourseCover::initials((string) $p['full_name'])) ?></span>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </span>
+                <span class="gruppo-ci-saranno">
+                    <?= $quantiCi === 1 ? '1 ci sarà' : $quantiCi . ' ci saranno' ?><span class="sr-only">: <?= htmlspecialchars(implode(', ', array_map(static fn (array $p): string => (string) $p['full_name'], $ciSaranno))) ?></span>
+                </span>
+            <?php else: ?>
+                <span class="gruppo-ci-saranno">Ancora nessuno ha detto «Ci sarò»</span>
+            <?php endif; ?>
+            <?php if ($partecipa): ?>
+                <form action="/gruppi/<?= (int) $group['id'] ?>/ci-saro" method="post" class="gruppo-ci-saro">
+                    <?= Csrf::field() ?>
+                    <input type="hidden" name="session_id" value="<?= (int) $incontro['id'] ?>">
+                    <?php if ($ciSaro): ?>
+                        <input type="hidden" name="ci" value="0">
+                        <span class="gruppo-ci-sarai">Ci sarai</span>
+                        <button type="submit" class="link-btn">Non posso più</button>
+                    <?php else: ?>
+                        <input type="hidden" name="ci" value="1">
+                        <button type="submit" class="btn btn-primary">Ci sarò</button>
+                    <?php endif; ?>
+                </form>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>
+
 <?php if ($quanti === 0 && $tutor === null): ?>
     <p class="empty-state">Questo gruppo non ha ancora partecipanti.</p>
 <?php else: ?>
@@ -117,6 +181,86 @@ $conPresentazione = array_values(array_filter(
             <?php endforeach; ?>
         </ul>
     </div>
+
+    <?php /*
+     * IL GIRO DEL CERCHIO (12/10, Alessandro, variante B del mockup): sotto il
+     * cerchio, che resta com'e', la domanda aperta e le risposte intere, una
+     * sotto l'altra, la propria per prima. Pone la domanda il tutor del
+     * gruppo o l'admin; una domanda nuova manda la precedente fra le domande
+     * passate. Regole in `App\Core\GiroDelCerchio`.
+     */
+    $gid = (int) $group['id'];
+    $mia = null;
+    foreach ($risposte as $r) {
+        if ($r['mia']) {
+            $mia = $r;
+        }
+    } ?>
+    <?php if ($domanda !== null || $modera): ?>
+        <section class="card giro" id="giro" aria-labelledby="giro-titolo">
+            <?php if ($domanda !== null): ?>
+                <div class="giro-testa">
+                    <?php if (!empty($domanda['author_avatar'])): ?>
+                        <img class="avatar giro-foto" src="/utenti/<?= (int) $domanda['author_id'] ?>/immagine" alt="" loading="lazy">
+                    <?php else: ?>
+                        <span class="avatar avatar-placeholder giro-foto" aria-hidden="true"><?= htmlspecialchars(CourseCover::initials((string) ($domanda['author_name'] ?? '?'))) ?></span>
+                    <?php endif; ?>
+                    <div>
+                        <p class="gruppo-etichetta">Il giro del cerchio</p>
+                        <p class="giro-chi"><?= htmlspecialchars(GiroDelCerchio::chiChiede($domanda['author_first_name'] ?? null)) ?></p>
+                    </div>
+                </div>
+                <h2 class="giro-domanda" id="giro-titolo"><?= nl2br(htmlspecialchars((string) $domanda['question']), false) ?></h2>
+                <p class="giro-conto"><?= htmlspecialchars(GiroDelCerchio::conto($contate, $partecipanti)) ?></p>
+
+                <?php if ($partecipa && ($mia === null || $mia['hidden_at'] === null)): ?>
+                    <?php $valore = $daRiprendere['answer'] ?? ($mia['answer'] ?? ''); ?>
+                    <?php $modulo = '<form action="/gruppi/' . $gid . '/risposta" method="post" class="giro-modulo">'
+                        . Csrf::field()
+                        . '<input type="hidden" name="question_id" value="' . (int) $domanda['id'] . '">'
+                        . CampoContato::html('giro-risposta', 'La tua risposta', 'answer', GroupQuestionModel::MAX_RISPOSTA, (string) $valore, 3)
+                        . '<p class="form-hint">La leggono i partecipanti e il tutor del gruppo.'
+                        . ($mia !== null ? ' Svuota il campo e salva per togliere la risposta.' : '') . '</p>'
+                        . '<div class="form-actions"><button type="submit" class="btn btn-primary">'
+                        . ($mia !== null ? 'Salva' : 'Condividi') . '</button></div></form>'; ?>
+                    <?php if ($mia === null || $daRiprendere !== null): ?>
+                        <?= $modulo ?>
+                    <?php else: ?>
+                        <details class="giro-cambia">
+                            <summary class="giro-cambia-comando">Modifica la tua risposta</summary>
+                            <?= $modulo ?>
+                        </details>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php require __DIR__ . '/_risposte.php'; ?>
+            <?php endif; ?>
+
+            <?php if ($modera): ?>
+                <?php if ($domanda === null): ?>
+                    <p class="gruppo-etichetta" id="giro-titolo">Il giro del cerchio</p>
+                    <p class="giro-spiega">Fai una domanda al gruppo: i partecipanti rispondono in una o due righe, e le risposte si leggono qui. Resta aperta finché non ne fai una nuova.</p>
+                <?php endif; ?>
+                <?php $nuova = '<form action="/gruppi/' . $gid . '/domanda" method="post" class="giro-modulo">'
+                    . Csrf::field()
+                    . CampoContato::html('giro-domanda', 'La domanda al gruppo', 'question', GroupQuestionModel::MAX_DOMANDA, '', 3)
+                    . ($domanda !== null ? '<p class="form-hint">La domanda di adesso, con le sue risposte, passa fra le domande passate.</p>' : '')
+                    . '<div class="form-actions"><button type="submit" class="btn ' . ($domanda !== null ? 'btn-secondary' : 'btn-primary') . '">Poni la domanda</button></div></form>'; ?>
+                <?php if ($domanda === null): ?>
+                    <?= $nuova ?>
+                <?php else: ?>
+                    <details class="giro-nuova">
+                        <summary class="giro-cambia-comando">Fai una nuova domanda</summary>
+                        <?= $nuova ?>
+                    </details>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <?php if ($archivio > 0): ?>
+                <p class="giro-passate"><a class="giro-passate-comando" href="/gruppi/<?= $gid ?>/domande-passate">Domande passate (<?= $archivio ?>)</a></p>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
 
     <?php if ($conPresentazione !== []): ?>
         <div class="presentazioni">
