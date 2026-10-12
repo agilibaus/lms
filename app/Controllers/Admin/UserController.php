@@ -152,8 +152,12 @@ class UserController extends AdminController
         // Perdere l'utente appena compilato per un'email non partita sarebbe
         // solo un fastidio: l'account resta, e l'invio si ripete dalla sua
         // scheda.
+        //
+        // Il testo e' «Il tuo accesso», come per chi arriva da un elenco
+        // (12/10): quello della password temporanea parla di una password
+        // precedente e di sessioni chiuse, che un account nuovo non ha.
         try {
-            Mailer::send(Mailer::temporaryPassword(
+            Mailer::send(Mailer::invite(
                 $data['email'],
                 $data['full_name'],
                 $password,

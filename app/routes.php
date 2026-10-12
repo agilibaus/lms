@@ -241,8 +241,12 @@ $router->get('/admin/settings', [SettingsController::class, 'index']);
 $router->get('/admin/settings/posta', [SettingsController::class, 'mail']);
 $router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']);
 $router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);
+$router->get('/admin/settings/email', [SettingsController::class, 'email']);
+$router->post('/admin/settings/email', [SettingsController::class, 'updateEmail']);
+$router->post('/admin/settings/email/testo', [SettingsController::class, 'updateModello']);
+$router->post('/admin/settings/email/prova', [SettingsController::class, 'provaModello']);
+// La pagina dei testi degli incontri, fino al 12/10: ora e' un gruppo di Email.
 $router->get('/admin/settings/inviti', [SettingsController::class, 'liveMail']);
-$router->post('/admin/settings/inviti', [SettingsController::class, 'updateLiveMail']);
 $router->get('/admin/settings/aspetto', [SettingsController::class, 'appearance']);
 $router->post('/admin/settings/aspetto', [SettingsController::class, 'updateAppearance']);
 $router->get('/admin/settings/benvenuto', [SettingsController::class, 'welcome']);

@@ -211,7 +211,7 @@ echo PHP_EOL . 'Lo spareggio' . PHP_EOL;
 // nell'ordine «sbagliato» rispetto all'email: e' proprio il caso in cui la
 // sola stabilita' li lascerebbe come sono.
 $omonimi = [
-    ['full_name' => 'Elena Mazzoleni', 'email' => 'info@movimente.it', 'score' => 1],
+    ['full_name' => 'Elena Mazzoleni', 'email' => 'info@esempio.it', 'score' => 1],
     ['full_name' => 'Bruno', 'email' => 'bruno@prova.it', 'score' => 1],
     ['full_name' => 'Elena Mazzoleni', 'email' => 'elena@prova.it', 'score' => 1],
 ];
@@ -226,7 +226,7 @@ $conSpareggio = static function (array $parametri): Ordinamento {
 check(
     'a parita\' di nome decide l\'email',
     $valori($conSpareggio(['ordina' => 'nome'])->applica($omonimi), 'email')
-        === ['bruno@prova.it', 'elena@prova.it', 'info@movimente.it'],
+        === ['bruno@prova.it', 'elena@prova.it', 'info@esempio.it'],
     'senza, due omonimi restano nell\'ordine in cui li manda il database'
 );
 
@@ -236,7 +236,7 @@ check(
 check(
     'invertendo il verso si inverte anche lo spareggio',
     $valori($conSpareggio(['ordina' => 'nome', 'verso' => 'desc'])->applica(array_reverse($omonimi)), 'email')
-        === ['info@movimente.it', 'elena@prova.it', 'bruno@prova.it'],
+        === ['info@esempio.it', 'elena@prova.it', 'bruno@prova.it'],
     'la colonna invertita deve leggersi al contrario tutta intera'
 );
 
@@ -250,7 +250,7 @@ check(
 check(
     'una colonna senza spareggio resta stabile come prima',
     $valori($conSpareggio(['ordina' => 'punti'])->applica($omonimi), 'email')
-        === ['info@movimente.it', 'bruno@prova.it', 'elena@prova.it']
+        === ['info@esempio.it', 'bruno@prova.it', 'elena@prova.it']
 );
 
 // ---------------------------------------------------------------

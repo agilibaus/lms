@@ -13,10 +13,10 @@ use App\Core\FontLibrary;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Google\ServiceAccountClient;
-use App\Core\Mail\LiveSessionMail;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\Mail\Message;
+use App\Core\Mail\Modelli;
 use App\Core\Settings;
 use App\Core\Welcome;
 use App\Core\Theme;
@@ -35,7 +35,7 @@ class SettingsController extends AdminController
 {
     private const MAIL_PAGE = '/admin/settings/posta';
     private const MEET_PAGE = '/admin/settings/meet';
-    private const LIVE_MAIL_PAGE = '/admin/settings/inviti';
+    private const EMAIL_PAGE = '/admin/settings/email';
     private const APPEARANCE_PAGE = '/admin/settings/aspetto';
     private const BUNNY_PAGE = '/admin/settings/bunny';
 
@@ -51,8 +51,9 @@ class SettingsController extends AdminController
      *
      * Non un sottomenu che si apre nella barra laterale: una pagina funziona
      * senza JavaScript (Sezione 4) e puo' dire a cosa serve ciascuna sezione,
-     * cosa che dai soli nomi non e' ovvia — "Posta elettronica" e "Inviti
-     * sessioni live" sembrano la stessa cosa e non lo sono.
+     * cosa che dai soli nomi non e' ovvia — "Posta elettronica" e "Email"
+     * sembrano la stessa cosa e non lo sono: la prima dice come partono, la
+     * seconda che cosa dicono.
      */
     public function index(array $params = []): void
     {
@@ -88,8 +89,6 @@ class SettingsController extends AdminController
             'pageTitle' => 'Posta elettronica',
             'transport' => strtolower((string) Settings::get('MAIL_TRANSPORT', 'log')),
             'values' => [
-                'MAIL_FROM_ADDRESS' => (string) Settings::get('MAIL_FROM_ADDRESS', ''),
-                'MAIL_FROM_NAME' => (string) Settings::get('MAIL_FROM_NAME', ''),
                 'MAIL_HOST' => (string) Settings::get('MAIL_HOST', ''),
                 'MAIL_PORT' => (string) Settings::get('MAIL_PORT', ''),
                 'MAIL_USERNAME' => (string) Settings::get('MAIL_USERNAME', ''),
@@ -97,7 +96,6 @@ class SettingsController extends AdminController
             ],
             // La password non torna mai al browser: si dice solo se c'è.
             'hasPassword' => (string) Settings::get('MAIL_PASSWORD', '') !== '',
-            'sources' => self::sourcesFor(Settings::MAIL_KEYS),
             'lastUpdate' => Settings::lastUpdate(Settings::MAIL_KEYS),
             'myEmail' => Auth::email(),
         ]);
@@ -111,12 +109,6 @@ class SettingsController extends AdminController
 
         if (!in_array($transport, ['log', 'mail', 'smtp'], true)) {
             $this->fail('Modalità di invio non riconosciuta.', self::MAIL_PAGE);
-        }
-
-        $from = trim((string) ($_POST['MAIL_FROM_ADDRESS'] ?? ''));
-
-        if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
-            $this->fail('L\'indirizzo del mittente non è valido.', self::MAIL_PAGE);
         }
 
         $port = trim((string) ($_POST['MAIL_PORT'] ?? ''));
@@ -140,8 +132,6 @@ class SettingsController extends AdminController
         $userId = Auth::id();
 
         Settings::set('MAIL_TRANSPORT', $transport, $userId);
-        Settings::set('MAIL_FROM_ADDRESS', $from, $userId);
-        Settings::set('MAIL_FROM_NAME', trim((string) ($_POST['MAIL_FROM_NAME'] ?? '')), $userId);
         Settings::set('MAIL_HOST', trim((string) ($_POST['MAIL_HOST'] ?? '')), $userId);
         Settings::set('MAIL_PORT', $port, $userId);
         Settings::set('MAIL_USERNAME', trim((string) ($_POST['MAIL_USERNAME'] ?? '')), $userId);
@@ -179,7 +169,7 @@ class SettingsController extends AdminController
         $message = new Message(
             $to,
             (string) (Auth::name() ?? ''),
-            'Prova di invio — Pistacchio LMS',
+            'Prova di invio — ' . Modelli::PIATTAFORMA,
             "Questo messaggio conferma che l'invio della posta è configurato correttamente.\n\n"
                 . 'Inviato il ' . date('d/m/Y \a\l\l\e H:i') . '.'
         );
@@ -201,57 +191,199 @@ class SettingsController extends AdminController
     }
 
     // ---------------------------------------------------------------
-    // Inviti alle sessioni live
+    // Email: mittente, chiusura e testo di ogni email (12/10)
     // ---------------------------------------------------------------
 
+    public function email(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        // Nei campi si mette quello che e' stato scritto qui, non il
+        // predefinito: cosi' un campo vuoto si legge come «vale il testo in
+        // grigio», che e' esattamente quello che significa.
+        $testi = [];
+
+        foreach (Modelli::elenco() as $chiave => $voce) {
+            $testi[$chiave] = [
+                'oggetto' => (string) (Settings::stored($voce['oggetto']) ?? ''),
+                'testo' => (string) (Settings::stored($voce['testo']) ?? ''),
+            ];
+        }
+
+        // Un testo rifiutato torna nei campi com'era stato scritto.
+        $daRiprendere = $_SESSION['email_da_riprendere'] ?? null;
+        unset($_SESSION['email_da_riprendere']);
+
+        if (is_array($daRiprendere) && isset($testi[$daRiprendere['chiave'] ?? ''])) {
+            $testi[$daRiprendere['chiave']] = [
+                'oggetto' => (string) $daRiprendere['oggetto'],
+                'testo' => (string) $daRiprendere['testo'],
+            ];
+        }
+
+        View::render('admin/settings/email', [
+            'pageTitle' => 'Email',
+            'comuni' => [
+                Modelli::ORGANIZZAZIONE => (string) (Settings::stored(Modelli::ORGANIZZAZIONE) ?? ''),
+                'MAIL_FROM_NAME' => (string) Settings::get('MAIL_FROM_NAME', ''),
+                'MAIL_FROM_ADDRESS' => (string) Settings::get('MAIL_FROM_ADDRESS', ''),
+                Modelli::RISPONDI_A => (string) (Settings::stored(Modelli::RISPONDI_A) ?? ''),
+                Modelli::CHIUSURA => (string) (Settings::stored(Modelli::CHIUSURA) ?? ''),
+            ],
+            'mittenteDaFile' => Settings::source('MAIL_FROM_ADDRESS') === 'file',
+            'testi' => $testi,
+            'lastUpdate' => Settings::lastUpdate(array_merge(['MAIL_FROM_NAME', 'MAIL_FROM_ADDRESS'], Modelli::chiaviSettings())),
+            'logTransport' => Mailer::isLogTransport(),
+            'myEmail' => Auth::email(),
+        ]);
+    }
+
+    /** Organizzazione, mittente, «Rispondi a» e chiusura: una volta per tutte le email. */
+    public function updateEmail(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $organizzazione = trim((string) ($_POST[Modelli::ORGANIZZAZIONE] ?? ''));
+        $nomeMittente = trim((string) ($_POST['MAIL_FROM_NAME'] ?? ''));
+        $mittente = trim((string) ($_POST['MAIL_FROM_ADDRESS'] ?? ''));
+        $rispondiA = trim((string) ($_POST[Modelli::RISPONDI_A] ?? ''));
+
+        if ($mittente !== '' && filter_var($mittente, FILTER_VALIDATE_EMAIL) === false) {
+            $this->fail('L\'indirizzo del mittente non è valido.', self::EMAIL_PAGE);
+        }
+
+        if ($rispondiA !== '' && filter_var($rispondiA, FILTER_VALIDATE_EMAIL) === false) {
+            $this->fail('L\'indirizzo «Rispondi a» non è valido.', self::EMAIL_PAGE);
+        }
+
+        $chiusura = CampoContato::taglia((string) ($_POST[Modelli::CHIUSURA] ?? ''), Modelli::MAX_CHIUSURA);
+        $problema = $this->problemaSegnaposto($chiusura, array_keys(Modelli::segnapostoComuni()), []);
+
+        $userId = Auth::id();
+        Settings::set(Modelli::ORGANIZZAZIONE, mb_substr($organizzazione, 0, 100), $userId);
+        Settings::set('MAIL_FROM_NAME', mb_substr($nomeMittente, 0, 100), $userId);
+        Settings::set('MAIL_FROM_ADDRESS', $mittente, $userId);
+        Settings::set(Modelli::RISPONDI_A, $rispondiA, $userId);
+        Settings::set(Modelli::CHIUSURA, $chiusura, $userId);
+
+        $this->resetMailer();
+
+        $this->success('Mittente e chiusura salvati.' . ($problema !== null ? ' ' . $problema : ''), self::EMAIL_PAGE);
+    }
+
+    /** Oggetto e testo di un'email. */
+    public function updateModello(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        [$chiave, $voce, $oggetto, $testo] = $this->modelloDalModulo();
+        $ancora = self::EMAIL_PAGE . '#email-' . $chiave;
+
+        $controllo = Modelli::controlla($oggetto . "\n" . $testo, Modelli::ammessi($chiave), []);
+        $mancanti = Modelli::controlla($testo, Modelli::ammessi($chiave), $voce['obbligatori'])['mancanti'];
+
+        if ($mancanti !== []) {
+            $_SESSION['email_da_riprendere'] = ['chiave' => $chiave, 'oggetto' => $oggetto, 'testo' => $testo];
+            $this->fail(
+                '«' . $voce['titolo'] . '» non è stata salvata: nel testo '
+                . (count($mancanti) === 1 ? 'manca ' : 'mancano ') . implode(', ', $mancanti)
+                . ', senza ' . (count($mancanti) === 1 ? 'il quale' : 'i quali') . ' l’email non serve a chi la riceve.',
+                $ancora
+            );
+        }
+
+        $userId = Auth::id();
+        Settings::set($voce['oggetto'], $oggetto, $userId);
+        Settings::set($voce['testo'], $testo, $userId);
+
+        $avviso = $controllo['sconosciuti'] !== []
+            ? ' Attenzione: ' . implode(', ', $controllo['sconosciuti'])
+                . (count($controllo['sconosciuti']) === 1 ? ' non è un segnaposto di questa email e resterà scritto così.'
+                    : ' non sono segnaposto di questa email e resteranno scritti così.')
+            : '';
+
+        $this->success('«' . $voce['titolo'] . '» salvata.' . $avviso, $ancora);
+    }
+
+    /**
+     * La prova di un'email al proprio indirizzo, con quello che e' scritto
+     * nei campi anche se non e' salvato: si prova prima di salvare.
+     */
+    public function provaModello(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        [$chiave, , $oggetto, $testo] = $this->modelloDalModulo();
+        $ancora = self::EMAIL_PAGE . '#email-' . $chiave;
+        $to = (string) Auth::email();
+
+        // I campi tornano come erano, salvati o no.
+        $_SESSION['email_da_riprendere'] = ['chiave' => $chiave, 'oggetto' => $oggetto, 'testo' => $testo];
+
+        if ($to === '') {
+            $this->fail('Il tuo account non ha un indirizzo email.', $ancora);
+        }
+
+        $this->resetMailer();
+
+        try {
+            Mailer::send(Modelli::prova($chiave, $to, (string) (Auth::name() ?? ''), $oggetto, $testo));
+        } catch (MailException $e) {
+            $this->fail('Invio non riuscito: ' . $e->getMessage(), $ancora);
+        }
+
+        $this->success(
+            Mailer::isLogTransport()
+                ? 'Prova scritta in storage/mail: in modalità registro non parte nulla verso l\'esterno.'
+                : 'Prova inviata a ' . $to . ', con i valori di esempio al posto dei segnaposto.',
+            $ancora
+        );
+    }
+
+    /** La vecchia pagina dei testi degli incontri: ora e' un gruppo della pagina Email. */
     public function liveMail(array $params = []): void
     {
         Auth::requirePermission('settings.manage');
 
-        $values = [];
-
-        foreach (Settings::LIVE_MAIL_KEYS as $key) {
-            // Nel campo si mette quello che e' stato scritto qui, non il
-            // predefinito: cosi' un campo vuoto si legge come "vale quello
-            // di fabbrica", che e' esattamente quello che significa.
-            $values[$key] = (string) (Settings::stored($key) ?? '');
-        }
-
-        View::render('admin/settings/live_mail', [
-            'pageTitle' => 'Inviti alle sessioni live',
-            'values' => $values,
-            'defaults' => LiveSessionMail::DEFAULTS,
-            'placeholders' => LiveSessionMail::placeholders(),
-            'lastUpdate' => Settings::lastUpdate(Settings::LIVE_MAIL_KEYS),
-            'logTransport' => Mailer::isLogTransport(),
-        ]);
+        header('Location: ' . self::EMAIL_PAGE . '#incontri', true, 301);
+        exit;
     }
 
-    public function updateLiveMail(array $params = []): void
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function modelloDalModulo(): array
     {
-        Auth::requirePermission('settings.manage');
+        $chiave = (string) ($_POST['chiave'] ?? '');
+        $elenco = Modelli::elenco();
 
-        $userId = Auth::id();
-
-        foreach (Settings::LIVE_MAIL_KEYS as $key) {
-            $value = trim(str_replace("\r\n", "\n", (string) ($_POST[$key] ?? '')));
-
-            // I testi, non gli oggetti, hanno il limite di 1.000 caratteri
-            // (10/10); l'oggetto ha gia' il suo nel campo, di 200.
-            if (!in_array($key, LiveSessionMail::SUBJECT_KEYS, true)) {
-                $value = CampoContato::taglia($value, LiveSessionMail::MAX_BODY_CHARS);
-            }
-
-            // Un oggetto su piu' righe spezzerebbe l'intestazione del
-            // messaggio: si rifiuta qui, dove si puo' ancora correggere.
-            if (in_array($key, LiveSessionMail::SUBJECT_KEYS, true) && str_contains($value, "\n")) {
-                $this->fail('L\'oggetto deve stare su una riga sola.', self::LIVE_MAIL_PAGE);
-            }
-
-            Settings::set($key, $value, $userId);
+        if (!isset($elenco[$chiave])) {
+            $this->fail('Email sconosciuta.', self::EMAIL_PAGE);
         }
 
-        $this->success('Testi degli inviti salvati.', self::LIVE_MAIL_PAGE);
+        // Un oggetto su piu' righe spezzerebbe l'intestazione del messaggio:
+        // gli a capo diventano spazi.
+        $oggetto = mb_substr(trim(str_replace(["\r", "\n"], ' ', (string) ($_POST['oggetto'] ?? ''))), 0, 200);
+        $testo = CampoContato::taglia((string) ($_POST['testo'] ?? ''), Modelli::MAX_TESTO);
+
+        return [$chiave, $elenco[$chiave], $oggetto, $testo];
+    }
+
+    /**
+     * @param list<string> $ammessi
+     * @param list<string> $obbligatori
+     */
+    private function problemaSegnaposto(string $testo, array $ammessi, array $obbligatori): ?string
+    {
+        $sconosciuti = Modelli::controlla($testo, $ammessi, $obbligatori)['sconosciuti'];
+
+        if ($sconosciuti === []) {
+            return null;
+        }
+
+        return 'Attenzione: ' . implode(', ', $sconosciuti)
+            . (count($sconosciuti) === 1 ? ' non è un segnaposto comune e resterà scritto così.'
+                : ' non sono segnaposto comuni e resteranno scritti così.');
     }
 
     // ---------------------------------------------------------------

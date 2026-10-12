@@ -116,7 +116,8 @@ class Settings
             || in_array($key, self::LIVE_MAIL_KEYS, true)
             || in_array($key, self::APPEARANCE_KEYS, true)
             || in_array($key, self::BUNNY_KEYS, true)
-            || in_array($key, self::WELCOME_KEYS, true);
+            || in_array($key, self::WELCOME_KEYS, true)
+            || in_array($key, Mail\Modelli::chiaviSettings(), true);
     }
 
     public static function isSecret(string $key): bool

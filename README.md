@@ -306,7 +306,7 @@ massimo 12.000, quindi non serve nessuna migrazione.
 | Descrizione della sessione dal vivo | 1.000 |
 | Testo della domanda di un questionario | 500 |
 | Impostazioni › Aspetto: titolo e testo della pagina di accesso affiancata | 300 e 500 |
-| Impostazioni › Inviti alle sessioni: testo di ciascuna email (con i segnaposto) | 1.000 |
+| Impostazioni › Email: testo di ciascuna email (con i segnaposto); chiusura comune | 1.000 e 500 |
 
 Fuori resta solo il testo delle lezioni, che è testo formattato nell'editor. **Obiettivo e
 descrizione del corso e obiettivo del modulo accettano qualche tag HTML** (11/10) e il loro
@@ -871,9 +871,11 @@ l'invito non parte. Per questo la pagina Utenti mostra quanti inviti restano, qu
 partito l'ultimo scaglione, e un pulsante per mandarne uno a mano. Se il numero non scende,
 si vede.
 
-L'email dell'invito è sua e non quella della password temporanea: quel testo dice «la
-password precedente non funziona più» e «le sessioni aperte sono state chiuse», due frasi
-vere per un account esistente e false per uno appena creato.
+L'email dell'invito è sua («Il tuo accesso») e non quella della password temporanea: quel
+testo dice «la password precedente non funziona più» e «le sessioni aperte sono state
+chiuse», due frasi vere per un account esistente e false per uno appena creato. Dal 12/10 la
+riceve anche chi viene creato a mano da Utenti › Nuovo utente, che fino ad allora riceveva
+quella della password temporanea.
 
 ## I lavori periodici su Windows (Laragon)
 
@@ -1306,6 +1308,7 @@ php tests/domande_test.php         # domande: a chi vanno, chi le vede, pubblica
 php tests/password_test.php         # regola della password e generatore
 php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
 php tests/live_session_mail_test.php   # testi delle email degli incontri
+php tests/email_modelli_test.php    # le email: elenco, segnaposto, chiusura, nome della piattaforma, Rispondi a
 php tests/xlsx_test.php             # il file XLSX scritto in casa
 
 # richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
@@ -2163,7 +2166,45 @@ nasce solo con l'approvazione.
 ### Email inviate
 Conferma dell'indirizzo, recupero password, conferma di iscrizione allo studente, avviso ad
 admin e tutor per le richieste da valutare, esito negativo di una richiesta. Tutte in testo
-semplice.
+semplice, e tutte modificabili da **Impostazioni › Email** (vedi sotto).
+
+## Le email e la pagina Impostazioni › Email
+
+Pistacchio LMS può essere usato da organizzazioni diverse, una per installazione: **nessun
+testo delle email è scritto nel codice delle pagine**, e il nome dell'organizzazione non
+compare in nessun file del progetto (`tests/email_modelli_test.php` lo controlla). Il nome
+della piattaforma invece è fisso: **«Pistacchio LMS»**, e non si cambia da nessuna parte.
+
+Tutte le email stanno in un elenco solo, `app/Core/Mail/Modelli.php`: per ognuna il gruppo, il
+titolo, quando parte, il testo predefinito, i segnaposto che può usare e quelli che non possono
+mancare. Da lì escono sia i messaggi sia la pagina **Impostazioni › Email**
+(`/admin/settings/email`, permesso `settings.manage`), che si costruisce da sola: un'email
+nuova è una voce in più nell'elenco.
+
+La pagina ha due parti:
+
+- **Organizzazione e mittente**, una volta per tutte le email: il nome dell'organizzazione
+  (`{organizzazione}`; finché è vuoto vale «Pistacchio LMS»), nome e indirizzo del mittente
+  (il nome, vuoto, vale quello dell'organizzazione), l'indirizzo **Rispondi a** (intestazione
+  `Reply-To` e segnaposto `{contatto}`; vuoto, vale il mittente) e la **chiusura**, aggiunta in
+  fondo a ogni email (500 caratteri). Il mittente si è spostato qui dalla pagina Posta
+  elettronica, che ora dice solo *come* partono le email;
+- **le email, per gruppo** (Account e accesso, Iscrizioni, Corso, Incontri dal vivo): per
+  ognuna oggetto e testo (1.000 caratteri), con il predefinito in grigio. **Un campo vuoto vale
+  il predefinito.** Ogni email si salva da sola, e **«Manda una prova a me»** la spedisce al
+  proprio indirizzo con quello che è scritto nei campi, anche non salvato, e valori di esempio
+  al posto dei segnaposto.
+
+I **segnaposto comuni** valgono in ogni email: `{nome}` (il solo nome di battesimo di chi
+riceve, letto dal suo account), `{organizzazione}`, `{piattaforma}` (sempre «Pistacchio LMS»)
+e `{contatto}`. Un testo senza un segnaposto **obbligatorio** (il `{link}` della conferma,
+la `{password}` dell'accesso…) non si salva e torna nei campi com'era; un segnaposto che non
+esiste si salva, con un avviso, e resta scritto com'è nell'email, così un errore di battitura
+si vede nella prova. I testi sono senza genere: la piattaforma non sa chi legge.
+
+Le tre email degli incontri dal vivo sono nello stesso elenco e tengono le chiavi di prima
+(`LIVE_*`): i testi già salvati restano. La vecchia pagina `/admin/settings/inviti` porta al
+gruppo «Incontri dal vivo».
 
 ## Configurazione dell'invio email
 

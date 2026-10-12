@@ -25,6 +25,7 @@ class NativeMailTransport implements Transport
                 'From: ' . (($this->fromName !== '' ? Message::encodeHeader($this->fromName) . ' ' : '') . '<' . $this->fromEmail . '>'),
                 'MIME-Version: 1.0',
             ],
+            $message->replyToHeaders(),
             // Con un allegato qui passa l'involucro multipart, e il corpo
             // contiene gia' le parti: mail() non deve saperne nulla.
             $message->contentHeaders()

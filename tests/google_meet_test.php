@@ -60,7 +60,7 @@ echo "JWT assertion" . PHP_EOL;
 $client = new ServiceAccountClient(
     $credentials['client_email'],
     $credentials['private_key'],
-    'corsi@movimente.it',
+    'corsi@esempio.it',
     new FakeTransport([])
 );
 
@@ -72,7 +72,7 @@ $claims = json_decode(base64_decode(strtr($p, '-_', '+/')), true);
 check('tre segmenti', count(explode('.', $assertion)) === 3);
 check('alg RS256', $header['alg'] === 'RS256');
 check('iss = service account', $claims['iss'] === $credentials['client_email']);
-check('sub = utente impersonato (delega)', $claims['sub'] === 'corsi@movimente.it');
+check('sub = utente impersonato (delega)', $claims['sub'] === 'corsi@esempio.it');
 check('aud = endpoint token', $claims['aud'] === 'https://oauth2.googleapis.com/token');
 check('scope calendar', $claims['scope'] === MeetCalendar::SCOPE);
 check('exp = iat + 3600', $claims['exp'] - $claims['iat'] === 3600);
@@ -106,8 +106,8 @@ $transport = new FakeTransport([
 ]);
 
 $calendar = new MeetCalendar(
-    new ServiceAccountClient($credentials['client_email'], $credentials['private_key'], 'corsi@movimente.it', $transport),
-    'corsi@movimente.it',
+    new ServiceAccountClient($credentials['client_email'], $credentials['private_key'], 'corsi@esempio.it', $transport),
+    'corsi@esempio.it',
     'Europe/Rome'
 );
 
@@ -128,7 +128,7 @@ check('grant_type jwt-bearer', str_contains($tokenRequest['body'], 'urn%3Aietf%3
 
 $eventRequest = $transport->requests[1];
 $payload = json_decode($eventRequest['body'], true);
-check('POST su events del calendario', str_contains($eventRequest['url'], '/calendars/corsi%40movimente.it/events'));
+check('POST su events del calendario', str_contains($eventRequest['url'], '/calendars/corsi%40esempio.it/events'));
 check('conferenceDataVersion=1', str_contains($eventRequest['url'], 'conferenceDataVersion=1'));
 check('Authorization con il token ottenuto', $eventRequest['headers']['Authorization'] === 'Bearer token-finto');
 check('richiesta conferenza hangoutsMeet', $payload['conferenceData']['createRequest']['conferenceSolutionKey']['type'] === 'hangoutsMeet');

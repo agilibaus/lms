@@ -195,9 +195,13 @@ check('l’allegato decodificato torna identico al file .ics', base64_decode($ba
 // ---------------------------------------------------------------
 echo PHP_EOL . 'Testi con segnaposto' . PHP_EOL;
 
-$variabili = LiveSessionMail::variables($sessione, 'Anna Rossi');
+$variabili = LiveSessionMail::variables($sessione);
 
-check('il nome finisce nei segnaposto', $variabili['{nome}'] === 'Anna Rossi');
+// {nome} e {piattaforma} sono segnaposto comuni a tutte le email (12/10):
+// li aggiunge Modelli, non l'incontro.
+check('il nome non e\' un segnaposto dell\'incontro', !isset($variabili['{nome}']) && !isset($variabili['{piattaforma}']));
+check('e nemmeno nell\'elenco del pannello', !array_key_exists('{nome}', LiveSessionMail::placeholders())
+    && !array_key_exists('{piattaforma}', LiveSessionMail::placeholders()));
 check('la data è in formato italiano', $variabili['{data}'] === '02/10/2026');
 check('l’ora di inizio è quella locale', $variabili['{ora_inizio}'] === '18:30');
 check('l’ora di fine pure', $variabili['{ora_fine}'] === '20:00');
@@ -208,20 +212,19 @@ check('senza orari precedenti non ci sono i segnaposto del cambio', !isset($vari
 
 $conPrecedenti = LiveSessionMail::variables(
     $sessione,
-    'Anna Rossi',
     ['starts_at' => '2026-09-25 17:00:00', 'ends_at' => '2026-09-25 18:00:00']
 );
 
 check('con gli orari di prima compare la data precedente', $conPrecedenti['{data_precedente}'] === '25/09/2026');
 check('e l’ora precedente', $conPrecedenti['{ora_inizio_precedente}'] === '17:00');
 
-$reso = LiveSessionMail::render('Ciao {nome}, ci vediamo il {data} alle {ora_inizio}.', $variabili);
-check('i segnaposto vengono sostituiti', $reso === "Ciao Anna Rossi, ci vediamo il 02/10/2026 alle 18:30.\n");
+$reso = LiveSessionMail::render('Ciao {nome}, ci vediamo il {data} alle {ora_inizio}.', $variabili + ['{nome}' => 'Anna']);
+check('i segnaposto vengono sostituiti', $reso === "Ciao Anna, ci vediamo il 02/10/2026 alle 18:30.\n");
 
 $sconosciuto = LiveSessionMail::render('Ciao {tiotlo}', $variabili);
 check('un segnaposto che non esiste resta scritto com’è', str_contains($sconosciuto, '{tiotlo}'));
 
-$senzaDescrizione = LiveSessionMail::variables(array_merge($sessione, ['description' => null]), 'Anna');
+$senzaDescrizione = LiveSessionMail::variables(array_merge($sessione, ['description' => null]));
 $vuoto = LiveSessionMail::render("Prima\n\n{descrizione}\n\nDopo", $senzaDescrizione);
 check('una descrizione assente non lascia righe bianche in fila', $vuoto === "Prima\n\nDopo\n");
 
@@ -332,6 +335,14 @@ if (!$database) {
     Settings::set('LIVE_INVITE_SUBJECT', null);
     $tornato = LiveSessionMail::invite($sessione, $destinatario);
     check('svuotandolo torna quello predefinito', str_contains($tornato->subject, 'Invito:'));
+
+    // Dal 12/10 gli incontri sono email come le altre: il solo nome di
+    // battesimo, la piattaforma col suo nome fisso, la chiusura in fondo.
+    $conNome = LiveSessionMail::invite($sessione, $destinatario + ['first_name' => 'Anna']);
+    check('{nome} e\' il solo nome di battesimo', str_starts_with($conNome->body, "Ciao Anna,\n"));
+    check('{piattaforma} e\' «Pistacchio LMS»', str_contains($conNome->body, 'su Pistacchio LMS:'));
+    check('in fondo c\'e\' la chiusura comune', str_contains($conNome->body, 'Messaggio automatico di Pistacchio LMS'));
+    check('l\'allegato resta dopo il passaggio da Modelli', count($conNome->attachments) === 1);
 
     $ripristina();
 }

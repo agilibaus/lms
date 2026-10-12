@@ -73,8 +73,8 @@ uguale('null non scrive niente', '', TestoBreve::html(null));
 // ---------------------------------------------------------------
 echo PHP_EOL . 'I tag' . PHP_EOL;
 
-$tutti = TestoBreve::html('<p><strong>g</strong> <b>b</b> <em>c</em> <i>i</i> <u>s</u> <a href="https://movimente.it">l</a></p><ul><li>x</li></ul><ol><li>y</li></ol>');
-foreach (['<strong>', '<b>', '<em>', '<i>', '<u>', '<a href="https://movimente.it">', '<ul>', '<ol>', '<li>'] as $tag) {
+$tutti = TestoBreve::html('<p><strong>g</strong> <b>b</b> <em>c</em> <i>i</i> <u>s</u> <a href="https://esempio.it">l</a></p><ul><li>x</li></ul><ol><li>y</li></ol>');
+foreach (['<strong>', '<b>', '<em>', '<i>', '<u>', '<a href="https://esempio.it">', '<ul>', '<ol>', '<li>'] as $tag) {
     check('resta ' . $tag, str_contains($tutti, $tag), $tutti);
 }
 
@@ -107,7 +107,7 @@ check('un a capo conta uno, anche se arriva come \r\n', TestoBreve::caratteri("a
 check('un\'entita\' conta come il carattere che e\'', TestoBreve::caratteri('a &amp; b') === 5);
 check('«a < b» e\' testo, non un tag', TestoBreve::caratteri('a < b e 3 > 2') === 13);
 check('una lettera accentata conta uno', TestoBreve::caratteri('perché') === 6);
-check('un collegamento conta solo la parola', TestoBreve::caratteri('<a href="https://www.movimente.it/una/pagina/lunga">qui</a>') === 3);
+check('un collegamento conta solo la parola', TestoBreve::caratteri('<a href="https://www.esempio.it/una/pagina/lunga">qui</a>') === 3);
 
 $pieno = str_repeat(str_repeat('a', 99) . "\n", 9) . '<strong>' . str_repeat('b', 95) . 'FINE.</strong>';
 check('1.000 caratteri visibili con 9 a capo e un grassetto: dentro il limite',

@@ -11,11 +11,12 @@ use App\Core\Url;
 /**
  * I tre messaggi delle sessioni live: invito, cambio di orario, annullamento.
  *
- * Oggetto e testo stanno in tabella `settings` con gli stessi nomi delle altre
- * chiavi, e si modificano dal pannello; se non sono stati scritti valgono i
- * testi predefiniti qui sotto. Svuotare un campo nel pannello significa
- * tornare a quello predefinito, come per le altre impostazioni svuotare un
- * campo restituisce il comando al .env.
+ * Dal 12/10 sono tre voci dell'elenco delle email (`Modelli`): oggetto e testo
+ * si modificano da Impostazioni › Email, con le chiavi `LIVE_*` di prima (i
+ * testi gia' salvati restano), e un campo vuoto vale il predefinito qui
+ * sotto. Da `Modelli` arrivano anche i segnaposto comuni (`{nome}`, solo il
+ * nome di battesimo; `{piattaforma}`, sempre «Pistacchio LMS») e la chiusura.
+ * Qui restano i segnaposto propri degli incontri e il file per il calendario.
  *
  * I segnaposto sconosciuti restano scritti come sono: un {tiotlo} sbagliato si
  * vede nel messaggio di prova invece di sparire in silenzio.
@@ -90,14 +91,14 @@ class LiveSessionMail
     ];
 
     /**
-     * I segnaposto utilizzabili, con la spiegazione mostrata nel pannello.
+     * I segnaposto propri degli incontri, con la spiegazione mostrata nel
+     * pannello. Quelli comuni a tutte le email stanno in `Modelli`.
      *
      * @return array<string, string>
      */
     public static function placeholders(): array
     {
         return [
-            '{nome}' => 'nome di chi riceve il messaggio',
             '{titolo}' => 'titolo dell’incontro',
             '{descrizione}' => 'descrizione dell’incontro, se c’è',
             '{data}' => 'data dell’incontro (18/09/2026)',
@@ -108,7 +109,6 @@ class LiveSessionMail
             '{corso}' => 'titolo del corso, se l’incontro è legato a un modulo',
             '{modulo}' => 'titolo del modulo, se c’è',
             '{gruppo}' => 'nome del gruppo, se c’è',
-            '{piattaforma}' => 'nome del mittente configurato nella pagina Posta elettronica',
             '{data_precedente}' => 'solo nel cambio di orario: la data di prima',
             '{ora_inizio_precedente}' => 'solo nel cambio di orario: l’ora di inizio di prima',
             '{ora_fine_precedente}' => 'solo nel cambio di orario: l’ora di fine di prima',
@@ -120,11 +120,7 @@ class LiveSessionMail
      */
     public static function template(string $key): string
     {
-        $stored = Settings::get($key, '');
-
-        return $stored !== null && trim($stored) !== ''
-            ? $stored
-            : (self::DEFAULTS[$key] ?? '');
+        return Modelli::testoInVigore($key, self::DEFAULTS[$key] ?? '');
     }
 
     /**
@@ -135,26 +131,23 @@ class LiveSessionMail
      */
     public static function render(string $template, array $variables): string
     {
-        $text = strtr($template, $variables);
-        $text = preg_replace("/\n{3,}/", "\n\n", str_replace(["\r\n", "\r"], "\n", $text)) ?? $text;
-
-        return trim($text) . "\n";
+        return Modelli::rendi($template, $variables);
     }
 
     /**
-     * I valori dei segnaposto per una sessione e un destinatario.
+     * I valori dei segnaposto propri di una sessione. Quelli comuni (`{nome}`,
+     * `{piattaforma}`…) li aggiunge `Modelli::messaggio()`.
      *
      * @param array<string, mixed> $session
      * @param array{starts_at?: string, ends_at?: string}|null $previous orari di prima, nel cambio di orario
      * @return array<string, string>
      */
-    public static function variables(array $session, string $recipientName, ?array $previous = null): array
+    public static function variables(array $session, ?array $previous = null): array
     {
         $starts = new \DateTimeImmutable((string) $session['starts_at']);
         $ends = new \DateTimeImmutable((string) $session['ends_at']);
 
         $variables = [
-            '{nome}' => $recipientName,
             '{titolo}' => (string) $session['title'],
             '{descrizione}' => (string) ($session['description'] ?? ''),
             '{data}' => $starts->format('d/m/Y'),
@@ -165,7 +158,6 @@ class LiveSessionMail
             '{corso}' => (string) ($session['course_title'] ?? ''),
             '{modulo}' => (string) ($session['module_title'] ?? ''),
             '{gruppo}' => (string) ($session['group_name'] ?? ''),
-            '{piattaforma}' => (string) Settings::get('MAIL_FROM_NAME', 'Pistacchio LMS'),
         ];
 
         if ($previous !== null && isset($previous['starts_at'], $previous['ends_at'])) {
@@ -190,7 +182,7 @@ class LiveSessionMail
      */
     public static function invite(array $session, array $recipient): Message
     {
-        return self::compose($session, $recipient, 'LIVE_INVITE_SUBJECT', 'LIVE_INVITE_BODY', null, false);
+        return self::compose($session, $recipient, 'incontro_invito', null, false);
     }
 
     /**
@@ -200,7 +192,7 @@ class LiveSessionMail
      */
     public static function change(array $session, array $recipient, array $previous): Message
     {
-        return self::compose($session, $recipient, 'LIVE_UPDATE_SUBJECT', 'LIVE_UPDATE_BODY', $previous, false);
+        return self::compose($session, $recipient, 'incontro_cambio', $previous, false);
     }
 
     /**
@@ -209,7 +201,7 @@ class LiveSessionMail
      */
     public static function cancellation(array $session, array $recipient): Message
     {
-        return self::compose($session, $recipient, 'LIVE_CANCEL_SUBJECT', 'LIVE_CANCEL_BODY', null, true);
+        return self::compose($session, $recipient, 'incontro_annullato', null, true);
     }
 
     // ---------------------------------------------------------------
@@ -222,24 +214,17 @@ class LiveSessionMail
     private static function compose(
         array $session,
         array $recipient,
-        string $subjectKey,
-        string $bodyKey,
+        string $chiave,
         ?array $previous,
         bool $cancelled,
     ): Message {
-        $name = (string) ($recipient['full_name'] ?? '');
-        $variables = self::variables($session, $name, $previous);
-
-        // L'oggetto sta su una riga sola: un a capo lasciato in un segnaposto
-        // spezzerebbe l'intestazione in due.
-        $subject = trim(str_replace(["\r", "\n"], ' ', self::render(self::template($subjectKey), $variables)));
-
-        return new Message(
+        return Modelli::messaggio(
+            $chiave,
             (string) $recipient['email'],
-            $name,
-            $subject,
-            self::render(self::template($bodyKey), $variables),
-            [self::calendarAttachment($session, $recipient, $cancelled)]
+            (string) ($recipient['full_name'] ?? ''),
+            self::variables($session, $previous),
+            [self::calendarAttachment($session, $recipient, $cancelled)],
+            isset($recipient['first_name']) ? (string) $recipient['first_name'] : null
         );
     }
 
@@ -255,7 +240,7 @@ class LiveSessionMail
         $starts = new \DateTimeImmutable((string) $session['starts_at']);
         $ends = new \DateTimeImmutable((string) $session['ends_at']);
         $organizer = (string) Settings::get('MAIL_FROM_ADDRESS', 'no-reply@localhost');
-        $organizerName = (string) Settings::get('MAIL_FROM_NAME', 'Pistacchio LMS');
+        $organizerName = Modelli::nomeMittente();
         $method = $cancelled ? 'CANCEL' : 'REQUEST';
 
         $content = $cancelled

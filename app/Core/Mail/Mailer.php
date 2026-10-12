@@ -25,7 +25,9 @@ class Mailer
         }
 
         $from = (string) Settings::get('MAIL_FROM_ADDRESS', 'no-reply@localhost');
-        $fromName = (string) Settings::get('MAIL_FROM_NAME', 'Pistacchio LMS');
+        // Senza un nome impostato, le email partono con quello
+        // dell'organizzazione (12/10).
+        $fromName = Modelli::nomeMittente();
 
         self::$transport = match (strtolower((string) Settings::get('MAIL_TRANSPORT', 'log'))) {
             'smtp' => new SmtpTransport(
@@ -84,99 +86,52 @@ class Mailer
 
     // ---------------------------------------------------------------
     // Messaggi della piattaforma
+    //
+    // Oggetto e testo stanno in `Modelli` (12/10): qui solo i valori dei
+    // segnaposto propri di ogni email. Il nome di chi riceve diventa il solo
+    // nome di battesimo, letto dal suo account.
     // ---------------------------------------------------------------
 
     public static function verification(string $email, string $name, string $link): Message
     {
-        return new Message(
-            $email,
-            $name,
-            'Conferma il tuo indirizzo email',
-            "Ciao {$name},\n\n"
-            . "per completare la registrazione a Pistacchio LMS conferma il tuo indirizzo email\n"
-            . "aprendo questo link:\n\n"
-            . "{$link}\n\n"
-            . "Il link resta valido 24 ore. Se non hai richiesto tu la registrazione, ignora\n"
-            . "questo messaggio: senza conferma l'account non viene attivato.\n"
-        );
+        return Modelli::messaggio('verifica', $email, $name, ['{link}' => $link]);
     }
 
     public static function passwordReset(string $email, string $name, string $link): Message
     {
-        return new Message(
-            $email,
-            $name,
-            'Reimposta la password',
-            "Ciao {$name},\n\n"
-            . "hai chiesto di reimpostare la password del tuo account Pistacchio LMS.\n"
-            . "Puoi farlo da qui:\n\n"
-            . "{$link}\n\n"
-            . "Il link vale un'ora e può essere usato una sola volta. Se non sei stato tu,\n"
-            . "non devi fare nulla: la password attuale resta valida.\n"
-        );
+        return Modelli::messaggio('reimposta', $email, $name, ['{link}' => $link]);
     }
 
     /**
-     * Password temporanea generata da un amministratore.
+     * Password temporanea generata da un amministratore per un account che
+     * esiste gia'.
      *
      * L'unica copia della password e' questa: l'admin la genera ma non la
      * vede, e in piattaforma resta solo la sua impronta.
      */
-    public static function temporaryPassword(
-        string $email,
-        string $name,
-        string $password,
-        string $link
-    ): Message {
-        return new Message(
-            $email,
-            $name,
-            'Password temporanea per il tuo account',
-            "Ciao {$name},\n\n"
-            . "chi amministra Pistacchio LMS ha generato una password temporanea per il tuo\n"
-            . "account. La password precedente non funziona più, e le sessioni eventualmente\n"
-            . "aperte sono state chiuse.\n\n"
-            . "Password temporanea: {$password}\n\n"
-            . "Entra da qui:\n\n"
-            . "{$link}\n\n"
-            . "Al primo accesso ti verrà chiesto di sceglierne una tua: fino ad allora non\n"
-            . "potrai usare il resto della piattaforma. Non rispondere a questo messaggio\n"
-            . "lasciando la password nel testo.\n"
-        );
+    public static function temporaryPassword(string $email, string $name, string $password, string $link): Message
+    {
+        return Modelli::messaggio('password_temporanea', $email, $name, ['{password}' => $password, '{link}' => $link]);
     }
 
     /**
-     * Invito a chi e' stato importato da un elenco.
+     * «Il tuo accesso»: a chi riceve un account nuovo, creato da chi
+     * amministra o importato da un elenco.
      *
-     * NON SI RIUSA `temporaryPassword()`, ed e' la seconda volta che questo
-     * progetto lo scopre dopo averlo fatto: quel testo dice «la password
-     * precedente non funziona piu'» e «le sessioni aperte sono state
-     * chiuse», due frasi vere per un account esistente e **false** per uno
-     * appena creato, che una password precedente non ce l'ha mai avuta. Chi
-     * la riceve si chiede quale password abbia perso, e quando abbia aperto
-     * una sessione.
+     * NON SI RIUSA `temporaryPassword()`, ed e' la terza volta che questo
+     * progetto lo scopre (la creazione dal pannello lo faceva fino al 12/10):
+     * quel testo dice «la password precedente non funziona piu'» e «le
+     * sessioni aperte sono state chiuse», due frasi vere per un account
+     * esistente e **false** per uno appena creato, che una password
+     * precedente non ce l'ha mai avuta.
      */
-    public static function invite(
-        string $email,
-        string $name,
-        string $password,
-        string $link
-    ): Message {
-        return new Message(
-            $email,
-            $name,
-            'Il tuo accesso a Pistacchio LMS',
-            "Ciao {$name},\n\n"
-            . "è stato creato un account per te su Pistacchio LMS, la piattaforma dei corsi\n"
-            . "online di MoviMente.\n\n"
-            . "Email con cui entrare: {$email}\n"
-            . "Password provvisoria: {$password}\n\n"
-            . "Entra da qui:\n\n"
-            . "{$link}\n\n"
-            . "Al primo accesso ti verrà chiesto di scegliere una password nuova: fino ad\n"
-            . "allora non potrai usare il resto della piattaforma. Non rispondere a questo\n"
-            . "messaggio, è stato generato automaticamente e le risposte non verranno lette.\n"
-        );
+    public static function invite(string $email, string $name, string $password, string $link): Message
+    {
+        return Modelli::messaggio('accesso', $email, $name, [
+            '{email}' => $email,
+            '{password}' => $password,
+            '{link}' => $link,
+        ]);
     }
 
     /**
@@ -185,31 +140,12 @@ class Mailer
      */
     public static function passwordChanged(string $email, string $name, string $link): Message
     {
-        return new Message(
-            $email,
-            $name,
-            'La password del tuo account è stata cambiata',
-            "Ciao {$name},\n\n"
-            . "la password del tuo account Pistacchio LMS è appena stata cambiata, e le altre\n"
-            . "sessioni aperte sono state chiuse.\n\n"
-            . "Se sei stato tu, non devi fare nulla.\n\n"
-            . "Se non sei stato tu, qualcuno conosce la tua password: reimpostala subito da\n"
-            . "\"Password dimenticata\" nella pagina di accesso, e avvisa chi amministra la\n"
-            . "piattaforma.\n\n"
-            . "{$link}\n"
-        );
+        return Modelli::messaggio('password_cambiata', $email, $name, ['{link}' => $link]);
     }
 
     public static function enrollmentConfirmed(string $email, string $name, string $courseTitle, string $link): Message
     {
-        return new Message(
-            $email,
-            $name,
-            'Iscrizione confermata: ' . $courseTitle,
-            "Ciao {$name},\n\n"
-            . "sei iscritto al corso \"{$courseTitle}\".\n\n"
-            . "Puoi iniziare da qui:\n{$link}\n"
-        );
+        return Modelli::messaggio('iscrizione_confermata', $email, $name, ['{corso}' => $courseTitle, '{link}' => $link]);
     }
 
     /**
@@ -225,44 +161,38 @@ class Mailer
         string $courseTitle,
         string $link
     ): Message {
-        return new Message(
-            $email,
-            $name,
-            'Nuovo modulo disponibile: ' . $moduleTitle,
-            "Ciao {$name},\n\n"
-            . "nel corso \"{$courseTitle}\" si è aperto il modulo \"{$moduleTitle}\".\n\n"
-            . "Puoi cominciarlo da qui:\n{$link}\n\n"
-            // Il saluto chiude solo questa email, per scelta del 01/10. E'
-            // l'unica che annuncia qualcosa di bello invece di chiedere
-            // un'azione o confermare un fatto. Se un giorno si decide di
-            // dare una chiusura a tutti i messaggi, questa e' la forma da
-            // ripetere, non un'eccezione da togliere.
-            . "Buono studio!\n"
-            . "Pistacchio\n"
-        );
+        return Modelli::messaggio('nuovo_modulo', $email, $name, [
+            '{corso}' => $courseTitle,
+            '{modulo}' => $moduleTitle,
+            '{link}' => $link,
+        ]);
     }
 
+    /**
+     * @param string $message quello che lo studente ha scritto nella
+     *                        richiesta; vuoto se non ha scritto niente
+     */
     public static function enrollmentRequested(
         string $email,
         string $name,
         string $studentName,
         string $courseTitle,
-        string $link
+        string $link,
+        string $message = ''
     ): Message {
-        return new Message(
-            $email,
-            $name,
-            'Richiesta di iscrizione: ' . $courseTitle,
-            "Ciao {$name},\n\n"
-            . "{$studentName} ha chiesto di iscriversi al corso \"{$courseTitle}\".\n\n"
-            . "Puoi approvare o rifiutare la richiesta qui:\n{$link}\n"
-        );
+        $message = trim($message);
+
+        return Modelli::messaggio('richiesta_iscrizione', $email, $name, [
+            '{studente}' => $studentName,
+            '{corso}' => $courseTitle,
+            '{messaggio}' => $message !== '' ? 'Ha scritto: «' . $message . '»' : '',
+            '{link}' => $link,
+        ]);
     }
 
     /**
-     * Una domanda nuova di uno studente (07/10): al tutor del suo gruppo, o
-     * agli amministratori se lo studente non ha un tutor. Con il testo
-     * intero, cosi' si capisce dall'email se e' urgente.
+     * Una domanda nuova di uno studente (07/10). Con il testo intero, cosi'
+     * si capisce dall'email se e' urgente.
      */
     public static function newQuestion(
         string $email,
@@ -273,26 +203,17 @@ class Mailer
         string $question,
         string $link
     ): Message {
-        return new Message(
-            $email,
-            $name,
-            'Nuova domanda: ' . $courseTitle,
-            "Ciao {$name},\n\n"
-            . "{$studentName} ha fatto una domanda nel corso \"{$courseTitle}\" ({$moduleTitle}):\n\n"
-            . $question . "\n\n"
-            . "Puoi rispondere e pubblicarla, o scartarla, qui:\n{$link}\n"
-        );
+        return Modelli::messaggio('nuova_domanda', $email, $name, [
+            '{studente}' => $studentName,
+            '{corso}' => $courseTitle,
+            '{modulo}' => $moduleTitle,
+            '{domanda}' => $question,
+            '{link}' => $link,
+        ]);
     }
 
     public static function enrollmentRejected(string $email, string $name, string $courseTitle): Message
     {
-        return new Message(
-            $email,
-            $name,
-            'Richiesta non accolta: ' . $courseTitle,
-            "Ciao {$name},\n\n"
-            . "la tua richiesta di iscrizione al corso \"{$courseTitle}\" non è stata accolta.\n"
-            . "Per capirne il motivo puoi contattare chi tiene il corso.\n"
-        );
+        return Modelli::messaggio('richiesta_rifiutata', $email, $name, ['{corso}' => $courseTitle]);
     }
 }

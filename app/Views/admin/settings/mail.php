@@ -8,18 +8,16 @@ use App\Core\Csrf;
  * @var string $transport
  * @var array<string, string> $values
  * @var bool $hasPassword
- * @var array<string, string> $sources
  * @var array|null $lastUpdate
  * @var string|null $myEmail
  */
 
-$fromFile = static fn (string $key): bool => ($sources[$key] ?? '') === 'file';
 ?>
 <div class="page-header">
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Posta elettronica</h1>
     <p class="page-subtitle">
-        Come la piattaforma invia verifiche dell'indirizzo, recuperi password e avvisi di iscrizione.
+        Come la piattaforma invia le sue email: verifiche dell'indirizzo, recuperi password, avvisi.
         Quello che salvi qui ha la precedenza sul file <code>.env</code>; lasciando un campo vuoto
         torna a valere il valore scritto nel file.
     </p>
@@ -49,18 +47,9 @@ $fromFile = static fn (string $key): bool => ($sources[$key] ?? '') === 'file';
             In prova tieni "Registro": nessuno studente riceve niente per sbaglio.
         </p>
 
-        <label for="MAIL_FROM_ADDRESS">Indirizzo del mittente</label>
-        <input type="email" id="MAIL_FROM_ADDRESS" name="MAIL_FROM_ADDRESS"
-               value="<?= htmlspecialchars($values['MAIL_FROM_ADDRESS']) ?>"
-               placeholder="no-reply@tuodominio.it">
-        <?php if ($fromFile('MAIL_FROM_ADDRESS')): ?>
-            <p class="form-hint">Adesso vale quello del file <code>.env</code>.</p>
-        <?php endif; ?>
-
-        <label for="MAIL_FROM_NAME">Nome del mittente</label>
-        <input type="text" id="MAIL_FROM_NAME" name="MAIL_FROM_NAME" maxlength="100"
-               value="<?= htmlspecialchars($values['MAIL_FROM_NAME']) ?>"
-               placeholder="Pistacchio LMS">
+        <p class="form-hint">
+            Il mittente e il testo delle email si impostano nella pagina <a href="/admin/settings/email">Email</a>.
+        </p>
 
         <h3>Server SMTP</h3>
         <p class="form-hint">Serve solo con la modalità "Server SMTP".</p>

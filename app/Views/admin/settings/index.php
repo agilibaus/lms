@@ -16,13 +16,13 @@ $sezioni = [
     [
         'titolo' => 'Posta elettronica',
         'href' => '/admin/settings/posta',
-        'testo' => 'Come partono le email della piattaforma: server SMTP, mittente, e la prova di invio.',
+        'testo' => 'Come partono le email della piattaforma: il server SMTP e la prova di invio.',
         'visibile' => $canSettings,
     ],
     [
-        'titolo' => 'Inviti sessioni live',
-        'href' => '/admin/settings/inviti',
-        'testo' => 'Oggetto e testo delle tre email degli incontri dal vivo: invito, cambio di orario, annullamento.',
+        'titolo' => 'Email',
+        'href' => '/admin/settings/email',
+        'testo' => 'Il nome dell’organizzazione, il mittente, la chiusura e il testo di ogni email che la piattaforma manda.',
         'visibile' => $canSettings,
     ],
     [

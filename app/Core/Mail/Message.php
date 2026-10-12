@@ -21,6 +21,13 @@ class Message
     private ?string $boundary = null;
 
     /**
+     * L'indirizzo a cui vanno le risposte, se diverso dal mittente (12/10):
+     * il mittente puo' essere un indirizzo che nessuno legge, «Rispondi a»
+     * quello di una persona. Lo imposta `Modelli::messaggio()`.
+     */
+    public ?string $replyTo = null;
+
+    /**
      * @param array<int, array{filename: string, mimeType: string, content: string}> $attachments
      */
     public function __construct(
@@ -58,11 +65,24 @@ class Message
                 'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . self::domainOf($fromEmail) . '>',
                 'MIME-Version: 1.0',
             ],
+            $this->replyToHeaders(),
             $this->contentHeaders(),
             ['Auto-Submitted: auto-generated']
         );
 
         return implode("\r\n", $headers) . "\r\n\r\n" . $this->mimeBody();
+    }
+
+    /**
+     * `Reply-To`, quando c'e' un indirizzo per le risposte valido.
+     *
+     * @return string[]
+     */
+    public function replyToHeaders(): array
+    {
+        $indirizzo = trim(str_replace(["\r", "\n"], '', (string) $this->replyTo));
+
+        return filter_var($indirizzo, FILTER_VALIDATE_EMAIL) !== false ? ['Reply-To: <' . $indirizzo . '>'] : [];
     }
 
     /**

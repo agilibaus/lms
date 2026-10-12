@@ -74,7 +74,7 @@ echo PHP_EOL . "URL" . PHP_EOL;
 check('javascript: rimosso da href', !str_contains(clean('<a href="javascript:alert(1)">x</a>'), 'javascript'));
 check('data: rimosso da src', !str_contains(clean('<img src="data:text/html;base64,PHNjcmlwdD4=" alt="">'), 'data:'));
 check('http conservato', str_contains(clean('<a href="http://esempio.it">x</a>'), 'http://esempio.it'));
-check('mailto conservato', str_contains(clean('<a href="mailto:info@movimente.it">x</a>'), 'mailto:'));
+check('mailto conservato', str_contains(clean('<a href="mailto:info@esempio.it">x</a>'), 'mailto:'));
 check('percorso interno conservato', str_contains(clean('<a href="/courses/3">x</a>'), '/courses/3'));
 check('ancora conservata', str_contains(clean('<a href="#nota">x</a>'), '#nota'));
 check('mailto non ammesso in src', !str_contains(clean('<img src="mailto:x@y.it" alt="">'), 'mailto'));
