@@ -178,6 +178,7 @@ danni. Le piu' recenti:
 | `2026_10_11_obiettivi.sql` | l'obiettivo del corso e l'obiettivo del modulo (`courses.objective`, `modules.objective`), facoltativi, fino a 1.000 caratteri |
 | `2026_10_11_obiettivi_html.sql` | le due colonne dell'obiettivo diventano TEXT: con i tag HTML il testo salvato può superare i 1.000 caratteri |
 | `2026_10_11_obiettivo_visite.sql` | `course_objective_views`: le visite dello studente alla pagina di un corso con un obiettivo |
+| `2026_10_12_promemoria_incontri.sql` | `live_sessions.invites_sent_at` e `live_session_reminders`: il promemoria degli incontri, sette ore prima, solo dopo gli inviti |
 | `2026_10_12_iscrizione_confermata.sql` | `enrollments.confirmation_pending`: l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, in coda per `bin/avvisi`. Va impostato anche il comando, ogni quarto d'ora |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
@@ -226,7 +227,7 @@ torna indietro, se non svuotando la casella a mano.
 /bin
   rilascio-moduli      → comando da cron: avvisa gli studenti dei moduli che si aprono
   invita-utenti        → comando da cron: gli inviti agli utenti importati, a scaglioni
-  avvisi               → comando da cron: le email che non partono dalla pagina (conferme di iscrizione dello staff)
+  avvisi               → comando da cron: le email che non partono dalla pagina (conferme di iscrizione dello staff, promemoria degli incontri)
 /config
   config.php           → bootstrap (env, error reporting, timezone)
 /storage
@@ -1327,7 +1328,7 @@ php tests/xlsx_test.php             # il file XLSX scritto in casa
 # richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
 php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie, chi riceve l'avviso
-php tests/avvisi_test.php           # conferme di iscrizione dello staff in coda; la richiesta a chi può decidere
+php tests/avvisi_test.php           # conferme dello staff in coda, richiesta a chi può decidere, promemoria degli incontri, corso completato
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale, i tre messaggi d'errore
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
@@ -2196,6 +2197,23 @@ in coda e parte quando il corso si pubblica.
 
 `php bin/avvisi --prova` elenca che cosa manderebbe senza mandare niente.
 
+Lo stesso comando manda **il promemoria degli incontri dal vivo**: il giorno dell'incontro,
+**sette ore prima dell'inizio** (girando ogni quarto d'ora, arriva fra sette ore e sei ore e
+tre quarti prima), a chi è atteso, **solo se gli inviti sono già partiti** dal pulsante «Invia
+inviti» (`live_sessions.invites_sent_at`) e se c'è il collegamento Meet. Un incontro prima
+delle 7 del mattino lo riceve dalla mezzanotte, perché arrivi lo stesso giorno. Senza
+allegato: il file per il calendario è arrivato con l'invito. Una volta sola per persona
+(`live_session_reminders`, la riga prima dell'invio). Gli incontri invitati prima della
+migrazione non hanno la data degli inviti: il promemoria parte se si rimandano.
+
+Due email nuove partono invece dalla pagina, subito:
+
+- **«Corso completato»**, a ogni emissione del certificato, automatica o a mano, con il
+  collegamento per scaricarlo;
+- **«La tua domanda ha una risposta»**, allo studente che l'ha fatta, quando l'esperto la
+  pubblica: con la domanda, la risposta e il collegamento alle domande e risposte del corso.
+  Una correzione successiva non manda niente.
+
 ## Le email e la pagina Impostazioni › Email
 
 Pistacchio LMS può essere usato da organizzazioni diverse, una per installazione: **nessun
@@ -2230,8 +2248,9 @@ la `{password}` dell'accesso…) non si salva e torna nei campi com'era; un segn
 esiste si salva, con un avviso, e resta scritto com'è nell'email, così un errore di battitura
 si vede nella prova. I testi sono senza genere: la piattaforma non sa chi legge.
 
-Le tre email degli incontri dal vivo sono nello stesso elenco e tengono le chiavi di prima
-(`LIVE_*`): i testi già salvati restano. La vecchia pagina `/admin/settings/inviti` porta al
+Le tre email degli incontri dal vivo di prima (invito, cambio di orario, annullamento) sono
+nello stesso elenco e tengono le chiavi di prima (`LIVE_*`): i testi già salvati restano. Il
+promemoria, nuovo, ha le sue (`EMAIL_PROMEMORIA_*`). La vecchia pagina `/admin/settings/inviti` porta al
 gruppo «Incontri dal vivo».
 
 ## Configurazione dell'invio email

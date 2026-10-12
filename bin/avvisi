@@ -4,9 +4,10 @@
 declare(strict_types=1);
 
 /**
- * Le email che non partono dalla pagina che le causa (12/10): oggi
- * l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, a
- * scaglioni. Vedi `App\Core\Avvisi`.
+ * Le email che non partono dalla pagina che le causa (12/10): l'«Iscrizione
+ * confermata» delle iscrizioni fatte dallo staff, a scaglioni, e il
+ * promemoria degli incontri dal vivo, sette ore prima. Vedi
+ * `App\Core\Avvisi`.
  *
  * Esecuzione da cron, ogni quarto d'ora:
  *
@@ -44,22 +45,31 @@ if (trim((string) Env::get('APP_URL', '')) === '') {
 
 $prova = in_array('--prova', $argv, true);
 $conferme = Avvisi::conferme(Avvisi::PER_GIRO, $prova);
+$promemoria = Avvisi::promemoria($prova);
 
 if ($prova) {
     foreach ($conferme['prova'] as $riga) {
         echo '  [prova] iscrizione confermata: ' . $riga . PHP_EOL;
     }
 
-    echo date('Y-m-d H:i:s') . ' — prova: ' . count($conferme['prova']) . " conferme da mandare, niente inviato.\n";
+    foreach ($promemoria['prova'] as $riga) {
+        echo '  [prova] promemoria: ' . $riga . PHP_EOL;
+    }
+
+    echo date('Y-m-d H:i:s') . ' — prova: ' . count($conferme['prova']) . ' conferme e '
+        . count($promemoria['prova']) . " promemoria da mandare, niente inviato.\n";
     exit(0);
 }
 
 Settings::recordSystem(Avvisi::ULTIMO_GIRO, date('Y-m-d H:i:s'));
 
-echo date('Y-m-d H:i:s') . ' — conferme di iscrizione mandate: ' . $conferme['mandate'] . PHP_EOL;
+echo date('Y-m-d H:i:s') . ' — conferme di iscrizione mandate: ' . $conferme['mandate']
+    . ', promemoria degli incontri mandati: ' . $promemoria['mandate'] . PHP_EOL;
 
-if ($conferme['fallite'] !== []) {
-    echo 'non partite: ' . implode(', ', $conferme['fallite']) . PHP_EOL;
+$fallite = array_merge($conferme['fallite'], $promemoria['fallite']);
+
+if ($fallite !== []) {
+    echo 'non partite: ' . implode(', ', $fallite) . PHP_EOL;
 }
 
-exit($conferme['fallite'] === [] ? 0 : 1);
+exit($fallite === [] ? 0 : 1);

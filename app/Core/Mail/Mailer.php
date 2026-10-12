@@ -212,6 +212,29 @@ class Mailer
         ]);
     }
 
+    /** Il certificato e' stato emesso (12/10). */
+    public static function courseCompleted(string $email, string $name, string $courseTitle, string $link): Message
+    {
+        return Modelli::messaggio('corso_completato', $email, $name, ['{corso}' => $courseTitle, '{link}' => $link]);
+    }
+
+    /** L'esperto ha pubblicato la risposta alla domanda di uno studente (12/10). */
+    public static function questionAnswered(
+        string $email,
+        string $name,
+        string $courseTitle,
+        string $question,
+        string $answer,
+        string $link
+    ): Message {
+        return Modelli::messaggio('risposta_esperto', $email, $name, [
+            '{corso}' => $courseTitle,
+            '{domanda}' => $question,
+            '{risposta}' => $answer,
+            '{link}' => $link,
+        ]);
+    }
+
     public static function enrollmentRejected(string $email, string $name, string $courseTitle): Message
     {
         return Modelli::messaggio('richiesta_rifiutata', $email, $name, ['{corso}' => $courseTitle]);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Core\Mail\Mailer;
 use App\Models\CertificateModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
@@ -132,6 +133,18 @@ class CertificateService
         // e va detto come tale invece di restituire un "certificato" vuoto.
         if ($certificate === null) {
             throw new \RuntimeException('Certificato non salvato: la riga appena scritta non si rilegge.');
+        }
+
+        // «Corso completato» (12/10), a ogni emissione: automatica o a mano.
+        // Non deve poter fermare l'emissione: se la posta non parte, il
+        // certificato c'e' lo stesso e l'errore finisce nel log.
+        if ((int) $user['is_active'] === 1) {
+            Mailer::sendQuietly(Mailer::courseCompleted(
+                (string) $user['email'],
+                (string) $user['full_name'],
+                (string) $course['title'],
+                Url::to('/certificates/' . (int) $certificate['id'] . '/download')
+            ));
         }
 
         return $certificate;

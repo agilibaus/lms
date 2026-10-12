@@ -14,6 +14,9 @@ use App\Core\Database;
  */
 class LiveSessionModel
 {
+    /** Quante ore prima dell'inizio parte il promemoria. */
+    public const ORE_PROMEMORIA = 7;
+
     /**
      * La finestra d'ingresso, scritta una volta sola.
      *
@@ -206,6 +209,67 @@ class LiveSessionModel
         // Le presenze seguono via FK ON DELETE CASCADE.
         $stmt = Database::connection()->prepare('DELETE FROM live_sessions WHERE id = :id');
         $stmt->execute(['id' => $id]);
+    }
+
+    /** Gli inviti sono partiti: da qui il promemoria del giorno (12/10). */
+    public static function segnaInvitiMandati(int $sessionId): void
+    {
+        Database::connection()->prepare('UPDATE live_sessions SET invites_sent_at = NOW() WHERE id = :id')
+            ->execute(['id' => $sessionId]);
+    }
+
+    /**
+     * Gli incontri di cui mandare il promemoria adesso (12/10, Alessandro):
+     * con gli inviti gia' partiti e un collegamento Meet, che cominciano
+     * **oggi** e **entro sette ore**, e non sono ancora cominciati. Il
+     * confronto con l'ora si fa in SQL, come per i moduli.
+     *
+     * Un incontro alle 6 del mattino ha le sette ore prima nel giorno
+     * prima: il promemoria parte dalla mezzanotte, perche' arrivi lo stesso
+     * giorno.
+     *
+     * @return list<int>
+     */
+    public static function daRicordare(): array
+    {
+        return array_map('intval', Database::connection()->query(
+            'SELECT id FROM live_sessions
+             WHERE invites_sent_at IS NOT NULL
+               AND meet_link IS NOT NULL AND meet_link <> \'\'
+               AND DATE(starts_at) = CURDATE()
+               AND starts_at > NOW()
+               AND starts_at <= DATE_ADD(NOW(), INTERVAL ' . self::ORE_PROMEMORIA . ' HOUR)
+             ORDER BY starts_at, id'
+        )->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Prende in carico il promemoria di una persona: scrive la riga e dice
+     * se e' riuscito. Prima la riga, poi l'email; la chiave unica impedisce
+     * i doppioni anche con due giri sovrapposti.
+     */
+    public static function prendiPromemoria(int $sessionId, int $userId): bool
+    {
+        try {
+            Database::connection()->prepare(
+                'INSERT INTO live_session_reminders (session_id, user_id) VALUES (:s, :u)'
+            )->execute(['s' => $sessionId, 'u' => $userId]);
+
+            return true;
+        } catch (\PDOException) {
+            return false;
+        }
+    }
+
+    /** Il promemoria di questa persona e' gia' partito? (per `bin/avvisi --prova`) */
+    public static function giaRicordato(int $sessionId, int $userId): bool
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT 1 FROM live_session_reminders WHERE session_id = :s AND user_id = :u'
+        );
+        $stmt->execute(['s' => $sessionId, 'u' => $userId]);
+
+        return $stmt->fetchColumn() !== false;
     }
 
     /**

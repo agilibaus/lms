@@ -92,6 +92,11 @@ final class Modelli
         $esempioLink = 'https://esempio.invalid/…';
 
         $incontri = LiveSessionMail::placeholders();
+        $incontriSenzaCambio = array_filter(
+            $incontri,
+            static fn (string $s): bool => !str_ends_with($s, '_precedente}'),
+            ARRAY_FILTER_USE_KEY
+        );
         $esempioIncontro = [
             '{titolo}' => 'Incontro di metà corso', '{descrizione}' => 'Parleremo delle prime settimane.',
             '{data}' => '18/09/2026', '{ora_inizio}' => '18:30', '{ora_fine}' => '20:00',
@@ -284,6 +289,55 @@ final class Modelli
                 'obbligatori' => [$link],
                 'esempio' => ['{corso}' => 'Il corso di esempio', '{modulo}' => 'Secondo modulo', $link => $esempioLink],
             ],
+            'corso_completato' => [
+                'gruppo' => 'corso',
+                'titolo' => 'Corso completato',
+                'quando' => 'Quando si emette il certificato di un corso: da solo, a lezioni completate e questionari '
+                    . 'superati, o a mano dallo staff.',
+                'oggetto' => 'EMAIL_COMPLETATO_OGGETTO',
+                'testo' => 'EMAIL_COMPLETATO_TESTO',
+                'predefinito' => [
+                    'Corso completato: {corso}',
+                    "Ciao {nome},\n\n"
+                    . "hai completato il corso «{corso}». Complimenti per il percorso fatto!\n\n"
+                    . "Il tuo certificato è pronto, puoi scaricarlo da qui:\n"
+                    . "{link}",
+                ],
+                'segnaposto' => ['{corso}' => 'il titolo del corso', $link => 'lo scaricamento del certificato'],
+                'obbligatori' => [$link],
+                'esempio' => ['{corso}' => 'Il corso di esempio', $link => $esempioLink],
+            ],
+            'risposta_esperto' => [
+                'gruppo' => 'corso',
+                'titolo' => 'La tua domanda ha una risposta',
+                'quando' => 'Allo studente che ha fatto la domanda, quando l’esperto la pubblica con la risposta.',
+                'oggetto' => 'EMAIL_RISPOSTA_OGGETTO',
+                'testo' => 'EMAIL_RISPOSTA_TESTO',
+                'predefinito' => [
+                    'La tua domanda ha una risposta: {corso}',
+                    "Ciao {nome},\n\n"
+                    . "l'esperto ha risposto alla domanda che hai fatto nel corso «{corso}».\n\n"
+                    . "La tua domanda:\n"
+                    . "{domanda}\n\n"
+                    . "La risposta:\n"
+                    . "{risposta}\n\n"
+                    . "Domanda e risposta sono ora fra le domande e risposte del corso:\n"
+                    . "{link}",
+                ],
+                'segnaposto' => [
+                    '{corso}' => 'il titolo del corso',
+                    '{domanda}' => 'la domanda, come è stata pubblicata',
+                    '{risposta}' => 'la risposta dell’esperto',
+                    $link => 'le domande e risposte del corso',
+                ],
+                'obbligatori' => [$link],
+                'esempio' => [
+                    '{corso}' => 'Il corso di esempio',
+                    '{domanda}' => 'Come si fa la pratica del mattino se i figli sono già svegli?',
+                    '{risposta}' => 'Si può spostare alla sera: conta la regolarità, non l’orario.',
+                    $link => $esempioLink,
+                ],
+            ],
             'nuova_domanda' => [
                 'gruppo' => 'corso',
                 'titolo' => 'Nuova domanda all’esperto',
@@ -320,6 +374,26 @@ final class Modelli
                 'testo' => 'LIVE_INVITE_BODY',
                 'predefinito' => [LiveSessionMail::DEFAULTS['LIVE_INVITE_SUBJECT'], LiveSessionMail::DEFAULTS['LIVE_INVITE_BODY']],
                 'segnaposto' => $incontri,
+                'obbligatori' => [],
+                'esempio' => $esempioIncontro,
+            ],
+            'incontro_promemoria' => [
+                'gruppo' => 'incontri',
+                'titolo' => 'Promemoria dell’incontro',
+                'quando' => 'Da sola, il giorno dell’incontro, sette ore prima dell’inizio (comando pianificato), '
+                    . 'a chi è atteso, se gli inviti sono già partiti. Senza allegato.',
+                'oggetto' => 'EMAIL_PROMEMORIA_OGGETTO',
+                'testo' => 'EMAIL_PROMEMORIA_TESTO',
+                'predefinito' => [
+                    'Oggi alle {ora_inizio}: {titolo}',
+                    "Ciao {nome},\n\n"
+                    . "oggi c'è l'incontro dal vivo «{titolo}», dalle {ora_inizio} alle {ora_fine}.\n\n"
+                    . "Per partecipare:\n"
+                    . "{link_meet}\n\n"
+                    . "La pagina dell'incontro su {piattaforma}:\n"
+                    . "{link_sessione}",
+                ],
+                'segnaposto' => $incontriSenzaCambio,
                 'obbligatori' => [],
                 'esempio' => $esempioIncontro,
             ],

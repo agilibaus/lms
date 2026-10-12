@@ -9,7 +9,10 @@ declare(strict_types=1);
  *     in coda, non per chi aspetta l'invito, non due volte, e la spedisce
  *     `Avvisi::conferme()` (cioe' `bin/avvisi`) a scaglioni;
  *   - **la richiesta di iscrizione** va a chi puo' decidere: gli admin e i
- *     tutor dei gruppi a cui il corso e' assegnato, non tutti i tutor.
+ *     tutor dei gruppi a cui il corso e' assegnato, non tutti i tutor;
+ *   - **il promemoria degli incontri**: oggi, entro sette ore, solo con gli
+ *     inviti partiti, una volta sola, senza allegato;
+ *   - **«Corso completato»** all'emissione del certificato.
  *
  * Esecuzione:  php tests/avvisi_test.php
  *
@@ -23,11 +26,15 @@ require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config/config.php';
 
 use App\Core\Avvisi;
+use App\Core\CertificateService;
 use App\Core\Database;
+use App\Core\Upload;
 use App\Core\Mail\Mailer;
 use App\Core\Mail\Message;
 use App\Core\Mail\Transport;
+use App\Models\CertificateModel;
 use App\Models\EnrollmentModel;
+use App\Models\LiveSessionModel;
 use App\Models\UserModel;
 
 const MARCHIO = '[prova-avvisi]';
@@ -184,6 +191,81 @@ try {
     check('non il tutor di un gruppo con un altro corso', !in_array('altrotutor' . DOMINIO, $decisori, true));
     check('non un amministratore disattivato', !in_array('adminspento' . DOMINIO, $decisori, true));
     check('non gli studenti', !in_array('anna' . DOMINIO, $decisori, true));
+
+    // ---------------------------------------------------------------
+    echo PHP_EOL . 'Il promemoria degli incontri' . PHP_EOL;
+
+    // Vicino alla mezzanotte «oggi fra due minuti» e' domani: la prova non
+    // avrebbe senso, e lo si dice invece di fallire.
+    if ((int) date('H') === 23 && (int) date('i') >= 50) {
+        echo '  (saltati: troppo vicino alla mezzanotte)' . PHP_EOL;
+    } else {
+        $pdo->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')
+            ->execute(['g' => $gruppo, 'u' => $anna]);
+
+        $incontro = static function (string $titolo, string $quando, bool $invitato, string $meet = 'https://meet.google.com/abc-defg-hij')
+        use ($pdo, $gruppo, $tutorDelCorso): int {
+            $pdo->prepare('INSERT INTO live_sessions (group_id, title, starts_at, ends_at, meet_link, invites_sent_at, created_by)
+                           VALUES (:g, :t, ' . $quando . ', DATE_ADD(' . $quando . ', INTERVAL 1 HOUR), :m, '
+                . ($invitato ? 'NOW()' : 'NULL') . ', :c)')
+                ->execute(['g' => $gruppo, 't' => MARCHIO . ' ' . $titolo, 'm' => $meet, 'c' => $tutorDelCorso]);
+
+            return (int) $pdo->lastInsertId();
+        };
+
+        $fraPoco = $incontro('fra poco', 'DATE_ADD(NOW(), INTERVAL 2 MINUTE)', true);
+        $senzaInvito = $incontro('senza invito', 'DATE_ADD(NOW(), INTERVAL 2 MINUTE)', false);
+        $cominciato = $incontro('cominciato', 'DATE_SUB(NOW(), INTERVAL 1 MINUTE)', true);
+        $troppoPresto = $incontro('fra otto ore', 'DATE_ADD(NOW(), INTERVAL 8 HOUR)', true);
+        $senzaMeet = $incontro('senza Meet', 'DATE_ADD(NOW(), INTERVAL 2 MINUTE)', true, '');
+
+        $daRicordare = LiveSessionModel::daRicordare();
+        check('un incontro invitato che comincia fra poco, oggi: si ricorda', in_array($fraPoco, $daRicordare, true));
+        check('senza inviti partiti no', !in_array($senzaInvito, $daRicordare, true));
+        check('gia\' cominciato no', !in_array($cominciato, $daRicordare, true));
+        check('fra otto ore no: sono piu\' di sette', !in_array($troppoPresto, $daRicordare, true));
+        check('senza collegamento Meet no', !in_array($senzaMeet, $daRicordare, true));
+
+        $raccolta->messaggi = [];
+        $prova = Avvisi::promemoria(true);
+        check('in prova lo elenca, senza mandare', (bool) array_filter($prova['prova'], static fn ($r) => str_contains($r, 'fra poco'))
+            && $raccolta->messaggi === []);
+
+        Avvisi::promemoria();
+        $promemoria = array_values(array_filter(
+            $raccolta->messaggi,
+            static fn (Message $m) => $m->toEmail === 'anna' . DOMINIO && str_contains($m->subject, 'fra poco')
+        ));
+        check('ad Anna parte il promemoria', count($promemoria) === 1);
+        check('«Oggi alle…», senza allegato', isset($promemoria[0])
+            && str_starts_with($promemoria[0]->subject, 'Oggi alle ') && $promemoria[0]->attachments === []);
+        check('con il collegamento Meet', isset($promemoria[0]) && str_contains($promemoria[0]->body, 'https://meet.google.com/abc-defg-hij'));
+
+        $raccolta->messaggi = [];
+        Avvisi::promemoria();
+        check('al giro dopo non riparte', !array_filter($raccolta->messaggi, static fn (Message $m) => str_contains($m->subject, 'fra poco')));
+    }
+
+    // ---------------------------------------------------------------
+    echo PHP_EOL . 'Corso completato' . PHP_EOL;
+
+    if (!CertificateService::dompdfAvailable()) {
+        echo '  (saltati: Dompdf non installato)' . PHP_EOL;
+    } else {
+        $raccolta->messaggi = [];
+        $certificato = CertificateService::issueManually($anna, $pubblicato, $tutorDelCorso);
+        $completato = array_values(array_filter($raccolta->messaggi, static fn (Message $m) => $m->toEmail === 'anna' . DOMINIO));
+        check('all\'emissione del certificato parte «Corso completato»', count($completato) === 1
+            && str_contains($completato[0]->subject, 'Corso completato'));
+        check('con il collegamento al certificato', isset($completato[0])
+            && str_contains($completato[0]->body, '/certificates/' . (int) $certificato['id'] . '/download'));
+
+        $raccolta->messaggi = [];
+        CertificateService::issueManually($anna, $pubblicato, $tutorDelCorso);
+        check('un certificato gia\' valido non lo rimanda', $raccolta->messaggi === []);
+
+        @unlink(Upload::absolutePath((string) $certificato['file_path']));
+    }
 } finally {
     Mailer::setTransport(null);
     $pulisci();

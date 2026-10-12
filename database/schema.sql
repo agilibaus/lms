@@ -450,11 +450,24 @@ CREATE TABLE live_sessions (
     ends_at         DATETIME NOT NULL,
     google_event_id VARCHAR(255),                -- id evento Google Calendar (per update/cancel successivi)
     meet_link       VARCHAR(255),
+    invites_sent_at DATETIME NULL DEFAULT NULL,  -- ultimo invio degli inviti: il promemoria parte solo dopo (2026_10_12)
     created_by      INT UNSIGNED NOT NULL,       -- tutor/admin che ha creato la sessione
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
     FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- A chi e' gia' partito il promemoria di un incontro (bin/avvisi, 2026_10_12):
+-- la riga si scrive prima dell'invio, la chiave unica impedisce i doppioni.
+CREATE TABLE live_session_reminders (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    session_id      INT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NOT NULL,
+    sent_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_session_user (session_id, user_id),
+    FOREIGN KEY (session_id) REFERENCES live_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Presenze alle sessioni live (per il report)

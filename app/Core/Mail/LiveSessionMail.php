@@ -204,6 +204,19 @@ class LiveSessionMail
         return self::compose($session, $recipient, 'incontro_annullato', null, true);
     }
 
+    /**
+     * Il promemoria del giorno, sette ore prima (12/10): lo manda
+     * `bin/avvisi`. Senza allegato: il calendario l'ha gia' avuto con
+     * l'invito.
+     *
+     * @param array<string, mixed> $session
+     * @param array{full_name?: string, email: string} $recipient
+     */
+    public static function reminder(array $session, array $recipient): Message
+    {
+        return self::compose($session, $recipient, 'incontro_promemoria', null, false, false);
+    }
+
     // ---------------------------------------------------------------
 
     /**
@@ -217,13 +230,14 @@ class LiveSessionMail
         string $chiave,
         ?array $previous,
         bool $cancelled,
+        bool $allegato = true,
     ): Message {
         return Modelli::messaggio(
             $chiave,
             (string) $recipient['email'],
             (string) ($recipient['full_name'] ?? ''),
             self::variables($session, $previous),
-            [self::calendarAttachment($session, $recipient, $cancelled)],
+            $allegato ? [self::calendarAttachment($session, $recipient, $cancelled)] : [],
             isset($recipient['first_name']) ? (string) $recipient['first_name'] : null
         );
     }

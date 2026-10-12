@@ -287,7 +287,14 @@ class LiveSessionController
             $this->fail('La sessione è già conclusa.', '/live/' . $id);
         }
 
-        $this->success(LiveSessionNotifier::summary(LiveSessionNotifier::invite($session)), '/live/' . $id);
+        $esito = LiveSessionNotifier::invite($session);
+
+        // Da qui parte il promemoria del giorno (bin/avvisi, 12/10).
+        if ($esito['sent'] > 0) {
+            LiveSessionModel::segnaInvitiMandati($id);
+        }
+
+        $this->success(LiveSessionNotifier::summary($esito), '/live/' . $id);
     }
 
     /**

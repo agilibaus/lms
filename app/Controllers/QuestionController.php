@@ -187,6 +187,11 @@ class QuestionController
         [$testo, $moduleId, $risposta] = $this->campi($domanda, '/domande#domanda-' . (int) $domanda['id']);
 
         $fatto = QuestionModel::publish((int) $domanda['id'], $testo, $moduleId, $risposta, (int) Auth::id());
+
+        if ($fatto) {
+            self::avvisaStudente($domanda, $testo, $risposta);
+        }
+
         $this->torna('/domande', $fatto ? 'Domanda pubblicata.' : 'Questa domanda era già stata gestita.', $fatto);
     }
 
@@ -210,6 +215,32 @@ class QuestionController
         $domanda = $this->daGestire((int) $params['id']);
         $fatto = QuestionModel::withdraw((int) $domanda['id']);
         $this->torna('/domande', $fatto ? 'Domanda tolta dall\'archivio.' : 'Questa domanda non è più pubblicata.', $fatto);
+    }
+
+    /**
+     * «La tua domanda ha una risposta» a chi l'ha fatta (12/10), solo alla
+     * prima pubblicazione: una correzione successiva non manda niente. Non
+     * a un account cancellato o disattivato.
+     *
+     * @param array<string, mixed> $domanda
+     */
+    private static function avvisaStudente(array $domanda, string $testo, string $risposta): void
+    {
+        $studente = $domanda['student_id'] === null ? null : UserModel::find((int) $domanda['student_id']);
+        $corso = CourseModel::find((int) $domanda['course_id']);
+
+        if ($studente === null || (int) $studente['is_active'] !== 1 || $corso === null) {
+            return;
+        }
+
+        Mailer::sendQuietly(Mailer::questionAnswered(
+            (string) $studente['email'],
+            (string) $studente['full_name'],
+            (string) $corso['title'],
+            $testo,
+            $risposta,
+            Url::to('/domande-e-risposte?corso=' . (int) $corso['id'])
+        ));
     }
 
     /**
