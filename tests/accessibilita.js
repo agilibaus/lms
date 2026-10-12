@@ -2244,13 +2244,13 @@ async function giroBenvenuto(browser) {
 
         // Il tutor arriva alla pagina dei suoi gruppi (12/10): non ne e'
         // membro, e il profilo non li elenca. Dall'elenco Gruppi, in ogni
-        // riga «Pagina del gruppo»; da Modifica gruppo, in alto. Si segue il
+        // riga «Vai al gruppo»; da Modifica gruppo, in alto. Si segue il
         // collegamento: la pagina si apre, ed e' quella del gruppo giusto,
         // con i comandi di chi modera.
         await esamina(tp, '/admin/groups', 'Gruppi (tutor)', BERSAGLIO_MINIMO, daTelefono);
         const righeGruppi = await tp.evaluate(() => [...document.querySelectorAll('.data-table tbody tr')].map((tr) => ({
             gestione: (tr.querySelector('a.group-name') || {}).getAttribute ? tr.querySelector('a.group-name').getAttribute('href') : null,
-            pagina: [...tr.querySelectorAll('.row-actions a')].filter((a) => a.textContent.trim() === 'Pagina del gruppo')
+            pagina: [...tr.querySelectorAll('.row-actions a')].filter((a) => a.textContent.trim() === 'Vai al gruppo')
                 .map((a) => a.getAttribute('href'))[0] || null,
         })));
         check('nell\'elenco Gruppi del tutor ogni riga porta anche alla pagina del gruppo',
@@ -2259,7 +2259,7 @@ async function giroBenvenuto(browser) {
             [JSON.stringify(righeGruppi)]);
         await esamina(tp, '/admin/groups/' + seme.gruppo_cerchio + '/edit', 'Modifica gruppo (tutor)', BERSAGLIO_MINIMO, daTelefono);
         const daModifica = await tp.evaluate(() => {
-            const a = [...document.querySelectorAll('.page-header a')].find((x) => x.textContent.trim() === 'apri la pagina del gruppo');
+            const a = [...document.querySelectorAll('.page-header a')].find((x) => x.textContent.trim() === 'vai al gruppo');
             return a ? a.getAttribute('href') : null;
         });
         let paginaTutor = null;
