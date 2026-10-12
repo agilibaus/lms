@@ -352,7 +352,8 @@ class CourseController extends AdminController
             $this->fail('Utente non trovato.', $redirect);
         }
 
-        EnrollmentModel::enroll($userId, (int) $course['id']);
+        // L'«Iscrizione confermata» la manda bin/avvisi (12/10).
+        EnrollmentModel::enroll($userId, (int) $course['id'], true);
 
         $this->success('Studente iscritto.', $redirect);
     }

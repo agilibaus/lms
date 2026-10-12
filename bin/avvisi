@@ -1,0 +1,65 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Le email che non partono dalla pagina che le causa (12/10): oggi
+ * l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, a
+ * scaglioni. Vedi `App\Core\Avvisi`.
+ *
+ * Esecuzione da cron, ogni quarto d'ora:
+ *
+ *   *\/15 * * * *  cd /percorso/lms && php bin/avvisi >> storage/logs/avvisi.log 2>&1
+ *
+ * (nel file di crontab vero la barra rovesciata non va: e' qui solo perche'
+ * questo e' un commento PHP.)
+ *
+ * Se non gira, le conferme restano in coda e partono al primo giro utile:
+ * non si perde niente, arriva tardi. Lascia detto di aver girato nella
+ * chiave AVVISI_LAST_RUN_AT delle impostazioni.
+ *
+ * `--prova` elenca che cosa manderebbe senza mandare niente e senza toccare
+ * la coda.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit("Questo comando si esegue dal terminale.\n");
+}
+
+require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../config/config.php';
+
+use App\Core\Avvisi;
+use App\Core\Env;
+use App\Core\Settings;
+
+// Senza APP_URL le email uscirebbero con un collegamento a localhost: la
+// stessa difesa degli altri due comandi.
+if (trim((string) Env::get('APP_URL', '')) === '') {
+    fwrite(STDERR, "APP_URL non e' configurato: le email uscirebbero con un indirizzo sbagliato.\n");
+    exit(2);
+}
+
+$prova = in_array('--prova', $argv, true);
+$conferme = Avvisi::conferme(Avvisi::PER_GIRO, $prova);
+
+if ($prova) {
+    foreach ($conferme['prova'] as $riga) {
+        echo '  [prova] iscrizione confermata: ' . $riga . PHP_EOL;
+    }
+
+    echo date('Y-m-d H:i:s') . ' — prova: ' . count($conferme['prova']) . " conferme da mandare, niente inviato.\n";
+    exit(0);
+}
+
+Settings::recordSystem(Avvisi::ULTIMO_GIRO, date('Y-m-d H:i:s'));
+
+echo date('Y-m-d H:i:s') . ' — conferme di iscrizione mandate: ' . $conferme['mandate'] . PHP_EOL;
+
+if ($conferme['fallite'] !== []) {
+    echo 'non partite: ' . implode(', ', $conferme['fallite']) . PHP_EOL;
+}
+
+exit($conferme['fallite'] === [] ? 0 : 1);

@@ -39,6 +39,7 @@ if (PHP_SAPI !== 'cli') {
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config/config.php';
 
+use App\Core\CourseAccess;
 use App\Core\Mail\Mailer;
 use App\Core\Settings;
 use App\Core\Url;
@@ -69,6 +70,7 @@ if ($inSospeso === []) {
 $mandate = 0;
 $fallite = 0;
 $saltate = 0;
+$chiusi = 0;
 
 foreach ($inSospeso as $avviso) {
     $moduleId = (int) $avviso['module_id'];
@@ -76,7 +78,8 @@ foreach ($inSospeso as $avviso) {
     $link = Url::base() . '/courses/' . (int) $avviso['course_id'] . '#modulo-' . $moduleId;
 
     if ($prova) {
-        echo "  [prova] " . $avviso['email'] . " ← «" . $avviso['module_title'] . "»\n";
+        echo "  [prova] " . $avviso['email'] . " ← «" . $avviso['module_title'] . "»"
+            . (CourseAccess::isModuleLocked($userId, $moduleId) ? ' (chiuso da un questionario: niente email)' : '') . "\n";
         continue;
     }
 
@@ -84,6 +87,15 @@ foreach ($inSospeso as $avviso) {
     // avviso, non si manda un doppione.
     if (!ModuleUnlockModel::claim($moduleId, $userId)) {
         $saltate++;
+        continue;
+    }
+
+    // Per lui il modulo e' ancora chiuso da un questionario non superato
+    // (12/10): «si e' aperto» sarebbe falso. La riga resta scritta, e
+    // l'avviso non parte nemmeno dopo: il modulo lo scopre superando il
+    // questionario, dentro il corso.
+    if (CourseAccess::isModuleLocked($userId, $moduleId)) {
+        $chiusi++;
         continue;
     }
 
@@ -113,6 +125,7 @@ if ($prova) {
 
 Settings::recordSystem('DRIP_LAST_RUN_AT', date('Y-m-d H:i:s'));
 
-echo date('c') . " mandate {$mandate}, fallite {$fallite}, gia' prese da altri {$saltate}.\n";
+echo date('c') . " mandate {$mandate}, fallite {$fallite}, gia' prese da altri {$saltate}, "
+    . "chiuse da un questionario {$chiusi}.\n";
 
 exit($fallite > 0 ? 1 : 0);

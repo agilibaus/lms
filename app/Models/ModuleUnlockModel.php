@@ -31,6 +31,13 @@ class ModuleUnlockModel
      * per ogni modulo esistente. L'avviso riguarda solo i moduli che si
      * aprono davvero in un momento preciso.
      *
+     * Chi riceve l'avviso (12/10): **studenti attivi**, non lo staff e non
+     * gli account disattivati, e **iscritti prima che il modulo si aprisse**.
+     * Chi si iscrive dopo trova il modulo gia' aperto: senza questa
+     * condizione riceverebbe un «si e' aperto» per ogni modulo con una data
+     * passata, anche settimane dopo. Il modulo chiuso da un questionario non
+     * superato lo esclude il comando, che sa calcolarlo (`CourseAccess`).
+     *
      * Il limite e' la cintura: se il comando resta fermo a lungo e si
      * riaccende, parte un blocco per volta invece di una raffica.
      *
@@ -41,7 +48,7 @@ class ModuleUnlockModel
     public static function pending(int $limit = 500): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT m.id AS module_id, u.id AS user_id, u.email, u.full_name,
+            "SELECT m.id AS module_id, u.id AS user_id, u.email, u.full_name,
                     m.title AS module_title, c.id AS course_id, c.title AS course_title
              FROM modules m
              INNER JOIN courses c ON c.id = m.course_id
@@ -52,9 +59,12 @@ class ModuleUnlockModel
              WHERE m.available_from IS NOT NULL
                AND m.available_from <= NOW()
                AND c.is_published = 1
+               AND u.is_active = 1
+               AND u.role = 'studente'
+               AND e.enrolled_at <= m.available_from
                AND n.id IS NULL
              ORDER BY m.available_from, m.id, u.id
-             LIMIT ' . (int) max(1, $limit)
+             LIMIT " . (int) max(1, $limit)
         );
         $stmt->execute();
 

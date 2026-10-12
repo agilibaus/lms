@@ -256,7 +256,9 @@ CREATE TABLE enrollments (
     enrolled_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at    DATETIME NULL,
     progress_pct    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    confirmation_pending TINYINT(1) NOT NULL DEFAULT 0,  -- «Iscrizione confermata» in coda per bin/avvisi (2026_10_12)
     UNIQUE KEY uq_user_course (user_id, course_id),
+    INDEX idx_confirmation_pending (confirmation_pending),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

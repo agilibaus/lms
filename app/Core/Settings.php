@@ -215,6 +215,7 @@ class Settings
     public const SYSTEM_KEYS = [
         'DRIP_LAST_RUN_AT',
         'INVITES_LAST_RUN_AT',
+        'AVVISI_LAST_RUN_AT',
     ];
 
     /**

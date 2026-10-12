@@ -62,6 +62,7 @@ try {
 
 $pulisci = static function () use ($pdo): void {
     $pdo->prepare('DELETE FROM courses WHERE title LIKE :m')->execute(['m' => MARCHIO . '%']);
+    $pdo->prepare('DELETE FROM users WHERE email LIKE :m')->execute(['m' => 'prova-rilascio-%@esempio.invalid']);
 };
 
 $pulisci();
@@ -94,8 +95,25 @@ $pdo->prepare('INSERT INTO courses (title, slug, is_published, enrollment_mode, 
     ]);
 $corso = (int) $pdo->lastInsertId();
 
-$pdo->prepare('INSERT INTO enrollments (user_id, course_id) VALUES (:u, :c)')
+// Iscritto da un giorno: prima dell'apertura del modulo, piu' sotto.
+$pdo->prepare('INSERT INTO enrollments (user_id, course_id, enrolled_at) VALUES (:u, :c, DATE_SUB(NOW(), INTERVAL 1 DAY))')
     ->execute(['u' => $studente, 'c' => $corso]);
+
+// Chi l'avviso non deve riceverlo (12/10): l'admin iscritto anche lui, uno
+// studente disattivato, uno studente iscritto dopo l'apertura.
+$utente = static function (string $chi, int $attivo) use ($pdo): int {
+    $pdo->prepare("INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
+                   VALUES (:e, 'x', 'Prova', :n, 'studente', :a)")
+        ->execute(['e' => 'prova-rilascio-' . $chi . '@esempio.invalid', 'n' => $chi, 'a' => $attivo]);
+
+    return (int) $pdo->lastInsertId();
+};
+$spento = $utente('spento', 0);
+$tardi = $utente('tardi', 1);
+$iscrivi = $pdo->prepare('INSERT INTO enrollments (user_id, course_id, enrolled_at) VALUES (:u, :c, ' . "DATE_SUB(NOW(), INTERVAL :ore HOUR))");
+$iscrivi->execute(['u' => $admin, 'c' => $corso, 'ore' => 24]);
+$iscrivi->execute(['u' => $spento, 'c' => $corso, 'ore' => 24]);
+$iscrivi->execute(['u' => $tardi, 'c' => $corso, 'ore' => 0]);
 
 /** @return array{0: int, 1: int} id del modulo e della sua lezione */
 $modulo = static function (string $titolo, ?string $quando, bool $quizObbligatorio, int $posizione)
@@ -225,6 +243,8 @@ try {
     ));
 
     check('il modulo appena aperto e da annunciare', count($miei) === 1);
+    check('a uno studente attivo iscritto prima dell\'apertura', (int) ($miei[0]['user_id'] ?? 0) === $studente,
+        'ci sono anche: ' . implode(', ', array_map(static fn ($r) => $r['email'], $miei)));
     check(
         'un modulo senza data non entra mai fra gli avvisi',
         !in_array($aperto, array_map(static fn ($r) => (int) $r['module_id'], $inSospeso), true),
@@ -243,6 +263,17 @@ try {
         static fn (array $r): bool => (int) $r['module_id'] === $chiuso
     );
     check('e dopo la presa in carico non e piu in sospeso', $ancora === []);
+
+    // Il modulo dopo il chiuso, con una data passata anche lui: per la data
+    // e' aperto, ma il questionario del modulo prima non e' superato. Il
+    // comando lo prende in carico senza mandare niente.
+    $pdo->prepare('UPDATE modules SET available_from = DATE_SUB(NOW(), INTERVAL 1 HOUR) WHERE id = :m')
+        ->execute(['m' => $dopo]);
+    check('il modulo dopo, aperto per data, e\' fra gli avvisi', in_array($dopo, array_map(
+        static fn ($r) => (int) $r['module_id'],
+        ModuleUnlockModel::pending()
+    ), true));
+    check('ma per lo studente e\' chiuso dal questionario: l\'email non parte', CourseAccess::isModuleLocked($studente, $dopo));
 } finally {
     $pulisci();
 }

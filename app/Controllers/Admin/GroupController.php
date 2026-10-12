@@ -271,7 +271,8 @@ class GroupController extends AdminController
         GroupModel::addMember($groupId, $userId);
 
         // Chi entra nel gruppo viene iscritto ai corsi gia' assegnati.
-        $created = EnrollmentModel::enrollMany([$userId], GroupModel::courseIds($groupId));
+        // L'«Iscrizione confermata» la manda bin/avvisi (12/10).
+        $created = EnrollmentModel::enrollMany([$userId], GroupModel::courseIds($groupId), true);
 
         $this->success(
             $created > 0
@@ -323,7 +324,9 @@ class GroupController extends AdminController
 
         GroupModel::addCourse($groupId, $courseId);
 
-        $created = EnrollmentModel::enrollMany(GroupModel::memberIds($groupId), [$courseId]);
+        // Le «Iscrizione confermata» le manda bin/avvisi, a scaglioni: un
+        // gruppo grande non le spedisce tutte insieme da questa pagina (12/10).
+        $created = EnrollmentModel::enrollMany(GroupModel::memberIds($groupId), [$courseId], true);
 
         $this->success(
             $created > 0

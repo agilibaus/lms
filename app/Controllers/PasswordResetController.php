@@ -110,6 +110,20 @@ class PasswordResetController
         // rimasto non verificato, ora lo è.
         UserModel::markEmailVerified((int) $row['user_id']);
 
+        // L'avviso del cambio parte anche da qui (12/10), come dal profilo e
+        // dal primo accesso: se la reimpostazione non l'ha chiesta il
+        // titolare, e' l'unico modo che ha di accorgersene. Non deve poter
+        // impedire il cambio: se la posta non parte, finisce nel log.
+        $utente = UserModel::find((int) $row['user_id']);
+
+        if ($utente !== null) {
+            Mailer::sendQuietly(Mailer::passwordChanged(
+                (string) $utente['email'],
+                (string) $utente['full_name'],
+                Url::to('/login')
+            ));
+        }
+
         $_SESSION['login_notice'] = 'Password aggiornata: puoi accedere con la nuova password.';
 
         $this->redirect('/login');

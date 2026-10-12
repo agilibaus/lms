@@ -189,7 +189,7 @@ final class Modelli
             'password_cambiata' => [
                 'gruppo' => 'account',
                 'titolo' => 'La password è stata cambiata',
-                'quando' => 'Quando una persona cambia la propria password: dal profilo o al primo accesso.',
+                'quando' => 'Quando una persona cambia la propria password: dal profilo, al primo accesso o da «Password dimenticata».',
                 'oggetto' => 'EMAIL_CAMBIATA_OGGETTO',
                 'testo' => 'EMAIL_CAMBIATA_TESTO',
                 'predefinito' => [
@@ -209,7 +209,8 @@ final class Modelli
             'iscrizione_confermata' => [
                 'gruppo' => 'iscrizioni',
                 'titolo' => 'Iscrizione confermata',
-                'quando' => 'A chi si iscrive da solo dal catalogo, o vede approvata la sua richiesta.',
+                'quando' => 'A chi si iscrive da solo dal catalogo o vede approvata la sua richiesta, subito. A chi viene iscritto '
+                    . 'dallo staff, a mano o con un gruppo, entro un quarto d’ora (a scaglioni). Non a chi aspetta ancora l’invito.',
                 'oggetto' => 'EMAIL_ISCRIZIONE_OGGETTO',
                 'testo' => 'EMAIL_ISCRIZIONE_TESTO',
                 'predefinito' => [
@@ -225,7 +226,8 @@ final class Modelli
             'richiesta_iscrizione' => [
                 'gruppo' => 'iscrizioni',
                 'titolo' => 'Richiesta di iscrizione',
-                'quando' => 'Allo staff, quando uno studente chiede di iscriversi a un corso «su richiesta».',
+                'quando' => 'Quando uno studente chiede di iscriversi a un corso «su richiesta»: agli amministratori e ai tutor '
+                    . 'dei gruppi a cui il corso è assegnato, cioè a chi può approvare.',
                 'oggetto' => 'EMAIL_RICHIESTA_OGGETTO',
                 'testo' => 'EMAIL_RICHIESTA_TESTO',
                 'predefinito' => [
@@ -267,7 +269,8 @@ final class Modelli
             'nuovo_modulo' => [
                 'gruppo' => 'corso',
                 'titolo' => 'Nuovo modulo disponibile',
-                'quando' => 'Agli iscritti, quando si apre un modulo con una data di apertura (comando pianificato).',
+                'quando' => 'Quando si apre un modulo con una data di apertura (comando pianificato): agli studenti attivi iscritti '
+                    . 'prima dell’apertura, non a chi ha il modulo ancora chiuso da un questionario.',
                 'oggetto' => 'EMAIL_MODULO_OGGETTO',
                 'testo' => 'EMAIL_MODULO_TESTO',
                 'predefinito' => [

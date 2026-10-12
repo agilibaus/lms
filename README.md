@@ -73,7 +73,7 @@ In sviluppo iniziale.
 - Composer (autoload PSR-4 e installazione di Dompdf: senza `composer install` i certificati non possono essere generati)
 - Estensioni `openssl` e `curl` per l'integrazione Google (già presenti in quasi tutte le installazioni)
 - Per le sessioni live: un progetto Google Cloud con **Calendar API** abilitata e un account di servizio con delega a livello di dominio (vedi sotto). Senza, le sessioni restano utilizzabili con link Meet inseriti a mano
-- **Accesso al cron** (o all'Utilità di pianificazione su Windows) per le email di apertura dei moduli a rilascio programmato. Senza, il resto funziona: mancano solo quegli avvisi
+- **Accesso al cron** (o all'Utilità di pianificazione su Windows) per tre comandi: le email di apertura dei moduli a rilascio programmato, gli inviti agli utenti importati e le conferme di iscrizione fatte dallo staff (`bin/avvisi`). Senza, il resto funziona: mancano quelle email
 
 ## Installazione
 
@@ -178,6 +178,7 @@ danni. Le piu' recenti:
 | `2026_10_11_obiettivi.sql` | l'obiettivo del corso e l'obiettivo del modulo (`courses.objective`, `modules.objective`), facoltativi, fino a 1.000 caratteri |
 | `2026_10_11_obiettivi_html.sql` | le due colonne dell'obiettivo diventano TEXT: con i tag HTML il testo salvato può superare i 1.000 caratteri |
 | `2026_10_11_obiettivo_visite.sql` | `course_objective_views`: le visite dello studente alla pagina di un corso con un obiettivo |
+| `2026_10_12_iscrizione_confermata.sql` | `enrollments.confirmation_pending`: l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, in coda per `bin/avvisi`. Va impostato anche il comando, ogni quarto d'ora |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -224,6 +225,8 @@ torna indietro, se non svuotando la casella a mano.
   routes.php
 /bin
   rilascio-moduli      → comando da cron: avvisa gli studenti dei moduli che si aprono
+  invita-utenti        → comando da cron: gli inviti agli utenti importati, a scaglioni
+  avvisi               → comando da cron: le email che non partono dalla pagina (conferme di iscrizione dello staff)
 /config
   config.php           → bootstrap (env, error reporting, timezone)
 /storage
@@ -354,7 +357,11 @@ corso, lo studente legge una frase che risponde all'altra domanda — «Sei in p
 modulo il 31/10/2026» — e che compare solo se c'e' davvero un modulo chiuso.
 
 #### L'email di apertura, e il cron che la manda
-Il giorno in cui un modulo si apre gli iscritti ricevono un'email. Non la manda una richiesta
+Il giorno in cui un modulo si apre gli iscritti ricevono un'email: **gli studenti attivi,
+iscritti prima dell'apertura**, e non chi ha il modulo ancora chiuso da un questionario non
+superato (12/10). Chi si iscrive dopo trova il modulo già aperto e non riceve niente; per chi è
+fermo al questionario l'avviso si segna come preso e non parte nemmeno dopo: il modulo lo
+scopre superando il questionario. Non la manda una richiesta
 web — non c'e' nessuna richiesta, e' passata una data — ma un comando da eseguire una volta al
 giorno:
 
@@ -879,9 +886,9 @@ quella della password temporanea.
 
 ## I lavori periodici su Windows (Laragon)
 
-I due comandi — `bin/rilascio-moduli` e `bin/invita-utenti` — in sviluppo girano sul computer
-di Elena, che è Windows con Laragon, tramite l'Utilità di pianificazione. La ricetta è la
-stessa per tutti e due, cambia solo il nome e la frequenza.
+I tre comandi — `bin/rilascio-moduli`, `bin/invita-utenti` e `bin/avvisi` — in sviluppo
+girano sul computer di Elena, che è Windows con Laragon, tramite l'Utilità di pianificazione.
+La ricetta è la stessa per tutti e tre, cambia solo il nome e la frequenza.
 
 **Il percorso del PHP.** Dal terminale di Laragon, `where php`: esce qualcosa come
 `C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe`, con il numero di versione che è il
@@ -893,6 +900,12 @@ ogni quarto d'ora):
 
 ```
 schtasks /create /tn "Pistacchio - inviti" /sc minute /mo 15 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\invita-utenti >> storage\logs\inviti.log 2>&1"
+```
+
+Per `bin/avvisi` è identica, ogni quarto d'ora anche lei, con il suo nome e il suo log:
+
+```
+schtasks /create /tn "Pistacchio - avvisi" /sc minute /mo 15 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\avvisi >> storage\logs\avvisi.log 2>&1"
 ```
 
 Per il rilascio dei moduli è identica, con `/sc daily /st 07:30` al posto di `/sc minute /mo 15`.
@@ -919,7 +932,7 @@ Attivatori → Modifica → «Ripeti attività ogni» 15 minuti, durata «Indefi
 partono al primo giro utile, oppure a mano dalla pagina Utenti.
 
 **Questa pianificazione vive dentro Windows e non si porta dietro niente**: non sta nel
-repository, nessun deploy la copia. Sull'hosting Linux vanno rifatte da zero tutte e due come
+repository, nessun deploy la copia. Sull'hosting Linux vanno rifatte da zero tutte e tre come
 righe di cron, ed è nell'elenco delle cose da fare prima di aprire agli studenti.
 
 ## Il benvenuto del tutor nel corso
@@ -1313,7 +1326,8 @@ php tests/xlsx_test.php             # il file XLSX scritto in casa
 
 # richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
-php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie
+php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie, chi riceve l'avviso
+php tests/avvisi_test.php           # conferme di iscrizione dello staff in coda; la richiesta a chi può decidere
 php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale, i tre messaggi d'errore
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
@@ -2155,7 +2169,7 @@ Ogni corso ha un campo `enrollment_mode`, impostabile dalla sua scheda in *Gesti
 | Modalità | Cosa comporta |
 |---|---|
 | `closed` (predefinita) | Iscrive solo lo staff, oppure l'assegnazione del corso a un gruppo. Il corso non compare nel catalogo |
-| `request` | Lo studente chiede di iscriversi, admin e tutor ricevono un'email e decidono dalla scheda del corso |
+| `request` | Lo studente chiede di iscriversi, con un messaggio facoltativo; gli admin e i tutor dei gruppi a cui il corso è assegnato ricevono un'email con il messaggio e decidono dalla scheda del corso |
 | `open` | Lo studente si iscrive da solo dal catalogo, senza attese |
 
 Il catalogo (`/catalogo`, voce *Esplora corsi*) elenca solo corsi **pubblicati** in modalità
@@ -2164,9 +2178,23 @@ Il catalogo (`/catalogo`, voce *Esplora corsi*) elenca solo corsi **pubblicati**
 nasce solo con l'approvazione.
 
 ### Email inviate
-Conferma dell'indirizzo, recupero password, conferma di iscrizione allo studente, avviso ad
-admin e tutor per le richieste da valutare, esito negativo di una richiesta. Tutte in testo
+Conferma dell'indirizzo, recupero password, conferma di iscrizione allo studente, avviso a
+chi può decidere per le richieste da valutare, esito negativo di una richiesta. Tutte in testo
 semplice, e tutte modificabili da **Impostazioni › Email** (vedi sotto).
+
+**L'«Iscrizione confermata»** parte subito per chi si iscrive dal catalogo o vede approvata la
+sua richiesta. Per le iscrizioni fatte dallo staff (a mano dalla scheda del corso, entrando in
+un gruppo, con un corso assegnato a un gruppo intero) resta in coda e la spedisce `bin/avvisi`,
+ogni quarto d'ora, venti per giro come gli inviti: un corso dato a un gruppo di cento persone
+non manda cento email da una pagina sola. Non la riceve chi aspetta ancora l'invito (gli
+arriva «Il tuo accesso»), né un account disattivato o dello staff; in un corso in bozza resta
+in coda e parte quando il corso si pubblica.
+
+```
+*/15 * * * * cd /percorso/del/sito && php bin/avvisi >> storage/logs/avvisi.log 2>&1
+```
+
+`php bin/avvisi --prova` elenca che cosa manderebbe senza mandare niente.
 
 ## Le email e la pagina Impostazioni › Email
 

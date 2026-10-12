@@ -412,7 +412,8 @@ class UserController extends AdminController
         GroupModel::addMember($groupId, $userId);
 
         // Come dalla scheda del gruppo: chi entra eredita i corsi assegnati.
-        $created = EnrollmentModel::enrollMany([$userId], GroupModel::courseIds($groupId));
+        // L'«Iscrizione confermata» la manda bin/avvisi (12/10).
+        $created = EnrollmentModel::enrollMany([$userId], GroupModel::courseIds($groupId), true);
 
         $this->success(
             $created > 0

@@ -79,7 +79,7 @@ class CatalogController
             );
             EnrollmentRequestModel::create($userId, $courseId, $message === '' ? null : $message);
 
-            $this->notifyStaff((string) $course['title'], $courseId);
+            $this->notifyStaff((string) $course['title'], $courseId, $message);
 
             $_SESSION['flash_success'] = 'Richiesta inviata: riceverai un\'email quando verrà valutata.';
 
@@ -93,19 +93,21 @@ class CatalogController
     // ---------------------------------------------------------------
 
     /**
-     * Avvisa admin e tutor che c'è una richiesta da valutare.
+     * Avvisa chi puo' decidere che c'e' una richiesta da valutare, con
+     * quello che lo studente ha scritto (12/10).
      */
-    private function notifyStaff(string $courseTitle, int $courseId): void
+    private function notifyStaff(string $courseTitle, int $courseId, string $message): void
     {
         $link = Url::to('/admin/courses/' . $courseId . '/edit');
 
-        foreach (UserModel::staffForNotifications() as $staff) {
+        foreach (UserModel::decisoriRichiesta($courseId) as $staff) {
             Mailer::sendQuietly(Mailer::enrollmentRequested(
                 (string) $staff['email'],
                 (string) $staff['full_name'],
                 (string) Auth::name(),
                 $courseTitle,
-                $link
+                $link,
+                $message
             ));
         }
     }
