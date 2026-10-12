@@ -12,7 +12,7 @@ use App\Core\Url;
  * I tre messaggi delle sessioni live: invito, cambio di orario, annullamento.
  *
  * Dal 12/10 sono tre voci dell'elenco delle email (`Modelli`): oggetto e testo
- * si modificano da Impostazioni › Email, con le chiavi `LIVE_*` di prima (i
+ * si modificano da Impostazioni › Messaggi email, con le chiavi `LIVE_*` di prima (i
  * testi gia' salvati restano), e un campo vuoto vale il predefinito qui
  * sotto. Da `Modelli` arrivano anche i segnaposto comuni (`{nome}`, solo il
  * nome di battesimo; `{piattaforma}`, sempre «Pistacchio LMS») e la chiusura.

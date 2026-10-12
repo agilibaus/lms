@@ -14,13 +14,13 @@ declare(strict_types=1);
  */
 $sezioni = [
     [
-        'titolo' => 'Posta elettronica',
+        'titolo' => 'Server di posta elettronica',
         'href' => '/admin/settings/posta',
         'testo' => 'Come partono le email della piattaforma: il server SMTP e la prova di invio.',
         'visibile' => $canSettings,
     ],
     [
-        'titolo' => 'Email',
+        'titolo' => 'Messaggi email',
         'href' => '/admin/settings/email',
         'testo' => 'Il nome dell’organizzazione, il mittente, la chiusura e il testo di ogni email che la piattaforma manda.',
         'visibile' => $canSettings,

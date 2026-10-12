@@ -495,7 +495,7 @@ const PAGINE_INTERNE = [
     ['/admin/users', 'Utenti'],
     ['/admin/users/importa', 'Importa utenti'],
     ['/admin/settings', 'Impostazioni'],
-    ['/admin/settings/posta', 'Posta elettronica'],
+    ['/admin/settings/posta', 'Server di posta elettronica'],
     ['/admin/settings/aspetto', 'Aspetto'],
     ['/admin/permissions', 'Permessi'],
     // Pagina di una lezione, quindi dipende dai dati: se la lezione 1 non
@@ -539,7 +539,7 @@ const PAGINE_INTERNE = [
 
     // Le pagine di impostazioni che mancavano. Email ha preso il posto di
     // «Inviti sessioni live» il 12/10.
-    ['/admin/settings/email', 'Email'],
+    ['/admin/settings/email', 'Messaggi email'],
     ['/admin/settings/bunny', 'Bunny Stream'],
     ['/admin/settings/meet', 'Google Meet'],
 
@@ -1488,10 +1488,10 @@ EXTRA['Domande in attesa (semina)'] = EXTRA['Quiz da svolgere'];
 
 // E i campi che hanno avuto il limite il 10/10: descrizione del gruppo e
 // della sessione dal vivo, testo della domanda del questionario, titolo e
-// testo della pagina d'accesso, testi delle email (pagina Email, 12/10).
+// testo della pagina d'accesso, testi delle email (pagina Messaggi email, 12/10).
 for (const pagina of ['Nuovo gruppo', 'Modifica gruppo', 'Modifica gruppo con corso (semina)',
     'Nuovo incontro', 'Modifica incontro', 'Quiz: domande', 'Modifica domanda',
-    'Modifica domanda vero/falso (semina)', 'Aspetto', 'Email']) {
+    'Modifica domanda vero/falso (semina)', 'Aspetto', 'Messaggi email']) {
     EXTRA[pagina] = EXTRA['Quiz da svolgere'];
 }
 

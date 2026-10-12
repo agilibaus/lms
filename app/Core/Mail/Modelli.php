@@ -13,7 +13,7 @@ use App\Core\Settings;
  * Nessun testo e' scritto nel codice delle pagine: ogni email e' una voce di
  * `elenco()`, con il testo predefinito, i segnaposto che puo' usare e quelli
  * che non possono mancare. Da qui escono sia i messaggi sia la pagina del
- * pannello Impostazioni › Email, che si costruisce da sola: un'email nuova e'
+ * pannello Impostazioni › Messaggi email, che si costruisce da sola: un'email nuova e'
  * una voce in piu'.
  *
  * LE REGOLE
@@ -45,7 +45,7 @@ final class Modelli
     /** Quanto puo' essere lunga la chiusura comune. */
     public const MAX_CHIUSURA = 500;
 
-    /** Le chiavi dei dati comuni, nella pagina Email. */
+    /** Le chiavi dei dati comuni, nella pagina Messaggi email. */
     public const ORGANIZZAZIONE = 'ORGANIZZAZIONE_NOME';
     public const RISPONDI_A = 'MAIL_REPLY_TO';
     public const CHIUSURA = 'EMAIL_CHIUSURA';
@@ -424,7 +424,7 @@ final class Modelli
     }
 
     /**
-     * Le chiavi di `settings` che la pagina Email scrive: i dati comuni e
+     * Le chiavi di `settings` che la pagina Messaggi email scrive: i dati comuni e
      * oggetto e testo di ogni email.
      *
      * @return list<string>

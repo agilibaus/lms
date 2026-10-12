@@ -310,7 +310,7 @@ massimo 12.000, quindi non serve nessuna migrazione.
 | Descrizione della sessione dal vivo | 1.000 |
 | Testo della domanda di un questionario | 500 |
 | Impostazioni › Aspetto: titolo e testo della pagina di accesso affiancata | 300 e 500 |
-| Impostazioni › Email: testo di ciascuna email (con i segnaposto); chiusura comune | 1.000 e 500 |
+| Impostazioni › Messaggi email: testo di ciascuna email (con i segnaposto); chiusura comune | 1.000 e 500 |
 
 Fuori resta solo il testo delle lezioni, che è testo formattato nell'editor. **Obiettivo e
 descrizione del corso e obiettivo del modulo accettano qualche tag HTML** (11/10) e il loro
@@ -1954,7 +1954,7 @@ JavaScript la pagina resta esattamente quella di prima.
 
 ## Configurazione dal pannello
 
-**Amministrazione → Posta elettronica** e **Amministrazione → Google Meet** permettono di
+**Impostazioni → Server di posta elettronica** e **Amministrazione → Google Meet** permettono di
 cambiare la configurazione senza aprire il `.env`. Le due pagine richiedono il permesso
 `settings.manage`, assegnato all'admin e spostabile dalla matrice dei permessi.
 
@@ -2181,7 +2181,7 @@ nasce solo con l'approvazione.
 ### Email inviate
 Conferma dell'indirizzo, recupero password, conferma di iscrizione allo studente, avviso a
 chi può decidere per le richieste da valutare, esito negativo di una richiesta. Tutte in testo
-semplice, e tutte modificabili da **Impostazioni › Email** (vedi sotto).
+semplice, e tutte modificabili da **Impostazioni › Messaggi email** (vedi sotto).
 
 **L'«Iscrizione confermata»** parte subito per chi si iscrive dal catalogo o vede approvata la
 sua richiesta. Per le iscrizioni fatte dallo staff (a mano dalla scheda del corso, entrando in
@@ -2214,7 +2214,10 @@ Due email nuove partono invece dalla pagina, subito:
   pubblica: con la domanda, la risposta e il collegamento alle domande e risposte del corso.
   Una correzione successiva non manda niente.
 
-## Le email e la pagina Impostazioni › Email
+## Le email e la pagina Impostazioni › Messaggi email
+
+(12/10: in Impostazioni le due pagine si chiamano **Server di posta elettronica** — come partono
+le email — e **Messaggi email** — che cosa dicono —, per non confonderle.)
 
 Pistacchio LMS può essere usato da organizzazioni diverse, una per installazione: **nessun
 testo delle email è scritto nel codice delle pagine**, e il nome dell'organizzazione non
@@ -2223,7 +2226,7 @@ della piattaforma invece è fisso: **«Pistacchio LMS»**, e non si cambia da ne
 
 Tutte le email stanno in un elenco solo, `app/Core/Mail/Modelli.php`: per ognuna il gruppo, il
 titolo, quando parte, il testo predefinito, i segnaposto che può usare e quelli che non possono
-mancare. Da lì escono sia i messaggi sia la pagina **Impostazioni › Email**
+mancare. Da lì escono sia i messaggi sia la pagina **Impostazioni › Messaggi email**
 (`/admin/settings/email`, permesso `settings.manage`), che si costruisce da sola: un'email
 nuova è una voce in più nell'elenco.
 
@@ -2233,8 +2236,8 @@ La pagina ha due parti:
   (`{organizzazione}`; finché è vuoto vale «Pistacchio LMS»), nome e indirizzo del mittente
   (il nome, vuoto, vale quello dell'organizzazione), l'indirizzo **Rispondi a** (intestazione
   `Reply-To` e segnaposto `{contatto}`; vuoto, vale il mittente) e la **chiusura**, aggiunta in
-  fondo a ogni email (500 caratteri). Il mittente si è spostato qui dalla pagina Posta
-  elettronica, che ora dice solo *come* partono le email;
+  fondo a ogni email (500 caratteri). Il mittente si è spostato qui dalla pagina Server di
+  posta elettronica, che ora dice solo *come* partono le email;
 - **le email, per gruppo** (Account e accesso, Iscrizioni, Corso, Incontri dal vivo): per
   ognuna oggetto e testo (1.000 caratteri), con il predefinito in grigio. **Un campo vuoto vale
   il predefinito.** Ogni email si salva da sola, e **«Manda una prova a me»** la spedisce al

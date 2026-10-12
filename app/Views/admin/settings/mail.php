@@ -15,7 +15,7 @@ use App\Core\Csrf;
 ?>
 <div class="page-header">
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
-    <h1>Posta elettronica</h1>
+    <h1>Server di posta elettronica</h1>
     <p class="page-subtitle">
         Come la piattaforma invia le sue email: verifiche dell'indirizzo, recuperi password, avvisi.
         Quello che salvi qui ha la precedenza sul file <code>.env</code>; lasciando un campo vuoto
@@ -48,7 +48,7 @@ use App\Core\Csrf;
         </p>
 
         <p class="form-hint">
-            Il mittente e il testo delle email si impostano nella pagina <a href="/admin/settings/email">Email</a>.
+            Il mittente e il testo delle email si impostano nella pagina <a href="/admin/settings/email">Messaggi email</a>.
         </p>
 
         <h3>Server SMTP</h3>

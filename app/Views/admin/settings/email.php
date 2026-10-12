@@ -7,7 +7,7 @@ use App\Core\Csrf;
 use App\Core\Mail\Modelli;
 
 /**
- * Impostazioni › Email (12/10): i dati comuni a tutte le email, poi ogni
+ * Impostazioni › Messaggi email (12/10): i dati comuni a tutte le email, poi ogni
  * email con il suo testo. La pagina si costruisce da `Modelli::elenco()`:
  * un'email nuova e' una voce in piu' li', non un pezzo di pagina in piu' qui.
  *
@@ -29,11 +29,11 @@ foreach ($elenco as $chiave => $voce) {
 ?>
 <div class="page-header">
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
-    <h1>Email</h1>
+    <h1>Messaggi email</h1>
     <p class="page-subtitle">
         Chi firma le email della piattaforma e che cosa dicono. Un campo lasciato vuoto usa il testo
         predefinito, quello che si legge in grigio. Come partono si imposta in
-        <a href="/admin/settings/posta">Posta elettronica</a>.
+        <a href="/admin/settings/posta">Server di posta elettronica</a>.
     </p>
 </div>
 
@@ -42,7 +42,7 @@ foreach ($elenco as $chiave => $voce) {
 <?php if ($logTransport): ?>
     <p class="empty-state-small">
         L’invio è in modalità “Registro”: i messaggi vengono scritti in <code>storage/mail</code>
-        e non raggiungono nessuno. Si cambia nella pagina <a href="/admin/settings/posta">Posta elettronica</a>.
+        e non raggiungono nessuno. Si cambia nella pagina <a href="/admin/settings/posta">Server di posta elettronica</a>.
     </p>
 <?php endif; ?>
 
@@ -72,7 +72,7 @@ foreach ($elenco as $chiave => $voce) {
                placeholder="no-reply@tuodominio.it">
         <p class="form-hint">
             Usa un indirizzo del dominio da cui partono davvero le email, quello del server impostato in
-            Posta elettronica: un mittente di un altro dominio finisce facilmente nello spam.
+            Server di posta elettronica: un mittente di un altro dominio finisce facilmente nello spam.
             <?php if ($mittenteDaFile): ?>Adesso vale quello del file <code>.env</code>.<?php endif; ?>
         </p>
 

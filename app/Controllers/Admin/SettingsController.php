@@ -51,7 +51,7 @@ class SettingsController extends AdminController
      *
      * Non un sottomenu che si apre nella barra laterale: una pagina funziona
      * senza JavaScript (Sezione 4) e puo' dire a cosa serve ciascuna sezione,
-     * cosa che dai soli nomi non e' ovvia — "Posta elettronica" e "Email"
+     * cosa che dai soli nomi non e' ovvia — "Server di posta elettronica" e "Messaggi email"
      * sembrano la stessa cosa e non lo sono: la prima dice come partono, la
      * seconda che cosa dicono.
      */
@@ -78,7 +78,7 @@ class SettingsController extends AdminController
     }
 
     // ---------------------------------------------------------------
-    // Posta elettronica
+    // Server di posta elettronica
     // ---------------------------------------------------------------
 
     public function mail(array $params = []): void
@@ -86,7 +86,7 @@ class SettingsController extends AdminController
         Auth::requirePermission('settings.manage');
 
         View::render('admin/settings/mail', [
-            'pageTitle' => 'Posta elettronica',
+            'pageTitle' => 'Server di posta elettronica',
             'transport' => strtolower((string) Settings::get('MAIL_TRANSPORT', 'log')),
             'values' => [
                 'MAIL_HOST' => (string) Settings::get('MAIL_HOST', ''),
@@ -222,7 +222,7 @@ class SettingsController extends AdminController
         }
 
         View::render('admin/settings/email', [
-            'pageTitle' => 'Email',
+            'pageTitle' => 'Messaggi email',
             'comuni' => [
                 Modelli::ORGANIZZAZIONE => (string) (Settings::stored(Modelli::ORGANIZZAZIONE) ?? ''),
                 'MAIL_FROM_NAME' => (string) Settings::get('MAIL_FROM_NAME', ''),
@@ -340,7 +340,7 @@ class SettingsController extends AdminController
         );
     }
 
-    /** La vecchia pagina dei testi degli incontri: ora e' un gruppo della pagina Email. */
+    /** La vecchia pagina dei testi degli incontri: ora e' un gruppo della pagina Messaggi email. */
     public function liveMail(array $params = []): void
     {
         Auth::requirePermission('settings.manage');
