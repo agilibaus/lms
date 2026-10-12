@@ -63,6 +63,10 @@ $groups = $ordine->applica($groups);
                 <td role="cell" data-label="Tutor"><?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?></td>
                 <td role="cell" data-label="Membri"><?= (int) $group['member_count'] ?></td>
                 <td role="cell" class="row-actions">
+                    <?php /* La pagina del gruppo, quella che vedono i partecipanti
+                             (12/10): il tutor e l'admin non ne sono membri, e
+                             da qui e' l'unica strada per arrivarci. */ ?>
+                    <a href="/gruppi/<?= (int) $group['id'] ?>">Pagina del gruppo</a>
                     <a href="/reports/groups/<?= (int) $group['id'] ?>">Report</a>
                     <form action="/admin/groups/<?= (int) $group['id'] ?>/delete" method="post"
                           onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">

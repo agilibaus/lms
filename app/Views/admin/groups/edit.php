@@ -28,6 +28,7 @@ $members = $ordineMembri->applica($members);
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         <?= count($members) ?> membri · <?= count($courses) ?> corsi assegnati ·
+        <a href="/gruppi/<?= $groupId ?>">apri la pagina del gruppo</a> ·
         <a href="/reports/groups/<?= $groupId ?>">vedi report</a>
     </p>
 </div>

@@ -2242,6 +2242,39 @@ async function giroBenvenuto(browser) {
         // Il tutor legge «L'esperto risponde» come uno studente (09/10).
         await esamina(tp, '/domande-e-risposte', 'L\'esperto risponde (tutor)', BERSAGLIO_MINIMO, daTelefono);
 
+        // Il tutor arriva alla pagina dei suoi gruppi (12/10): non ne e'
+        // membro, e il profilo non li elenca. Dall'elenco Gruppi, in ogni
+        // riga «Pagina del gruppo»; da Modifica gruppo, in alto. Si segue il
+        // collegamento: la pagina si apre, ed e' quella del gruppo giusto,
+        // con i comandi di chi modera.
+        await esamina(tp, '/admin/groups', 'Gruppi (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        const righeGruppi = await tp.evaluate(() => [...document.querySelectorAll('.data-table tbody tr')].map((tr) => ({
+            gestione: (tr.querySelector('a.group-name') || {}).getAttribute ? tr.querySelector('a.group-name').getAttribute('href') : null,
+            pagina: [...tr.querySelectorAll('.row-actions a')].filter((a) => a.textContent.trim() === 'Pagina del gruppo')
+                .map((a) => a.getAttribute('href'))[0] || null,
+        })));
+        check('nell\'elenco Gruppi del tutor ogni riga porta anche alla pagina del gruppo',
+            righeGruppi.length > 0 && righeGruppi.every((r) => r.pagina !== null
+                && r.gestione === r.pagina.replace('/gruppi/', '/admin/groups/') + '/edit'),
+            [JSON.stringify(righeGruppi)]);
+        await esamina(tp, '/admin/groups/' + seme.gruppo_cerchio + '/edit', 'Modifica gruppo (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        const daModifica = await tp.evaluate(() => {
+            const a = [...document.querySelectorAll('.page-header a')].find((x) => x.textContent.trim() === 'apri la pagina del gruppo');
+            return a ? a.getAttribute('href') : null;
+        });
+        let paginaTutor = null;
+        if (daModifica !== null) {
+            await tp.goto(BASE + daModifica);
+            paginaTutor = await tp.evaluate(() => ({
+                titolo: document.querySelector('h1').textContent.trim(),
+                modera: !!document.querySelector('section.giro form[action$="/domanda"]'),
+            }));
+        }
+        check('da Modifica gruppo il tutor apre la pagina del gruppo, dove pone la domanda',
+            daModifica === '/gruppi/' + seme.gruppo_cerchio && paginaTutor !== null
+                && paginaTutor.titolo === 'Gruppo [prova-permessi] cerchio' && paginaTutor.modera,
+            [JSON.stringify({ daModifica, paginaTutor })]);
+
         await esamina(tp, '/profilo', 'Profilo (tutor)', BERSAGLIO_MINIMO, daTelefono);
         check('nel profilo del tutor c\'è il campo «Email per gli studenti»',
             await tp.locator('input#contact_email').count() === 1);
