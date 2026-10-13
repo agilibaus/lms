@@ -288,9 +288,6 @@ class UserController extends AdminController
     }
 
     /**
-     * Reimpostazione password da parte dello staff.
-     */
-    /**
      * Genera una password temporanea e la manda all'utente.
      *
      * L'admin non la sceglie e non la vede: l'unica copia e' quella

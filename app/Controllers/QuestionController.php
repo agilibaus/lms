@@ -75,7 +75,7 @@ class QuestionController
         // La sezione delle domande si riapre da sola, per far vedere la
         // domanda appena inviata in «Le tue domande» (08/10).
         $_SESSION['domande_aperte'] = true;
-        $this->torna($redirect, 'Domanda inviata al tutor: la trovi in «Le tue domande», in fondo alla pagina.', true);
+        $this->torna($redirect, 'Domanda inviata all\'esperto: la trovi in «Le tue domande», in fondo alla pagina.', true);
     }
 
     /**

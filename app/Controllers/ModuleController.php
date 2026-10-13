@@ -122,15 +122,22 @@ class ModuleController
 
         $this->rifiutaOltreIlLimite('modulo', (int) $module['id'], '/modules/' . (int) $module['id'] . '/edit');
 
-        if ($title !== '') {
-            ModuleModel::update(
-                (int) $module['id'],
-                $title,
-                isset($_POST['quiz_required']),
-                $this->availableFromPost(),
-                $this->objectivePost()
-            );
+        // Un titolo vuoto (solo spazi: il campo e' obbligatorio nel browser)
+        // non si salva, e lo si dice invece di tornare al corso come se fosse
+        // andato tutto bene (13/10).
+        if ($title === '') {
+            $_SESSION['flash_error'] = 'Il titolo del modulo è obbligatorio: le modifiche non sono state salvate.';
+            header('Location: /modules/' . (int) $module['id'] . '/edit');
+            exit;
         }
+
+        ModuleModel::update(
+            (int) $module['id'],
+            $title,
+            isset($_POST['quiz_required']),
+            $this->availableFromPost(),
+            $this->objectivePost()
+        );
 
         header('Location: /courses/' . $module['course_id']);
         exit;

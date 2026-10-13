@@ -155,9 +155,13 @@ class QuizController
 
         $title = trim($_POST['title'] ?? '');
 
-        if ($title !== '') {
-            QuizModel::update((int) $quiz['id'], $title, $this->passingScoreFromPost());
+        // Come per il modulo: un titolo vuoto non si salva, e si dice (13/10).
+        if ($title === '') {
+            $_SESSION['flash_error'] = 'Il titolo del questionario è obbligatorio: le modifiche non sono state salvate.';
+            $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
         }
+
+        QuizModel::update((int) $quiz['id'], $title, $this->passingScoreFromPost());
 
         $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
     }
@@ -487,8 +491,18 @@ class QuizController
         $attemptId = QuizAttemptModel::create((int) Auth::id(), (int) $quiz['id'], $scorePct, $passed, $answers);
 
         if ($passed) {
-            // Superare l'ultimo quiz mancante puo' completare i requisiti del certificato.
-            CertificateService::issueIfEligible((int) Auth::id(), (int) $module['course_id']);
+            // Superare l'ultimo quiz mancante puo' completare i requisiti del
+            // certificato. Un certificato che non si riesce a generare (per
+            // esempio senza Dompdf) non deve far perdere allo studente la
+            // pagina del risultato, con il tentativo gia' salvato (13/10): si
+            // scrive nel log, come nella pagina del corso, che riprova a ogni
+            // visita. La pagina del risultato non mostra avvisi, quindi niente
+            // messaggio in sessione, che comparirebbe poi altrove.
+            try {
+                CertificateService::issueIfEligible((int) Auth::id(), (int) $module['course_id']);
+            } catch (\RuntimeException $e) {
+                error_log('[Certificati] ' . $e->getMessage());
+            }
         }
 
         $this->redirect('/attempts/' . $attemptId);

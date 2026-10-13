@@ -34,6 +34,7 @@ use App\Core\Mail\Message;
 use App\Core\Mail\Transport;
 use App\Models\CertificateModel;
 use App\Models\EnrollmentModel;
+use App\Models\EnrollmentRequestModel;
 use App\Models\LiveSessionModel;
 use App\Models\UserModel;
 
@@ -191,6 +192,15 @@ try {
     check('non il tutor di un gruppo con un altro corso', !in_array('altrotutor' . DOMINIO, $decisori, true));
     check('non un amministratore disattivato', !in_array('adminspento' . DOMINIO, $decisori, true));
     check('non gli studenti', !in_array('anna' . DOMINIO, $decisori, true));
+
+    // Le richieste in attesa contate in Gestione corsi (13/10): il tutor
+    // conta solo quelle dei corsi che puo' gestire.
+    $pdo->prepare("INSERT INTO enrollment_requests (user_id, course_id, status) VALUES (:u, :c, 'pending')")
+        ->execute(['u' => $carla, 'c' => $pubblicato]);
+    check('le richieste in attesa di un corso che si gestisce si contano', EnrollmentRequestModel::countPending([$pubblicato]) === 1);
+    check('quelle di un altro corso no', EnrollmentRequestModel::countPending([$bozza]) === 0);
+    check('senza corsi, nessuna', EnrollmentRequestModel::countPending([]) === 0);
+    check('l\'admin le conta tutte', EnrollmentRequestModel::countPending() >= 1);
 
     // ---------------------------------------------------------------
     echo PHP_EOL . 'Il promemoria degli incontri' . PHP_EOL;

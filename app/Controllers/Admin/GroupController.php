@@ -242,6 +242,10 @@ class GroupController extends AdminController
 
         GroupModel::delete((int) $group['id']);
 
+        // Il logo va via con il gruppo (13/10), come fa «Rimuovi immagine» e
+        // come la foto di un utente eliminato: nessuna riga lo nomina piu'.
+        GroupLogo::delete(!empty($group['logo_path']) ? (string) $group['logo_path'] : null);
+
         $this->success('Gruppo eliminato. Le iscrizioni ai corsi restano attive.', '/admin/groups');
     }
 

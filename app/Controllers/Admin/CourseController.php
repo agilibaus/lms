@@ -57,7 +57,10 @@ class CourseController extends AdminController
             'courses' => CourseModel::allForStaff(),
             'canCreate' => Auth::can('course.create'),
             'canDelete' => Auth::can('course.delete'),
-            'pendingRequests' => EnrollmentRequestModel::countPending(),
+            // Solo le richieste dei corsi che chi guarda puo' gestire (13/10):
+            // un tutor non deve leggere richieste che non puo' ne' vedere ne'
+            // decidere. Per l'admin `editableCourseIds()` e' null, cioe' tutte.
+            'pendingRequests' => EnrollmentRequestModel::countPending(CourseRights::editableCourseIds()),
         ]);
     }
 
@@ -177,6 +180,12 @@ class CourseController extends AdminController
             $this->notFound('Corso non trovato.');
             return;
         }
+
+        // Come ogni altra modifica di un corso: il permesso non basta, il
+        // corso dev'essere fra quelli che si possono modificare (13/10). Oggi
+        // `course.delete` ce l'ha solo l'admin, che li modifica tutti; se un
+        // giorno lo avesse anche il tutor, cancellerebbe solo i suoi.
+        CourseRights::requireEdit((int) $course['id']);
 
         // Moduli, lezioni, iscrizioni, tentativi e certificati vengono eliminati
         // a cascata: i file caricati in /storage restano invece su disco.

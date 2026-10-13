@@ -132,9 +132,6 @@ class CourseRights
     // ---------------------------------------------------------------
 
     /**
-     * @return int[]
-     */
-    /**
      * I corsi che un tutor puo' modificare, **senza passare dalla
      * sessione**.
      *
@@ -151,6 +148,9 @@ class CourseRights
         return self::tutorCourseIds($tutorId);
     }
 
+    /**
+     * @return int[]
+     */
     private static function tutorCourseIds(int $tutorId): array
     {
         if (!isset(self::$cache[$tutorId])) {

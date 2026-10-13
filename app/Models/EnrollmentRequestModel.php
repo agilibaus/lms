@@ -108,10 +108,30 @@ class EnrollmentRequestModel
         )->fetchAll();
     }
 
-    public static function countPending(): int
+    /**
+     * Le richieste in attesa, di tutti i corsi (`null`) o solo di quelli
+     * indicati: i corsi che chi guarda puo' gestire (13/10).
+     *
+     * @param list<int>|null $courseIds
+     */
+    public static function countPending(?array $courseIds = null): int
     {
-        return (int) Database::connection()
-            ->query("SELECT COUNT(*) FROM enrollment_requests WHERE status = 'pending'")
-            ->fetchColumn();
+        if ($courseIds === null) {
+            return (int) Database::connection()
+                ->query("SELECT COUNT(*) FROM enrollment_requests WHERE status = 'pending'")
+                ->fetchColumn();
+        }
+
+        if ($courseIds === []) {
+            return 0;
+        }
+
+        $segnaposto = implode(',', array_fill(0, count($courseIds), '?'));
+        $stmt = Database::connection()->prepare(
+            "SELECT COUNT(*) FROM enrollment_requests WHERE status = 'pending' AND course_id IN ($segnaposto)"
+        );
+        $stmt->execute(array_map('intval', array_values($courseIds)));
+
+        return (int) $stmt->fetchColumn();
     }
 }
