@@ -633,6 +633,57 @@ const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])'
  * collegamento.
  */
 /**
+ * Le larghezze dei campi (13/10, Alessandro): un'area di testo arriva a
+ * 780px, o a tutto il form se e' piu' stretto (il telefono, la scheda del
+ * catalogo, un riquadro rientrato); un campo di una riga, o una scelta, si
+ * ferma a 520. Il form
+ * della lezione non conta: la sua misura e' quella dell'editor. Null se la
+ * pagina non ha aree di testo ne' campi in un form.
+ */
+async function larghezzeCampi(page) {
+    return page.evaluate(() => {
+        const visibile = (e) => e.checkVisibility() && e.getBoundingClientRect().width > 0;
+        const aree = [...document.querySelectorAll('textarea')]
+            .filter((t) => t.closest('.lesson-form') === null && visibile(t));
+        const righe = [...document.querySelectorAll('form.form, form.stacked-form:not(.lesson-form)')]
+            .filter((f) => f.closest('.lesson-form') === null)
+            .flatMap((f) => [...f.querySelectorAll('input:not([type="hidden"], [type="checkbox"], [type="radio"], [type="file"], [type="submit"], [type="button"]), select')])
+            .filter(visibile);
+
+        if (aree.length === 0 && righe.length === 0) {
+            return null;
+        }
+
+        const male = [];
+
+        for (const t of aree) {
+            // Lo spazio e' quello di chi contiene il campo (o il suo
+            // contenitore con il contatore): in Aspetto e' un riquadro
+            // rientrato dentro il form.
+            const f = (t.closest('.quiz-open-wrap') || t).parentElement;
+            const st = getComputedStyle(f);
+            const spazio = f.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight);
+            const w = t.getBoundingClientRect().width;
+            const atteso = Math.min(780, spazio);
+
+            if (Math.abs(w - atteso) > 1) {
+                male.push((t.id || t.name) + ': larga ' + Math.round(w) + ' px, attesi ' + Math.round(atteso));
+            }
+        }
+
+        for (const c of righe) {
+            const w = c.getBoundingClientRect().width;
+
+            if (w > 520.5) {
+                male.push((c.id || c.name) + ': campo di una riga largo ' + Math.round(w) + ' px, oltre 520');
+            }
+        }
+
+        return male;
+    });
+}
+
+/**
  * Un campo di testo con un limite ha sempre il contatore (10/10, la regola
  * del promemoria resa un controllo): un'area di testo con `maxlength` deve
  * essere `.quiz-open-answer` e avere il contatore come prima descrizione.
@@ -846,6 +897,11 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     const senzaContatore = await campiSenzaContatore(page);
     if (senzaContatore !== null) {
         check(nome + ': ogni campo di testo con un limite ha il contatore', senzaContatore.length === 0, senzaContatore);
+    }
+
+    const larghezze = await larghezzeCampi(page);
+    if (larghezze !== null) {
+        check(nome + ': aree di testo fino a 780 px, campi di una riga fino a 520', larghezze.length === 0, larghezze);
     }
 
     const indietro = await collegamentoIndietro(page);

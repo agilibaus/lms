@@ -1876,8 +1876,15 @@ form.form + form {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    max-width: 520px;
+    max-width: 780px;
     margin-bottom: 1.5rem;
+}
+
+/* Il form arriva a 780px per l'area di testo (l'obiettivo del modulo, 13/10);
+   tutto il resto si ferma a 520 come prima. Il form della lezione ha la sua
+   misura, quella dell'editor, e non e' toccato. */
+.stacked-form:not(.lesson-form) > :not(.quiz-open-wrap, textarea, .tag-consentiti) {
+    max-width: 520px;
 }
 
 /* Le etichette dei campi sono testo da leggere, non decorazione.
@@ -2874,19 +2881,22 @@ body.has-focus-video {
 .form input[type="time"],
 .form input[type="datetime-local"],
 .form input[type="url"],
-.form select,
-.form textarea {
+.form select {
     width: 100%;
     max-width: 520px;
 }
 
-/* Un campo con il contatore sopra (la presentazione del profilo) sta in un
-   contenitore, e il contatore si allinea al bordo destro del contenitore:
-   il contenitore deve fermarsi dove si ferma il campo, o su un computer il
-   numero finisce a mezza pagina di distanza. */
-.form .quiz-open-wrap {
-    max-width: 520px;
+/* Le aree di testo arrivano a 780px (13/10, Alessandro): a 520 un obiettivo
+   o il testo di un'email si scrivono in una colonna stretta, a tutta
+   larghezza su un computer sono quasi 1000px, e una riga cosi' lunga si
+   rilegge male. I campi di una riga restano a 520: un nome o un indirizzo
+   non hanno bisogno di piu' spazio. Sul telefono tutti prendono la
+   larghezza dello schermo, come prima. */
+.form textarea {
+    width: 100%;
+    max-width: 780px;
 }
+
 
 /* Nel profilo l'etichetta sta sulla stessa riga del contatore: a sinistra
    il nome del campo, a destra quanto resta, e sotto subito il campo. La
@@ -3979,6 +3989,7 @@ fieldset.checkbox-group legend {
 .quiz-open-wrap {
     display: flex;
     flex-direction: column;
+    max-width: 780px;
     margin-top: 0.5rem;
 }
 

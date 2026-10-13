@@ -1632,6 +1632,23 @@ passano.
 > quelle interne il carattere di sistema, e due caratteri diversi alla stessa dimensione
 > danno righe alte 17 e 18 px. È una differenza del carattere, non del foglio di stile.
 
+### Larghezza dei campi: 520 e 780
+
+**Le aree di testo arrivano a 780 px, i campi di una riga e le scelte a 520** (13/10). A 520
+un obiettivo, una descrizione o il testo di un'email si scrivevano in una colonna stretta; a
+tutta larghezza su un computer sarebbero quasi 1000 px, e una riga così lunga si rilegge male.
+Vale in tutta la piattaforma: corso (obiettivo, descrizione, benvenuto), modulo (obiettivo),
+gruppo e incontro (descrizione), profilo (presentazione), Messaggi email (chiusura e testi),
+Aspetto, domande all'esperto, giro del cerchio, risposte aperte nei questionari. Sul telefono,
+e dove il riquadro è più stretto (la scheda del catalogo), l'area prende tutto lo spazio che
+c'è, come prima. Il contatore resta sul bordo destro del campo.
+
+Il form del modulo (`.stacked-form`) arriva a 780 per l'obiettivo, ma tutto il resto — titolo,
+casella del questionario, data, pulsanti — si ferma a 520 come prima. Il form della lezione ha
+la misura dell'editor e non cambia. `accessibilita.js` controlla su ogni pagina che ogni area
+di testo sia larga 780 px, o quanto il suo form se è più stretto, e che nessun campo di una riga
+superi 520.
+
 ## Ritocchi ai singoli elementi
 
 **Amministrazione → Aspetto → Solo le pagine pubbliche → Ritocchi ai singoli elementi.** Sei
