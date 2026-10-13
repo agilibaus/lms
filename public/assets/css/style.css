@@ -5715,7 +5715,6 @@ details[open] > summary .obiettivo-se-aperto {
     align-items: center;
     flex: 0 0 auto;
     min-height: var(--tap-target);
-    margin-left: auto;
     color: var(--color-primary);
     font-size: 0.9rem;
     font-weight: 600;
@@ -5725,8 +5724,24 @@ details[open] > summary .obiettivo-se-aperto {
     white-space: nowrap;
 }
 
-.lesson-list-item.da-qui > .badge + .da-qui-comando {
-    margin-left: 0;
+/* Sulla riga verde l'etichetta ha lo stesso fondo della riga, e si leggeva
+   come testo semplice: qui ha il fondo bianco (13/10, Alessandro). */
+.lesson-list-item.da-qui > .badge {
+    background: var(--color-surface);
+}
+
+/* Nella riga del questionario non c'e' un titolo che spinga: il comando va a
+   destra da solo. */
+.module-quiz-row .da-qui-comando {
+    margin-left: auto;
+}
+
+/* Le etichette («video», «superato») centrate sulla riga (13/10): il margine
+   in alto di `.badge`, pensato per le schede, qui le abbassava di 4 px
+   rispetto al titolo e al comando — misurato. */
+.lesson-list-item .badge,
+.module-quiz-row .badge {
+    margin-top: 0;
 }
 
 /* Una griglia: la spunta, il titolo, lo stato, il comando. Sul telefono lo

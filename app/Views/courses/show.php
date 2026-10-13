@@ -328,11 +328,13 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                         <?php endif; ?>
                                         <?= htmlspecialchars($lesson['title']) ?>
                                     </a>
-                                    <?php if ($lesson['video_provider'] !== 'none'): ?>
-                                        <span class="badge badge-video">video</span>
-                                    <?php endif; ?>
+                                    <?php /* Il comando prima dell'etichetta: «video» resta sul
+                                             bordo destro, in colonna con le altre righe (13/10). */ ?>
                                     <?php if ($daQui): ?>
                                         <a class="da-qui-comando" href="/lessons/<?= (int) $lesson['id'] ?>"><?= $ripresa['fatte'] > 0 ? 'Riprendi da qui' : 'Inizia da qui' ?></a>
+                                    <?php endif; ?>
+                                    <?php if ($lesson['video_provider'] !== 'none'): ?>
+                                        <span class="badge badge-video">video</span>
                                     <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
