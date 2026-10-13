@@ -1385,7 +1385,7 @@ EXTRA['Corso con obiettivi, da staff (semina)'] = async (page, nome) => {
         ridotti: document.querySelectorAll('details.obiettivo-ridotto, details.obiettivo-modulo-ridotto').length,
         moduli: [...document.querySelectorAll('.module-card')].map((m) => !!m.querySelector(':scope > .obiettivo-modulo')),
         // La gerarchia dei moduli (11/10) e' solo per lo studente.
-        gerarchia: document.querySelectorAll('.moduli-barra, details.modulo-riga, .etichetta-modulo, .riprendi, .modulo-in-corso').length,
+        gerarchia: document.querySelectorAll('.moduli-barra, details.modulo-riga, .etichetta-modulo, .lezioni-fatte, .da-qui, .modulo-in-corso').length,
     }));
     check(nome + ': obiettivo del corso e di ogni modulo completi', stato.corso === 1 && stato.ridotti === 0
         && stato.moduli.length === 3 && stato.moduli.every(Boolean), [JSON.stringify(stato)]);
@@ -1862,7 +1862,8 @@ async function giroBenvenuto(browser) {
             [JSON.stringify(obiettivi)]);
 
         // La gerarchia dei moduli (11/10). Lo studente non ha fatto niente:
-        // il primo modulo e' in corso, con «In corso» e «Inizia da…»; quello
+        // il primo modulo e' in corso, con «In corso», «0 di 1 lezioni fatte»
+        // e, sulla riga della lezione, «Inizia da qui» (13/10); quello
         // chiuso e' il prossimo, aperto, con «Prossimo» e la data; il terzo e'
         // una riga «1 lezione» che si apre. Sopra, «3 moduli · 0 completati»
         // e «Mostra tutti i moduli».
@@ -1870,15 +1871,19 @@ async function giroBenvenuto(browser) {
             const carte = [...document.querySelectorAll('.module-card')];
             const riga = document.querySelector('details.modulo-riga:not([open])');
             const barra = document.querySelector('.moduli-barra');
-            const riprendi = carte[0] ? carte[0].querySelector('.riprendi') : null;
+            const conto = carte[0] ? carte[0].querySelector('.lezioni-fatte') : null;
+            const daQui = carte[0] ? carte[0].querySelector('.lesson-list-item.da-qui') : null;
             return {
                 barra: barra ? barra.querySelector('span').textContent.replace(/\s+/g, ' ').trim() : null,
                 comando: barra && barra.querySelector('.moduli-comando') ? barra.querySelector('.moduli-comando').textContent.trim() : null,
                 carte: carte.length,
                 inCorso: carte[0] ? carte[0].classList.contains('modulo-in-corso')
                     && carte[0].querySelector('h2 .etichetta-modulo').textContent.trim() === 'In corso' : false,
-                riprendi: riprendi ? riprendi.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : null,
-                riprendiVa: riprendi ? !!riprendi.querySelector('a[href^="/lessons/"]') : false,
+                conto: conto ? conto.textContent.replace(/\s+/g, ' ').trim() : null,
+                daQui: daQui ? (daQui.querySelector('a.da-qui-comando') || {}).textContent : null,
+                daQuiVa: daQui ? daQui.querySelector('a.da-qui-comando').getAttribute('href')
+                    === daQui.querySelector('a:not(.da-qui-comando)').getAttribute('href') : false,
+                riquadro: document.querySelectorAll('.riprendi').length,
                 prossimo: carte[1] ? carte[1].querySelector('h2 .etichetta-modulo').textContent.trim() : null,
                 prossimoChiuso: carte[1] ? carte[1].classList.contains('module-locked') : false,
                 riga: riga ? riga.querySelector('.modulo-riga-stato').textContent.trim() : null,
@@ -1886,9 +1891,10 @@ async function giroBenvenuto(browser) {
                 rigaLezioneVisibile: riga ? riga.querySelector('.lesson-list').checkVisibility() : null,
             };
         });
-        check('gerarchia: il primo modulo «In corso» con «Inizia da…», il chiuso «Prossimo», il terzo una riga',
-            gerarchiaModuli.carte === 2 && gerarchiaModuli.inCorso && gerarchiaModuli.riprendiVa
-                && /^Inizia da: .+ · 0 di 1 fatte$/.test(gerarchiaModuli.riprendi || '')
+        check('gerarchia: il primo modulo «In corso» con «Inizia da qui» sulla lezione, il chiuso «Prossimo», il terzo una riga',
+            gerarchiaModuli.carte === 2 && gerarchiaModuli.inCorso && gerarchiaModuli.daQuiVa
+                && gerarchiaModuli.conto === '0 di 1 lezioni fatte' && (gerarchiaModuli.daQui || '').trim() === 'Inizia da qui'
+                && gerarchiaModuli.riquadro === 0
                 && gerarchiaModuli.prossimo === 'Prossimo' && gerarchiaModuli.prossimoChiuso
                 && gerarchiaModuli.riga === '1 lezione' && gerarchiaModuli.rigaComando === 'Mostra' && gerarchiaModuli.rigaLezioneVisibile === false,
             [JSON.stringify(gerarchiaModuli)]);

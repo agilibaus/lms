@@ -1037,10 +1037,13 @@ degli altri, e quando lo finisce conta il successivo. **Una regola sola**, che s
 numero dei moduli (`App\Core\Percorso`):
 
 - **In corso**: il primo modulo in cui resta una lezione da completare o un questionario da
-  superare, anche se chiuso. Aperto, con il bordo verde, «In corso» accanto al titolo e «Riprendi
-  da: … · 1 di 3 fatte» con il pulsante («Inizia da…» se nel modulo non ha fatto ancora niente).
-  Il conto è sulle lezioni, non sul questionario; con le lezioni tutte fatte resta «Ti resta il
-  questionario».
+  superare, anche se chiuso. Aperto, con il bordo verde e «In corso» accanto al titolo. Sopra
+  l'elenco delle lezioni, piccolo e grigio, «1 di 3 lezioni fatte»; nell'elenco la lezione da cui
+  riprendere ha il fondo verde chiaro e, a destra, **«Riprendi da qui»** («Inizia da qui» se nel
+  modulo non ha fatto ancora niente). Con le lezioni tutte fatte lo stesso segno passa alla riga
+  del questionario, con **«Fallo ora»** (13/10, Alessandro, variante C del mockup: prima c'era un
+  riquadro «Riprendi da: …» con un pulsante, e il modulo in corso era troppo denso). Il conto è
+  sulle lezioni, non sul questionario.
 - **Prossimo**: il primo modulo non completato dopo quello in corso. Aperto, con «Prossimo»,
   anche se chiuso per data: si vede quando si apre.
 - **Completato**: lezioni completate e questionario superato. Una riga, «✓ … completato · 3
@@ -1056,7 +1059,7 @@ che apre tutto per quella visita (`?moduli=tutti`, quindi anche senza JavaScript
 ricorda. A corso finito non c'è un modulo in corso: sono tutte righe «completato». **Lo staff vede
 tutto aperto**, senza etichette né «Riprendi».
 
-`tests/percorso_test.php` prova gli stati e «Riprendi da»; `accessibilita.js`, nel giro da
+`tests/percorso_test.php` prova gli stati e da quale lezione riprendere; `accessibilita.js`, nel giro da
 studente, il modulo in corso, il prossimo chiuso, la riga che si apre e «Mostra tutti i moduli»;
 da staff, che non ci sia niente di tutto questo. La semina aggiunge al corso del mondo A un terzo
 modulo, che per lo studente è una riga.

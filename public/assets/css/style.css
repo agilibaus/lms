@@ -5680,21 +5680,53 @@ details[open] > summary .obiettivo-se-aperto {
     font-weight: 600;
 }
 
-.riprendi {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.6rem 1rem;
-    margin: 0.5rem 0 0.4rem;
-    padding: 0.6rem 0.8rem;
-    border-radius: var(--radius-md);
-    background: var(--color-primary-soft);
-    font-size: 0.92rem;
+/* Dove riprendere, nel modulo in corso (13/10, variante C): il conto delle
+   lezioni sopra l'elenco, piccolo e grigio, e nell'elenco la riga da cui
+   riprendere (o quella del questionario, se manca solo lui) su fondo verde
+   chiaro, con il comando a destra. Il fondo da solo non basta a dirlo: lo
+   dice la parola. */
+.lezioni-fatte {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
 }
 
-.riprendi p {
-    margin: 0;
+.lezioni-fatte + .lesson-list {
+    margin-top: 0.3rem;
+}
+
+.lesson-list-item.da-qui,
+.module-quiz-row.da-qui {
+    background: var(--color-primary-soft);
+}
+
+.lesson-list-item.da-qui {
+    justify-content: flex-start;
+    gap: 0.8rem;
+}
+
+.lesson-list-item.da-qui > a:not(.da-qui-comando) {
+    margin-right: auto;
+}
+
+.lesson-list-item .da-qui-comando,
+.module-quiz-row .da-qui-comando {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-height: var(--tap-target);
+    margin-left: auto;
+    color: var(--color-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    white-space: nowrap;
+}
+
+.lesson-list-item.da-qui > .badge + .da-qui-comando {
+    margin-left: 0;
 }
 
 /* Una griglia: la spunta, il titolo, lo stato, il comando. Sul telefono lo

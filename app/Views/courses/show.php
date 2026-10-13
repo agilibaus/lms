@@ -260,27 +260,20 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                     <?php endif; ?>
                 <?php endif; ?>
 
-                <?php /* «Riprendi da…» nel modulo in corso (11/10): la prima
-                         lezione non completata; il conto e' sulle lezioni, non
-                         sul questionario. Con le lezioni tutte fatte resta il
-                         questionario. In un modulo chiuso niente: c'e' la data. */ ?>
+                <?php /* Dove riprendere, nel modulo in corso (13/10, Alessandro,
+                         variante C del mockup): niente riquadro sopra
+                         l'elenco. Sopra le lezioni il conto, piccolo e grigio;
+                         nell'elenco la lezione da cui riprendere, su fondo
+                         verde chiaro, con «Riprendi da qui» (o «Inizia da qui»
+                         se nel modulo non ha fatto ancora niente). Con le
+                         lezioni tutte fatte resta il questionario: la sua riga
+                         ha lo stesso segno, con «Fallo ora». Il conto e' sulle
+                         lezioni, non sul questionario. In un modulo chiuso
+                         niente: c'e' la data. */ ?>
+                <?php $ripresa = null; $restaQuestionario = false; ?>
                 <?php if ($stato === Percorso::IN_CORSO && !$isLocked): ?>
                     <?php $ripresa = Percorso::riprendi($lessonsByModule[$moduleId] ?? [], $completedLessonIds); ?>
-                    <?php if ($ripresa !== null): ?>
-                        <?php $verbo = $ripresa['fatte'] > 0 ? 'Riprendi' : 'Inizia'; ?>
-                        <div class="riprendi">
-                            <p>
-                                <?= $verbo ?> da: <strong><?= htmlspecialchars((string) $ripresa['lezione']['title']) ?></strong>
-                                · <?= $ripresa['fatte'] ?> di <?= $ripresa['totale'] ?> fatte
-                            </p>
-                            <a class="btn btn-primary" href="/lessons/<?= (int) $ripresa['lezione']['id'] ?>"><?= $verbo ?></a>
-                        </div>
-                    <?php elseif ($quiz !== null): ?>
-                        <div class="riprendi">
-                            <p>Lezioni completate · <?= $nLezioni ?> di <?= $nLezioni ?>. Ti resta il questionario.</p>
-                            <a class="btn btn-primary" href="/quizzes/<?= (int) $quiz['id'] ?>">Questionario</a>
-                        </div>
-                    <?php endif; ?>
+                    <?php $restaQuestionario = $ripresa === null && $quiz !== null; ?>
                 <?php endif; ?>
 
                 <?php if ($lockedByDate): ?>
@@ -301,9 +294,16 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                     <?php if (empty($lessons)): ?>
                         <p class="empty-state-small">Nessuna lezione in questo modulo.</p>
                     <?php else: ?>
+                        <?php if ($ripresa !== null || $restaQuestionario): ?>
+                            <p class="lezioni-fatte">
+                                <?= $ripresa !== null ? $ripresa['fatte'] . ' di ' . $ripresa['totale'] : $nLezioni . ' di ' . $nLezioni ?>
+                                lezioni fatte
+                            </p>
+                        <?php endif; ?>
                         <ul class="lesson-list">
                             <?php foreach ($lessons as $lessonIndex => $lesson): ?>
-                                <li class="lesson-list-item">
+                                <?php $daQui = $ripresa !== null && (int) $ripresa['lezione']['id'] === (int) $lesson['id']; ?>
+                                <li class="lesson-list-item<?= $daQui ? ' da-qui' : '' ?>">
                                     <?php if ($isStaff): ?>
                                         <span class="order-actions">
                                             <form action="/lessons/<?= (int) $lesson['id'] ?>/move" method="post">
@@ -331,13 +331,16 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                     <?php if ($lesson['video_provider'] !== 'none'): ?>
                                         <span class="badge badge-video">video</span>
                                     <?php endif; ?>
+                                    <?php if ($daQui): ?>
+                                        <a class="da-qui-comando" href="/lessons/<?= (int) $lesson['id'] ?>"><?= $ripresa['fatte'] > 0 ? 'Riprendi da qui' : 'Inizia da qui' ?></a>
+                                    <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
                     <?php endif; ?>
 
                     <?php if ($quiz !== null): ?>
-                        <p class="module-quiz-row">
+                        <p class="module-quiz-row<?= $restaQuestionario ? ' da-qui' : '' ?>">
                             <?php if ($isStaff): ?>
                                 <?php /* Lo scalino delle frecce di riordino, che
                                          il quiz non ha: ce n'e' uno solo per
@@ -352,6 +355,9 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                             </a>
                             <?php if (!empty($quizPassedByModule[$moduleId])): ?>
                                 <span class="badge badge-success">superato</span>
+                            <?php endif; ?>
+                            <?php if ($restaQuestionario): ?>
+                                <a class="da-qui-comando" href="/quizzes/<?= (int) $quiz['id'] ?>">Fallo ora</a>
                             <?php endif; ?>
                         </p>
                     <?php endif; ?>
