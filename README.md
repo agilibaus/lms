@@ -611,18 +611,29 @@ chiama e manda sempre `X-Content-Type-Options: nosniff`. Allegati, immagini, fot
 loghi e audio del benvenuto erano già così. E il video, come gli allegati, non si scarica più
 da un modulo ancora chiuso.
 
-**I tentativi di accesso hanno un limite.** Si potevano provare password a ripetizione sullo
-stesso account. Ora (`App\Core\TentativiAccesso`, tabella `login_failures`), nell'arco di un
-quarto d'ora, **10 password sbagliate per lo stesso indirizzo** lo fermano da qualunque IP, e
-**50 dallo stesso IP** fermano quell'IP qualunque indirizzo provi (di più, perché dietro lo
-stesso IP possono esserci più persone). Chi è fermato legge «Troppi tentativi di accesso con
-password sbagliata. Riprova fra 12 minuti, oppure reimposta la password», e intanto nemmeno la
-password giusta apre: continuare a provare non serve. Il blocco finisce da solo; chi entra
-azzera i suoi errori. Contano solo le password sbagliate, e gli indirizzi che non esistono
-contano come gli altri, per non dire quali sono registrati. Un rovescio da sapere: chi conosce
-l'indirizzo di qualcuno può tenerlo fuori per un quarto d'ora sbagliando apposta; resta aperta
-la reimpostazione della password. `tests/accesso_test.php` prova i conti, `permessi.js` il
-giro vero dalla pagina d'accesso.
+**I tentativi di accesso hanno un limite** (`App\Core\TentativiAccesso`, tabella
+`login_failures`). Si potevano provare password a ripetizione sullo stesso account. Ora:
+
+- **5 password sbagliate per lo stesso indirizzo, nell'arco di un'ora, bloccano l'account per
+  un'ora** (13/10, Alessandro), da qualunque IP arrivino. L'avviso a schermo cambia con i
+  tentativi: le prime due volte «Email o password non corretti.»; la terza e la quarta aggiunge
+  «Ancora 2 tentativi, poi l'account si blocca per un'ora.» (poi «Ancora 1 tentativo»); alla
+  quinta «Per sicurezza l'account è bloccato per un'ora: la password è stata sbagliata 5 volte.
+  Riprova fra 60 minuti, oppure reimposta la password con «Password dimenticata?».». Durante il
+  blocco nemmeno la password giusta apre, e i tentativi non si contano: il blocco finisce
+  un'ora dopo la quinta, e si riparte da zero.
+- **Si sblocca prima** reimpostando la password dal link dell'email, o quando l'admin manda una
+  password temporanea dalla scheda dell'utente. Chi entra con la password giusta azzera i suoi
+  errori.
+- **50 password sbagliate dallo stesso IP in un quarto d'ora** fermano quell'IP, qualunque
+  indirizzo provi: è il limite contro chi prova tanti account, più alto perché dietro lo stesso
+  IP possono esserci più persone.
+
+Contano solo le password sbagliate, e gli indirizzi che non esistono ricevono gli stessi avvisi,
+per non dire quali sono registrati. Un rovescio da sapere: chi conosce l'indirizzo di qualcuno
+può bloccargli l'account per un'ora sbagliando apposta; resta aperta la reimpostazione della
+password. `tests/accesso_test.php` prova i conti e gli avvisi, `permessi.js` il giro vero dalla
+pagina d'accesso fino allo sblocco con la reimpostazione.
 
 **Il cookie di sessione è protetto** (`App\Core\Sessione`, anche nella procedura di
 installazione): **HttpOnly**, così JavaScript non lo legge; **SameSite=Lax**, così un altro sito
@@ -1402,7 +1413,7 @@ php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, sp
 php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
 php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
 php tests/giro_test.php             # pagina del gruppo: chi pone, risponde e modera; domanda aperta e archivio; «Ci sarò»
-php tests/accesso_test.php          # limite ai tentativi di accesso (indirizzo e IP, fine del blocco) e cookie di sessione protetto
+php tests/accesso_test.php          # limite ai tentativi di accesso (5 per account, avvisi, blocco di un'ora; IP) e cookie di sessione protetto
 php tests/csv_test.php              # CSV: i testi-formula escono con l'apostrofo, numeri e telefoni come sono
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php

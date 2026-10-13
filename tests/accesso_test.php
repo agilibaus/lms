@@ -5,9 +5,11 @@ declare(strict_types=1);
 /**
  * Test dell'accesso protetto (13/10, verifica di sicurezza):
  *
- *   - il limite ai tentativi (`App\Core\TentativiAccesso`): dieci password
- *     sbagliate per indirizzo, cinquanta per IP, nel quarto d'ora; il blocco
- *     finisce da solo e chi entra azzera i suoi errori;
+ *   - il limite ai tentativi (`App\Core\TentativiAccesso`): cinque password
+ *     sbagliate per indirizzo nell'ora bloccano l'account per un'ora, con
+ *     l'avviso dei tentativi che restano dalla terza; cinquanta per IP nel
+ *     quarto d'ora fermano l'IP; il blocco finisce da solo e chi entra
+ *     azzera i suoi errori;
  *   - il cookie di sessione (`App\Core\Sessione`): HttpOnly e SameSite
  *     sempre, Secure in https.
  *
@@ -69,37 +71,64 @@ $pulisci();
 
 try {
     $chi = 'Anna@Prova-Accesso.invalid';
-
-    for ($i = 1; $i < TentativiAccesso::MAX_PER_INDIRIZZO; $i++) {
+    $err = static function () use ($chi): string {
         TentativiAccesso::registraErrore($chi, IP_A);
+
+        return TentativiAccesso::avvisoErrore($chi, IP_A);
+    };
+
+    check('prima password sbagliata: l\'avviso di sempre', $err() === 'Email o password non corretti.');
+    check('seconda: ancora l\'avviso di sempre', $err() === 'Email o password non corretti.');
+    $terza = $err();
+    check('terza: restano 2 tentativi', str_contains($terza, 'Ancora 2 tentativi, poi l’account si blocca per un’ora.'), $terza);
+    $quarta = $err();
+    check('quarta: resta 1 tentativo', str_contains($quarta, 'Ancora 1 tentativo,'), $quarta);
+    check('fin qui si puo\' ancora provare', TentativiAccesso::blocco($chi, IP_A) === null);
+
+    $quinta = $err();
+    check('quinta: l\'avviso dice che l\'account e\' bloccato per un\'ora',
+        str_contains($quinta, 'l’account è bloccato per un’ora') && str_contains($quinta, 'fra 60 minuti'), $quinta);
+    $blocco = TentativiAccesso::blocco($chi, IP_A);
+    check('l\'account e\' bloccato per un\'ora', $blocco === ['motivo' => TentativiAccesso::ACCOUNT, 'minuti' => 60],
+        var_export($blocco, true));
+    check('anche da un altro IP', (TentativiAccesso::blocco($chi, IP_B)['minuti'] ?? null) === 60);
+    check('maiuscole e spazi non cambiano l\'indirizzo', (TentativiAccesso::blocco('  anna@prova-accesso.INVALID ', IP_B)['minuti'] ?? null) === 60);
+    check('un altro indirizzo dallo stesso IP no', TentativiAccesso::blocco('bruno@prova-accesso.invalid', IP_A) === null);
+
+    // Il blocco dura un'ora dalla quinta: si invecchiano le righe invece di
+    // aspettare.
+    $pdo->prepare("UPDATE login_failures SET created_at = created_at - INTERVAL 59 MINUTE WHERE email = 'anna@prova-accesso.invalid'")->execute();
+    check('dopo 59 minuti manca 1 minuto', (TentativiAccesso::blocco($chi, IP_A)['minuti'] ?? null) === 1);
+    $pdo->prepare("UPDATE login_failures SET created_at = created_at - INTERVAL 2 MINUTE WHERE email = 'anna@prova-accesso.invalid'")->execute();
+    check('dopo un\'ora il blocco e\' finito', TentativiAccesso::blocco($chi, IP_A) === null);
+    check('e si riparte da zero', TentativiAccesso::restano($chi) === 5 && $err() === 'Email o password non corretti.');
+
+    // Cinque errori sparsi nell'ora bloccano lo stesso; quelli di piu' di
+    // un'ora fa non contano.
+    TentativiAccesso::azzera($chi);
+    $pdo->prepare("INSERT INTO login_failures (email, ip, created_at) VALUES ('anna@prova-accesso.invalid', :ip, NOW() - INTERVAL 70 MINUTE)")
+        ->execute(['ip' => IP_A]);
+    for ($i = 0; $i < 4; $i++) {
+        $pdo->prepare("INSERT INTO login_failures (email, ip, created_at) VALUES ('anna@prova-accesso.invalid', :ip, NOW() - INTERVAL :m MINUTE)")
+            ->execute(['ip' => IP_A, 'm' => 50 - $i * 10]);
     }
-    check('nove password sbagliate: si puo\' ancora provare', TentativiAccesso::minutiDiBlocco($chi, IP_A) === null);
+    check('quattro errori nell\'ultima ora e uno piu\' vecchio: nessun blocco, resta 1 tentativo',
+        TentativiAccesso::blocco($chi, IP_A) === null && TentativiAccesso::restano($chi) === 1);
+    $err();
+    check('il quinto nell\'ora blocca, per un\'ora da adesso', (TentativiAccesso::blocco($chi, IP_A)['minuti'] ?? null) === 60);
 
-    TentativiAccesso::registraErrore($chi, IP_A);
-    $minuti = TentativiAccesso::minutiDiBlocco($chi, IP_A);
-    check('alla decima l\'indirizzo e\' fermato per un quarto d\'ora', $minuti === 15, var_export($minuti, true));
-    check('anche da un altro IP', TentativiAccesso::minutiDiBlocco($chi, IP_B) === 15);
-    check('maiuscole e spazi non cambiano l\'indirizzo', TentativiAccesso::minutiDiBlocco('  anna@prova-accesso.INVALID ', IP_B) === 15);
-    check('un altro indirizzo dallo stesso IP no', TentativiAccesso::minutiDiBlocco('bruno@prova-accesso.invalid', IP_A) === null);
-
-    // Il blocco finisce quando il primo errore della finestra esce dal quarto
-    // d'ora: si invecchiano le righe invece di aspettare.
-    $pdo->prepare("UPDATE login_failures SET created_at = NOW() - INTERVAL 14 MINUTE WHERE email = 'anna@prova-accesso.invalid'")->execute();
-    check('dopo 14 minuti manca 1 minuto', TentativiAccesso::minutiDiBlocco($chi, IP_A) === 1);
-    $pdo->prepare("UPDATE login_failures SET created_at = NOW() - INTERVAL 16 MINUTE WHERE email = 'anna@prova-accesso.invalid'")->execute();
-    check('dopo 16 minuti il blocco e\' finito', TentativiAccesso::minutiDiBlocco($chi, IP_A) === null);
-
-    TentativiAccesso::registraErrore($chi, IP_A);
     TentativiAccesso::azzera($chi);
     $resta = (int) $pdo->query("SELECT COUNT(*) FROM login_failures WHERE email = 'anna@prova-accesso.invalid'")->fetchColumn();
-    check('chi entra azzera i suoi errori', $resta === 0, $resta . ' righe');
+    check('azzerare toglie gli errori e il blocco', $resta === 0 && TentativiAccesso::blocco($chi, IP_A) === null, $resta . ' righe');
 
     for ($i = 0; $i < TentativiAccesso::MAX_PER_IP; $i++) {
         TentativiAccesso::registraErrore('persona' . $i . '@prova-accesso.invalid', IP_C);
     }
-    check('cinquanta indirizzi diversi dallo stesso IP: l\'IP e\' fermato',
-        TentativiAccesso::minutiDiBlocco('nuovo@prova-accesso.invalid', IP_C) === 15);
-    check('chi arriva da un altro IP no', TentativiAccesso::minutiDiBlocco('nuovo@prova-accesso.invalid', IP_B) === null);
+    $daIp = TentativiAccesso::blocco('nuovo@prova-accesso.invalid', IP_C);
+    check('cinquanta indirizzi diversi dallo stesso IP: l\'IP e\' fermato per un quarto d\'ora',
+        $daIp === ['motivo' => TentativiAccesso::IP, 'minuti' => 15], var_export($daIp, true));
+    check('con la sua frase', str_contains(TentativiAccesso::messaggio($daIp ?? ['motivo' => 'ip', 'minuti' => 15]), 'da questa connessione'));
+    check('chi arriva da un altro IP no', TentativiAccesso::blocco('nuovo@prova-accesso.invalid', IP_B) === null);
 
     $pdo->prepare("INSERT INTO login_failures (email, ip, created_at) VALUES ('vecchio@prova-accesso.invalid', :ip, NOW() - INTERVAL 2 DAY)")
         ->execute(['ip' => IP_B]);
@@ -107,8 +136,8 @@ try {
     $vecchie = (int) $pdo->query("SELECT COUNT(*) FROM login_failures WHERE email = 'vecchio@prova-accesso.invalid'")->fetchColumn();
     check('le righe di piu\' di un giorno si tolgono da sole', $vecchie === 0);
 
-    check('la frase dice quanto aspettare', str_contains(TentativiAccesso::messaggio(1), 'fra 1 minuto,')
-        && str_contains(TentativiAccesso::messaggio(15), 'fra 15 minuti,'));
+    check('la frase dice quanto aspettare', str_contains(TentativiAccesso::messaggio(['motivo' => 'account', 'minuti' => 1]), 'fra 1 minuto,')
+        && str_contains(TentativiAccesso::messaggio(['motivo' => 'account', 'minuti' => 42]), 'fra 42 minuti,'));
 } finally {
     $pulisci();
 }

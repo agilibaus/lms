@@ -53,10 +53,10 @@ class AuthController
         // Il limite ai tentativi (13/10) viene prima della password: chi e'
         // fermato non la vede nemmeno controllare, giusta o sbagliata, cosi'
         // continuare a provare non serve a niente.
-        $minuti = $email !== '' ? TentativiAccesso::minutiDiBlocco($email, $ip) : null;
+        $blocco = $email !== '' ? TentativiAccesso::blocco($email, $ip) : null;
 
-        if ($minuti !== null) {
-            $_SESSION['login_error'] = TentativiAccesso::messaggio($minuti);
+        if ($blocco !== null) {
+            $_SESSION['login_error'] = TentativiAccesso::messaggio($blocco);
             $_SESSION['login_unverified'] = false;
 
             header('Location: /login');
@@ -64,7 +64,9 @@ class AuthController
         }
 
         if ($email === '' || $password === '' || !Auth::attempt($email, $password)) {
-            if ($email !== '' && $password !== '' && Auth::failureReason() === Auth::FAILURE_CREDENTIALS) {
+            $contato = $email !== '' && $password !== '' && Auth::failureReason() === Auth::FAILURE_CREDENTIALS;
+
+            if ($contato) {
                 TentativiAccesso::registraErrore($email, $ip);
             }
 
@@ -79,7 +81,9 @@ class AuthController
                     'Questo account è disattivato: contatta chi gestisce la piattaforma.',
                     false,
                 ],
-                default => ['Email o password non corretti.', false],
+                // Una password sbagliata: dalla terza l'avviso dice quanti
+                // tentativi restano, alla quinta che l'account e' bloccato.
+                default => [$contato ? TentativiAccesso::avvisoErrore($email, $ip) : 'Email o password non corretti.', false],
             };
 
             $_SESSION['login_error'] = $message;

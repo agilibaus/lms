@@ -15,6 +15,7 @@ use App\Core\Upload;
 use App\Core\Url;
 use App\Core\Invites;
 use App\Core\Settings;
+use App\Core\TentativiAccesso;
 use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\EnrollmentModel;
@@ -330,6 +331,9 @@ class UserController extends AdminController
         }
 
         UserModel::updatePassword((int) $user['id'], $password, true);
+        // Una password nuova sblocca l'account fermato dalle password
+        // sbagliate (13/10): e' anche il modo in cui l'admin sblocca qualcuno.
+        TentativiAccesso::azzera((string) $user['email']);
 
         $this->success(
             'Password temporanea inviata a ' . $user['email'] . '. Le sessioni aperte di '

@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Core\Env;
 use App\Core\PasswordPolicy;
+use App\Core\TentativiAccesso;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
@@ -117,6 +118,11 @@ class PasswordResetController
         $utente = UserModel::find((int) $row['user_id']);
 
         if ($utente !== null) {
+            // Chi ha reimpostato la password esce dal blocco per le password
+            // sbagliate (13/10): l'avviso del blocco lo indica come via
+            // d'uscita, e chi riceve il link controlla la casella.
+            TentativiAccesso::azzera((string) $utente['email']);
+
             Mailer::sendQuietly(Mailer::passwordChanged(
                 (string) $utente['email'],
                 (string) $utente['full_name'],

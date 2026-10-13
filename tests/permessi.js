@@ -1538,34 +1538,55 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 cookie !== undefined && cookie.httpOnly === true && cookie.sameSite === 'Lax', [JSON.stringify(cookie)]);
             await c1.close();
 
-            // Dieci password sbagliate fermano l'indirizzo: all'undicesimo
-            // tentativo nemmeno quella giusta apre, e la pagina dice perche'.
+            // Cinque password sbagliate bloccano l'account per un'ora (13/10,
+            // Alessandro): dalla terza l'avviso a schermo dice quanti
+            // tentativi restano, alla quinta che l'account e' bloccato, e
+            // durante il blocco nemmeno la password giusta apre. La
+            // reimpostazione della password lo sblocca.
             azzera();
             const ctx = await browser.newContext();
             const page = await ctx.newPage();
+            const avviso = async () => page.evaluate(() => {
+                const a = document.querySelector('.alert-error');
+                return a === null ? '' : a.innerText;
+            });
             const prova = async (password) => {
                 await page.goto(BASE + '/login');
                 await page.fill('input[name="email"]', EMAIL);
                 await page.fill('input[name="password"]', password);
                 await Promise.all([page.waitForNavigation(), page.click('form.auth-form button[type="submit"]')]);
+                return avviso();
             };
 
             try {
-                for (let i = 0; i < 10; i++) {
-                    await prova('sbagliata-' + i);
+                const avvisi = [];
+                for (let i = 0; i < 5; i++) {
+                    avvisi.push(await prova('sbagliata-' + i));
                 }
 
-                await prova(PASSWORD);
-                const fermato = page.url().includes('/login')
-                    && (await page.evaluate(() => document.body.innerText)).includes('Troppi tentativi di accesso');
-                check('dieci password sbagliate: anche quella giusta non apre, e la pagina dice di aspettare', fermato, [page.url()]);
+                check('prima e seconda password sbagliata: l\'avviso di sempre',
+                    avvisi[0] === 'Email o password non corretti.' && avvisi[1] === avvisi[0], avvisi.slice(0, 2));
+                check('terza e quarta: l\'avviso dice quanti tentativi restano',
+                    avvisi[2].includes('Ancora 2 tentativi') && avvisi[3].includes('Ancora 1 tentativo,'), avvisi.slice(2, 4));
+                check('quinta: a schermo, l\'account è bloccato per un\'ora',
+                    avvisi[4].includes('l’account è bloccato per un’ora') && avvisi[4].includes('Password dimenticata?'), [avvisi[4]]);
 
-                // Se il blocco non c'era, la prova sopra e' entrata: si esce
-                // togliendo il cookie, per riprovare dalla pagina d'accesso.
+                const conGiusta = await prova(PASSWORD);
+                check('durante il blocco nemmeno la password giusta apre, e l\'avviso resta',
+                    page.url().includes('/login') && conGiusta.includes('bloccato per un’ora'), [page.url(), conGiusta]);
+
+                // La via d'uscita indicata dall'avviso: il link per
+                // reimpostare la password. Si reimposta la stessa, cosi' gli
+                // altri giri la trovano com'era.
                 await ctx.clearCookies();
-                azzera();
+                const token = sql('echo App\\Models\\UserTokenModel::issue((int) $argv[1], App\\Models\\UserTokenModel::PURPOSE_RESET, 3600);',
+                    d.utenti.studenteB);
+                await page.goto(BASE + '/password/reimposta/' + token);
+                await page.fill('#password', PASSWORD);
+                await page.fill('#password_confirm', PASSWORD);
+                await Promise.all([page.waitForNavigation(), page.click('form button[type="submit"]')]);
                 await prova(PASSWORD);
-                check('finito il blocco, la password giusta apre', !page.url().includes('/login'), [page.url()]);
+                check('reimpostata la password, l\'account è sbloccato', !page.url().includes('/login'), [page.url()]);
             } finally {
                 azzera();
                 await ctx.close();
