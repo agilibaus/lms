@@ -5717,7 +5717,6 @@ details[open] > summary .obiettivo-se-aperto {
     min-height: var(--tap-target);
     color: var(--color-primary);
     font-size: 0.9rem;
-    font-weight: 600;
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 0.15em;
