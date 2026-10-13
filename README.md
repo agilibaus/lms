@@ -631,6 +631,22 @@ un'email arriverebbe senza sessione); **Secure** quando la piattaforma è in htt
 richiesta lo è o `APP_URL` comincia con `https://` — in locale, in http, resta spento. E la
 modalità rigida di PHP: un identificativo di sessione che non ha creato lui non viene accettato.
 
+**Nessun altro sito incornicia la piattaforma** (`App\Core\Intestazioni`, anche nella
+procedura di installazione). Prima un sito esterno poteva mostrare una pagina dell'admin dentro
+la sua, trasparente sotto un suo pulsante, e il clic finiva sul comando vero (clickjacking).
+Ogni pagina manda `Content-Security-Policy: frame-ancestors 'self'` e, per i browser vecchi,
+`X-Frame-Options: SAMEORIGIN`. Se un giorno la piattaforma dovesse comparire dentro un altro
+sito (per esempio il sito dell'organizzazione), quel sito va aggiunto qui. I video di YouTube,
+Vimeo e Bunny non c'entrano: la regola dice chi può incorniciare noi, non chi incorniciamo noi.
+
+**I CSV non contengono formule** (`Csv::cella()`). Un testo che comincia con `=`, `+`, `-` o `@`
+è una formula per Excel e LibreOffice, che la eseguono aprendo il file: un nome come
+`=HYPERLINK(...)` diventava un collegamento nel foglio dell'admin. Ora esce con un apostrofo
+davanti, che lo fa leggere come testo (e resta visibile). Numeri, percentuali e telefoni —
+cifre, spazi e punteggiatura, senza lettere — escono come prima. Il foglio di calcolo (.xlsx)
+non ne aveva bisogno: scrive i testi come testo. `tests/csv_test.php` prova le celle,
+`permessi.js` le intestazioni e il CSV vero degli utenti.
+
 ## Sessioni live (Google Meet)
 
 Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**: i
@@ -1387,6 +1403,7 @@ php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, 
 php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
 php tests/giro_test.php             # pagina del gruppo: chi pone, risponde e modera; domanda aperta e archivio; «Ci sarò»
 php tests/accesso_test.php          # limite ai tentativi di accesso (indirizzo e IP, fine del blocco) e cookie di sessione protetto
+php tests/csv_test.php              # CSV: i testi-formula escono con l'apostrofo, numeri e telefoni come sono
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha

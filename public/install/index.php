@@ -28,6 +28,10 @@ session_set_cookie_params([
 ]);
 session_start();
 
+// Come la piattaforma: nessun altro sito incornicia la procedura (13/10).
+header('X-Frame-Options: SAMEORIGIN');
+header("Content-Security-Policy: frame-ancestors 'self'");
+
 $projectRoot = dirname(__DIR__, 2);
 $installer = new Installer($projectRoot);
 

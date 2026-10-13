@@ -1572,6 +1572,52 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        console.log('\n--- cornici e file scaricati (13/10)');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const sql = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php"; $db = App\\Core\\Database::connection();' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+
+            // Nessun altro sito incornicia la piattaforma: sulla pagina
+            // d'accesso, che non chiede di essere dentro, e su una pagina
+            // dell'admin, quella che un clic rubato farebbe piu' danni.
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            const intestazioni = async (url) => {
+                const r = await page.goto(BASE + url);
+                const h = r.headers();
+                return { xfo: h['x-frame-options'] || null, csp: h['content-security-policy'] || null };
+            };
+
+            for (const url of ['/login', '/admin/users']) {
+                const h = await intestazioni(url);
+                check(url + ': nessun altro sito la incornicia',
+                    h.xfo === 'SAMEORIGIN' && h.csp !== null && h.csp.includes("frame-ancestors 'self'"), [JSON.stringify(h)]);
+            }
+
+            // Un nome che Excel eseguirebbe come formula esce, nel CSV degli
+            // utenti, con l'apostrofo davanti.
+            const formula = '=HYPERLINK("http://esempio.invalid";"clic")';
+            // Il nome intero si compone da nome e cognome: si cambia il nome.
+            const prima = sql('$s = $db->prepare("SELECT first_name FROM users WHERE id = ?"); $s->execute([$argv[1]]); echo $s->fetchColumn();',
+                d.utenti.studenteB);
+            const nome = (n) => sql('$db->prepare("UPDATE users SET first_name = ? WHERE id = ?")->execute([$argv[1], $argv[2]]);',
+                n, d.utenti.studenteB);
+
+            try {
+                nome(formula);
+                await page.goto(BASE + '/admin/users');
+                const csv = await page.evaluate(async () => (await (await fetch('/admin/users/csv', { credentials: 'same-origin' })).text()));
+                const riga = csv.split('\n').find((r) => r.includes('HYPERLINK')) || '';
+                check('CSV degli utenti: un nome-formula esce con l\'apostrofo davanti',
+                    riga.includes(';"\'=HYPERLINK(') || riga.includes(';\'=HYPERLINK('), [riga]);
+            } finally {
+                nome(prima);
+                await ctx.close();
+            }
+        }
+
         console.log('\n--- chi non ha fatto l\'accesso');
 
         const ctx = await browser.newContext();
