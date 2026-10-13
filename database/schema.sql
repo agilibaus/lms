@@ -596,4 +596,15 @@ CREATE TABLE course_questions (
     FOREIGN KEY (answered_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Le password sbagliate degli ultimi tentativi di accesso (2026_10_13): il
+-- limite ai tentativi, in App\Core\TentativiAccesso.
+CREATE TABLE login_failures (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email           VARCHAR(255) NOT NULL,
+    ip              VARCHAR(45) NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_email_created (email, created_at),
+    KEY idx_ip_created (ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;

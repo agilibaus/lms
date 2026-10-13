@@ -181,6 +181,7 @@ danni. Le piu' recenti:
 | `2026_10_12_promemoria_incontri.sql` | `live_sessions.invites_sent_at` e `live_session_reminders`: il promemoria degli incontri, sette ore prima, solo dopo gli inviti |
 | `2026_10_12_giro_del_cerchio.sql` | `group_questions`, `group_answers` e `live_session_rsvps`: il giro del cerchio e «Ci sarò» nella pagina del gruppo |
 | `2026_10_12_iscrizione_confermata.sql` | `enrollments.confirmation_pending`: l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, in coda per `bin/avvisi`. Va impostato anche il comando, ogni quarto d'ora |
+| `2026_10_13_tentativi_accesso.sql` | `login_failures`: le password sbagliate degli ultimi tentativi di accesso, per il limite ai tentativi |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -609,6 +610,26 @@ sessione di chi lo apriva. Ora il tipo viene dall'estensione già controllata al
 chiama e manda sempre `X-Content-Type-Options: nosniff`. Allegati, immagini, foto, copertine,
 loghi e audio del benvenuto erano già così. E il video, come gli allegati, non si scarica più
 da un modulo ancora chiuso.
+
+**I tentativi di accesso hanno un limite.** Si potevano provare password a ripetizione sullo
+stesso account. Ora (`App\Core\TentativiAccesso`, tabella `login_failures`), nell'arco di un
+quarto d'ora, **10 password sbagliate per lo stesso indirizzo** lo fermano da qualunque IP, e
+**50 dallo stesso IP** fermano quell'IP qualunque indirizzo provi (di più, perché dietro lo
+stesso IP possono esserci più persone). Chi è fermato legge «Troppi tentativi di accesso con
+password sbagliata. Riprova fra 12 minuti, oppure reimposta la password», e intanto nemmeno la
+password giusta apre: continuare a provare non serve. Il blocco finisce da solo; chi entra
+azzera i suoi errori. Contano solo le password sbagliate, e gli indirizzi che non esistono
+contano come gli altri, per non dire quali sono registrati. Un rovescio da sapere: chi conosce
+l'indirizzo di qualcuno può tenerlo fuori per un quarto d'ora sbagliando apposta; resta aperta
+la reimpostazione della password. `tests/accesso_test.php` prova i conti, `permessi.js` il
+giro vero dalla pagina d'accesso.
+
+**Il cookie di sessione è protetto** (`App\Core\Sessione`, anche nella procedura di
+installazione): **HttpOnly**, così JavaScript non lo legge; **SameSite=Lax**, così un altro sito
+non lo manda con le sue richieste nascoste (Lax e non Strict: con Strict chi apre un link da
+un'email arriverebbe senza sessione); **Secure** quando la piattaforma è in https, cioè la
+richiesta lo è o `APP_URL` comincia con `https://` — in locale, in http, resta spento. E la
+modalità rigida di PHP: un identificativo di sessione che non ha creato lui non viene accettato.
 
 ## Sessioni live (Google Meet)
 
@@ -1365,6 +1386,7 @@ php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, sp
 php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
 php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
 php tests/giro_test.php             # pagina del gruppo: chi pone, risponde e modera; domanda aperta e archivio; «Ci sarò»
+php tests/accesso_test.php          # limite ai tentativi di accesso (indirizzo e IP, fine del blocco) e cookie di sessione protetto
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha

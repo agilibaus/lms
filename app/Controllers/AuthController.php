@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\TentativiAccesso;
 use App\Core\Welcome;
 use App\Models\UserModel;
 use App\Auth\Auth;
@@ -47,8 +48,26 @@ class AuthController
     {
         $email = trim($_POST['email'] ?? '');
         $password = (string) ($_POST['password'] ?? '');
+        $ip = TentativiAccesso::ip();
+
+        // Il limite ai tentativi (13/10) viene prima della password: chi e'
+        // fermato non la vede nemmeno controllare, giusta o sbagliata, cosi'
+        // continuare a provare non serve a niente.
+        $minuti = $email !== '' ? TentativiAccesso::minutiDiBlocco($email, $ip) : null;
+
+        if ($minuti !== null) {
+            $_SESSION['login_error'] = TentativiAccesso::messaggio($minuti);
+            $_SESSION['login_unverified'] = false;
+
+            header('Location: /login');
+            exit;
+        }
 
         if ($email === '' || $password === '' || !Auth::attempt($email, $password)) {
+            if ($email !== '' && $password !== '' && Auth::failureReason() === Auth::FAILURE_CREDENTIALS) {
+                TentativiAccesso::registraErrore($email, $ip);
+            }
+
             // Il motivo si puo' dettagliare solo quando la password era giusta:
             // altrimenti si direbbe a un estraneo quali indirizzi sono registrati.
             [$message, $unverified] = match (Auth::failureReason()) {
@@ -69,6 +88,8 @@ class AuthController
             header('Location: /login');
             exit;
         }
+
+        TentativiAccesso::azzera($email);
 
         // Il saluto «Che bello rivederti, Marta! 🌸» (08/10, chiesto da Elena):
         // solo agli studenti, a ogni accesso tranne il primo in assoluto, che

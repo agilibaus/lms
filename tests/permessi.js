@@ -1519,6 +1519,59 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        console.log('\n--- l\'accesso protetto (13/10)');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const sql = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php"; $db = App\\Core\\Database::connection();' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const EMAIL = 'strano@test.it';
+            const azzera = () => sql('$db->prepare("DELETE FROM login_failures WHERE email = ?")->execute([$argv[1]]);', EMAIL);
+
+            // Il cookie di sessione: non si legge da JavaScript e non parte
+            // con le richieste nascoste di un altro sito. Secure qui non si
+            // prova: il server di sviluppo e' in http (lo prova accesso_test.php).
+            const { ctx: c1 } = await entra(browser, 'stud@test.it');
+            const cookie = (await c1.cookies()).find((c) => c.name === 'PHPSESSID');
+            check('cookie di sessione HttpOnly e SameSite=Lax',
+                cookie !== undefined && cookie.httpOnly === true && cookie.sameSite === 'Lax', [JSON.stringify(cookie)]);
+            await c1.close();
+
+            // Dieci password sbagliate fermano l'indirizzo: all'undicesimo
+            // tentativo nemmeno quella giusta apre, e la pagina dice perche'.
+            azzera();
+            const ctx = await browser.newContext();
+            const page = await ctx.newPage();
+            const prova = async (password) => {
+                await page.goto(BASE + '/login');
+                await page.fill('input[name="email"]', EMAIL);
+                await page.fill('input[name="password"]', password);
+                await Promise.all([page.waitForNavigation(), page.click('form.auth-form button[type="submit"]')]);
+            };
+
+            try {
+                for (let i = 0; i < 10; i++) {
+                    await prova('sbagliata-' + i);
+                }
+
+                await prova(PASSWORD);
+                const fermato = page.url().includes('/login')
+                    && (await page.evaluate(() => document.body.innerText)).includes('Troppi tentativi di accesso');
+                check('dieci password sbagliate: anche quella giusta non apre, e la pagina dice di aspettare', fermato, [page.url()]);
+
+                // Se il blocco non c'era, la prova sopra e' entrata: si esce
+                // togliendo il cookie, per riprovare dalla pagina d'accesso.
+                await ctx.clearCookies();
+                azzera();
+                await prova(PASSWORD);
+                check('finito il blocco, la password giusta apre', !page.url().includes('/login'), [page.url()]);
+            } finally {
+                azzera();
+                await ctx.close();
+            }
+        }
+
         console.log('\n--- chi non ha fatto l\'accesso');
 
         const ctx = await browser.newContext();

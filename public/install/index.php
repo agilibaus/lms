@@ -16,6 +16,16 @@ define('LMS_INSTALLER', true);
 
 require __DIR__ . '/Installer.php';
 
+// Il cookie della procedura protetto come quello della piattaforma (13/10):
+// qui non c'e' ancora l'autoload, quindi le stesse impostazioni a mano.
+ini_set('session.use_strict_mode', '1');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'secure' => ($_SERVER['HTTPS'] ?? '') === 'on',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 $projectRoot = dirname(__DIR__, 2);
