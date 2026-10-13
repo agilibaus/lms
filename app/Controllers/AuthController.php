@@ -31,6 +31,7 @@ class AuthController
         $notice ??= match ($_GET['motivo'] ?? null) {
             'password' => 'La password di questo account è stata cambiata. Entra con quella nuova.',
             'sessione' => 'La sessione non è più valida. Entra di nuovo.',
+            'disattivato' => 'Questo account è stato disattivato: contatta chi gestisce la piattaforma.',
             default => null,
         };
 

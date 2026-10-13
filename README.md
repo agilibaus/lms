@@ -590,6 +590,26 @@ Router prima di invocare il controller; una richiesta senza token valido riceve 
 produce alcun effetto. Nelle view il campo si inserisce con `<?= Csrf::field() ?>`. Il token
 viene rigenerato a ogni login e logout, insieme all'id di sessione.
 
+## Sicurezza: sessioni e file
+
+Le correzioni della verifica di sicurezza del 13/10, ciascuna con la sua prova in `permessi.js`.
+
+**Lo stato dell'account si legge a ogni richiesta.** Ruolo e stato si leggevano solo
+all'accesso: un tutor passato a studente continuava a vedere i report, e un account disattivato
+restava collegato finché non usciva da solo. Ora la query che `Auth::guardSession()` faceva già
+(il controllo del cambio password) porta anche `is_active` e `role`: chi è stato disattivato
+esce alla richiesta dopo, con l'avviso «Questo account è stato disattivato» nella pagina
+d'accesso; chi ha cambiato ruolo resta dentro con i permessi nuovi.
+
+**I file consegnati hanno il tipo deciso dal server, mai dal contenuto.** Il video caricato
+sul server usciva con il tipo dedotto dal contenuto: un `.mp4` che dentro era una pagina HTML
+veniva consegnato come pagina, con l'indirizzo della piattaforma, e il suo codice girava con la
+sessione di chi lo apriva. Ora il tipo viene dall'estensione già controllata al caricamento
+(`video/mp4`, `video/webm`, `video/quicktime`), `App\Core\FileStream` lo pretende da chi
+chiama e manda sempre `X-Content-Type-Options: nosniff`. Allegati, immagini, foto, copertine,
+loghi e audio del benvenuto erano già così. E il video, come gli allegati, non si scarica più
+da un modulo ancora chiuso.
+
 ## Sessioni live (Google Meet)
 
 Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**: i

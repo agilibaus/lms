@@ -357,8 +357,12 @@ class UserModel
         // query che c'e' gia' costa zero, mentre una seconda query sarebbe
         // una query per richiesta per ogni persona collegata (§7.2: il
         // vincolo vero sono i 20 processi PHP, non il database).
+        // Anche `is_active` e `role` (13/10): `guardSession()` chiude la
+        // sessione di chi e' stato disattivato e aggiorna il ruolo di chi e'
+        // stato cambiato, senza aspettare che esca da solo.
         $stmt = Database::connection()->prepare(
-            'SELECT password_changed_at, must_change_password, welcome_seen_at, name_display
+            'SELECT password_changed_at, must_change_password, welcome_seen_at, name_display,
+                    is_active, role
                FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);

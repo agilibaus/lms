@@ -1428,6 +1428,97 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await admin.ctx.close();
         }
 
+        console.log('\n--- un account cambiato mentre è collegato (13/10)');
+
+        {
+            // Lo stato dell'account si legge a ogni richiesta, non solo
+            // all'accesso: un tutor passato a studente perde le pagine da
+            // tutor alla richiesta dopo, e chi viene disattivato esce.
+            const radice = path.join(__dirname, '..');
+            const sql = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php"; $db = App\\Core\\Database::connection();' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const imposta = (ruolo, attivo) => sql(
+                '$db->prepare("UPDATE users SET role = ?, is_active = ? WHERE id = ?")->execute([$argv[1], $argv[2], $argv[3]]);',
+                ruolo, attivo, d.utenti.tutorB);
+
+            const { ctx, page } = await entra(browser, 'tutor2@test.it');
+
+            try {
+                let r = await esitoGet(page, '/reports');
+                check('tutor B collegato → /reports: consentito', r.esito === 'consentito', [r.come]);
+
+                // Da studente il primo accesso lo porta alla sua pagina (il
+                // tutor non ha scelto come lo vedono gli altri): conta che
+                // non arrivi ai report, in un modo o nell'altro.
+                imposta('studente', 1);
+                const risposta = await page.goto(BASE + '/reports');
+                const dove = new URL(page.url()).pathname;
+                check('tutor B passato a studente, senza uscire → /reports: negato',
+                    dove !== '/reports' || risposta.status() >= 400, [risposta.status() + ' ' + dove]);
+
+                imposta('tutor', 1);
+                r = await esitoGet(page, '/reports');
+                check('e tornato tutor → /reports: di nuovo consentito', r.esito === 'consentito', [r.come]);
+
+                imposta('tutor', 0);
+                r = await esitoGet(page, '/profilo');
+                const avviso = await page.evaluate(() => document.body.innerText.includes('stato disattivato'));
+                check('tutor B disattivato, senza uscire → /profilo: torna all\'accesso, con il motivo',
+                    r.esito === 'negato' && page.url().includes('motivo=disattivato') && avviso, [r.come, page.url()]);
+
+                imposta('tutor', 1);
+                r = await esitoGet(page, '/profilo');
+                check('e riattivato: la sessione chiusa resta chiusa', r.esito === 'negato', [r.come]);
+            } finally {
+                imposta('tutor', 1);
+                await ctx.close();
+            }
+        }
+
+        console.log('\n--- il video caricato sul server (13/10)');
+
+        {
+            // Un file `.mp4` che dentro e' una pagina HTML: il tipo si decide
+            // dall'estensione, e il browser non deve dedurlo dal contenuto.
+            const radice = path.join(__dirname, '..');
+            const sql = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php"; $db = App\\Core\\Database::connection();' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const cartella = path.join(radice, 'storage', 'videos', 'prova-permessi');
+            const fs = require('node:fs');
+            fs.mkdirSync(cartella, { recursive: true });
+            fs.writeFileSync(path.join(cartella, 'finto.mp4'), '<html><body><script>document.title = "preso"</script></body></html>');
+            const video = (lezione, ref) => sql(
+                '$db->prepare("UPDATE lessons SET video_provider = ?, video_ref = ? WHERE id = ?")->execute([$argv[1], $argv[2] === "" ? null : $argv[2], $argv[3]]);',
+                ref === '' ? 'none' : 'self_hosted', ref, lezione);
+
+            video(A.lezione, 'videos/prova-permessi/finto.mp4');
+            video(A.lezione_chiusa, 'videos/prova-permessi/finto.mp4');
+            const { ctx, page } = await entra(browser, 'stud@test.it');
+
+            try {
+                await page.goto(BASE + '/profilo');
+                const chiedi = (u) => page.evaluate(async (u) => {
+                    const res = await fetch(u, { credentials: 'same-origin' });
+                    return { stato: res.status, tipo: res.headers.get('content-type'), nosniff: res.headers.get('x-content-type-options') };
+                }, u);
+
+                const aperto = await chiedi('/lessons/' + A.lezione + '/video');
+                check('video con dentro una pagina HTML: esce come video/mp4, con nosniff',
+                    aperto.stato === 200 && (aperto.tipo || '').startsWith('video/mp4') && aperto.nosniff === 'nosniff',
+                    [JSON.stringify(aperto)]);
+
+                const chiuso = await chiedi('/lessons/' + A.lezione_chiusa + '/video');
+                check('studente A → video di una lezione di un modulo chiuso: negato', chiuso.stato === 403, [JSON.stringify(chiuso)]);
+            } finally {
+                video(A.lezione, '');
+                video(A.lezione_chiusa, '');
+                fs.rmSync(cartella, { recursive: true, force: true });
+                await ctx.close();
+            }
+        }
+
         console.log('\n--- chi non ha fatto l\'accesso');
 
         const ctx = await browser.newContext();

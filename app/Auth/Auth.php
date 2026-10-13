@@ -213,7 +213,10 @@ class Auth
      *    sempre aperta: senza, chi entra per sbaglio con un account altrui non
      *    potrebbe nemmeno andarsene.
      *
-     * Costa una query per richiesta, deliberatamente ristretta a due colonne.
+     * Costa una query per richiesta, deliberatamente ristretta a poche colonne.
+     * Dal 13/10 la stessa query dice anche se l'account e' ancora attivo (se
+     * no la sessione si chiude) e qual e' il ruolo (se e' cambiato, la
+     * sessione prende quello nuovo).
      */
     private static function guardSession(): void
     {
@@ -225,6 +228,17 @@ class Auth
             header('Location: /login?motivo=sessione');
             exit;
         }
+
+        // Disattivato mentre era dentro (13/10): esce subito. Prima il ruolo
+        // e lo stato si leggevano solo all'accesso, e chi veniva disattivato
+        // restava collegato finche' non usciva da solo.
+        if (!(bool) $stato['is_active']) {
+            self::logout();
+            header('Location: /login?motivo=disattivato');
+            exit;
+        }
+
+        self::allineaRuolo($stato);
 
         if (array_key_exists(self::SESSION_PASSWORD_STAMP, $_SESSION)) {
             if ($_SESSION[self::SESSION_PASSWORD_STAMP] !== $stato['password_changed_at']) {
@@ -392,9 +406,11 @@ class Auth
 
         $stato = self::passwordState();
 
-        if ($stato === null) {
+        if ($stato === null || !(bool) $stato['is_active']) {
             return false;
         }
+
+        self::allineaRuolo($stato);
 
         if (
             array_key_exists(self::SESSION_PASSWORD_STAMP, $_SESSION)
@@ -404,6 +420,23 @@ class Auth
         }
 
         return (int) $stato['must_change_password'] !== 1 && !self::primoAccessoPending();
+    }
+
+    /**
+     * Il ruolo della sessione e' quello del database, a ogni richiesta
+     * (13/10). Si legge all'accesso e si teneva fino all'uscita: un tutor
+     * passato a studente, o un admin tolto dal ruolo, continuava a vedere e
+     * a fare quello che faceva prima. Cambia la sessione, non la chiude: chi
+     * e' stato promosso o declassato resta dentro, con i permessi nuovi.
+     *
+     * @param array{role: string} $stato
+     */
+    private static function allineaRuolo(array $stato): void
+    {
+        if (($_SESSION['user_role'] ?? null) !== $stato['role']) {
+            $_SESSION['user_role'] = $stato['role'];
+            self::flushPermissionCache();
+        }
     }
 
     /**

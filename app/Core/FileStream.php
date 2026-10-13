@@ -16,16 +16,21 @@ namespace App\Core;
  */
 final class FileStream
 {
-    public static function send(string $absolutePath, ?string $mime = null): void
+    /**
+     * Il tipo lo dice chi chiama, dall'estensione che ha gia' controllato
+     * (13/10): mai dedotto dal contenuto, che e' di chi ha caricato il file.
+     * E `nosniff`, perche' il browser non lo deduca a sua volta.
+     */
+    public static function send(string $absolutePath, string $mime): void
     {
         $size = filesize($absolutePath);
-        $mime ??= mime_content_type($absolutePath) ?: 'application/octet-stream';
 
         $start = 0;
         $end = $size - 1;
 
         header('Accept-Ranges: bytes');
         header('Content-Type: ' . $mime);
+        header('X-Content-Type-Options: nosniff');
 
         if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d*)-(\d*)/', $_SERVER['HTTP_RANGE'], $matches)) {
             $start = $matches[1] === '' ? 0 : (int) $matches[1];

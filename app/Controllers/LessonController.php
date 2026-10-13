@@ -29,6 +29,18 @@ class LessonController
     private const MATERIAL_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 
     private const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v'];
+
+    /**
+     * Il tipo con cui si consegna un video caricato, dall'estensione e mai
+     * dal contenuto (13/10). Dedotto dal contenuto, un file chiamato `.mp4`
+     * che dentro e' una pagina HTML usciva come `text/html`, con l'indirizzo
+     * della piattaforma: il codice della pagina girava con la sessione di
+     * chi lo apriva.
+     */
+    private const VIDEO_MIME = [
+        'mp4' => 'video/mp4', 'm4v' => 'video/mp4',
+        'webm' => 'video/webm', 'mov' => 'video/quicktime',
+    ];
     public const VIDEO_MAX_BYTES = 500 * 1024 * 1024; // 500 MB — per file più grandi preferire Bunny/Cloudflare Stream
 
     /** Immagini inserite nel testo dall'editor. */
@@ -611,15 +623,25 @@ class LessonController
             return;
         }
 
-        $absolute = Upload::absolutePath($lesson['video_ref']);
+        // Come gli allegati: il video e' un ingresso alla lezione al pari della
+        // sua pagina, e un modulo chiuso non si scavalca chiedendolo
+        // direttamente (13/10).
+        if ($this->isModuleLocked((int) $module['id'])) {
+            http_response_code(403);
+            echo 'Questo video appartiene a un modulo non ancora disponibile.';
+            return;
+        }
 
-        if (!is_file($absolute)) {
+        $absolute = Upload::absolutePath($lesson['video_ref']);
+        $mime = self::VIDEO_MIME[strtolower(pathinfo((string) $lesson['video_ref'], PATHINFO_EXTENSION))] ?? null;
+
+        if (!is_file($absolute) || $mime === null) {
             http_response_code(404);
             echo 'File video non trovato sul server.';
             return;
         }
 
-        FileStream::send($absolute);
+        FileStream::send($absolute, $mime);
     }
 
     public function complete(array $params): void
