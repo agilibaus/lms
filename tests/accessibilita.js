@@ -1161,6 +1161,9 @@ const EXTRA = {
                     stessaRiga: r ? r.top >= c.top - 1 && r.bottom <= c.bottom + 1 : null,
                     subitoDopo: r ? Math.abs(r.left - c.right) < 2 : null,
                     testo: (s.textContent + elenco.textContent).trim(),
+                    // 0,85 rem, piu' piccolo degli aiuti (13/10, Alessandro).
+                    misura: Math.abs(parseFloat(getComputedStyle(s).fontSize)
+                        - 0.85 * parseFloat(getComputedStyle(document.documentElement).fontSize)) < 0.1,
                     // Attaccato al suo campo (11/10): dal fondo del campo alla
                     // cima del testo del comando al massimo 6 px, e meno della
                     // distanza da cio' che viene dopo.
@@ -1188,13 +1191,13 @@ const EXTRA = {
             const aperto = await leggi();
             await comando.click();
             const richiuso = await leggi();
-            if (chiuso.visibile || !chiuso.vicino || !aperto.visibile || !aperto.stessaRiga || !aperto.subitoDopo || richiuso.visibile
+            if (chiuso.visibile || !chiuso.vicino || !chiuso.misura || !aperto.visibile || !aperto.stessaRiga || !aperto.subitoDopo || richiuso.visibile
                 || aperto.testo !== 'Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">.') {
                 tagStorti.push(JSON.stringify({ chiuso, aperto, richiuso }));
             }
         }
         if (comandiTag.length > 0) {
-            check(nome + ': «Tag HTML consentiti» sta attaccato al campo, apre l\'elenco sulla stessa riga, e un secondo clic lo chiude',
+            check(nome + ': «Tag HTML consentiti», a 0,85 rem, sta attaccato al campo, apre l\'elenco sulla stessa riga, e un secondo clic lo chiude',
                 tagStorti.length === 0, tagStorti);
         }
 

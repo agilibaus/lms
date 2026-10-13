@@ -688,14 +688,17 @@ h3 { font-size: 1.05rem; }
    bersaglio da 24 px aggiunge sopra il testo, il comando stava a 11 px dal
    campo e a 17 dal campo dopo: a meta' strada, e non si capiva di chi
    fosse. Qui il testo sta a 5 px dal campo, quanto un'etichetta dal suo
-   campo. In `.stacked-form` (il modulo) c'e' anche lo spazio fra le righe
+   campo (con il testo a 0,85 rem dal 13/10: un px in meno di margine). In `.stacked-form` (il modulo) c'e' anche lo spazio fra le righe
    del modulo, 0,3 rem, che va tolto. */
 .form-hint.tag-consentiti {
-    margin-top: 0.125rem;
+    margin-top: 0.0625rem;
+    /* 0,85 rem e non gli 0,92 degli aiuti (13/10, Alessandro): e' un
+       comando accessorio, e alla misura del testo d'aiuto pesava troppo. */
+    font-size: 0.85rem;
 }
 
 .stacked-form > .form-hint.tag-consentiti {
-    margin-top: -0.175rem;
+    margin-top: -0.2375rem;
 }
 
 /* «Tag HTML consentiti» sotto obiettivo e descrizione (11/10, Alessandro):

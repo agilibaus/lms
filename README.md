@@ -545,7 +545,8 @@ Le regole stanno in `App\Core\TestoBreve`:
   riga, subito dopo («Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">.»),
   e un secondo clic lo richiude. È un `details`, senza JavaScript; è un comando, quindi neutro
   come «Mostra». Dove il browser non conosce `::details-content` l'elenco si apre sulla riga sotto.
-  Sta attaccato al suo campo, a 5 px come un'etichetta (0182). `accessibilita.js` lo apre e lo
+  Sta attaccato al suo campo, a 5 px come un'etichetta (0182), ed è scritto a 0,85 rem, più
+  piccolo degli aiuti sotto i campi (13/10). `accessibilita.js` lo apre e lo
   richiude con il clic vero su ogni pagina che lo ha, e controlla che stia più vicino al suo campo
   che a quello dopo.
 
