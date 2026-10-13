@@ -1010,6 +1010,62 @@ const EXTRA = {
             fumetto !== null && fumetto.colore === fumetto.verde,
             [fumetto === null ? 'nessun fumetto' : fumetto.colore + ' invece di ' + fumetto.verde]);
 
+        // Le persone in un riquadro bianco come l'incontro e il giro del
+        // cerchio (13/10, Alessandro): stesso fondo, e nessun nome che esce
+        // dal riquadro — nel cerchio i nomi sono posizionati e il riquadro
+        // non cresce per loro. E il fumetto, bianco anche lui, ha un bordo
+        // che sul fondo bianco si vede: almeno 3:1, la soglia degli elementi
+        // grafici (WCAG 1.4.11).
+        const riquadro = await page.evaluate(() => {
+            const r = document.querySelector('.gruppo-persone');
+            const giro = document.querySelector('.giro, .gruppo-incontro');
+
+            if (r === null) {
+                return null;
+            }
+
+            const rgb = (c) => c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+            const lum = (c) => {
+                const [R, G, B] = rgb(c).map((v) => {
+                    const x = v / 255;
+                    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+                });
+                return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+            };
+            const rapporto = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+            const b = r.getBoundingClientRect();
+            const fuori = [...r.querySelectorAll('*')]
+                .filter((e) => !e.closest('.sr-only') && e.checkVisibility())
+                .filter((e) => {
+                    const q = e.getBoundingClientRect();
+                    return q.width > 0 && (q.top < b.top - 0.5 || q.bottom > b.bottom + 0.5
+                        || q.left < b.left - 0.5 || q.right > b.right + 0.5);
+                })
+                .map((e) => (e.textContent || e.className).trim().slice(0, 40));
+            const fondo = getComputedStyle(r).backgroundColor;
+            const f = r.querySelector('.persona-fumetto');
+
+            return {
+                fondo,
+                comeGliAltri: giro === null || getComputedStyle(giro).backgroundColor === fondo,
+                bordo: getComputedStyle(r).borderTopStyle,
+                fuori,
+                fumetto: f === null ? null : rapporto(getComputedStyle(f).borderTopColor, fondo),
+            };
+        });
+
+        if (riquadro === null) {
+            check(nome + ': le persone del gruppo stanno in un riquadro', false, ['manca .gruppo-persone']);
+        } else {
+            check(nome + ': le persone del gruppo stanno in un riquadro bianco come gli altri',
+                riquadro.bordo === 'solid' && riquadro.comeGliAltri,
+                [JSON.stringify(riquadro)]);
+            check(nome + ': nessun nome esce dal riquadro delle persone', riquadro.fuori.length === 0, riquadro.fuori);
+            check(nome + ': il bordo del fumetto si vede sul fondo del riquadro (almeno 3:1)',
+                riquadro.fumetto !== null && riquadro.fumetto >= 3,
+                [riquadro.fumetto === null ? 'nessun fumetto' : 'contrasto ' + riquadro.fumetto.toFixed(2) + ':1']);
+        }
+
         for (const id of ids) {
             // Con un timeout breve e senza fermare il giro: se qualcosa copre
             // il pulsante — una scheda rimasta aperta, o le schede chiuse

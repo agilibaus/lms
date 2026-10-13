@@ -149,8 +149,12 @@ $conPresentazione = array_values(array_filter(
      *
      * `role="list"` perche' togliere i pallini a un elenco ne fa perdere la
      * semantica in Safari.
+     *
+     * In un riquadro bianco come l'incontro e il giro del cerchio (13/10,
+     * Alessandro, variante A del mockup): senza titolo, perche' «Gruppo
+     * Giallo» in cima alla pagina dice gia' chi sono.
      */ ?>
-    <div class="gruppo-persone">
+    <div class="card gruppo-persone">
         <ul class="gruppo-cerchio<?= GroupCircle::usaCerchio($quanti) ? ' usa-cerchio' : '' ?>" role="list">
             <?php if ($tutor !== null): ?>
                 <li class="persona persona-tutor">

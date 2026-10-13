@@ -2170,6 +2170,16 @@ prima che calda, e regge gruppi di qualunque misura):
   cancellarla. Chi l'ha scritta la vede ancora, con la nota che è nascosta, e non la può più
   cambiare; «Rimetti» la rende di nuovo visibile.
 - Nel cerchio resta un gesto solo, la presentazione: la conversazione sta sotto.
+- **Tre riquadri bianchi uguali** (13/10, Alessandro, variante A del mockup): anche il cerchio
+  (o la griglia) sta in un riquadro come l'incontro e il giro del cerchio, senza un titolo suo —
+  «Gruppo Giallo» in cima dice già chi sono. Fra un riquadro e l'altro 20 px. Nel cerchio i nomi
+  sono posizionati e il riquadro non cresce per loro: sopra e sotto c'è lo spazio, misurato, per
+  un nome di tre righe con «Gli altri ti vedono come …», e i nomi in cima e in fondo sono larghi
+10 rem come quelli dei fianchi (prima 7), così un nome lungo va a capo meno volte. Il fumetto, bianco come il fondo, ha il
+  bordo del colore principale come le foto. Dentro il riquadro lo spazio per il cerchio è 42 px
+  più stretto: su computer il cerchio si accende con la finestra larga almeno 1.175 px circa
+  (prima circa 1.135), sotto resta la griglia. `accessibilita.js` controlla il riquadro, che
+  nessun nome ne esca e che il bordo del fumetto abbia almeno 3:1 sul fondo.
 
 Le regole stanno in `App\Core\GiroDelCerchio`, senza database (`tests/giro_test.php`);
 `permessi.js` prova che nessuno scrive nel gruppo di un altro, che lo studente non pone domande
@@ -2177,8 +2187,9 @@ né modera, e che il tutor di un altro gruppo non modera. **Da aggiornare l'info
 le risposte le leggono i compagni di gruppo e il tutor, come le presentazioni.
 
 **La presentazione si apre sopra la pagina.** Chi ne ha scritta una è un pulsante — foto e
-nome insieme — con un piccolo fumetto verde sull'angolo della foto (è la forma a dirlo; il
-colore principale la accompagna e cambia con la tavolozza).
+nome insieme — con un piccolo fumetto verde sull'angolo della foto, bianco con il bordo del
+colore principale (è la forma a dirlo; il colore principale la accompagna e cambia con la
+tavolozza).
 Toccandolo si apre una scheda con foto, nome e il testo **in corsivo** fra due **virgolette
 giganti** — un racconto detto a voce più che un testo da consultare —, che si chiude con la ✕,
 con Esc o toccando fuori; il cerchio non si sposta.

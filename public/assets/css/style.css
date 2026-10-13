@@ -4609,7 +4609,9 @@ fieldset.checkbox-group legend {
 
 .gruppo-cerchio {
     list-style: none;
-    margin: 1rem 0 0;
+    /* Nel riquadro (13/10) il primo elemento non ha margine sopra: lo
+       spazio dal bordo e' quello del riquadro. */
+    margin: 0;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
@@ -4720,8 +4722,14 @@ fieldset.checkbox-group legend {
         aspect-ratio: 1;
         /* Sopra e sotto c'e' spazio per i nomi delle foto in alto e in
            basso, che escono dal quadrato. Sopra di piu': un nome lungo va
-           a capo verso l'alto, e a 4,5 rem toccava il sottotitolo. */
-        margin: 6.5rem auto 4.5rem;
+           a capo verso l'alto. Dal 13/10 il cerchio sta in un riquadro, e il
+           vuoto che prima lo staccava dal resto della pagina dentro il
+           riquadro sarebbe solo spazio sprecato: resta lo spazio per un
+           nome di tre righe con sotto «Gli altri ti vedono come …», misurato,
+           e un margine. Uguale sopra e sotto: con nomi corti il vuoto fra il
+           nome e il bordo e' lo stesso in alto e in basso. `accessibilita.js`
+           controlla che nessun nome esca dal riquadro. */
+        margin: 5rem auto;
     }
 
     .usa-cerchio .persona {
@@ -4769,6 +4777,16 @@ fieldset.checkbox-group legend {
         left: 50%;
         transform: translateX(-50%);
         text-align: center;
+    }
+
+    /* In cima e in fondo il nome e' largo come quelli dei fianchi (13/10):
+       sopra e sotto non ha vicini, e un nome lungo va a capo meno volte.
+       Conta da quando il cerchio sta in un riquadro, che non cresce per i
+       nomi: a 7 rem un nome di 60 lettere faceva sei righe e usciva dal
+       bordo. Il tutor resta a 7 rem: ai suoi lati ci sono i compagni. */
+    .usa-cerchio .persona-lato-sopra .persona-nome,
+    .usa-cerchio .persona-lato-sotto .persona-nome {
+        width: 10rem;
     }
 
     .usa-cerchio .persona-lato-sopra .persona-nome {
@@ -4823,7 +4841,12 @@ fieldset.checkbox-group legend {
    sull'angolo in basso a destra della foto. E' la forma a dirlo, non il
    colore, e si vede uguale su una foto scura, su una chiara e sulle
    iniziali. Il disegno e' una maschera CSS, cosi' prende il colore
-   principale e cambia con la tavolozza. */
+   principale e cambia con la tavolozza.
+
+   Il bordo e' del colore principale, come quello delle foto (13/10): da
+   quando il cerchio sta in un riquadro bianco, il fumetto bianco con il
+   bordo grigio chiaro si perdeva nel fondo nella parte che sporge dalla
+   foto. */
 .persona-fumetto {
     position: absolute;
     right: -0.2rem;
@@ -4834,7 +4857,7 @@ fieldset.checkbox-group legend {
     height: 1.6rem;
     border-radius: 50%;
     background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-primary);
 }
 
 .persona-fumetto::before {
@@ -5066,7 +5089,9 @@ fieldset.checkbox-group legend {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.8rem 1.2rem;
-    margin: 1.2rem 0;
+    /* Sotto, la distanza fra i riquadri della pagina, la stessa per tutti
+       e tre (13/10). */
+    margin: 1.2rem 0 1.25rem;
 }
 
 .gruppo-incontro-testo {
@@ -5147,7 +5172,7 @@ fieldset.checkbox-group legend {
 }
 
 .giro {
-    margin: 1.5rem 0;
+    margin: 1.25rem 0 1.5rem;
 }
 
 .giro-testa {
