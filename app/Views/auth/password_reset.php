@@ -34,6 +34,8 @@ ob_start();
                minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
 
         <button type="submit" class="btn btn-primary btn-block">Salva e accedi</button>
+        <?php /* «Annulla» (14/10): non cambia la password e torna all'accesso. */ ?>
+        <a href="/login" class="btn btn-secondary btn-block">Annulla</a>
     </form>
 
     <p class="form-hint"><?= htmlspecialchars($passwordHint) ?></p>

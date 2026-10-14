@@ -226,7 +226,11 @@ $conPresentazione = array_values(array_filter(
                         . '<p class="form-hint">La leggono i partecipanti e il tutor del gruppo.'
                         . ($mia !== null ? ' Svuota il campo e salva per togliere la risposta.' : '') . '</p>'
                         . '<div class="form-actions"><button type="submit" class="btn btn-primary">'
-                        . ($mia !== null ? 'Salva' : 'Condividi') . '</button></div></form>'; ?>
+                        . ($mia !== null ? 'Salva' : 'Condividi') . '</button>'
+                        // «Annulla» accanto a «Salva» (14/10): rimette la risposta
+                        // salvata e chiude il pannello «Modifica la tua risposta».
+                        . ($mia !== null ? '<button type="reset" class="btn btn-secondary" data-annulla-chiude>Annulla</button>' : '')
+                        . '</div></form>'; ?>
                     <?php if ($mia === null || $daRiprendere !== null): ?>
                         <?= $modulo ?>
                     <?php else: ?>

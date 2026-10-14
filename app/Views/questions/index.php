@@ -144,6 +144,7 @@ foreach ($pubblicate as $q) {
 
                                     <div class="form-actions qa-azioni">
                                         <button type="submit" class="btn btn-primary">Salva</button>
+                                        <button type="reset" class="btn btn-secondary" data-annulla-chiude>Annulla</button>
                                         <button type="submit" form="pubblicata-<?= $qid ?>-togli" class="link-btn link-btn-danger">Togli dall'archivio</button>
                                     </div>
                                 </form>

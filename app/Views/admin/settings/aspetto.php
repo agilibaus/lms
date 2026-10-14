@@ -326,6 +326,7 @@ use App\Core\Theme;
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">Salva</button>
+        <a href="/admin/settings" class="btn btn-secondary">Annulla</a>
         <a href="/login" class="btn btn-secondary" target="_blank" rel="noopener">Vedi la pagina di accesso</a>
     </div>
 </form>

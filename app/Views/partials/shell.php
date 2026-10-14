@@ -223,5 +223,7 @@ use App\Core\Csrf;
         <?= $content ?>
     </main>
 </div>
+<?php /* «Annulla» che rimette i valori salvati (14/10): contatori, editor e pannelli. */ ?>
+<script src="/assets/js/annulla.js" defer></script>
 </body>
 </html>

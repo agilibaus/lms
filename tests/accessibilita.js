@@ -633,6 +633,34 @@ const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])'
  * collegamento.
  */
 /**
+ * «Annulla» accanto a ogni «Crea», «Salva», «Modifica» (14/10, Alessandro):
+ * un collegamento che esce (`a.btn`) o un `button[type="reset"]` che rimette
+ * i valori salvati, nello stesso modulo. Restano fuori le azioni senza campi
+ * da compilare («Crea l'indirizzo del calendario», «Crea l'evento su Google
+ * Calendar»): non c'e' niente da annullare. Null se la pagina non ha
+ * pulsanti cosi'.
+ */
+async function annullaAccanto(page) {
+    return page.evaluate(() => {
+        const AZIONI = /^Crea l(’|')(indirizzo del calendario|evento su Google Calendar)/;
+        const pulsanti = [...document.querySelectorAll('form button[type="submit"]:not([form])')]
+            .filter((b) => /^(Crea|Salva|Modifica)\b/.test(b.textContent.trim()) && !AZIONI.test(b.textContent.trim()));
+
+        if (pulsanti.length === 0) {
+            return null;
+        }
+
+        return pulsanti.filter((b) => {
+            const modulo = b.closest('form');
+            const annulla = [...modulo.querySelectorAll('a.btn, button[type="reset"]')]
+                .filter((a) => a.textContent.trim() === 'Annulla');
+
+            return annulla.length !== 1;
+        }).map((b) => b.textContent.trim() + ' (' + (b.closest('form').getAttribute('action') || '') + ')');
+    });
+}
+
+/**
  * Le larghezze dei campi (13/10, Alessandro): un'area di testo arriva a
  * 780px, o a tutto il form se e' piu' stretto (il telefono, la scheda del
  * catalogo, un riquadro rientrato); un campo di una riga, o una scelta, si
@@ -897,6 +925,11 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     const senzaContatore = await campiSenzaContatore(page);
     if (senzaContatore !== null) {
         check(nome + ': ogni campo di testo con un limite ha il contatore', senzaContatore.length === 0, senzaContatore);
+    }
+
+    const senzaAnnulla = await annullaAccanto(page);
+    if (senzaAnnulla !== null) {
+        check(nome + ': accanto a ogni «Crea» e «Salva» c\'è «Annulla»', senzaAnnulla.length === 0, senzaAnnulla);
     }
 
     const larghezze = await larghezzeCampi(page);

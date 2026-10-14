@@ -162,6 +162,7 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva</button>
+            <button type="reset" class="btn btn-secondary">Annulla</button>
         </div>
     </form>
 </section>
@@ -207,6 +208,7 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
             </p>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Salva</button>
+                <button type="reset" class="btn btn-secondary">Annulla</button>
             </div>
         </form>
     </section>

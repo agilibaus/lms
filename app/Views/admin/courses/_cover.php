@@ -59,6 +59,7 @@ $isExternal = $coverUrl !== null && CourseCover::isExternalUrl($coverUrl);
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva copertina</button>
+            <button type="reset" class="btn btn-secondary">Annulla</button>
         </div>
     </form>
 

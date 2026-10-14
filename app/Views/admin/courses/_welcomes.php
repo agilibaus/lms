@@ -107,6 +107,7 @@ $tutti = Auth::can('course.welcome');
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary"><?= $esiste ? 'Salva benvenuto' : 'Carica benvenuto' ?></button>
+                    <button type="reset" class="btn btn-secondary">Annulla</button>
                 </div>
             </form>
 

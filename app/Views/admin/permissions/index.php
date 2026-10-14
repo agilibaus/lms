@@ -78,5 +78,6 @@ use App\Core\Csrf;
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">Salva permessi</button>
+        <a href="/admin/settings" class="btn btn-secondary">Annulla</a>
     </div>
 </form>

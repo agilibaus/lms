@@ -48,6 +48,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
         <?php require __DIR__ . '/_fields.php'; ?>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva</button>
+            <button type="reset" class="btn btn-secondary">Annulla</button>
         </div>
     </form>
 </section>

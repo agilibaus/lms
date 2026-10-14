@@ -89,6 +89,7 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva impostazioni</button>
+            <a href="/courses/<?= (int) $module['course_id'] ?>" class="btn btn-secondary">Annulla</a>
         </div>
     </form>
 

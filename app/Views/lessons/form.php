@@ -117,15 +117,12 @@ $provider = $lesson['video_provider'] ?? 'none';
         </div>
     </fieldset>
 
-    <?php /* «Annulla» accanto a «Crea lezione» (14/10, Alessandro), come nelle
-             altre pagine di creazione: non salva niente e riporta al corso, da
-             dove si arriva («+ Lezione» nella scheda del modulo), alla scheda
-             di quel modulo. */ ?>
+    <?php /* «Annulla» accanto a «Crea lezione» e a «Salva» (14/10, Alessandro:
+             ovunque si crea o si salva): non salva niente e riporta al corso,
+             alla scheda del modulo della lezione. */ ?>
     <div class="form-actions">
         <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Salva' : 'Crea lezione' ?></button>
-        <?php if (!$isEdit): ?>
-            <a href="/courses/<?= (int) $module['course_id'] ?>#modulo-<?= (int) $module['id'] ?>" class="btn btn-secondary">Annulla</a>
-        <?php endif; ?>
+        <a href="/courses/<?= (int) $module['course_id'] ?>#modulo-<?= (int) $module['id'] ?>" class="btn btn-secondary">Annulla</a>
     </div>
 </form>
 

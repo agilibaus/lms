@@ -91,6 +91,7 @@ foreach ($elenco as $chiave => $voce) {
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva</button>
+            <button type="reset" class="btn btn-secondary">Annulla</button>
         </div>
     </form>
 </section>
@@ -166,6 +167,7 @@ foreach ($elenco as $chiave => $voce) {
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Salva</button>
+                    <button type="reset" class="btn btn-secondary">Annulla</button>
                     <button type="submit" class="btn btn-secondary" formaction="/admin/settings/email/prova">
                         Manda una prova a me
                     </button>

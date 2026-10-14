@@ -42,6 +42,7 @@ $members = $ordineMembri->applica($members);
         <?php require __DIR__ . '/_fields.php'; ?>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva</button>
+            <a href="/admin/groups" class="btn btn-secondary">Annulla</a>
         </div>
     </form>
 

@@ -1213,10 +1213,10 @@ ai lati: il margine lo scrive l'estensione che allunga l'editor, quindi si impos
 `autoresize_overflow_padding` in `lessons/form.php`, non nel foglio di stile. Nella pagina della
 lezione la riga resta di 68 caratteri. `accessibilita.js` controlla anche la larghezza.
 
-**«Annulla» accanto a «Crea lezione» e «Crea modulo»** (14/10, Alessandro), come nelle altre
-pagine di creazione: non salva niente e riporta al corso — per la lezione, alla scheda del suo
-modulo. Nella modifica non c'è, come nelle altre pagine. `permessi.js` scrive un titolo, preme
-«Annulla» e controlla che non sia stato salvato niente.
+**«Annulla» accanto a «Crea lezione» e «Crea modulo»** (14/10, Alessandro), e dallo stesso
+giorno anche accanto a «Salva» nella loro modifica: non salva niente e riporta al corso — per la
+lezione, alla scheda del suo modulo. La regola generale sta in «I moduli da compilare».
+`permessi.js` scrive un titolo, preme «Annulla» e controlla che non sia stato salvato niente.
 
 ## L'esperto risponde (domande e risposte)
 
@@ -1738,6 +1738,32 @@ casella del questionario, data, pulsanti — si ferma a 520 come prima. Il form 
 la misura dell'editor e non cambia. `accessibilita.js` controlla su ogni pagina che ogni area
 di testo sia larga 780 px, o quanto il suo form se è più stretto, e che nessun campo di una riga
 superi 520.
+
+### «Annulla» accanto a ogni «Crea» e «Salva»
+
+**Ovunque ci sia un pulsante «Crea», «Salva» o «Modifica» c'è accanto «Annulla»** (14/10,
+Alessandro). Che cosa fa dipende dalla pagina:
+
+- **una pagina con un modulo solo** (nuovo e modifica di modulo, lezione, utente, gruppo,
+  incontro e questionario; nuovo corso; le impostazioni del questionario; le impostazioni di Aspetto, Video di benvenuto, Bunny, Google Meet,
+  Server di posta; i Permessi; la reimpostazione della password): **esce senza salvare** e torna
+  alla pagina da cui si arriva — la stessa del collegamento «indietro» in cima, per la password
+  la pagina d'accesso. È un collegamento con l'aspetto di un pulsante;
+- **una pagina con più moduli da salvare** (Messaggi email, il Profilo, Modifica corso con la
+  copertina e i benvenuti): **rimette i valori salvati in quel riquadro e lascia dove si è**, così
+  su una pagina lunga non si perde il punto né il lavoro negli altri riquadri. È un
+  `<button type="reset">`: funziona anche senza JavaScript;
+- **un pannello dentro una pagina** («Modifica la tua risposta» nel giro del cerchio, una domanda
+  pubblicata in «Domande»): **rimette i valori e chiude il pannello**.
+
+Restano fuori le azioni senza campi da compilare — «Crea l'indirizzo del calendario» in Agenda,
+«Crea l'evento su Google Calendar» nella pagina dell'incontro —, perché non c'è niente da
+annullare, e i pulsanti che non salvano una modifica («Pubblica», «Condividi», «Poni la
+domanda», «Invia»). `public/assets/js/annulla.js`, caricato in ogni pagina, fa le tre cose che il
+reset del browser da solo non fa: aggiorna i contatori dei caratteri, rimette il testo
+nell'editor della lezione e chiude il pannello. `accessibilita.js` controlla su ogni pagina che
+accanto a ogni «Crea», «Salva» e «Modifica» ci sia «Annulla»; `permessi.js` che in Messaggi email
+e in Domande rimetta testo e contatore, e che il pannello si chiuda.
 
 ## Ritocchi ai singoli elementi
 

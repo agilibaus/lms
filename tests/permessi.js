@@ -1704,11 +1704,63 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     [href, page.url()]);
             }
 
-            for (const url of ['/modules/' + A.modulo + '/edit', '/lessons/' + A.lezione + '/edit']) {
+            // E nella modifica (14/10, «ovunque si salva»): riporta al corso.
+            for (const [url, attesa] of [
+                ['/modules/' + A.modulo + '/edit', '/courses/' + A.corso],
+                ['/lessons/' + A.lezione + '/edit', '/courses/' + A.corso + '#modulo-' + A.modulo],
+            ]) {
                 await page.goto(BASE + url);
-                const quanti = await page.locator('.form-actions a.btn', { hasText: 'Annulla' }).count();
-                check(url + ': nella modifica «Annulla» non c\'è', quanti === 0, [quanti + '']);
+                const href = await page.locator('form.stacked-form > .form-actions a.btn', { hasText: 'Annulla' }).evaluateAll((l) => l.map((a) => a.getAttribute('href')));
+                check(url + ': anche nella modifica «Annulla» riporta al corso', href.length === 1 && href[0] === attesa, [JSON.stringify(href)]);
             }
+
+            await ctx.close();
+        }
+
+        console.log('\n--- «Annulla» che rimette i valori salvati (14/10)');
+
+        {
+            // Nelle pagine con più moduli «Annulla» rimette i valori salvati e
+            // si resta lì; nei pannelli li rimette e chiude il pannello. Il
+            // contatore dei caratteri torna al numero di prima.
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            const prova = async (selettoreCampo) => page.evaluate(async (sel) => {
+                const campo = document.querySelector(sel);
+                const contatore = document.getElementById(campo.id + '-resta');
+                const prima = { valore: campo.value, conto: contatore ? contatore.textContent : null };
+                campo.value = prima.valore + ' testo in più che non si salva';
+                campo.dispatchEvent(new Event('input', { bubbles: true }));
+                const durante = contatore ? contatore.textContent : null;
+                const annulla = [...campo.form.querySelectorAll('button[type="reset"]')].find((b) => b.textContent.trim() === 'Annulla');
+                const pannello = campo.closest('details');
+                if (annulla === undefined) return { manca: 'nessun «Annulla» nel modulo' };
+                annulla.click();
+                await new Promise((r) => setTimeout(r, 50));
+                return {
+                    rimesso: campo.value === prima.valore,
+                    conto: contatore ? contatore.textContent === prima.conto && durante !== prima.conto : true,
+                    chiuso: pannello === null ? null : !pannello.open,
+                    url: location.pathname,
+                };
+            }, selettoreCampo);
+
+            await page.goto(BASE + '/admin/settings/email');
+            const email = await prova('#testo-verifica');
+            check('Messaggi email: «Annulla» rimette il testo salvato e il contatore, e si resta nella pagina',
+                email.rimesso && email.conto && email.url === '/admin/settings/email', [JSON.stringify(email)]);
+
+            // La prima domanda pubblicata della pagina: quella seminata puo'
+            // essere stata tolta dall'archivio da una prova piu' sopra.
+            await page.goto(BASE + '/domande');
+            const voce = await page.evaluate(() => {
+                const li = document.querySelector('li[id^="pubblicata-"]');
+                if (li === null) return null;
+                li.querySelector('details').open = true;
+                return li.id;
+            });
+            const domanda = voce === null ? { nessuna: true } : await prova('#' + voce + '-risposta');
+            check('Domande, pubblicata: «Annulla» rimette la risposta e chiude il pannello',
+                domanda.rimesso && domanda.conto && domanda.chiuso === true, [JSON.stringify(domanda)]);
 
             await ctx.close();
         }
