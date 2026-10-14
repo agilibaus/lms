@@ -644,7 +644,9 @@ const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])'
  */
 async function annullaAccanto(page) {
     return page.evaluate(() => {
-        const AZIONI = /^(Crea l(’|')(indirizzo del calendario|evento su Google Calendar)|Invia messaggio di prova|Invia inviti)/;
+        // «Invia il link» (Password dimenticata, Rinvia il link) ha gia'
+        // «Torna all'accesso» sotto il modulo (14/10, Alessandro).
+        const AZIONI = /^(Crea l(’|')(indirizzo del calendario|evento su Google Calendar)|Invia messaggio di prova|Invia inviti|Invia il link)/;
         const pulsanti = [...document.querySelectorAll('form button[type="submit"]:not([form])')]
             .filter((b) => /^(Crea|Salva|Modifica|Pubblica|Condividi|Poni la domanda|Invia)\b/.test(b.textContent.trim())
                 && !AZIONI.test(b.textContent.trim()));

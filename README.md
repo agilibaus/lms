@@ -1747,8 +1747,7 @@ Alessandro), e lo stesso giorno anche accanto a **«Pubblica», «Condividi», �
 
 - **una pagina con un modulo solo** (nuovo e modifica di modulo, lezione, utente, gruppo,
   incontro e questionario; nuovo corso; le impostazioni del questionario; lo svolgimento del
-  questionario, che torna al corso senza inviare; «Password dimenticata» e «Rinvia il link di
-  conferma», che tornano all'accesso; le impostazioni di Aspetto, Video di benvenuto, Bunny, Google Meet,
+  questionario, che torna al corso senza inviare; le impostazioni di Aspetto, Video di benvenuto, Bunny, Google Meet,
   Server di posta; i Permessi; la reimpostazione della password): **esce senza salvare** e torna
   alla pagina da cui si arriva — la stessa del collegamento «indietro» in cima, per la password
   la pagina d'accesso. È un collegamento con l'aspetto di un pulsante;
@@ -1765,7 +1764,8 @@ Alessandro), e lo stesso giorno anche accanto a **«Pubblica», «Condividi», �
 Restano fuori le azioni senza campi da compilare — «Crea l'indirizzo del calendario» in Agenda,
 «Crea l'evento su Google Calendar» nella pagina dell'incontro, «Invia messaggio di prova» nel
 Server di posta, «Invia inviti» nella pagina dell'incontro (che chiede già conferma) —, perché
-non c'è niente da annullare. `public/assets/js/annulla.js`, caricato in ogni pagina, fa le tre cose che il
+non c'è niente da annullare. E «Invia il link» in «Password dimenticata» e «Rinvia il link di
+conferma»: sotto il modulo c'è già «Torna all'accesso», che fa la stessa cosa (14/10). `public/assets/js/annulla.js`, caricato in ogni pagina, fa le tre cose che il
 reset del browser da solo non fa: aggiorna i contatori dei caratteri, rimette il testo
 nell'editor della lezione e chiude il pannello. `accessibilita.js` controlla su ogni pagina che
 accanto a ogni «Crea», «Salva» e «Modifica» ci sia «Annulla»; `permessi.js` che in Messaggi email
