@@ -2199,7 +2199,15 @@ In **I miei gruppi**, nel profilo, il nome di ogni gruppo porta a `/gruppi/{id}`
 parte, con la foto o le iniziali, **senza email**. Ci si arriva anche dal corso (12/10,
 Alessandro): nel benvenuto del tutor, in «Tutor del **tuo gruppo** in questo corso», le parole
 «tuo gruppo» portano alla pagina del gruppo da cui viene il benvenuto. Un collegamento in una
-frase, quindi verde e sottolineato; c'è solo dove c'è il benvenuto del tutor. **Il tutor e
+frase, quindi verde e sottolineato; c'è solo dove c'è il benvenuto del tutor. E **sotto il
+titolo del corso** (14/10, Alessandro: il gruppo è parte della didattica e deve vedersi) c'è
+**«Vai al tuo gruppo»**: un collegamento solo, verde e sottolineato come «Riprendi da qui»,
+alto quanto un tocco comodo. Niente nome del gruppo né del tutor: il tutor sta già nel
+benvenuto, e «Gruppo Giallo» sotto il titolo di un corso non si capisce a prima vista. «Tuo» e
+non «del corso», perché un corso può avere più gruppi e ognuno vede solo il suo. Lo vede solo
+lo studente che nel corso ha un gruppo (`GroupModel::delloStudenteNelCorso()`, lo stesso del
+benvenuto quando c'è); `permessi.js` prova che porta al gruppo giusto e che lo staff non lo
+vede. **Il tutor e
 l'admin** non sono membri dei gruppi che guidano, e il profilo non glieli elenca: ci arrivano
 dall'elenco **Gruppi**, con «Vai al gruppo» in ogni riga, e da **Modifica gruppo**, con «vai al
 gruppo» sotto il titolo (12/10). Il titolo è «Gruppo» seguito dal nome

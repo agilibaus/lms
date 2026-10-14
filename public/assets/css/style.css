@@ -389,6 +389,23 @@ h3 { font-size: 1.05rem; }
     margin-bottom: 1.5rem;
 }
 
+/* «Vai al tuo gruppo» sotto il titolo del corso (14/10): verde e
+   sottolineato come «Riprendi da qui», perche' si deve vedere; alto quanto
+   un tocco comodo, con il testo vicino al titolo. */
+.corso-tuo-gruppo {
+    margin: 0;
+}
+
+.corso-tuo-gruppo-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+}
+
 /* La riga dei comandi in cima a una pagina. Non e' un paragrafo: dentro ci
    vanno anche elementi di blocco, come la tendina qui sotto, che in un <p>
    non sarebbero validi. */

@@ -1639,6 +1639,37 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        console.log('\n--- «Vai al tuo gruppo» nella pagina del corso (14/10)');
+
+        {
+            // Lo studente vede il collegamento al suo gruppo, quello del corso,
+            // e il collegamento si apre; lo staff non lo vede.
+            const vai = async (page, corso) => {
+                await page.goto(BASE + '/courses/' + corso);
+                return page.evaluate(() => [...document.querySelectorAll('.page-header a')]
+                    .filter((a) => a.textContent.trim() === 'Vai al tuo gruppo')
+                    .map((a) => a.getAttribute('href')));
+            };
+
+            for (const [email, chi, corso, gruppo] of [
+                ['stud@test.it', 'studente A', A.corso, A.gruppo],
+                ['strano@test.it', 'studente B', B.corso, B.gruppo],
+            ]) {
+                const { ctx, page } = await entra(browser, email);
+                const link = await vai(page, corso);
+                check(chi + ' → pagina del suo corso: «Vai al tuo gruppo» porta al suo gruppo',
+                    link.length === 1 && link[0] === '/gruppi/' + gruppo, [JSON.stringify(link)]);
+                const r = await esitoGet(page, link[0] || '/gruppi/0');
+                check(chi + ' → il collegamento si apre', r.esito === 'consentito', [r.come]);
+                await ctx.close();
+            }
+
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            const allo = await vai(page, A.corso);
+            check('admin → pagina del corso A: nessun «Vai al tuo gruppo»', allo.length === 0, [JSON.stringify(allo)]);
+            await ctx.close();
+        }
+
         console.log('\n--- chi non ha fatto l\'accesso');
 
         const ctx = await browser.newContext();

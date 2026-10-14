@@ -146,6 +146,28 @@ class GroupModel
     }
 
     /**
+     * Il gruppo di uno studente in un corso: uno dei suoi gruppi che ha
+     * accesso a quel corso, o null (14/10, «Vai al tuo gruppo» nella pagina
+     * del corso). Con piu' gruppi nello stesso corso, il primo per nome.
+     */
+    public static function delloStudenteNelCorso(int $userId, int $courseId): ?int
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT g.id
+             FROM group_members gm
+             INNER JOIN `groups` g ON g.id = gm.group_id
+             INNER JOIN group_course_access gca ON gca.group_id = g.id AND gca.course_id = :course
+             WHERE gm.user_id = :user
+             ORDER BY g.name, g.id
+             LIMIT 1'
+        );
+        $stmt->execute(['user' => $userId, 'course' => $courseId]);
+        $id = $stmt->fetchColumn();
+
+        return $id === false ? null : (int) $id;
+    }
+
+    /**
      * Id degli utenti che appartengono ad almeno un gruppo del tutor indicato —
      * definisce il perimetro visibile all'assistente assegnato a quel tutor.
      *

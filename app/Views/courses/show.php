@@ -25,6 +25,7 @@ use App\Core\TestoBreve;
 /** @var int|null $moduloInCorso */
 /** @var array<int, string>|null $statiModuli lo stato di ogni modulo per lo studente; null per lo staff */
 /** @var bool $tuttiModuli «Mostra tutti i moduli», per questa visita */
+/** @var int|null $tuoGruppo il gruppo dello studente in questo corso, o null */
 
 // Chi puo' modificare questo corso: l'admin sempre, il tutor solo se il corso e'
 // assegnato a uno dei suoi gruppi. Gli altri tutor lo vedono in sola lettura.
@@ -33,6 +34,13 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <div class="page-header">
     <a href="/" class="back-link"><span class="back-link-testo"><?= Auth::hasRole('admin', 'tutor', 'assistente') ? 'Tutti i corsi' : 'I miei corsi' ?></span></a>
     <h1><?= htmlspecialchars($course['title']) ?></h1>
+    <?php /* Il gruppo e' parte della didattica (14/10, Alessandro): un
+             collegamento solo, senza nome ne' tutor (il tutor sta nel
+             benvenuto), e solo per lo studente che un gruppo nel corso ce
+             l'ha. «Tuo» e non «del corso»: un corso puo' avere piu' gruppi. */ ?>
+    <?php if (!empty($tuoGruppo)): ?>
+        <p class="corso-tuo-gruppo"><a href="/gruppi/<?= (int) $tuoGruppo ?>" class="corso-tuo-gruppo-link">Vai al tuo gruppo</a></p>
+    <?php endif; ?>
 </div>
 
 <?php /* Le conferme e gli errori subito sotto il titolo: piu' in basso, con il

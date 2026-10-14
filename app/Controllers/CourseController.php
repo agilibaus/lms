@@ -19,6 +19,7 @@ use App\Core\View;
 use App\Models\CertificateModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
+use App\Models\GroupModel;
 use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
 use App\Models\ModuleModel;
@@ -179,9 +180,22 @@ class CourseController
                 : 'completo';
         }
 
+        // «Vai al tuo gruppo» sotto il titolo (14/10, Alessandro): il gruppo e'
+        // parte della didattica, e fin qui dalla pagina del corso ci si
+        // arrivava solo dal benvenuto del tutor. Lo stesso gruppo del
+        // benvenuto, quando c'e'; se no il primo dei suoi gruppi nel corso.
+        $tuoGruppo = null;
+
+        if ($isStudent) {
+            $tuoGruppo = $welcome !== null && !empty($welcome['group_id'])
+                ? (int) $welcome['group_id']
+                : GroupModel::delloStudenteNelCorso($userId, $courseId);
+        }
+
         View::render('courses/show', [
             'pageTitle' => $course['title'],
             'welcome' => $welcome,
+            'tuoGruppo' => $tuoGruppo,
             'obiettivoCorso' => $obiettivoCorso,
             'tuttiCompleti' => !$isStudent,
             // La gerarchia dei moduli (11/10): lo stato di ciascuno per lo
