@@ -1198,6 +1198,14 @@ cambiano. Dove il browser ha `initial-letter` (Chrome, Edge, Safari) la lettera 
 su tre righe; altrove (Firefox) scorre a sinistra con misure calcolate, e l'allineamento è
 approssimato. La descrizione del corso è larga quanto gli altri blocchi della pagina.
 
+**Non nell'editor della lezione** (14/10, Alessandro). L'editor carica il foglio di stile della
+piattaforma e dà al testo la classe della lezione, così il capolettera compariva mentre si
+scriveva o si incollava, come se fosse stato aggiunto al testo. Non lo era — il testo salvato è
+pulito, verificato incollando — ma lo sembrava. Il corpo dell'editor ha la classe
+`mce-content-body`, e lì la regola non vale; nella pagina della lezione resta com'è.
+`accessibilita.js` scrive un testo nell'editor, senza salvarlo, e controlla che la prima lettera
+sia normale.
+
 ## L'esperto risponde (domande e risposte)
 
 **Risponde l'esperto, cioè l'admin** (dal 09/10, Elena; prima il tutor del gruppo). Due posti:

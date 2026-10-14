@@ -6454,13 +6454,19 @@ details[open] > summary .obiettivo-se-aperto {
    E' solo aspetto: `::first-letter` non cambia il testo, e un lettore di
    schermo lo legge com'e'.
 
+   Non nell'editor della lezione (14/10, Alessandro): l'editor carica questo
+   foglio e da' al testo la classe `lesson-content`, e il capolettera
+   compariva mentre si scriveva o incollava, come se fosse stato aggiunto al
+   testo. Non lo era (il testo salvato e' pulito), ma lo sembrava. Il corpo
+   dell'editor ha la classe `mce-content-body`, e li' la regola non vale.
+
    Due modi. Dove c'e' `initial-letter` (Chrome, Edge, Safari) il browser
    allinea la lettera esattamente su tre righe. Altrove (Firefox, al 09/10)
    la lettera scorre a sinistra e il testo le gira intorno, con misure
    calcolate per tre righe di 1,6 di interlinea: la lettera e' alta 3 x 1,6
    = 4,8 volte il testo, meno lo spazio sopra le maiuscole. */
 .course-description > p:first-child::first-letter,
-.lesson-content > p:first-child::first-letter {
+.lesson-content:not(.mce-content-body) > p:first-child::first-letter {
     float: left;
     margin: 0.06em 0.08em 0 0;
     font-size: 4.1em;
@@ -6471,7 +6477,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 @supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
     .course-description > p:first-child::first-letter,
-    .lesson-content > p:first-child::first-letter {
+    .lesson-content:not(.mce-content-body) > p:first-child::first-letter {
         float: none;
         /* Con initial-letter il margine e' lo spazio fra la lettera e il
            testo che le gira intorno: a 0,12 la «U» toccava la «n». */

@@ -1518,6 +1518,49 @@ EXTRA['Modifica corso con benvenuto (semina)'] = EXTRA['Quiz da svolgere'];
 // E «Due righe su di te» nella richiesta di iscrizione (10/10). Il campo c'e'
 // solo sotto un corso con l'iscrizione su richiesta: la semina ne crea uno, il
 // corso del mondo B; dove non ce n'e' nessuno il controllo lo dice e salta.
+// Nell'editor della lezione niente capolettera (14/10, Alessandro): l'editor
+// carica il foglio di stile con la classe del testo della lezione, e il
+// capolettera compariva mentre si scriveva o incollava, come se fosse stato
+// aggiunto al testo. Si scrive un testo nell'editor (senza salvarlo) e si
+// guarda la prima lettera del primo paragrafo.
+EXTRA['Modifica lezione'] = async (page, nome) => {
+    const lettera = await page.evaluate(async () => {
+        for (let i = 0; i < 50 && !(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized); i++) {
+            await new Promise((r) => setTimeout(r, 100));
+        }
+
+        if (!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)) {
+            return null;
+        }
+
+        const ed = tinymce.activeEditor;
+        const prima = ed.getContent();
+        ed.setContent('<p>Respirare insieme.</p><p>Secondo paragrafo.</p>');
+        const doc = ed.getDoc();
+        const p = doc.body.querySelector('p');
+        const s = doc.defaultView.getComputedStyle(p, '::first-letter');
+        const esito = {
+            dimensione: s.fontSize,
+            testo: doc.defaultView.getComputedStyle(p).fontSize,
+            righe: (s.getPropertyValue('initial-letter') || s.getPropertyValue('-webkit-initial-letter') || 'normal').trim(),
+            float: s.float,
+        };
+        ed.setContent(prima);
+        ed.undoManager.clear();
+        ed.setDirty(false);
+
+        return esito;
+    });
+
+    if (lettera === null) {
+        console.log('  --   ' + nome + ': editor non pronto, capolettera non controllato');
+        return;
+    }
+
+    check(nome + ': nell\'editor il primo paragrafo non ha il capolettera',
+        lettera.dimensione === lettera.testo && lettera.righe === 'normal' && lettera.float === 'none', [JSON.stringify(lettera)]);
+};
+
 EXTRA['Catalogo'] = async (page, nome) => {
     await EXTRA['Quiz da svolgere'](page, nome);
 
