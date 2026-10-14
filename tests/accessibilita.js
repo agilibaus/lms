@@ -1518,7 +1518,8 @@ EXTRA['Modifica corso con benvenuto (semina)'] = EXTRA['Quiz da svolgere'];
 // E «Due righe su di te» nella richiesta di iscrizione (10/10). Il campo c'e'
 // solo sotto un corso con l'iscrizione su richiesta: la semina ne crea uno, il
 // corso del mondo B; dove non ce n'e' nessuno il controllo lo dice e salta.
-// Nell'editor della lezione niente capolettera (14/10, Alessandro): l'editor
+// Nell'editor della lezione niente capolettera, e il testo largo quanto il
+// riquadro (14/10, Alessandro): l'editor
 // carica il foglio di stile con la classe del testo della lezione, e il
 // capolettera compariva mentre si scriveva o incollava, come se fosse stato
 // aggiunto al testo. Si scrive un testo nell'editor (senza salvarlo) e si
@@ -1544,6 +1545,11 @@ EXTRA['Modifica lezione'] = async (page, nome) => {
             testo: doc.defaultView.getComputedStyle(p).fontSize,
             righe: (s.getPropertyValue('initial-letter') || s.getPropertyValue('-webkit-initial-letter') || 'normal').trim(),
             float: s.float,
+            // E la larghezza (14/10): il testo occupa tutto il riquadro,
+            // meno il margine interno ai lati.
+            riga: Math.round(p.getBoundingClientRect().width),
+            riquadro: doc.documentElement.clientWidth,
+            sinistra: Math.round(p.getBoundingClientRect().left),
         };
         ed.setContent(prima);
         ed.undoManager.clear();
@@ -1559,6 +1565,8 @@ EXTRA['Modifica lezione'] = async (page, nome) => {
 
     check(nome + ': nell\'editor il primo paragrafo non ha il capolettera',
         lettera.dimensione === lettera.testo && lettera.righe === 'normal' && lettera.float === 'none', [JSON.stringify(lettera)]);
+    check(nome + ': nell\'editor il testo occupa tutta la larghezza, con un margine interno ai lati',
+        lettera.sinistra >= 12 && Math.abs(lettera.riquadro - lettera.riga - 2 * lettera.sinistra) <= 2, [JSON.stringify(lettera)]);
 };
 
 EXTRA['Catalogo'] = async (page, nome) => {

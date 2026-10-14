@@ -1206,6 +1206,18 @@ pulito, verificato incollando — ma lo sembrava. Il corpo dell'editor ha la cla
 `accessibilita.js` scrive un testo nell'editor, senza salvarlo, e controlla che la prima lettera
 sia normale.
 
+Per la stessa ragione l'editor prendeva anche **la misura di riga della lezione**, 68 caratteri,
+e il testo si fermava a due terzi del riquadro, attaccato al bordo sinistro. Ora (14/10) nel
+corpo dell'editor la misura non vale e il testo occupa tutto il riquadro, con 16 px di margine
+ai lati: il margine lo scrive l'estensione che allunga l'editor, quindi si imposta con
+`autoresize_overflow_padding` in `lessons/form.php`, non nel foglio di stile. Nella pagina della
+lezione la riga resta di 68 caratteri. `accessibilita.js` controlla anche la larghezza.
+
+**«Annulla» accanto a «Crea lezione» e «Crea modulo»** (14/10, Alessandro), come nelle altre
+pagine di creazione: non salva niente e riporta al corso — per la lezione, alla scheda del suo
+modulo. Nella modifica non c'è, come nelle altre pagine. `permessi.js` scrive un titolo, preme
+«Annulla» e controlla che non sia stato salvato niente.
+
 ## L'esperto risponde (domande e risposte)
 
 **Risponde l'esperto, cioè l'admin** (dal 09/10, Elena; prima il tutor del gruppo). Due posti:

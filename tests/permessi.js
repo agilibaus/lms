@@ -1670,6 +1670,49 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
 
+        console.log('\n--- «Annulla» nella creazione di moduli e lezioni (14/10)');
+
+        {
+            // «Annulla» accanto a «Crea»: riporta al corso senza salvare
+            // niente. Si scrive un titolo, si preme Annulla, e si guarda che
+            // nessun modulo o lezione con quel titolo esista.
+            const radice = path.join(__dirname, '..');
+            const conta = (tabella, titolo) => Number(execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";'
+                + '$s = App\\Core\\Database::connection()->prepare("SELECT COUNT(*) FROM ' + tabella + ' WHERE title = ?");'
+                + '$s->execute([$argv[1]]); echo $s->fetchColumn();', '--', titolo], { cwd: radice, encoding: 'utf8' }));
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+
+            for (const [url, tabella, chi, attesa] of [
+                ['/courses/' + A.corso + '/modules/create', 'modules', 'nuovo modulo', '/courses/' + A.corso],
+                ['/modules/' + A.modulo + '/lessons/create', 'lessons', 'nuova lezione', '/courses/' + A.corso + '#modulo-' + A.modulo],
+            ]) {
+                const titolo = '[prova-annulla] ' + chi;
+                await page.goto(BASE + url);
+                await page.fill('#title', titolo);
+                const annulla = page.locator('.form-actions a.btn', { hasText: 'Annulla' });
+
+                if (await annulla.count() !== 1) {
+                    check(chi + ': «Annulla» riporta al corso e non salva niente', false, ['«Annulla» non c\'è']);
+                    continue;
+                }
+
+                const href = await annulla.getAttribute('href');
+                await Promise.all([page.waitForNavigation(), annulla.click()]);
+                check(chi + ': «Annulla» riporta al corso e non salva niente',
+                    href === attesa && new URL(page.url()).pathname === '/courses/' + A.corso && conta(tabella, titolo) === 0,
+                    [href, page.url()]);
+            }
+
+            for (const url of ['/modules/' + A.modulo + '/edit', '/lessons/' + A.lezione + '/edit']) {
+                await page.goto(BASE + url);
+                const quanti = await page.locator('.form-actions a.btn', { hasText: 'Annulla' }).count();
+                check(url + ': nella modifica «Annulla» non c\'è', quanti === 0, [quanti + '']);
+            }
+
+            await ctx.close();
+        }
+
         console.log('\n--- chi non ha fatto l\'accesso');
 
         const ctx = await browser.newContext();

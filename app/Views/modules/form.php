@@ -65,5 +65,12 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
         La data è uguale per tutti gli studenti e il giorno dell’apertura ricevono un’email.
     </p>
 
-    <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Salva' : 'Crea modulo' ?></button>
+    <?php /* «Annulla» accanto a «Crea modulo» (14/10, Alessandro): non salva
+             niente e riporta al corso, da dove si arriva («+ Nuovo modulo»). */ ?>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Salva' : 'Crea modulo' ?></button>
+        <?php if (!$isEdit): ?>
+            <a href="/courses/<?= (int) $course['id'] ?>" class="btn btn-secondary">Annulla</a>
+        <?php endif; ?>
+    </div>
 </form>

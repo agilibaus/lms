@@ -2542,6 +2542,20 @@ body.has-focus-video {
     margin-bottom: 1.5rem;
 }
 
+/* Nell'editor della lezione (14/10, Alessandro): l'editor carica questo
+   foglio e da' al testo la classe `lesson-content`, e ne prendeva anche la
+   misura di riga — il testo si fermava a 68 caratteri. Li' il testo occupa
+   tutto il riquadro; nella pagina della lezione resta a 68 caratteri, la
+   misura che si legge bene. Il margine interno ai lati non sta qui:
+   l'estensione che allunga l'editor lo scrive sul corpo, e lo si imposta
+   con `autoresize_overflow_padding` (lessons/form.php). Qui sopra e sotto. */
+.lesson-content.mce-content-body {
+    max-width: none;
+    margin: 0;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
 /* Il contenuto arriva dall'editor: qui si danno misure sensate a quello che
    l'autore puo' inserire, immagini e tabelle comprese. */
 .lesson-content h2 { font-size: 1.3rem; margin: 1.6rem 0 0.6rem; }
@@ -2966,6 +2980,14 @@ body.has-focus-video {
     flex-wrap: wrap;
     gap: 0.6rem;
     margin-top: 1.1rem;
+}
+
+/* Nei form di modulo e lezione i pulsanti stavano da soli, distanziati dal
+   campo sopra come gli altri elementi del form; da quando c'e' «Annulla»
+   (14/10) stanno in `.form-actions`, e il suo margine li allontanava di
+   altri 18 px. Restano dove erano. */
+.stacked-form > .form-actions {
+    margin-top: 0;
 }
 
 .form-hint {
