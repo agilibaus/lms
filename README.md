@@ -1739,13 +1739,16 @@ la misura dell'editor e non cambia. `accessibilita.js` controlla su ogni pagina 
 di testo sia larga 780 px, o quanto il suo form se è più stretto, e che nessun campo di una riga
 superi 520.
 
-### «Annulla» accanto a ogni «Crea» e «Salva»
+### «Annulla» accanto a ogni «Crea», «Salva», «Invia»...
 
 **Ovunque ci sia un pulsante «Crea», «Salva» o «Modifica» c'è accanto «Annulla»** (14/10,
-Alessandro). Che cosa fa dipende dalla pagina:
+Alessandro), e lo stesso giorno anche accanto a **«Pubblica», «Condividi», «Poni la domanda» e
+«Invia»**. Che cosa fa dipende dalla pagina:
 
 - **una pagina con un modulo solo** (nuovo e modifica di modulo, lezione, utente, gruppo,
-  incontro e questionario; nuovo corso; le impostazioni del questionario; le impostazioni di Aspetto, Video di benvenuto, Bunny, Google Meet,
+  incontro e questionario; nuovo corso; le impostazioni del questionario; lo svolgimento del
+  questionario, che torna al corso senza inviare; «Password dimenticata» e «Rinvia il link di
+  conferma», che tornano all'accesso; le impostazioni di Aspetto, Video di benvenuto, Bunny, Google Meet,
   Server di posta; i Permessi; la reimpostazione della password): **esce senza salvare** e torna
   alla pagina da cui si arriva — la stessa del collegamento «indietro» in cima, per la password
   la pagina d'accesso. È un collegamento con l'aspetto di un pulsante;
@@ -1753,13 +1756,16 @@ Alessandro). Che cosa fa dipende dalla pagina:
   copertina e i benvenuti): **rimette i valori salvati in quel riquadro e lascia dove si è**, così
   su una pagina lunga non si perde il punto né il lavoro negli altri riquadri. È un
   `<button type="reset">`: funziona anche senza JavaScript;
-- **un pannello dentro una pagina** («Modifica la tua risposta» nel giro del cerchio, una domanda
-  pubblicata in «Domande»): **rimette i valori e chiude il pannello**.
+- **un pannello dentro una pagina** («Modifica la tua risposta», la risposta nuova e «Fai una
+  nuova domanda» nel giro del cerchio; una domanda pubblicata in «Domande»; «Fai una domanda
+  all'esperto» nella pagina del corso): **rimette i valori — o svuota il campo — e chiude il
+  pannello**. Una domanda in attesa in «Domande» sta in un riquadro sempre aperto: «Annulla»
+  accanto a «Pubblica» rimette la domanda com'era arrivata e svuota la risposta.
 
 Restano fuori le azioni senza campi da compilare — «Crea l'indirizzo del calendario» in Agenda,
-«Crea l'evento su Google Calendar» nella pagina dell'incontro —, perché non c'è niente da
-annullare, e i pulsanti che non salvano una modifica («Pubblica», «Condividi», «Poni la
-domanda», «Invia»). `public/assets/js/annulla.js`, caricato in ogni pagina, fa le tre cose che il
+«Crea l'evento su Google Calendar» nella pagina dell'incontro, «Invia messaggio di prova» nel
+Server di posta, «Invia inviti» nella pagina dell'incontro (che chiede già conferma) —, perché
+non c'è niente da annullare. `public/assets/js/annulla.js`, caricato in ogni pagina, fa le tre cose che il
 reset del browser da solo non fa: aggiorna i contatori dei caratteri, rimette il testo
 nell'editor della lezione e chiude il pannello. `accessibilita.js` controlla su ogni pagina che
 accanto a ogni «Crea», «Salva» e «Modifica» ci sia «Annulla»; `permessi.js` che in Messaggi email

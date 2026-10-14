@@ -633,18 +633,21 @@ const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])'
  * collegamento.
  */
 /**
- * «Annulla» accanto a ogni «Crea», «Salva», «Modifica» (14/10, Alessandro):
+ * «Annulla» accanto a ogni «Crea», «Salva», «Modifica» (14/10, Alessandro), e
+ * poi anche a «Pubblica», «Condividi», «Poni la domanda» e «Invia»:
  * un collegamento che esce (`a.btn`) o un `button[type="reset"]` che rimette
  * i valori salvati, nello stesso modulo. Restano fuori le azioni senza campi
  * da compilare («Crea l'indirizzo del calendario», «Crea l'evento su Google
- * Calendar»): non c'e' niente da annullare. Null se la pagina non ha
+ * Calendar», «Invia messaggio di prova», «Invia inviti»): non c'e' niente da
+ * annullare. Null se la pagina non ha
  * pulsanti cosi'.
  */
 async function annullaAccanto(page) {
     return page.evaluate(() => {
-        const AZIONI = /^Crea l(’|')(indirizzo del calendario|evento su Google Calendar)/;
+        const AZIONI = /^(Crea l(’|')(indirizzo del calendario|evento su Google Calendar)|Invia messaggio di prova|Invia inviti)/;
         const pulsanti = [...document.querySelectorAll('form button[type="submit"]:not([form])')]
-            .filter((b) => /^(Crea|Salva|Modifica)\b/.test(b.textContent.trim()) && !AZIONI.test(b.textContent.trim()));
+            .filter((b) => /^(Crea|Salva|Modifica|Pubblica|Condividi|Poni la domanda|Invia)\b/.test(b.textContent.trim())
+                && !AZIONI.test(b.textContent.trim()));
 
         if (pulsanti.length === 0) {
             return null;
@@ -929,7 +932,7 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
 
     const senzaAnnulla = await annullaAccanto(page);
     if (senzaAnnulla !== null) {
-        check(nome + ': accanto a ogni «Crea» e «Salva» c\'è «Annulla»', senzaAnnulla.length === 0, senzaAnnulla);
+        check(nome + ': accanto a ogni «Crea», «Salva», «Invia»... c\'è «Annulla»', senzaAnnulla.length === 0, senzaAnnulla);
     }
 
     const larghezze = await larghezzeCampi(page);

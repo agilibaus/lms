@@ -76,6 +76,8 @@ $quante = count($domande);
 
             <div class="form-actions qa-azioni">
                 <button type="submit" class="btn btn-primary">Pubblica</button>
+                <?php /* «Annulla» (14/10): rimette la domanda com'era arrivata e svuota la risposta. */ ?>
+                <button type="reset" class="btn btn-secondary">Annulla</button>
                 <button type="submit" form="domanda-<?= $qid ?>-scarta" class="link-btn link-btn-danger">Scarta</button>
             </div>
         </form>

@@ -1763,6 +1763,25 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 domanda.rimesso && domanda.conto && domanda.chiuso === true, [JSON.stringify(domanda)]);
 
             await ctx.close();
+
+            // E accanto a «Invia la domanda» nella pagina del corso (14/10):
+            // svuota il campo e chiude «Fai una domanda all'esperto».
+            const stud = await entra(browser, 'stud@test.it');
+            await stud.page.goto(BASE + '/courses/' + A.corso);
+            await stud.page.evaluate(() => { const d = document.querySelector('#qa-domanda').closest('details'); if (d) d.open = true; });
+            const studente = await stud.page.evaluate(async (sel) => {
+                const campo = document.querySelector(sel);
+                const prima = campo.value;
+                campo.value = 'Una domanda che non mando';
+                const annulla = [...campo.form.querySelectorAll('button[type="reset"]')].find((b) => b.textContent.trim() === 'Annulla');
+                if (annulla === undefined) return { manca: 'nessun «Annulla»' };
+                annulla.click();
+                await new Promise((r) => setTimeout(r, 50));
+                return { rimesso: campo.value === prima, chiuso: !campo.closest('details').open };
+            }, '#qa-domanda');
+            check('pagina del corso: «Annulla» accanto a «Invia la domanda» svuota il campo e chiude il riquadro',
+                studente.rimesso === true && studente.chiuso === true, [JSON.stringify(studente)]);
+            await stud.ctx.close();
         }
 
         console.log('\n--- chi non ha fatto l\'accesso');

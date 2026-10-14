@@ -90,6 +90,8 @@ $stati = [
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Invia la domanda</button>
+                <?php /* «Annulla» (14/10): svuota la domanda e chiude il riquadro. */ ?>
+                <button type="reset" class="btn btn-secondary" data-annulla-chiude>Annulla</button>
             </div>
         </form>
 

@@ -23,6 +23,8 @@ ob_start();
     <input type="email" id="email" name="email" required autofocus autocomplete="email">
 
     <button type="submit" class="btn btn-primary btn-block">Invia il link</button>
+    <?php /* «Annulla» (14/10): non manda niente e torna all'accesso. */ ?>
+    <a href="/login" class="btn btn-secondary btn-block">Annulla</a>
 </form>
 
 <p class="auth-links"><a href="/login">Torna all'accesso</a></p>

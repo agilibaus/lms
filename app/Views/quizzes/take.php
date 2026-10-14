@@ -146,6 +146,8 @@ use App\Core\QuizScoring;
         <?php if (Auth::hasRole('studente')): ?>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Invia risposte</button>
+                <?php /* «Annulla» (14/10): non invia niente e torna al corso, alla scheda del modulo. */ ?>
+                <a href="/courses/<?= (int) $module['course_id'] ?>#modulo-<?= (int) $module['id'] ?>" class="btn btn-secondary">Annulla</a>
             </div>
         <?php else: ?>
             <p class="form-hint">Anteprima per lo staff: l'invio è riservato agli studenti iscritti.</p>

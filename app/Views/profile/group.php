@@ -227,9 +227,10 @@ $conPresentazione = array_values(array_filter(
                         . ($mia !== null ? ' Svuota il campo e salva per togliere la risposta.' : '') . '</p>'
                         . '<div class="form-actions"><button type="submit" class="btn btn-primary">'
                         . ($mia !== null ? 'Salva' : 'Condividi') . '</button>'
-                        // «Annulla» accanto a «Salva» (14/10): rimette la risposta
-                        // salvata e chiude il pannello «Modifica la tua risposta».
-                        . ($mia !== null ? '<button type="reset" class="btn btn-secondary" data-annulla-chiude>Annulla</button>' : '')
+                        // «Annulla» accanto a «Salva» e a «Condividi» (14/10):
+                        // rimette la risposta salvata (o svuota il campo) e
+                        // chiude il pannello «Modifica la tua risposta».
+                        . '<button type="reset" class="btn btn-secondary" data-annulla-chiude>Annulla</button>'
                         . '</div></form>'; ?>
                     <?php if ($mia === null || $daRiprendere !== null): ?>
                         <?= $modulo ?>
@@ -253,7 +254,9 @@ $conPresentazione = array_values(array_filter(
                     . Csrf::field()
                     . CampoContato::html('giro-domanda', 'La domanda al gruppo', 'question', GroupQuestionModel::MAX_DOMANDA, '', 3)
                     . ($domanda !== null ? '<p class="form-hint">La domanda di adesso, con le sue risposte, passa fra le domande passate.</p>' : '')
-                    . '<div class="form-actions"><button type="submit" class="btn ' . ($domanda !== null ? 'btn-secondary' : 'btn-primary') . '">Poni la domanda</button></div></form>'; ?>
+                    . '<div class="form-actions"><button type="submit" class="btn ' . ($domanda !== null ? 'btn-secondary' : 'btn-primary') . '">Poni la domanda</button>'
+                    // «Annulla» (14/10): svuota il campo e chiude «Fai una nuova domanda».
+                    . '<button type="reset" class="btn btn-secondary" data-annulla-chiude>Annulla</button></div></form>'; ?>
                 <?php if ($domanda === null): ?>
                     <?= $nuova ?>
                 <?php else: ?>
