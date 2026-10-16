@@ -28,9 +28,25 @@ class Router
         ];
     }
 
+    /**
+     * Da modello di rotta a espressione regolare. I segnaposto `{nome}`
+     * diventano un segmento catturato; tutto il resto e' testo fisso e va
+     * protetto con preg_quote(): senza, il punto di `{token}.ics` valeva
+     * «un carattere qualunque», barra compresa, e `/calendario/X/ics`
+     * apriva il calendario.
+     */
     private function toRegex(string $pattern): string
     {
-        $regex = preg_replace('#\{([a-zA-Z_][a-zA-Z0-9_]*)\}#', '(?P<$1>[^/]+)', $pattern);
+        $parti = preg_split('#\{([a-zA-Z_][a-zA-Z0-9_]*)\}#', $pattern, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $regex = '';
+
+        // Con PREG_SPLIT_DELIM_CAPTURE le parti alternano testo fisso (indici
+        // pari) e nomi dei segnaposto (indici dispari).
+        foreach ($parti === false ? [$pattern] : $parti as $i => $parte) {
+            $regex .= $i % 2 === 0
+                ? preg_quote($parte, '#')
+                : '(?P<' . $parte . '>[^/]+)';
+        }
 
         return '#^' . $regex . '$#';
     }
