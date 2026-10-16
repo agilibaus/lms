@@ -1031,6 +1031,36 @@ const EXTRA = {
             bordi.quante > 0 && bordi.senza.length === 0, bordi.senza.slice(0, 3));
         check(nome + ': anche quella del tutor', bordi.tutor === 1, ['foto del tutor con il bordo: ' + bordi.tutor]);
 
+        // Nel cerchio foto e fumetto sono piu' grandi del 10%, e il cerchio
+        // e' largo 33 rem (16/10, Alessandro, variante B del mockup); nella
+        // griglia del telefono e del tablet le misure restano quelle di prima.
+        const misure = await page.evaluate(() => {
+            const lista = document.querySelector('.gruppo-cerchio');
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const largo = (s) => {
+                const e = document.querySelector(s);
+                return e === null ? null : Math.round(e.getBoundingClientRect().width);
+            };
+            const f = document.querySelector('.persona-fumetto');
+            const cerchio = lista !== null && getComputedStyle(lista).display === 'block';
+
+            return {
+                cerchio,
+                studente: largo('.persona:not(.persona-tutor) .persona-foto'),
+                tutor: largo('.persona-tutor .persona-foto'),
+                fumetto: f === null ? null : Math.round(parseFloat(getComputedStyle(f).width) / rem * 100) / 100,
+                larghezza: cerchio ? Math.round(lista.getBoundingClientRect().width / rem * 100) / 100 : null,
+            };
+        });
+        const attese = misure.cerchio
+            ? { cerchio: true, studente: 70, tutor: 114, fumetto: 1.76, larghezza: 33 }
+            : { cerchio: false, studente: 64, tutor: 104, fumetto: 1.6, larghezza: null };
+        check(nome + (misure.cerchio
+            ? ': nel cerchio le foto sono di 70 e 114 px, il fumetto di 1,76 rem e il cerchio di 33 rem'
+            : ': nella griglia le foto restano di 64 e 104 px e il fumetto di 1,6 rem'),
+            JSON.stringify(misure) === JSON.stringify(attese),
+            ['misurato ' + JSON.stringify(misure) + ', atteso ' + JSON.stringify(attese)]);
+
         const problemi = { apre: [], fuori: [], scorre: [], scorreV: [], chiudi: [], esc: [], fuoco: [], virgolette: [], corsivo: [] };
 
         // Il fumetto e' verde, cioe' del colore principale (06/10).

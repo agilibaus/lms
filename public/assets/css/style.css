@@ -4640,7 +4640,9 @@ fieldset.checkbox-group legend {
    Dove `@container` non e' supportato resta la griglia, ed e' voluto.
 
    La soglia, 52 rem, e' il cerchio (30 rem) piu' un nome da 10 rem e il suo
-   distacco su ciascun lato: sotto, i nomi dei due fianchi uscirebbero. */
+   distacco su ciascun lato: sotto, i nomi dei due fianchi uscirebbero. Dal
+   16/10 il cerchio e' di 33 rem e la soglia e' rimasta: misurato alla soglia,
+   con il nome piu' lungo della semina, nessun nome esce dal riquadro. */
 
 .gruppo-persone {
     container: gruppo / inline-size;
@@ -4754,10 +4756,16 @@ fieldset.checkbox-group legend {
         justify-content: center;
     }
 
+    /* Nel cerchio le foto sono piu' grandi del 10% (16/10, Alessandro,
+       variante B del mockup): studenti 70 px invece di 64, tutor 114 invece
+       di 104, e il cerchio 33 rem invece di 30, cosi' le distanze fra le
+       persone restano quelle di prima anche con piu' studenti. Nella griglia
+       del telefono e del tablet resta tutto com'era. */
     .gruppo-cerchio.usa-cerchio {
+        --foto-tutor: 114px;
         display: block;
         position: relative;
-        width: 30rem;
+        width: 33rem;
         aspect-ratio: 1;
         /* Sopra e sotto c'e' spazio per i nomi delle foto in alto e in
            basso, che escono dal quadrato. Sopra di piu': un nome lungo va
@@ -4775,10 +4783,16 @@ fieldset.checkbox-group legend {
         position: absolute;
         left: calc(var(--x) * 1%);
         top: calc(var(--y) * 1%);
-        width: 64px;
-        height: 64px;
+        width: 70px;
+        height: 70px;
         display: block;
         transform: translate(-50%, -50%);
+    }
+
+    .usa-cerchio .persona:not(.persona-tutor) .persona-foto {
+        width: 70px;
+        height: 70px;
+        font-size: 1.485rem;
     }
 
     .usa-cerchio .persona-tutor {
@@ -4786,6 +4800,22 @@ fieldset.checkbox-group legend {
         top: 50%;
         width: var(--foto-tutor);
         height: var(--foto-tutor);
+    }
+
+    .usa-cerchio .persona-tutor .persona-foto {
+        font-size: 2.31rem;
+    }
+
+    /* Anche il fumetto della presentazione cresce del 10%, con le foto. */
+    .usa-cerchio .persona-fumetto {
+        right: -0.22rem;
+        bottom: -0.22rem;
+        width: 1.76rem;
+        height: 1.76rem;
+    }
+
+    .usa-cerchio .persona-fumetto::before {
+        inset: 0.33rem;
     }
 
     /* Il nome esce dalla foto verso l'esterno: di fianco sui due lati,
