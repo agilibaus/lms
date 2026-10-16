@@ -23,7 +23,32 @@ final class FileStream
      */
     public static function send(string $absolutePath, string $mime): void
     {
-        $size = filesize($absolutePath);
+        // Si apre prima di mandare qualunque intestazione: un file che manca
+        // (o una cartella al suo posto) e' un 404, uno che c'e' ma non si
+        // legge (permessi) un 500 con la causa nel log. Prima il primo dava
+        // due avvisi e un errore fatale, il secondo un 200 vuoto e un fatale.
+        $stream = is_file($absolutePath) ? @fopen($absolutePath, 'rb') : false;
+        $stat = $stream === false ? false : fstat($stream);
+
+        if ($stream === false || $stat === false) {
+            $presente = is_file($absolutePath);
+
+            if ($presente) {
+                error_log('[FileStream] File presente ma non leggibile: ' . $absolutePath);
+            }
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            http_response_code($presente ? 500 : 404);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo $presente ? 'Il file non si può leggere sul server.' : 'File non trovato.';
+
+            return;
+        }
+
+        $size = (int) $stat['size'];
 
         $start = 0;
         $end = $size - 1;
@@ -33,10 +58,20 @@ final class FileStream
         header('X-Content-Type-Options: nosniff');
 
         if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d*)-(\d*)/', $_SERVER['HTTP_RANGE'], $matches)) {
-            $start = $matches[1] === '' ? 0 : (int) $matches[1];
-            $end = $matches[2] === '' ? $size - 1 : min((int) $matches[2], $size - 1);
+            if ($matches[1] === '' && $matches[2] !== '') {
+                // «bytes=-N» vuol dire gli ultimi N byte (RFC 9110, 14.1.2),
+                // non i byte da 0 a N: e' cosi' che un lettore chiede la coda
+                // del file. N piu' grande del file vale tutto il file; N = 0
+                // non chiede niente, e lo dice il 416 qui sotto.
+                $start = max(0, $size - (int) $matches[2]);
+                $end = (int) $matches[2] === 0 ? -1 : $size - 1;
+            } else {
+                $start = $matches[1] === '' ? 0 : (int) $matches[1];
+                $end = $matches[2] === '' ? $size - 1 : min((int) $matches[2], $size - 1);
+            }
 
             if ($start > $end || $start >= $size) {
+                fclose($stream);
                 header('Content-Range: bytes */' . $size);
                 http_response_code(416);
                 return;
@@ -48,7 +83,6 @@ final class FileStream
 
         header('Content-Length: ' . ($end - $start + 1));
 
-        $stream = fopen($absolutePath, 'rb');
         fseek($stream, $start);
         $bytesLeft = $end - $start + 1;
 
