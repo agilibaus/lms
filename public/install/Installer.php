@@ -51,59 +51,19 @@ class Installer
     }
 
     /**
-     * L'installazione si considera conclusa se esiste il file di lock, oppure
-     * se esiste un .env che punta a un database con almeno un utente: in
-     * quest'ultimo caso l'installer si blocca comunque, anche senza lock.
+     * L'installazione si considera conclusa se esiste il file di lock oppure
+     * il .env: lo stesso criterio della piattaforma, che manda a /install solo
+     * finche' il .env manca (public/index.php).
+     *
+     * Fino al 16/10, senza lock, si leggeva il .env con una regola scritta qui
+     * e si provava il database: un .env con il BOM, una password con una
+     * virgoletta in fondo o un database spento per un minuto facevano
+     * riaprire la procedura su un sito gia' installato, e l'ultimo passo
+     * riscrive il .env. Il file non si legge piu': basta che ci sia.
      */
     public function isInstalled(): bool
     {
-        if (is_file($this->lockFile())) {
-            return true;
-        }
-
-        $env = $this->readEnv();
-
-        if ($env === null) {
-            return false;
-        }
-
-        try {
-            $pdo = $this->connect(
-                $env['DB_HOST'] ?? '127.0.0.1',
-                $env['DB_NAME'] ?? '',
-                $env['DB_USER'] ?? '',
-                $env['DB_PASS'] ?? ''
-            );
-        } catch (\PDOException) {
-            return false;
-        }
-
-        return $this->hasUsers($pdo);
-    }
-
-    /**
-     * @return array<string, string>|null
-     */
-    public function readEnv(): ?array
-    {
-        if (!is_file($this->envFile())) {
-            return null;
-        }
-
-        $values = [];
-
-        foreach ((array) file($this->envFile(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $line = trim((string) $line);
-
-            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
-                continue;
-            }
-
-            [$key, $value] = explode('=', $line, 2);
-            $values[trim($key)] = trim(trim($value), "\"'");
-        }
-
-        return $values;
+        return is_file($this->lockFile()) || is_file($this->envFile());
     }
 
     // ---------------------------------------------------------------

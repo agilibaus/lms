@@ -11,8 +11,9 @@ defined('LMS_INSTALLER') || exit('Accesso diretto non consentito.');
 </div>
 
 <p>
-    Se devi davvero reinstallare da zero — perdendo i dati esistenti — elimina il file
-    <code>storage/installed.lock</code> e svuota il database, poi ricarica questa pagina.
+    Se devi davvero reinstallare da zero — perdendo i dati esistenti — elimina i file
+    <code>.env</code> e <code>storage/installed.lock</code> e svuota il database, poi ricarica
+    questa pagina.
 </p>
 
 <p>Altrimenti, la strada giusta è l'accesso normale alla piattaforma.</p>
