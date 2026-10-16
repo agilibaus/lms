@@ -34,7 +34,9 @@ class Database
             } catch (PDOException $e) {
                 error_log('[DB] Connessione fallita: ' . $e->getMessage());
                 http_response_code(500);
-                exit('Errore di connessione al database. Riprova più tardi.');
+                // L'a capo in fondo serve ai comandi pianificati: il loro log
+                // riceve questa frase, e senza la riga dopo ci si attaccava.
+                exit("Errore di connessione al database. Riprova più tardi.\n");
             }
         }
 
