@@ -268,6 +268,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // bastava essere tutor per aprire quelli di chiunque.
             ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente di un suo gruppo'],
             ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente del gruppo di un collega'],
+            // Gli incontri dal vivo (17/10): la pagina si apre se l'incontro
+            // e' nel suo elenco, cioe' del suo corso o del suo gruppo. Prima
+            // bastava essere staff per aprire quello di chiunque, link Meet
+            // compreso.
+            ['/live/' + A.incontro, 'consentito', 'incontro del suo gruppo'],
+            ['/live/' + B.incontro, 'negato', 'incontro del gruppo di un collega'],
             // Lo stesso per i certificati (17/10).
             ['/certificates/' + A.certificato + '/download', 'consentito', 'certificato di uno studente di un suo gruppo'],
             ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente del gruppo di un collega'],
@@ -312,6 +318,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/courses/' + B.corso, 'negato', 'corso di un tutor che non segue'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
             ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente del tutor che segue'],
+            // Gli incontri (17/10): l'assistente apre quelli del suo elenco,
+            // dove compare come destinatario, come uno studente. Quelli dei
+            // gruppi del suo tutor non ci sono, e quindi nemmeno la pagina.
+            ['/live/' + B.incontro, 'negato', 'incontro di un tutor che non segue'],
+            ['/live/' + A.incontro, 'negato', 'incontro di un gruppo di cui non fa parte: non è nel suo elenco'],
             ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente fuori dal suo perimetro'],
             ['/certificates/' + A.certificato + '/download', 'consentito', 'certificato di uno studente del tutor che segue'],
             ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente fuori dal suo perimetro'],
@@ -333,6 +344,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + B.lezione + '/edit', 'consentito', 'l\'admin modifica tutto'],
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
             ['/attempts/' + B.tentativo, 'consentito', 'l\'admin vede i tentativi di tutti'],
+            ['/live/' + B.incontro, 'consentito', 'l\'admin apre ogni incontro'],
             ['/certificates/' + B.certificato + '/download', 'consentito', 'l\'admin scarica i certificati di tutti'],
             ['/admin/permissions', 'consentito', 'è sua'],
             ['/admin/users/importa', 'consentito', 'l\'importazione è sua'],
@@ -1069,6 +1081,53 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
 
             await anonimo.close();
+            await ctx.close();
+        }
+
+        // --- l'ingresso in riunione (17/10) -------------------------------
+        //
+        // /live/{id}/join rimanda al link Meet: la pagina dell'incontro si
+        // prova nell'elenco qui sopra, l'ingresso qui, senza seguire il
+        // rimando (Meet da qui non si raggiunge). Un rimando e' un ingresso
+        // consentito, un 403 un rifiuto.
+
+        console.log('\n--- l\'ingresso in riunione');
+
+        for (const [email, chi, id, atteso, perche] of [
+            ['tutor1@test.it', 'tutor del mondo A', A.incontro, 'consentito', 'incontro del suo gruppo'],
+            ['tutor1@test.it', 'tutor del mondo A', B.incontro, 'negato', 'incontro del gruppo di un collega: il link Meet non gli si consegna'],
+            ['assist@test.it', 'assistente del tutor A', B.incontro, 'negato', 'incontro di un tutor che non segue'],
+            ['admin@test.it', 'amministratore', B.incontro, 'consentito', 'l\'admin entra ovunque'],
+        ]) {
+            const { ctx, page } = await entra(browser, email);
+            await page.goto(BASE + '/profilo');
+            const stato = await page.evaluate(async (u) => {
+                const res = await fetch(u, { credentials: 'same-origin', redirect: 'manual' });
+                return res.type === 'opaqueredirect' ? 'rimando' : String(res.status);
+            }, '/live/' + id + '/join');
+            const esito = stato === 'rimando' ? 'consentito' : 'negato';
+            check(chi + ' → /live/' + id + '/join: ' + atteso, esito === atteso, ['ottenuto ' + stato + ' — ' + perche]);
+            await ctx.close();
+        }
+
+        // Nella pagina della lezione, il riquadro «Incontri dal vivo di questo
+        // modulo» mostra solo gli incontri che chi guarda puo' aprire (17/10):
+        // il tutor A legge la lezione del corso B in sola lettura, ma
+        // l'incontro di quel modulo non e' suo. Si usano le lezioni dei moduli
+        // chiusi, che hanno un incontro legato al modulo (lo staff non e'
+        // soggetto al rilascio).
+        {
+            const { ctx, page } = await entra(browser, 'tutor1@test.it');
+            const riquadro = async (lezione) => {
+                await page.goto(BASE + '/lessons/' + lezione);
+                return (await page.content()).includes('Incontri dal vivo di questo modulo');
+            };
+            const nelB = await riquadro(B.lezione_chiusa);
+            const nelA = await riquadro(A.lezione_chiusa);
+            check('tutor del mondo A → nella lezione del corso B non compare l\'incontro di quel modulo', !nelB,
+                nelB ? ['il riquadro degli incontri c\'è, e «Entra» porterebbe a un 403'] : []);
+            check('controprova: nella lezione del suo corso l\'incontro compare', nelA,
+                nelA ? [] : ['se mancasse anche qui, la prova sopra non direbbe niente']);
             await ctx.close();
         }
 

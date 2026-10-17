@@ -26,9 +26,13 @@ use App\Models\UserModel;
  *   - `gestibile()`  — «e' roba mia da organizzare»: l'admin tutto, il
  *     tutor i corsi che puo' modificare e i gruppi di cui e' tutor. E'
  *     quella che decide se compaiono i comandi di modifica.
- *   - `visibile()`   — «lo posso aprire»: lo staff si', lo studente solo
- *     se e' fra i destinatari **e** il modulo e' gia' aperto (§8.7).
- *   - `elencoPer()`  — l'elenco che ne esce per chi sta guardando.
+ *   - `visibile()`   — «lo posso aprire»: se e' nel mio elenco. Dal 17/10;
+ *     prima lo staff apriva qualunque incontro, link Meet compreso, anche
+ *     quelli che il suo elenco non mostrava.
+ *   - `elencoPer()`  — l'elenco che ne esce per chi sta guardando: l'admin
+ *     tutto, il tutor i suoi corsi e i suoi gruppi, studenti e assistenti
+ *     gli incontri di cui sono destinatari, meno quelli di un modulo non
+ *     ancora aperto (§8.7).
  */
 class LiveScope
 {
@@ -48,25 +52,29 @@ class LiveScope
         return !empty($session['group_id']) && self::gruppoMio((int) $session['group_id']);
     }
 
+    /**
+     * Si apre un incontro se e' nel proprio elenco: la pagina, l'ingresso in
+     * riunione e l'elenco dicono la stessa cosa (17/10). Prima qui lo staff
+     * passava sempre — `course.edit` o il ruolo — e un tutor apriva
+     * l'incontro del gruppo di un collega, con il link Meet, scrivendo
+     * l'indirizzo a mano.
+     *
+     * Per lo studente non cambia niente: il suo elenco e' gia' «destinatario
+     * e modulo aperto». Un incontro legato a un modulo chiuso e' chiuso con
+     * lui: altrimenti il link Meet del modulo di dicembre sarebbe
+     * raggiungibile a ottobre scrivendo l'indirizzo a mano.
+     */
     public static function visibile(array $session): bool
     {
-        if (Auth::can('course.edit') || Auth::hasRole('admin', 'tutor', 'assistente')) {
-            return true;
+        $id = (int) $session['id'];
+
+        foreach (self::elencoDiUtente((int) Auth::id()) as $mio) {
+            if ((int) $mio['id'] === $id) {
+                return true;
+            }
         }
 
-        if (!LiveSessionModel::isParticipant((int) $session['id'], (int) Auth::id())) {
-            return false;
-        }
-
-        // Un incontro legato a un modulo chiuso e' chiuso con lui: altrimenti
-        // il link Meet del modulo di dicembre sarebbe raggiungibile a ottobre
-        // scrivendo l'indirizzo a mano. Gli incontri rivolti a un gruppo e non
-        // a un modulo non hanno un modulo da cui dipendere: restano visibili.
-        if (!empty($session['module_id'])) {
-            return !CourseAccess::isModuleLocked((int) Auth::id(), (int) $session['module_id']);
-        }
-
-        return true;
+        return false;
     }
 
     public static function gruppoMio(int $groupId): bool

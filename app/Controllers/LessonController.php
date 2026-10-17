@@ -10,6 +10,7 @@ use App\Core\FileStream;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\HtmlSanitizer;
+use App\Core\LiveScope;
 use App\Core\OrphanFiles;
 use App\Core\Upload;
 use App\Core\VideoEmbed;
@@ -163,7 +164,13 @@ class LessonController
             'course' => $course,
             'materials' => LessonMaterialModel::forLesson((int) $lesson['id']),
             'completed' => LessonProgressModel::isCompleted((int) Auth::id(), (int) $lesson['id']),
-            'liveSessions' => LiveSessionModel::upcomingForModule((int) $module['id']),
+            // Solo gli incontri che chi guarda puo' aprire (17/10, LiveScope):
+            // un tutor che legge la lezione del corso di un collega non vede
+            // un «Entra nella riunione» che lo porterebbe a un 403.
+            'liveSessions' => array_values(array_filter(
+                LiveSessionModel::upcomingForModule((int) $module['id']),
+                static fn (array $s): bool => LiveScope::visibile($s)
+            )),
             // Il secondo da cui riprendere, o null se non c'e' niente da
             // riprendere. Lo calcola il server: cosi' il pulsante e' gia'
             // nell'HTML con il suo minuto scritto dentro, e non compare a
