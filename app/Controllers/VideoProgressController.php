@@ -260,6 +260,40 @@ class VideoProgressController
     }
 
     /**
+     * Chi in sessione puo' aprire la fruizione delle lezioni di questo corso.
+     * Una regola sola: la usano questa pagina e il report per corso, per
+     * decidere se il titolo di una lezione e' un collegamento.
+     *
+     * - Ci vuole un modo di arrivarci: poter modificare il corso (da
+     *   Modifica lezione) o uno dei due permessi dei report. Con
+     *   `report.view_assigned` anche l'assistente (17/10, Alessandro): le
+     *   righe sono gia' ristrette ai suoi studenti, qui sotto.
+     * - E il corso deve essere di un gruppo del perimetro (StudentScope):
+     *   `report.view` ce l'ha anche il tutor, e fino al 17/10 apriva la
+     *   fruizione di qualunque lezione. L'admin vede tutto.
+     */
+    public static function apribile(int $courseId): bool
+    {
+        if (!CourseRights::canEdit($courseId) && !Auth::can('report.view') && !Auth::can('report.view_assigned')) {
+            return false;
+        }
+
+        $tutori = StudentScope::tutorIds();
+
+        if ($tutori === null) {
+            return true;
+        }
+
+        foreach ($tutori as $tutorId) {
+            if (in_array($courseId, CourseRights::courseIdsFor($tutorId), true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Carica lezione, modulo, corso e righe, dopo aver verificato che chi
      * chiede possa vedere quella lezione. Sta in un posto solo perche' la
      * pagina e i due scaricamenti devono dare esattamente gli stessi dati e
@@ -292,48 +326,10 @@ class VideoProgressController
             exit('Corso non trovato.');
         }
 
-        /*
-         * Due strade per arrivare qui, e vanno bene tutte e due: chi puo'
-         * modificare il corso (ci si arriva da Modifica lezione) e chi puo'
-         * consultare i report di tutti (ci si arriva da Report → Fruizione
-         * dei video).
-         *
-         * `report.view_assigned` **non** basta: questa pagina mostra tutti
-         * gli iscritti al corso, mentre chi ha quel permesso puo' vedere
-         * solo gli studenti dei gruppi del proprio tutor. La matrice per
-         * corso dentro Report e' gia' ristretta a quel perimetro, e da li'
-         * il titolo della lezione non porta un collegamento a chi non puo'
-         * aprirlo.
-         */
-        if (!CourseRights::canEdit((int) $course['id']) && !Auth::can('report.view')) {
+        if (!self::apribile((int) $course['id'])) {
             http_response_code(403);
-            exit('Accesso negato: questa lezione non è fra quelle che puoi gestire, '
-                . 'e non hai i permessi per consultare i report di tutti gli studenti.');
-        }
-
-        /*
-         * Il perimetro (17/10). `report.view` ce l'ha anche il tutor, e qui
-         * apriva la fruizione di qualunque lezione, con tutti gli iscritti;
-         * nei report, invece, il tutor e' ristretto comunque ai suoi. Ora vale
-         * la stessa regola: fuori dai corsi dei gruppi del perimetro la
-         * lezione non si apre, e dentro si vedono solo gli studenti che chi
-         * guarda segue (StudentScope) — un corso puo' essere assegnato a piu'
-         * gruppi, con tutor diversi. L'admin vede tutto, come prima. Le medie
-         * in cima si calcolano dalle righe, quindi seguono da sole.
-         */
-        $tutori = StudentScope::tutorIds();
-
-        if ($tutori !== null) {
-            $corsi = [];
-
-            foreach ($tutori as $tutorId) {
-                $corsi = array_merge($corsi, CourseRights::courseIdsFor($tutorId));
-            }
-
-            if (!in_array((int) $course['id'], $corsi, true)) {
-                http_response_code(403);
-                exit('Accesso negato: questa lezione non è in un corso dei gruppi che segui.');
-            }
+            exit('Accesso negato: questa lezione non è in un corso dei gruppi che segui, '
+                . 'o non hai i permessi per consultare i report.');
         }
 
         $durata = (int) ($lesson['duration_seconds'] ?? 0);

@@ -334,6 +334,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente fuori dal suo perimetro'],
             ['/certificates/' + A.certificato + '/download', 'consentito', 'certificato di uno studente del tutor che segue'],
             ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente fuori dal suo perimetro'],
+            // La fruizione di una lezione (17/10, Alessandro): con
+            // report.view_assigned l'assistente la apre per i corsi del
+            // tutor che affianca, e vede solo gli studenti di quel tutor.
+            ['/lessons/' + A.lezione + '/fruizione', 'consentito', 'fruizione di una lezione di un corso del tutor che segue'],
+            ['/lessons/' + B.lezione + '/fruizione', 'negato', 'fruizione di una lezione di un corso di un tutor che non segue'],
             ['/lessons/' + A.lezione + '/edit', 'negato', 'un assistente non modifica le lezioni'],
             ['/admin/users', 'negato', 'nessuna gestione utenti'],
             ['/admin/users/importa', 'negato', 'nemmeno importarli da un file'],
@@ -490,6 +495,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             try {
                 for (const [email, chi, vedeB] of [
                     ['tutor1@test.it', 'tutor del mondo A', false],
+                    ['assist@test.it', 'assistente del tutor A', false],
                     ['admin@test.it', 'amministratore (controprova)', true],
                 ]) {
                     const { ctx, page } = await entra(browser, email);

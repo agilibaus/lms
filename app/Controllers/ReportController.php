@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
-use App\Auth\CourseRights;
 use App\Auth\StudentScope;
 use App\Core\Csv;
 use App\Core\Ordinamento;
@@ -304,11 +303,10 @@ class ReportController
             'course' => $course,
             'lezioni' => $lezioni,
             'righe' => $righe,
-            // Il dettaglio di una lezione mostra *tutti* gli iscritti al
-            // corso: chi vede solo gli studenti del proprio tutor non ci
-            // puo' entrare, e il titolo resta senza collegamento invece di
-            // portare a un 403.
-            'dettaglioApribile' => CourseRights::canEdit((int) $course['id']) || Auth::can('report.view'),
+            // Il titolo della lezione porta al suo dettaglio solo se chi
+            // guarda lo puo' aprire: la regola e' quella della pagina stessa
+            // (17/10), invece di una copia che poteva dire un'altra cosa.
+            'dettaglioApribile' => VideoProgressController::apribile((int) $course['id']),
         ]);
     }
 
