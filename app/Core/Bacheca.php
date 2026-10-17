@@ -45,28 +45,15 @@ final class Bacheca
     public const SOLO_LINK = ['video', 'podcast'];
 
     /**
-     * I colori delle categorie (17/10, Alessandro, variante B): 64 colori
-     * in una tavolozza 8x8, una riga per tinta e otto toni dal piu' chiaro
-     * al piu' scuro. Sono toni smorzati come quelli del tema, e contengono
-     * i quattro colori delle tavolozze del tema, cosi' le categorie create
-     * prima restano come erano.
-     *
-     * TUTTI MEDI O SCURI, E NON PER GUSTO. Il titolo del riquadro e' scritto
-     * nel colore sulla sua tinta chiara, e deve leggersi: almeno 4,5:1. Un
-     * giallo, un rosa o un azzurro chiaro non ci arrivano. Li ha generati
-     * uno script in OKLCH, con il tono piu' chiaro di ogni riga al limite
-     * del contrasto; `tests/bacheca_test.php` rifa' il conto su tutti e 64.
+     * I COLORI DELLE CATEGORIE (17/10, Alessandro, strada 2). L'admin sceglie
+     * qualunque colore da una tavolozza continua. Il filo in cima e la tinta
+     * di sfondo usano il colore esattamente com'e'; il titolo, che sta sopra
+     * la tinta e deve leggersi (almeno 4,5:1), usa la stessa tinta scurita
+     * solo quanto serve: un giallo limone ha il titolo ocra scuro, un verde
+     * scuro resta com'e'. Cosi' nessun colore e' vietato, e nessun titolo e'
+     * illeggibile. `tests/bacheca_test.php` lo prova su colori chiari e scuri.
      */
-    public const TAVOLOZZA = [
-        'rosso' => ['Rosso', ['#975455', '#8E4C4C', '#854345', '#7C3B3D', '#6E3738', '#603333', '#532E2F', '#462A2A']],
-        'terracotta' => ['Terracotta', ['#9B4F2F', '#8A4F33', '#82472B', '#793F23', '#6B3A23', '#5E3523', '#513122', '#452C21']],
-        'ocra' => ['Ocra', ['#826122', '#7A5918', '#72510C', '#6A4900', '#5F430A', '#533D12', '#493716', '#3E3019']],
-        'oliva' => ['Oliva', ['#656C2A', '#5D6421', '#555C18', '#4E550E', '#474D14', '#404518', '#393D1A', '#32351C']],
-        'verde' => ['Verde', ['#4F7256', '#336B41', '#2B643A', '#235C33', '#245330', '#244A2D', '#24412A', '#233927']],
-        'petrolio' => ['Petrolio', ['#007378', '#066A6F', '#036266', '#015A5E', '#005256', '#004A4E', '#0B4245', '#14393B']],
-        'ardesia' => ['Ardesia', ['#366C98', '#3F6079', '#255C86', '#1C547E', '#1E4C70', '#204462', '#203D54', '#203547']],
-        'prugna' => ['Prugna', ['#81598B', '#795082', '#6B4A77', '#674070', '#5C3B64', '#513658', '#47314C', '#3C2C40']],
-    ];
+    public const CONTRASTO_TITOLO = 4.5;
 
     /** Le chiavi di prima (le tavolozze del tema), per le righe non migrate. */
     private const VECCHIE_CHIAVI = ['verde', 'ardesia', 'terracotta', 'prugna'];
@@ -109,55 +96,51 @@ final class Bacheca
     }
 
     /**
-     * Il colore di una categoria e la sua tinta chiara. Un colore del tema ha
-     * la tinta del tema (la stessa di prima); gli altri l'89% di bianco. Un
-     * valore fuori dalla tavolozza torna verde.
+     * Il colore di una categoria, la sua tinta chiara e il colore del titolo.
+     * Un colore del tema ha la tinta del tema (la stessa di prima); gli altri
+     * l'89% di bianco. Il titolo e' il colore stesso, spinto verso il nero a
+     * passi del 2% finche' non si legge sulla tinta. Un valore che non e' un
+     * colore torna verde.
      *
-     * @return array{primary: string, soft: string}
+     * @return array{primary: string, soft: string, titolo: string}
      */
     public static function colore(string $valore): array
     {
         $hex = in_array($valore, self::VECCHIE_CHIAVI, true)
             ? Theme::TAVOLOZZE[$valore]['primary']
-            : (self::nellaTavolozza($valore) ?? Theme::TAVOLOZZE['verde']['primary']);
+            : (self::coloreValido($valore) ?? Theme::TAVOLOZZE['verde']['primary']);
+        $soft = Theme::mescolaVerso($hex, '#FFFFFF', self::BIANCO_TINTA);
 
         foreach (Theme::TAVOLOZZE as $t) {
             if (strtoupper($t['primary']) === $hex) {
-                return ['primary' => $hex, 'soft' => $t['soft']];
+                $soft = strtoupper($t['soft']);
             }
         }
 
-        return ['primary' => $hex, 'soft' => Theme::mescolaVerso($hex, '#FFFFFF', self::BIANCO_TINTA)];
+        return ['primary' => $hex, 'soft' => $soft, 'titolo' => self::titoloLeggibile($hex, $soft)];
     }
 
-    /** Il colore scritto come nella tavolozza, se ci sta; altrimenti null. */
-    public static function nellaTavolozza(string $valore): ?string
+    /** Il colore scritto #RRGGBB maiuscolo, se e' un colore; altrimenti null. */
+    public static function coloreValido(string $valore): ?string
     {
-        $hex = strtoupper(trim($valore));
-
-        foreach (self::TAVOLOZZA as [, $toni]) {
-            if (in_array($hex, $toni, true)) {
-                return $hex;
-            }
-        }
-
-        return null;
+        return Theme::coloreValido($valore);
     }
 
-    /** «Verde, tono 1»: il nome che si legge e che sentono i lettori di schermo. */
-    public static function nomeColore(string $valore): string
+    /**
+     * Lo stesso colore, scurito quanto basta a leggersi su `$fondo`. Lo
+     * stesso conto lo fa l'anteprima nel browser (`bacheca-colore.js`).
+     */
+    private static function titoloLeggibile(string $hex, string $fondo): string
     {
-        $hex = self::colore($valore)['primary'];
+        for ($passo = 0; $passo <= 50; $passo++) {
+            $prova = Theme::mescolaVerso($hex, '#000000', $passo * 0.02);
 
-        foreach (self::TAVOLOZZA as [$nome, $toni]) {
-            $i = array_search($hex, $toni, true);
-
-            if ($i !== false) {
-                return $nome . ', tono ' . ($i + 1);
+            if (Theme::contrasto($prova, $fondo) >= self::CONTRASTO_TITOLO) {
+                return $prova;
             }
         }
 
-        return $hex;
+        return '#000000';
     }
 
     public static function etichettaLink(string $tipo): string

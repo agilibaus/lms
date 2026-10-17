@@ -1853,11 +1853,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', '#4F7256']], 'negato', 'creare una categoria'],
             ]],
             ['admin@test.it', 'admin (bacheca)', [
-                // Un colore fuori dalla tavolozza (17/10): la richiesta torna con
-                // il motivo e la categoria non nasce (si controlla dopo).
-                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria fucsia'], ['color', '#FF00FF'], ['description', '']],
-                    'consentito', 'chiedere una categoria con un colore fuori dalla tavolozza (non nasce: si controlla dopo)'],
-                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria di permessi.js'], ['color', '#1E4C70'], ['description', '']],
+                // Un valore che non è un colore (17/10): la richiesta torna con
+                // il motivo e la categoria non nasce (si controlla dopo). Un
+                // giallo chiaro invece va bene: dal 17/10 ogni colore si può.
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria fucsia'], ['color', 'fucsia'], ['description', '']],
+                    'consentito', 'chiedere una categoria con un colore che non è un colore (non nasce: si controlla dopo)'],
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria di permessi.js'], ['color', '#FFF59D'], ['description', '']],
                     'consentito', 'creare una categoria'],
                 ['/admin/bacheca/categorie/' + A.bacheca_categoria + '/elimina', [], 'consentito',
                     'chiedere di eliminare una categoria piena (risponde con il motivo, e la categoria resta: si controlla dopo)'],
@@ -1924,10 +1925,16 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 html.includes('Comunicare con mio figlio') && !html.includes('Prendersi cura di sé') && html.includes('Categoria di permessi.js'));
             const nuova = await page.evaluate(() => {
                 const t = [...document.querySelectorAll('.bacheca-riquadro')].find((x) => x.textContent.includes('Categoria di permessi.js'));
-                return t ? [t.style.getPropertyValue('--cat'), t.style.getPropertyValue('--cat-soft')] : null;
+                if (!t) return null;
+                const h = t.querySelector('.bacheca-riquadro-titolo');
+                return [t.style.getPropertyValue('--cat'), t.style.getPropertyValue('--cat-soft'), t.style.getPropertyValue('--cat-titolo'),
+                    getComputedStyle(h).color, getComputedStyle(t).borderTopColor];
             });
-            check('bacheca → la categoria nuova ha il colore scelto dalla tavolozza, con la sua tinta; quella fucsia non c\'è',
-                nuova !== null && nuova[0] === '#1E4C70' && nuova[1] === '#E6EBEF' && !html.includes('Categoria fucsia'), [JSON.stringify(nuova)]);
+            // Un giallo chiaro (17/10, strada 2): il filo è giallo chiaro, il
+            // titolo la stessa tinta scurita fino a leggersi.
+            check('bacheca → la categoria nuova, giallo chiaro: filo nel colore scelto, titolo nella stessa tinta scurita; quella con un non-colore non c\'è',
+                nuova !== null && nuova[0] === '#FFF59D' && nuova[1] === '#FFFEF4' && nuova[2] === '#7A764B'
+                    && nuova[3] === 'rgb(122, 118, 75)' && nuova[4] === 'rgb(255, 245, 157)' && !html.includes('Categoria fucsia'), [JSON.stringify(nuova)]);
             check('bacheca → la proposta pubblicata è nella categoria scelta dal tutor: Vita digitale ha 2 risorse',
                 /Vita digitale[\s\S]*?2 risorse/.test(html));
             await page.goto(BASE + '/bacheca/categorie/' + A.bacheca_categoria);

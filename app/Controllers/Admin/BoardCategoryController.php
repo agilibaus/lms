@@ -13,7 +13,7 @@ use App\Models\CourseModel;
 /**
  * Le categorie della Bacheca di un corso (17/10), dal riquadro «Bacheca»
  * di «Modifica corso». Le gestisce chi ha `board.manage`, cioe' l'admin:
- * nome, colore (uno dei 64 della tavolozza di `Bacheca`), descrizione di 200
+ * nome, colore (qualunque: il titolo si scurisce da se', `Bacheca::colore`), descrizione di 200
  * caratteri al piu', ordine. Una categoria con delle risorse non si elimina.
  */
 class BoardCategoryController extends AdminController
@@ -82,7 +82,7 @@ class BoardCategoryController extends AdminController
     private function campi(string $qui): array
     {
         $nome = trim((string) ($_POST['name'] ?? ''));
-        $colore = Bacheca::nellaTavolozza((string) ($_POST['color'] ?? ''));
+        $colore = Bacheca::coloreValido((string) ($_POST['color'] ?? ''));
         $descrizione = CampoContato::taglia((string) ($_POST['description'] ?? ''), Bacheca::MAX_DESCRIZIONE_CATEGORIA + 1);
 
         if ($nome === '' || mb_strlen($nome) > Bacheca::MAX_NOME_CATEGORIA) {
@@ -90,7 +90,7 @@ class BoardCategoryController extends AdminController
         }
 
         if ($colore === null) {
-            $this->fail('Scegli uno dei colori della tavolozza.', $qui);
+            $this->fail('Scegli un colore dalla tavolozza.', $qui);
         }
 
         if (mb_strlen($descrizione) > Bacheca::MAX_DESCRIZIONE_CATEGORIA) {

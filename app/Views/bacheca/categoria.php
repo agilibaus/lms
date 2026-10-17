@@ -29,7 +29,7 @@ $conCategoria = $categoria === null;
     $base = '/bacheca/categorie/' . (int) $categoria['id'];
     ?>
     <a href="/bacheca?corso=<?= $courseId ?>" class="back-link"><span class="back-link-testo">Bacheca</span></a>
-    <div class="bacheca-cat-testa" style="--cat:<?= $col['primary'] ?>;--cat-soft:<?= $col['soft'] ?>">
+    <div class="bacheca-cat-testa" style="--cat:<?= $col['primary'] ?>;--cat-soft:<?= $col['soft'] ?>;--cat-titolo:<?= $col['titolo'] ?>">
         <h1><?= htmlspecialchars((string) $categoria['name']) ?></h1>
         <?php if (!empty($categoria['description'])): ?>
             <p><?= htmlspecialchars((string) $categoria['description']) ?></p>

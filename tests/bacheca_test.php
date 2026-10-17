@@ -41,42 +41,43 @@ check('una proposta da valutare', Bacheca::daValutare(1) === '1 proposta da valu
 check('due proposte da valutare', Bacheca::daValutare(2) === '2 proposte da valutare', Bacheca::daValutare(2));
 
 // ---------------------------------------------------------------
-echo PHP_EOL . 'I colori delle categorie: la tavolozza 8x8 (17/10, variante B)' . PHP_EOL;
+echo PHP_EOL . 'I colori delle categorie: qualunque colore (17/10, strada 2)' . PHP_EOL;
 
-$righe = Bacheca::TAVOLOZZA;
-$tutti = array_merge(...array_map(static fn (array $r): array => $r[1], array_values($righe)));
-check('otto righe da otto colori', count($righe) === 8 && array_values(array_unique(array_map(static fn (array $r): int => count($r[1]), $righe))) === [8],
-    count($righe) . ' righe');
-check('64 colori tutti diversi, scritti #RRGGBB maiuscolo', count(array_unique($tutti)) === 64
-    && array_filter($tutti, static fn (string $c): bool => preg_match('/^#[0-9A-F]{6}$/', $c) !== 1) === []);
-
+// Il filo e lo sfondo usano il colore scelto, esattamente; il titolo la
+// stessa tinta, scurita solo quanto serve a leggersi sulla tinta chiara.
+$campioni = ['#FFFF00', '#FFF59D', '#FFC0CB', '#87CEEB', '#FFFFFF', '#00FF00', '#FF00FF', '#E0E0E0',
+    '#000000', '#4F7256', '#1E4C70', '#B63B39', '#808080', '#FFA500', '#00FFFF', '#7F00FF'];
 $deboli = [];
 
-foreach ($tutti as $c) {
+foreach ($campioni as $c) {
     $t = Bacheca::colore($c);
-    $titolo = Theme::contrasto($t['primary'], $t['soft']);
+    $titolo = Theme::contrasto($t['titolo'], $t['soft']);
     $testo = Theme::contrasto('#1C1C1A', $t['soft']);
 
     if ($t['primary'] !== $c || $titolo < 4.5 || $testo < 4.5) {
-        $deboli[] = sprintf('%s: titolo %.2f, testo %.2f', $c, $titolo, $testo);
+        $deboli[] = sprintf('%s: titolo %s %.2f, testo %.2f', $c, $t['titolo'], $titolo, $testo);
     }
 }
 
-check('ogni colore, scritto sulla sua tinta, si legge (almeno 4,5:1), e il testo normale anche', $deboli === [], implode('; ', $deboli));
+check('ogni colore resta com\'è, e il suo titolo si legge sulla tinta chiara (almeno 4,5:1)', $deboli === [], implode('; ', $deboli));
+
+$giallo = Bacheca::colore('#FFFF00');
+check('un giallo limone: il titolo è un giallo scurito, non un altro colore',
+    $giallo['titolo'] !== '#FFFF00' && hexdec(substr($giallo['titolo'], 5, 2)) === 0
+        && hexdec(substr($giallo['titolo'], 1, 2)) === hexdec(substr($giallo['titolo'], 3, 2)), $giallo['titolo']);
+check('un colore già leggibile non si scurisce', Bacheca::colore('#1E4C70')['titolo'] === '#1E4C70');
 
 foreach (['verde', 'ardesia', 'terracotta', 'prugna'] as $chiave) {
     $primo = Theme::TAVOLOZZE[$chiave]['primary'];
-    check($chiave . ': il colore di prima è nella tavolozza, con la sua tinta di sempre',
-        in_array($primo, $tutti, true) && Bacheca::colore($primo)['soft'] === Theme::TAVOLOZZE[$chiave]['soft']);
-    check($chiave . ': la vecchia chiave, se la migrazione non è passata, dà lo stesso colore',
-        Bacheca::colore($chiave) === Bacheca::colore($primo));
+    check($chiave . ': il colore del tema ha la sua tinta di sempre, e il titolo nel colore',
+        Bacheca::colore($primo) === ['primary' => $primo, 'soft' => Theme::TAVOLOZZE[$chiave]['soft'], 'titolo' => $primo]);
+    check($chiave . ': la vecchia chiave dà lo stesso colore', Bacheca::colore($chiave) === Bacheca::colore($primo));
 }
 
-check('un colore fuori dalla tavolozza torna verde', Bacheca::colore('#FF00FF')['primary'] === Theme::TAVOLOZZE['verde']['primary']);
-check('nella tavolozza: il valore, anche minuscolo', Bacheca::nellaTavolozza('#4f7256') === '#4F7256');
-check('fuori dalla tavolozza: null', Bacheca::nellaTavolozza('#FF00FF') === null && Bacheca::nellaTavolozza('verde') === null);
-check('il nome di un colore: tinta e tono', Bacheca::nomeColore('#4F7256') === 'Verde, tono 1', Bacheca::nomeColore('#4F7256'));
-check('il nome di una vecchia chiave', Bacheca::nomeColore('prugna') === 'Prugna, tono 3', Bacheca::nomeColore('prugna'));
+check('un valore che non è un colore torna verde', Bacheca::colore('fucsia')['primary'] === Theme::TAVOLOZZE['verde']['primary']);
+check('un colore valido si scrive #RRGGBB maiuscolo', Bacheca::coloreValido(' #ffd700 ') === '#FFD700' && Bacheca::coloreValido('#abc') === '#AABBCC');
+check('un valore che non è un colore: null', Bacheca::coloreValido('giallo') === null && Bacheca::coloreValido('#12345') === null
+    && Bacheca::coloreValido('red;background:url(x)') === null);
 
 // ---------------------------------------------------------------
 echo PHP_EOL . 'I tipi e i link' . PHP_EOL;

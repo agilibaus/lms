@@ -2520,11 +2520,13 @@ async function giroBenvenuto(browser) {
         await esamina(tp, '/bacheca?corso=' + corso, 'Bacheca (tutor)', BERSAGLIO_MINIMO, daTelefono);
         await esamina(tp, '/bacheca/proposte?corso=' + corso, 'Proposte da valutare (tutor)', BERSAGLIO_MINIMO, daTelefono);
 
-        // La tavolozza dei colori delle categorie (17/10, variante B), aperta,
-        // su computer e a 320 px: 64 pulsanti di scelta con il loro nome, uno
-        // scelto, tutti dentro lo schermo e grandi almeno quanto il minimo;
-        // scelto un colore, il pulsante ne dice il nome e la tavolozza si
-        // chiude. Una volta sola, non a ogni giro di larghezze.
+        // Il colore delle categorie (17/10, strada 2): una tavolozza continua
+        // con un cerchio da spostare, e l'intensità. Aperta, su computer e a
+        // 320 px: disegnata, dentro lo schermo, con le etichette; un clic
+        // nella zona chiara sceglie un colore chiaro, il pulsante e
+        // l'anteprima lo seguono e il titolo dell'anteprima si legge; le
+        // frecce lo spostano; l'intensità a zero dà un grigio. Salvando, la
+        // categoria ha quel colore. Una volta sola, non a ogni giro.
         if (!daTelefono) {
             for (const [w, h] of [[1280, 900], [320, 568]]) {
                 const cx = await browser.newContext({ viewport: { width: w, height: h } });
@@ -2536,38 +2538,93 @@ async function giroBenvenuto(browser) {
                 await ap.waitForLoadState('load');
                 await ap.goto(BASE + '/admin/courses/' + corso + '/edit');
                 await ap.click('#bacheca .bacheca-cat-admin details > summary');
-                await ap.click('#bacheca .bacheca-cat-admin .bacheca-tavolozza > summary');
-                await ap.evaluate(() => document.querySelector('#bacheca .bacheca-cat-admin .bacheca-tavolozza-pannello').scrollIntoView({ block: 'center' }));
-                const t = await ap.evaluate((minimo) => {
-                    const tav = document.querySelector('#bacheca .bacheca-cat-admin .bacheca-tavolozza');
-                    const p = tav.querySelector('.bacheca-tavolozza-pannello').getBoundingClientRect();
-                    const scelte = [...tav.querySelectorAll('input[type="radio"]')];
-                    const quadri = [...tav.querySelectorAll('.bacheca-tavolozza-q')].map((q) => q.getBoundingClientRect());
+                const sel = '#bacheca .bacheca-cat-admin li:first-child .bacheca-colore';
+                const prima = await ap.inputValue(sel + ' input[type="color"]');
+                await ap.click(sel + ' > summary');
+                // Si disegna all'apertura (l'evento `toggle` arriva subito dopo).
+                await ap.waitForFunction((s) => {
+                    const cv = document.querySelector(s + ' canvas');
+                    return cv.getContext('2d').getImageData(Math.floor(cv.width / 2), Math.floor(cv.height / 2), 1, 1).data[3] === 255;
+                }, sel, { timeout: 3000 }).catch(() => {});
+                await ap.evaluate((s) => document.querySelector(s + ' .bacheca-colore-pannello').scrollIntoView({ block: 'center' }), sel);
+                const t = await ap.evaluate(([s, minimo]) => {
+                    const c = document.querySelector(s);
+                    const p = c.querySelector('.bacheca-colore-pannello').getBoundingClientRect();
+                    const area = c.querySelector('.bacheca-colore-area').getBoundingClientRect();
+                    const cv = c.querySelector('canvas');
+                    const px = cv.getContext('2d').getImageData(Math.floor(cv.width / 2), Math.floor(cv.height / 2), 1, 1).data;
                     return {
-                        quante: scelte.length,
-                        scelte: scelte.filter((r) => r.checked).length,
-                        senzaNome: scelte.filter((r) => !/^[A-Z][a-z]+, tono [1-8]$/.test(r.getAttribute('aria-label') || '')).length,
+                        pronta: c.classList.contains('pronta'),
+                        disegnata: px[3] === 255,
                         dentro: p.left >= 0 && p.right <= innerWidth && p.top >= 0 && p.bottom <= innerHeight,
-                        piccoli: quadri.filter((q) => q.width < minimo || q.height < minimo).length,
-                        lato: Math.round(quadri[0].width),
+                        area: [Math.round(area.width), Math.round(area.height)],
                         scorre: document.documentElement.scrollWidth > innerWidth,
                     };
-                }, BERSAGLIO_MINIMO);
-                check('tavolozza a ' + w + ' px: 64 colori con il nome, uno scelto, dentro lo schermo, grandi almeno ' + BERSAGLIO_MINIMO + ' px',
-                    t.quante === 64 && t.scelte === 1 && t.senzaNome === 0 && t.dentro && t.piccoli === 0 && !t.scorre, [JSON.stringify(t)]);
+                }, [sel, BERSAGLIO_MINIMO]);
+                check('colore a ' + w + ' px: la tavolozza si apre disegnata, dentro lo schermo, senza scorrimento orizzontale',
+                    t.pronta && t.disegnata && t.dentro && !t.scorre && t.area[0] >= 200 && t.area[1] >= 100, [JSON.stringify(t)]);
                 const r = await ap.evaluate(raccogli, BERSAGLIO_MINIMO);
-                check('tavolozza a ' + w + ' px, aperta: campi con etichetta, contrasto, bersagli, identificativi non ripetuti',
+                check('colore a ' + w + ' px, aperta: campi con etichetta, contrasto, bersagli, identificativi non ripetuti',
                     r.senzaEtichetta.length === 0 && r.idRipetuti.length === 0 && r.contrasti.length === 0 && r.bersagli.length === 0,
                     [...r.senzaEtichetta, ...r.idRipetuti, ...r.contrasti, ...r.bersagli]);
-                await ap.click('#bacheca .bacheca-cat-admin .bacheca-tavolozza-q[title="Petrolio, tono 4"]');
-                await ap.waitForTimeout(50);
-                const dopo = await ap.evaluate(() => {
-                    const tav = document.querySelector('#bacheca .bacheca-cat-admin .bacheca-tavolozza');
-                    return { aperta: tav.open, nome: tav.querySelector('.bacheca-tavolozza-nome').textContent,
-                        valore: (tav.querySelector('input:checked') || {}).value };
-                });
-                check('tavolozza a ' + w + ' px: scelto un colore, il pulsante ne dice il nome e la tavolozza si chiude',
-                    !dopo.aperta && dopo.nome === 'Petrolio, tono 4' && dopo.valore === '#015A5E', [JSON.stringify(dopo)]);
+
+                const stato = () => ap.evaluate((s) => {
+                    const c = document.querySelector(s);
+                    const lum = (rgb) => rgb.match(/\d+/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+                        .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+                    const tit = c.querySelector('.bacheca-colore-anteprima-titolo');
+                    const fondo = getComputedStyle(c.querySelector('.bacheca-colore-anteprima-riquadro')).backgroundColor;
+                    const [l1, l2] = [lum(getComputedStyle(tit).color), lum(fondo)];
+                    return {
+                        valore: c.querySelector('input[type="color"]').value.toUpperCase(),
+                        campione: getComputedStyle(c.querySelector('.bacheca-colore-campione')).backgroundColor,
+                        filo: getComputedStyle(c.querySelector('.bacheca-colore-anteprima-riquadro')).borderTopColor,
+                        contrasto: Math.round((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05) * 100) / 100,
+                        aperta: c.open,
+                    };
+                }, sel);
+                const rgb = (hex) => 'rgb(' + [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ') + ')';
+                const box = await ap.locator(sel + ' .bacheca-colore-area').boundingBox();
+                await ap.mouse.click(box.x + box.width * 0.28, box.y + box.height * 0.08);
+                const chiaro = await stato();
+                const luce = [1, 3, 5].map((i) => parseInt(chiaro.valore.slice(i, i + 2), 16));
+                check('colore a ' + w + ' px: un clic in alto, sui gialli, sceglie un giallo chiaro; pulsante e filo dell\'anteprima lo seguono, il titolo si legge',
+                    chiaro.valore !== prima.toUpperCase() && luce[0] > 200 && luce[1] > 180 && luce[2] < luce[1]
+                        && chiaro.campione === rgb(chiaro.valore) && chiaro.filo === rgb(chiaro.valore) && chiaro.contrasto >= 4.5,
+                    [JSON.stringify(chiaro)]);
+                await ap.focus(sel + ' .bacheca-colore-area');
+                await ap.keyboard.press('ArrowRight');
+                await ap.keyboard.press('ArrowRight');
+                await ap.keyboard.press('ArrowDown');
+                const frecce = await stato();
+                check('colore a ' + w + ' px: con le frecce il colore cambia', frecce.valore !== chiaro.valore && frecce.aperta, [JSON.stringify(frecce)]);
+                await ap.fill(sel + ' .bacheca-colore-intensita input', '0');
+                await ap.dispatchEvent(sel + ' .bacheca-colore-intensita input', 'input');
+                const grigio = await stato();
+                const g = [1, 3, 5].map((i) => parseInt(grigio.valore.slice(i, i + 2), 16));
+                check('colore a ' + w + ' px: con l\'intensità a zero il colore è un grigio',
+                    Math.max(...g) - Math.min(...g) <= 3, [JSON.stringify(grigio)]);
+                if (w === 1280) {
+                    await ap.mouse.click(box.x + box.width * 0.28, box.y + box.height * 0.08);
+                    await ap.fill(sel + ' .bacheca-colore-intensita input', '100');
+                    await ap.dispatchEvent(sel + ' .bacheca-colore-intensita input', 'input');
+                    await ap.mouse.click(box.x + box.width * 0.28, box.y + box.height * 0.08);
+                    const scelto = (await stato()).valore;
+                    const titoloAnteprima = await ap.evaluate((s) => document.querySelector(s + ' .bacheca-colore-anteprima-riquadro').style.getPropertyValue('--cat-titolo'), sel);
+                    // Esc chiude la tavolozza, che copre il resto del modulo.
+                    await ap.focus(sel + ' .bacheca-colore-area');
+                    await ap.keyboard.press('Escape');
+                    const chiusa = await ap.evaluate((s) => !document.querySelector(s).open, sel);
+                    check('colore: Esc chiude la tavolozza', chiusa);
+                    await Promise.all([ap.waitForNavigation(), ap.click('#bacheca .bacheca-cat-admin li:first-child form.form button.btn-primary')]);
+                    await ap.goto(BASE + '/bacheca?corso=' + corso);
+                    const riq = await ap.evaluate(() => {
+                        const r = document.querySelector('.bacheca-riquadro');
+                        return [r.style.getPropertyValue('--cat'), r.style.getPropertyValue('--cat-titolo')];
+                    });
+                    check('colore: salvato, la categoria ha il colore scelto nella tavolozza (' + scelto + '), e il titolo dell\'anteprima è quello vero',
+                        riq[0] === scelto && riq[1] === titoloAnteprima, [JSON.stringify(riq), titoloAnteprima]);
+                }
                 await cx.close();
             }
         }

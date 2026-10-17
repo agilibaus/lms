@@ -6623,13 +6623,15 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .bacheca-riquadro:focus-visible {
-    outline: 2px solid var(--cat);
+    outline: 2px solid var(--cat-titolo, var(--cat));
     outline-offset: 2px;
 }
 
 .bacheca-riquadro .bacheca-riquadro-titolo {
     margin: 0;
-    color: var(--cat);
+    /* La tinta scelta, scurita quanto serve a leggersi (17/10, strada 2):
+       il filo in cima resta nel colore esatto. */
+    color: var(--cat-titolo, var(--cat));
     font-size: 1.2rem;
     font-weight: 600;
     line-height: 1.3;
@@ -6657,7 +6659,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .bacheca-cat-testa h1 {
     margin: 0 0 0.3rem;
-    color: var(--cat);
+    color: var(--cat-titolo, var(--cat));
 }
 
 .bacheca-cat-testa p {
@@ -6937,33 +6939,31 @@ details[open] > summary .obiettivo-se-aperto {
     margin: 0;
 }
 
-/* La tavolozza dei colori delle categorie (17/10, variante B): il pulsante
-   con il colore scelto e, aperto, il quadrato 8x8. Ogni quadro e' un
-   pulsante di scelta da 30 px; quello scelto ha il contorno e il segno di
-   spunta, quello con il fuoco della tastiera un doppio anello. Sul
-   telefono la tavolozza si apre in basso, larga quanto lo schermo: aperta
-   sotto il pulsante, rientrata nel riquadro, ne uscirebbe. */
-.form fieldset.bacheca-tavolozza-campo {
+/* Il colore delle categorie (17/10, strada 2): il pulsante con il colore
+   scelto apre la tavolozza continua (tinta in orizzontale, chiaro e scuro
+   in verticale) con il cerchio da spostare, l'intensita', il selettore del
+   browser e l'anteprima del riquadro. Senza JavaScript restano il
+   selettore del browser e l'anteprima. Sul telefono il pannello si apre in
+   basso, largo quanto lo schermo. */
+.form fieldset.bacheca-colore-campo {
     min-width: 0;
     margin: 0.9rem 0 0;
     padding: 0;
     border: 0;
 }
 
-/* Il margine sopra lo prende il fieldset: quello della legenda, dentro un
-   fieldset, il browser lo ignora, e «Colore» stava 14 px piu' su delle
-   altre etichette. */
-.form .bacheca-tavolozza-campo > legend {
+.form .bacheca-colore-campo > legend {
     margin-top: 0;
     padding: 0;
 }
 
-.bacheca-tavolozza {
+.bacheca-colore {
     position: relative;
     display: inline-block;
+    max-width: 100%;
 }
 
-.bacheca-tavolozza > summary {
+.bacheca-colore > summary {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
@@ -6978,23 +6978,24 @@ details[open] > summary .obiettivo-se-aperto {
     cursor: pointer;
 }
 
-.bacheca-tavolozza > summary::-webkit-details-marker {
+.bacheca-colore > summary::-webkit-details-marker {
     display: none;
 }
 
-.bacheca-tavolozza > summary:focus-visible {
+.bacheca-colore > summary:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
-.bacheca-tavolozza-campione {
+.bacheca-colore-campione {
     flex-shrink: 0;
     width: 1.4rem;
     height: 1.4rem;
     border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
-.bacheca-tavolozza-freccia {
+.bacheca-colore-freccia {
     width: 0;
     height: 0;
     margin-left: 0.3rem;
@@ -7003,95 +7004,149 @@ details[open] > summary .obiettivo-se-aperto {
     border-top: 0.4rem solid currentColor;
 }
 
-.bacheca-tavolozza-scelto {
-    margin: 0.6rem 0 0;
-    color: var(--color-text-muted);
-    font-size: 0.85rem;
+.bacheca-colore:not([open]) .bacheca-colore-pannello {
+    display: none;
 }
 
-.bacheca-tavolozza-pannello {
+.bacheca-colore-pannello {
     position: absolute;
     z-index: 20;
     top: calc(100% + 0.4rem);
     left: 0;
-    padding: 0.75rem;
+    display: flex;
+    gap: 1.1rem;
+    align-items: flex-start;
+    padding: 0.9rem;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* Chiusa, la tavolozza non c'e': senza questa regola i quadri di una
-   tavolozza chiusa hanno comunque una misura, e per chi la legge esistono. */
-.bacheca-tavolozza:not([open]) .bacheca-tavolozza-pannello {
+.bacheca-colore-comandi {
+    width: 20rem;
+    max-width: 100%;
+}
+
+/* La tavolozza e l'intensita' esistono solo quando lo script li disegna. */
+.bacheca-colore:not(.pronta) :is(.bacheca-colore-area, .bacheca-colore-legenda, .bacheca-colore-intensita) {
     display: none;
 }
 
-.bacheca-tavolozza-griglia {
-    display: grid;
-    grid-template-columns: repeat(8, 1.9rem);
-    gap: 0.3rem;
-}
-
-.form label.bacheca-tavolozza-q {
+.bacheca-colore-area {
     position: relative;
+    touch-action: none;
+    cursor: crosshair;
+    border-radius: 6px;
+}
+
+.bacheca-colore-area:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+.bacheca-colore-area canvas {
     display: block;
-    width: 1.9rem;
-    height: 1.9rem;
-    margin: 0;
-    border-radius: 4px;
-    background: var(--q);
-    cursor: pointer;
-}
-
-.bacheca-tavolozza-q input {
-    position: absolute;
-    inset: 0;
     width: 100%;
-    height: 100%;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
+    height: auto;
+    border-radius: 6px;
 }
 
-.bacheca-tavolozza-q:has(input:checked) {
-    outline: 2px solid var(--color-text);
-    outline-offset: 2px;
-}
-
-.bacheca-tavolozza-q:has(input:checked)::after {
-    content: "\2713";
+.bacheca-colore-cursore {
     position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.4);
     pointer-events: none;
 }
 
-.bacheca-tavolozza-q:has(input:focus-visible) {
-    box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px var(--color-primary);
+.bacheca-colore-legenda {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin: 0.35rem 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+}
+
+.form label.bacheca-colore-intensita,
+.form label.bacheca-colore-codice {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.bacheca-colore-intensita input[type="range"] {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--tap-target);
+    accent-color: var(--color-primary);
+}
+
+.bacheca-colore-codice input[type="color"] {
+    width: 3rem;
+    height: 2rem;
+    padding: 0.1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    cursor: pointer;
+}
+
+.bacheca-colore-anteprima {
+    width: 14rem;
+}
+
+.bacheca-colore-anteprima-etichetta {
+    margin: 0 0 0.35rem;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+}
+
+.bacheca-colore-anteprima-riquadro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.9rem 1rem;
+    background: var(--cat-soft);
+    border-top: 4px solid var(--cat);
+    border-radius: var(--radius-md);
+    overflow-wrap: anywhere;
+}
+
+.bacheca-colore-anteprima-titolo {
+    color: var(--cat-titolo, var(--cat));
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.bacheca-colore-anteprima-testo {
+    font-size: 0.85rem;
 }
 
 @media (max-width: 40rem) {
-    .bacheca-tavolozza-pannello {
+    .bacheca-colore-pannello {
         position: fixed;
         top: auto;
         right: 1rem;
         bottom: 1rem;
         left: 1rem;
+        flex-direction: column;
+        gap: 0.7rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
     }
 
-    .bacheca-tavolozza-griglia {
-        grid-template-columns: repeat(8, minmax(0, 1fr));
-    }
-
-    .form label.bacheca-tavolozza-q {
-        width: auto;
-        height: auto;
-        aspect-ratio: 1;
+    .bacheca-colore-comandi,
+    .bacheca-colore-anteprima {
+        width: 100%;
     }
 }
 

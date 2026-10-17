@@ -74,7 +74,7 @@ use App\Core\Bacheca;
                 <?php $col = Bacheca::colore((string) $c['color']); ?>
                 <li>
                     <a href="/bacheca/categorie/<?= (int) $c['id'] ?>" class="bacheca-riquadro"
-                       style="--cat:<?= $col['primary'] ?>;--cat-soft:<?= $col['soft'] ?>">
+                       style="--cat:<?= $col['primary'] ?>;--cat-soft:<?= $col['soft'] ?>;--cat-titolo:<?= $col['titolo'] ?>">
                         <h2 class="bacheca-riquadro-titolo"><?= htmlspecialchars((string) $c['name']) ?></h2>
                         <?php if (!empty($c['description'])): ?>
                             <span class="bacheca-riquadro-desc"><?= htmlspecialchars((string) $c['description']) ?></span>

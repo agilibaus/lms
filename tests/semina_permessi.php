@@ -539,7 +539,8 @@ $b['domanda_in_attesa'] = $GLOBALS['domandaInAttesa']['B'];
 $a['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['A'];
 $b['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['B'];
 
-// La Bacheca (17/10): in ogni mondo tre categorie — una con le risorse,
+// La Bacheca (17/10): in ogni mondo tre categorie (la terza giallo chiaro:
+// il suo titolo, scurito, deve leggersi, e i controlli del contrasto lo vedono) — una con le risorse,
 // una con una sola, una vuota (il riquadro «Nessuna risorsa») — e
 // in quella piena una risorsa del tutor con il file, in evidenza; una
 // dello studente con un link; una proposta in attesa e una non pubblicata.
@@ -566,7 +567,7 @@ function bachecaDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, strin
     $cat->execute(['c' => $mondo['corso'], 'n' => 'Vita digitale', 'k' => '#015A5E', 'p' => 1,
         'd' => 'Smartphone e social, videogiochi e tempi, sicurezza online, come parlarne in famiglia.']);
     $categoria2 = (int) $pdo->lastInsertId();
-    $cat->execute(['c' => $mondo['corso'], 'n' => 'Prendersi cura di sé come genitore', 'k' => '#6B4A77', 'p' => 2, 'd' => null]);
+    $cat->execute(['c' => $mondo['corso'], 'n' => 'Prendersi cura di sé come genitore', 'k' => '#FFF59D', 'p' => 2, 'd' => null]);
     $vuota = (int) $pdo->lastInsertId();
 
     $ris = $pdo->prepare(
