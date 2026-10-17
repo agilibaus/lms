@@ -134,6 +134,16 @@ $conPresentazione = array_values(array_filter(
             <?php endif; ?>
         </div>
     </section>
+<?php else: ?>
+    <?php /* Nessun incontro del gruppo in programma (17/10, Alessandro,
+             variante A del mockup): il riquadro resta, con una frase, cosi'
+             la pagina non si svuota il giorno dopo un incontro. */ ?>
+    <section class="card gruppo-incontro" aria-labelledby="gruppo-incontro-titolo">
+        <div class="gruppo-incontro-testo">
+            <p class="gruppo-etichetta" id="gruppo-incontro-titolo">Prossimo incontro del gruppo</p>
+            <p class="gruppo-incontro-quando">Nessun incontro in programma, per ora.</p>
+        </div>
+    </section>
 <?php endif; ?>
 
 <?php if ($quanti === 0 && $tutor === null): ?>
@@ -270,6 +280,15 @@ $conPresentazione = array_values(array_filter(
             <?php if ($archivio > 0): ?>
                 <p class="giro-passate"><a class="giro-passate-comando" href="/gruppi/<?= $gid ?>/domande-passate">Domande passate (<?= $archivio ?>)</a></p>
             <?php endif; ?>
+        </section>
+    <?php else: ?>
+        <?php /* Nessuna domanda, per chi non la puo' fare (17/10, variante A):
+                 il riquadro resta, con una frase. Le domande passate non ci
+                 sono: la domanda aperta e' l'ultima fatta, e senza di lei non
+                 ce n'e' nessuna in archivio. */ ?>
+        <section class="card giro" id="giro" aria-labelledby="giro-titolo">
+            <p class="gruppo-etichetta" id="giro-titolo">Il giro del cerchio</p>
+            <p class="giro-spiega">Il tutor non ha ancora fatto una domanda al gruppo. Quando la farà, la trovi qui.</p>
         </section>
     <?php endif; ?>
 

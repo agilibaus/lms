@@ -743,6 +743,49 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        // --- la pagina del gruppo quando non c'e' niente in programma -------
+        //
+        // Variante A del mockup (17/10, Alessandro): il riquadro dell'incontro
+        // e quello del giro del cerchio ci sono sempre, con una frase quando
+        // sono vuoti, cosi' la pagina non si svuota dopo un incontro. Il
+        // gruppo «cerchio» della semina non ha incontri in programma ma ha
+        // una domanda aperta; quello del mondo A ha l'incontro e nessuna
+        // domanda.
+
+        console.log('\n--- la pagina del gruppo quando non c\'è niente in programma');
+
+        {
+            const NESSUN_INCONTRO = 'Nessun incontro in programma, per ora.';
+            const NESSUNA_DOMANDA = 'Il tutor non ha ancora fatto una domanda al gruppo.';
+            const riquadri = async (page, gruppo) => {
+                await page.goto(BASE + '/gruppi/' + gruppo);
+                return await page.evaluate(() => {
+                    const testo = (s) => { const e = document.querySelector(s); return e === null ? null : e.textContent.replace(/\s+/g, ' ').trim(); };
+                    return { incontro: testo('.gruppo-incontro'), giro: testo('.giro'), modulo: document.querySelector('.giro textarea[name="question"]') !== null };
+                });
+            };
+
+            const studente = await entra(browser, 'stud@test.it');
+            let r = await riquadri(studente.page, d.gruppo_cerchio);
+            check('studente → senza incontri in programma il riquadro dell\'incontro c\'è, e lo dice',
+                r.incontro !== null && r.incontro.includes(NESSUN_INCONTRO), [JSON.stringify(r)]);
+            check('studente → con una domanda aperta il giro mostra la domanda, non la frase del vuoto',
+                r.giro !== null && !r.giro.includes(NESSUNA_DOMANDA), [JSON.stringify(r)]);
+
+            r = await riquadri(studente.page, A.gruppo);
+            check('studente → senza una domanda il riquadro del giro del cerchio c\'è, e lo dice',
+                r.giro !== null && r.giro.includes(NESSUNA_DOMANDA) && !r.modulo, [JSON.stringify(r)]);
+            check('studente → con un incontro in programma il riquadro mostra l\'incontro, non la frase del vuoto',
+                r.incontro !== null && !r.incontro.includes(NESSUN_INCONTRO), [JSON.stringify(r)]);
+            await studente.ctx.close();
+
+            const tutore = await entra(browser, 'tutor1@test.it');
+            r = await riquadri(tutore.page, A.gruppo);
+            check('tutor del gruppo → senza una domanda vede il modulo per farla, non la frase dello studente',
+                r.giro !== null && r.modulo && !r.giro.includes(NESSUNA_DOMANDA), [JSON.stringify(r)]);
+            await tutore.ctx.close();
+        }
+
         // --- le domande: che cosa c'e' dentro (07/10) ----------------------
         //
         // Dal 09/10 l'archivio sta nella pagina «Domande e risposte», non piu'
