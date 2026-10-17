@@ -5153,6 +5153,24 @@ fieldset.checkbox-group legend {
     color: var(--color-text-muted);
 }
 
+/* I titoli dei riquadri, «Prossimo incontro del gruppo» e «Il giro del
+   cerchio» (17/10, Alessandro, variante A del mockup): erano etichette
+   da 12 px, maiuscole e grigie, e da sole, nei riquadri vuoti, sembravano
+   piccole accanto ai titoli dei riquadri delle altre pagine. Ora sono h2
+   da 16 px seminero come i titoli del profilo e di Modifica corso; sotto
+   di loro il titolo dell'incontro e la domanda sono h3. L'etichetta
+   maiuscola resta nelle domande passate. Con `.card` davanti: senza,
+   vinceva `.card h2`, che ha piu' peso, e il margine sotto il titolo
+   diventava 0,9 rem invece dei 0,4 del mockup (8 px in piu' per riquadro,
+   visto confrontando al pixel). */
+.card .gruppo-riquadro-titolo {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    color: var(--color-text);
+}
+
 .gruppo-incontro {
     display: flex;
     flex-wrap: wrap;
@@ -5168,15 +5186,16 @@ fieldset.checkbox-group legend {
     min-width: 0;
 }
 
-.gruppo-incontro h2 {
+.gruppo-incontro-nome {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1rem;
+    font-weight: 400;
     overflow-wrap: anywhere;
 }
 
 /* Il titolo porta alla pagina dell'incontro: nel colore del testo, ma
    sottolineato sempre, perche' da solo un titolo non dice di toccarlo. */
-.gruppo-incontro h2 a {
+.gruppo-incontro-nome a {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
@@ -5250,7 +5269,8 @@ fieldset.checkbox-group legend {
     gap: 0.7rem;
 }
 
-.giro-testa .gruppo-etichetta {
+.giro-testa .gruppo-etichetta,
+.giro-testa .gruppo-riquadro-titolo {
     margin: 0;
 }
 
@@ -5272,6 +5292,12 @@ fieldset.checkbox-group legend {
     font-size: 1.15rem;
     line-height: 1.35;
     overflow-wrap: anywhere;
+}
+
+/* Nella pagina del gruppo la domanda sta sotto il titolo del riquadro, ed e'
+   un h3 un po' piu' piccolo (17/10); nelle domande passate resta com'era. */
+.giro h3.giro-domanda {
+    font-size: 1.05rem;
 }
 
 .giro-conto,

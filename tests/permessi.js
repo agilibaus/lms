@@ -761,18 +761,40 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 await page.goto(BASE + '/gruppi/' + gruppo);
                 return await page.evaluate(() => {
                     const testo = (s) => { const e = document.querySelector(s); return e === null ? null : e.textContent.replace(/\s+/g, ' ').trim(); };
-                    return { incontro: testo('.gruppo-incontro'), giro: testo('.giro'), modulo: document.querySelector('.giro textarea[name="question"]') !== null };
+                    // Il titolo di ciascun riquadro (17/10, variante A): un h2
+                    // vero, a 16 px seminero come i titoli dei riquadri del
+                    // profilo, ed e' lui a dare il nome al riquadro.
+                    const titolo = (s) => {
+                        const sezione = document.querySelector(s);
+                        const h = sezione === null ? null : sezione.querySelector('h2');
+                        if (h === null) {
+                            return null;
+                        }
+                        const st = getComputedStyle(h);
+                        const nome = document.getElementById(sezione.getAttribute('aria-labelledby') || '');
+                        return h.textContent.trim() + ' · ' + st.fontSize + ' ' + st.fontWeight + ' · ' + (nome === h ? 'dà il nome' : 'non dà il nome');
+                    };
+                    return {
+                        incontro: testo('.gruppo-incontro'), giro: testo('.giro'),
+                        modulo: document.querySelector('.giro textarea[name="question"]') !== null,
+                        titoli: [titolo('.gruppo-incontro'), titolo('.giro')],
+                    };
                 });
             };
+            const TITOLI = ['Prossimo incontro del gruppo · 16px 600 · dà il nome', 'Il giro del cerchio · 16px 600 · dà il nome'];
+            const titoliGiusti = (chi, r) => check(chi + ' → «Prossimo incontro del gruppo» e «Il giro del cerchio» sono titoli veri da 16 px seminero',
+                JSON.stringify(r.titoli) === JSON.stringify(TITOLI), ['misurato ' + JSON.stringify(r.titoli)]);
 
             const studente = await entra(browser, 'stud@test.it');
             let r = await riquadri(studente.page, d.gruppo_cerchio);
+            titoliGiusti('studente, senza incontro e con la domanda', r);
             check('studente → senza incontri in programma il riquadro dell\'incontro c\'è, e lo dice',
                 r.incontro !== null && r.incontro.includes(NESSUN_INCONTRO), [JSON.stringify(r)]);
             check('studente → con una domanda aperta il giro mostra la domanda, non la frase del vuoto',
                 r.giro !== null && !r.giro.includes(NESSUNA_DOMANDA), [JSON.stringify(r)]);
 
             r = await riquadri(studente.page, A.gruppo);
+            titoliGiusti('studente, con l\'incontro e senza domanda', r);
             check('studente → senza una domanda il riquadro del giro del cerchio c\'è, e lo dice',
                 r.giro !== null && r.giro.includes(NESSUNA_DOMANDA) && !r.modulo, [JSON.stringify(r)]);
             check('studente → con un incontro in programma il riquadro mostra l\'incontro, non la frase del vuoto',
@@ -781,6 +803,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             const tutore = await entra(browser, 'tutor1@test.it');
             r = await riquadri(tutore.page, A.gruppo);
+            titoliGiusti('tutor del gruppo, senza domanda', r);
             check('tutor del gruppo → senza una domanda vede il modulo per farla, non la frase dello studente',
                 r.giro !== null && r.modulo && !r.giro.includes(NESSUNA_DOMANDA), [JSON.stringify(r)]);
             await tutore.ctx.close();

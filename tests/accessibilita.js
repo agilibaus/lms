@@ -1957,7 +1957,7 @@ async function giroBenvenuto(browser) {
             const s = document.querySelector('section.gruppo-incontro');
             return s ? {
                 primo: s === document.querySelector('.page-header ~ section.card'),
-                titolo: !!s.querySelector('h2 a[href^="/live/"]'),
+                titolo: !!s.querySelector('h3 a[href^="/live/"]'),
                 bottone: (s.querySelector('form[action$="/ci-saro"] button') || {}).textContent,
             } : null;
         });

@@ -97,8 +97,8 @@ $conPresentazione = array_values(array_filter(
     $quantiCi = count($ciSaranno); ?>
     <section class="card gruppo-incontro" aria-labelledby="gruppo-incontro-titolo">
         <div class="gruppo-incontro-testo">
-            <p class="gruppo-etichetta">Prossimo incontro del gruppo</p>
-            <h2 id="gruppo-incontro-titolo"><a href="/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></h2>
+            <h2 class="gruppo-riquadro-titolo" id="gruppo-incontro-titolo">Prossimo incontro del gruppo</h2>
+            <h3 class="gruppo-incontro-nome"><a href="/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></h3>
             <p class="gruppo-incontro-quando"><?= htmlspecialchars(GiroDelCerchio::quando((string) $incontro['starts_at'], (string) $incontro['ends_at'])) ?></p>
         </div>
         <div class="gruppo-incontro-chi">
@@ -140,7 +140,7 @@ $conPresentazione = array_values(array_filter(
              la pagina non si svuota il giorno dopo un incontro. */ ?>
     <section class="card gruppo-incontro" aria-labelledby="gruppo-incontro-titolo">
         <div class="gruppo-incontro-testo">
-            <p class="gruppo-etichetta" id="gruppo-incontro-titolo">Prossimo incontro del gruppo</p>
+            <h2 class="gruppo-riquadro-titolo" id="gruppo-incontro-titolo">Prossimo incontro del gruppo</h2>
             <p class="gruppo-incontro-quando">Nessun incontro in programma, per ora.</p>
         </div>
     </section>
@@ -220,11 +220,11 @@ $conPresentazione = array_values(array_filter(
                         <span class="avatar avatar-placeholder giro-foto" aria-hidden="true"><?= htmlspecialchars(CourseCover::initials((string) ($domanda['author_name'] ?? '?'))) ?></span>
                     <?php endif; ?>
                     <div>
-                        <p class="gruppo-etichetta">Il giro del cerchio</p>
+                        <h2 class="gruppo-riquadro-titolo" id="giro-titolo">Il giro del cerchio</h2>
                         <p class="giro-chi"><?= htmlspecialchars(GiroDelCerchio::chiChiede($domanda['author_first_name'] ?? null)) ?></p>
                     </div>
                 </div>
-                <h2 class="giro-domanda" id="giro-titolo"><?= nl2br(htmlspecialchars((string) $domanda['question']), false) ?></h2>
+                <h3 class="giro-domanda"><?= nl2br(htmlspecialchars((string) $domanda['question']), false) ?></h3>
                 <p class="giro-conto"><?= htmlspecialchars(GiroDelCerchio::conto($contate, $partecipanti)) ?></p>
 
                 <?php if ($partecipa && ($mia === null || $mia['hidden_at'] === null)): ?>
@@ -257,7 +257,7 @@ $conPresentazione = array_values(array_filter(
 
             <?php if ($modera): ?>
                 <?php if ($domanda === null): ?>
-                    <p class="gruppo-etichetta" id="giro-titolo">Il giro del cerchio</p>
+                    <h2 class="gruppo-riquadro-titolo" id="giro-titolo">Il giro del cerchio</h2>
                     <p class="giro-spiega">Fai una domanda al gruppo: i partecipanti rispondono in una o due righe, e le risposte si leggono qui. Resta aperta finché non ne fai una nuova.</p>
                 <?php endif; ?>
                 <?php $nuova = '<form action="/gruppi/' . $gid . '/domanda" method="post" class="giro-modulo">'
@@ -287,7 +287,7 @@ $conPresentazione = array_values(array_filter(
                  sono: la domanda aperta e' l'ultima fatta, e senza di lei non
                  ce n'e' nessuna in archivio. */ ?>
         <section class="card giro" id="giro" aria-labelledby="giro-titolo">
-            <p class="gruppo-etichetta" id="giro-titolo">Il giro del cerchio</p>
+            <h2 class="gruppo-riquadro-titolo" id="giro-titolo">Il giro del cerchio</h2>
             <p class="giro-spiega">Il tutor non ha ancora fatto una domanda al gruppo. Quando la farà, la trovi qui.</p>
         </section>
     <?php endif; ?>
