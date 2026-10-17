@@ -33,8 +33,8 @@ final class Bacheca
 
     /** I tipi di risorsa, con il nome che si legge. */
     public const TIPI = [
-        'scheda' => 'Scheda',
-        'checklist' => 'Checklist',
+        'scheda' => 'Scheda pratica',
+        'checklist' => 'Promemoria',
         'video' => 'Video',
         'podcast' => 'Podcast',
         'articolo' => 'Articolo',
@@ -75,11 +75,23 @@ final class Bacheca
     private const BIANCO_TINTA = 0.89;
 
     /**
-     * Gli stessi file dei materiali delle lezioni (`LessonController`), e la
-     * stessa dimensione: lo controlla `tests/bacheca_test.php`.
+     * Gli stessi tipi di file dei materiali delle lezioni (`LessonController`),
+     * lo controlla `tests/bacheca_test.php`. La dimensione no: 3 MB (17/10,
+     * Alessandro), perche' una scheda pratica o un promemoria in PDF pesano
+     * poche centinaia di kB, e la bacheca non e' un archivio di file.
      */
     public const FILE_EXTENSIONS = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'mp3', 'wav', 'm4a', 'zip', 'txt'];
-    public const FILE_MAX_BYTES = 50 * 1024 * 1024;
+    public const FILE_MAX_BYTES = 3 * 1024 * 1024;
+
+    /**
+     * Il limite vero di un file: il piu' basso fra il nostro e quello del
+     * php.ini (`upload_max_filesize`, `post_max_size`). Annunciare 3 MB su un
+     * server che ne accetta 2 farebbe perdere tempo a chi carica.
+     */
+    public static function limiteFile(): int
+    {
+        return min(self::FILE_MAX_BYTES, Upload::iniLimitBytes());
+    }
 
     public static function conta(int $quante): string
     {

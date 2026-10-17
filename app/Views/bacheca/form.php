@@ -98,7 +98,12 @@ $stati = [
                 <?php endif; ?>
                 <input type="file" id="bacheca-file" name="file" accept="<?= $accept ?>" aria-describedby="bacheca-file-aiuto">
                 <p class="form-hint" id="bacheca-file-aiuto">
-                    PDF, Word, PowerPoint, Excel, audio, ZIP o testo, fino a <?= (int) (Bacheca::FILE_MAX_BYTES / 1024 / 1024) ?> MB.
+                    PDF, Word, PowerPoint, Excel, audio, ZIP o testo, fino a <?= htmlspecialchars(FileType::humanSize(Bacheca::limiteFile())) ?>.
+                    <?php if (Bacheca::limiteFile() < Bacheca::FILE_MAX_BYTES): ?>
+                        Il limite lo impone la configurazione di PHP (<code>upload_max_filesize</code> e
+                        <code>post_max_size</code> nel php.ini), non la piattaforma, che accetterebbe fino a
+                        <?= htmlspecialchars(FileType::humanSize(Bacheca::FILE_MAX_BYTES)) ?>.
+                    <?php endif; ?>
                 </p>
                 <?php if (!empty($risorsa['file_path'])): ?>
                     <label class="checkbox-label"><input type="checkbox" name="remove_file" value="1"> Togli il file</label>

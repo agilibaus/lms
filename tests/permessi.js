@@ -1602,6 +1602,38 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
             check('tutor A → «1 proposta da valutare» e il numero accanto a «Bacheca» nel ramo del corso',
                 html.includes('1 proposta da valutare') && new RegExp('href="/bacheca\\?corso=' + A.corso + '"[^>]*>Bacheca\\s*<span class="nav-conteggio">1').test(html));
+                        // Il file di una risorsa (17/10): fino a 3 MB, o meno se il
+            // php.ini del server ne accetta meno. Un file appena oltre si
+            // ferma con il motivo, e la risorsa non nasce; uno piccolo passa.
+            // Il modulo dice il limite.
+            {
+                const carica = async (titolo, byte) => {
+                    await s.page.goto(BASE + '/bacheca/nuova?corso=' + A.corso + '&categoria=' + A.bacheca_categoria);
+                    const aiuto = (await s.page.textContent('#bacheca-file-aiuto')).replace(/\s+/g, ' ').trim();
+                    await s.page.fill('#bacheca-titolo', titolo);
+                    await s.page.selectOption('#bacheca-tipo', 'scheda');
+                    await s.page.fill('#bacheca-descrizione', 'Descrizione di permessi.js.');
+                    const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(byte - 9, 0x20)]);
+                    await s.page.setInputFiles('#bacheca-file', { name: 'prova-limite.pdf', mimeType: 'application/pdf', buffer: pdf });
+                    await Promise.all([s.page.waitForNavigation(), s.page.click('form.form button.btn-primary')]);
+                    return { aiuto, html: await s.page.content(), url: s.page.url() };
+                };
+                // Il limite atteso, letto dallo stesso PHP del server.
+                const atteso = execFileSync('php', ['-r', 'require "vendor/autoload.php";'
+                    + ' echo App\\Core\\FileType::humanSize(min(3 * 1024 * 1024, App\\Core\\Upload::iniLimitBytes()));'],
+                    { encoding: 'utf8', cwd: path.join(__dirname, '..') }).trim();
+                const troppo = await carica('File troppo grande di permessi.js', 3 * 1024 * 1024 + 1024);
+                check('tutor A → il modulo dice il limite dei file: fino a ' + atteso + ' (3 MB, o meno se il server ne accetta meno)',
+                    troppo.aiuto.includes('fino a ' + atteso + '.'), [troppo.aiuto]);
+                check('tutor A → un file di 3 MB e 1 kB non si carica: torna al modulo con il motivo',
+                    troppo.url.includes('/bacheca/nuova') && /supera (la dimensione massima consentita|il limite del server)/.test(troppo.html),
+                    [troppo.url]);
+                const piccolo = await carica('File piccolo di permessi.js', 200 * 1024);
+                check('tutor A → un file di 200 kB si carica, e la risorsa è nella categoria',
+                    piccolo.url.includes('/bacheca/categorie/' + A.bacheca_categoria) && piccolo.html.includes('File piccolo di permessi.js')
+                        && piccolo.html.includes('prova-limite.pdf') && !piccolo.html.includes('File troppo grande di permessi.js'),
+                    [piccolo.url]);
+            }
             await s.ctx.close();
 
             s = await entra(browser, 'tutor2@test.it');

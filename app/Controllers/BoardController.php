@@ -564,7 +564,7 @@ class BoardController
         }
 
         try {
-            return Upload::store($_FILES['file'], 'bacheca/' . $courseId, Bacheca::FILE_EXTENSIONS, Bacheca::FILE_MAX_BYTES);
+            return Upload::store($_FILES['file'], 'bacheca/' . $courseId, Bacheca::FILE_EXTENSIONS, Bacheca::limiteFile());
         } catch (\RuntimeException $e) {
             $this->torna($dietro, $e->getMessage(), false);
         }

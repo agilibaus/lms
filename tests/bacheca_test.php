@@ -82,6 +82,8 @@ check('il nome di una vecchia chiave', Bacheca::nomeColore('prugna') === 'Prugna
 echo PHP_EOL . 'I tipi e i link' . PHP_EOL;
 
 check('i sei tipi', array_keys(Bacheca::TIPI) === ['scheda', 'checklist', 'video', 'podcast', 'articolo', 'altro']);
+check('«Scheda pratica» e «Promemoria» (17/10): cambiano i nomi, non le chiavi salvate',
+    Bacheca::TIPI['scheda'] === 'Scheda pratica' && Bacheca::TIPI['checklist'] === 'Promemoria');
 check('il video si apre come video', Bacheca::etichettaLink('video') === 'Apri il video');
 check('il podcast come podcast', Bacheca::etichettaLink('podcast') === 'Apri il podcast');
 check('l\'articolo come articolo', Bacheca::etichettaLink('articolo') === 'Apri l’articolo');
@@ -111,8 +113,12 @@ echo PHP_EOL . 'I file' . PHP_EOL;
 $materiali = (array) (new ReflectionClassConstant(LessonController::class, 'MATERIAL_EXTENSIONS'))->getValue();
 check('si caricano gli stessi tipi dei materiali delle lezioni', Bacheca::FILE_EXTENSIONS === $materiali,
     implode(', ', Bacheca::FILE_EXTENSIONS));
-check('e la stessa dimensione massima', Bacheca::FILE_MAX_BYTES
-    === (int) (new ReflectionClassConstant(LessonController::class, 'MATERIAL_MAX_BYTES'))->getValue());
+// La dimensione no (17/10, Alessandro): 3 MB, non i 50 dei materiali. Una
+// scheda o un promemoria in PDF pesano poche centinaia di kB.
+check('fino a 3 MB', Bacheca::FILE_MAX_BYTES === 3 * 1024 * 1024, (string) Bacheca::FILE_MAX_BYTES);
+check('il limite vero è il più basso fra il nostro e quello del php.ini',
+    Bacheca::limiteFile() === min(Bacheca::FILE_MAX_BYTES, \App\Core\Upload::iniLimitBytes()),
+    Bacheca::limiteFile() . ' / ini ' . \App\Core\Upload::iniLimitBytes());
 check('nessun SVG', array_intersect(Bacheca::FILE_EXTENSIONS, ['svg', 'svgz']) === []);
 
 // ---------------------------------------------------------------
