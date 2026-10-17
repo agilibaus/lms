@@ -689,6 +689,60 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
 
+        // Un tutor che nel gruppo e' solo membro (17/10): i nomi interi li
+        // vede il tutor **di quel gruppo**, non chiunque abbia il ruolo. Il
+        // tutor B diventa membro del gruppo «cerchio» per la durata della
+        // prova, e alla fine si toglie.
+        {
+            const radice = path.join(__dirname, '..');
+            const sql = (q, ...valori) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";'
+                + ' App\\Core\\Database::connection()->prepare($argv[1])->execute(array_slice($argv, 2));',
+                '--', q, ...valori.map(String)], { cwd: radice, encoding: 'utf8' });
+            const membro = () => [d.gruppo_cerchio, d.utenti.tutorB];
+            // Nell'archivio della semina il compagno 5 (iniziali) non ha
+            // risposte: senza questa, la prova sulle domande passate sarebbe
+            // verde per il motivo sbagliato. Si aggiunge alla domanda piu'
+            // vecchia del gruppo, che e' in archivio, e si toglie alla fine.
+            const rispostaDiProva = 'Risposta di prova del compagno 5 (permessi.js)';
+
+            sql('INSERT IGNORE INTO group_members (group_id, user_id) VALUES (?, ?)', ...membro());
+            sql('INSERT INTO group_answers (question_id, user_id, answer)'
+                + ' SELECT (SELECT MIN(id) FROM group_questions WHERE group_id = ?), id, ? FROM users WHERE email = ?',
+            d.gruppo_cerchio, rispostaDiProva, 'compagno5@test.it');
+
+            try {
+                {
+                    const tutore = await entra(browser, 'tutor1@test.it');
+                    await tutore.page.goto(BASE + '/gruppi/' + d.gruppo_cerchio + '/domande-passate');
+                    const suo = await tutore.page.content();
+                    const ok = suo.includes(rispostaDiProva) && suo.includes('Compagno 5');
+                    check('controprova: nelle domande passate c\'è la risposta del compagno 5, e il tutor del gruppo la vede per intero',
+                        ok, ok ? [] : ['senza, la prova sull\'archivio non direbbe niente']);
+                    await tutore.ctx.close();
+                }
+
+                const { ctx, page } = await entra(browser, 'tutor2@test.it');
+                await page.goto(BASE + '/gruppi/' + d.gruppo_cerchio);
+                const nomi = await page.$$eval('.gruppo-cerchio .persona-nome', (ns) => ns.map((n) => n.childNodes[0].textContent.trim()));
+                const html = await page.content();
+                check('tutor B, solo membro del gruppo → vede le iniziali e il solo nome come li hanno scelti',
+                    nomi.includes('C. 5.') && !nomi.includes('Compagno 6'), [JSON.stringify(nomi)]);
+                check('tutor B, solo membro del gruppo → il nome intero di chi ha scelto le iniziali non c\'è nell\'HTML',
+                    !html.includes('Compagno 5'), html.includes('Compagno 5') ? ['trovato «Compagno 5»'] : []);
+
+                await page.goto(BASE + '/gruppi/' + d.gruppo_cerchio + '/domande-passate');
+                const archivio = await page.content();
+                const archivioOk = archivio.includes(rispostaDiProva) && !archivio.includes('Compagno 5');
+                check('tutor B, solo membro del gruppo → nemmeno nelle domande passate', archivioOk,
+                    archivioOk ? [] : [archivio.includes(rispostaDiProva) ? 'trovato «Compagno 5»' : 'la risposta di prova non c\'è']);
+                await ctx.close();
+            } finally {
+                sql('DELETE FROM group_answers WHERE answer = ?', rispostaDiProva);
+                sql('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', ...membro());
+            }
+        }
+
         // --- le domande: che cosa c'e' dentro (07/10) ----------------------
         //
         // Dal 09/10 l'archivio sta nella pagina «Domande e risposte», non piu'

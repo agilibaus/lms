@@ -45,12 +45,12 @@ class GroupPageController
 
         // Come compaiono gli studenti (07/10): ciascuno come ha scelto nel
         // profilo — nome e cognome, solo il nome, solo le iniziali — tranne
-        // per lo staff, che vede sempre tutto, e per se stessi. Il nome
-        // mostrato prende il posto di `full_name`, cosi' la vista, le
-        // iniziali della foto e la scheda della presentazione usano tutti lo
-        // stesso. Il tutor al centro compare sempre per intero.
+        // per l'admin e il tutor del gruppo, che vedono sempre tutto, e per se
+        // stessi. Il nome mostrato prende il posto di `full_name`, cosi' la
+        // vista, le iniziali della foto e la scheda della presentazione usano
+        // tutti lo stesso. Il tutor al centro compare sempre per intero.
         $chiGuarda = (int) Auth::id();
-        $vedeTutto = Auth::hasRole('admin', 'tutor');
+        $vedeTutto = self::vedeTutto($group, $chiGuarda);
         $people = array_map(
             static fn (array $p): array => [
                 'full_name' => PersonName::shown($p, $chiGuarda, $vedeTutto),
@@ -125,7 +125,7 @@ class GroupPageController
     public function archive(array $params): void
     {
         [$group, $chiGuarda, $modera] = $this->gruppoVisibile((int) $params['id']);
-        $vedeTutto = Auth::hasRole('admin', 'tutor');
+        $vedeTutto = self::vedeTutto($group, $chiGuarda);
 
         $domande = array_map(
             static fn (array $q): array => $q + ['risposte' => self::conNomi(
@@ -262,6 +262,22 @@ class GroupPageController
     }
 
     // ---------------------------------------------------------------
+
+    /**
+     * Chi vede i compagni sempre con nome e cognome, qualunque cosa abbiano
+     * scelto: l'admin e il tutor **di questo gruppo** (decisione del 07/10).
+     * Fino al 17/10 bastava il ruolo di tutor: un tutor che nel gruppo di un
+     * collega era solo membro vedeva per intero anche chi aveva scelto le
+     * iniziali. Ora chi e' nel gruppo come membro, tutor o no, vede i
+     * compagni come ciascuno ha scelto. Una regola sola, per la pagina e per
+     * le domande passate.
+     *
+     * @param array<string, mixed> $group
+     */
+    private static function vedeTutto(array $group, int $chiGuarda): bool
+    {
+        return Auth::hasRole('admin') || (int) ($group['tutor_id'] ?? 0) === $chiGuarda;
+    }
 
     /**
      * Il gruppo, se chi e' collegato lo puo' vedere; altrimenti 404 o 403.
