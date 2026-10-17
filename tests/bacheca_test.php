@@ -111,8 +111,12 @@ foreach ($casi as [$dato, $atteso, $cosa]) {
 echo PHP_EOL . 'I file' . PHP_EOL;
 
 $materiali = (array) (new ReflectionClassConstant(LessonController::class, 'MATERIAL_EXTENSIONS'))->getValue();
-check('si caricano gli stessi tipi dei materiali delle lezioni', Bacheca::FILE_EXTENSIONS === $materiali,
+// Documenti, non audio e archivi (17/10, Alessandro): i podcast sono link,
+// e in 3 MB un audio sta in un paio di minuti.
+check('documenti: PDF, Word, PowerPoint, Excel e testo', Bacheca::FILE_EXTENSIONS === ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'],
     implode(', ', Bacheca::FILE_EXTENSIONS));
+check('niente audio né ZIP', array_intersect(Bacheca::FILE_EXTENSIONS, ['mp3', 'wav', 'm4a', 'zip']) === []);
+check('tutti fra quelli dei materiali delle lezioni', array_diff(Bacheca::FILE_EXTENSIONS, $materiali) === []);
 // La dimensione no (17/10, Alessandro): 3 MB, non i 50 dei materiali. Una
 // scheda o un promemoria in PDF pesano poche centinaia di kB.
 check('fino a 3 MB', Bacheca::FILE_MAX_BYTES === 3 * 1024 * 1024, (string) Bacheca::FILE_MAX_BYTES);

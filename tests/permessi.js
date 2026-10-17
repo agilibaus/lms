@@ -1615,6 +1615,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     await s.page.fill('#bacheca-descrizione', 'Descrizione di permessi.js.');
                     const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(byte - 9, 0x20)]);
                     await s.page.setInputFiles('#bacheca-file', { name: 'prova-limite.pdf', mimeType: 'application/pdf', buffer: pdf });
+                    // Il controllo del browser si salta: qui si prova il server.
+                    await s.page.evaluate(() => { document.querySelector('#bacheca-file').closest('form').noValidate = true; });
                     await Promise.all([s.page.waitForNavigation(), s.page.click('form.form button.btn-primary')]);
                     return { aiuto, html: await s.page.content(), url: s.page.url() };
                 };
@@ -1628,6 +1630,42 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 check('tutor A → un file di 3 MB e 1 kB non si carica: torna al modulo con il motivo',
                     troppo.url.includes('/bacheca/nuova') && /supera (la dimensione massima consentita|il limite del server)/.test(troppo.html),
                     [troppo.url]);
+                // Nel browser, appena si sceglie il file (17/10): un file troppo
+                // grande o di un tipo non ammesso lo dice subito, sotto il campo,
+                // e il modulo non parte; uno giusto toglie l'avviso.
+                await s.page.goto(BASE + '/bacheca/nuova?corso=' + A.corso);
+                const scegli = async (nome, byte) => {
+                    await s.page.setInputFiles('#bacheca-file', { name: nome, mimeType: 'application/octet-stream', buffer: Buffer.alloc(byte, 0x20) });
+                    return s.page.evaluate(() => {
+                        const c = document.querySelector('#bacheca-file');
+                        const avviso = document.querySelector('#bacheca-file-errore') || { textContent: '(nessun avviso)', offsetHeight: 0 };
+                        return { valido: c.validity.valid, avviso: avviso.textContent.trim(), visibile: avviso.offsetHeight > 0,
+                            descritto: (c.getAttribute('aria-describedby') || '').includes('bacheca-file-errore') };
+                    });
+                };
+                const grande = await scegli('grande.pdf', 4 * 1024 * 1024 + 300 * 1024);
+                check('tutor A → scelto un file da 4,3 MB, lo dice subito: «pesa 4,3 MB», con il massimo, e il modulo non parte',
+                    !grande.valido && grande.visibile && grande.descritto && grande.avviso.includes('pesa 4,3 MB')
+                        && grande.avviso.includes('il massimo è ' + atteso), [JSON.stringify(grande)]);
+                const audio = await scegli('podcast.mp3', 10 * 1024);
+                check('tutor A → scelto un MP3, dice che quel tipo non si carica', !audio.valido && audio.visibile && /MP3/.test(audio.avviso),
+                    [JSON.stringify(audio)]);
+                const giusto = await scegli('scheda.pdf', 10 * 1024);
+                check('tutor A → scelto un PDF piccolo, l\'avviso sparisce', giusto.valido && !giusto.visibile && giusto.avviso === '',
+                    [JSON.stringify(giusto)]);
+
+                // Il server, senza il browser: un MP3 non entra.
+                await s.page.goto(BASE + '/bacheca/nuova?corso=' + A.corso);
+                await s.page.evaluate(() => { const c = document.querySelector('#bacheca-file'); c.removeAttribute('accept'); });
+                await s.page.fill('#bacheca-titolo', 'Audio di permessi.js');
+                await s.page.fill('#bacheca-descrizione', 'Descrizione.');
+                await s.page.setInputFiles('#bacheca-file', { name: 'podcast.mp3', mimeType: 'audio/mpeg', buffer: Buffer.alloc(10 * 1024, 0x20) });
+                await s.page.evaluate(() => { const c = document.querySelector('#bacheca-file'); c.setCustomValidity(''); c.closest('form').noValidate = true; });
+                await Promise.all([s.page.waitForNavigation(), s.page.click('form.form button.btn-primary')]);
+                const htmlAudio = await s.page.content();
+                check('tutor A → il server non accetta un MP3 nella bacheca (scavalcando il browser)',
+                    s.page.url().includes('/bacheca/nuova') && htmlAudio.includes('Formato file non consentito'), [s.page.url()]);
+
                 const piccolo = await carica('File piccolo di permessi.js', 200 * 1024);
                 check('tutor A → un file di 200 kB si carica, e la risorsa è nella categoria',
                     piccolo.url.includes('/bacheca/categorie/' + A.bacheca_categoria) && piccolo.html.includes('File piccolo di permessi.js')

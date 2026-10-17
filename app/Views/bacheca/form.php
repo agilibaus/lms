@@ -96,9 +96,15 @@ $stati = [
                         Un file nuovo lo sostituisce.
                     </p>
                 <?php endif; ?>
-                <input type="file" id="bacheca-file" name="file" accept="<?= $accept ?>" aria-describedby="bacheca-file-aiuto">
+                <?php /* Il controllo nel browser (17/10): appena si sceglie il file,
+                         dimensione e tipo, con l'avviso sotto il campo. Il server
+                         controlla comunque, con le stesse regole. */ ?>
+                <input type="file" id="bacheca-file" name="file" accept="<?= $accept ?>"
+                       aria-describedby="bacheca-file-aiuto bacheca-file-errore"
+                       data-max-bytes="<?= Bacheca::limiteFile() ?>" data-estensioni="<?= implode(',', Bacheca::FILE_EXTENSIONS) ?>">
+                <p class="bacheca-file-errore" id="bacheca-file-errore" aria-live="polite"></p>
                 <p class="form-hint" id="bacheca-file-aiuto">
-                    PDF, Word, PowerPoint, Excel, audio, ZIP o testo, fino a <?= htmlspecialchars(FileType::humanSize(Bacheca::limiteFile())) ?>.
+                    PDF, Word, PowerPoint, Excel o testo, fino a <?= htmlspecialchars(FileType::humanSize(Bacheca::limiteFile())) ?>.
                     <?php if (Bacheca::limiteFile() < Bacheca::FILE_MAX_BYTES): ?>
                         Il limite lo impone la configurazione di PHP (<code>upload_max_filesize</code> e
                         <code>post_max_size</code> nel php.ini), non la piattaforma, che accetterebbe fino a
@@ -148,3 +154,6 @@ $stati = [
     </section>
 <?php endif; ?>
 <script src="/assets/js/quiz-open-count.js"></script>
+<?php if ($staff): ?>
+    <script src="/assets/js/bacheca-file.js"></script>
+<?php endif; ?>

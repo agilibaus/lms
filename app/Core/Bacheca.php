@@ -75,12 +75,13 @@ final class Bacheca
     private const BIANCO_TINTA = 0.89;
 
     /**
-     * Gli stessi tipi di file dei materiali delle lezioni (`LessonController`),
-     * lo controlla `tests/bacheca_test.php`. La dimensione no: 3 MB (17/10,
-     * Alessandro), perche' una scheda pratica o un promemoria in PDF pesano
-     * poche centinaia di kB, e la bacheca non e' un archivio di file.
+     * I file della bacheca (17/10, Alessandro): documenti, fino a 3 MB. Sono
+     * i tipi dei materiali delle lezioni senza audio e ZIP: i podcast sono
+     * link, e in 3 MB un audio sta in un paio di minuti. Una scheda pratica
+     * o un promemoria in PDF pesano poche centinaia di kB, e la bacheca non
+     * e' un archivio di file.
      */
-    public const FILE_EXTENSIONS = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'mp3', 'wav', 'm4a', 'zip', 'txt'];
+    public const FILE_EXTENSIONS = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'];
     public const FILE_MAX_BYTES = 3 * 1024 * 1024;
 
     /**

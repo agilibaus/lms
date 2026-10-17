@@ -7132,3 +7132,15 @@ details[open] > summary .obiettivo-se-aperto {
     font-weight: 600;
     line-height: 1.35;
 }
+
+/* L'avviso sotto il campo file della bacheca (17/10): vuoto non occupa
+   spazio. */
+.bacheca-file-errore {
+    margin: 0.4rem 0 0;
+    color: var(--color-danger);
+    font-size: 0.92rem;
+}
+
+.bacheca-file-errore:empty {
+    display: none;
+}
