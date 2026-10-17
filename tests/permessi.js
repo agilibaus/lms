@@ -98,7 +98,9 @@ async function esitoGet(page, url) {
     // browser avvia un download invece di navigare, e Playwright solleva un
     // errore. Si chiede con `fetch`, che del download ci da' solo il codice
     // — che e' tutto quello che serve qui.
-    if (url.includes('/download')) {
+    // Lo stesso per gli scaricamenti dei rendiconti, che finiscono in /csv o
+    // /xlsx (17/10).
+    if (url.includes('/download') || /\/(csv|xlsx)$/.test(url)) {
         await page.goto(BASE + '/profilo');
 
         const stato = await page.evaluate(async (u) => {
@@ -274,6 +276,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // compreso.
             ['/live/' + A.incontro, 'consentito', 'incontro del suo gruppo'],
             ['/live/' + B.incontro, 'negato', 'incontro del gruppo di un collega'],
+            // La fruizione dei video di una lezione (17/10): solo nei suoi
+            // corsi. Prima `report.view`, che il tutor ha, apriva quella di
+            // qualunque lezione, con tutti gli iscritti.
+            ['/lessons/' + A.lezione + '/fruizione', 'consentito', 'fruizione di una lezione del suo corso'],
+            ['/lessons/' + B.lezione + '/fruizione', 'negato', 'fruizione di una lezione del corso di un collega'],
+            ['/lessons/' + B.lezione + '/fruizione/csv', 'negato', 'nemmeno scaricandola'],
             // Lo stesso per i certificati (17/10).
             ['/certificates/' + A.certificato + '/download', 'consentito', 'certificato di uno studente di un suo gruppo'],
             ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente del gruppo di un collega'],
@@ -345,6 +353,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
             ['/attempts/' + B.tentativo, 'consentito', 'l\'admin vede i tentativi di tutti'],
             ['/live/' + B.incontro, 'consentito', 'l\'admin apre ogni incontro'],
+            ['/lessons/' + B.lezione + '/fruizione', 'consentito', 'l\'admin vede la fruizione di ogni lezione'],
             ['/certificates/' + B.certificato + '/download', 'consentito', 'l\'admin scarica i certificati di tutti'],
             ['/admin/permissions', 'consentito', 'è sua'],
             ['/admin/users/importa', 'consentito', 'l\'importazione è sua'],
@@ -458,6 +467,44 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 + (vedeB ? 'c\'è' : 'non c\'è') + ' quello del mondo B',
                 a === vedeA && b === vedeB, ['mondo A: ' + (a ? 'c\'è' : 'non c\'è') + ', mondo B: ' + (b ? 'c\'è' : 'non c\'è')]);
             await ctx.close();
+        }
+
+        // --- la fruizione di una lezione: che cosa c'è dentro --------------
+        //
+        // Su un corso suo il tutor vede gli studenti che segue, non tutti gli
+        // iscritti: un corso puo' essere assegnato a piu' gruppi, con tutor
+        // diversi (17/10). Per provarlo lo studente B si iscrive al corso A
+        // per la durata della prova, e alla fine si toglie.
+
+        console.log('\n--- la fruizione di una lezione: che cosa c\'è dentro');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const sql = (q) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";'
+                + ' App\\Core\\Database::connection()->prepare($argv[1])->execute([(int) $argv[2], (int) $argv[3]]);',
+                '--', q, String(d.utenti.studenteB), String(A.corso)], { cwd: radice, encoding: 'utf8' });
+
+            sql('INSERT IGNORE INTO enrollments (user_id, course_id) VALUES (?, ?)');
+
+            try {
+                for (const [email, chi, vedeB] of [
+                    ['tutor1@test.it', 'tutor del mondo A', false],
+                    ['admin@test.it', 'amministratore (controprova)', true],
+                ]) {
+                    const { ctx, page } = await entra(browser, email);
+                    await page.goto(BASE + '/lessons/' + A.lezione + '/fruizione');
+                    const html = await page.content();
+                    const a = html.includes('stud@test.it');
+                    const b = html.includes('strano@test.it');
+                    check(chi + ' → nella fruizione della lezione del corso A c\'è lo studente A, '
+                        + (vedeB ? 'e anche' : 'non') + ' lo studente B iscritto allo stesso corso',
+                        a && b === vedeB, ['studente A: ' + (a ? 'c\'è' : 'non c\'è') + ', studente B: ' + (b ? 'c\'è' : 'non c\'è')]);
+                    await ctx.close();
+                }
+            } finally {
+                sql('DELETE FROM enrollments WHERE user_id = ? AND course_id = ?');
+            }
         }
 
         // --- il video di benvenuto ---------------------------------------

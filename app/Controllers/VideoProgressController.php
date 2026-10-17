@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Auth\StudentScope;
 use App\Core\Csrf;
 use App\Core\Csv;
 use App\Core\View;
@@ -310,6 +311,31 @@ class VideoProgressController
                 . 'e non hai i permessi per consultare i report di tutti gli studenti.');
         }
 
+        /*
+         * Il perimetro (17/10). `report.view` ce l'ha anche il tutor, e qui
+         * apriva la fruizione di qualunque lezione, con tutti gli iscritti;
+         * nei report, invece, il tutor e' ristretto comunque ai suoi. Ora vale
+         * la stessa regola: fuori dai corsi dei gruppi del perimetro la
+         * lezione non si apre, e dentro si vedono solo gli studenti che chi
+         * guarda segue (StudentScope) — un corso puo' essere assegnato a piu'
+         * gruppi, con tutor diversi. L'admin vede tutto, come prima. Le medie
+         * in cima si calcolano dalle righe, quindi seguono da sole.
+         */
+        $tutori = StudentScope::tutorIds();
+
+        if ($tutori !== null) {
+            $corsi = [];
+
+            foreach ($tutori as $tutorId) {
+                $corsi = array_merge($corsi, CourseRights::courseIdsFor($tutorId));
+            }
+
+            if (!in_array((int) $course['id'], $corsi, true)) {
+                http_response_code(403);
+                exit('Accesso negato: questa lezione non è in un corso dei gruppi che segui.');
+            }
+        }
+
         $durata = (int) ($lesson['duration_seconds'] ?? 0);
 
         $righe = VideoProgressModel::reportForLesson(
@@ -317,6 +343,15 @@ class VideoProgressController
             (int) $module['course_id'],
             $durata > 0 ? $durata : null
         );
+
+        $studenti = StudentScope::studentIds();
+
+        if ($studenti !== null) {
+            $righe = array_values(array_filter(
+                $righe,
+                static fn (array $r): bool => in_array((int) $r['user_id'], $studenti, true)
+            ));
+        }
 
         return [$lesson, $module, $course, $righe];
     }
