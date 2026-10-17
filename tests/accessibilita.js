@@ -2353,21 +2353,22 @@ async function giroBenvenuto(browser) {
         // La pagina «Domande e risposte» (09/10): voce del menu prima di
         // «Certificati»; l'archivio alle misure dei moduli, con la ricerca in
         // fondo; si misura com'e', e aperta da una ricerca.
-        await page.goto(BASE + '/domande-e-risposte');
+        await page.goto(BASE + '/domande-e-risposte?corso=' + corso);
         const pagina = await page.evaluate(() => {
             const voci = [...document.querySelectorAll('.sidebar-nav a.nav-link')].map((a) => a.textContent.trim());
             const archivio = document.querySelector('.qa-archivio');
             const domanda = document.querySelector('.qa-voce > summary');
             return {
-                primaDiCertificati: voci.indexOf('L\'esperto risponde') === voci.indexOf('Certificati') - 1,
+                // Dal 17/10 nel ramo del corso, sotto «I miei corsi».
+                nelRamo: document.querySelector('.nav-corso a.nav-link-active') !== null,
                 attiva: (document.querySelector('.nav-link-active') || {}).textContent,
                 cercaInFondo: archivio !== null && archivio.lastElementChild.matches('form.qa-cerca'),
                 domanda: domanda ? getComputedStyle(domanda).fontSize : null,
                 testo: getComputedStyle(document.documentElement).fontSize,
             };
         });
-        check('nel menu «L\'esperto risponde», prima di «Certificati», ed evidenziata',
-            pagina.primaDiCertificati && (pagina.attiva || '').trim() === 'L\'esperto risponde', [JSON.stringify(pagina)]);
+        check('nel menu «L\'esperto risponde», nel ramo del corso, ed evidenziata',
+            pagina.nelRamo && (pagina.attiva || '').trim() === 'L\'esperto risponde', [JSON.stringify(pagina)]);
         check('l\'archivio con la ricerca in fondo, e le domande alla misura delle lezioni (0,9 rem)',
             pagina.cercaInFondo && pagina.domanda !== null
                 && Math.abs(parseFloat(pagina.domanda) - 0.9 * parseFloat(pagina.testo)) < 0.5,

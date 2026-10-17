@@ -80,7 +80,8 @@ class QuestionController
 
     /**
      * La pagina «Domande e risposte» dello studente (09/10, Elena): l'archivio
-     * di un corso alla volta, scelto con un menu fra quelli a cui e' iscritto.
+     * di un corso alla volta, quello di `?corso=` (dal 17/10 ci si arriva dal
+     * ramo del corso nella sidebar, non piu' da un menu nella pagina).
      * Solo per gli studenti: lo staff ha «Domande», dove risponde e corregge.
      * Un corso a cui lo studente non e' iscritto, chiesto a mano
      * nell'indirizzo, non si apre: si mostra il primo dei suoi.
@@ -121,7 +122,6 @@ class QuestionController
 
         View::render('questions/archive', [
             'pageTitle' => "L'esperto risponde",
-            'corsi' => $corsi,
             'corso' => $corso,
             'cerca' => $cerca,
             // Il tutor vede gli autori per intero, come lo staff ovunque.

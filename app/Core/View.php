@@ -22,6 +22,9 @@ class View
         }
 
         if ($withShell) {
+            // Il corso in cui ci si trova, per il suo ramo nella sidebar
+            // (17/10): lo dicono i dati della pagina (`CorsoCorrente::da`).
+            $corsoCorrente = CorsoCorrente::da($data);
             ob_start();
             require $viewFile;
             $content = ob_get_clean();

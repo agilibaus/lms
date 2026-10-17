@@ -8,6 +8,7 @@ use App\Models\QuestionModel;
 use App\Core\TutorWelcome;
 use App\Models\TutorWelcomeModel;
 use App\Auth\Auth;
+use App\Auth\BachecaScope;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\CourseCover;
@@ -17,6 +18,7 @@ use App\Core\TestoBreve;
 use App\Core\Upload;
 use App\Core\View;
 use App\Models\CertificateModel;
+use App\Models\BoardModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
@@ -56,7 +58,35 @@ class CourseController
             // dice se lo studente e' in pari con quello che puo' fare oggi.
             // Sono due domande diverse e vanno mostrate come due cose diverse.
             'availability' => $isStaff ? [] : $this->availability((int) Auth::id()),
+            // Le proposte della bacheca da valutare, corso per corso (17/10):
+            // la voce Bacheca sta nel ramo del corso, e da fuori il numero si
+            // vede qui, sulla scheda del corso che le aspetta.
+            'daValutare' => $isStaff ? self::daValutare($courses) : [],
         ]);
+    }
+
+    /**
+     * Quante proposte della bacheca aspettano chi guarda, per corso; solo i
+     * corsi che ne hanno.
+     *
+     * @param list<array<string, mixed>> $courses
+     * @return array<int, int>
+     */
+    private static function daValutare(array $courses): array
+    {
+        $conti = [];
+
+        foreach ($courses as $c) {
+            $id = (int) $c['id'];
+            $moderati = BachecaScope::moderati($id);
+            $quante = $moderati === [] ? 0 : count(BoardModel::inAttesa($id, $moderati));
+
+            if ($quante > 0) {
+                $conti[$id] = $quante;
+            }
+        }
+
+        return $conti;
     }
 
     /**

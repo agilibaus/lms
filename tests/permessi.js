@@ -891,13 +891,100 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
         {
-            // Il tutor non ha «Domande», e ha «L'esperto risponde».
+            // Il tutor non ha «Domande», e ha «L'esperto risponde»: dal 17/10
+            // dentro il corso, nel ramo del corso (variante C della sidebar).
             const { ctx, page } = await entra(browser, 'tutor1@test.it');
-            await page.goto(BASE + '/');
+            await page.goto(BASE + '/courses/' + A.corso);
             const voci = await page.$$eval('.sidebar-nav a.nav-link', (a) => a.map((x) => x.textContent.trim()));
-            check('tutor → nel menu «L\'esperto risponde» e non «Domande»',
+            check('tutor → dentro il corso, nel menu «L\'esperto risponde» e non «Domande»',
                 voci.includes('L\'esperto risponde') && !voci.some((v) => v.startsWith('Domande')), [JSON.stringify(voci)]);
             await ctx.close();
+        }
+
+        // --- il ramo del corso nella sidebar (17/10, variante C) -------------
+        //
+        // Bacheca e «L'esperto risponde» compaiono solo dentro un corso, in un
+        // ramo subito sotto «I miei corsi» (o «Corsi»): il nome del corso e le
+        // sue voci, con il corso nell'indirizzo. Fuori dai corsi non ci sono.
+        // Il ramo e' quello del corso della pagina, e le voci quelle che chi
+        // guarda puo' aprire.
+        console.log('\n--- il ramo del corso nella sidebar');
+        {
+            const ramo = (page) => page.evaluate(() => {
+                const nav = document.querySelector('.sidebar-nav');
+                const r = nav.querySelector('.nav-corso');
+                const testo = (a) => a.childNodes[0].textContent.trim();
+                const prima = r ? r.previousElementSibling : null;
+                return {
+                    ramo: r === null ? null : {
+                        nome: testo(r.querySelector('.nav-corso-nome')),
+                        corso: r.querySelector('.nav-corso-nome').getAttribute('href'),
+                        voci: [...r.querySelectorAll('.nav-corso-voce')].map((a) => [testo(a), a.getAttribute('href'),
+                            a.classList.contains('nav-link-active'), (a.querySelector('.nav-conteggio') || { firstChild: { textContent: '' } }).firstChild.textContent]),
+                        sotto: prima === null ? null : prima.textContent.trim(),
+                    },
+                    fuori: [...nav.querySelectorAll('a.nav-link')].filter((a) => !a.closest('.nav-corso')).map((a) => a.textContent.trim().split(/\s+/)[0]),
+                };
+            });
+            const B_ = (id) => '/bacheca?corso=' + id;
+            const E_ = (id) => '/domande-e-risposte?corso=' + id;
+            const CASI = [
+                ['stud@test.it', 'studente', [
+                    ['/', null, 'la home: nessun ramo'],
+                    ['/agenda', null, 'l\'agenda: nessun ramo'],
+                    ['/certificates', null, 'i certificati: nessun ramo'],
+                    ['/courses/' + A.corso, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false]]], 'la pagina del corso'],
+                    ['/lessons/' + A.lezione, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false]]], 'una lezione del corso'],
+                    ['/quizzes/' + A.quiz, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false]]], 'il quiz del corso'],
+                    ['/bacheca/categorie/' + A.bacheca_categoria, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), true], ['L\'esperto risponde', E_(A.corso), false]]], 'una categoria della bacheca: Bacheca evidenziata'],
+                    [E_(A.corso), [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), true]]], '«L\'esperto risponde»: evidenziata'],
+                ]],
+                ['tutor1@test.it', 'tutor A', [
+                    ['/admin/courses', null, 'Gestione corsi: un elenco, nessun ramo'],
+                    [B_(A.corso), [A.corso, 'Corsi', [['Bacheca', B_(A.corso), true, '1'], ['L\'esperto risponde', E_(A.corso), false]]], 'la bacheca, con la proposta da valutare sulla voce'],
+                    ['/admin/courses/' + A.corso + '/edit', [A.corso, 'Corsi', [['Bacheca', B_(A.corso), false, '1'], ['L\'esperto risponde', E_(A.corso), false]]], 'Modifica corso'],
+                ]],
+                ['assist@test.it', 'assistente', [
+                    [B_(A.corso), [A.corso, 'Corsi', [['Bacheca', B_(A.corso), true]]], 'la bacheca che legge; «L\'esperto risponde» non è sua'],
+                ]],
+                ['admin@test.it', 'admin', [
+                    ['/admin/courses/' + B.corso + '/edit', [B.corso, 'Corsi', [['Bacheca', B_(B.corso), false, '1']]], 'Modifica corso: la Bacheca, e la proposta di B da valutare; «L\'esperto risponde» no, ha «Domande»'],
+                    ['/reports/courses/' + B.corso, [B.corso, 'Corsi', [['Bacheca', B_(B.corso), false, '1']]], 'il report del corso'],
+                    ['/reports', null, 'i report: un elenco, nessun ramo'],
+                ]],
+            ];
+            // Fuori dai corsi il numero delle proposte si vede sulla scheda del
+            // corso che le aspetta, in «Corsi».
+            for (const [email, chi, vede] of [['tutor1@test.it', 'tutor A', true], ['stud@test.it', 'studente', false]]) {
+                const { ctx, page } = await entra(browser, email);
+                await page.goto(BASE + '/');
+                const scheda = await page.evaluate((id) => {
+                    const c = document.querySelector('.course-card[data-corso="' + id + '"] .course-card-valutare');
+                    return c ? c.textContent.trim() : null;
+                }, A.corso);
+                check(chi + ' → in «' + (vede ? 'Corsi' : 'I miei corsi') + '», sulla scheda del corso A: '
+                    + (vede ? '«1 proposta da valutare nella bacheca»' : 'nessun avviso di proposte'),
+                    vede ? scheda === '1 proposta da valutare nella bacheca' : scheda === null, [String(scheda)]);
+                await ctx.close();
+            }
+            for (const [email, chi, prove] of CASI) {
+                const { ctx, page } = await entra(browser, email);
+                for (const [url, atteso, cosa] of prove) {
+                    await page.goto(BASE + url);
+                    const r = await ramo(page);
+                    const senzaVociDiCorso = !r.fuori.includes('Bacheca') && !r.fuori.includes('L\'esperto');
+                    let giusto;
+                    if (atteso === null) {
+                        giusto = r.ramo === null;
+                    } else {
+                        const [id, sotto, voci] = atteso;
+                        giusto = r.ramo !== null && r.ramo.corso === '/courses/' + id && r.ramo.sotto === sotto
+                            && JSON.stringify(r.ramo.voci) === JSON.stringify(voci.map((v) => [v[0], v[1], v[2], v[3] || '']));
+                    }
+                    check(chi + ' → ' + url + ': ' + cosa, giusto && senzaVociDiCorso, [JSON.stringify(r)]);
+                }
+                await ctx.close();
+            }
         }
 
         console.log('\n--- il video di benvenuto');
@@ -1513,8 +1600,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             check('tutor A → fra le proposte quella in attesa, non quella non pubblicata',
                 html.includes('compiti condivisi A') && !html.includes('non pubblicata A'));
             html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
-            check('tutor A → «1 proposta da valutare» e il numero accanto a «Bacheca» nel menu',
-                html.includes('1 proposta da valutare') && /href="\/bacheca"[^>]*>Bacheca\s*<span class="nav-conteggio">1/.test(html));
+            check('tutor A → «1 proposta da valutare» e il numero accanto a «Bacheca» nel ramo del corso',
+                html.includes('1 proposta da valutare') && new RegExp('href="/bacheca\\?corso=' + A.corso + '"[^>]*>Bacheca\\s*<span class="nav-conteggio">1').test(html));
             await s.ctx.close();
 
             s = await entra(browser, 'tutor2@test.it');

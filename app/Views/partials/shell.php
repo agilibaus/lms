@@ -117,11 +117,41 @@ use App\Core\Csrf;
             return $attiva ? ' nav-link-active" aria-current="page' : '';
         };
         ?>
+        <?php
+        /* Il ramo del corso (17/10, Alessandro, variante C): dentro un corso,
+           sotto «I miei corsi» (o «Corsi») compaiono il nome del corso e, rientrate,
+           le sue voci, Bacheca e «L'esperto risponde». Fuori dai corsi non ci
+           sono. Il corso lo dicono i dati della pagina (`CorsoCorrente`). */
+        $ramo = isset($corsoCorrente) && $corsoCorrente !== null ? \App\Core\CorsoCorrente::ramo((int) $corsoCorrente) : null;
+        $ramoHtml = '';
+
+        if ($ramo !== null) {
+            $id = (int) $ramo['id'];
+            $ramoHtml = '<div class="nav-corso" role="group" aria-label="' . htmlspecialchars('Corso: ' . $ramo['title'], ENT_QUOTES) . '">'
+                . '<a href="/courses/' . $id . '" class="nav-link nav-corso-nome">' . htmlspecialchars($ramo['title']) . '</a>';
+
+            if ($ramo['bacheca']) {
+                $ramoHtml .= '<a href="/bacheca?corso=' . $id . '" class="nav-link nav-corso-voce' . $voce('/bacheca') . '">Bacheca'
+                    . ($ramo['daValutare'] > 0
+                        ? ' <span class="nav-conteggio">' . (int) $ramo['daValutare'] . '<span class="sr-only"> da valutare</span></span>'
+                        : '')
+                    . '</a>';
+            }
+
+            if ($ramo['esperto']) {
+                $ramoHtml .= '<a href="/domande-e-risposte?corso=' . $id . '" class="nav-link nav-corso-voce' . $voce('/domande-e-risposte') . '">L\'esperto risponde</a>';
+            }
+
+            $ramoHtml .= '</div>';
+        }
+        ?>
         <nav class="sidebar-nav">
             <?php if (Auth::hasRole('admin', 'tutor', 'assistente')): ?>
                 <a href="/" class="nav-link<?= $voce('/') ?>">Corsi</a>
+                <?= $ramoHtml ?>
             <?php else: ?>
                 <a href="/" class="nav-link<?= $voce('/') ?>">I miei corsi</a>
+                <?= $ramoHtml ?>
                 <a href="/catalogo" class="nav-link<?= $voce('/catalogo') ?>">Esplora corsi</a>
             <?php endif; ?>
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
@@ -144,22 +174,6 @@ use App\Core\Csrf;
                      si guardano. */ ?>
             <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
             <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
-            <?php
-            /* La Bacheca (17/10), per tutti: ognuno vede quella dei suoi corsi.
-               A chi modera, il numero delle proposte che aspettano. */
-            $daValutare = Auth::can('board.manage') || Auth::can('board.manage_own')
-                ? \App\Models\BoardModel::contaDaValutare((int) Auth::id(), Auth::can('board.manage'))
-                : 0;
-            ?>
-            <a href="/bacheca" class="nav-link<?= $voce('/bacheca') ?>">Bacheca<?php if ($daValutare > 0): ?>
-                <span class="nav-conteggio"><?= $daValutare ?><span class="sr-only"> da valutare</span></span><?php endif; ?></a>
-            <?php if (Auth::hasRole('studente', 'tutor')): ?>
-                <?php /* L'archivio delle domande, «L'esperto risponde» (09/10,
-                         Elena), prima di «Certificati». Per gli studenti e per i
-                         tutor, che lo leggono come uno studente; l'admin, che e'
-                         l'esperto, ha «Domande». */ ?>
-                <a href="/domande-e-risposte" class="nav-link<?= $voce('/domande-e-risposte') ?>">L'esperto risponde</a>
-            <?php endif; ?>
             <a href="/certificates" class="nav-link<?= $voce('/certificates') ?>">Certificati</a>
             <a href="/profilo" class="nav-link<?= $voce('/profilo') ?>">Profilo</a>
 

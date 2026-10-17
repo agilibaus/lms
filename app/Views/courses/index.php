@@ -79,6 +79,12 @@ use App\Models\CourseModel;
                     <?php elseif (!$course['is_published']): ?>
                         <span class="badge badge-muted">Bozza</span>
                     <?php endif; ?>
+                    <?php if (isset($daValutare[(int) $course['id']])): ?>
+                        <?php /* Le proposte della bacheca (17/10): la voce sta nel
+                                 ramo del corso, e da qui si vede in quale corso
+                                 aspettano. */ ?>
+                        <span class="course-card-valutare"><?= htmlspecialchars(\App\Core\Bacheca::daValutare($daValutare[(int) $course['id']])) ?> nella bacheca</span>
+                    <?php endif; ?>
                 </div>
             </a>
         <?php endforeach; ?>

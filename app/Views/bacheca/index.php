@@ -12,7 +12,6 @@ use App\Core\Bacheca;
  * risorse e ne propone una; chi modera vede quante proposte aspettano;
  * chi pubblica aggiunge una risorsa.
  *
- * @var list<array<string, mixed>> $corsi
  * @var array<string, mixed>|null $corso
  * @var list<array<string, mixed>> $categorie
  * @var bool $partecipa
@@ -24,6 +23,11 @@ use App\Core\Bacheca;
 ?>
 <?php require __DIR__ . '/../admin/_flash.php'; ?>
 <div class="page-header">
+    <?php /* Il corso si sceglie entrando nel corso (17/10, variante C): qui
+             niente menu dei corsi, ma il ritorno al corso di questa bacheca. */ ?>
+    <?php if ($corso !== null): ?>
+        <a href="/courses/<?= (int) $corso['id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $corso['title']) ?></span></a>
+    <?php endif; ?>
     <h1>Bacheca</h1>
     <p class="page-subtitle">
         <?= $corso !== null && !$partecipa
@@ -36,20 +40,6 @@ use App\Core\Bacheca;
     <p class="empty-state">Non ci sono ancora bacheche da mostrare.</p>
 <?php else: ?>
     <?php $courseId = (int) $corso['id']; ?>
-    <?php if (count($corsi) > 1): ?>
-        <form method="get" action="/bacheca" class="form-inline qa-scegli-corso">
-            <label for="bacheca-corso">Corso</label>
-            <select id="bacheca-corso" name="corso">
-                <?php foreach ($corsi as $c): ?>
-                    <option value="<?= (int) $c['id'] ?>" <?= (int) $c['id'] === $courseId ? 'selected' : '' ?>>
-                        <?= htmlspecialchars((string) $c['title']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <button type="submit" class="btn btn-secondary">Apri</button>
-        </form>
-    <?php endif; ?>
-
     <?php if ($daValutare > 0): ?>
         <div class="bacheca-avviso">
             <span><strong><?= htmlspecialchars(Bacheca::daValutare($daValutare)) ?></strong></span>

@@ -173,31 +173,6 @@ final class BoardModel
     }
 
     /**
-     * Le proposte in attesa che questa persona puo' valutare, in tutti i
-     * corsi: e' il numero accanto a «Bacheca» nel menu. Con `$tutte` (l'admin)
-     * tutte; altrimenti quelle degli studenti dei suoi gruppi, nei corsi di
-     * quei gruppi.
-     */
-    public static function contaDaValutare(int $userId, bool $tutte): int
-    {
-        if ($tutte) {
-            return (int) Database::connection()->query("SELECT COUNT(*) FROM board_resources WHERE status = 'pending'")->fetchColumn();
-        }
-
-        $stmt = Database::connection()->prepare(
-            "SELECT COUNT(DISTINCT r.id)
-             FROM board_resources r
-             INNER JOIN group_members gm ON gm.user_id = r.author_id
-             INNER JOIN `groups` g ON g.id = gm.group_id AND g.tutor_id = :t
-             INNER JOIN group_course_access gca ON gca.group_id = g.id AND gca.course_id = r.course_id
-             WHERE r.status = 'pending'"
-        );
-        $stmt->execute(['t' => $userId]);
-
-        return (int) $stmt->fetchColumn();
-    }
-
-    /**
      * Le proposte di uno studente in un corso, dalla piu' recente, con lo
      * stato: «Le tue proposte».
      *

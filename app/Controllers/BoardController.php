@@ -41,7 +41,7 @@ class BoardController
 
         $corsi = BachecaScope::corsi();
         $corso = self::corsoScelto($corsi);
-        $dati = ['pageTitle' => 'Bacheca', 'corsi' => $corsi, 'corso' => $corso];
+        $dati = ['pageTitle' => 'Bacheca', 'corso' => $corso];
 
         if ($corso !== null) {
             $courseId = (int) $corso['id'];
