@@ -614,8 +614,8 @@ CREATE TABLE board_categories (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     course_id       INT UNSIGNED NOT NULL,
     name            VARCHAR(80) NOT NULL,
-    -- Una delle tavolozze del tema: verde, ardesia, terracotta, prugna.
-    color           VARCHAR(20) NOT NULL DEFAULT 'verde',
+    -- Uno dei 64 colori della tavolozza di App\Core\Bacheca, #RRGGBB.
+    color           VARCHAR(20) NOT NULL DEFAULT '#4F7256',
     description     VARCHAR(200) NULL,
     position        INT NOT NULL DEFAULT 0,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

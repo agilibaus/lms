@@ -60,7 +60,7 @@ use App\Core\Bacheca;
     <?php if ($partecipa || $puoPubblicare || $gestisceCategorie): ?>
         <div class="bacheca-comandi">
             <?php if ($gestisceCategorie): ?>
-                <a href="/admin/courses/<?= $courseId ?>/edit#bacheca" class="bacheca-comando">Gestisci le categorie</a>
+                <a href="/admin/courses/<?= $courseId ?>/edit#bacheca" class="bacheca-comando">Gestione categorie</a>
             <?php endif; ?>
             <?php if ($partecipa): ?>
                 <a href="/bacheca/mie?corso=<?= $courseId ?>" class="bacheca-comando">Le mie risorse (<?= $tenute ?>)</a>
@@ -76,7 +76,7 @@ use App\Core\Bacheca;
 
     <?php if ($categorie === []): ?>
         <p class="empty-state">
-            La bacheca di questo corso non ha ancora categorie<?= $gestisceCategorie ? ': si creano da «Gestisci le categorie».' : '.' ?>
+            La bacheca di questo corso non ha ancora categorie<?= $gestisceCategorie ? ': si creano da «Gestione categorie».' : '.' ?>
         </p>
     <?php else: ?>
         <ul class="bacheca-griglia" role="list">

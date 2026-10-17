@@ -24,18 +24,33 @@ $ultima = count($bacheca) - 1;
 
 /** I campi di una categoria: gli stessi per correggere e per aggiungere. */
 $campiCategoria = static function (string $p, array $c): string {
-    $colore = (string) ($c['color'] ?? 'verde');
-    $opzioni = '';
+    // La tavolozza 8x8 (17/10, variante B): un pulsante con il colore
+    // scelto, che apre i 64 colori. Sono pulsanti di scelta veri dentro un
+    // `details`: senza JavaScript si apre, si sceglie e si salva lo stesso;
+    // lo script aggiorna il pulsante e chiude la tavolozza dopo il clic.
+    $scelto = Bacheca::colore((string) ($c['color'] ?? 'verde'))['primary'];
+    $quadri = '';
 
-    foreach (Bacheca::COLORI as $chiave => $nome) {
-        $opzioni .= '<option value="' . $chiave . '"' . ($chiave === $colore ? ' selected' : '') . '>' . $nome . '</option>';
+    foreach (Bacheca::TAVOLOZZA as [$tinta, $toni]) {
+        foreach ($toni as $i => $hex) {
+            $nome = $tinta . ', tono ' . ($i + 1);
+            $quadri .= '<label class="bacheca-tavolozza-q" style="--q:' . $hex . '" title="' . $nome . '">'
+                . '<input type="radio" name="color" value="' . $hex . '" aria-label="' . $nome . '"' . ($hex === $scelto ? ' checked' : '') . '>'
+                . '</label>';
+        }
     }
 
     return '<label for="' . $p . '-nome">Nome</label>'
         . '<input type="text" id="' . $p . '-nome" name="name" required maxlength="' . Bacheca::MAX_NOME_CATEGORIA . '" value="'
         . htmlspecialchars((string) ($c['name'] ?? ''), ENT_QUOTES) . '">'
-        . '<label for="' . $p . '-colore">Colore</label>'
-        . '<select id="' . $p . '-colore" name="color">' . $opzioni . '</select>'
+        . '<fieldset class="bacheca-tavolozza-campo"><legend>Colore</legend>'
+        . '<details class="bacheca-tavolozza"><summary>'
+        . '<span class="bacheca-tavolozza-campione" style="background:' . $scelto . '"></span>'
+        . '<span class="bacheca-tavolozza-nome">' . Bacheca::nomeColore($scelto) . '</span>'
+        . '<span class="sr-only"> (cambia colore)</span><span class="bacheca-tavolozza-freccia" aria-hidden="true"></span>'
+        . '</summary><div class="bacheca-tavolozza-pannello"><div class="bacheca-tavolozza-griglia">' . $quadri . '</div>'
+        . '<p class="bacheca-tavolozza-scelto" aria-hidden="true">' . Bacheca::nomeColore($scelto) . ' di 8</p></div></details>'
+        . '</fieldset>'
         . CampoContato::html($p . '-descrizione', 'Descrizione (facoltativa)', 'description',
             Bacheca::MAX_DESCRIZIONE_CATEGORIA, (string) ($c['description'] ?? ''), 2);
 };
@@ -115,3 +130,9 @@ $campiCategoria = static function (string $p, array $c): string {
         </div>
     </form>
 </section>
+<?php /* Il contatore della descrizione (17/10): lo script caricato dai dati
+         del corso, piu' su, gira prima che questo riquadro esista e non lo
+         vedeva. Come il benvenuto, il riquadro lo porta con se'; caricato
+         due volte, ogni campo si collega una volta sola. */ ?>
+<script src="/assets/js/quiz-open-count.js"></script>
+<script src="/assets/js/bacheca-tavolozza.js"></script>

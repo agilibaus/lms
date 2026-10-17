@@ -923,6 +923,16 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     check(nome + ': titoli senza salti di livello', r.salti.length === 0, r.salti);
     check(nome + ': bersagli almeno ' + minimoBersaglio + 'px', r.bersagli.length === 0, r.bersagli);
 
+    // Ogni contatore di caratteri e' collegato al suo campo (17/10): il
+    // riquadro della bacheca in Modifica corso veniva dopo lo script, e il
+    // contatore della descrizione restava fermo.
+    const slegati = await page.$$eval('.quiz-open-answer[aria-describedby]',
+        (ts) => ts.filter((t) => !t.hasAttribute('data-contato')).map((t) => t.id));
+    const contatori = await page.$$eval('.quiz-open-answer[aria-describedby]', (ts) => ts.length);
+    if (contatori > 0) {
+        check(nome + ': ogni contatore di caratteri si aggiorna mentre si scrive', slegati.length === 0, slegati);
+    }
+
     const fuoco = await fuocoInvisibile(page);
     check(nome + ': fuoco visibile su ogni comando', fuoco.length === 0, fuoco);
 
@@ -2508,6 +2518,58 @@ async function giroBenvenuto(browser) {
         await esamina(tp, '/domande-e-risposte', 'L\'esperto risponde (tutor)', BERSAGLIO_MINIMO, daTelefono);
         await esamina(tp, '/bacheca?corso=' + corso, 'Bacheca (tutor)', BERSAGLIO_MINIMO, daTelefono);
         await esamina(tp, '/bacheca/proposte?corso=' + corso, 'Proposte da valutare (tutor)', BERSAGLIO_MINIMO, daTelefono);
+
+        // La tavolozza dei colori delle categorie (17/10, variante B), aperta,
+        // su computer e a 320 px: 64 pulsanti di scelta con il loro nome, uno
+        // scelto, tutti dentro lo schermo e grandi almeno quanto il minimo;
+        // scelto un colore, il pulsante ne dice il nome e la tavolozza si
+        // chiude. Una volta sola, non a ogni giro di larghezze.
+        if (!daTelefono) {
+            for (const [w, h] of [[1280, 900], [320, 568]]) {
+                const cx = await browser.newContext({ viewport: { width: w, height: h } });
+                const ap = await cx.newPage();
+                await ap.goto(BASE + '/login');
+                await ap.fill('input[name="email"]', ADMIN);
+                await ap.fill('input[name="password"]', PASS);
+                await ap.click('form.auth-form button[type="submit"]');
+                await ap.waitForLoadState('load');
+                await ap.goto(BASE + '/admin/courses/' + corso + '/edit');
+                await ap.click('#bacheca .bacheca-cat-admin details > summary');
+                await ap.click('#bacheca .bacheca-cat-admin .bacheca-tavolozza > summary');
+                await ap.evaluate(() => document.querySelector('#bacheca .bacheca-cat-admin .bacheca-tavolozza-pannello').scrollIntoView({ block: 'center' }));
+                const t = await ap.evaluate((minimo) => {
+                    const tav = document.querySelector('#bacheca .bacheca-cat-admin .bacheca-tavolozza');
+                    const p = tav.querySelector('.bacheca-tavolozza-pannello').getBoundingClientRect();
+                    const scelte = [...tav.querySelectorAll('input[type="radio"]')];
+                    const quadri = [...tav.querySelectorAll('.bacheca-tavolozza-q')].map((q) => q.getBoundingClientRect());
+                    return {
+                        quante: scelte.length,
+                        scelte: scelte.filter((r) => r.checked).length,
+                        senzaNome: scelte.filter((r) => !/^[A-Z][a-z]+, tono [1-8]$/.test(r.getAttribute('aria-label') || '')).length,
+                        dentro: p.left >= 0 && p.right <= innerWidth && p.top >= 0 && p.bottom <= innerHeight,
+                        piccoli: quadri.filter((q) => q.width < minimo || q.height < minimo).length,
+                        lato: Math.round(quadri[0].width),
+                        scorre: document.documentElement.scrollWidth > innerWidth,
+                    };
+                }, BERSAGLIO_MINIMO);
+                check('tavolozza a ' + w + ' px: 64 colori con il nome, uno scelto, dentro lo schermo, grandi almeno ' + BERSAGLIO_MINIMO + ' px',
+                    t.quante === 64 && t.scelte === 1 && t.senzaNome === 0 && t.dentro && t.piccoli === 0 && !t.scorre, [JSON.stringify(t)]);
+                const r = await ap.evaluate(raccogli, BERSAGLIO_MINIMO);
+                check('tavolozza a ' + w + ' px, aperta: campi con etichetta, contrasto, bersagli, identificativi non ripetuti',
+                    r.senzaEtichetta.length === 0 && r.idRipetuti.length === 0 && r.contrasti.length === 0 && r.bersagli.length === 0,
+                    [...r.senzaEtichetta, ...r.idRipetuti, ...r.contrasti, ...r.bersagli]);
+                await ap.click('#bacheca .bacheca-cat-admin .bacheca-tavolozza-q[title="Petrolio, tono 4"]');
+                await ap.waitForTimeout(50);
+                const dopo = await ap.evaluate(() => {
+                    const tav = document.querySelector('#bacheca .bacheca-cat-admin .bacheca-tavolozza');
+                    return { aperta: tav.open, nome: tav.querySelector('.bacheca-tavolozza-nome').textContent,
+                        valore: (tav.querySelector('input:checked') || {}).value };
+                });
+                check('tavolozza a ' + w + ' px: scelto un colore, il pulsante ne dice il nome e la tavolozza si chiude',
+                    !dopo.aperta && dopo.nome === 'Petrolio, tono 4' && dopo.valore === '#015A5E', [JSON.stringify(dopo)]);
+                await cx.close();
+            }
+        }
 
         // Il tutor arriva alla pagina dei suoi gruppi (12/10): non ne e'
         // membro, e il profilo non li elenca. Dall'elenco Gruppi, in ogni

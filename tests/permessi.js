@@ -1472,10 +1472,17 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             let s = await entra(browser, 'stud@test.it');
             let html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
-            check('studente → i riquadri contano le sole pubblicate: 2 risorse, 1 risorsa, Ancora nessuna risorsa',
-                html.includes('2 risorse') && html.includes('1 risorsa') && html.includes('Ancora nessuna risorsa'));
+            check('studente → i riquadri contano le sole pubblicate: 2 risorse, 1 risorsa, Nessuna risorsa (17/10: era «Ancora nessuna risorsa»)',
+                html.includes('2 risorse') && html.includes('1 risorsa') && html.includes('>Nessuna risorsa<') && !html.includes('Ancora nessuna'));
             check('studente → «Le mie risorse (1)» e «Condividi una risorsa»; niente «Nuova risorsa» né «Valuta»',
                 html.includes('Le mie risorse (1)') && html.includes('Condividi una risorsa') && !html.includes('Nuova risorsa') && !html.includes('>Valuta<'));
+            await s.ctx.close();
+            s = await entra(browser, 'admin@test.it');
+            html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
+            check('admin → il collegamento alle categorie si chiama «Gestione categorie» (17/10)',
+                html.includes('>Gestione categorie<') && !html.includes('Gestisci le categorie'));
+            await s.ctx.close();
+            s = await entra(browser, 'stud@test.it');
             html = await testoDi(s.page, '/bacheca/mie?corso=' + B.corso);
             check('studente → con il corso di B nell\'indirizzo resta nella sua bacheca',
                 html.includes('conversazione A') && !html.includes('conversazione B'));
@@ -1655,7 +1662,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/bacheca/risorse/' + A.bacheca_risorsa + '/evidenza', [['si', '0']], 'negato', 'cambiare l\'evidenza'],
                 ['/bacheca/usi/' + A.bacheca_uso_nascosto, [['azione', 'rimetti']], 'negato', 'rimettere il proprio racconto nascosto'],
                 ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare senza passare dal tutor'],
-                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', 'verde']], 'negato', 'creare una categoria'],
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', '#4F7256']], 'negato', 'creare una categoria'],
                 ['/admin/bacheca/categorie/' + A.bacheca_categoria_vuota + '/elimina', [], 'negato', 'eliminare una categoria'],
             ]],
             ['tutor2@test.it', 'tutor B (bacheca)', [
@@ -1666,7 +1673,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/bacheca/risorse/' + A.bacheca_risorsa + '/togli', [], 'negato', 'toglierla'],
                 ['/bacheca/usi/' + A.bacheca_uso, [['azione', 'nascondi']], 'negato', 'nascondere il racconto di uno studente di un collega'],
                 ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare nella bacheca di un collega'],
-                ['/admin/courses/' + B.corso + '/bacheca/categorie', [['name', 'x'], ['color', 'verde']], 'negato',
+                ['/admin/courses/' + B.corso + '/bacheca/categorie', [['name', 'x'], ['color', '#4F7256']], 'negato',
                     'creare una categoria: le crea l\'admin, anche nel corso suo'],
             ]],
             ['assist@test.it', 'assistente (bacheca)', [
@@ -1686,10 +1693,14 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria2)]], 'consentito',
                     'pubblicare la proposta di un suo studente, in un\'altra categoria'],
                 ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'consentito', 'pubblicare nel corso dei suoi gruppi'],
-                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', 'verde']], 'negato', 'creare una categoria'],
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', '#4F7256']], 'negato', 'creare una categoria'],
             ]],
             ['admin@test.it', 'admin (bacheca)', [
-                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria di permessi.js'], ['color', 'ardesia'], ['description', '']],
+                // Un colore fuori dalla tavolozza (17/10): la richiesta torna con
+                // il motivo e la categoria non nasce (si controlla dopo).
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria fucsia'], ['color', '#FF00FF'], ['description', '']],
+                    'consentito', 'chiedere una categoria con un colore fuori dalla tavolozza (non nasce: si controlla dopo)'],
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria di permessi.js'], ['color', '#1E4C70'], ['description', '']],
                     'consentito', 'creare una categoria'],
                 ['/admin/bacheca/categorie/' + A.bacheca_categoria + '/elimina', [], 'consentito',
                     'chiedere di eliminare una categoria piena (risponde con il motivo, e la categoria resta: si controlla dopo)'],
@@ -1754,6 +1765,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             let html = await page.content();
             check('bacheca → la categoria piena non si elimina, quella vuota sì, la nuova c\'è',
                 html.includes('Comunicare con mio figlio') && !html.includes('Prendersi cura di sé') && html.includes('Categoria di permessi.js'));
+            const nuova = await page.evaluate(() => {
+                const t = [...document.querySelectorAll('.bacheca-riquadro')].find((x) => x.textContent.includes('Categoria di permessi.js'));
+                return t ? [t.style.getPropertyValue('--cat'), t.style.getPropertyValue('--cat-soft')] : null;
+            });
+            check('bacheca → la categoria nuova ha il colore scelto dalla tavolozza, con la sua tinta; quella fucsia non c\'è',
+                nuova !== null && nuova[0] === '#1E4C70' && nuova[1] === '#E6EBEF' && !html.includes('Categoria fucsia'), [JSON.stringify(nuova)]);
             check('bacheca → la proposta pubblicata è nella categoria scelta dal tutor: Vita digitale ha 2 risorse',
                 /Vita digitale[\s\S]*?2 risorse/.test(html));
             await page.goto(BASE + '/bacheca/categorie/' + A.bacheca_categoria);

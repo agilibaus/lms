@@ -45,17 +45,34 @@ final class Bacheca
     public const SOLO_LINK = ['video', 'podcast'];
 
     /**
-     * I colori delle categorie: le quattro tavolozze del tema, con il loro
-     * colore e la loro tinta chiara. Gia' verificate per il contrasto
-     * (`tests/tema_test.php`): il titolo colorato sulla tinta chiara e il
-     * testo normale sulla tinta chiara si leggono tutti.
+     * I colori delle categorie (17/10, Alessandro, variante B): 64 colori
+     * in una tavolozza 8x8, una riga per tinta e otto toni dal piu' chiaro
+     * al piu' scuro. Sono toni smorzati come quelli del tema, e contengono
+     * i quattro colori delle tavolozze del tema, cosi' le categorie create
+     * prima restano come erano.
+     *
+     * TUTTI MEDI O SCURI, E NON PER GUSTO. Il titolo del riquadro e' scritto
+     * nel colore sulla sua tinta chiara, e deve leggersi: almeno 4,5:1. Un
+     * giallo, un rosa o un azzurro chiaro non ci arrivano. Li ha generati
+     * uno script in OKLCH, con il tono piu' chiaro di ogni riga al limite
+     * del contrasto; `tests/bacheca_test.php` rifa' il conto su tutti e 64.
      */
-    public const COLORI = [
-        'verde' => 'Verde',
-        'ardesia' => 'Ardesia',
-        'terracotta' => 'Terracotta',
-        'prugna' => 'Prugna',
+    public const TAVOLOZZA = [
+        'rosso' => ['Rosso', ['#975455', '#8E4C4C', '#854345', '#7C3B3D', '#6E3738', '#603333', '#532E2F', '#462A2A']],
+        'terracotta' => ['Terracotta', ['#9B4F2F', '#8A4F33', '#82472B', '#793F23', '#6B3A23', '#5E3523', '#513122', '#452C21']],
+        'ocra' => ['Ocra', ['#826122', '#7A5918', '#72510C', '#6A4900', '#5F430A', '#533D12', '#493716', '#3E3019']],
+        'oliva' => ['Oliva', ['#656C2A', '#5D6421', '#555C18', '#4E550E', '#474D14', '#404518', '#393D1A', '#32351C']],
+        'verde' => ['Verde', ['#4F7256', '#336B41', '#2B643A', '#235C33', '#245330', '#244A2D', '#24412A', '#233927']],
+        'petrolio' => ['Petrolio', ['#007378', '#066A6F', '#036266', '#015A5E', '#005256', '#004A4E', '#0B4245', '#14393B']],
+        'ardesia' => ['Ardesia', ['#366C98', '#3F6079', '#255C86', '#1C547E', '#1E4C70', '#204462', '#203D54', '#203547']],
+        'prugna' => ['Prugna', ['#81598B', '#795082', '#6B4A77', '#674070', '#5C3B64', '#513658', '#47314C', '#3C2C40']],
     ];
+
+    /** Le chiavi di prima (le tavolozze del tema), per le righe non migrate. */
+    private const VECCHIE_CHIAVI = ['verde', 'ardesia', 'terracotta', 'prugna'];
+
+    /** Quanto bianco nella tinta chiara di un colore che non e' del tema. */
+    private const BIANCO_TINTA = 0.89;
 
     /**
      * Gli stessi file dei materiali delle lezioni (`LessonController`), e la
@@ -67,7 +84,7 @@ final class Bacheca
     public static function conta(int $quante): string
     {
         return match (true) {
-            $quante <= 0 => 'Ancora nessuna risorsa',
+            $quante <= 0 => 'Nessuna risorsa',
             $quante === 1 => '1 risorsa',
             default => $quante . ' risorse',
         };
@@ -78,12 +95,56 @@ final class Bacheca
         return $quante === 1 ? '1 proposta da valutare' : $quante . ' proposte da valutare';
     }
 
-    /** @return array{primary: string, soft: string} */
-    public static function colore(string $chiave): array
+    /**
+     * Il colore di una categoria e la sua tinta chiara. Un colore del tema ha
+     * la tinta del tema (la stessa di prima); gli altri l'89% di bianco. Un
+     * valore fuori dalla tavolozza torna verde.
+     *
+     * @return array{primary: string, soft: string}
+     */
+    public static function colore(string $valore): array
     {
-        $t = Theme::TAVOLOZZE[isset(self::COLORI[$chiave]) ? $chiave : 'verde'];
+        $hex = in_array($valore, self::VECCHIE_CHIAVI, true)
+            ? Theme::TAVOLOZZE[$valore]['primary']
+            : (self::nellaTavolozza($valore) ?? Theme::TAVOLOZZE['verde']['primary']);
 
-        return ['primary' => $t['primary'], 'soft' => $t['soft']];
+        foreach (Theme::TAVOLOZZE as $t) {
+            if (strtoupper($t['primary']) === $hex) {
+                return ['primary' => $hex, 'soft' => $t['soft']];
+            }
+        }
+
+        return ['primary' => $hex, 'soft' => Theme::mescolaVerso($hex, '#FFFFFF', self::BIANCO_TINTA)];
+    }
+
+    /** Il colore scritto come nella tavolozza, se ci sta; altrimenti null. */
+    public static function nellaTavolozza(string $valore): ?string
+    {
+        $hex = strtoupper(trim($valore));
+
+        foreach (self::TAVOLOZZA as [, $toni]) {
+            if (in_array($hex, $toni, true)) {
+                return $hex;
+            }
+        }
+
+        return null;
+    }
+
+    /** «Verde, tono 1»: il nome che si legge e che sentono i lettori di schermo. */
+    public static function nomeColore(string $valore): string
+    {
+        $hex = self::colore($valore)['primary'];
+
+        foreach (self::TAVOLOZZA as [$nome, $toni]) {
+            $i = array_search($hex, $toni, true);
+
+            if ($i !== false) {
+                return $nome . ', tono ' . ($i + 1);
+            }
+        }
+
+        return $hex;
     }
 
     public static function etichettaLink(string $tipo): string

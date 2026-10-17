@@ -316,3 +316,7 @@ $conPresentazione = array_values(array_filter(
         </div>
     <?php endif; ?>
 <?php endif; ?>
+<?php /* I contatori della domanda e della risposta del giro (17/10): la
+         pagina non caricava lo script, e restavano fermi sul numero di
+         partenza. */ ?>
+<script src="/assets/js/quiz-open-count.js"></script>

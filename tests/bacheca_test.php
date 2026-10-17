@@ -34,26 +34,49 @@ function check(string $label, bool $condition, string $dettaglio = ''): void
 // ---------------------------------------------------------------
 echo 'I conteggi' . PHP_EOL;
 
-check('nessuna risorsa', Bacheca::conta(0) === 'Ancora nessuna risorsa', Bacheca::conta(0));
+check('nessuna risorsa', Bacheca::conta(0) === 'Nessuna risorsa', Bacheca::conta(0));
 check('una risorsa', Bacheca::conta(1) === '1 risorsa', Bacheca::conta(1));
 check('tre risorse', Bacheca::conta(3) === '3 risorse', Bacheca::conta(3));
 check('una proposta da valutare', Bacheca::daValutare(1) === '1 proposta da valutare', Bacheca::daValutare(1));
 check('due proposte da valutare', Bacheca::daValutare(2) === '2 proposte da valutare', Bacheca::daValutare(2));
 
 // ---------------------------------------------------------------
-echo PHP_EOL . 'I colori delle categorie' . PHP_EOL;
+echo PHP_EOL . 'I colori delle categorie: la tavolozza 8x8 (17/10, variante B)' . PHP_EOL;
 
-check('sono le quattro tavolozze del tema', array_keys(Bacheca::COLORI) === ['verde', 'ardesia', 'terracotta', 'prugna'],
-    implode(', ', array_keys(Bacheca::COLORI)));
+$righe = Bacheca::TAVOLOZZA;
+$tutti = array_merge(...array_map(static fn (array $r): array => $r[1], array_values($righe)));
+check('otto righe da otto colori', count($righe) === 8 && array_values(array_unique(array_map(static fn (array $r): int => count($r[1]), $righe))) === [8],
+    count($righe) . ' righe');
+check('64 colori tutti diversi, scritti #RRGGBB maiuscolo', count(array_unique($tutti)) === 64
+    && array_filter($tutti, static fn (string $c): bool => preg_match('/^#[0-9A-F]{6}$/', $c) !== 1) === []);
 
-foreach (array_keys(Bacheca::COLORI) as $chiave) {
-    $c = Bacheca::colore($chiave);
-    check($chiave . ': colore e tinta sono quelli del tema, gia\' verificati per il contrasto',
-        $c['primary'] === Theme::TAVOLOZZE[$chiave]['primary'] && $c['soft'] === Theme::TAVOLOZZE[$chiave]['soft'],
-        json_encode($c));
+$deboli = [];
+
+foreach ($tutti as $c) {
+    $t = Bacheca::colore($c);
+    $titolo = Theme::contrasto($t['primary'], $t['soft']);
+    $testo = Theme::contrasto('#1C1C1A', $t['soft']);
+
+    if ($t['primary'] !== $c || $titolo < 4.5 || $testo < 4.5) {
+        $deboli[] = sprintf('%s: titolo %.2f, testo %.2f', $c, $titolo, $testo);
+    }
 }
 
-check('un colore sconosciuto torna verde', Bacheca::colore('fucsia')['primary'] === Theme::TAVOLOZZE['verde']['primary']);
+check('ogni colore, scritto sulla sua tinta, si legge (almeno 4,5:1), e il testo normale anche', $deboli === [], implode('; ', $deboli));
+
+foreach (['verde', 'ardesia', 'terracotta', 'prugna'] as $chiave) {
+    $primo = Theme::TAVOLOZZE[$chiave]['primary'];
+    check($chiave . ': il colore di prima è nella tavolozza, con la sua tinta di sempre',
+        in_array($primo, $tutti, true) && Bacheca::colore($primo)['soft'] === Theme::TAVOLOZZE[$chiave]['soft']);
+    check($chiave . ': la vecchia chiave, se la migrazione non è passata, dà lo stesso colore',
+        Bacheca::colore($chiave) === Bacheca::colore($primo));
+}
+
+check('un colore fuori dalla tavolozza torna verde', Bacheca::colore('#FF00FF')['primary'] === Theme::TAVOLOZZE['verde']['primary']);
+check('nella tavolozza: il valore, anche minuscolo', Bacheca::nellaTavolozza('#4f7256') === '#4F7256');
+check('fuori dalla tavolozza: null', Bacheca::nellaTavolozza('#FF00FF') === null && Bacheca::nellaTavolozza('verde') === null);
+check('il nome di un colore: tinta e tono', Bacheca::nomeColore('#4F7256') === 'Verde, tono 1', Bacheca::nomeColore('#4F7256'));
+check('il nome di una vecchia chiave', Bacheca::nomeColore('prugna') === 'Prugna, tono 3', Bacheca::nomeColore('prugna'));
 
 // ---------------------------------------------------------------
 echo PHP_EOL . 'I tipi e i link' . PHP_EOL;

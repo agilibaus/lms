@@ -57,7 +57,7 @@ $conCategoria = $categoria === null;
     <p class="empty-state">
         <?= $mie
             ? 'Non hai ancora tenuto nessuna risorsa' . ($conCategoria ? '' : ' di questa categoria') . '. Premi «Questa me la tengo» sotto quelle che vuoi ritrovare.'
-            : 'Ancora nessuna risorsa in questa categoria.' ?>
+            : 'Nessuna risorsa in questa categoria.' ?>
     </p>
 <?php else: ?>
     <div class="card bacheca-sezione">

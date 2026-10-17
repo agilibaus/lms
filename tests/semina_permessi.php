@@ -540,7 +540,7 @@ $a['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['A'];
 $b['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['B'];
 
 // La Bacheca (17/10): in ogni mondo tre categorie — una con le risorse,
-// una con una sola, una vuota (il riquadro «Ancora nessuna risorsa») — e
+// una con una sola, una vuota (il riquadro «Nessuna risorsa») — e
 // in quella piena una risorsa del tutor con il file, in evidenza; una
 // dello studente con un link; una proposta in attesa e una non pubblicata.
 // Lo studente si tiene la risorsa del tutor, racconta come l'ha usata, e
@@ -560,13 +560,13 @@ function bachecaDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, strin
     }
 
     $cat = $pdo->prepare('INSERT INTO board_categories (course_id, name, color, description, position) VALUES (:c, :n, :k, :d, :p)');
-    $cat->execute(['c' => $mondo['corso'], 'n' => 'Comunicare con mio figlio', 'k' => 'verde', 'p' => 0,
+    $cat->execute(['c' => $mondo['corso'], 'n' => 'Comunicare con mio figlio', 'k' => '#4F7256', 'p' => 0,
         'd' => 'Ascolto e dialogo, i momenti di tensione, i conflitti, le frasi per aprire una conversazione.']);
     $categoria = (int) $pdo->lastInsertId();
-    $cat->execute(['c' => $mondo['corso'], 'n' => 'Vita digitale', 'k' => 'terracotta', 'p' => 1,
+    $cat->execute(['c' => $mondo['corso'], 'n' => 'Vita digitale', 'k' => '#015A5E', 'p' => 1,
         'd' => 'Smartphone e social, videogiochi e tempi, sicurezza online, come parlarne in famiglia.']);
     $categoria2 = (int) $pdo->lastInsertId();
-    $cat->execute(['c' => $mondo['corso'], 'n' => 'Prendersi cura di sé come genitore', 'k' => 'prugna', 'p' => 2, 'd' => null]);
+    $cat->execute(['c' => $mondo['corso'], 'n' => 'Prendersi cura di sé come genitore', 'k' => '#6B4A77', 'p' => 2, 'd' => null]);
     $vuota = (int) $pdo->lastInsertId();
 
     $ris = $pdo->prepare(
