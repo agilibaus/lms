@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Auth\StudentScope;
 use App\Core\CertificateService;
 use App\Core\Upload;
 use App\Core\View;
@@ -15,7 +16,9 @@ use App\Models\UserModel;
 class CertificateController
 {
     /**
-     * Studente: i propri certificati. Staff: tutti quelli emessi.
+     * Studente: i propri certificati. Staff: quelli degli studenti che segue,
+     * con la regola del report dello studente (17/10, StudentScope); l'admin
+     * tutti. Prima lo staff li vedeva tutti, di qualunque studente.
      */
     public function index(array $params = []): void
     {
@@ -26,7 +29,7 @@ class CertificateController
         View::render('certificates/index', [
             'pageTitle' => 'Certificati',
             'isStaff' => $isStaff,
-            'certificates' => $isStaff ? CertificateModel::all() : CertificateModel::forUser((int) Auth::id()),
+            'certificates' => $isStaff ? CertificateModel::all(StudentScope::studentIds()) : CertificateModel::forUser((int) Auth::id()),
             'dompdfAvailable' => CertificateService::dompdfAvailable(),
         ]);
     }
@@ -43,7 +46,10 @@ class CertificateController
             return;
         }
 
-        if ((int) $certificate['user_id'] !== (int) Auth::id() && !Auth::hasRole('admin', 'tutor', 'assistente')) {
+        // Il proprio, o quello di uno studente che si segue, come l'elenco
+        // (17/10). Prima bastava essere staff per scaricare quello di
+        // chiunque.
+        if ((int) $certificate['user_id'] !== (int) Auth::id() && !StudentScope::puoVedere((int) $certificate['user_id'])) {
             http_response_code(403);
             echo 'Non puoi scaricare questo certificato.';
             return;

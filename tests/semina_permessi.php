@@ -236,6 +236,21 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
     // Un certificato emesso allo studente: senza, l'elenco dei certificati e
     // la colonna del report per gruppo restano vuoti, e una tabella vuota
     // non sfora mai. Si cancella con il corso, per cascata.
+    //
+    // **Il file deve esistere sul disco** (17/10), come quello del
+    // materiale: senza, chi prova a scaricare il certificato di un altro
+    // riceve 404 per il file mancante, e un controllo lo conterebbe come un
+    // rifiuto del permesso. Fino al 17/10 il file non c'era.
+    $certificatoFile = __DIR__ . '/../storage/certificates/prova-permessi.pdf';
+
+    if (!is_dir(dirname($certificatoFile))) {
+        mkdir(dirname($certificatoFile), 0775, true);
+    }
+
+    if (!is_file($certificatoFile)) {
+        file_put_contents($certificatoFile, "%PDF-1.4\n% certificato di prova della verifica dei permessi\n");
+    }
+
     $pdo->prepare('INSERT INTO certificates (user_id, course_id, certificate_code, file_path, issued_by)
                    VALUES (:u, :c, :k, "certificates/prova-permessi.pdf", :a)')
         ->execute([

@@ -69,17 +69,36 @@ class CertificateModel
     }
 
     /**
-     * Tutti i certificati emessi (vista staff).
+     * I certificati emessi (vista staff): tutti con null, altrimenti solo
+     * quelli degli studenti indicati (il perimetro di StudentScope, 17/10).
+     *
+     * @param int[]|null $userIds
      */
-    public static function all(): array
+    public static function all(?array $userIds = null): array
     {
-        return Database::connection()->query(
+        if ($userIds === []) {
+            return [];
+        }
+
+        $filtro = '';
+        $valori = [];
+
+        if ($userIds !== null) {
+            $filtro = 'WHERE c.user_id IN (' . implode(',', array_fill(0, count($userIds), '?')) . ')';
+            $valori = array_map('intval', array_values($userIds));
+        }
+
+        $stmt = Database::connection()->prepare(
             'SELECT c.*, u.full_name, u.email, co.title AS course_title
              FROM certificates c
              INNER JOIN users u ON u.id = c.user_id
              INNER JOIN courses co ON co.id = c.course_id
+             ' . $filtro . '
              ORDER BY c.issued_at DESC'
-        )->fetchAll();
+        );
+        $stmt->execute($valori);
+
+        return $stmt->fetchAll();
     }
 
     public static function create(int $userId, int $courseId, string $code, string $filePath, ?int $issuedBy): int

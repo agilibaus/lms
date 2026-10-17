@@ -255,6 +255,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // I tentativi dei quiz (17/10): ognuno vede i propri.
             ['/attempts/' + A.tentativo, 'consentito', 'il proprio tentativo'],
             ['/attempts/' + B.tentativo, 'negato', 'il tentativo di un altro studente'],
+
+            // I certificati (17/10): il file c'e' sul disco (lo mette la
+            // semina), quindi un rifiuto qui e' della regola.
+            ['/certificates/' + A.certificato + '/download', 'consentito', 'il proprio certificato'],
+            ['/certificates/' + B.certificato + '/download', 'negato', 'il certificato di un altro studente'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
@@ -263,6 +268,9 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // bastava essere tutor per aprire quelli di chiunque.
             ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente di un suo gruppo'],
             ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente del gruppo di un collega'],
+            // Lo stesso per i certificati (17/10).
+            ['/certificates/' + A.certificato + '/download', 'consentito', 'certificato di uno studente di un suo gruppo'],
+            ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente del gruppo di un collega'],
 
             ['/courses/' + A.corso, 'consentito', 'è il corso dei suoi gruppi'],
             ['/lessons/' + A.lezione + '/edit', 'consentito', 'può modificare le lezioni del corso A'],
@@ -305,6 +313,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
             ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente del tutor che segue'],
             ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente fuori dal suo perimetro'],
+            ['/certificates/' + A.certificato + '/download', 'consentito', 'certificato di uno studente del tutor che segue'],
+            ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente fuori dal suo perimetro'],
             ['/lessons/' + A.lezione + '/edit', 'negato', 'un assistente non modifica le lezioni'],
             ['/admin/users', 'negato', 'nessuna gestione utenti'],
             ['/admin/users/importa', 'negato', 'nemmeno importarli da un file'],
@@ -323,6 +333,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + B.lezione + '/edit', 'consentito', 'l\'admin modifica tutto'],
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
             ['/attempts/' + B.tentativo, 'consentito', 'l\'admin vede i tentativi di tutti'],
+            ['/certificates/' + B.certificato + '/download', 'consentito', 'l\'admin scarica i certificati di tutti'],
             ['/admin/permissions', 'consentito', 'è sua'],
             ['/admin/users/importa', 'consentito', 'l\'importazione è sua'],
             ['/admin/settings/bunny', 'consentito', 'è sua'],
@@ -408,6 +419,33 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 loTrova ? [] : ['se non lo trovasse nemmeno lui, le due prove qui sopra non direbbero niente']
             );
             await admin.ctx.close();
+        }
+
+        // --- l'elenco dei certificati: che cosa c'è dentro ----------------
+        //
+        // /certificates si apre a tutti: lo studente vede i propri, lo staff
+        // quelli degli studenti che segue, l'admin tutti (17/10; prima lo
+        // staff li vedeva tutti). Si guarda dentro, cercando i codici dei due
+        // certificati della semina, che cominciano con PROVA-A- e PROVA-B-.
+
+        console.log('\n--- l\'elenco dei certificati: che cosa c\'è dentro');
+
+        for (const [email, chi, vedeA, vedeB] of [
+            ['stud@test.it', 'studente del mondo A', true, false],
+            ['tutor1@test.it', 'tutor del mondo A', true, false],
+            ['assist@test.it', 'assistente del tutor A', true, false],
+            ['tutor2@test.it', 'tutor del mondo B', false, true],
+            ['admin@test.it', 'amministratore (controprova)', true, true],
+        ]) {
+            const { ctx, page } = await entra(browser, email);
+            await page.goto(BASE + '/certificates');
+            const html = await page.content();
+            const a = html.includes('PROVA-A-');
+            const b = html.includes('PROVA-B-');
+            check(chi + ' → nei certificati ' + (vedeA ? 'c\'è' : 'non c\'è') + ' quello del mondo A, '
+                + (vedeB ? 'c\'è' : 'non c\'è') + ' quello del mondo B',
+                a === vedeA && b === vedeB, ['mondo A: ' + (a ? 'c\'è' : 'non c\'è') + ', mondo B: ' + (b ? 'c\'è' : 'non c\'è')]);
+            await ctx.close();
         }
 
         // --- il video di benvenuto ---------------------------------------
