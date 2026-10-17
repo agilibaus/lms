@@ -11,6 +11,7 @@ use App\Core\Ordinamento;
 /** @var array $availableStudents */
 /** @var bool $canDelete */
 /** @var list<array<string, mixed>>|null $welcomes null se chi guarda non puo' caricare benvenuti */
+/** @var list<array<string, mixed>>|null $bacheca le categorie della bacheca; null se chi guarda non le gestisce */
 
 $courseId = (int) $course['id'];
 
@@ -57,6 +58,10 @@ $enrollments = $ordineIscritti->applica($enrollments);
 
 <?php if ($welcomes !== null): ?>
     <?php require __DIR__ . '/_welcomes.php'; ?>
+<?php endif; ?>
+
+<?php if ($bacheca !== null): ?>
+    <?php require __DIR__ . '/_bacheca.php'; ?>
 <?php endif; ?>
 
 <?php if ($requests !== []): ?>

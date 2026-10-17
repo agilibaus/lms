@@ -144,6 +144,15 @@ use App\Core\Csrf;
                      si guardano. */ ?>
             <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
             <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
+            <?php
+            /* La Bacheca (17/10), per tutti: ognuno vede quella dei suoi corsi.
+               A chi modera, il numero delle proposte che aspettano. */
+            $daValutare = Auth::can('board.manage') || Auth::can('board.manage_own')
+                ? \App\Models\BoardModel::contaDaValutare((int) Auth::id(), Auth::can('board.manage'))
+                : 0;
+            ?>
+            <a href="/bacheca" class="nav-link<?= $voce('/bacheca') ?>">Bacheca<?php if ($daValutare > 0): ?>
+                <span class="nav-conteggio"><?= $daValutare ?><span class="sr-only"> da valutare</span></span><?php endif; ?></a>
             <?php if (Auth::hasRole('studente', 'tutor')): ?>
                 <?php /* L'archivio delle domande, «L'esperto risponde» (09/10,
                          Elena), prima di «Certificati». Per gli studenti e per i

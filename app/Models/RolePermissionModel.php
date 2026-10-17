@@ -48,6 +48,8 @@ class RolePermissionModel
                 'course.welcome' => 'Caricare il benvenuto di qualunque tutor all\'inizio dei corsi',
                 'course.welcome_own' => 'Caricare il proprio benvenuto nei corsi dei propri gruppi',
                 'question.answer' => "Rispondere alle domande degli studenti (l'esperto)",
+                'board.manage' => 'Gestire le categorie e tutte le bacheche dei corsi',
+                'board.manage_own' => 'Pubblicare nelle bacheche dei corsi dei propri gruppi e moderare i propri studenti',
             ],
             'Questionari' => [
                 'quiz.take' => 'Svolgere i questionari',

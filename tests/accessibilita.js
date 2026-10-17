@@ -595,6 +595,14 @@ PAGINE_INTERNE.push(
     // E con una pubblicata aperta per correggerla, come quando si arriva dal
     // «Modifica» dell'archivio (08/10): chiusa, il suo modulo non si misura.
     ['/domande?apri=' + SEMINATI.domanda_pubblicata, 'Domande con una pubblicata aperta (semina)'],
+    // La Bacheca (17/10): l'admin vede ogni comando, la proposta da valutare
+    // e i racconti nascosti; i moduli con il file e «In evidenza».
+    ['/bacheca?corso=' + SEMINATI.corso, 'Bacheca (semina)'],
+    ['/bacheca/categorie/' + SEMINATI.bacheca_categoria, 'Categoria della bacheca (semina)'],
+    ['/bacheca/proposte?corso=' + SEMINATI.corso, 'Proposte da valutare (semina)'],
+    ['/bacheca/nuova?corso=' + SEMINATI.corso, 'Nuova risorsa della bacheca (semina)'],
+    ['/bacheca/risorse/' + SEMINATI.bacheca_risorsa + '/modifica', 'Modifica risorsa con file (semina)'],
+    ['/bacheca/risorse/' + SEMINATI.bacheca_proposta + '/modifica', 'Correggi la proposta (semina)'],
 );
 
 async function entra(page) {
@@ -613,7 +621,7 @@ async function entra(page) {
 const COMANDI = '.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a, '
     + '.assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta, '
     + '.tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando, '
-    + '.giro-cambia-comando, .giro-passate-comando';
+    + '.giro-cambia-comando, .giro-passate-comando, .bacheca-comando, .bacheca-filtro:not(.attivo)';
 const NELLE_FRASI = ':is(p, .alert, .form-hint, .lesson-content) a:not([class])';
 
 /**
@@ -2357,6 +2365,23 @@ async function giroBenvenuto(browser) {
         await esamina(page, '/domande-e-risposte', 'L\'esperto risponde (studente)', BERSAGLIO_MINIMO, daTelefono);
         await esamina(page, '/domande-e-risposte?corso=' + corso + '&cerca=Domanda', 'L\'esperto risponde dopo una ricerca (studente)',
             BERSAGLIO_MINIMO, daTelefono);
+
+        // La Bacheca (17/10), come la vede lo studente: i riquadri, una
+        // categoria con il racconto nascosto e il modulo del racconto, le sue
+        // risorse e «Condividi una risorsa» con le sue proposte.
+        await esamina(page, '/bacheca?corso=' + corso, 'Bacheca (studente)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(page, '/bacheca/categorie/' + seme.A.bacheca_categoria, 'Categoria della bacheca (studente)', BERSAGLIO_MINIMO, daTelefono);
+        await page.evaluate(() => document.querySelectorAll('.bacheca-risorsa details').forEach((d) => { d.open = true; }));
+        {
+            const r = await page.evaluate(raccogli, BERSAGLIO_MINIMO);
+            check('Categoria della bacheca (studente), con racconti e modulo aperti: campi con etichetta, contrasto, bersagli',
+                r.senzaEtichetta.length === 0 && r.contrasti.length === 0 && r.bersagli.length === 0 && r.idRipetuti.length === 0,
+                [...r.senzaEtichetta, ...r.contrasti, ...r.bersagli, ...r.idRipetuti]);
+            const riquadro = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+            check('Categoria della bacheca (studente), aperta: niente scorrimento orizzontale', riquadro);
+        }
+        await esamina(page, '/bacheca/mie?corso=' + corso, 'Le mie risorse della bacheca (studente)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(page, '/bacheca/condividi?corso=' + corso, 'Condividi una risorsa (studente)', BERSAGLIO_MINIMO, daTelefono);
         await page.goto(BASE + url);
 
         // Il contatore sopra il campo della domanda (08/10, Elena): «1000
@@ -2481,6 +2506,8 @@ async function giroBenvenuto(browser) {
 
         // Il tutor legge «L'esperto risponde» come uno studente (09/10).
         await esamina(tp, '/domande-e-risposte', 'L\'esperto risponde (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(tp, '/bacheca?corso=' + corso, 'Bacheca (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(tp, '/bacheca/proposte?corso=' + corso, 'Proposte da valutare (tutor)', BERSAGLIO_MINIMO, daTelefono);
 
         // Il tutor arriva alla pagina dei suoi gruppi (12/10): non ne e'
         // membro, e il profilo non li elenca. Dall'elenco Gruppi, in ogni

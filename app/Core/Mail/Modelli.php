@@ -365,6 +365,33 @@ final class Modelli
                     '{domanda}' => 'Come si fa la pratica del mattino se i figli sono già svegli?', $link => $esempioLink,
                 ],
             ],
+            'bacheca_proposta' => [
+                'gruppo' => 'corso',
+                'titolo' => 'Nuova proposta per la bacheca',
+                'quando' => 'Al tutor del gruppo, quando uno studente propone una risorsa per la bacheca del corso; '
+                    . 'se lo studente non ha un tutor nel corso, agli amministratori.',
+                'oggetto' => 'EMAIL_BACHECA_OGGETTO',
+                'testo' => 'EMAIL_BACHECA_TESTO',
+                'predefinito' => [
+                    'Nuova proposta per la bacheca: {corso}',
+                    "Ciao {nome},\n\n"
+                    . "{studente} ha proposto una risorsa per la bacheca del corso «{corso}»:\n\n"
+                    . "{titolo}\n\n"
+                    . "Puoi correggerla e pubblicarla, o non pubblicarla, qui:\n"
+                    . "{link}",
+                ],
+                'segnaposto' => [
+                    '{studente}' => 'nome e cognome di chi propone',
+                    '{corso}' => 'il titolo del corso',
+                    '{titolo}' => 'il titolo della risorsa proposta',
+                    $link => 'la pagina delle proposte da valutare',
+                ],
+                'obbligatori' => [$link],
+                'esempio' => [
+                    '{studente}' => 'Anna Rossi', '{corso}' => 'Il corso di esempio',
+                    '{titolo}' => 'Un’app per dividere le faccende di casa', $link => $esempioLink,
+                ],
+            ],
             'incontro_invito' => [
                 'gruppo' => 'incontri',
                 'titolo' => 'Invito all’incontro',

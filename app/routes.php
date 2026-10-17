@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controllers\Admin\BoardCategoryController;
 use App\Controllers\Admin\CourseController as AdminCourseController;
 use App\Controllers\Admin\GroupController as AdminGroupController;
 use App\Controllers\Admin\PermissionController as AdminPermissionController;
@@ -11,6 +12,7 @@ use App\Controllers\Admin\UserImportController;
 use App\Controllers\Admin\TutorWelcomeController;
 use App\Controllers\AgendaController;
 use App\Controllers\AuthController;
+use App\Controllers\BoardController;
 use App\Controllers\CatalogController;
 use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
@@ -296,3 +298,28 @@ $router->post('/live/{id}/delete', [LiveSessionController::class, 'destroy']);
 $router->post('/live/{id}/sync', [LiveSessionController::class, 'syncGoogle']);
 $router->post('/live/{id}/inviti', [LiveSessionController::class, 'invite']);
 $router->post('/live/{id}/attendance/{userId}', [LiveSessionController::class, 'setAttendance']);
+
+// La Bacheca (17/10): le risorse condivise di un corso, per categorie. Le
+// categorie le crea l'admin da «Modifica corso».
+$router->get('/bacheca', [BoardController::class, 'index']);
+$router->get('/bacheca/mie', [BoardController::class, 'mine']);
+$router->get('/bacheca/condividi', [BoardController::class, 'shareForm']);
+$router->get('/bacheca/nuova', [BoardController::class, 'createForm']);
+$router->get('/bacheca/proposte', [BoardController::class, 'proposals']);
+$router->get('/bacheca/categorie/{id}', [BoardController::class, 'category']);
+$router->post('/bacheca/corsi/{id}/condividi', [BoardController::class, 'share']);
+$router->post('/bacheca/corsi/{id}/nuova', [BoardController::class, 'store']);
+$router->get('/bacheca/risorse/{id}/modifica', [BoardController::class, 'editForm']);
+$router->get('/bacheca/risorse/{id}/download', [BoardController::class, 'download']);
+$router->post('/bacheca/risorse/{id}', [BoardController::class, 'update']);
+$router->post('/bacheca/risorse/{id}/pubblica', [BoardController::class, 'publish']);
+$router->post('/bacheca/risorse/{id}/scarta', [BoardController::class, 'discard']);
+$router->post('/bacheca/risorse/{id}/togli', [BoardController::class, 'withdraw']);
+$router->post('/bacheca/risorse/{id}/evidenza', [BoardController::class, 'feature']);
+$router->post('/bacheca/risorse/{id}/tengo', [BoardController::class, 'save']);
+$router->post('/bacheca/risorse/{id}/uso', [BoardController::class, 'story']);
+$router->post('/bacheca/usi/{id}', [BoardController::class, 'moderateUse']);
+$router->post('/admin/courses/{id}/bacheca/categorie', [BoardCategoryController::class, 'store']);
+$router->post('/admin/bacheca/categorie/{id}', [BoardCategoryController::class, 'update']);
+$router->post('/admin/bacheca/categorie/{id}/elimina', [BoardCategoryController::class, 'destroy']);
+$router->post('/admin/bacheca/categorie/{id}/sposta', [BoardCategoryController::class, 'move']);

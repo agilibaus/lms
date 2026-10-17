@@ -12,6 +12,7 @@ use App\Core\Mail\Mailer;
 use App\Core\TestoBreve;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\BoardModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\EnrollmentRequestModel;
@@ -132,6 +133,8 @@ class CourseController extends AdminController
                     static fn (array $w): bool => TutorWelcomeController::puoGestire((int) $w['tutor_id'])
                 ))
                 : null,
+            // Le categorie della bacheca (17/10): solo per chi le gestisce.
+            'bacheca' => Auth::can('board.manage') ? BoardModel::categorie((int) $course['id']) : null,
         ]);
     }
 

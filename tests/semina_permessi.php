@@ -539,6 +539,79 @@ $b['domanda_in_attesa'] = $GLOBALS['domandaInAttesa']['B'];
 $a['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['A'];
 $b['domanda_pubblicata'] = $GLOBALS['domandaPubblicata']['B'];
 
+// La Bacheca (17/10): in ogni mondo tre categorie — una con le risorse,
+// una con una sola, una vuota (il riquadro «Ancora nessuna risorsa») — e
+// in quella piena una risorsa del tutor con il file, in evidenza; una
+// dello studente con un link; una proposta in attesa e una non pubblicata.
+// Lo studente si tiene la risorsa del tutor, racconta come l'ha usata, e
+// ha un racconto nascosto dal tutor sull'altra. Il file esiste sul disco,
+// per lo stesso motivo del materiale: un 404 per il file mancante
+// passerebbe per un rifiuto del permesso.
+function bachecaDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, string $lettera): array
+{
+    $file = __DIR__ . '/../storage/bacheca/prova-permessi.pdf';
+
+    if (!is_dir(dirname($file))) {
+        mkdir(dirname($file), 0775, true);
+    }
+
+    if (!is_file($file)) {
+        file_put_contents($file, "%PDF-1.4\n% scheda di prova della bacheca\n");
+    }
+
+    $cat = $pdo->prepare('INSERT INTO board_categories (course_id, name, color, description, position) VALUES (:c, :n, :k, :d, :p)');
+    $cat->execute(['c' => $mondo['corso'], 'n' => 'Comunicare con mio figlio', 'k' => 'verde', 'p' => 0,
+        'd' => 'Ascolto e dialogo, i momenti di tensione, i conflitti, le frasi per aprire una conversazione.']);
+    $categoria = (int) $pdo->lastInsertId();
+    $cat->execute(['c' => $mondo['corso'], 'n' => 'Vita digitale', 'k' => 'terracotta', 'p' => 1,
+        'd' => 'Smartphone e social, videogiochi e tempi, sicurezza online, come parlarne in famiglia.']);
+    $categoria2 = (int) $pdo->lastInsertId();
+    $cat->execute(['c' => $mondo['corso'], 'n' => 'Prendersi cura di sé come genitore', 'k' => 'prugna', 'p' => 2, 'd' => null]);
+    $vuota = (int) $pdo->lastInsertId();
+
+    $ris = $pdo->prepare(
+        'INSERT INTO board_resources (course_id, category_id, author_id, title, kind, url, description, file_path, file_name, file_size,
+                                      status, featured, published_at, created_at)
+         VALUES (:c, :k, :a, :t, :ki, :u, :d, :fp, :fn, :fs, :s, :f, :pa, NOW() - INTERVAL :g DAY)'
+    );
+    $righe = [
+        'risorsa' => [$categoria, $tutor, 'Dieci domande per aprire una conversazione ' . $lettera, 'scheda', null,
+            'Una pagina di domande aperte da usare a tavola o in macchina, quando il dialogo sembra inceppato.',
+            'bacheca/prova-permessi.pdf', 'dieci-domande.pdf', filesize($file), 'published', 1, 3],
+        'risorsa_studente' => [$categoria, $studente, 'Ascoltare senza correggere ' . $lettera, 'podcast', 'https://esempio.invalid/podcast',
+            "Una puntata breve su come ascoltare un figlio arrabbiato.\nProva a ripetere con parole tue quello che ha detto.",
+            null, null, null, 'published', 0, 2],
+        'risorsa_digitale' => [$categoria2, $tutor, 'Lo smartphone in camera di notte ' . $lettera, 'articolo', 'https://esempio.invalid/articolo',
+            'Un articolo su sonno e schermi, con proposte concrete.', null, null, null, 'published', 0, 1],
+        'proposta' => [$categoria, $studente, 'Un’app per i compiti condivisi ' . $lettera, 'altro', 'https://esempio.invalid/app',
+            'Un’app gratuita per dividere le faccende di casa tra fratelli.', null, null, null, 'pending', 0, 1],
+        'scartata' => [$categoria, $studente, 'Una proposta non pubblicata ' . $lettera, 'altro', null,
+            'Questa il tutor non l’ha pubblicata.', null, null, null, 'discarded', 0, 4],
+    ];
+    $ids = [];
+
+    foreach ($righe as $chiave => [$k, $a, $t, $ki, $u, $d, $fp, $fn, $fs, $st, $f, $giorni]) {
+        $ris->execute(['c' => $mondo['corso'], 'k' => $k, 'a' => $a, 't' => $t, 'ki' => $ki, 'u' => $u, 'd' => $d,
+            'fp' => $fp, 'fn' => $fn, 'fs' => $fs, 's' => $st, 'f' => $f,
+            'pa' => $st === 'published' ? date('Y-m-d H:i:s', time() - $giorni * 86400) : null, 'g' => $giorni]);
+        $ids['bacheca_' . $chiave] = (int) $pdo->lastInsertId();
+    }
+
+    $pdo->prepare('INSERT INTO board_saves (user_id, resource_id) VALUES (:u, :r)')
+        ->execute(['u' => $studente, 'r' => $ids['bacheca_risorsa']]);
+    $uso = $pdo->prepare('INSERT INTO board_uses (resource_id, user_id, body, hidden_at, hidden_by) VALUES (:r, :u, :b, :h, :by)');
+    $uso->execute(['r' => $ids['bacheca_risorsa'], 'u' => $studente, 'b' => 'L’ho provata a cena: la terza domanda ha funzionato.', 'h' => null, 'by' => null]);
+    $ids['bacheca_uso'] = (int) $pdo->lastInsertId();
+    $uso->execute(['r' => $ids['bacheca_risorsa_studente'], 'u' => $studente, 'b' => 'Un racconto che il tutor ha nascosto.',
+        'h' => date('Y-m-d H:i:s'), 'by' => $tutor]);
+    $ids['bacheca_uso_nascosto'] = (int) $pdo->lastInsertId();
+
+    return $ids + ['bacheca_categoria' => $categoria, 'bacheca_categoria2' => $categoria2, 'bacheca_categoria_vuota' => $vuota];
+}
+
+$a += bachecaDiProva($pdo, $a, $studenteA, $tutorA, 'A');
+$b += bachecaDiProva($pdo, $b, $studenteB, $tutorB, 'B');
+
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
 // no, e nel loro benvenuto non deve comparire niente. Si riscrivono a ogni

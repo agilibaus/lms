@@ -20,6 +20,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use App\Controllers\LessonController;
 use App\Core\AvatarImage;
+use App\Core\Bacheca;
 use App\Core\CourseCover;
 use App\Core\FileType;
 use App\Core\GroupLogo;
@@ -50,6 +51,7 @@ $elenchi = [
     'copertina del corso (CourseCover)' => CourseCover::EXTENSIONS,
     'logo del gruppo (GroupLogo)' => GroupLogo::EXTENSIONS,
     'audio del benvenuto (TutorWelcome)' => TutorWelcome::AUDIO_EXTENSIONS,
+    'file della bacheca (Bacheca)' => Bacheca::FILE_EXTENSIONS,
 ];
 
 foreach (['IMAGE_EXTENSIONS' => 'immagini del testo della lezione', 'MATERIAL_EXTENSIONS' => 'materiali della lezione', 'VIDEO_EXTENSIONS' => 'video caricati'] as $costante => $etichetta) {
@@ -70,7 +72,7 @@ foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__ . 
     }
 }
 
-check('le chiamate a Upload::store() sono le sette conosciute (un caricamento nuovo va aggiunto qui)', $chiamate === 7, 'trovate ' . $chiamate);
+check('le chiamate a Upload::store() sono le otto conosciute (un caricamento nuovo va aggiunto qui)', $chiamate === 8, 'trovate ' . $chiamate);
 
 check('l\'elenco dei tipi di file non conosce l\'SVG', FileType::label('svg') === 'SVG' && FileType::family('svg') === 'generic',
     FileType::label('svg') . ' / ' . FileType::family('svg'));

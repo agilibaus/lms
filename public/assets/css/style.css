@@ -317,7 +317,7 @@ h3 { font-size: 1.05rem; }
 :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
     .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
     .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando,
-    .giro-cambia-comando, .giro-passate-comando):is(:hover, :focus-visible) {
+    .giro-cambia-comando, .giro-passate-comando, .bacheca-comando, .bacheca-filtro:not(.attivo)):is(:hover, :focus-visible) {
     text-decoration: underline;
     text-underline-offset: 0.15em;
 }
@@ -326,7 +326,7 @@ h3 { font-size: 1.05rem; }
     :is(.link-btn, .data-table td a:not(.btn), .row-actions a:not(.btn), .module-card-actions a,
         .assign-list li > a, .assign-list .assign-info > a, .material-name, .agenda-azioni a:not(.btn), .tutor-benvenuto-riascolta,
     .tutor-benvenuto-contatti a, .qa-comando, .catalogo-leggi-comando, .tag-consentiti-comando, .obiettivo-comando, .moduli-comando,
-    .giro-cambia-comando, .giro-passate-comando) {
+    .giro-cambia-comando, .giro-passate-comando, .bacheca-comando, .bacheca-filtro:not(.attivo)) {
         text-decoration: underline;
         text-underline-offset: 0.15em;
     }
@@ -6565,4 +6565,390 @@ details[open] > summary .obiettivo-se-aperto {
         -webkit-initial-letter: 3;
         initial-letter: 3;
     }
+}
+
+/* ---------- La Bacheca (17/10) ---------- */
+
+/* La prima pagina: un riquadro per categoria, «riquadro tenue» (Alessandro,
+   stile 2): la tinta chiara della tavolozza scelta dall'admin, un filo del
+   suo colore in cima, il titolo nel colore. Le coppie sono quelle del tema,
+   gia' verificate: il colore sulla sua tinta da' almeno 4,72:1, il testo
+   normale sulla tinta di piu'. Il grigio dei testi secondari sulla tinta
+   non arriva a 4,5 (4,06-4,18): per questo descrizione e conteggio sono
+   nel colore del testo. Al passaggio del mouse si sottolinea il titolo e
+   non cambia lo sfondo, che porterebbe sotto soglia proprio quelle coppie. */
+.bacheca-comandi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem 1.2rem;
+    margin: 0 0 1.25rem;
+}
+
+.bacheca-comando {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--color-text);
+    font-size: 0.95rem;
+}
+
+.bacheca-avviso {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    margin: 0 0 1rem;
+    padding: 0.8rem 1.25rem;
+    background: var(--color-primary-soft);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+}
+
+/* `min(22rem, 100%)`: su un telefono da 320 px una colonna da 22 rem
+   uscirebbe dallo schermo. */
+.bacheca-griglia {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+    gap: 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.bacheca-riquadro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    height: 100%;
+    min-height: 12rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--cat-soft);
+    border-top: 4px solid var(--cat);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.bacheca-riquadro:hover .bacheca-riquadro-titolo {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.bacheca-riquadro:focus-visible {
+    outline: 2px solid var(--cat);
+    outline-offset: 2px;
+}
+
+.bacheca-riquadro .bacheca-riquadro-titolo {
+    margin: 0;
+    color: var(--cat);
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: normal;
+}
+
+.bacheca-riquadro-desc {
+    font-size: 0.92rem;
+}
+
+.bacheca-riquadro-conto {
+    margin-top: auto;
+    font-size: 0.85rem;
+}
+
+/* La testata di una categoria, come il riquadro da cui si arriva. */
+.bacheca-cat-testa {
+    margin: 0.3rem 0 1.25rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--cat-soft);
+    border-top: 4px solid var(--cat);
+    border-radius: var(--radius-md);
+    overflow-wrap: anywhere;
+}
+
+.bacheca-cat-testa h1 {
+    margin: 0 0 0.3rem;
+    color: var(--cat);
+}
+
+.bacheca-cat-testa p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.bacheca-sotto-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    margin: 0 0 1.25rem;
+}
+
+.bacheca-filtri {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 1.2rem;
+    font-size: 0.95rem;
+}
+
+.bacheca-filtro {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--color-text);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+}
+
+.bacheca-filtro.attivo {
+    font-weight: 600;
+    border-bottom-color: var(--color-primary);
+}
+
+/* Le risorse. */
+.bacheca-elenco {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.bacheca-risorsa {
+    padding: 1rem 0;
+    border-top: 1px solid var(--color-border);
+    overflow-wrap: anywhere;
+}
+
+.bacheca-risorsa:first-child {
+    border-top: 0;
+    padding-top: 0.2rem;
+}
+
+.bacheca-risorsa:last-child {
+    padding-bottom: 0;
+}
+
+.bacheca-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.6rem;
+}
+
+.bacheca-testa .badge {
+    margin-top: 0;
+}
+
+.card .bacheca-titolo {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.bacheca-ev {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.bacheca-cat {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.bacheca-descrizione {
+    margin: 0.4rem 0 0.3rem;
+    max-width: 68ch;
+}
+
+.bacheca-link {
+    margin: 0 0 0.3rem;
+    font-size: 0.92rem;
+}
+
+.bacheca-file-info {
+    color: var(--color-text-muted);
+}
+
+.bacheca-azioni {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1.2rem;
+    font-size: 0.85rem;
+}
+
+.bacheca-azioni form {
+    display: contents;
+}
+
+.bacheca-chi {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.bacheca-tengo.tenuta {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.bacheca-usi {
+    margin-top: 0.5rem;
+}
+
+.bacheca-uso p {
+    margin: 0.2rem 0 0.3rem;
+    font-size: 0.92rem;
+}
+
+.bacheca-uso.nascosto p {
+    color: var(--color-text-muted);
+}
+
+.bacheca-uso-nota {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.8rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+}
+
+.bacheca-uso-nota .badge {
+    margin-top: 0;
+}
+
+.bacheca-racconta {
+    margin-top: 0.3rem;
+}
+
+.bacheca-racconta > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.bacheca-racconta > summary::-webkit-details-marker {
+    display: none;
+}
+
+.bacheca-racconta[open] > summary {
+    font-weight: 600;
+}
+
+.bacheca-racconta .form-hint.bacheca-avvertenza {
+    margin: 0.3rem 0 0;
+    color: var(--color-text);
+}
+
+/* «Condividi una risorsa» e le proposte. */
+.bacheca-mie {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.bacheca-mie li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.6rem;
+    align-items: baseline;
+    overflow-wrap: anywhere;
+}
+
+.bacheca-mie .badge {
+    margin-top: 0;
+}
+
+.bacheca-attesa {
+    background: #fef3c7;
+    color: #78350f;
+}
+
+.bacheca-proposta {
+    overflow-wrap: anywhere;
+}
+
+.bacheca-proposta .bacheca-chi {
+    margin-bottom: 0.3rem;
+}
+
+.bacheca-decidi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.2rem;
+    margin-top: 0.6rem;
+}
+
+.bacheca-decidi .form-inline {
+    max-width: 100%;
+}
+
+/* Il menu della categoria si stringe sul telefono: a 320 px il nome piu'
+   lungo lo portava 4 px oltre lo schermo. */
+.bacheca-decidi select {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.92rem;
+    min-height: 2.5rem;
+    max-width: 100%;
+}
+
+/* Le categorie in «Modifica corso». */
+.bacheca-cat-admin {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.bacheca-campione {
+    flex-shrink: 0;
+    align-self: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 3px;
+    background: var(--cat-soft);
+    border-top: 4px solid var(--cat);
+}
+
+.bacheca-cat-admin-conto {
+    color: var(--color-text-muted);
+    font-weight: 400;
+}
+
+.bacheca-cat-admin-azioni {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1.2rem;
+    margin-top: 0.6rem;
+}
+
+.bacheca-cat-admin-azioni form {
+    display: contents;
+}
+
+.card .bacheca-cat-admin-nuova {
+    margin: 1.25rem 0 0;
+    font-size: 1rem;
+}
+
+.bacheca-cat-admin-azioni .card-meta {
+    margin: 0;
 }

@@ -8,6 +8,7 @@
 /storage/group-logos/*
 /storage/certificates/*
 /storage/welcomes/*
+/storage/bacheca/*
 /storage/installed.lock
 /storage/mail/*
 !/storage/mail/.gitkeep
@@ -20,6 +21,7 @@
 !/storage/group-logos/.gitkeep
 !/storage/certificates/.gitkeep
 !/storage/welcomes/.gitkeep
+!/storage/bacheca/.gitkeep
 .env
 .env.local
 *.log

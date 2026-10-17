@@ -212,6 +212,23 @@ class Mailer
         ]);
     }
 
+    /** Una proposta nuova per la bacheca (17/10), al tutor del gruppo dello studente. */
+    public static function boardProposal(
+        string $email,
+        string $name,
+        string $studentName,
+        string $courseTitle,
+        string $title,
+        string $link
+    ): Message {
+        return Modelli::messaggio('bacheca_proposta', $email, $name, [
+            '{studente}' => $studentName,
+            '{corso}' => $courseTitle,
+            '{titolo}' => $title,
+            '{link}' => $link,
+        ]);
+    }
+
     /** Il certificato e' stato emesso (12/10). */
     public static function courseCompleted(string $email, string $name, string $courseTitle, string $link): Message
     {

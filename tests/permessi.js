@@ -262,6 +262,20 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // semina), quindi un rifiuto qui e' della regola.
             ['/certificates/' + A.certificato + '/download', 'consentito', 'il proprio certificato'],
             ['/certificates/' + B.certificato + '/download', 'negato', 'il certificato di un altro studente'],
+
+            // La Bacheca (17/10): quella del suo corso, non quella di B; propone
+            // ma non pubblica, non valuta, non corregge. Il file c'e' sul disco.
+            ['/bacheca?corso=' + A.corso, 'consentito', 'la bacheca del suo corso'],
+            ['/bacheca/categorie/' + A.bacheca_categoria, 'consentito', 'una categoria della sua bacheca'],
+            ['/bacheca/categorie/' + B.bacheca_categoria, 'negato', 'una categoria della bacheca di un corso non suo'],
+            ['/bacheca/mie?corso=' + A.corso, 'consentito', 'le risorse che si tiene'],
+            ['/bacheca/condividi?corso=' + A.corso, 'consentito', 'proporre una risorsa'],
+            ['/bacheca/proposte?corso=' + A.corso, 'negato', 'le proposte le valuta il tutor'],
+            ['/bacheca/nuova?corso=' + A.corso, 'negato', 'pubblica lo staff'],
+            ['/bacheca/risorse/' + A.bacheca_risorsa + '/modifica', 'negato', 'corregge chi gestisce la risorsa'],
+            ['/bacheca/risorse/' + A.bacheca_risorsa_studente + '/modifica', 'negato', 'nemmeno la propria, una volta pubblicata'],
+            ['/bacheca/risorse/' + A.bacheca_risorsa + '/download', 'consentito', 'il file di una risorsa della sua bacheca'],
+            ['/bacheca/risorse/' + B.bacheca_risorsa + '/download', 'negato', 'il file della bacheca di un altro corso'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
@@ -316,6 +330,16 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un collega'],
             ['/domande', 'negato', 'risponde l\'esperto, l\'admin (09/10)'],
             ['/domande-e-risposte', 'consentito', 'legge «L\'esperto risponde» come uno studente'],
+            // La Bacheca (17/10): pubblica nel corso dei suoi gruppi e valuta
+            // le proposte dei suoi studenti; la bacheca di un collega no.
+            ['/bacheca/categorie/' + A.bacheca_categoria, 'consentito', 'la bacheca del corso dei suoi gruppi'],
+            ['/bacheca/categorie/' + B.bacheca_categoria, 'negato', 'la bacheca del corso di un collega'],
+            ['/bacheca/proposte?corso=' + A.corso, 'consentito', 'le proposte dei suoi studenti'],
+            ['/bacheca/nuova?corso=' + A.corso, 'consentito', 'pubblica nel corso dei suoi gruppi'],
+            ['/bacheca/condividi?corso=' + A.corso, 'negato', 'propongono gli studenti: lui pubblica'],
+            ['/bacheca/risorse/' + A.bacheca_proposta + '/modifica', 'consentito', 'corregge la proposta di un suo studente'],
+            ['/bacheca/risorse/' + B.bacheca_proposta + '/modifica', 'negato', 'non quella di uno studente di un collega'],
+            ['/bacheca/risorse/' + B.bacheca_risorsa + '/download', 'negato', 'il file della bacheca di un collega'],
         ]],
 
         ['assist@test.it', 'assistente del tutor A', [
@@ -350,6 +374,14 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/gruppi/' + A.gruppo, 'negato', 'né la pagina del gruppo'],
             ['/benvenuti/' + A.benvenuto + '/audio', 'negato', 'il benvenuto non è per lo staff che non lo carica'],
             ['/domande', 'negato', 'l\'assistente non risponde alle domande'],
+            // La Bacheca (17/10): la legge come il tutor che affianca, ma non
+            // pubblica e non modera.
+            ['/bacheca/categorie/' + A.bacheca_categoria, 'consentito', 'la bacheca di un corso del tutor che segue'],
+            ['/bacheca/categorie/' + B.bacheca_categoria, 'negato', 'la bacheca di un corso di un tutor che non segue'],
+            ['/bacheca/risorse/' + A.bacheca_risorsa + '/download', 'consentito', 'i file della bacheca che legge'],
+            ['/bacheca/proposte?corso=' + A.corso, 'negato', 'non valuta le proposte'],
+            ['/bacheca/nuova?corso=' + A.corso, 'negato', 'non pubblica'],
+            ['/bacheca/risorse/' + A.bacheca_risorsa + '/modifica', 'negato', 'non corregge'],
         ]],
 
         ['admin@test.it', 'amministratore', [
@@ -371,6 +403,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 'controprova: la foto di B esiste, quindi chi la rifiuta lo fa per la regola'],
             ['/benvenuti/' + B.benvenuto + '/audio', 'consentito',
                 'controprova: l\'audio di B esiste, e l\'admin carica i benvenuti'],
+            ['/bacheca/categorie/' + B.bacheca_categoria, 'consentito', 'l\'admin legge ogni bacheca'],
+            ['/bacheca/proposte?corso=' + B.corso, 'consentito', 'e ne valuta le proposte'],
+            ['/bacheca/risorse/' + B.bacheca_proposta + '/modifica', 'consentito', 'e le corregge'],
+            ['/bacheca/risorse/' + B.bacheca_risorsa + '/download', 'consentito', 'controprova: il file di B esiste'],
         ]],
     ];
 
@@ -1420,6 +1456,66 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         // riuscisse quando non deve, il mondo seminato ne esce rotto: il giro
         // successivo lo ricrea da zero, quindi non è un problema.
 
+        // --- la Bacheca, dentro le pagine (17/10) -----------------------------
+        //
+        // La porta si prova sopra; qui che cosa mostra. I conteggi contano solo
+        // le pubblicate; il racconto nascosto lo vedono chi l'ha scritto e chi
+        // modera, non l'assistente; le proposte non pubblicate non finiscono
+        // fra quelle da valutare; un `?corso=` di un altro corso non apre
+        // quella bacheca.
+
+        console.log('\n--- la Bacheca, dentro le pagine');
+
+        {
+            const testoDi = async (page, url) => { await page.goto(BASE + url); return page.content(); };
+            const NASCOSTO = 'Un racconto che il tutor ha nascosto.';
+
+            let s = await entra(browser, 'stud@test.it');
+            let html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
+            check('studente → i riquadri contano le sole pubblicate: 2 risorse, 1 risorsa, Ancora nessuna risorsa',
+                html.includes('2 risorse') && html.includes('1 risorsa') && html.includes('Ancora nessuna risorsa'));
+            check('studente → «Le mie risorse (1)» e «Condividi una risorsa»; niente «Nuova risorsa» né «Valuta»',
+                html.includes('Le mie risorse (1)') && html.includes('Condividi una risorsa') && !html.includes('Nuova risorsa') && !html.includes('>Valuta<'));
+            html = await testoDi(s.page, '/bacheca/mie?corso=' + B.corso);
+            check('studente → con il corso di B nell\'indirizzo resta nella sua bacheca',
+                html.includes('conversazione A') && !html.includes('conversazione B'));
+            html = await testoDi(s.page, '/bacheca/categorie/' + A.bacheca_categoria);
+            check('studente → vede il proprio racconto nascosto, segnato come tale',
+                html.includes(NASCOSTO) && html.includes('lo vedi solo tu'));
+            check('studente → la proposta in attesa e la non pubblicata non sono nella categoria',
+                !html.includes('compiti condivisi A') && !html.includes('non pubblicata A'));
+            check('studente → nessun comando di chi gestisce', !html.includes('/modifica"') && !html.includes('Togli dalla bacheca'));
+            html = await testoDi(s.page, '/bacheca/condividi?corso=' + A.corso);
+            check('studente → «Le tue proposte» con i tre stati',
+                html.includes('Le tue proposte') && html.includes('In attesa') && html.includes('Non pubblicata') && html.includes('Pubblicata'));
+            check('studente → il suo modulo non ha il campo file', !html.includes('type="file"'));
+            await s.ctx.close();
+
+            s = await entra(browser, 'assist@test.it');
+            html = await testoDi(s.page, '/bacheca/categorie/' + A.bacheca_categoria);
+            check('assistente → legge, ma non vede il racconto nascosto né i comandi per moderare',
+                html.includes('conversazione A') && !html.includes(NASCOSTO) && !html.includes('Rendi di nuovo visibile')
+                && !html.includes('Togli dalla bacheca') && !html.includes('Racconta come'));
+            await s.ctx.close();
+
+            s = await entra(browser, 'tutor1@test.it');
+            html = await testoDi(s.page, '/bacheca/categorie/' + A.bacheca_categoria);
+            check('tutor A → vede il racconto nascosto del suo studente, con «Rendi di nuovo visibile»',
+                html.includes(NASCOSTO) && html.includes('Rendi di nuovo visibile'));
+            html = await testoDi(s.page, '/bacheca/proposte?corso=' + A.corso);
+            check('tutor A → fra le proposte quella in attesa, non quella non pubblicata',
+                html.includes('compiti condivisi A') && !html.includes('non pubblicata A'));
+            html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
+            check('tutor A → «1 proposta da valutare» e il numero accanto a «Bacheca» nel menu',
+                html.includes('1 proposta da valutare') && /href="\/bacheca"[^>]*>Bacheca\s*<span class="nav-conteggio">1/.test(html));
+            await s.ctx.close();
+
+            s = await entra(browser, 'tutor2@test.it');
+            html = await testoDi(s.page, '/bacheca/proposte?corso=' + B.corso);
+            check('tutor B → fra le sue proposte non c\'è quella dello studente di A', !html.includes('compiti condivisi A'));
+            await s.ctx.close();
+        }
+
         console.log('\n--- le azioni: nessuno deve poter scrivere nel mondo di un altro');
 
         const AZIONI = [
@@ -1543,6 +1639,62 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/admin/courses/' + A.corso + '/benvenuti/' + d.utenti.tutorA + '/elimina', [], 'consentito',
                     'togliere il proprio benvenuto: lo carica lui'],
             ]],
+            // La Bacheca (17/10). Prima i rifiuti, poi le azioni che riescono:
+            // il tutor di B non tocca la proposta dello studente di A prima che
+            // il tutor di A la pubblichi.
+            ['strano@test.it', 'studente B (bacheca)', [
+                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato',
+                    'proporre una risorsa in un corso a cui non è iscritto'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa + '/tengo', [], 'negato', 'tenersi una risorsa di un\'altra bacheca'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa + '/uso', [['body', 'x']], 'negato', 'raccontarla'],
+            ]],
+            ['stud@test.it', 'studente A (bacheca, rifiuti)', [
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria)]], 'negato',
+                    'pubblicare la propria proposta'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa + '/togli', [], 'negato', 'togliere una risorsa dalla bacheca'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa + '/evidenza', [['si', '0']], 'negato', 'cambiare l\'evidenza'],
+                ['/bacheca/usi/' + A.bacheca_uso_nascosto, [['azione', 'rimetti']], 'negato', 'rimettere il proprio racconto nascosto'],
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare senza passare dal tutor'],
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', 'verde']], 'negato', 'creare una categoria'],
+                ['/admin/bacheca/categorie/' + A.bacheca_categoria_vuota + '/elimina', [], 'negato', 'eliminare una categoria'],
+            ]],
+            ['tutor2@test.it', 'tutor B (bacheca)', [
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria)]], 'negato',
+                    'pubblicare la proposta di uno studente di un collega'],
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/scarta', [], 'negato', 'non pubblicarla'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa, [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'correggere una risorsa della bacheca di un collega'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa + '/togli', [], 'negato', 'toglierla'],
+                ['/bacheca/usi/' + A.bacheca_uso, [['azione', 'nascondi']], 'negato', 'nascondere il racconto di uno studente di un collega'],
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare nella bacheca di un collega'],
+                ['/admin/courses/' + B.corso + '/bacheca/categorie', [['name', 'x'], ['color', 'verde']], 'negato',
+                    'creare una categoria: le crea l\'admin, anche nel corso suo'],
+            ]],
+            ['assist@test.it', 'assistente (bacheca)', [
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare'],
+                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'proporre: propongono gli studenti'],
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria)]], 'negato', 'valutare una proposta'],
+                ['/bacheca/usi/' + A.bacheca_uso, [['azione', 'nascondi']], 'negato', 'moderare un racconto'],
+            ]],
+            ['stud@test.it', 'studente A (bacheca)', [
+                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'consentito', 'proporre una risorsa nel proprio corso'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa_digitale + '/tengo', [], 'consentito', 'tenersi una risorsa'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa_digitale + '/uso', [['body', 'Racconto di permessi.js.']], 'consentito',
+                    'raccontare come l\'ha utilizzata'],
+            ]],
+            ['tutor1@test.it', 'tutor A (bacheca)', [
+                ['/bacheca/usi/' + A.bacheca_uso_nascosto, [['azione', 'rimetti']], 'consentito', 'rimettere il racconto di un suo studente'],
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria2)]], 'consentito',
+                    'pubblicare la proposta di un suo studente, in un\'altra categoria'],
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'consentito', 'pubblicare nel corso dei suoi gruppi'],
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', 'verde']], 'negato', 'creare una categoria'],
+            ]],
+            ['admin@test.it', 'admin (bacheca)', [
+                ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'Categoria di permessi.js'], ['color', 'ardesia'], ['description', '']],
+                    'consentito', 'creare una categoria'],
+                ['/admin/bacheca/categorie/' + A.bacheca_categoria + '/elimina', [], 'consentito',
+                    'chiedere di eliminare una categoria piena (risponde con il motivo, e la categoria resta: si controlla dopo)'],
+                ['/admin/bacheca/categorie/' + A.bacheca_categoria_vuota + '/elimina', [], 'consentito', 'eliminare una categoria vuota'],
+            ]],
         ];
 
         for (const [email, chi, prove] of AZIONI) {
@@ -1579,6 +1731,37 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             check('la domanda nuova arriva per email all\'esperto, l\'admin', diQuestoGiro('admin'),
                 ['nessuna email «Nuova domanda» all\'admin in storage/mail']);
             check('e non al tutor del gruppo', !diQuestoGiro('tutor1'), ['il tutor l\'ha ricevuta']);
+        }
+
+        // La Bacheca (17/10): la proposta dello studente di A arriva al tutor
+        // del suo gruppo, e non all'admin; le azioni qui sopra hanno lasciato
+        // i segni che dovevano lasciare.
+        {
+            const fs = require('fs');
+            const cartella = path.join(__dirname, '..', 'storage', 'mail');
+            const arrivata = (chi) => (fs.existsSync(cartella) ? fs.readdirSync(cartella) : [])
+                .filter((f) => f.includes(chi) && fs.statSync(path.join(cartella, f)).mtimeMs >= INIZIO_GIRO)
+                .some((f) => {
+                    const testo = fs.readFileSync(path.join(cartella, f), 'utf8');
+                    return testo.includes('Subject: Nuova proposta per la bacheca') && testo.includes('Proposta di permessi.js');
+                });
+            check('la proposta per la bacheca arriva per email al tutor del gruppo', arrivata('tutor1'),
+                ['nessuna email «Nuova proposta per la bacheca» al tutor in storage/mail']);
+            check('e non all\'admin, quando il tutor c\'è', !arrivata('admin'), ['l\'admin l\'ha ricevuta']);
+
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            await page.goto(BASE + '/bacheca?corso=' + A.corso);
+            let html = await page.content();
+            check('bacheca → la categoria piena non si elimina, quella vuota sì, la nuova c\'è',
+                html.includes('Comunicare con mio figlio') && !html.includes('Prendersi cura di sé') && html.includes('Categoria di permessi.js'));
+            check('bacheca → la proposta pubblicata è nella categoria scelta dal tutor: Vita digitale ha 2 risorse',
+                /Vita digitale[\s\S]*?2 risorse/.test(html));
+            await page.goto(BASE + '/bacheca/categorie/' + A.bacheca_categoria);
+            html = await page.content();
+            check('bacheca → il racconto rimesso dal tutor è di nuovo visibile, e la risorsa del tutor è pubblicata',
+                html.includes('Un racconto che il tutor ha nascosto.') && !html.includes('Rendi di nuovo visibile')
+                && html.includes('Proposta di permessi.js'));
+            await ctx.close();
         }
 
         // --- gli a capo nei campi con il limite (10/10) --------------------
