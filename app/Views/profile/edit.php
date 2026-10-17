@@ -45,7 +45,9 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
         <div class="avatar-editor-actions">
             <form action="/profilo/immagine" method="post" enctype="multipart/form-data" class="form form-inline">
                 <?= Csrf::field() ?>
-                <input type="file" name="avatar" accept="image/*" required aria-label="Nuova immagine del profilo">
+                <?php /* I quattro formati che il server accetta (AvatarImage::EXTENSIONS),
+                   come nel pannello: «image/*» proponeva anche gli SVG (17/10). */ ?>
+                <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" required aria-label="Nuova immagine del profilo">
                 <button type="submit" class="btn btn-secondary"><?= $hasAvatar ? 'Sostituisci' : 'Carica' ?></button>
             </form>
             <p class="form-hint">

@@ -41,7 +41,7 @@ class FileType
         'png' => ['image', 'Immagine'],
         'gif' => ['image', 'Immagine'],
         'webp' => ['image', 'Immagine'],
-        'svg' => ['image', 'Immagine'],
+        // Niente SVG (17/10): nessun caricamento lo accetta, per sicurezza.
         'zip' => ['archive', 'Archivio'],
         'rar' => ['archive', 'Archivio'],
         '7z' => ['archive', 'Archivio'],
