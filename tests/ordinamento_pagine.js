@@ -32,6 +32,18 @@
 'use strict';
 
 const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
+const { execFileSync } = require('node:child_process');
+const path = require('node:path');
+
+/**
+ * Gli studenti di prova per la seconda pagina dell'elenco (17/10): senza,
+ * con meno di 51 studenti, la prova della paginazione non aveva niente da
+ * provare. Si creano all'inizio e si tolgono alla fine (`semina_elenco.php`).
+ */
+function studentiDiProva(azione) {
+    const radice = path.join(__dirname, '..');
+    execFileSync('php', [path.join(radice, 'tests', 'semina_elenco.php'), azione], { cwd: radice, encoding: 'utf8' });
+}
 
 const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const ADMIN = process.env.LMS_ADMIN || 'admin@test.it';
@@ -146,6 +158,7 @@ const dichiarate = (page) => page.evaluate(() =>
         .map((th) => th.textContent.replace(/\s+/g, ' ').replace(/:.*$/, '').trim()));
 
 (async () => {
+    studentiDiProva('crea');
     const browser = await chromium.launch();
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
@@ -380,6 +393,7 @@ const dichiarate = (page) => page.evaluate(() =>
         }
     } finally {
         await browser.close();
+        studentiDiProva('togli');
     }
 
     console.log('\nTotale: ' + ok + ' superati, ' + fail + ' falliti');
