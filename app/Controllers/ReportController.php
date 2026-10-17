@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Auth\StudentScope;
 use App\Core\Csv;
 use App\Core\Ordinamento;
 use App\Core\ReportSections;
@@ -630,46 +631,24 @@ class ReportController
     }
 
     /**
-     * I tutor di cui l'utente vede il lavoro: null per l'admin (tutto), il
-     * tutor stesso per un tutor, i suoi tutor — anche piu' d'uno — per un
-     * assistente. E' da qui che derivano studenti, gruppi e corsi visibili.
+     * I tutor di cui l'utente vede il lavoro: la regola sta in StudentScope
+     * (17/10), la stessa della pagina del tentativo di un quiz.
      *
      * @return int[]|null
      */
     private function scopeTutorIds(): ?array
     {
-        if (Auth::hasRole('admin')) {
-            return null;
-        }
-
-        if (Auth::hasRole('tutor')) {
-            return [(int) Auth::id()];
-        }
-
-        return UserModel::tutorIdsForAssistant((int) Auth::id());
+        return StudentScope::tutorIds();
     }
 
     /**
-     * Perimetro visibile: null = nessuna restrizione (admin), altrimenti gli
-     * id degli studenti dei gruppi dei tutor del perimetro.
+     * Gli studenti del perimetro (null = tutti): anche questa da StudentScope.
      *
      * @return int[]|null
      */
     private function allowedStudentIds(): ?array
     {
-        $tutors = $this->scopeTutorIds();
-
-        if ($tutors === null) {
-            return null;
-        }
-
-        $ids = [];
-
-        foreach ($tutors as $tutorId) {
-            $ids = array_merge($ids, GroupModel::memberIdsForTutor($tutorId));
-        }
-
-        return array_values(array_unique($ids));
+        return StudentScope::studentIds();
     }
 
     private function visibleGroups(): array

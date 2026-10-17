@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Core\CampoContato;
 use App\Auth\CourseRights;
+use App\Auth\StudentScope;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\QuizScoring;
@@ -519,8 +520,11 @@ class QuizController
             return;
         }
 
-        // Lo studente vede solo i propri tentativi; lo staff puo' consultarli tutti.
-        if ((int) $attempt['user_id'] !== (int) Auth::id() && !Auth::hasRole('admin', 'tutor', 'assistente')) {
+        // Ognuno vede i propri tentativi; lo staff quelli degli studenti che
+        // segue, con la stessa regola del report dello studente da cui si
+        // arriva qui (17/10, StudentScope). Prima bastava il ruolo: qualunque
+        // tutor o assistente apriva il tentativo di qualunque studente.
+        if ((int) $attempt['user_id'] !== (int) Auth::id() && !StudentScope::puoVedere((int) $attempt['user_id'])) {
             http_response_code(403);
             echo 'Non puoi consultare questo tentativo.';
             return;

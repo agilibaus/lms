@@ -333,7 +333,17 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
         ->execute(['m' => $moduloChiuso, 'g' => $gruppo, 't' => $nome . ' incontro chiuso', 'a' => $admin]);
     $incontroChiuso = (int) $pdo->lastInsertId();
 
+    // Un tentativo dello studente sul quiz del suo mondo (17/10): la pagina
+    // del tentativo la apre lo staff dal report dello studente, e prima la
+    // apriva qualunque tutor o assistente, di qualunque studente. Non
+    // superato, perche' non cambi niente di cio' che lo studente vede nel
+    // corso (rilascio, certificato, «Riprendi da qui»).
+    $pdo->prepare('INSERT INTO quiz_attempts (user_id, quiz_id, score_pct, passed) VALUES (:u, :q, 0, 0)')
+        ->execute(['u' => $studente, 'q' => $quiz]);
+    $tentativo = (int) $pdo->lastInsertId();
+
     return [
+        'tentativo' => $tentativo,
         'corso' => $corso,
         'gruppo' => $gruppo,
         'modulo' => $modulo,

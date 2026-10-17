@@ -251,9 +251,19 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/benvenuti/' + B.benvenuto + '/audio', 'negato', 'il benvenuto di un altro tutor, in un altro corso'],
             ['/domande', 'negato', 'la pagina delle domande è di chi risponde'],
             ['/domande-e-risposte', 'consentito', 'l\'archivio delle domande e risposte dei suoi corsi'],
+
+            // I tentativi dei quiz (17/10): ognuno vede i propri.
+            ['/attempts/' + A.tentativo, 'consentito', 'il proprio tentativo'],
+            ['/attempts/' + B.tentativo, 'negato', 'il tentativo di un altro studente'],
         ]],
 
         ['tutor1@test.it', 'tutor del mondo A', [
+            // I tentativi dei quiz (17/10): il tutor vede quelli degli
+            // studenti dei suoi gruppi, come il loro report. Fino al 17/10
+            // bastava essere tutor per aprire quelli di chiunque.
+            ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente di un suo gruppo'],
+            ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente del gruppo di un collega'],
+
             ['/courses/' + A.corso, 'consentito', 'è il corso dei suoi gruppi'],
             ['/lessons/' + A.lezione + '/edit', 'consentito', 'può modificare le lezioni del corso A'],
             ['/quizzes/' + A.quiz + '/edit', 'consentito', 'può modificare il quiz del corso A'],
@@ -293,6 +303,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/courses/' + A.corso, 'consentito', 'corso del tutor che segue'],
             ['/reports/courses/' + B.corso, 'negato', 'corso di un tutor che non segue'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
+            ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente del tutor che segue'],
+            ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente fuori dal suo perimetro'],
             ['/lessons/' + A.lezione + '/edit', 'negato', 'un assistente non modifica le lezioni'],
             ['/admin/users', 'negato', 'nessuna gestione utenti'],
             ['/admin/users/importa', 'negato', 'nemmeno importarli da un file'],
@@ -310,6 +322,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/courses/' + B.corso, 'consentito', 'l\'admin vede tutto'],
             ['/lessons/' + B.lezione + '/edit', 'consentito', 'l\'admin modifica tutto'],
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
+            ['/attempts/' + B.tentativo, 'consentito', 'l\'admin vede i tentativi di tutti'],
             ['/admin/permissions', 'consentito', 'è sua'],
             ['/admin/users/importa', 'consentito', 'l\'importazione è sua'],
             ['/admin/settings/bunny', 'consentito', 'è sua'],
