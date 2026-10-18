@@ -7237,8 +7237,8 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .informazioni-logo {
-    /* 154 px: 140 piu' il 10% (18/10, Alessandro). */
-    width: 154px;
+    /* 169 px: 140, piu' il 10%, piu' un altro 10% (18/10, Alessandro). */
+    width: 169px;
     height: auto;
     margin-bottom: 1.1rem;
 }
@@ -7259,6 +7259,68 @@ details[open] > summary .obiettivo-se-aperto {
 .informazioni-link {
     margin: 0;
     font-size: 0.95rem;
+}
+
+/* I dati per l'assistenza (18/10): un riquadro bianco con PHP, database e
+   data di installazione. Su computer in una riga, etichetta e valore
+   affiancati, separati da un filo verticale grigio chiaro (variante B). */
+.informazioni-dati {
+    display: flex;
+    margin: 1.6rem 0 0;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.informazioni-dato {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.65rem 1.2rem;
+    font-size: 0.9rem;
+}
+
+.informazioni-dato + .informazioni-dato {
+    border-left: 1px solid var(--color-border);
+}
+
+.informazioni-etichetta {
+    color: var(--color-text-muted);
+}
+
+.informazioni-valore {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Sul telefono uno sotto l'altro, con l'etichetta sopra il valore e un
+   filo orizzontale fra le caselle (variante A). */
+@media (max-width: 768px) {
+    .informazioni-dati {
+        flex-direction: column;
+        width: 100%;
+        max-width: 20rem;
+    }
+
+    .informazioni-dato {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.15rem;
+        padding: 0.8rem 1.4rem;
+    }
+
+    .informazioni-dato + .informazioni-dato {
+        border-left: 0;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .informazioni-etichetta {
+        font-size: 0.78rem;
+    }
+
+    .informazioni-valore {
+        font-size: 0.95rem;
+    }
 }
 
 /* Sul telefono l'area principale ha 4 rem sopra (la barra con il menu) e 2

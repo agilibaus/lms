@@ -2545,9 +2545,37 @@ async function giroBenvenuto(browser) {
                         logo: Math.round(document.querySelector('.informazioni-logo').getBoundingClientRect().width),
                     };
                 });
-                check('Informazioni a ' + w + '×' + h + ': il blocco è al centro, in verticale e in orizzontale, senza scorrere; il logo è largo 154 px',
-                    Math.abs(m.dy) <= 12 && Math.abs(m.dx) <= 2 && !m.scorre && m.logo === 154, [JSON.stringify(m)]);
+                check('Informazioni a ' + w + '×' + h + ': il blocco, con i dati, è al centro in verticale e in orizzontale, senza scorrere; il logo è largo 169 px',
+                    Math.abs(m.dy) <= 12 && Math.abs(m.dx) <= 2 && !m.scorre && m.logo === 169, [JSON.stringify(m)]);
             }
+            // I dati (18/10): su computer in una riga, etichetta e valore
+            // affiancati (variante B); sul telefono uno sotto l'altro, con
+            // l'etichetta sopra il valore (variante A). Separatori grigio chiaro.
+            const disposizione = () => ap.evaluate(() => {
+                const d = [...document.querySelectorAll('.informazioni-dato')];
+                const e = d.map((x) => [x.querySelector('.informazioni-etichetta').getBoundingClientRect(), x.querySelector('.informazioni-valore').getBoundingClientRect()]);
+                const cs = d.map((x) => getComputedStyle(x));
+                const riquadro = getComputedStyle(document.querySelector('.informazioni-dati'));
+                return {
+                    inRiga: d.length === 3 && new Set(d.map((x) => Math.round(x.getBoundingClientRect().top))).size === 1,
+                    affiancati: e.every(([a, b]) => Math.abs(a.top + a.height / 2 - (b.top + b.height / 2)) <= 3 && b.left > a.right),
+                    sopra: e.every(([a, b]) => b.top >= a.bottom - 1),
+                    separatori: [cs[1].borderLeftWidth, cs[1].borderLeftColor, cs[1].borderTopWidth, cs[1].borderTopColor],
+                    fondo: riquadro.backgroundColor,
+                    bordo: getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim(),
+                    scorre: document.documentElement.scrollWidth > innerWidth,
+                };
+            });
+            await ap.setViewportSize({ width: 1366, height: 760 });
+            await ap.goto(BASE + '/admin/settings/informazioni');
+            const pc = await disposizione();
+            check('Informazioni su computer: i tre dati in una riga, etichetta e valore affiancati, separatori verticali grigio chiaro, fondo bianco',
+                pc.inRiga && pc.affiancati && pc.separatori[0] === '1px' && pc.separatori[2] === '0px' && pc.fondo === 'rgb(255, 255, 255)', [JSON.stringify(pc)]);
+            await ap.setViewportSize({ width: 390, height: 844 });
+            await ap.goto(BASE + '/admin/settings/informazioni');
+            const tel = await disposizione();
+            check('Informazioni sul telefono: i dati uno sotto l\'altro, etichetta sopra il valore, separatori orizzontali, niente scorrimento',
+                !tel.inRiga && tel.sopra && tel.separatori[0] === '0px' && tel.separatori[2] === '1px' && !tel.scorre, [JSON.stringify(tel)]);
             await cx.close();
         }
 

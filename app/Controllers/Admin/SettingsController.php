@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
 use App\Core\CampoContato;
+use App\Core\Ambiente;
 use App\Core\AuthLayout;
 use App\Core\BunnyToken;
 use App\Core\ElementStyle;
@@ -96,6 +97,12 @@ class SettingsController extends AdminController
         View::render('admin/settings/informazioni', [
             'pageTitle' => 'Informazioni su Pistacchio LMS',
             'versione' => Versione::corrente(),
+            // I dati per l'assistenza (18/10).
+            'dati' => [
+                'PHP' => Ambiente::php(),
+                'Database' => Ambiente::database(),
+                'Installata il' => Ambiente::installazione() ?? 'non nota',
+            ],
         ]);
     }
 

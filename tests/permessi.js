@@ -1012,6 +1012,15 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             check('admin → la pagina dice «Versione ' + versione + '», letta dal file VERSION, e porta al repository in una scheda nuova',
                 (info.titolo || '').trim() === 'Pistacchio LMS' && (info.versione || '').replace(/\s+/g, ' ').trim() === 'Versione ' + versione
                     && info.link === 'https://github.com/agilibaus/lms' && info.scheda === '_blank', [JSON.stringify(info)]);
+            // I dati per l'assistenza (18/10): PHP (lo stesso del server),
+            // database, data di installazione.
+            const php = execFileSync('php', ['-r', 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION . "." . PHP_RELEASE_VERSION;'], { encoding: 'utf8' }).trim();
+            const dati = await page.$$eval('.informazioni-dato', (d) => d.map((x) => [
+                x.querySelector('.informazioni-etichetta').textContent.trim(), x.querySelector('.informazioni-valore').textContent.trim()]));
+            check('admin → sotto, PHP ' + php + ', il database con la sua versione e la data di installazione',
+                dati.length === 3 && dati[0][0] === 'PHP' && dati[0][1] === php
+                    && dati[1][0] === 'Database' && /^(MySQL|MariaDB) \d+\.\d+\.\d+$/.test(dati[1][1])
+                    && dati[2][0] === 'Installata il' && /^\d{2}\/\d{2}\/\d{4}$/.test(dati[2][1]), [JSON.stringify(dati)]);
             await ctx.close();
         }
 
