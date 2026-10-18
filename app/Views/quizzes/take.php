@@ -44,7 +44,7 @@ use App\Core\QuizScoring;
 <?php if ($best !== null): ?>
     <div class="alert <?= $best['passed'] ? 'alert-success' : 'alert-warning' ?>">
         Miglior risultato: <?= number_format($best['score_pct'], 0) ?>%
-        (<?= $best['passed'] ? 'superato' : 'non superato' ?>) su <?= (int) $best['attempts'] ?> tentativi.
+        (<?= $best['passed'] ? 'superato' : 'non superato' ?>) su <?= (int) $best['attempts'] === 1 ? '1 tentativo' : (int) $best['attempts'] . ' tentativi' ?>.
     </div>
 <?php endif; ?>
 
@@ -62,6 +62,39 @@ use App\Core\QuizScoring;
                 $quante = (int) ($correctCountByQuestion[$qid] ?? 0);
                 ?>
                 <li class="quiz-question">
+                    <?php if ($tipo === 'open'): ?>
+                        <?php /* La domanda aperta ha un campo solo: niente `fieldset`,
+                                 la domanda e' l'etichetta del campo (18/10). Sta sulla
+                                 stessa riga del contatore, come nel profilo e nelle
+                                 domande all'esperto (`campo-contato-testa`), e sotto
+                                 subito il campo, alla stessa distanza delle opzioni
+                                 dalla loro domanda. Prima c'erano la legenda, la riga
+                                 del contatore e poi il campo: 34 px dal titolo.
+
+                                 Il contatore resta la descrizione del campo
+                                 (`aria-describedby`), senza `aria-live`: un
+                                 contatore che parla a ogni tasto coprirebbe quello che
+                                 la persona sta scrivendo. Senza JavaScript resta
+                                 scritto «3000 caratteri rimasti», che a campo vuoto e'
+                                 vero, e il limite lo fa rispettare `maxlength`. */ ?>
+                        <div class="quiz-question-group quiz-open-wrap quiz-open-domanda">
+                            <div class="campo-contato-testa">
+                                <label class="quiz-question-text" for="aperta-<?= $qid ?>">
+                                    <span class="quiz-question-numero"><?= (int) $indice + 1 ?>.</span>
+                                    <?= htmlspecialchars($question['question_text']) ?>
+                                    <span class="quiz-question-hint">Risposta libera, non fa punteggio</span>
+                                </label>
+                                <span class="quiz-open-count" id="resta-<?= $qid ?>"
+                                      data-max="<?= QuizController::MAX_OPEN_CHARS ?>">
+                                    <?= QuizController::MAX_OPEN_CHARS ?> caratteri rimasti
+                                </span>
+                            </div>
+                            <textarea id="aperta-<?= $qid ?>" name="open[<?= $qid ?>]" rows="4"
+                                      maxlength="<?= QuizController::MAX_OPEN_CHARS ?>" required
+                                      aria-describedby="resta-<?= $qid ?>"
+                                      class="quiz-open-answer"></textarea>
+                        </div>
+                    <?php else: ?>
                     <?php /* `fieldset` e non solo un paragrafo: le opzioni di una
                              domanda sono un gruppo, e un lettore di schermo deve
                              annunciare la domanda prima di ogni risposta. */ ?>
@@ -80,65 +113,28 @@ use App\Core\QuizScoring;
                                 <?php /* Quante risposte aspettarsi: senza, «tutto o
                                          niente» diventa un indovinello. */ ?>
                                 <span class="quiz-question-hint">Seleziona <?= $quante ?> risposte</span>
-                            <?php elseif ($tipo === 'open'): ?>
-                                <span class="quiz-question-hint">Risposta libera, non fa punteggio</span>
                             <?php endif; ?>
                         </legend>
-
-                        <?php if ($tipo === 'open'): ?>
-                            <label class="sr-only" for="aperta-<?= $qid ?>">
-                                La tua risposta a: <?= htmlspecialchars($question['question_text']) ?>
+                        <?php foreach ($opzioni as $option): ?>
+                            <label class="quiz-option">
+                                <?php if (QuizScoring::piuRisposte($tipo)): ?>
+                                    <?php /* Niente `required` sulle caselle: il browser
+                                             lo pretenderebbe su ognuna, cioe' tutte
+                                             spuntate. Che si risponda a tutto lo
+                                             verifica il server. */ ?>
+                                    <input type="checkbox"
+                                           name="answers[<?= $qid ?>][]"
+                                           value="<?= (int) $option['id'] ?>">
+                                <?php else: ?>
+                                    <input type="radio"
+                                           name="answers[<?= $qid ?>]"
+                                           value="<?= (int) $option['id'] ?>" required>
+                                <?php endif; ?>
+                                <span><?= htmlspecialchars($option['option_text']) ?></span>
                             </label>
-                            <?php /* Il contatore sta **prima** del campo nel
-                                     documento, perche' li' sta anche sullo
-                                     schermo — sopra, a destra — e perche' un
-                                     lettore di schermo lo annuncia come
-                                     descrizione del campo quando ci si entra,
-                                     grazie ad `aria-describedby`.
-
-                                     Niente `aria-live`: un contatore che parla
-                                     a ogni tasto e' esattamente il caso che le
-                                     linee guida classificano come «passivo»,
-                                     da leggere solo andandoci sopra. Qui
-                                     annunciarlo di continuo coprirebbe quello
-                                     che la persona sta scrivendo.
-
-                                     Senza JavaScript resta scritto «3000
-                                     caratteri rimasti», che a campo vuoto e'
-                                     vero: degrada in una dichiarazione del
-                                     limite, e il limite lo fa comunque
-                                     rispettare `maxlength`. */ ?>
-                            <div class="quiz-open-wrap">
-                                <span class="quiz-open-count" id="resta-<?= $qid ?>"
-                                      data-max="<?= QuizController::MAX_OPEN_CHARS ?>">
-                                    <?= QuizController::MAX_OPEN_CHARS ?> caratteri rimasti
-                                </span>
-                                <textarea id="aperta-<?= $qid ?>" name="open[<?= $qid ?>]" rows="4"
-                                          maxlength="<?= QuizController::MAX_OPEN_CHARS ?>" required
-                                          aria-describedby="resta-<?= $qid ?>"
-                                          class="quiz-open-answer"></textarea>
-                            </div>
-                        <?php else: ?>
-                            <?php foreach ($opzioni as $option): ?>
-                                <label class="quiz-option">
-                                    <?php if (QuizScoring::piuRisposte($tipo)): ?>
-                                        <?php /* Niente `required` sulle caselle: il browser
-                                                 lo pretenderebbe su ognuna, cioe' tutte
-                                                 spuntate. Che si risponda a tutto lo
-                                                 verifica il server. */ ?>
-                                        <input type="checkbox"
-                                               name="answers[<?= $qid ?>][]"
-                                               value="<?= (int) $option['id'] ?>">
-                                    <?php else: ?>
-                                        <input type="radio"
-                                               name="answers[<?= $qid ?>]"
-                                               value="<?= (int) $option['id'] ?>" required>
-                                    <?php endif; ?>
-                                    <span><?= htmlspecialchars($option['option_text']) ?></span>
-                                </label>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                        <?php endforeach; ?>
                     </fieldset>
+                    <?php endif; ?>
                 </li>
             <?php endforeach; ?>
         </ol>

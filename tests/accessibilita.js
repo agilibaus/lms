@@ -1312,6 +1312,41 @@ const EXTRA = {
         const vivi = male((e) => e.vivo === null || e.vivo === 'off');
         check(nome + ': il contatore non è una regione viva', vivi.length === 0, vivi);
 
+        // La domanda aperta del questionario (18/10, Alessandro): la domanda
+        // e' l'etichetta del campo e il campo le sta sotto come le opzioni
+        // alla loro domanda (prima 34 px, ora 8). Quando il contatore va a
+        // capo, sul telefono, si conta anche la sua riga.
+        const aperte = await page.evaluate(() => [...document.querySelectorAll('.quiz-open-domanda')].map((d) => {
+            const etichetta = d.querySelector('label.quiz-question-text');
+            const campo = d.querySelector('textarea');
+            const contatore = d.querySelector('.quiz-open-count');
+            const e = etichetta.getBoundingClientRect();
+            const c = contatore.getBoundingClientRect();
+            const sotto = c.top >= e.bottom - 1 ? c.bottom : e.bottom;
+            return { per: etichetta.getAttribute('for') === campo.id, distanza: Math.round(campo.getBoundingClientRect().top - sotto) };
+        }));
+        const chiuse = await page.evaluate(() => [...document.querySelectorAll('fieldset.quiz-question-group')].map((f) =>
+            Math.round(f.querySelector('.quiz-option').getBoundingClientRect().top - f.querySelector('legend').getBoundingClientRect().bottom)));
+        if (aperte.length > 0) {
+            check(nome + ': la domanda aperta è l\'etichetta del campo, che le sta sotto come le opzioni alla loro domanda',
+                aperte.every((a) => a.per && a.distanza <= 12 && (chiuse.length === 0 || Math.abs(a.distanza - chiuse[0]) <= 4)),
+                [JSON.stringify({ aperte, chiuse })]);
+        }
+
+        // Fra il modulo e quello che lo segue (il riquadro «I tuoi
+        // tentativi») c'e' spazio: si toccavano (18/10).
+        const dopo = await page.evaluate(() => {
+            const f = document.querySelector('.quiz-form');
+            let n = f ? f.nextElementSibling : null;
+            while (n !== null && n.tagName === 'SCRIPT') {
+                n = n.nextElementSibling;
+            }
+            return n === null ? null : Math.round(n.getBoundingClientRect().top - f.getBoundingClientRect().bottom);
+        });
+        if (dopo !== null) {
+            check(nome + ': fra il questionario e il riquadro sotto c\'è spazio', dopo >= 16, [String(dopo)]);
+        }
+
         // Un campo che conta il testo visibile (obiettivo e descrizione con i
         // tag, 11/10) non dichiara il limite al browser: `maxlength`
         // conterebbe anche i tag e fermerebbe la scrittura prima del limite.

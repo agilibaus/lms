@@ -4050,6 +4050,33 @@ fieldset.checkbox-group legend {
     width: 100%;
 }
 
+/* La domanda aperta (18/10): la domanda e il contatore sulla stessa riga,
+   e il campo subito sotto, a 0,5 rem come le opzioni dalla loro domanda.
+   La riga non ha il margine sopra che ha nel profilo: lo spazio dalla
+   domanda precedente e' quello di `.quiz-question`. */
+.quiz-open-domanda {
+    margin-top: 0;
+}
+
+.quiz-open-domanda .campo-contato-testa {
+    margin: 0 0 0.5rem;
+}
+
+.quiz-open-domanda .quiz-question-text {
+    margin: 0;
+}
+
+.quiz-open-domanda .campo-contato-testa .quiz-open-count {
+    margin-bottom: 0;
+}
+
+/* Fra i pulsanti del questionario e il riquadro «I tuoi tentativi» (18/10):
+   il modulo non aveva margine sotto e il riquadro nessuno sopra, e i due
+   si toccavano (0 px, misurati). */
+.quiz-form {
+    margin-bottom: 1.75rem;
+}
+
 /* Le risposte aperte nell'esito: la domanda sopra, la risposta sotto e
    rientrata, perché una accanto all'altra su un telefono non ci stanno. */
 .risposte-aperte {
