@@ -278,7 +278,7 @@ $conPresentazione = array_values(array_filter(
             <?php endif; ?>
 
             <?php if ($archivio > 0): ?>
-                <p class="giro-passate"><a class="giro-passate-comando" href="/gruppi/<?= $gid ?>/domande-passate">Domande passate (<?= $archivio ?>)</a></p>
+                <p class="giro-passate"><a class="giro-passate-comando" href="/gruppi/<?= $gid ?>/domande-passate<?= isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '' ?>">Domande passate (<?= $archivio ?>)</a></p>
             <?php endif; ?>
         </section>
     <?php else: ?>

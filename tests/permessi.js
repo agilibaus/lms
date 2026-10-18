@@ -930,16 +930,22 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             });
             const B_ = (id) => '/bacheca?corso=' + id;
             const E_ = (id) => '/domande-e-risposte?corso=' + id;
+            // «Il mio gruppo» (18/10): il gruppo dello studente in quel corso, con il
+            // corso nell'indirizzo, cosi' sulla pagina del gruppo il ramo resta.
+            const G_ = (id) => '/gruppi/' + A.gruppo + '?corso=' + id;
             const CASI = [
                 ['stud@test.it', 'studente', [
                     ['/', null, 'la home: nessun ramo'],
                     ['/agenda', null, 'l\'agenda: nessun ramo'],
                     ['/certificates', null, 'i certificati: nessun ramo'],
-                    ['/courses/' + A.corso, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false]]], 'la pagina del corso'],
-                    ['/lessons/' + A.lezione, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false]]], 'una lezione del corso'],
-                    ['/quizzes/' + A.quiz, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false]]], 'il quiz del corso'],
-                    ['/bacheca/categorie/' + A.bacheca_categoria, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), true], ['L\'esperto risponde', E_(A.corso), false]]], 'una categoria della bacheca: Bacheca evidenziata'],
-                    [E_(A.corso), [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), true]]], '«L\'esperto risponde»: evidenziata'],
+                    ['/courses/' + A.corso, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false], ['Il mio gruppo', G_(A.corso), false]]], 'la pagina del corso'],
+                    ['/lessons/' + A.lezione, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false], ['Il mio gruppo', G_(A.corso), false]]], 'una lezione del corso'],
+                    ['/quizzes/' + A.quiz, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false], ['Il mio gruppo', G_(A.corso), false]]], 'il quiz del corso'],
+                    ['/bacheca/categorie/' + A.bacheca_categoria, [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), true], ['L\'esperto risponde', E_(A.corso), false], ['Il mio gruppo', G_(A.corso), false]]], 'una categoria della bacheca: Bacheca evidenziata'],
+                    [E_(A.corso), [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), true], ['Il mio gruppo', G_(A.corso), false]]], '«L\'esperto risponde»: evidenziata'],
+                    [G_(A.corso), [A.corso, 'I miei corsi', [['Bacheca', B_(A.corso), false], ['L\'esperto risponde', E_(A.corso), false], ['Il mio gruppo', G_(A.corso), true]]], 'la pagina del gruppo, arrivando dal ramo: «Il mio gruppo» evidenziata'],
+                    ['/gruppi/' + A.gruppo, null, 'la pagina del gruppo senza il corso nell\'indirizzo: nessun ramo'],
+                    ['/gruppi/' + A.gruppo + '?corso=' + B.corso, null, 'con un corso che non è del gruppo: nessun ramo'],
                 ]],
                 ['tutor1@test.it', 'tutor A', [
                     ['/admin/courses', null, 'Gestione corsi: un elenco, nessun ramo'],
@@ -2341,8 +2347,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ]) {
                 const { ctx, page } = await entra(browser, email);
                 const link = await vai(page, corso);
-                check(chi + ' → pagina del suo corso: «Vai al tuo gruppo» porta al suo gruppo',
-                    link.length === 1 && link[0] === '/gruppi/' + gruppo, [JSON.stringify(link)]);
+                // Dal 18/10 con il corso nell'indirizzo: sulla pagina del gruppo
+                // resta il ramo del corso nella sidebar.
+                check(chi + ' → pagina del suo corso: «Vai al tuo gruppo» porta al suo gruppo, con il corso',
+                    link.length === 1 && link[0] === '/gruppi/' + gruppo + '?corso=' + corso, [JSON.stringify(link)]);
                 const r = await esitoGet(page, link[0] || '/gruppi/0');
                 check(chi + ' → il collegamento si apre', r.esito === 'consentito', [r.come]);
                 await ctx.close();

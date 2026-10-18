@@ -10,6 +10,7 @@ use App\Auth\CourseRights;
 use App\Models\BoardModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
+use App\Models\GroupModel;
 
 /**
  * Il corso in cui ci si trova, e il suo ramo nella sidebar (17/10,
@@ -23,7 +24,8 @@ use App\Models\EnrollmentModel;
  * corso aperto, con qualunque numero di iscrizioni. Si cambia corso da
  * «I miei corsi».
  *
- * DENTRO UN CORSO. Una pagina e' di un corso se i suoi dati lo dicono:
+ * DENTRO UN CORSO. Una pagina e' di un corso se i suoi dati lo dicono
+ * (la pagina del gruppo lo e' quando ci si arriva dal ramo, con `?corso=`):
  * `course` (la pagina del corso, lezioni, quiz, Modifica corso, il report e
  * la fruizione del corso), `module` (le pagine di un modulo, che sa di
  * quale corso e'), `corso` (la Bacheca e «L'esperto risponde»). Lo legge
@@ -56,8 +58,10 @@ final class CorsoCorrente
      * - «L'esperto risponde»: per lo studente iscritto e per il tutor del
      *   corso, che la legge come uno studente. L'admin, che e' l'esperto,
      *   ha «Domande».
+     * - «Il mio gruppo» (18/10): per lo studente iscritto, il suo gruppo in
+     *   quel corso (`GroupModel::delloStudenteNelCorso`), se ne ha uno.
      *
-     * @return array{id: int, title: string, bacheca: bool, esperto: bool, daValutare: int}|null
+     * @return array{id: int, title: string, bacheca: bool, esperto: bool, gruppo: ?int, daValutare: int}|null
      */
     public static function ramo(int $courseId): ?array
     {
@@ -69,10 +73,11 @@ final class CorsoCorrente
 
         $userId = (int) Auth::id();
         $bacheca = BachecaScope::puoLeggere($courseId);
-        $esperto = (Auth::hasRole('studente') && EnrollmentModel::find($userId, $courseId) !== null)
-            || (Auth::hasRole('tutor') && in_array($courseId, CourseRights::courseIdsFor($userId), true));
+        $iscritto = Auth::hasRole('studente') && EnrollmentModel::find($userId, $courseId) !== null;
+        $esperto = $iscritto || (Auth::hasRole('tutor') && in_array($courseId, CourseRights::courseIdsFor($userId), true));
+        $gruppo = $iscritto ? GroupModel::delloStudenteNelCorso($userId, $courseId) : null;
 
-        if (!$bacheca && !$esperto) {
+        if (!$bacheca && !$esperto && $gruppo === null) {
             return null;
         }
 
@@ -83,6 +88,7 @@ final class CorsoCorrente
             'title' => (string) $corso['title'],
             'bacheca' => $bacheca,
             'esperto' => $esperto,
+            'gruppo' => $gruppo,
             'daValutare' => $bacheca && $moderati !== [] ? count(BoardModel::inAttesa($courseId, $moderati)) : 0,
         ];
     }

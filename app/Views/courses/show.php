@@ -39,7 +39,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
              benvenuto), e solo per lo studente che un gruppo nel corso ce
              l'ha. «Tuo» e non «del corso»: un corso puo' avere piu' gruppi. */ ?>
     <?php if (!empty($tuoGruppo)): ?>
-        <p class="corso-tuo-gruppo"><a href="/gruppi/<?= (int) $tuoGruppo ?>" class="corso-tuo-gruppo-link">Vai al tuo gruppo</a></p>
+        <p class="corso-tuo-gruppo"><a href="/gruppi/<?= (int) $tuoGruppo ?>?corso=<?= (int) $course['id'] ?>" class="corso-tuo-gruppo-link">Vai al tuo gruppo</a></p>
     <?php endif; ?>
 </div>
 

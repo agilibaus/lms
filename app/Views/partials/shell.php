@@ -142,6 +142,12 @@ use App\Core\Csrf;
                 $ramoHtml .= '<a href="/domande-e-risposte?corso=' . $id . '" class="nav-link nav-corso-voce' . $voce('/domande-e-risposte') . '">L\'esperto risponde</a>';
             }
 
+            // «Il mio gruppo» (18/10): con il corso nell'indirizzo, cosi' sulla
+            // pagina del gruppo il ramo resta quello di questo corso.
+            if ($ramo['gruppo'] !== null) {
+                $ramoHtml .= '<a href="/gruppi/' . (int) $ramo['gruppo'] . '?corso=' . $id . '" class="nav-link nav-corso-voce' . $voce('/gruppi') . '">Il mio gruppo</a>';
+            }
+
             $ramoHtml .= '</div>';
         }
         ?>

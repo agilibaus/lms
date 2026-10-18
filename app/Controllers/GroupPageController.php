@@ -10,6 +10,7 @@ use App\Core\CampoContato;
 use App\Core\GiroDelCerchio;
 use App\Core\PersonName;
 use App\Core\View;
+use App\Models\CourseModel;
 use App\Models\GroupModel;
 use App\Models\GroupQuestionModel;
 use App\Models\LiveSessionModel;
@@ -118,6 +119,7 @@ class GroupPageController
             'ciSaro' => in_array($chiGuarda, array_map(static fn (array $p): int => (int) $p['id'], $ciSaranno), true),
             'chiGuarda' => $chiGuarda,
             'daRiprendere' => is_array($daRiprendere) && (int) ($daRiprendere['gruppo'] ?? 0) === $groupId ? $daRiprendere : null,
+            'corso' => self::corsoDelRamo($groupId),
         ]);
     }
 
@@ -142,7 +144,23 @@ class GroupPageController
             'domande' => $domande,
             'modera' => $modera,
             'chiGuarda' => $chiGuarda,
+            'corso' => self::corsoDelRamo((int) $group['id']),
         ]);
+    }
+
+    /**
+     * Il corso da cui si arriva dal ramo della sidebar («Il mio gruppo»,
+     * 18/10), se e' uno dei corsi del gruppo: allora la pagina del gruppo
+     * tiene il ramo di quel corso (`CorsoCorrente`). Senza, o con un corso
+     * che non e' del gruppo, il ramo non c'e'.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function corsoDelRamo(int $groupId): ?array
+    {
+        $chiesto = (int) ($_GET['corso'] ?? 0);
+
+        return $chiesto > 0 && in_array($chiesto, GroupModel::courseIds($groupId), true) ? CourseModel::find($chiesto) : null;
     }
 
     /** Una domanda nuova al gruppo: la precedente passa all'archivio. */

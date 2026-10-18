@@ -17,7 +17,7 @@ use App\Core\GiroDelCerchio;
  */
 ?>
 <div class="page-header">
-    <a href="/gruppi/<?= (int) $group['id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars(GroupPageController::titolo((string) $group['name'])) ?></span></a>
+    <a href="/gruppi/<?= (int) $group['id'] ?><?= isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '' ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars(GroupPageController::titolo((string) $group['name'])) ?></span></a>
     <h1>Domande passate</h1>
     <p class="page-subtitle">Le domande del giro del cerchio a cui il gruppo ha già risposto, dalla più recente.</p>
 </div>
