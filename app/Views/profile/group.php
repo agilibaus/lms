@@ -25,6 +25,7 @@ use App\Models\GroupQuestionModel;
 /** @var bool $ciSaro */
 /** @var int $chiGuarda */
 /** @var array|null $daRiprendere */
+/** @var array<string, mixed>|null $corso */
 
 $quanti = count($people);
 $posizioni = GroupCircle::posizioni($quanti);
@@ -76,6 +77,9 @@ $conPresentazione = array_values(array_filter(
     array_merge($tutor !== null ? [$tutor] : [], $people),
     $haPresentazione
 ));
+
+// Dal ramo del corso (18/10): link e moduli portano `?corso=`, cosi' il ramo resta.
+$ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
 ?>
 <div class="page-header">
     <a href="/profilo" class="back-link"><span class="back-link-testo">Profilo</span></a>
@@ -119,7 +123,7 @@ $conPresentazione = array_values(array_filter(
                 <span class="gruppo-ci-saranno">Ancora nessuno ha detto «Ci sarò»</span>
             <?php endif; ?>
             <?php if ($partecipa): ?>
-                <form action="/gruppi/<?= (int) $group['id'] ?>/ci-saro" method="post" class="gruppo-ci-saro">
+                <form action="/gruppi/<?= (int) $group['id'] ?>/ci-saro<?= $ramo ?>" method="post" class="gruppo-ci-saro">
                     <?= Csrf::field() ?>
                     <input type="hidden" name="session_id" value="<?= (int) $incontro['id'] ?>">
                     <?php if ($ciSaro): ?>
@@ -229,7 +233,7 @@ $conPresentazione = array_values(array_filter(
 
                 <?php if ($partecipa && ($mia === null || $mia['hidden_at'] === null)): ?>
                     <?php $valore = $daRiprendere['answer'] ?? ($mia['answer'] ?? ''); ?>
-                    <?php $modulo = '<form action="/gruppi/' . $gid . '/risposta" method="post" class="giro-modulo">'
+                    <?php $modulo = '<form action="/gruppi/' . $gid . '/risposta' . $ramo . '" method="post" class="giro-modulo">'
                         . Csrf::field()
                         . '<input type="hidden" name="question_id" value="' . (int) $domanda['id'] . '">'
                         . CampoContato::html('giro-risposta', 'La tua risposta', 'answer', GroupQuestionModel::MAX_RISPOSTA, (string) $valore, 3)
@@ -260,7 +264,7 @@ $conPresentazione = array_values(array_filter(
                     <h2 class="gruppo-riquadro-titolo" id="giro-titolo">Il giro del cerchio</h2>
                     <p class="giro-spiega">Fai una domanda al gruppo: i partecipanti rispondono in una o due righe, e le risposte si leggono qui. Resta aperta finché non ne fai una nuova.</p>
                 <?php endif; ?>
-                <?php $nuova = '<form action="/gruppi/' . $gid . '/domanda" method="post" class="giro-modulo">'
+                <?php $nuova = '<form action="/gruppi/' . $gid . '/domanda' . $ramo . '" method="post" class="giro-modulo">'
                     . Csrf::field()
                     . CampoContato::html('giro-domanda', 'La domanda al gruppo', 'question', GroupQuestionModel::MAX_DOMANDA, '', 3)
                     . ($domanda !== null ? '<p class="form-hint">La domanda di adesso, con le sue risposte, passa fra le domande passate.</p>' : '')
@@ -278,7 +282,7 @@ $conPresentazione = array_values(array_filter(
             <?php endif; ?>
 
             <?php if ($archivio > 0): ?>
-                <p class="giro-passate"><a class="giro-passate-comando" href="/gruppi/<?= $gid ?>/domande-passate<?= isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '' ?>">Domande passate (<?= $archivio ?>)</a></p>
+                <p class="giro-passate"><a class="giro-passate-comando" href="/gruppi/<?= $gid ?>/domande-passate<?= $ramo ?>">Domande passate (<?= $archivio ?>)</a></p>
             <?php endif; ?>
         </section>
     <?php else: ?>

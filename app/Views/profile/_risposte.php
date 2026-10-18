@@ -33,7 +33,7 @@ if ($risposte === []) {
                 <div class="giro-risposta-testa">
                     <strong><?= htmlspecialchars((string) $r['nome']) ?><?= $r['mia'] ? ' (tu)' : '' ?></strong>
                     <?php if ($modera): ?>
-                        <form action="/gruppi/risposte/<?= $rid ?>" method="post" class="giro-modera">
+                        <form action="/gruppi/risposte/<?= $rid ?><?= $ramo ?? '' ?>" method="post" class="giro-modera">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="azione" value="<?= $nascosta ? 'rimetti' : 'nascondi' ?>">
                             <button type="submit" class="link-btn"><?= $nascosta ? 'Rimetti' : 'Nascondi' ?></button>

@@ -993,6 +993,26 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 }
                 await ctx.close();
             }
+            // Dopo un'azione sulla pagina del gruppo (18/10) si torna alla
+            // pagina con il corso nell'indirizzo, e il ramo resta. «Ci sarò»
+            // due volte, cosi' lo stato torna com'era.
+            {
+                const { ctx, page } = await entra(browser, 'stud@test.it');
+                for (let volta = 0; volta < 2; volta++) {
+                    await page.goto(BASE + G_(A.corso));
+                    const azione = await page.getAttribute('form.gruppo-ci-saro', 'action');
+                    await Promise.all([page.waitForNavigation(), page.click('form.gruppo-ci-saro button[type=submit]')]);
+                    const r = await ramo(page);
+                    const dove = new URL(page.url());
+                    const attiva = r.ramo !== null ? r.ramo.voci.find((v) => v[2]) : null;
+                    check('studente → «' + (volta === 0 ? 'Ci sarò' : 'Non posso più') + '» dalla pagina del gruppo aperta dal ramo: '
+                        + 'si torna con ?corso= e «Il mio gruppo» evidenziata',
+                        azione === '/gruppi/' + A.gruppo + '/ci-saro?corso=' + A.corso
+                            && dove.pathname + dove.search === G_(A.corso) && attiva !== undefined && attiva !== null && attiva[0] === 'Il mio gruppo',
+                        [String(azione), page.url(), JSON.stringify(r.ramo)]);
+                }
+                await ctx.close();
+            }
         }
 
         // «Informazioni su Pistacchio LMS» (18/10): la tessera in Impostazioni,

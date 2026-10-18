@@ -26,6 +26,13 @@ use App\Models\LiveSessionModel;
  */
 class GroupPageController
 {
+    /**
+     * `?corso=N` se la pagina del gruppo e' aperta dal ramo del corso
+     * (18/10): i moduli lo portano nel loro indirizzo e, dopo un'azione, si
+     * torna alla pagina con il ramo. Lo fissa `gruppoVisibile()`.
+     */
+    private string $ramo = '';
+
     public function show(array $params): void
     {
         Auth::requireLogin();
@@ -320,6 +327,9 @@ class GroupPageController
             $this->vietato('Non fai parte di questo gruppo.');
         }
 
+        $corso = self::corsoDelRamo($groupId);
+        $this->ramo = $corso !== null ? '?corso=' . (int) $corso['id'] : '';
+
         return [$group, $chiGuarda, GiroDelCerchio::modera($group, $chiGuarda, Auth::hasRole('admin'))];
     }
 
@@ -343,6 +353,13 @@ class GroupPageController
     private function torna(string $dove, string $messaggio, bool $bene): never
     {
         $_SESSION[$bene ? 'flash_success' : 'flash_error'] = $messaggio;
+
+        // Il ramo del corso va prima dell'ancora: /gruppi/1?corso=2#giro.
+        if ($this->ramo !== '') {
+            $ancora = strpos($dove, '#');
+            $dove = $ancora === false ? $dove . $this->ramo : substr($dove, 0, $ancora) . $this->ramo . substr($dove, $ancora);
+        }
+
         header('Location: ' . $dove);
         exit;
     }
