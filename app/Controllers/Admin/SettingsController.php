@@ -20,6 +20,7 @@ use App\Core\Mail\Modelli;
 use App\Core\Settings;
 use App\Core\Welcome;
 use App\Core\Theme;
+use App\Core\Versione;
 use App\Core\View;
 
 /**
@@ -74,6 +75,27 @@ class SettingsController extends AdminController
             'pageTitle' => 'Impostazioni',
             'canSettings' => Auth::can('settings.manage'),
             'canPermissions' => Auth::hasRole('admin'),
+        ]);
+    }
+
+    /**
+     * «Informazioni su Pistacchio LMS» (18/10): logo, versione e il
+     * collegamento al repository. A chi apre le impostazioni: la versione
+     * esatta serve a chi gestisce la piattaforma, e mostrata a tutti
+     * aiuterebbe chi cerca un'installazione con un difetto noto.
+     */
+    public function informazioni(array $params = []): void
+    {
+        Auth::requireLogin();
+
+        if (!Auth::can('settings.manage') && !Auth::hasRole('admin')) {
+            http_response_code(403);
+            exit('Accesso negato: permessi insufficienti per questa pagina.');
+        }
+
+        View::render('admin/settings/informazioni', [
+            'pageTitle' => 'Informazioni su Pistacchio LMS',
+            'versione' => Versione::corrente(),
         ]);
     }
 

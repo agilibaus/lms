@@ -315,6 +315,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/users/importa', 'negato', 'importare utenti è dell\'admin'],
             ['/admin/permissions', 'negato', 'i permessi sono dell\'admin'],
             ['/admin/settings', 'negato', 'le impostazioni sono dell\'admin'],
+            ['/admin/settings/informazioni', 'negato', 'nemmeno la versione installata (18/10)'],
 
             // Lo staff non è mai soggetto al rilascio: un modulo che si apre
             // fra un mese va preparato oggi, e chi lo prepara deve entrarci.
@@ -395,6 +396,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/permissions', 'consentito', 'è sua'],
             ['/admin/users/importa', 'consentito', 'l\'importazione è sua'],
             ['/admin/settings/bunny', 'consentito', 'è sua'],
+            ['/admin/settings/informazioni', 'consentito', 'la versione installata e il codice sorgente (18/10)'],
             ['/lessons/' + A.lezione_chiusa, 'consentito', 'il rilascio non vale per l\'admin'],
             ['/materials/' + A.materiale_chiuso + '/download', 'consentito',
                 'il rilascio non vale per l\'admin, e il file di prova esiste'],
@@ -985,6 +987,32 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 }
                 await ctx.close();
             }
+        }
+
+        // «Informazioni su Pistacchio LMS» (18/10): la tessera in Impostazioni,
+        // la versione del file VERSION, il collegamento al repository.
+        {
+            const fs = require('fs');
+            const versione = fs.readFileSync(path.join(__dirname, '..', 'VERSION'), 'utf8').trim();
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            await page.goto(BASE + '/admin/settings');
+            const tessera = await page.evaluate(() => {
+                const a = [...document.querySelectorAll('.settings-card')].pop();
+                return a ? [a.getAttribute('href'), a.querySelector('.settings-card-title').textContent.trim()] : null;
+            });
+            check('admin → in Impostazioni, in fondo, la tessera «Informazioni su Pistacchio LMS»',
+                tessera !== null && tessera[0] === '/admin/settings/informazioni' && tessera[1] === 'Informazioni su Pistacchio LMS', [JSON.stringify(tessera)]);
+            await page.goto(BASE + '/admin/settings/informazioni');
+            const info = await page.evaluate(() => ({
+                titolo: (document.querySelector('h1') || {}).textContent,
+                versione: (document.querySelector('.informazioni-versione') || {}).textContent,
+                link: (document.querySelector('.informazioni-link a') || { getAttribute: () => null }).getAttribute('href'),
+                scheda: (document.querySelector('.informazioni-link a') || { getAttribute: () => null }).getAttribute('target'),
+            }));
+            check('admin → la pagina dice «Versione ' + versione + '», letta dal file VERSION, e porta al repository in una scheda nuova',
+                (info.titolo || '').trim() === 'Pistacchio LMS' && (info.versione || '').replace(/\s+/g, ' ').trim() === 'Versione ' + versione
+                    && info.link === 'https://github.com/agilibaus/lms' && info.scheda === '_blank', [JSON.stringify(info)]);
+            await ctx.close();
         }
 
         console.log('\n--- il video di benvenuto');

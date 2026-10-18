@@ -542,6 +542,7 @@ const PAGINE_INTERNE = [
     ['/admin/settings/email', 'Messaggi email'],
     ['/admin/settings/bunny', 'Bunny Stream'],
     ['/admin/settings/meet', 'Google Meet'],
+    ['/admin/settings/informazioni', 'Informazioni su Pistacchio LMS'],
 
     ['/catalogo', 'Catalogo'],
 ];
@@ -2519,6 +2520,35 @@ async function giroBenvenuto(browser) {
         await esamina(tp, '/domande-e-risposte', 'L\'esperto risponde (tutor)', BERSAGLIO_MINIMO, daTelefono);
         await esamina(tp, '/bacheca?corso=' + corso, 'Bacheca (tutor)', BERSAGLIO_MINIMO, daTelefono);
         await esamina(tp, '/bacheca/proposte?corso=' + corso, 'Proposte da valutare (tutor)', BERSAGLIO_MINIMO, daTelefono);
+
+        // «Informazioni su Pistacchio LMS» (18/10, variante A): logo, versione
+        // e collegamento al centro della pagina, anche in verticale.
+        if (!daTelefono) {
+            const cx = await browser.newContext({ viewport: { width: 1366, height: 760 } });
+            const ap = await cx.newPage();
+            await ap.goto(BASE + '/login');
+            await ap.fill('input[name="email"]', ADMIN);
+            await ap.fill('input[name="password"]', PASS);
+            await ap.click('form.auth-form button[type="submit"]');
+            await ap.waitForLoadState('load');
+            for (const [w, h] of [[1366, 760], [1280, 1000]]) {
+                await ap.setViewportSize({ width: w, height: h });
+                await ap.goto(BASE + '/admin/settings/informazioni');
+                const m = await ap.evaluate(() => {
+                    const b = document.querySelector('.informazioni-blocco').getBoundingClientRect();
+                    const main = document.querySelector('.main-content').getBoundingClientRect();
+                    return {
+                        dy: Math.round((b.top + b.bottom) / 2 - innerHeight / 2),
+                        // Il centro dello spazio a destra della barra laterale.
+                        dx: Math.round((b.left + b.right) / 2 - (main.left + innerWidth) / 2),
+                        scorre: document.documentElement.scrollHeight > innerHeight + 1,
+                    };
+                });
+                check('Informazioni a ' + w + '×' + h + ': il blocco è al centro, in verticale e in orizzontale, senza scorrere',
+                    Math.abs(m.dy) <= 12 && Math.abs(m.dx) <= 2 && !m.scorre, [JSON.stringify(m)]);
+            }
+            await cx.close();
+        }
 
         // Il colore delle categorie (17/10, strada 2): una tavolozza continua
         // con un cerchio da spostare, e l'intensità. Aperta, su computer e a

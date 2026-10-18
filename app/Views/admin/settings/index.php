@@ -55,6 +55,12 @@ $sezioni = [
         'testo' => 'Che cosa può fare ciascun ruolo. È la pagina più delicata del pannello: una spunta tolta qui cambia il lavoro di qualcuno.',
         'visibile' => $canPermissions,
     ],
+    [
+        'titolo' => 'Informazioni su Pistacchio LMS',
+        'href' => '/admin/settings/informazioni',
+        'testo' => 'La versione installata e il collegamento al codice sorgente su GitHub.',
+        'visibile' => true,
+    ],
 ];
 ?>
 <div class="page-header">

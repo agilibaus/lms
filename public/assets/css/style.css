@@ -7199,3 +7199,72 @@ details[open] > summary .obiettivo-se-aperto {
 .bacheca-file-errore:empty {
     display: none;
 }
+
+/* «Informazioni su Pistacchio LMS» (18/10, variante A): il blocco al centro
+   della pagina, anche in verticale. La pagina occupa l'altezza della
+   finestra meno i margini dell'area principale; sotto il blocco c'e' uno
+   spazio alto quanto il collegamento «Impostazioni» sopra, cosi' il centro
+   e' quello della finestra e non quello dello spazio sotto il collegamento. */
+.informazioni {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 3.5rem);
+    min-height: calc(100dvh - 3.5rem);
+}
+
+/* Al centro dello spazio a destra della barra laterale, non della colonna
+   da 1080 px delle altre pagine, che su uno schermo largo sta a sinistra. */
+.main-content:has(.informazioni) {
+    max-width: none;
+}
+
+.informazioni > .back-link {
+    align-self: flex-start;
+}
+
+.informazioni::after {
+    content: "";
+    height: var(--informazioni-sopra, 1.6rem);
+}
+
+.informazioni-blocco {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: auto 0;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+.informazioni-logo {
+    width: 140px;
+    height: auto;
+    margin-bottom: 1.1rem;
+}
+
+.informazioni-blocco h1 {
+    margin: 0 0 0.35rem;
+    font-size: 1.6rem;
+}
+
+.informazioni-versione {
+    margin: 0 0 1rem;
+}
+
+.informazioni-versione strong {
+    font-weight: 600;
+}
+
+.informazioni-link {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Sul telefono l'area principale ha 4 rem sopra (la barra con il menu) e 2
+   sotto: la pagina si accorcia di conseguenza, e non scorre. */
+@media (max-width: 768px) {
+    .informazioni {
+        min-height: calc(100vh - 6rem);
+        min-height: calc(100dvh - 6rem);
+    }
+}

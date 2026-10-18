@@ -246,6 +246,8 @@ $router->post('/domande/{id}/togli', [QuestionController::class, 'withdraw']);
 
 // --- Configurazione: posta elettronica e Google Meet ---
 $router->get('/admin/settings', [SettingsController::class, 'index']);
+// La versione installata e il codice sorgente (18/10).
+$router->get('/admin/settings/informazioni', [SettingsController::class, 'informazioni']);
 $router->get('/admin/settings/posta', [SettingsController::class, 'mail']);
 $router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']);
 $router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);
