@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\CourseRights;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\Ordinamento;
 use App\Core\OrphanFiles;
 use App\Models\CourseModel;
@@ -29,7 +30,7 @@ $courses = $ordine->applica($courses);
     <h1>Gestione corsi</h1>
     <p class="page-subtitle">Creazione, pubblicazione e iscrizioni. I contenuti (moduli, lezioni, questionari) si gestiscono dalla scheda del corso.</p>
     <?php if ($canCreate): ?>
-        <p><a href="/admin/courses/create" class="btn btn-primary">+ Nuovo corso</a></p>
+        <p><a href="/admin/courses/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo corso</a></p>
     <?php endif; ?>
 </div>
 
@@ -81,15 +82,15 @@ $courses = $ordine->applica($courses);
                     </span>
                 </td>
                 <td role="cell" class="row-actions">
-                    <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
+                    <a href="/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('card-list') ?>Contenuti</a>
                     <?php if (CourseRights::canEdit((int) $course['id'])): ?>
-                        <a href="/reports/courses/<?= (int) $course['id'] ?>">Report</a>
+                        <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                     <?php endif; ?>
                     <?php if ($canDelete): ?>
                         <form action="/admin/courses/<?= (int) $course['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare il corso con moduli, lezioni, questionari, iscrizioni e certificati?');">
                             <?= Csrf::field() ?>
-                            <button type="submit" class="link-btn link-btn-danger">Elimina</button>
+                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                         </form>
                     <?php endif; ?>
                 </td>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Auth\CourseRights;
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\VideoPoster;
 use App\Core\FileType;
 use App\Core\VideoEmbed;
@@ -36,7 +37,7 @@ $minutoSecondo = static function (int $secondi): string {
                  che si compie dopo aver letto o guardato. */ ?>
         <?php if (Auth::hasRole('studente') && $completed): ?>
             <span class="badge badge-muted lesson-done">
-                <span class="lesson-done-check" aria-hidden="true">&check;</span> Lezione completata
+                <?= Icona::svg('check-circle-fill', 'lesson-done-check') ?> Lezione completata
             </span>
         <?php endif; ?>
     </h1>

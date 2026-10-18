@@ -1869,15 +1869,6 @@ form.form + form {
     font-size: 0.9rem;
 }
 
-.lesson-check {
-    color: var(--color-primary);
-    font-weight: 700;
-}
-
-.badge-video {
-    background: var(--color-primary-soft);
-    color: var(--color-primary-hover);
-}
 
 .empty-state-small {
     color: var(--color-text-muted);
@@ -2235,7 +2226,6 @@ form.form + form {
    nota senza che lo stato gridi piu' del titolo a cui sta accanto. */
 .lesson-done-check {
     color: var(--color-primary);
-    font-weight: 700;
 }
 
 /* Riordino delle schede corso: si trascinano con il mouse. */
@@ -5894,7 +5884,7 @@ details[open] > summary .obiettivo-se-aperto {
     margin-left: auto;
 }
 
-/* Le etichette («video», «superato») centrate sulla riga (13/10): il margine
+/* Le etichette («superato») centrate sulla riga (13/10): il margine
    in alto di `.badge`, pensato per le schede, qui le abbassava di 4 px
    rispetto al titolo e al comando — misurato. */
 .lesson-list-item .badge,
@@ -7356,5 +7346,128 @@ details[open] > summary .obiettivo-se-aperto {
     .informazioni {
         min-height: calc(100vh - 6rem);
         min-height: calc(100dvh - 6rem);
+    }
+}
+
+/* ==========================================================
+   Le icone (18/10, Alessandro): Bootstrap Icons, accanto al testo
+   ==========================================================
+   Le scrive `App\Core\Icona`, sempre accanto a una parola e nascoste ai
+   lettori di schermo. Un'icona e' alta quanto il testo che accompagna e ne
+   prende il colore; i comandi con un'icona la tengono a 0,35 rem dalla
+   parola, le voci dell'elenco di un corso a 0,55. */
+.icona {
+    width: 1.05em;
+    height: 1.05em;
+    flex: 0 0 auto;
+    vertical-align: -0.15em;
+}
+
+/* Le voci della pagina del corso: l'icona dice il tipo (lezione da leggere,
+   video, questionario) o che la lezione e' fatta, nel colore del tema. */
+.lesson-list-item > a.lezione-voce,
+.module-quiz-row .quiz-link {
+    gap: 0.55rem;
+}
+
+.lezione-voce .icona,
+.quiz-link .icona {
+    width: 17px;
+    height: 17px;
+    color: var(--color-primary);
+}
+
+/* «Riprendi da qui», «Inizia da qui», «Fallo ora»: il play vuoto. La
+   sottolineatura resta sulla parola, l'icona non ne ha. */
+.da-qui-comando {
+    gap: 0.35rem;
+}
+
+/* I comandi di una riga (Gestione corsi) e i pulsanti con un'icona. */
+.comando-con-icona,
+.row-actions > .comando-con-icona {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.btn-con-icona {
+    gap: 0.45rem;
+}
+
+/* La spunta piena: lezione e modulo completati, la risorsa che ci si tiene,
+   la risposta corretta nell'anteprima del questionario. */
+.modulo-riga-spunta .icona {
+    vertical-align: -0.2em;
+}
+
+.etichetta-con-icona .icona {
+    width: 1em;
+    height: 1em;
+    margin-right: 0.15rem;
+    vertical-align: -0.15em;
+}
+
+.icona-fatta {
+    color: var(--color-primary);
+}
+
+.option-preview .icona-fatta {
+    margin-left: 0.3rem;
+}
+
+.bacheca-tengo.tenuta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* La freccia di «Mostra»/«Nascondi», disegnata qui e non nella pagina:
+   gira da sola quando il riquadro si apre, e i tre comandi con la stessa
+   funzione (l'obiettivo e i moduli, il benvenuto del tutor, la domanda
+   all'esperto) la hanno tutti senza ripeterla nelle viste. E' il
+   `chevron-down` di Bootstrap Icons, come maschera: prende il colore del
+   testo. */
+.obiettivo-comando::after,
+.qa-comando::after,
+.tutor-benvenuto-riascolta::after {
+    content: "";
+    width: 0.85em;
+    height: 0.85em;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: transform 0.15s ease;
+}
+
+.obiettivo-comando,
+.qa-comando {
+    grid-template-columns: auto auto;
+    column-gap: 0.3rem;
+    align-items: center;
+}
+
+.obiettivo-comando::after,
+.qa-comando::after {
+    grid-area: 1 / 2;
+}
+
+.tutor-benvenuto-riascolta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+details[open] > summary .obiettivo-comando::after,
+.qa-apri[open] .qa-comando::after,
+.tutor-benvenuto-ridotto[open] .tutor-benvenuto-riascolta::after {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .obiettivo-comando::after,
+    .qa-comando::after,
+    .tutor-benvenuto-riascolta::after {
+        transition: none;
     }
 }

@@ -7,6 +7,7 @@ use App\Auth\Auth;
 use App\Core\CourseAccess;
 use App\Core\CourseCover;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\Obiettivo;
 use App\Core\Percorso;
 use App\Core\TestoBreve;
@@ -181,7 +182,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                 <details class="modulo-riga <?= $stato === Percorso::COMPLETATO ? 'modulo-riga-completato' : '' ?>" id="modulo-<?= $moduleId ?>">
                     <summary>
                         <?php if ($stato === Percorso::COMPLETATO): ?>
-                            <span class="modulo-riga-spunta" aria-hidden="true">&check;</span>
+                            <span class="modulo-riga-spunta" aria-hidden="true"><?= Icona::svg('check-circle-fill') ?></span>
                         <?php endif; ?>
                         <h2 class="modulo-riga-titolo"><?= htmlspecialchars($module['title']) ?></h2>
                         <span class="modulo-riga-stato"><?= htmlspecialchars($statoRiga) ?></span>
@@ -198,7 +199,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         <?php elseif ($stato === Percorso::PROSSIMO): ?>
                             <span class="etichetta-modulo etichetta-modulo-quieta">Prossimo</span>
                         <?php elseif ($stato === Percorso::COMPLETATO): ?>
-                            <span class="etichetta-modulo etichetta-modulo-quieta"><span aria-hidden="true">&check;</span> Completato</span>
+                            <span class="etichetta-modulo etichetta-modulo-quieta etichetta-con-icona"><?= Icona::svg('check-circle-fill') ?> Completato</span>
                         <?php endif; ?>
                         <?php if ($lockedByDate): ?>
                             <span class="badge badge-muted">
@@ -330,19 +331,22 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                             </form>
                                         </span>
                                     <?php endif; ?>
-                                    <a href="/lessons/<?= (int) $lesson['id'] ?>">
-                                        <?php if (in_array((int) $lesson['id'], $completedLessonIds, true)): ?>
-                                            <span class="lesson-check" title="Completata">&check;</span>
-                                        <?php endif; ?>
-                                        <?= htmlspecialchars($lesson['title']) ?>
+                                    <?php
+                                    /* L'icona del tipo di contenuto (18/10): la lezione
+                                       completata ha la spunta piena, le altre il play se
+                                       sono un video, il foglio se sono da leggere. Quello
+                                       che dice solo l'icona, il lettore di schermo lo
+                                       sente dopo il titolo. Prima c'era l'etichetta
+                                       «video» sul bordo destro. */
+                                    $fatta = in_array((int) $lesson['id'], $completedLessonIds, true);
+                                    $video = $lesson['video_provider'] !== 'none';
+                                    ?>
+                                    <a href="/lessons/<?= (int) $lesson['id'] ?>" class="lezione-voce">
+                                        <?= Icona::svg($fatta ? 'check-circle-fill' : ($video ? 'play-circle' : 'file-earmark-text'), $fatta ? 'icona-fatta' : '') ?>
+                                        <span><?= htmlspecialchars($lesson['title']) ?><span class="sr-only"><?= $video ? ', video' : '' ?><?= $fatta ? ', completata' : '' ?></span></span>
                                     </a>
-                                    <?php /* Il comando prima dell'etichetta: «video» resta sul
-                                             bordo destro, in colonna con le altre righe (13/10). */ ?>
                                     <?php if ($daQui): ?>
-                                        <a class="da-qui-comando" href="/lessons/<?= (int) $lesson['id'] ?>"><?= $ripresa['fatte'] > 0 ? 'Riprendi da qui' : 'Inizia da qui' ?></a>
-                                    <?php endif; ?>
-                                    <?php if ($lesson['video_provider'] !== 'none'): ?>
-                                        <span class="badge badge-video">video</span>
+                                        <a class="da-qui-comando" href="/lessons/<?= (int) $lesson['id'] ?>"><?= Icona::svg('play') ?><?= $ripresa['fatte'] > 0 ? 'Riprendi da qui' : 'Inizia da qui' ?></a>
                                     <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
@@ -361,13 +365,13 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                 <span class="ordine-vuoto" aria-hidden="true"></span>
                             <?php endif; ?>
                             <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="quiz-link">
-                                Questionario: <?= htmlspecialchars((string) $quiz['title']) ?>
+                                <?= Icona::svg('clipboard-check') ?>Questionario: <?= htmlspecialchars((string) $quiz['title']) ?>
                             </a>
                             <?php if (!empty($quizPassedByModule[$moduleId])): ?>
                                 <span class="badge badge-success">superato</span>
                             <?php endif; ?>
                             <?php if ($restaQuestionario): ?>
-                                <a class="da-qui-comando" href="/quizzes/<?= (int) $quiz['id'] ?>">Fallo ora</a>
+                                <a class="da-qui-comando" href="/quizzes/<?= (int) $quiz['id'] ?>"><?= Icona::svg('play') ?>Fallo ora</a>
                             <?php endif; ?>
                         </p>
                     <?php endif; ?>

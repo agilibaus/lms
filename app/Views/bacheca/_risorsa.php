@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Bacheca;
 use App\Core\CampoContato;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\FileType;
 
 /**
@@ -53,7 +54,7 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
         <form action="/bacheca/risorse/<?= $rid ?>/tengo" method="post">
             <?= Csrf::field() ?><?= $torna ?>
             <button type="submit" class="link-btn bacheca-tengo<?= $r['tenuta'] ? ' tenuta' : '' ?>" aria-pressed="<?= $r['tenuta'] ? 'true' : 'false' ?>">
-                <?= $r['tenuta'] ? '✓ Te la tieni' : 'Questa me la tengo' ?>
+                <?= $r['tenuta'] ? Icona::svg('check-circle-fill') . 'Te la tieni' : 'Questa me la tengo' ?>
             </button>
         </form>
         <?php if ($r['gestisce']): ?>

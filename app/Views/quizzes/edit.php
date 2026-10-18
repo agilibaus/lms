@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\QuizScoring;
 
 /** @var array $quiz */
@@ -126,7 +127,7 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
                             <?php foreach ($optionsByQuestion[$question['id']] ?? [] as $option): ?>
                                 <li class="<?= (int) $option['is_correct'] === 1 ? 'is-correct' : '' ?>">
                                     <?= htmlspecialchars($option['option_text']) ?>
-                                    <?= (int) $option['is_correct'] === 1 ? ' &check;' : '' ?>
+                                    <?= (int) $option['is_correct'] === 1 ? Icona::svg('check-circle-fill', 'icona-fatta') . '<span class="sr-only"> (corretta)</span>' : '' ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
