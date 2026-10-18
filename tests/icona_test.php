@@ -62,15 +62,20 @@ check('le viste usano ' . count($usate) . ' icone, e ci sono tutte', $usate !== 
 
 // Niente piu' «✓» scritte a mano: la spunta e' l'icona (18/10).
 $conSpunta = [];
+$conFrecce = [];
 foreach ($it as $f) {
     if ($f->isFile() && str_ends_with($f->getFilename(), '.php')) {
         $testo = (string) file_get_contents($f->getPathname());
         if (str_contains($testo, '&check;') || str_contains($testo, '✓')) {
             $conSpunta[] = basename($f->getPathname());
         }
+        if (preg_match('/&[ud]arr;|[↑↓]/u', $testo) === 1) {
+            $conFrecce[] = basename($f->getPathname());
+        }
     }
 }
 check('nessuna vista scrive la spunta a mano', $conSpunta === [], implode(', ', $conSpunta));
+check('nessuna vista scrive le frecce di riordino a mano', $conFrecce === [], implode(', ', $conFrecce));
 
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail > 0 ? 1 : 0);

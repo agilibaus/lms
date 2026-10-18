@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\LessonController;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\FileType;
 use App\Core\OrphanFiles;
 use App\Core\Upload;
@@ -186,13 +187,13 @@ $provider = $lesson['video_provider'] ?? 'none';
                                 <?= Csrf::field() ?>
                                 <input type="hidden" name="direction" value="up">
                                 <button type="submit" class="icon-btn" title="Sposta su"
-                                        aria-label="Sposta su" <?= $index === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                                        aria-label="Sposta su" <?= $index === 0 ? 'disabled' : '' ?>><?= Icona::svg('arrow-up') ?></button>
                             </form>
                             <form action="/lessons/<?= $lessonId ?>/materials/<?= (int) $material['id'] ?>/move" method="post">
                                 <?= Csrf::field() ?>
                                 <input type="hidden" name="direction" value="down">
                                 <button type="submit" class="icon-btn" title="Sposta giù"
-                                        aria-label="Sposta giù" <?= $index === count($materials) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                                        aria-label="Sposta giù" <?= $index === count($materials) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                             </form>
                             <form action="/lessons/<?= $lessonId ?>/materials/<?= (int) $material['id'] ?>/delete"
                                   method="post" onsubmit="return confirm('Eliminare questo materiale?');">

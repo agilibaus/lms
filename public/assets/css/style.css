@@ -2066,6 +2066,9 @@ form.form + form {
 }
 
 .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 1.75rem;
     height: 1.75rem;
     padding: 0;
@@ -7377,10 +7380,27 @@ details[open] > summary .obiettivo-se-aperto {
     color: var(--color-primary);
 }
 
-/* «Riprendi da qui», «Inizia da qui», «Fallo ora»: il play vuoto. La
-   sottolineatura resta sulla parola, l'icona non ne ha. */
+/* «Riprendi da qui», «Inizia da qui», «Fallo ora»: il play vuoto, a 20 px
+   (18/10, Alessandro, variante B): il triangolo di Bootstrap riempie solo
+   meta' del suo riquadro, e alla misura del testo (15 px) sembrava piu'
+   piccolo delle altre icone della riga. La sottolineatura resta sulla
+   parola, l'icona non ne ha. */
 .da-qui-comando {
     gap: 0.35rem;
+}
+
+.da-qui-comando .icona {
+    width: 20px;
+    height: 20px;
+}
+
+/* Le frecce per riordinare (lezioni, moduli, domande del questionario,
+   materiali della lezione): `arrow-up` e `arrow-down` di Bootstrap, al
+   posto dei caratteri delle frecce. Il nome del comando resta
+   nell'`aria-label`. */
+.icon-btn .icona {
+    width: 15px;
+    height: 15px;
 }
 
 /* I comandi di una riga (Gestione corsi) e i pulsanti con un'icona. */

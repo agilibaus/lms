@@ -145,14 +145,14 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
                             <input type="hidden" name="direction" value="up">
                             <button type="submit" class="icon-btn" title="Sposta su"
                                     aria-label="Sposta su la domanda: <?= htmlspecialchars($question['question_text']) ?>"
-                                    <?= $indice === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                                    <?= $indice === 0 ? 'disabled' : '' ?>><?= Icona::svg('arrow-up') ?></button>
                         </form>
                         <form action="/questions/<?= (int) $question['id'] ?>/move" method="post">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="direction" value="down">
                             <button type="submit" class="icon-btn" title="Sposta giù"
                                     aria-label="Sposta giù la domanda: <?= htmlspecialchars($question['question_text']) ?>"
-                                    <?= $indice === count($questions) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                                    <?= $indice === count($questions) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                         </form>
                         <a href="/questions/<?= (int) $question['id'] ?>/edit">Modifica</a>
                         <form action="/questions/<?= (int) $question['id'] ?>/delete" method="post"

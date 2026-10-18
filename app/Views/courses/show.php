@@ -222,14 +222,14 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                     <input type="hidden" name="direction" value="up">
                                     <button type="submit" class="icon-btn" title="Sposta il modulo su"
                                             aria-label="Sposta il modulo <?= htmlspecialchars($module['title']) ?> su"
-                                            <?= $moduleIndex === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                                            <?= $moduleIndex === 0 ? 'disabled' : '' ?>><?= Icona::svg('arrow-up') ?></button>
                                 </form>
                                 <form action="/modules/<?= $moduleId ?>/move" method="post">
                                     <?= Csrf::field() ?>
                                     <input type="hidden" name="direction" value="down">
                                     <button type="submit" class="icon-btn" title="Sposta il modulo giù"
                                             aria-label="Sposta il modulo <?= htmlspecialchars($module['title']) ?> giù"
-                                            <?= $moduleIndex === count($modules) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                                            <?= $moduleIndex === count($modules) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                                 </form>
                             </span>
                             <a href="/modules/<?= $moduleId ?>/lessons/create">+ Lezione</a>
@@ -320,14 +320,14 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                                 <input type="hidden" name="direction" value="up">
                                                 <button type="submit" class="icon-btn" title="Sposta la lezione su"
                                                         aria-label="Sposta la lezione <?= htmlspecialchars($lesson['title']) ?> su"
-                                                        <?= $lessonIndex === 0 ? 'disabled' : '' ?>>&uarr;</button>
+                                                        <?= $lessonIndex === 0 ? 'disabled' : '' ?>><?= Icona::svg('arrow-up') ?></button>
                                             </form>
                                             <form action="/lessons/<?= (int) $lesson['id'] ?>/move" method="post">
                                                 <?= Csrf::field() ?>
                                                 <input type="hidden" name="direction" value="down">
                                                 <button type="submit" class="icon-btn" title="Sposta la lezione giù"
                                                         aria-label="Sposta la lezione <?= htmlspecialchars($lesson['title']) ?> giù"
-                                                        <?= $lessonIndex === count($lessons) - 1 ? 'disabled' : '' ?>>&darr;</button>
+                                                        <?= $lessonIndex === count($lessons) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                                             </form>
                                         </span>
                                     <?php endif; ?>
