@@ -2542,10 +2542,11 @@ async function giroBenvenuto(browser) {
                         // Il centro dello spazio a destra della barra laterale.
                         dx: Math.round((b.left + b.right) / 2 - (main.left + innerWidth) / 2),
                         scorre: document.documentElement.scrollHeight > innerHeight + 1,
+                        logo: Math.round(document.querySelector('.informazioni-logo').getBoundingClientRect().width),
                     };
                 });
-                check('Informazioni a ' + w + '×' + h + ': il blocco è al centro, in verticale e in orizzontale, senza scorrere',
-                    Math.abs(m.dy) <= 12 && Math.abs(m.dx) <= 2 && !m.scorre, [JSON.stringify(m)]);
+                check('Informazioni a ' + w + '×' + h + ': il blocco è al centro, in verticale e in orizzontale, senza scorrere; il logo è largo 154 px',
+                    Math.abs(m.dy) <= 12 && Math.abs(m.dx) <= 2 && !m.scorre && m.logo === 154, [JSON.stringify(m)]);
             }
             await cx.close();
         }

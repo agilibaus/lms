@@ -14,7 +14,7 @@ declare(strict_types=1);
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
 
     <div class="informazioni-blocco">
-        <img class="informazioni-logo" src="/assets/img/pistacchio-180.png" alt="" width="140" height="140">
+        <img class="informazioni-logo" src="/assets/img/pistacchio-180.png" alt="" width="154" height="154">
         <h1>Pistacchio LMS</h1>
         <p class="informazioni-versione">
             <?php if ($versione !== null): ?>

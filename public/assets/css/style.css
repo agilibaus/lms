@@ -7237,7 +7237,8 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .informazioni-logo {
-    width: 140px;
+    /* 154 px: 140 piu' il 10% (18/10, Alessandro). */
+    width: 154px;
     height: auto;
     margin-bottom: 1.1rem;
 }
