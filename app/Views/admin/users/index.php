@@ -6,6 +6,7 @@ use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\Invites;
 use App\Core\Ordinamento;
+use App\Core\Icona;
 
 /** @var array $users */
 /** @var bool $canManageAll */
@@ -32,10 +33,10 @@ $users = $ordine->applica($users);
             : 'Gli assistenti assegnati a te.' ?>
     </p>
     <div class="page-actions">
-        <a href="/admin/users/create" class="btn btn-primary">+ Nuovo utente</a>
+        <a href="/admin/users/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo utente</a>
 
         <?php if ($canManageAll): ?>
-            <a href="/admin/users/importa" class="btn btn-secondary">Importa da file</a>
+            <a href="/admin/users/importa" class="btn btn-secondary btn-con-icona"><?= Icona::svg('upload') ?>Importa da file</a>
         <?php endif; ?>
 
         <?php if ($canManageAll): ?>
@@ -45,7 +46,7 @@ $users = $ordine->applica($users);
                      con un clic fuori — toglie, non abilita (Sezione 4 del
                      promemoria). */ ?>
             <details class="dropdown">
-                <summary class="btn btn-secondary">Scarica dati</summary>
+                <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica dati</summary>
                 <div class="dropdown-menu">
                     <a href="/admin/users/csv">CSV</a>
                     <?php if ($canExportXlsx): ?>
@@ -78,7 +79,7 @@ $users = $ordine->applica($users);
         <?php endif; ?>
         <form action="/admin/users/inviti/manda" method="post">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn">Manda adesso il prossimo scaglione</button>
+            <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('send') ?>Manda adesso il prossimo scaglione</button>
         </form>
     </div>
 <?php endif; ?>
@@ -120,11 +121,11 @@ $users = $ordine->applica($users);
                         <?php endif; ?>
                     </td>
                     <td role="cell" class="row-actions">
-                        <a href="/admin/users/<?= (int) $user['id'] ?>/edit">Modifica</a>
+                        <a href="/admin/users/<?= (int) $user['id'] ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?>Modifica</a>
                         <form action="/admin/users/<?= (int) $user['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare questo utente? Iscrizioni, progressi, tentativi dei questionari e certificati verranno rimossi. In alternativa puoi disattivarlo.');">
                             <?= Csrf::field() ?>
-                            <button type="submit" class="link-btn link-btn-danger">Elimina</button>
+                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                         </form>
                     </td>
                 </tr>

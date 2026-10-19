@@ -50,7 +50,10 @@ class ReportSections
      * restino: sono scritte in due file, e due stringhe uguali scritte in
      * due posti divergono.
      *
-     * @return array<string, array{titolo: string, singolare: string, plurale: string,
+     * `icona` e' l'icona di «Dettaglio» nelle righe dell'elenco, quella di
+     * quello che il dettaglio apre (19/10, Alessandro): `App\Core\Icona`.
+     *
+     * @return array<string, array{icona: string, titolo: string, singolare: string, plurale: string,
      *                             articolo: string, base: string, vuoto: string,
      *                             occhiello: string, cerca: array<string, string>}>
      */
@@ -58,6 +61,8 @@ class ReportSections
     {
         return [
             'courses' => [
+                // L'icona di «Dettaglio» nelle righe dell'elenco: quello che apre.
+                'icona' => 'book',
                 'titolo' => 'Per corso',
                 'singolare' => 'corso',
                 'plurale' => 'corsi',
@@ -68,6 +73,8 @@ class ReportSections
                 'cerca' => ['title' => 'Corso'],
             ],
             'groups' => [
+                // L'icona di «Dettaglio» nelle righe dell'elenco: quello che apre.
+                'icona' => 'people',
                 'titolo' => 'Per gruppo',
                 'singolare' => 'gruppo',
                 'plurale' => 'gruppi',
@@ -78,6 +85,8 @@ class ReportSections
                 'cerca' => ['name' => 'Gruppo', 'tutor_name' => 'Tutor'],
             ],
             'students' => [
+                // L'icona di «Dettaglio» nelle righe dell'elenco: quello che apre.
+                'icona' => 'person',
                 'titolo' => 'Per studente',
                 'singolare' => 'studente',
                 'plurale' => 'studenti',
@@ -88,6 +97,8 @@ class ReportSections
                 'cerca' => ['full_name' => 'Studente', 'email' => 'Email'],
             ],
             'live' => [
+                // L'icona di «Dettaglio» nelle righe dell'elenco: quello che apre.
+                'icona' => 'camera-video',
                 'titolo' => 'Per incontro dal vivo',
                 'singolare' => 'incontro',
                 'plurale' => 'incontri',
@@ -104,6 +115,8 @@ class ReportSections
                 ],
             ],
             'fruizione' => [
+                // L'icona di «Dettaglio» nelle righe dell'elenco: quello che apre.
+                'icona' => 'play-circle',
                 'titolo' => 'Fruizione dei video',
                 'singolare' => 'corso con video',
                 'plurale' => 'corsi con video',

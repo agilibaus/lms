@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\VideoProgressController;
 use App\Core\Ordinamento;
 use App\Core\Xlsx;
+use App\Core\Icona;
 
 /** @var array $course */
 /** @var list<array{id: int, title: string, module_title: string, duration_seconds: int|null}> $lezioni */
@@ -31,7 +32,7 @@ $righe = $ordine->applica($righe);
     <p class="page-subtitle"><?= htmlspecialchars((string) $course['title']) ?></p>
     <div class="page-actions">
         <details class="dropdown">
-            <summary class="btn btn-secondary">Scarica</summary>
+            <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica</summary>
             <div class="dropdown-menu">
                 <?php if (Xlsx::disponibile()): ?>
                     <a href="/reports/fruizione/<?= (int) $course['id'] ?>/xlsx">XLSX</a>

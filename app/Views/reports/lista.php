@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Ordinamento;
 use App\Core\ReportSections;
 use App\Core\Xlsx;
+use App\Core\Icona;
 
 /**
  * L'elenco completo di un taglio: ricerca, tabella, paginazione.
@@ -52,9 +53,10 @@ $colonne = $tutteLeColonne[$chiave];
  */
 $scarica = static function (string $base): string {
     $b = htmlspecialchars($base);
-    $xlsx = Xlsx::disponibile() ? '<a href="' . $b . '/xlsx">XLSX</a>' : '';
+    $giu = Icona::svg('download');
+    $xlsx = Xlsx::disponibile() ? '<a href="' . $b . '/xlsx" class="comando-con-icona">' . $giu . 'XLSX</a>' : '';
 
-    return $xlsx . '<a href="' . $b . '/csv">CSV</a>';
+    return $xlsx . '<a href="' . $b . '/csv" class="comando-con-icona">' . $giu . 'CSV</a>';
 };
 
 /** L'indirizzo di questa pagina con un parametro cambiato. */
@@ -165,7 +167,7 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
                             </td>
                         <?php endforeach; ?>
                         <td role="cell" data-label="Azioni" class="col-azioni row-actions">
-                            <a href="<?= $esc($base) ?>">Dettaglio</a>
+                            <a href="<?= $esc($base) ?>" class="comando-con-icona"><?= Icona::svg($sezione['icona']) ?>Dettaglio</a>
                             <?= $scarica($base) ?>
                         </td>
                     </tr>

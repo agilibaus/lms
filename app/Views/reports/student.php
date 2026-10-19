@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Auth\Auth;
 use App\Controllers\ReportController;
 use App\Core\Ordinamento;
+use App\Core\Icona;
 
 /** @var array $student */
 /** @var array $courses */
@@ -57,7 +58,7 @@ $liveSessions = $ordineIncontri->applica(array_map(
              `details`/`summary` funziona senza JavaScript. */ ?>
     <p>
         <details class="dropdown">
-            <summary class="btn btn-secondary">Scarica</summary>
+            <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica</summary>
             <div class="dropdown-menu">
                 <?php if (App\Core\Xlsx::disponibile()): ?>
                     <a href="/reports/students/<?= (int) $student['id'] ?>/xlsx">XLSX</a>

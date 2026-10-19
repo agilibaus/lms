@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Icona;
 
 /**
  * @var string $transport
@@ -111,6 +112,6 @@ use App\Core\Csrf;
 
     <form action="/admin/settings/posta/prova" method="post">
         <?= Csrf::field() ?>
-        <button type="submit" class="btn btn-secondary">Invia messaggio di prova</button>
+        <button type="submit" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Invia messaggio di prova</button>
     </form>
 </section>

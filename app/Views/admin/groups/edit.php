@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Csrf;
 use App\Core\Ordinamento;
 use App\Core\GroupLogo;
+use App\Core\Icona;
 
 /** @var array $group */
 /** @var array $tutors */
@@ -53,7 +54,7 @@ $members = $ordineMembri->applica($members);
         <form action="/admin/groups/<?= $groupId ?>/logo/elimina" method="post"
               onsubmit="return confirm('Rimuovere l\'immagine di questo gruppo?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Rimuovi immagine</button>
+            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi immagine</button>
         </form>
     <?php endif; ?>
 </section>
@@ -75,7 +76,7 @@ $members = $ordineMembri->applica($members);
                     <form action="/admin/groups/<?= $groupId ?>/courses/<?= (int) $course['id'] ?>/delete" method="post"
                           onsubmit="return confirm('Rimuovere il corso dal gruppo? Gli iscritti restano tali.');">
                         <?= Csrf::field() ?>
-                        <button type="submit" class="link-btn">Rimuovi</button>
+                        <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi</button>
                     </form>
                 </li>
             <?php endforeach; ?>
@@ -129,7 +130,7 @@ $members = $ordineMembri->applica($members);
                         <form action="/admin/groups/<?= $groupId ?>/members/<?= (int) $member['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere questo membro dal gruppo? Le iscrizioni ai corsi restano attive.');">
                             <?= Csrf::field() ?>
-                            <button type="submit" class="link-btn">Rimuovi</button>
+                            <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi</button>
                         </form>
                     </td>
                 </tr>
@@ -165,6 +166,6 @@ $members = $ordineMembri->applica($members);
     <form action="/admin/groups/<?= $groupId ?>/delete" method="post"
           onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
         <?= Csrf::field() ?>
-        <button type="submit" class="link-btn link-btn-danger">Elimina gruppo</button>
+        <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina gruppo</button>
     </form>
 </div>

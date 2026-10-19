@@ -84,8 +84,13 @@ $conVocabolario = [
     'courses/show.php', 'admin/courses/index.php', 'admin/courses/edit.php', 'admin/courses/_cover.php',
     'admin/courses/_welcomes.php', 'admin/courses/_bacheca.php', 'lessons/show.php', 'lessons/form.php',
     'lessons/fruizione.php', 'quizzes/take.php', 'quizzes/edit.php',
+    // Seconda area (19/10): utenti, gruppi, report, impostazioni.
+    'admin/users/index.php', 'admin/users/form.php', 'admin/groups/index.php', 'admin/groups/edit.php',
+    'admin/settings/meet.php', 'admin/settings/mail.php', 'admin/settings/aspetto.php',
+    'reports/course.php', 'reports/fruizione.php', 'reports/group.php', 'reports/live_session.php',
+    'reports/student.php', 'reports/lista.php',
 ];
-$parole = 'Modifica[^<]*|Elimina[^<]*|Rimuovi[^<]*|Togli[^<]*|Approva|Rifiuta|Sposta su|Sposta giù|Scarica|Report|Contenuti';
+$parole = 'Modifica[^<]*|Elimina[^<]*|Rimuovi[^<]*|Togli[^<]*|Approva|Rifiuta|Sposta su|Sposta giù|Scarica[^<]*|Report|Contenuti|Dettaglio|Vai al gruppo|Emetti certificato|Importa da file|Invia messaggio di prova|Genera e invia[^<]*|Manda adesso[^<]*|Vedi la pagina[^<]*';
 $senza = [];
 foreach ($conVocabolario as $vista) {
     $testo = (string) file_get_contents(__DIR__ . '/../app/Views/' . $vista);
@@ -102,6 +107,12 @@ foreach ($conVocabolario as $vista) {
     }
 }
 check('nelle pagine passate al vocabolario, ogni comando ha la sua icona', $senza === [], implode('; ', $senza));
+
+// «Dettaglio» negli elenchi dei Report prende l'icona dalla sezione.
+$sezioni = App\Core\ReportSections::tutte();
+$senzaIcona = array_keys(array_filter($sezioni, static fn (array $s): bool => !in_array($s['icona'] ?? '', Icona::nomi(), true)));
+check('ogni sezione dei Report ha un\'icona per «Dettaglio», e c\'e\'', $senzaIcona === [], implode(', ', $senzaIcona));
+check('«Dettaglio» di uno studente e\' la persona, di un gruppo le persone', $sezioni['students']['icona'] === 'person' && $sezioni['groups']['icona'] === 'people');
 
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail > 0 ? 1 : 0);

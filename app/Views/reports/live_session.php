@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\ReportController;
 use App\Core\Ordinamento;
+use App\Core\Icona;
 
 /** @var array $session */
 /** @var array $rows */
@@ -56,7 +57,7 @@ $rows = $ordine->applica($rows);
              `details`/`summary` funziona senza JavaScript. */ ?>
     <p>
         <details class="dropdown">
-            <summary class="btn btn-secondary">Scarica</summary>
+            <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica</summary>
             <div class="dropdown-menu">
                 <?php if (App\Core\Xlsx::disponibile()): ?>
                     <a href="/reports/live/<?= $id ?>/xlsx">XLSX</a>

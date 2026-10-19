@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\Ordinamento;
+use App\Core\Icona;
 
 /** @var array $course */
 /** @var array $rows */
@@ -33,7 +34,7 @@ $rows = $ordine->applica($rows);
              `details`/`summary` funziona senza JavaScript. */ ?>
     <p>
         <details class="dropdown">
-            <summary class="btn btn-secondary">Scarica</summary>
+            <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica</summary>
             <div class="dropdown-menu">
                 <?php if (App\Core\Xlsx::disponibile()): ?>
                     <a href="/reports/courses/<?= (int) $course['id'] ?>/xlsx">XLSX</a>
@@ -104,7 +105,7 @@ $rows = $ordine->applica($rows);
                             <input type="hidden" name="user_id" value="<?= (int) $row['user_id'] ?>">
                             <input type="hidden" name="course_id" value="<?= (int) $course['id'] ?>">
                             <input type="hidden" name="redirect_to" value="/reports/courses/<?= (int) $course['id'] ?>">
-                            <button type="submit" class="link-btn">Emetti certificato</button>
+                            <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('award') ?>Emetti certificato</button>
                         </form>
                     <?php endif; ?>
                 </td>

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Icona;
 
 /**
  * @var array<string, string> $values
@@ -93,7 +94,7 @@ use App\Core\Csrf;
         <form action="/admin/settings/meet/chiave/elimina" method="post"
               onsubmit="return confirm('Rimuovere la chiave? Le sessioni live andranno gestite con link inseriti a mano.');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Rimuovi la chiave</button>
+            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi la chiave</button>
         </form>
     <?php endif; ?>
 

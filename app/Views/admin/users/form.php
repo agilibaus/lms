@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Auth\Auth;
 use App\Core\AvatarImage;
 use App\Core\Csrf;
+use App\Core\Icona;
 
 /** @var array|null $user */
 /** @var array $tutors */
@@ -158,7 +159,7 @@ $haFoto = !empty($user['avatar_path']);
                                   method="post"
                                   onsubmit="return confirm('Togliere l’utente dal gruppo? Le iscrizioni ai corsi restano attive.');">
                                 <?= Csrf::field() ?>
-                                <button type="submit" class="link-btn">Rimuovi</button>
+                                <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi</button>
                             </form>
                         <?php endif; ?>
                     </li>
@@ -191,7 +192,7 @@ $haFoto = !empty($user['avatar_path']);
         </p>
         <form action="/admin/users/<?= $userId ?>/password" method="post" class="form">
             <?= Csrf::field() ?>
-            <button type="submit" class="btn btn-secondary">Genera e invia password temporanea</button>
+            <button type="submit" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Genera e invia password temporanea</button>
         </form>
     </section>
 <?php endif; ?>
