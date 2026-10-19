@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\VideoProgressController;
 use App\Core\Ordinamento;
+use App\Core\Icona;
 use App\Core\Xlsx;
 
 /** @var array $lesson */
@@ -60,7 +61,7 @@ $quando = static function (?string $data): string {
         <?php /* Stessa tendina dell'elenco utenti: `details`/`summary`, che si
                  apre e si chiude senza JavaScript. */ ?>
         <details class="dropdown">
-            <summary class="btn btn-secondary">Scarica</summary>
+            <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica</summary>
             <div class="dropdown-menu">
                 <?php if (Xlsx::disponibile()): ?>
                     <a href="/lessons/<?= (int) $lesson['id'] ?>/fruizione/xlsx">XLSX</a>

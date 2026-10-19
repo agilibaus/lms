@@ -77,5 +77,31 @@ foreach ($it as $f) {
 check('nessuna vista scrive la spunta a mano', $conSpunta === [], implode(', ', $conSpunta));
 check('nessuna vista scrive le frecce di riordino a mano', $conFrecce === [], implode(', ', $conFrecce));
 
+// Il vocabolario (19/10): nelle pagine gia' passate alle icone, ogni comando
+// con una parola del vocabolario ha la sua icona subito prima della parola.
+// L'elenco delle pagine cresce con le patch delle aree successive.
+$conVocabolario = [
+    'courses/show.php', 'admin/courses/index.php', 'admin/courses/edit.php', 'admin/courses/_cover.php',
+    'admin/courses/_welcomes.php', 'admin/courses/_bacheca.php', 'lessons/show.php', 'lessons/form.php',
+    'lessons/fruizione.php', 'quizzes/take.php', 'quizzes/edit.php',
+];
+$parole = 'Modifica[^<]*|Elimina[^<]*|Rimuovi[^<]*|Togli[^<]*|Approva|Rifiuta|Sposta su|Sposta giù|Scarica|Report|Contenuti';
+$senza = [];
+foreach ($conVocabolario as $vista) {
+    $testo = (string) file_get_contents(__DIR__ . '/../app/Views/' . $vista);
+    preg_match_all('/(.{0,40})>(' . $parole . ')<\/(a|button|summary)>/u', $testo, $m, PREG_SET_ORDER);
+    foreach ($m as $c) {
+        // Un collegamento senza classe sta dentro una frase («scrivendo la
+        // durata in Modifica lezione»): e' testo, non un comando.
+        if ($c[3] === 'a' && !str_contains($c[1], 'class=') && !str_contains($c[1], 'Icona::svg(')) {
+            continue;
+        }
+        if (!str_contains($c[1], 'Icona::svg(')) {
+            $senza[] = $vista . ': ' . $c[2];
+        }
+    }
+}
+check('nelle pagine passate al vocabolario, ogni comando ha la sua icona', $senza === [], implode('; ', $senza));
+
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail > 0 ? 1 : 0);

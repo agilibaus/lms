@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\CourseCover;
 use App\Core\Csrf;
+use App\Core\Icona;
 
 /**
  * Copertina del corso: caricamento, testo alternativo, rimozione.
@@ -67,7 +68,7 @@ $isExternal = $coverUrl !== null && CourseCover::isExternalUrl($coverUrl);
         <form action="/admin/courses/<?= $courseId ?>/copertina/elimina" method="post"
               onsubmit="return confirm('Rimuovere la copertina di questo corso?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Rimuovi copertina</button>
+            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi copertina</button>
         </form>
     <?php endif; ?>
 </section>

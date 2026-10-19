@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Bacheca;
 use App\Core\CampoContato;
 use App\Core\Csrf;
+use App\Core\Icona;
 
 /**
  * Le categorie della Bacheca del corso (17/10), per chi le gestisce
@@ -104,21 +105,21 @@ $campiCategoria = static function (string $p, array $c) use ($temi): string {
                                     <form action="/admin/bacheca/categorie/<?= $id ?>/sposta" method="post">
                                         <?= Csrf::field() ?>
                                         <input type="hidden" name="direction" value="up">
-                                        <button type="submit" class="link-btn">Sposta su</button>
+                                        <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('arrow-up') ?>Sposta su</button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if ($i < $ultima): ?>
                                     <form action="/admin/bacheca/categorie/<?= $id ?>/sposta" method="post">
                                         <?= Csrf::field() ?>
                                         <input type="hidden" name="direction" value="down">
-                                        <button type="submit" class="link-btn">Sposta giù</button>
+                                        <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('arrow-down') ?>Sposta giù</button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if ((int) $c['tutte'] === 0): ?>
                                     <form action="/admin/bacheca/categorie/<?= $id ?>/elimina" method="post"
                                           onsubmit="return confirm('Eliminare la categoria?');">
                                         <?= Csrf::field() ?>
-                                        <button type="submit" class="link-btn link-btn-danger">Elimina</button>
+                                        <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                                     </form>
                                 <?php else: ?>
                                     <span class="card-meta">Ha delle risorse (anche proposte o tolte): non si può eliminare.</span>

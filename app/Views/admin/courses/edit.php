@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\Ordinamento;
 
 /** @var array $course */
@@ -95,13 +96,13 @@ $enrollments = $ordineIscritti->applica($enrollments);
                         <form action="/admin/requests/<?= (int) $request['id'] ?>" method="post">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="decision" value="approve">
-                            <button type="submit" class="link-btn">Approva</button>
+                            <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('check-lg') ?>Approva</button>
                         </form>
                         <form action="/admin/requests/<?= (int) $request['id'] ?>" method="post"
                               onsubmit="return confirm('Rifiutare la richiesta? Lo studente riceverà un avviso.');">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="decision" value="reject">
-                            <button type="submit" class="link-btn link-btn-danger">Rifiuta</button>
+                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-lg') ?>Rifiuta</button>
                         </form>
                     </td>
                 </tr>
@@ -150,7 +151,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                         <form action="/admin/courses/<?= $courseId ?>/enrollments/<?= (int) $row['user_id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere l’iscrizione? Progresso, tentativi dei questionari e certificato di questo corso verranno eliminati.');">
                             <?= Csrf::field() ?>
-                            <button type="submit" class="link-btn link-btn-danger">Rimuovi</button>
+                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi</button>
                         </form>
                     </td>
                 </tr>
@@ -187,7 +188,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
         <form action="/admin/courses/<?= $courseId ?>/delete" method="post"
               onsubmit="return confirm('Eliminare definitivamente questo corso e tutti i dati collegati?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Elimina corso</button>
+            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina corso</button>
         </form>
     </div>
 <?php endif; ?>

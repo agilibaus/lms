@@ -146,14 +146,14 @@ $provider = $lesson['video_provider'] ?? 'none';
 
         <form action="/lessons/<?= $lessonId ?>/video/detach" method="post" class="inline-form">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn">Rimuovi dalla lezione</button>
+            <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi dalla lezione</button>
             <span class="form-hint">Il file resta sul server e si può ricaricare in un'altra lezione.</span>
         </form>
 
         <form action="/lessons/<?= $lessonId ?>/video/delete" method="post" class="inline-form"
               onsubmit="return confirm('Eliminare il file dal server? Questa operazione non si può annullare.');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Rimuovi dalla lezione e dal server</button>
+            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi dalla lezione e dal server</button>
             <span class="form-hint">Il file viene cancellato dal disco: non si torna indietro.</span>
         </form>
     </section>
@@ -198,7 +198,7 @@ $provider = $lesson['video_provider'] ?? 'none';
                             <form action="/lessons/<?= $lessonId ?>/materials/<?= (int) $material['id'] ?>/delete"
                                   method="post" onsubmit="return confirm('Eliminare questo materiale?');">
                                 <?= Csrf::field() ?>
-                                <button type="submit" class="link-btn link-btn-danger">Elimina</button>
+                                <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                             </form>
                         </span>
                     </li>
@@ -227,7 +227,7 @@ $provider = $lesson['video_provider'] ?? 'none';
     <form action="/lessons/<?= $lessonId ?>/delete" method="post"
           onsubmit="return confirm('Eliminare definitivamente questa lezione? I file caricati (video, materiali, immagini) restano sul server e non saranno più collegati a nessuna lezione.');">
         <?= Csrf::field() ?>
-        <button type="submit" class="link-btn link-btn-danger">Elimina lezione</button>
+        <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina lezione</button>
     </form>
 <?php endif; ?>
 

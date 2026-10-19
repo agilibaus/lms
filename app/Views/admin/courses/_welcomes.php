@@ -6,6 +6,7 @@ use App\Controllers\Admin\TutorWelcomeController;
 use App\Auth\Auth;
 use App\Core\CampoContato;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\TutorWelcome;
 
 /**
@@ -115,7 +116,7 @@ $tutti = Auth::can('course.welcome');
                 <form action="/admin/courses/<?= $courseId ?>/benvenuti/<?= $tutorId ?>/elimina" method="post"
                       onsubmit="return confirm('Rimuovere il benvenuto di questo tutor? L’audio viene cancellato; la foto del profilo resta.');">
                     <?= Csrf::field() ?>
-                    <button type="submit" class="link-btn link-btn-danger">Rimuovi benvenuto</button>
+                    <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi benvenuto</button>
                 </form>
             <?php endif; ?>
         </div>

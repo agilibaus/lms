@@ -6,6 +6,7 @@ use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Controllers\QuizController;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\QuizScoring;
 
 /** @var array $quiz */
@@ -33,7 +34,7 @@ use App\Core\QuizScoring;
          nell'intestazione del modulo, e chi partiva dal quiz non la trovava.
          Il permesso e' quello del corso, come per la lezione. */ ?>
 <?php if ($course !== null && CourseRights::canEdit((int) $course['id'])): ?>
-    <p><a href="/quizzes/<?= (int) $quiz['id'] ?>/edit" class="btn btn-primary">Modifica questionario</a></p>
+    <p><a href="/quizzes/<?= (int) $quiz['id'] ?>/edit" class="btn btn-primary btn-con-icona"><?= Icona::svg('pencil') ?>Modifica questionario</a></p>
 <?php endif; ?>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>

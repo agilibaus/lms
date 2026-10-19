@@ -44,7 +44,7 @@ $minutoSecondo = static function (int $secondi): string {
 </div>
 
 <?php if (CourseRights::canEdit((int) $course['id'])): ?>
-    <p><a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="btn btn-primary">Modifica lezione</a></p>
+    <p><a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="btn btn-primary btn-con-icona"><?= Icona::svg('pencil') ?>Modifica lezione</a></p>
 <?php endif; ?>
 
 <?php

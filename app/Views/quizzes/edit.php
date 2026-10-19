@@ -97,7 +97,7 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/delete" method="post" class="danger-zone"
           onsubmit="return confirm('Eliminare il questionario, le sue domande e tutti i tentativi degli studenti?');">
         <?= Csrf::field() ?>
-        <button type="submit" class="link-btn link-btn-danger">Elimina il questionario</button>
+        <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina il questionario</button>
         <span class="form-hint">
             Spariscono le domande e tutti i tentativi già svolti dagli studenti.
             Non si torna indietro.
@@ -154,11 +154,11 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
                                     aria-label="Sposta giù la domanda: <?= htmlspecialchars($question['question_text']) ?>"
                                     <?= $indice === count($questions) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                         </form>
-                        <a href="/questions/<?= (int) $question['id'] ?>/edit">Modifica</a>
+                        <a href="/questions/<?= (int) $question['id'] ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?>Modifica</a>
                         <form action="/questions/<?= (int) $question['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare questa domanda?');">
                             <?= Csrf::field() ?>
-                            <button type="submit" class="link-btn link-btn-danger">Elimina</button>
+                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                         </form>
                     </div>
                 </li>
