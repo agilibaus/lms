@@ -2305,6 +2305,29 @@ form.form + form {
     height: 96px;
 }
 
+/* Nella pagina del gruppo, accanto al nome in cima (19/10): alta quanto
+   due righe del titolo, cosi' si vede senza pesare piu' del nome. */
+.gruppo-titolo {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    /* Il margine che il titolo ha da solo (0,4 em di 1,5 rem). */
+    margin: 0 0 0.6rem;
+}
+
+.gruppo-titolo h1 {
+    margin: 0;
+}
+
+.gruppo-titolo-logo {
+    width: 44px;
+    height: 44px;
+}
+
+.gruppo-titolo .group-logo-placeholder {
+    font-size: 0.95rem;
+}
+
 /* Riquadro con le iniziali quando il logo manca: tinta dall'identificativo,
    come per le copertine dei corsi. */
 /* Il colore delle iniziali dipende dall'identificativo del gruppo, quindi

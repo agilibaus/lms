@@ -8,6 +8,7 @@ use App\Core\CourseCover;
 use App\Core\Csrf;
 use App\Core\GiroDelCerchio;
 use App\Core\GroupCircle;
+use App\Core\GroupLogo;
 use App\Models\GroupQuestionModel;
 use App\Core\Icona;
 
@@ -84,7 +85,21 @@ $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
 ?>
 <div class="page-header">
     <a href="/profilo" class="back-link"><span class="back-link-testo">Profilo</span></a>
-    <h1><?= htmlspecialchars(GroupPageController::titolo((string) $group['name'])) ?></h1>
+    <?php /* L'immagine del gruppo accanto al nome (19/10, Alessandro): il
+             limone del Giallo. La stessa dell'elenco dei gruppi e del
+             profilo, con le iniziali quando manca. `alt` vuoto: il nome e'
+             scritto subito accanto. Fuori dal titolo: il titolo della pagina
+             resta solo il nome, anche per un lettore di schermo. */ ?>
+    <?php $logo = GroupLogo::url($group); ?>
+    <div class="gruppo-titolo">
+        <?php if ($logo !== null): ?>
+            <img src="<?= htmlspecialchars($logo) ?>" alt="" class="group-logo gruppo-titolo-logo">
+        <?php else: ?>
+            <span class="group-logo group-logo-placeholder gruppo-titolo-logo"
+                  style="--logo-hue: <?= GroupLogo::hue((int) $group['id']) ?>;" aria-hidden="true"><?= htmlspecialchars(GroupLogo::initials((string) $group['name'])) ?></span>
+        <?php endif; ?>
+        <h1><?= htmlspecialchars(GroupPageController::titolo((string) $group['name'])) ?></h1>
+    </div>
     <p class="page-subtitle">
         <?= $quanti === 1 ? '1 partecipante' : $quanti . ' partecipanti' ?>
         <?php if ($tutor !== null): ?>
