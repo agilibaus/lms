@@ -105,7 +105,7 @@ $rows = $ordine->applica($rows);
                             <input type="hidden" name="user_id" value="<?= (int) $row['user_id'] ?>">
                             <input type="hidden" name="course_id" value="<?= (int) $course['id'] ?>">
                             <input type="hidden" name="redirect_to" value="/reports/courses/<?= (int) $course['id'] ?>">
-                            <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('award') ?>Emetti certificato</button>
+                            <button type="submit" class="link-btn">Emetti certificato</button>
                         </form>
                     <?php endif; ?>
                 </td>

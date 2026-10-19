@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Bacheca;
+use App\Core\Icona;
 
 /**
  * La prima pagina della Bacheca (17/10): un riquadro per categoria, nel
@@ -53,13 +54,13 @@ use App\Core\Bacheca;
                 <a href="/admin/courses/<?= $courseId ?>/edit#bacheca" class="bacheca-comando">Gestione categorie</a>
             <?php endif; ?>
             <?php if ($partecipa): ?>
-                <a href="/bacheca/mie?corso=<?= $courseId ?>" class="bacheca-comando">Le mie risorse (<?= $tenute ?>)</a>
+                <a href="/bacheca/mie?corso=<?= $courseId ?>" class="bacheca-comando comando-con-icona"><?= Icona::svg('bookmark') ?>Le mie risorse (<?= $tenute ?>)</a>
                 <?php if ($categorie !== []): ?>
-                    <a href="/bacheca/condividi?corso=<?= $courseId ?>" class="btn btn-secondary">Condividi una risorsa</a>
+                    <a href="/bacheca/condividi?corso=<?= $courseId ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Condividi una risorsa</a>
                 <?php endif; ?>
             <?php endif; ?>
             <?php if ($puoPubblicare && $categorie !== []): ?>
-                <a href="/bacheca/nuova?corso=<?= $courseId ?>" class="btn btn-secondary">Nuova risorsa</a>
+                <a href="/bacheca/nuova?corso=<?= $courseId ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova risorsa</a>
             <?php endif; ?>
         </div>
     <?php endif; ?>

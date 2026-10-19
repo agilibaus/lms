@@ -82,7 +82,7 @@ $courses = $ordine->applica($courses);
                     </span>
                 </td>
                 <td role="cell" class="row-actions">
-                    <a href="/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('card-list') ?>Contenuti</a>
+                    <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
                     <?php if (CourseRights::canEdit((int) $course['id'])): ?>
                         <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                     <?php endif; ?>

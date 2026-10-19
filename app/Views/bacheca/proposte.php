@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\Bacheca;
 use App\Core\Csrf;
+use App\Core\Icona;
 
 /**
  * Le proposte degli studenti da valutare (17/10): il tutor vede quelle dei
@@ -63,11 +64,11 @@ $courseId = (int) $corso['id'];
                 <button type="submit" class="btn btn-primary">Pubblica</button>
                 <button type="reset" class="btn btn-secondary">Annulla</button>
             </form>
-            <a class="link-btn" href="/bacheca/risorse/<?= $pid ?>/modifica">Correggi prima di pubblicare</a>
+            <a class="link-btn comando-con-icona" href="/bacheca/risorse/<?= $pid ?>/modifica"><?= Icona::svg('pencil') ?>Correggi prima di pubblicare</a>
             <form action="/bacheca/risorse/<?= $pid ?>/scarta" method="post"
                   onsubmit="return confirm('Non pubblicare la proposta? Chi l’ha proposta la vedrà «Non pubblicata».');">
                 <?= Csrf::field() ?>
-                <button type="submit" class="link-btn link-btn-danger">Non pubblicare</button>
+                <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-lg') ?>Non pubblicare</button>
             </form>
         </div>
     </section>

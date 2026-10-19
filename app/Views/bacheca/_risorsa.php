@@ -54,11 +54,11 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
         <form action="/bacheca/risorse/<?= $rid ?>/tengo" method="post">
             <?= Csrf::field() ?><?= $torna ?>
             <button type="submit" class="link-btn bacheca-tengo<?= $r['tenuta'] ? ' tenuta' : '' ?>" aria-pressed="<?= $r['tenuta'] ? 'true' : 'false' ?>">
-                <?= $r['tenuta'] ? Icona::svg('check-circle-fill') . 'Te la tieni' : 'Questa me la tengo' ?>
+                <?= $r['tenuta'] ? Icona::svg('bookmark-fill') . 'Te la tieni' : Icona::svg('bookmark') . 'Questa me la tengo' ?>
             </button>
         </form>
         <?php if ($r['gestisce']): ?>
-            <a class="link-btn" href="/bacheca/risorse/<?= $rid ?>/modifica">Modifica</a>
+            <a class="link-btn comando-con-icona" href="/bacheca/risorse/<?= $rid ?>/modifica"><?= Icona::svg('pencil') ?>Modifica</a>
             <form action="/bacheca/risorse/<?= $rid ?>/evidenza" method="post">
                 <?= Csrf::field() ?><?= $torna ?>
                 <input type="hidden" name="si" value="<?= (int) $r['featured'] === 1 ? '0' : '1' ?>">
@@ -67,7 +67,7 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
             <form action="/bacheca/risorse/<?= $rid ?>/togli" method="post"
                   onsubmit="return confirm('Togliere la risorsa dalla bacheca? Non si cancella: chi l’ha proposta la vede «Non pubblicata».');">
                 <?= Csrf::field() ?>
-                <button type="submit" class="link-btn link-btn-danger">Togli dalla bacheca</button>
+                <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-circle') ?>Togli dalla bacheca</button>
             </form>
         <?php endif; ?>
     </div>

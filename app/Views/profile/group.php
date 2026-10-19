@@ -9,6 +9,7 @@ use App\Core\Csrf;
 use App\Core\GiroDelCerchio;
 use App\Core\GroupCircle;
 use App\Models\GroupQuestionModel;
+use App\Core\Icona;
 
 /** @var array $group */
 /** @var array|null $tutor */
@@ -250,7 +251,7 @@ $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
                         <?= $modulo ?>
                     <?php else: ?>
                         <details class="giro-cambia">
-                            <summary class="giro-cambia-comando">Modifica la tua risposta</summary>
+                            <summary class="giro-cambia-comando comando-con-icona"><?= Icona::svg('pencil') ?>Modifica la tua risposta</summary>
                             <?= $modulo ?>
                         </details>
                     <?php endif; ?>
@@ -275,7 +276,7 @@ $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
                     <?= $nuova ?>
                 <?php else: ?>
                     <details class="giro-nuova">
-                        <summary class="giro-cambia-comando">Fai una nuova domanda</summary>
+                        <summary class="giro-cambia-comando comando-con-icona"><?= Icona::svg('plus-lg') ?>Fai una nuova domanda</summary>
                         <?= $nuova ?>
                     </details>
                 <?php endif; ?>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\Ordinamento;
+use App\Core\Icona;
 
 /** @var bool $isStaff */
 /** @var array $certificates */
@@ -92,7 +93,7 @@ $certificates = $ordine->applica($certificates);
                 </td>
                 <td role="cell" class="row-actions">
                     <?php if (!$revoked): ?>
-                        <a href="/certificates/<?= (int) $certificate['id'] ?>/download">PDF</a>
+                        <a href="/certificates/<?= (int) $certificate['id'] ?>/download" class="comando-con-icona"><?= Icona::svg('file-earmark-pdf') ?>PDF</a>
                     <?php endif; ?>
                     <a href="/verify/<?= urlencode((string) $certificate['certificate_code']) ?>">Verifica</a>
                     <?php if (!$revoked && Auth::can('certificate.issue')): ?>
@@ -100,7 +101,7 @@ $certificates = $ordine->applica($certificates);
                               onsubmit="return confirm('Revocare questo certificato?');">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="redirect_to" value="/certificates">
-                            <button type="submit" class="link-btn link-btn-danger">Revoca</button>
+                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-circle') ?>Revoca</button>
                         </form>
                     <?php endif; ?>
                 </td>

@@ -167,7 +167,7 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
                             </td>
                         <?php endforeach; ?>
                         <td role="cell" data-label="Azioni" class="col-azioni row-actions">
-                            <a href="<?= $esc($base) ?>" class="comando-con-icona"><?= Icona::svg($sezione['icona']) ?>Dettaglio</a>
+                            <a href="<?= $esc($base) ?>">Dettaglio</a>
                             <?= $scarica($base) ?>
                         </td>
                     </tr>

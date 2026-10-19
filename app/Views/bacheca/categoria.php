@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\BachecaScope;
 use App\Core\Bacheca;
+use App\Core\Icona;
 
 /**
  * La pagina di una categoria (17/10), con la testata nel suo colore come
@@ -39,10 +40,10 @@ $conCategoria = $categoria === null;
     <div class="bacheca-sotto-testa">
         <nav class="bacheca-filtri" aria-label="Quali risorse">
             <a href="<?= $base ?>" class="bacheca-filtro<?= $mie ? '' : ' attivo" aria-current="page' ?>">Tutte (<?= $conteggi['tutte'] ?>)</a>
-            <a href="<?= $base ?>?mie=1" class="bacheca-filtro<?= $mie ? ' attivo" aria-current="page' : '' ?>">Le mie risorse (<?= $conteggi['mie'] ?>)</a>
+            <a href="<?= $base ?>?mie=1" class="bacheca-filtro<?= $mie ? ' attivo" aria-current="page' : '' ?>"><?= Icona::svg('bookmark') ?>Le mie risorse (<?= $conteggi['mie'] ?>)</a>
         </nav>
         <?php if (BachecaScope::puoPubblicare($courseId)): ?>
-            <a href="/bacheca/nuova?corso=<?= $courseId ?>&amp;categoria=<?= (int) $categoria['id'] ?>" class="btn btn-secondary">Nuova risorsa</a>
+            <a href="/bacheca/nuova?corso=<?= $courseId ?>&amp;categoria=<?= (int) $categoria['id'] ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova risorsa</a>
         <?php endif; ?>
     </div>
 <?php else: ?>

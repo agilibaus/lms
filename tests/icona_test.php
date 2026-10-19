@@ -89,8 +89,12 @@ $conVocabolario = [
     'admin/settings/meet.php', 'admin/settings/mail.php', 'admin/settings/aspetto.php',
     'reports/course.php', 'reports/fruizione.php', 'reports/group.php', 'reports/live_session.php',
     'reports/student.php', 'reports/lista.php',
+    // Terza area (19/10): lo studente, la Bacheca, le sessioni live, i certificati.
+    'bacheca/_risorsa.php', 'bacheca/index.php', 'bacheca/categoria.php', 'bacheca/proposte.php',
+    'agenda/index.php', 'live/index.php', 'live/show.php', 'profile/edit.php', 'profile/group.php',
+    'certificates/index.php',
 ];
-$parole = 'Modifica[^<]*|Elimina[^<]*|Rimuovi[^<]*|Togli[^<]*|Approva|Rifiuta|Sposta su|Sposta giù|Scarica[^<]*|Report|Contenuti|Dettaglio|Vai al gruppo|Emetti certificato|Importa da file|Invia messaggio di prova|Genera e invia[^<]*|Manda adesso[^<]*|Vedi la pagina[^<]*';
+$parole = 'Modifica[^<]*|Elimina[^<]*|Rimuovi[^<]*|Togli dalla bacheca|Approva|Rifiuta|Non pubblicare|Correggi[^<]*|Sposta su|Sposta giù|Scarica[^<]*|Report|Importa da file|Invia inviti|Invia messaggio di prova|Genera e invia[^<]*|Manda adesso[^<]*|Vedi la pagina[^<]*|Entra[^<]*|Le mie risorse[^<]*|Nuova [a-z]+|Condividi una risorsa|Fai una nuova domanda|Disattiva|Revoca|PDF';
 $senza = [];
 foreach ($conVocabolario as $vista) {
     $testo = (string) file_get_contents(__DIR__ . '/../app/Views/' . $vista);
@@ -108,11 +112,20 @@ foreach ($conVocabolario as $vista) {
 }
 check('nelle pagine passate al vocabolario, ogni comando ha la sua icona', $senza === [], implode('; ', $senza));
 
-// «Dettaglio» negli elenchi dei Report prende l'icona dalla sezione.
-$sezioni = App\Core\ReportSections::tutte();
-$senzaIcona = array_keys(array_filter($sezioni, static fn (array $s): bool => !in_array($s['icona'] ?? '', Icona::nomi(), true)));
-check('ogni sezione dei Report ha un\'icona per «Dettaglio», e c\'e\'', $senzaIcona === [], implode(', ', $senzaIcona));
-check('«Dettaglio» di uno studente e\' la persona, di un gruppo le persone', $sezioni['students']['icona'] === 'person' && $sezioni['groups']['icona'] === 'people');
+// Dove l'icona non va (19/10, i principi in `Icona`): i collegamenti di
+// navigazione e i comandi rari che la parola spiega gia'. Le avevamo messe
+// e le abbiamo tolte: questo controllo impedisce che tornino per abitudine.
+$vietate = ['Contenuti', 'Vai al gruppo', 'Dettaglio', 'Emetti certificato'];
+$conIcona = [];
+foreach ($conVocabolario as $vista) {
+    $testo = (string) file_get_contents(__DIR__ . '/../app/Views/' . $vista);
+    foreach ($vietate as $parola) {
+        if (preg_match('/Icona::svg\([^)]*\)\s*\?>\s*' . preg_quote($parola, '/') . '</u', $testo) === 1) {
+            $conIcona[] = $vista . ': ' . $parola;
+        }
+    }
+}
+check('niente icona sui collegamenti di navigazione e su «Emetti certificato»', $conIcona === [], implode('; ', $conIcona));
 
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail > 0 ? 1 : 0);

@@ -9,6 +9,7 @@ use App\Controllers\ProfileController;
 use App\Core\Csrf;
 use App\Core\GroupLogo;
 use App\Core\Welcome;
+use App\Core\Icona;
 
 /** @var array $user */
 /** @var array $groups */
@@ -78,7 +79,7 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
                 <form action="/profilo/immagine/elimina" method="post"
                       onsubmit="return confirm('Rimuovere l’immagine del profilo?');">
                     <?= Csrf::field() ?>
-                    <button type="submit" class="link-btn link-btn-danger">Rimuovi immagine</button>
+                    <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi immagine</button>
                 </form>
             <?php endif; ?>
         </div>

@@ -836,8 +836,17 @@ async function comeSiRiconoscono(page) {
         }
         for (const fila of document.querySelectorAll('.row-actions, .module-card-actions')) {
             const voci = [...fila.querySelectorAll('a, button')].filter(visibile).map((e) => {
+                // Il testo, non l'icona (19/10): con un'icona davanti il primo
+                // rettangolo era quello dell'svg, e in una fila con comandi
+                // con e senza icona si confrontava un'icona con una parola.
                 const rg = document.createRange();
-                rg.selectNodeContents(e);
+                const parole = document.createTreeWalker(e, NodeFilter.SHOW_TEXT,
+                    { acceptNode: (n) => (n.textContent.trim() !== '' && !n.parentElement.closest('.sr-only') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
+                const primo = parole.nextNode();
+                if (primo === null) {
+                    return null;
+                }
+                rg.selectNodeContents(primo);
                 const r = rg.getClientRects()[0];
                 return r ? { t: testo(e), alto: r.top, basso: r.bottom } : null;
             }).filter(Boolean);

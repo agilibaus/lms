@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Agenda;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\Icona;
 
 /**
  * L'agenda: elenco e mese.
@@ -62,7 +63,7 @@ $voce = static function (array $e) use ($esc, $adesso): string {
     }
 
     if ($apribile) {
-        $html .= '<a class="btn btn-primary" href="/live/' . (int) $e['id'] . '/join">Entra</a>';
+        $html .= '<a class="btn btn-primary btn-con-icona" href="/live/' . (int) $e['id'] . '/join">' . Icona::svg('camera-video') . 'Entra</a>';
     }
 
     // Non per un incontro gia' finito: mettere in agenda un appuntamento
@@ -329,7 +330,7 @@ $titoliGruppi = [
             </form>
             <form method="post" action="/agenda/calendario/dimentica">
                 <?= Csrf::field() ?>
-                <button type="submit" class="btn btn-secondary">Disattiva</button>
+                <button type="submit" class="btn btn-secondary btn-con-icona"><?= Icona::svg('x-circle') ?>Disattiva</button>
             </form>
         </div>
     <?php endif; ?>

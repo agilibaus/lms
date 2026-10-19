@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\Csrf;
 use App\Core\Ordinamento;
+use App\Core\Icona;
 
 /** @var array $session */
 /** @var bool $canManage */
@@ -83,8 +84,8 @@ $apribile = (bool) ($session['joinable'] ?? false);
                      dalla riunione, quindi la scheda separata e' l'unico ritorno
                      che non dipende da un gesto dell'utente. */ ?>
             <p>
-                <a href="/live/<?= $id ?>/join" class="btn btn-primary"
-                   target="_blank" rel="noopener">Entra nella sessione</a>
+                <a href="/live/<?= $id ?>/join" class="btn btn-primary btn-con-icona"
+                   target="_blank" rel="noopener"><?= Icona::svg('camera-video') ?>Entra nella sessione</a>
             </p>
             <p class="form-hint">Si apre in una nuova scheda: questa pagina resta aperta.</p>
         <?php else: ?>
@@ -118,7 +119,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
         <form action="/live/<?= $id ?>/inviti" method="post"
               onsubmit="return confirm('Inviare l’invito a tutti i partecipanti attesi?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="btn btn-secondary">Invia inviti</button>
+            <button type="submit" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Invia inviti</button>
         </form>
     </section>
 <?php endif; ?>
@@ -198,7 +199,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
         <form action="/live/<?= $id ?>/delete" method="post"
               onsubmit="return confirm('Eliminare questa sessione e le presenze registrate?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="link-btn link-btn-danger">Elimina sessione</button>
+            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina sessione</button>
         </form>
     </div>
 <?php endif; ?>

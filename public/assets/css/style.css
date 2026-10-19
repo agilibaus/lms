@@ -7411,6 +7411,15 @@ details[open] > summary .obiettivo-se-aperto {
     gap: 0.35rem;
 }
 
+/* In una fila di comandi quelli senza icona («Dettaglio», «Verifica»,
+   «Contenuti») si dispongono come quelli con l'icona: contenitori
+   flessibili centrati, cosi' il testo di tutti cade sulla stessa riga
+   (19/10; accessibilita.js lo misura sul testo, non sull'icona). */
+.row-actions > a {
+    display: inline-flex;
+    align-items: center;
+}
+
 .btn-con-icona {
     gap: 0.45rem;
 }
@@ -7436,9 +7445,15 @@ details[open] > summary .obiettivo-se-aperto {
     margin-left: 0.3rem;
 }
 
-.bacheca-tengo.tenuta {
+/* «Questa me la tengo» e «Te la tieni»: il segnalibro, vuoto e pieno. */
+.bacheca-tengo {
     display: inline-flex;
     align-items: center;
+    gap: 0.35rem;
+}
+
+/* «Le mie risorse» fra i filtri di una categoria: il segnalibro. */
+.bacheca-filtro {
     gap: 0.35rem;
 }
 

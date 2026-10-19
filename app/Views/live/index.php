@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Ordinamento;
+use App\Core\Icona;
 
 /** @var array $sessions */
 /** @var bool $canManage */
@@ -27,7 +28,7 @@ $sessions = $ordine->applica($sessions);
             : 'Gli incontri dal vivo dei tuoi corsi e gruppi.' ?>
     </p>
     <?php if ($canManage): ?>
-        <p><a href="/live/create" class="btn btn-primary">+ Nuova sessione</a></p>
+        <p><a href="/live/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova sessione</a></p>
     <?php endif; ?>
 </div>
 
@@ -114,15 +115,15 @@ $sessions = $ordine->applica($sessions);
                          (vedi §5). */ ?>
                 <td role="cell" data-label="Accesso">
                     <?php if (!empty($session['meet_link']) && $apribile): ?>
-                        <a href="/live/<?= (int) $session['id'] ?>/join"
-                           target="_blank" rel="noopener">Entra</a>
+                        <a href="/live/<?= (int) $session['id'] ?>/join" class="comando-con-icona"
+                           target="_blank" rel="noopener"><?= Icona::svg('camera-video') ?>Entra</a>
                     <?php elseif (!empty($session['meet_link']) && !$isPast): ?>
                         Da 15 minuti prima
                     <?php endif; ?>
                 </td>
                 <td role="cell" class="row-actions">
                     <?php if ($canManage): ?>
-                        <a href="/live/<?= (int) $session['id'] ?>/edit">Modifica</a>
+                        <a href="/live/<?= (int) $session['id'] ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?>Modifica</a>
                     <?php endif; ?>
                 </td>
             </tr>

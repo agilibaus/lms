@@ -67,7 +67,7 @@ $groups = $ordine->applica($groups);
                     <?php /* La pagina del gruppo, quella che vedono i partecipanti
                              (12/10): il tutor e l'admin non ne sono membri, e
                              da qui e' l'unica strada per arrivarci. */ ?>
-                    <a href="/gruppi/<?= (int) $group['id'] ?>" class="comando-con-icona"><?= Icona::svg('people') ?>Vai al gruppo</a>
+                    <a href="/gruppi/<?= (int) $group['id'] ?>">Vai al gruppo</a>
                     <a href="/reports/groups/<?= (int) $group['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                     <form action="/admin/groups/<?= (int) $group['id'] ?>/delete" method="post"
                           onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
