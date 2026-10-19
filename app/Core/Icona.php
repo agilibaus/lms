@@ -21,6 +21,14 @@ namespace App\Core;
  * (`currentColor`) e quindi il tema. Una nuova si aggiunge copiando i
  * `<path>` dal suo SVG in `ICONE`.
  *
+ * IL VOCABOLARIO (19/10, Alessandro): una parola ha sempre la stessa icona.
+ * Modifica: `pencil` · Elimina: `trash3` (rosso) · Rimuovi/Togli da un
+ * elenco: `x-circle` · Aggiungi/Nuovo/«+ …»: `plus-lg`, al posto del «+»
+ * scritto · Report: `bar-chart` · Scarica, CSV: `download` · PDF:
+ * `file-earmark-pdf` · Importa: `upload` · Anteprima: `eye`. L'icona
+ * segue lo stato: «+ Questionario» se non c'e', matita se c'e' gia'.
+ * Restano senza icona Salva, Annulla e Invia in fondo ai moduli.
+ *
  * La freccia di «Mostra»/«Nascondi» non passa di qui: e' disegnata dal CSS
  * (`style.css`, «Le icone»), cosi' gira da sola quando il riquadro si apre.
  */
@@ -28,6 +36,7 @@ final class Icona
 {
     /** @var array<string, string> nome Bootstrap => i suoi `<path>` (viewBox 0 0 16 16) */
     private const ICONE = [
+        'pencil' => '<path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>',
         'arrow-up' => '<path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5"/>',
         'arrow-down' => '<path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1"/>',
         'check-circle-fill' => '<path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>',

@@ -121,7 +121,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <?php endif; ?>
 
 <?php if ($isStaff): ?>
-    <p><a href="/courses/<?= (int) $course['id'] ?>/modules/create" class="btn btn-primary">+ Nuovo modulo</a></p>
+    <p><a href="/courses/<?= (int) $course['id'] ?>/modules/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo modulo</a></p>
 <?php endif; ?>
 
 <?php if (empty($modules)): ?>
@@ -232,17 +232,22 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                             <?= $moduleIndex === count($modules) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                                 </form>
                             </span>
-                            <a href="/modules/<?= $moduleId ?>/lessons/create">+ Lezione</a>
+                            <?php /* Le icone del vocabolario (19/10): il più per creare, la
+                                     matita per modificare, il cestino per eliminare. Quello
+                                     che prima diceva il «+» scritto, e ora dice l'icona, il
+                                     lettore di schermo lo sente come parola: «Aggiungi
+                                     Lezione», «Modifica Modulo». */ ?>
+                            <a href="/modules/<?= $moduleId ?>/lessons/create" class="comando-con-icona"><?= Icona::svg('plus-lg') ?><span class="sr-only">Aggiungi </span>Lezione</a>
                             <?php if ($quiz === null): ?>
-                                <a href="/modules/<?= $moduleId ?>/quiz/create">+ Questionario</a>
+                                <a href="/modules/<?= $moduleId ?>/quiz/create" class="comando-con-icona"><?= Icona::svg('plus-lg') ?><span class="sr-only">Aggiungi </span>Questionario</a>
                             <?php else: ?>
-                                <a href="/quizzes/<?= (int) $quiz['id'] ?>/edit">Questionario</a>
+                                <a href="/quizzes/<?= (int) $quiz['id'] ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?><span class="sr-only">Modifica </span>Questionario</a>
                             <?php endif; ?>
-                            <a href="/modules/<?= $moduleId ?>/edit">Modulo</a>
+                            <a href="/modules/<?= $moduleId ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?><span class="sr-only">Modifica </span>Modulo</a>
                             <form action="/modules/<?= $moduleId ?>/delete" method="post"
                                   onsubmit="return confirm('Eliminare questo modulo e tutte le sue lezioni?');">
                                 <?= Csrf::field() ?>
-                                <button type="submit" class="link-btn link-btn-danger">Elimina</button>
+                                <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                             </form>
                         </div>
                     <?php endif; ?>

@@ -1457,6 +1457,16 @@ const EXTRA = {
      * pagina gira con un utente dello staff, cioe' nel caso peggiore.
      */
     'Corso': async (page, nome) => {
+        // I comandi del modulo con l'icona (19/10): quello che dice l'icona
+        // (crea o modifica) il lettore di schermo lo sente come parola.
+        const comandi = await page.evaluate(() => [...document.querySelectorAll('.module-card-actions .comando-con-icona')]
+            .map((a) => ({ visto: a.innerText.trim(), nome: a.textContent.replace(/\s+/g, ' ').trim(), icona: a.querySelector('svg.icona') !== null })));
+        if (comandi.length > 0) {
+            const male = comandi.filter((c) => !c.icona || (c.visto !== 'Elimina' && !/^(Aggiungi|Modifica) /.test(c.nome)));
+            check(nome + ': i comandi del modulo hanno l\'icona, e il lettore di schermo sente «Aggiungi» o «Modifica»',
+                male.length === 0, male.map((c) => JSON.stringify(c)));
+        }
+
         const scarto = await page.evaluate(() => {
             const sezioni = [...document.querySelectorAll('section')]
                 .filter((s) => s.querySelector('.module-quiz-row') !== null
