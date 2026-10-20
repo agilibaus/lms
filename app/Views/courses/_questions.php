@@ -16,7 +16,7 @@ use App\Models\QuestionModel;
  * chiedere controlla se qualcuno l'ha gia' fatto) e «Le tue domande» con lo
  * stato. Solo per lo studente.
  *
- * Si apre da sola nei due casi in cui chi arriva deve vedere qualcosa che sta
+ * Si apre da sola nei casi in cui chi arriva deve vedere qualcosa che sta
  * dentro: dopo aver inviato una domanda («Le tue domande») e dopo un invio
  * respinto (il testo da correggere). Alla visita dopo riparte chiusa.
  *
@@ -34,7 +34,9 @@ $courseId = (int) $course['id'];
 $respinta = isset($_SESSION['question_old']);
 $vecchio = $_SESSION['question_old'] ?? ['text' => '', 'module' => null];
 unset($_SESSION['question_old']);
-$aperta = $respinta || !empty($_SESSION['domande_aperte']);
+// Si apre anche arrivando da «Fai una domanda all'esperto» in fondo a
+// «L'esperto risponde» (`?chiedi=1`, 21/10): chi ha cliccato vuole scrivere.
+$aperta = $respinta || !empty($_SESSION['domande_aperte']) || isset($_GET['chiedi']);
 unset($_SESSION['domande_aperte']);
 
 $stati = [

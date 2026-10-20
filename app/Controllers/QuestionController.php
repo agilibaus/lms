@@ -126,6 +126,11 @@ class QuestionController
             'cerca' => $cerca,
             // Il tutor vede gli autori per intero, come lo staff ovunque.
             'archivio' => $corso === null ? [] : self::archivio((int) $corso['id'], $cerca, $userId, !$studente),
+            // Quante sono senza la ricerca: sotto le cinque (`_archivio.php`)
+            // il campo non compare (21/10).
+            'totale' => $corso === null ? 0 : count(QuestionModel::published((int) $corso['id'])),
+            // Solo lo studente chiede: al tutor il rimando non serve.
+            'puoChiedere' => $studente,
         ]);
     }
 

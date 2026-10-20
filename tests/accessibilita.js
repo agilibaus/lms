@@ -2410,8 +2410,10 @@ async function giroBenvenuto(browser) {
             forma.collegamento === '/domande-e-risposte?corso=' + corso, [JSON.stringify(forma)]);
 
         // La pagina «Domande e risposte» (09/10): voce del menu prima di
-        // «Certificati»; l'archivio alle misure dei moduli, con la ricerca in
-        // fondo; si misura com'e', e aperta da una ricerca.
+        // «Certificati»; l'archivio alle misure dei moduli. La ricerca, dal
+        // 21/10, sta in cima e solo da cinque domande in su (o se si sta
+        // cercando); in fondo «Non hai trovato quello che cercavi?». Si
+        // misura com'e', e aperta da una ricerca.
         await page.goto(BASE + '/domande-e-risposte?corso=' + corso);
         const pagina = await page.evaluate(() => {
             const voci = [...document.querySelectorAll('.sidebar-nav a.nav-link')].map((a) => a.textContent.trim());
@@ -2421,20 +2423,41 @@ async function giroBenvenuto(browser) {
                 // Dal 17/10 nel ramo del corso, sotto «I miei corsi».
                 nelRamo: document.querySelector('.nav-corso a.nav-link-active') !== null,
                 attiva: (document.querySelector('.nav-link-active') || {}).textContent,
-                cercaInFondo: archivio !== null && archivio.lastElementChild.matches('form.qa-cerca'),
+                // La ricerca, se c'e', prima del primo modulo; in fondo il rimando.
+                cercaInCima: (() => {
+                    const form = document.querySelector('.qa-archivio form.qa-cerca');
+                    const modulo = document.querySelector('.qa-archivio .qa-modulo');
+                    return form === null || modulo === null
+                        || (form.compareDocumentPosition(modulo) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+                })(),
+                rimandoInFondo: archivio !== null && archivio.lastElementChild.matches('p.qa-non-trovato'),
                 domanda: domanda ? getComputedStyle(domanda).fontSize : null,
                 testo: getComputedStyle(document.documentElement).fontSize,
             };
         });
         check('nel menu «L\'esperto risponde», nel ramo del corso, ed evidenziata',
             pagina.nelRamo && (pagina.attiva || '').trim() === 'L\'esperto risponde', [JSON.stringify(pagina)]);
-        check('l\'archivio con la ricerca in fondo, e le domande alla misura delle lezioni (0,9 rem)',
-            pagina.cercaInFondo && pagina.domanda !== null
+        check('l\'archivio con la ricerca in cima, «Non hai trovato…?» in fondo, e le domande alla misura delle lezioni (0,9 rem)',
+            pagina.cercaInCima && pagina.rimandoInFondo && pagina.domanda !== null
                 && Math.abs(parseFloat(pagina.domanda) - 0.9 * parseFloat(pagina.testo)) < 0.5,
             [JSON.stringify(pagina)]);
         await esamina(page, '/domande-e-risposte', 'L\'esperto risponde (studente)', BERSAGLIO_MINIMO, daTelefono);
         await esamina(page, '/domande-e-risposte?corso=' + corso + '&cerca=Domanda', 'L\'esperto risponde dopo una ricerca (studente)',
             BERSAGLIO_MINIMO, daTelefono);
+        // Mentre si cerca il campo resta, anche con poche domande: serve a
+        // cambiare la ricerca e a tornare a «Mostra tutte».
+        await page.goto(BASE + '/domande-e-risposte?corso=' + corso + '&cerca=Domanda');
+        const cercando = await page.evaluate(() => {
+            const form = document.querySelector('.qa-archivio form.qa-cerca');
+            const modulo = document.querySelector('.qa-archivio .qa-modulo');
+            return {
+                campo: form !== null,
+                inCima: form !== null && (modulo === null || (form.compareDocumentPosition(modulo) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0),
+                mostraTutte: document.querySelector('.qa-cerca a.link-btn') !== null,
+            };
+        });
+        check('cercando, il campo c\'è, in cima, con «Mostra tutte»',
+            cercando.campo && cercando.inCima && cercando.mostraTutte, [JSON.stringify(cercando)]);
 
         // La Bacheca (17/10), come la vede lo studente: i riquadri, una
         // categoria con il racconto nascosto e il modulo del racconto, le sue

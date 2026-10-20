@@ -11,6 +11,8 @@ declare(strict_types=1);
  * @var array<string, mixed>|null $corso
  * @var list<array<string, mixed>> $archivio
  * @var string $cerca
+ * @var int $totale
+ * @var bool $puoChiedere
  */
 ?>
 <div class="page-header">
@@ -30,6 +32,7 @@ declare(strict_types=1);
         <?php
         $indirizzo = '/domande-e-risposte';
         $campiNascosti = ['corso' => (string) (int) $corso['id']];
+        $chiedi = $puoChiedere ? '/courses/' . (int) $corso['id'] . '?chiedi=1#domande' : null;
         require __DIR__ . '/_archivio.php';
         ?>
     </section>
