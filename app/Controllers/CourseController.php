@@ -15,6 +15,7 @@ use App\Core\CourseCover;
 use App\Core\Obiettivo;
 use App\Core\Percorso;
 use App\Core\TestoBreve;
+use App\Core\TreParole;
 use App\Core\Upload;
 use App\Core\View;
 use App\Models\CertificateModel;
@@ -27,6 +28,7 @@ use App\Models\LessonProgressModel;
 use App\Models\ModuleModel;
 use App\Models\QuizAttemptModel;
 use App\Models\QuizModel;
+use App\Models\TreParoleModel;
 
 class CourseController
 {
@@ -222,17 +224,20 @@ class CourseController
                 : GroupModel::delloStudenteNelCorso($userId, $courseId);
         }
 
+        $statiModuli = $isStudent
+            ? Percorso::stati($modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)
+            : null;
+
         View::render('courses/show', [
             'pageTitle' => $course['title'],
             'welcome' => $welcome,
+            'treParole' => $isStudent ? self::treParole($course, $modules, $statiModuli, $userId) : null,
             'tuoGruppo' => $tuoGruppo,
             'obiettivoCorso' => $obiettivoCorso,
             'tuttiCompleti' => !$isStudent,
             // La gerarchia dei moduli (11/10): lo stato di ciascuno per lo
             // studente; per lo staff null, cioe' tutto aperto.
-            'statiModuli' => $isStudent
-                ? Percorso::stati($modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)
-                : null,
+            'statiModuli' => $statiModuli,
             'tuttiModuli' => ($_GET['moduli'] ?? '') === Percorso::TUTTI,
             'moduloInCorso' => $isStudent
                 ? Obiettivo::moduloInCorso($modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)
@@ -254,6 +259,44 @@ class CourseController
             'certificate' => $isStudent ? CertificateModel::findForUserAndCourse($userId, $courseId) : null,
             'eligibility' => $isStudent ? CertificateService::eligibility($userId, $courseId) : null,
         ]);
+    }
+
+    /**
+     * «Tre parole» (21/10) per lo studente: il modulo di cui chiederle (il
+     * completato piu' di recente fra quelli a cui non ha ancora risposto,
+     * se il corso le chiede e il modulo e' finito da quando le chiede), le
+     * parole gia' scritte per modulo, e l'esito dell'ultimo invio.
+     *
+     * @param list<array<string, mixed>> $modules
+     * @param array<int, string>|null    $stati   da `Percorso::stati`
+     * @return array{chiedi: ?array, mie: array<int, array>, esito: ?array}
+     */
+    private static function treParole(array $course, array $modules, ?array $stati, int $userId): array
+    {
+        $esito = $_SESSION['tre_parole'] ?? null;
+        unset($_SESSION['tre_parole']);
+        $chiesteDal = $course['three_words_since'] ?? null;
+        $mie = TreParoleModel::delloStudente($userId, (int) $course['id']);
+        $chiedi = null;
+
+        if ($chiesteDal !== null && $stati !== null) {
+            $completati = array_keys(array_filter($stati, static fn (string $s): bool => $s === Percorso::COMPLETATO));
+            $date = TreParoleModel::completatiIl($userId, $completati);
+            $ultima = '';
+
+            foreach ($modules as $m) {
+                $id = (int) $m['id'];
+                $il = $date[$id] ?? null;
+
+                if (!isset($mie[$id]) && in_array($id, $completati, true)
+                    && TreParole::daChiedere($il, (string) $chiesteDal) && (string) $il >= $ultima) {
+                    $chiedi = $m;
+                    $ultima = (string) $il;
+                }
+            }
+        }
+
+        return ['chiedi' => $chiedi, 'mie' => $mie, 'esito' => is_array($esito) ? $esito : null];
     }
 
     /**

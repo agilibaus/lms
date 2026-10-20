@@ -14,6 +14,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Models\BoardModel;
 use App\Models\CourseModel;
+use App\Models\TreParoleModel;
 use App\Models\EnrollmentModel;
 use App\Models\EnrollmentRequestModel;
 use App\Models\TutorWelcomeModel;
@@ -97,6 +98,8 @@ class CourseController extends AdminController
             $data['objective']
         );
 
+        TreParoleModel::imposta($courseId, $data['three_words']);
+
         $this->success('Corso creato.', '/admin/courses/' . $courseId . '/edit');
     }
 
@@ -169,6 +172,8 @@ class CourseController extends AdminController
             $data['enrollment_mode'],
             $data['objective']
         );
+
+        TreParoleModel::imposta($id, $data['three_words']);
 
         $this->success('Corso aggiornato.', $redirect);
     }
@@ -461,6 +466,7 @@ class CourseController extends AdminController
             'description' => $description === '' ? null : $description,
             'is_published' => isset($_POST['is_published']),
             'enrollment_mode' => in_array($mode, ['open', 'request', 'closed'], true) ? $mode : 'closed',
+            'three_words' => isset($_POST['three_words']),
         ];
     }
 

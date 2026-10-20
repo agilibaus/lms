@@ -77,7 +77,54 @@ class LiveSessionController
             'participants' => $canManage ? LiveSessionModel::participants((int) $session['id']) : [],
             'attendance' => $canManage ? LiveSessionAttendanceModel::forSession((int) $session['id']) : [],
             'hasJoined' => LiveSessionAttendanceModel::hasJoined((int) $session['id'], (int) Auth::id()),
+            'treParole' => self::treParole($session),
         ]);
+    }
+
+    /**
+     * «Le tre parole di …» (21/10): dall'incontro di un modulo alle parole
+     * scritte alla fine di quel modulo, per prepararlo. Per l'admin e per il
+     * tutor di un gruppo del corso, quando il corso le chiede; l'indirizzo
+     * porta gia' il gruppo dell'incontro, se ne ha uno.
+     *
+     * @return array{titolo: string, url: string}|null
+     */
+    private static function treParole(array $session): ?array
+    {
+        if (empty($session['module_id']) || empty($session['course_id'])) {
+            return null;
+        }
+
+        $courseId = (int) $session['course_id'];
+        $corso = CourseModel::find($courseId);
+
+        if ($corso === null || empty($corso['three_words_since'])) {
+            return null;
+        }
+
+        $suoi = Auth::hasRole('admin')
+            || (Auth::hasRole('tutor') && array_intersect(
+                GroupModel::courseGroupIds($courseId),
+                array_map(static fn (array $g): int => (int) $g['id'], GroupModel::forTutor((int) Auth::id()))
+            ) !== []);
+
+        if (!$suoi) {
+            return null;
+        }
+
+        $numero = array_search((int) $session['module_id'], array_map(static fn (array $m): int => (int) $m['id'], ModuleModel::forCourse($courseId)), true);
+
+        if ($numero === false) {
+            return null;
+        }
+
+        $q = ['corso' => $courseId, 'modulo' => $numero + 1];
+
+        if (!empty($session['group_id'])) {
+            $q['gruppo'] = (int) $session['group_id'];
+        }
+
+        return ['titolo' => (string) $session['module_title'], 'url' => '/tre-parole?' . http_build_query($q)];
     }
 
     public function createForm(array $params = []): void

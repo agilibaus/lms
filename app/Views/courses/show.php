@@ -22,6 +22,7 @@ use App\Core\TestoBreve;
 /** @var array|null $certificate */
 /** @var array|null $eligibility */
 /** @var string|null $obiettivoCorso «completo», «ridotto», o null senza obiettivo */
+/** @var array{chiedi: ?array, mie: array<int, array>, esito: ?array}|null $treParole solo per lo studente */
 /** @var bool $tuttiCompleti lo staff vede gli obiettivi sempre completi */
 /** @var int|null $moduloInCorso */
 /** @var array<int, string>|null $statiModuli lo stato di ogni modulo per lo studente; null per lo staff */
@@ -118,6 +119,11 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
         Per ottenere il certificato: lezioni <?= (int) $eligibility['lessons_done'] ?>/<?= (int) $eligibility['lessons_total'] ?>,
         questionari superati <?= (int) $eligibility['quizzes_passed'] ?>/<?= (int) $eligibility['quizzes_total'] ?>.
     </p>
+<?php endif; ?>
+
+<?php /* «Tre parole» alla fine di un modulo (21/10): solo per lo studente. */ ?>
+<?php if (!empty($treParole)): ?>
+    <?php require __DIR__ . '/_tre_parole.php'; ?>
 <?php endif; ?>
 
 <?php if ($isStaff): ?>
@@ -272,6 +278,16 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                             <?= $bloccoObiettivo ?>
                         </details>
                     <?php endif; ?>
+                <?php endif; ?>
+
+                <?php /* Le tre parole gia' scritte per questo modulo (21/10), da
+                         rileggere: non si cambiano. */ ?>
+                <?php $parole = $treParole['mie'][$moduleId] ?? null; ?>
+                <?php if ($parole !== null): ?>
+                    <p class="tre-parole-mie">
+                        Le tue tre parole:
+                        <span><?= htmlspecialchars($parole['word1']) ?> · <?= htmlspecialchars($parole['word2']) ?> · <?= htmlspecialchars($parole['word3']) ?></span>
+                    </p>
                 <?php endif; ?>
 
                 <?php /* Dove riprendere, nel modulo in corso (13/10, Alessandro,

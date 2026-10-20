@@ -11,6 +11,7 @@ use App\Core\Icona;
 /** @var array $participants */
 /** @var array<int, array{joined_at: string|null, source: string}> $attendance */
 /** @var bool $hasJoined */
+/** @var array{titolo: string, url: string}|null $treParole */
 
 $id = (int) $session['id'];
 $startsAt = new DateTimeImmutable((string) $session['starts_at']);
@@ -105,6 +106,14 @@ $apribile = (bool) ($session['joinable'] ?? false);
         <?php endif; ?>
     <?php endif; ?>
 </section>
+
+<?php /* Per preparare l'incontro (21/10): le parole scritte alla fine del
+         suo modulo. Un collegamento a un'altra pagina, senza icona. */ ?>
+<?php if ($treParole !== null): ?>
+    <p class="tp-dall-incontro">
+        <a href="<?= htmlspecialchars($treParole['url']) ?>">Le tre parole di «<?= htmlspecialchars($treParole['titolo']) ?>»</a>
+    </p>
+<?php endif; ?>
 
 <?php if ($canManage && !empty($session['meet_link']) && !$isPast): ?>
     <section class="card">

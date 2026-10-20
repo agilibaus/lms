@@ -38,6 +38,17 @@ use App\Core\TestoBreve;
     Pubblicato (una bozza resta visibile solo allo staff)
 </label>
 
+<?php /* «Tre parole» (21/10): spenta di partenza. Accesa, si chiedono per
+         i moduli completati da quel momento in poi (`App\Core\TreParole`). */ ?>
+<label class="checkbox-label">
+    <input type="checkbox" name="three_words" value="1" aria-describedby="three-words-hint" <?= !empty($course['three_words_since']) ? 'checked' : '' ?>>
+    Chiedi tre parole alla fine di ogni modulo
+</label>
+<p class="form-hint" id="three-words-hint">
+    Lo studente scrive le prime tre parole che gli vengono; le leggono il tutor del gruppo e l'amministrazione,
+    in «Tre parole». Si chiedono per i moduli completati da quando è attiva.
+</p>
+
 <label for="enrollment_mode">Come ci si iscrive</label>
 <?php $mode = $course['enrollment_mode'] ?? 'closed'; ?>
 <select id="enrollment_mode" name="enrollment_mode">

@@ -208,6 +208,9 @@ CREATE TABLE courses (
     -- Ordine deciso da chi amministra: vale nell'elenco dei corsi, in Gestione
     -- corsi e nel catalogo degli studenti.
     position        SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    -- Da quando il corso chiede le tre parole alla fine di ogni modulo
+    -- (2026_10_21_tre_parole.sql). NULL = non le chiede.
+    three_words_since DATETIME NULL DEFAULT NULL,
     created_by      INT UNSIGNED NOT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -680,6 +683,27 @@ CREATE TABLE board_uses (
     FOREIGN KEY (resource_id) REFERENCES board_resources(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (hidden_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- «Tre parole» alla fine di un modulo (2026_10_21): una riga per studente e
+-- modulo, non modificabile; il gruppo decide quale tutor le legge. Le regole
+-- in App\Core\TreParole.
+CREATE TABLE module_words (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id         INT UNSIGNED NOT NULL,
+    module_id       INT UNSIGNED NOT NULL,
+    course_id       INT UNSIGNED NOT NULL,
+    group_id        INT UNSIGNED NULL,
+    word1           VARCHAR(30) NOT NULL,
+    word2           VARCHAR(30) NOT NULL,
+    word3           VARCHAR(30) NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_user_module (user_id, module_id),
+    KEY idx_module_group (module_id, group_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

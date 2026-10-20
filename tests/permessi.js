@@ -205,6 +205,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/fermi/csv', 'negato', 'né scaricandolo'],
             ['/reports/courses/' + A.corso + '/griglia', 'negato', 'né la griglia del suo corso'],
             ['/reports/courses/' + A.corso + '/griglia/csv', 'negato', 'né scaricandola'],
+            ['/tre-parole?corso=' + A.corso, 'negato', 'le tre parole le leggono il tutor e l\'amministrazione'],
             // Gli elenchi sono pagine nuove, con un indirizzo diverso da
             // quello dell'indice: una porta nuova va provata, non dedotta
             // dal fatto che quella accanto è chiusa.
@@ -312,6 +313,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/courses/' + A.corso + '/griglia', 'consentito', 'la griglia del suo corso'],
             ['/reports/courses/' + B.corso + '/griglia', 'negato', 'la griglia di un corso non suo'],
             ['/reports/courses/' + B.corso + '/griglia/csv', 'negato', 'nemmeno scaricandola'],
+            ['/tre-parole?corso=' + A.corso, 'consentito', 'le tre parole del corso dei suoi gruppi'],
+            ['/tre-parole?corso=' + B.corso, 'negato', 'non quelle di un corso non suo'],
             ['/lessons/' + B.lezione + '/edit', 'negato', 'lezione di un corso non suo'],
             ['/quizzes/' + B.quiz + '/edit', 'negato', 'quiz di un corso non suo'],
             ['/questions/' + B.domanda + '/edit', 'negato', 'domanda del quiz di un collega'],
@@ -360,6 +363,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports/courses/' + B.corso, 'negato', 'corso di un tutor che non segue'],
             ['/reports/courses/' + A.corso + '/griglia', 'consentito', 'la griglia del corso del tutor che segue'],
             ['/reports/courses/' + B.corso + '/griglia', 'negato', 'la griglia di un corso di un tutor che non segue'],
+            ['/tre-parole?corso=' + A.corso, 'negato', 'le tre parole le leggono il tutor e l\'amministrazione, non l\'assistente'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
             ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente del tutor che segue'],
             // Gli incontri (17/10): l'assistente apre quelli del suo elenco,
@@ -401,6 +405,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + B.lezione + '/edit', 'consentito', 'l\'admin modifica tutto'],
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
             ['/reports/courses/' + B.corso + '/griglia', 'consentito', 'e nessuna sulla griglia'],
+            ['/tre-parole?corso=' + B.corso, 'consentito', 'le tre parole di ogni corso'],
             ['/attempts/' + B.tentativo, 'consentito', 'l\'admin vede i tentativi di tutti'],
             ['/live/' + B.incontro, 'consentito', 'l\'admin apre ogni incontro'],
             ['/lessons/' + B.lezione + '/fruizione', 'consentito', 'l\'admin vede la fruizione di ogni lezione'],
@@ -568,6 +573,76 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 await admin.ctx.close();
             } finally {
                 sql('DELETE FROM enrollments WHERE user_id = ? AND course_id = ?');
+            }
+        }
+
+        // --- «Tre parole»: chi le legge, e chi le scrive -------------------
+        //
+        // Il corso A le chiede da ieri. Nel suo modulo ci sono le parole
+        // dello studente A (gruppo A) e una terna con il gruppo B, come se
+        // nel corso ci fosse anche un gruppo di un collega. Il tutor A vede
+        // le prime e non la seconda, in tutte e due le viste; l'admin tutte.
+        // E nessuno scrive parole per un modulo che non ha completato.
+
+        console.log('\n--- «Tre parole»: chi le legge, e chi le scrive');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const sql = (q, ...valori) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";'
+                + ' App\\Core\\Database::connection()->prepare($argv[1])->execute(array_slice($argv, 2));',
+                '--', q, ...valori.map(String)], { cwd: radice, encoding: 'utf8' });
+            const parola = (u, g, p) => sql('INSERT INTO module_words (user_id, module_id, course_id, group_id, word1, word2, word3) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                u, A.modulo, A.corso, g, p, 'seconda', 'terza');
+
+            sql('UPDATE courses SET three_words_since = NOW() - INTERVAL 1 DAY WHERE id = ?', A.corso);
+            parola(d.utenti.studenteA, A.gruppo, 'paroladia');
+            parola(d.utenti.studenteB, B.gruppo, 'paroladib');
+
+            try {
+                const { ctx, page } = await entra(browser, 'tutor1@test.it');
+
+                for (const vista of ['', '&vista=nomi']) {
+                    const r = await page.goto(BASE + '/tre-parole?corso=' + A.corso + vista);
+                    const html = await page.content();
+                    const giusto = r.status() === 200 && html.includes('paroladia') && !html.includes('paroladib');
+                    check(
+                        'tutor del mondo A → «Tre parole»' + (vista ? ' con i nomi' : ' anonime') + ': le parole del suo gruppo, non quelle di un altro',
+                        giusto,
+                        giusto ? [] : ['stato ' + r.status() + ', A: ' + html.includes('paroladia') + ', B: ' + html.includes('paroladib')]
+                    );
+                }
+
+                // Il tutor non scrive parole: e' una cosa dello studente.
+                const t = await esitoPost(page, '/courses/' + A.corso + '/moduli/' + A.modulo + '/tre-parole',
+                    [['parole[0]', 'a'], ['parole[1]', 'b'], ['parole[2]', 'c']]);
+                check('tutor del mondo A → POST tre parole: negato', t.esito === 'negato', t.esito === 'negato' ? [] : ['ottenuto ' + t.esito]);
+                await ctx.close();
+
+                const admin = await entra(browser, 'admin@test.it');
+                await admin.page.goto(BASE + '/tre-parole?corso=' + A.corso);
+                const tutte = await admin.page.content();
+                check('controprova: l\'amministratore le vede tutte e due',
+                    tutte.includes('paroladia') && tutte.includes('paroladib'), []);
+                await admin.ctx.close();
+
+                // Lo studente A non ha completato il modulo (il suo tentativo
+                // al questionario e' fallito): niente parole, anche con un
+                // invio costruito a mano.
+                const studente = await entra(browser, 'strano@test.it');
+                const s = await esitoPost(studente.page, '/courses/' + A.corso + '/moduli/' + A.modulo + '/tre-parole',
+                    [['parole[0]', 'a'], ['parole[1]', 'b'], ['parole[2]', 'c']]);
+                check('studente del mondo B → POST tre parole in un corso non suo: negato', s.esito === 'negato', s.esito === 'negato' ? [] : ['ottenuto ' + s.esito]);
+                await studente.ctx.close();
+
+                const stud = await entra(browser, 'stud@test.it');
+                const m = await esitoPost(stud.page, '/courses/' + A.corso + '/moduli/' + A.modulo + '/tre-parole',
+                    [['parole[0]', 'a'], ['parole[1]', 'b'], ['parole[2]', 'c']]);
+                check('studente del mondo A → POST tre parole per un modulo non completato: negato', m.esito === 'negato', m.esito === 'negato' ? [] : ['ottenuto ' + m.esito]);
+                await stud.ctx.close();
+            } finally {
+                sql('DELETE FROM module_words WHERE course_id = ?', A.corso);
+                sql('UPDATE courses SET three_words_since = NULL WHERE id = ?', A.corso);
             }
         }
 

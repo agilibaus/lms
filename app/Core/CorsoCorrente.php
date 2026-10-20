@@ -61,7 +61,7 @@ final class CorsoCorrente
      * - «Il mio gruppo» (18/10): per lo studente iscritto, il suo gruppo in
      *   quel corso (`GroupModel::delloStudenteNelCorso`), se ne ha uno.
      *
-     * @return array{id: int, title: string, bacheca: bool, esperto: bool, gruppo: ?int, daValutare: int}|null
+     * @return array{id: int, title: string, bacheca: bool, esperto: bool, gruppo: ?int, treParole: bool, daValutare: int}|null
      */
     public static function ramo(int $courseId): ?array
     {
@@ -77,7 +77,13 @@ final class CorsoCorrente
         $esperto = $iscritto || (Auth::hasRole('tutor') && in_array($courseId, CourseRights::courseIdsFor($userId), true));
         $gruppo = $iscritto ? GroupModel::delloStudenteNelCorso($userId, $courseId) : null;
 
-        if (!$bacheca && !$esperto && $gruppo === null) {
+        // «Tre parole» (21/10): per l'admin e per il tutor di un gruppo del
+        // corso, quando il corso le chiede.
+        $treParole = !empty($corso['three_words_since'])
+            && (Auth::hasRole('admin') || (Auth::hasRole('tutor')
+                && array_intersect(GroupModel::courseGroupIds($courseId), array_map(static fn (array $g): int => (int) $g['id'], GroupModel::forTutor($userId))) !== []));
+
+        if (!$bacheca && !$esperto && $gruppo === null && !$treParole) {
             return null;
         }
 
@@ -89,6 +95,7 @@ final class CorsoCorrente
             'bacheca' => $bacheca,
             'esperto' => $esperto,
             'gruppo' => $gruppo,
+            'treParole' => $treParole,
             'daValutare' => $bacheca && $moderati !== [] ? count(BoardModel::inAttesa($courseId, $moderati)) : 0,
         ];
     }

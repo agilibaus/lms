@@ -297,4 +297,20 @@ class GroupModel
 
         return array_map('intval', array_column($stmt->fetchAll(), 'course_id'));
     }
+
+    /**
+     * Gli id dei gruppi a cui un corso e' assegnato (il contrario di
+     * `courseIds`).
+     *
+     * @return int[]
+     */
+    public static function courseGroupIds(int $courseId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT group_id FROM group_course_access WHERE course_id = :course_id'
+        );
+        $stmt->execute(['course_id' => $courseId]);
+
+        return array_map('intval', array_column($stmt->fetchAll(), 'group_id'));
+    }
 }

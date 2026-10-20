@@ -509,6 +509,8 @@ const PAGINE_INTERNE = [
     // regressioni sullo scorrimento orizzontale si nascondono.
     ['/reports/courses/1', 'Report per corso'],
     ['/reports/courses/1/griglia', 'Griglia del corso'],
+    ['/tre-parole?corso=1', 'Tre parole'],
+    ['/tre-parole?corso=1&vista=nomi', 'Tre parole con i nomi'],
     ['/reports/courses/1/griglia?modulo=1', 'Griglia del corso, modulo aperto'],
     ['/reports/students/2', 'Report per studente'],
     ['/reports/groups/1', 'Report per gruppo'],

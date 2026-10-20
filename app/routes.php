@@ -25,6 +25,7 @@ use App\Controllers\PasswordResetController;
 use App\Controllers\ProfileController;
 use App\Controllers\FirstAccessController;
 use App\Controllers\QuestionController;
+use App\Controllers\TreParoleController;
 use App\Controllers\WelcomeController;
 use App\Controllers\QuizController;
 use App\Controllers\RegistrationController;
@@ -243,6 +244,10 @@ $router->post('/benvenuti/{id}/ascoltato', [TutorWelcomeController::class, 'list
 
 // Le domande degli studenti al tutor e l'archivio delle risposte (07/10).
 $router->post('/courses/{id}/domande', [QuestionController::class, 'store']);
+// «Tre parole» alla fine di un modulo (21/10): l'invio dello studente e la
+// pagina del tutor e dell'admin.
+$router->post('/courses/{id}/moduli/{modulo}/tre-parole', [TreParoleController::class, 'invia']);
+$router->get('/tre-parole', [TreParoleController::class, 'pagina']);
 $router->get('/domande', [QuestionController::class, 'index']);
 // L'archivio delle domande e risposte, per lo studente (09/10).
 $router->get('/domande-e-risposte', [QuestionController::class, 'archive']);
