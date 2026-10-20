@@ -64,6 +64,9 @@ CREATE TABLE users (
     -- il resto sarebbe un registro di abitudini che nessuno ha chiesto.
     calendar_token_created_at DATETIME NULL DEFAULT NULL,
     calendar_token_used_at    DATETIME NULL DEFAULT NULL,
+    -- L'ultimo accesso alla piattaforma, scritto al piu' ogni cinque minuti
+    -- («Studenti fermi», 2026_10_20). Solo l'ultima volta, non ogni accesso.
+    last_seen_at    DATETIME NULL DEFAULT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -286,6 +289,7 @@ CREATE TABLE enrollments (
     completed_at    DATETIME NULL,
     progress_pct    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
     confirmation_pending TINYINT(1) NOT NULL DEFAULT 0,  -- «Iscrizione confermata» in coda per bin/avvisi (2026_10_12)
+    last_visit_at   DATETIME NULL DEFAULT NULL,  -- l'ultima visita al corso, al piu' ogni cinque minuti («Studenti fermi», 2026_10_20)
     UNIQUE KEY uq_user_course (user_id, course_id),
     INDEX idx_confirmation_pending (confirmation_pending),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

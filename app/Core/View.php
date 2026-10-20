@@ -25,6 +25,9 @@ class View
             // Il corso in cui ci si trova, per il suo ramo nella sidebar
             // (17/10): lo dicono i dati della pagina (`CorsoCorrente::da`).
             $corsoCorrente = CorsoCorrente::da($data);
+            // L'ultimo accesso e l'ultima visita al corso, per «Studenti
+            // fermi» (20/10): al piu' una scrittura ogni cinque minuti.
+            Presenza::segna($corsoCorrente);
             ob_start();
             require $viewFile;
             $content = ob_get_clean();

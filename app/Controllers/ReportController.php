@@ -9,6 +9,7 @@ use App\Auth\StudentScope;
 use App\Core\Csv;
 use App\Core\Ordinamento;
 use App\Core\ReportSections;
+use App\Core\StudentiFermi;
 use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\CourseModel;
@@ -17,6 +18,7 @@ use App\Models\LiveSessionAttendanceModel;
 use App\Models\LiveSessionModel;
 use App\Models\QuizAttemptModel;
 use App\Models\ReportModel;
+use App\Models\StudentiFermiModel;
 use App\Models\UserModel;
 use App\Models\VideoProgressModel;
 
@@ -52,6 +54,27 @@ class ReportController
             'pageTitle' => 'Report',
             'sezioni' => ReportSections::tutte(),
             'conteggi' => $sezioni,
+            'fermi' => count(StudentiFermiModel::elenco(StudentiFermi::SOGLIA_INIZIALE, $this->allowedStudentIds())),
+            'restricted' => $this->allowedStudentIds() !== null,
+        ]);
+    }
+
+    /**
+     * «Studenti fermi» (20/10): chi non avanza in un corso da 7, 14 o 30
+     * giorni, o non l'ha mai iniziato. Il perimetro e' quello degli altri
+     * report: l'admin tutti, il tutor gli studenti dei suoi gruppi,
+     * l'assistente quelli dei suoi tutor. Le regole in `StudentiFermi`.
+     */
+    public function fermi(array $params = []): void
+    {
+        $this->requireReportAccess();
+
+        $soglia = StudentiFermi::soglia($_GET['giorni'] ?? null);
+
+        View::render('reports/fermi', [
+            'pageTitle' => 'Studenti fermi',
+            'soglia' => $soglia,
+            'righe' => StudentiFermiModel::elenco($soglia, $this->allowedStudentIds()),
             'restricted' => $this->allowedStudentIds() !== null,
         ]);
     }

@@ -154,6 +154,8 @@ $router->get('/verify/{code}', [CertificateController::class, 'verify']);
 
 // --- Report -----------------------------------------------------------
 $router->get('/reports', [ReportController::class, 'index']);
+// «Studenti fermi» (20/10): chi non avanza da 7, 14 o 30 giorni.
+$router->get('/reports/fermi', [ReportController::class, 'fermi']);
 
 // L'elenco completo di un taglio. Sta PRIMA delle rotte con {id} perche' il
 // router prende la prima che combacia, e `/reports/courses` non deve finire

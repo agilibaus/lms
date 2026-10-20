@@ -201,6 +201,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/lessons/' + B.lezione, 'negato', 'lezione di un corso non suo'],
             ['/quizzes/' + B.quiz, 'negato', 'quiz di un corso non suo'],
             ['/reports', 'negato', 'gli studenti non hanno i report'],
+            ['/reports/fermi', 'negato', 'né l\'elenco degli studenti fermi'],
             // Gli elenchi sono pagine nuove, con un indirizzo diverso da
             // quello dell'indice: una porta nuova va provata, non dedotta
             // dal fatto che quella accanto è chiusa.
@@ -345,6 +346,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
         ['assist@test.it', 'assistente del tutor A', [
             ['/reports', 'consentito', 'vede i report, ristretti al suo perimetro'],
+            ['/reports/fermi', 'consentito', 'gli studenti fermi, ristretti al suo perimetro'],
             ['/reports/elenco/students', 'consentito',
                 'l\'elenco si apre: a restringerlo sono le righe, non la porta'],
             ['/reports/courses/' + A.corso, 'consentito', 'corso del tutor che segue'],
@@ -483,6 +485,53 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 loTrova ? [] : ['se non lo trovasse nemmeno lui, le due prove qui sopra non direbbero niente']
             );
             await admin.ctx.close();
+        }
+
+        // --- «Studenti fermi»: che cosa c'è dentro -------------------------
+        //
+        // Lo studente B viene iscritto per la durata della prova al corso
+        // del mondo A, con l'iscrizione di 40 giorni fa e nessuna attività:
+        // è fermo in un corso che l'assistente segue. Se la pagina guardasse
+        // il corso e non il perimetro degli studenti, comparirebbe.
+
+        console.log('\n--- «Studenti fermi»: che cosa c\'è dentro');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const sql = (q) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";'
+                + ' App\\Core\\Database::connection()->prepare($argv[1])->execute([(int) $argv[2], (int) $argv[3]]);',
+                '--', q, String(d.utenti.studenteB), String(A.corso)], { cwd: radice, encoding: 'utf8' });
+            const emailB = 'strano@test.it';
+
+            sql('INSERT IGNORE INTO enrollments (user_id, course_id, enrolled_at) VALUES (?, ?, NOW() - INTERVAL 40 DAY)');
+
+            try {
+                for (const email of ['assist@test.it', 'tutor1@test.it']) {
+                    const { ctx, page } = await entra(browser, email);
+                    const risposta = await page.goto(BASE + '/reports/fermi?giorni=30');
+                    const html = await page.content();
+                    const pulito = risposta.status() === 200 && !html.includes(emailB);
+                    check(
+                        email + ' → «Studenti fermi» non contiene lo studente del mondo B',
+                        pulito,
+                        pulito ? [] : ['stato ' + risposta.status() + (html.includes(emailB) ? ', «' + emailB + '» compare' : '')]
+                    );
+                    await ctx.close();
+                }
+
+                const admin = await entra(browser, 'admin@test.it');
+                await admin.page.goto(BASE + '/reports/fermi?giorni=30');
+                const loTrova = (await admin.page.content()).includes(emailB);
+                check(
+                    'controprova: l\'amministratore lo vede fra i fermi',
+                    loTrova,
+                    loTrova ? [] : ['se non lo vedesse nemmeno lui, le prove qui sopra non direbbero niente']
+                );
+                await admin.ctx.close();
+            } finally {
+                sql('DELETE FROM enrollments WHERE user_id = ? AND course_id = ?');
+            }
         }
 
         // --- l'elenco dei certificati: che cosa c'è dentro ----------------
@@ -2508,6 +2557,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             '/quizzes/' + A.quiz,
             '/reports',
             '/reports/elenco/students',
+            '/reports/fermi',
             '/agenda',
             '/admin/users',
             '/admin/permissions',

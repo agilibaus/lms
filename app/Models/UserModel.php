@@ -36,7 +36,7 @@ class UserModel
     {
         $stmt = Database::connection()->prepare(
             'SELECT id, email, contact_email, first_name, last_name, name_display, full_name, role, is_active, email_verified_at,
-                    bio, phone, city, avatar_path, created_at
+                    bio, phone, city, avatar_path, created_at, last_seen_at
              FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);

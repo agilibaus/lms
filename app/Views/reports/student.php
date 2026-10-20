@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Auth\Auth;
+use App\Core\StudentiFermi;
 use App\Controllers\ReportController;
 use App\Core\Ordinamento;
 use App\Core\Icona;
@@ -48,6 +49,18 @@ $liveSessions = $ordineIncontri->applica(array_map(
     <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1><?= htmlspecialchars((string) $student['full_name']) ?></h1>
     <p class="page-subtitle"><?= htmlspecialchars((string) $student['email']) ?> · <?= htmlspecialchars(Auth::roleLabel((string) $student['role'])) ?></p>
+    <?php /* L'ultimo accesso alla piattaforma (20/10, «Studenti fermi»):
+             vuoto finche' lo studente non torna dopo la migrazione. */ ?>
+    <p class="page-subtitle">
+        Ultimo accesso:
+        <?php if (empty($student['last_seen_at'])): ?>
+            non ancora registrato
+        <?php else: ?>
+            <?php $giorniAccesso = StudentiFermi::giorni((string) $student['last_seen_at'], new DateTimeImmutable('now')); ?>
+            <?= htmlspecialchars(StudentiFermi::quando($giorniAccesso)) ?>
+            (<?= htmlspecialchars(date('d/m/Y H:i', (int) strtotime((string) $student['last_seen_at']))) ?>)
+        <?php endif; ?>
+    </p>
     <?php if ($liveAttendance['total'] > 0): ?>
         <p class="page-subtitle">
             Sessioni live seguite: <?= (int) $liveAttendance['attended'] ?>/<?= (int) $liveAttendance['total'] ?>

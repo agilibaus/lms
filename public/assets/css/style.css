@@ -3253,6 +3253,15 @@ body.has-focus-video {
     color: var(--color-danger);
 }
 
+/* «entra ma non avanza» in «Studenti fermi» (20/10): fra il grigio di «non
+   ha mai iniziato» e il rosso di «non entra piu'». Gli stessi toni degli
+   avvisi gialli, con il testo un po' piu' scuro per stare sopra 4,5:1 anche
+   alla misura piccola delle etichette. */
+.badge-attenzione {
+    background: #fdf6e3;
+    color: #6f5410;
+}
+
 /* ---------- Verifica pubblica certificato ---------- */
 
 .centered-page {
@@ -4334,6 +4343,13 @@ fieldset.checkbox-group legend {
 /* «Si entra da 15 minuti prima» nei riquadri delle Sessioni live (20/10,
    variante C2): sotto il titolo, perche' descrive la sessione; a destra
    restano solo i comandi. */
+/* Nelle schede del telefono le etichette di stato restano della loro
+   misura, non larghe quanto la riga (20/10, «Studenti fermi»). */
+.fermi .badge {
+    justify-self: start;
+    width: fit-content;
+}
+
 .agenda-attesa {
     /* La misura delle altre righe del riquadro (20/10, Alessandro): a 0,85
        rem, appena piu' piccola del corso sopra, la differenza si notava

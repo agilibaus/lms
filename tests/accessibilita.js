@@ -482,6 +482,8 @@ const PAGINE_INTERNE = [
     ['/agenda', 'Agenda'],
     ['/agenda?vista=mese', 'Agenda del mese'],
     ['/reports', 'Report'],
+    ['/reports/fermi', 'Studenti fermi'],
+    ['/reports/fermi?giorni=7', 'Studenti fermi a 7 giorni'],
     // Gli elenchi dei report, dal 04/10 pagine a sé. Due su cinque: quello
     // degli studenti è il più lungo (è lui che ha la paginazione) e quello
     // della fruizione ha le intestazioni più larghe, cioè i due casi in cui
