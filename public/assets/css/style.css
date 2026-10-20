@@ -4360,10 +4360,6 @@ fieldset.checkbox-group legend {
     overflow-wrap: normal;
 }
 
-.fermi .group-name {
-    white-space: nowrap;
-}
-
 .fermi-legenda {
     display: flex;
     flex-direction: column;

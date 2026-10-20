@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Core\GroupLogo;
 use App\Core\Icona;
 use App\Core\Ordinamento;
 use App\Core\StudentiFermi;
@@ -32,17 +31,6 @@ $conOrdine = static function (array $q) use ($ordine): string {
     }
 
     return http_build_query($q);
-};
-
-/** Il gruppo con il suo simbolo davanti, come negli elenchi dei Report. */
-$gruppo = static function (array $g) use ($esc): string {
-    $logo = GroupLogo::url($g);
-    $simbolo = $logo !== null
-        ? '<img src="' . $esc($logo) . '" alt="" class="group-logo" loading="lazy">'
-        : '<span class="group-logo group-logo-placeholder" aria-hidden="true" style="--logo-hue: '
-            . GroupLogo::hue((int) $g['id']) . ';">' . $esc(GroupLogo::initials((string) $g['name'])) . '</span>';
-
-    return '<span class="group-name">' . $simbolo . $esc((string) $g['name']) . '</span>';
 };
 
 /**
@@ -122,11 +110,10 @@ $legenda = [
                             <td role="cell" data-label="Studente"><?= $esc((string) $r['full_name']) ?></td>
                             <td role="cell" data-label="Corso"><?= $esc((string) $r['course_title']) ?></td>
                             <td role="cell" data-label="Gruppo">
-                                <?php if ($r['gruppi'] === []): ?>
-                                    <span class="valore-assente">—</span>
-                                <?php else: ?>
-                                    <?= implode('<br>', array_map($gruppo, $r['gruppi'])) ?>
-                                <?php endif; ?>
+                                <?php /* Solo il nome, senza simbolo (21/10, Alessandro):
+                                         in una tabella di dati occuperebbe spazio senza
+                                         dire niente in piu'. */ ?>
+                                <?= $r['gruppi'] === [] ? '<span class="valore-assente">—</span>' : $esc(implode(', ', $r['gruppi'])) ?>
                             </td>
                             <td role="cell" data-label="Iscritto da"><?= (int) $r['iscritto_giorni'] ?> <?= (int) $r['iscritto_giorni'] === 1 ? 'giorno' : 'giorni' ?></td>
                             <td role="cell" data-label="Ultima attività">
