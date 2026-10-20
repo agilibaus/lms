@@ -62,21 +62,25 @@ $voce = static function (array $e) use ($esc, $adesso): string {
         $html .= '<span class="badge badge-success">in corso</span>';
     }
 
-    if ($apribile) {
-        $html .= '<a class="btn btn-primary btn-con-icona" href="/live/' . (int) $e['id'] . '/join">' . Icona::svg('camera-video') . 'Entra</a>';
-    }
-
     // Non per un incontro gia' finito: mettere in agenda un appuntamento
     // passato non serve a niente. La condizione e' la stessa con cui
     // `Agenda::raggruppa()` manda una voce nello Storico — la fine se c'e',
     // altrimenti l'inizio — cosi' il collegamento sparisce esattamente
     // quando la voce scende li' sotto.
-    if ($incontro && $adesso <= $fine) {
+    // E nemmeno a incontro cominciato (20/10, Alessandro): a quel punto si
+    // entra, non si mette in calendario.
+    if ($incontro && $adesso <= $fine && !$inCorso) {
         // «Aggiungi al calendario» e non «Al calendario»: in una riga di
         // comandi un'etichetta senza verbo non dice cosa succede a
         // cliccarla. Non «in agenda», che qui e' il nome della pagina:
         // il calendario di destinazione e' quello di chi legge.
         $html .= '<a href="/agenda/evento/' . (int) $e['id'] . '.ics">Aggiungi al calendario</a>';
+    }
+
+    // «Entra» per ultimo, appoggiato al margine destro; «Aggiungi al
+    // calendario» alla sua sinistra (20/10, Alessandro).
+    if ($apribile) {
+        $html .= '<a class="btn btn-primary btn-con-icona" href="/live/' . (int) $e['id'] . '/join">' . Icona::svg('camera-video') . 'Entra</a>';
     }
 
     return $html . '</span></li>';

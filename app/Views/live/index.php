@@ -43,6 +43,10 @@ $sessions = $ordine->applica($sessions);
 
 <?php if ($sessions === []): ?>
     <p class="empty-state">Nessuna sessione in programma.</p>
+<?php elseif (!$canManage): ?>
+    <?php /* Chi partecipa vede i riquadri dell'Agenda (20/10); la tabella
+             e' per chi organizza. */ ?>
+    <?php require __DIR__ . '/_elenco.php'; ?>
 <?php else: ?>
     <?php /* Sei colonne: sotto i 50 rem di spazio diventa un elenco di
              schede (vedi `.tabella-schede`). */ ?>

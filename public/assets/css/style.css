@@ -4333,6 +4333,14 @@ fieldset.checkbox-group legend {
     color: #5A554F;
 }
 
+/* «Si entra da 15 minuti prima» nei riquadri delle Sessioni live (20/10,
+   variante C2): sotto il titolo, perche' descrive la sessione; a destra
+   restano solo i comandi. */
+.agenda-attesa {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
 .agenda-azioni {
     display: flex;
     flex-wrap: wrap;
