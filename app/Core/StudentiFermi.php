@@ -79,17 +79,31 @@ final class StudentiFermi
         };
     }
 
-    /** Che cosa ha fatto per ultimo, in una frase. */
+    /** Dove si ordina lo stato: dal meno grave al piu' grave. */
+    public static function ordineStato(string $stato): int
+    {
+        return match ($stato) {
+            self::MAI => 0,
+            self::ENTRA => 1,
+            default => 2,
+        };
+    }
+
+    /**
+     * Che cosa ha fatto per ultimo, senza verbo (21/10, Alessandro): «video
+     * «Benvenuto»», non «ha guardato il video…». La colonna si legge di
+     * corsa, e il tipo di attivita' basta a dire che cosa e' successo.
+     */
     public static function descrivi(string $tipo, string $titolo): string
     {
         return match ($tipo) {
-            'lezione' => 'ha completato la lezione «' . $titolo . '»',
-            'video' => 'ha guardato il video «' . $titolo . '»',
-            'questionario' => 'ha fatto il questionario «' . $titolo . '»',
-            'incontro' => 'era all\'incontro «' . $titolo . '»',
-            'domanda' => 'ha fatto una domanda all\'esperto',
-            'risorsa' => 'ha condiviso una risorsa in Bacheca',
-            'racconto' => 'ha raccontato come ha usato una risorsa della Bacheca',
+            'lezione' => 'lezione «' . $titolo . '»',
+            'video' => 'video «' . $titolo . '»',
+            'questionario' => 'questionario «' . $titolo . '»',
+            'incontro' => 'incontro «' . $titolo . '»',
+            'domanda' => 'domanda all\'esperto',
+            'risorsa' => 'risorsa in Bacheca «' . $titolo . '»',
+            'racconto' => 'racconto in Bacheca «' . $titolo . '»',
             default => $titolo,
         };
     }

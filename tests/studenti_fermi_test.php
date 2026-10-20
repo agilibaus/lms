@@ -94,9 +94,11 @@ check('le tre etichette', StudentiFermi::etichettaStato(StudentiFermi::MAI) === 
 echo PHP_EOL . 'Le frasi' . PHP_EOL;
 
 check('oggi, ieri, da N giorni', StudentiFermi::quando(0) === 'oggi' && StudentiFermi::quando(1) === 'ieri' && StudentiFermi::quando(12) === 'da 12 giorni');
-check('la lezione ha il titolo', StudentiFermi::descrivi('lezione', 'Il respiro') === 'ha completato la lezione «Il respiro»');
-check('l incontro ha il titolo', StudentiFermi::descrivi('incontro', 'Tappa 1') === 'era all\'incontro «Tappa 1»');
-check('la domanda non ha titolo', StudentiFermi::descrivi('domanda', 'qualunque') === 'ha fatto una domanda all\'esperto');
+check('la lezione, senza verbo', StudentiFermi::descrivi('lezione', 'Il respiro') === 'lezione «Il respiro»');
+check('l incontro, senza verbo', StudentiFermi::descrivi('incontro', 'Tappa 1') === 'incontro «Tappa 1»');
+check('la domanda non ha titolo', StudentiFermi::descrivi('domanda', 'qualunque') === 'domanda all\'esperto');
+check('lo stato si ordina mai, entra, esce', StudentiFermi::ordineStato(StudentiFermi::MAI) < StudentiFermi::ordineStato(StudentiFermi::ENTRA)
+    && StudentiFermi::ordineStato(StudentiFermi::ENTRA) < StudentiFermi::ordineStato(StudentiFermi::ESCE));
 foreach (['lezione', 'video', 'questionario', 'incontro', 'domanda', 'risorsa', 'racconto'] as $tipo) {
     check('il tipo «' . $tipo . '» ha una frase', StudentiFermi::descrivi($tipo, 'X') !== 'X');
 }

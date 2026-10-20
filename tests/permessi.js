@@ -202,6 +202,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/quizzes/' + B.quiz, 'negato', 'quiz di un corso non suo'],
             ['/reports', 'negato', 'gli studenti non hanno i report'],
             ['/reports/fermi', 'negato', 'né l\'elenco degli studenti fermi'],
+            ['/reports/fermi/csv', 'negato', 'né scaricandolo'],
             // Gli elenchi sono pagine nuove, con un indirizzo diverso da
             // quello dell'indice: una porta nuova va provata, non dedotta
             // dal fatto che quella accanto è chiusa.
@@ -347,6 +348,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         ['assist@test.it', 'assistente del tutor A', [
             ['/reports', 'consentito', 'vede i report, ristretti al suo perimetro'],
             ['/reports/fermi', 'consentito', 'gli studenti fermi, ristretti al suo perimetro'],
+            ['/reports/fermi/csv', 'consentito', 'e li scarica, con lo stesso perimetro'],
             ['/reports/elenco/students', 'consentito',
                 'l\'elenco si apre: a restringerlo sono le righe, non la porta'],
             ['/reports/courses/' + A.corso, 'consentito', 'corso del tutor che segue'],
@@ -517,14 +519,26 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                         pulito,
                         pulito ? [] : ['stato ' + risposta.status() + (html.includes(emailB) ? ', «' + emailB + '» compare' : '')]
                     );
+                    // Il file scaricato ha lo stesso perimetro della pagina.
+                    const csv = await page.evaluate(async () => (await (await fetch('/reports/fermi/csv?giorni=30', { credentials: 'same-origin' })).text()));
+                    // Prima si controlla che sia davvero il file: una pagina
+                    // d'errore non contiene l'email e passerebbe per pulita.
+                    const eIlFile = csv.includes('Studente;Email;Corso');
+                    const csvPulito = eIlFile && !csv.includes(emailB);
+                    check(
+                        email + ' → e nemmeno il CSV',
+                        csvPulito,
+                        csvPulito ? [] : [eIlFile ? '«' + emailB + '» compare nel file' : 'non è il CSV: ' + csv.slice(0, 60)]
+                    );
                     await ctx.close();
                 }
 
                 const admin = await entra(browser, 'admin@test.it');
                 await admin.page.goto(BASE + '/reports/fermi?giorni=30');
-                const loTrova = (await admin.page.content()).includes(emailB);
+                const csvAdmin = await admin.page.evaluate(async () => (await (await fetch('/reports/fermi/csv?giorni=30', { credentials: 'same-origin' })).text()));
+                const loTrova = (await admin.page.content()).includes(emailB) && csvAdmin.includes(emailB);
                 check(
-                    'controprova: l\'amministratore lo vede fra i fermi',
+                    'controprova: l\'amministratore lo vede fra i fermi, nella pagina e nel CSV',
                     loTrova,
                     loTrova ? [] : ['se non lo vedesse nemmeno lui, le prove qui sopra non direbbero niente']
                 );

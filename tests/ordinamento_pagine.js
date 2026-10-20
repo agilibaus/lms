@@ -74,12 +74,26 @@ function check(nome, condizione, dettagli = []) {
  * `accessibilita.js`: un'installazione senza quel corso non deve far
  * fallire tutto.
  */
+
+/*
+ * Colonne di parole che non si ordinano per alfabeto, e perche'. Sono poche
+ * e dichiarate: il controllo alfabetico resta acceso su tutte le altre.
+ *
+ * - «Stato» di «Studenti fermi» (21/10): si ordina per gravita', mai →
+ *   entra → esce (`StudentiFermi::ordineStato`); in ordine alfabetico «non
+ *   entra piu'» verrebbe prima di «non ha mai iniziato», mischiando i casi.
+ */
+const NON_ALFABETICHE = {
+    'Studenti fermi': ['Stato'],
+};
+
 const PAGINE = [
     ['/admin/users', 'Utenti'],
     ['/admin/courses', 'Gestione corsi'],
     ['/admin/groups', 'Gruppi'],
     ['/certificates', 'Certificati'],
     ['/live', 'Sessioni live'],
+    ['/reports/fermi?giorni=7', 'Studenti fermi'],
     ['/reports/elenco/courses', 'Elenco per corso'],
     ['/reports/elenco/groups', 'Elenco per gruppo'],
     ['/reports/elenco/students', 'Elenco per studente'],
@@ -257,6 +271,7 @@ const dichiarate = (page) => page.evaluate(() =>
                  */
                 const valori = await valoriDellaColonna(page);
                 const testuale = valori !== null
+                    && !(NON_ALFABETICHE[nome] || []).includes(etichetta)
                     && valori.length > 1
                     // Solo valori che cominciano per lettera: sulla
                     // punteggiatura iniziale l'ordine di `Collator` in PHP e

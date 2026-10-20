@@ -63,12 +63,20 @@ final class StudentiFermiModel
                 continue;
             }
 
+            $suoiGruppi = $gruppi[$chiave] ?? [];
+
+            // Oltre a quello che si mostra, i campi su cui si ordina
+            // (`Ordinamento`): il nome del gruppo come testo, lo stato come
+            // numero nell'ordine mai → entra → esce.
             $righe[] = $i + [
                 'giorni' => $v['giorni'],
                 'stato' => $v['stato'],
+                'stato_ordine' => StudentiFermi::ordineStato($v['stato']),
+                'iscritto_giorni' => StudentiFermi::giorni((string) $i['enrolled_at'], $adesso),
                 'ultima_at' => $ultima['at'] ?? null,
                 'ultima_cosa' => $ultima === null ? null : StudentiFermi::descrivi($ultima['tipo'], (string) $ultima['titolo']),
-                'gruppi' => $gruppi[$chiave] ?? [],
+                'gruppi' => $suoiGruppi,
+                'gruppo_nome' => implode(', ', array_column($suoiGruppi, 'name')),
                 'visita_giorni' => $i['last_visit_at'] === null ? null : StudentiFermi::giorni((string) $i['last_visit_at'], $adesso),
             ];
         }
@@ -132,11 +140,13 @@ final class StudentiFermiModel
      * I gruppi di ogni studente a cui il corso e' assegnato: chiave
      * «utente-corso».
      *
-     * @return array<string, list<string>>
+     * Le righe hanno quello che serve a `GroupLogo` (id, nome, logo).
+     *
+     * @return array<string, list<array{id: int, name: string, logo_path: ?string}>>
      */
     private static function gruppi(string $filtro): array
     {
-        $sql = 'SELECT gm.user_id, gca.course_id, g.name
+        $sql = 'SELECT gm.user_id, gca.course_id, g.id, g.name, g.logo_path
                   FROM group_members gm
                   JOIN group_course_access gca ON gca.group_id = gm.group_id
                   JOIN `groups` g ON g.id = gm.group_id
@@ -145,7 +155,11 @@ final class StudentiFermiModel
         $gruppi = [];
 
         foreach (Database::connection()->query($sql) as $r) {
-            $gruppi[(int) $r['user_id'] . '-' . (int) $r['course_id']][] = (string) $r['name'];
+            $gruppi[(int) $r['user_id'] . '-' . (int) $r['course_id']][] = [
+                'id' => (int) $r['id'],
+                'name' => (string) $r['name'],
+                'logo_path' => $r['logo_path'],
+            ];
         }
 
         return $gruppi;

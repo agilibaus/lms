@@ -3253,15 +3253,6 @@ body.has-focus-video {
     color: var(--color-danger);
 }
 
-/* «entra ma non avanza» in «Studenti fermi» (20/10): fra il grigio di «non
-   ha mai iniziato» e il rosso di «non entra piu'». Gli stessi toni degli
-   avvisi gialli, con il testo un po' piu' scuro per stare sopra 4,5:1 anche
-   alla misura piccola delle etichette. */
-.badge-attenzione {
-    background: #fdf6e3;
-    color: #6f5410;
-}
-
 /* ---------- Verifica pubblica certificato ---------- */
 
 .centered-page {
@@ -4343,11 +4334,62 @@ fieldset.checkbox-group legend {
 /* «Si entra da 15 minuti prima» nei riquadri delle Sessioni live (20/10,
    variante C2): sotto il titolo, perche' descrive la sessione; a destra
    restano solo i comandi. */
-/* Nelle schede del telefono le etichette di stato restano della loro
-   misura, non larghe quanto la riga (20/10, «Studenti fermi»). */
-.fermi .badge {
-    justify-self: start;
-    width: fit-content;
+/* ---------- «Studenti fermi» (21/10) ----------
+
+   Lo stato e' un pallino; che cosa vuol dire lo dice la legenda sotto la
+   tabella. I tre colori stanno sopra 3:1 sul bianco (1.4.11, elementi
+   grafici) e non si distinguono solo per tinta: grigio, ocra e rosso hanno
+   anche luminosita' diverse, cosi' restano separabili per chi non vede il
+   rosso. Il testo per i lettori di schermo e' nella cella. */
+.pallino {
+    display: inline-block;
+    flex: none;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.pallino-mai { background: #8a847d; }
+.pallino-entra { background: #b07a00; }
+.pallino-esce { background: #b91c1c; }
+
+/* Le parole vanno a capo fra una parola e l'altra, non a meta': con nove
+   colonne «Mindfulness» finiva spezzato in «Mindfulnes-s». */
+.fermi td {
+    overflow-wrap: normal;
+}
+
+.fermi .group-name {
+    white-space: nowrap;
+}
+
+.fermi-legenda {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 1.1rem 0 0;
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+}
+
+.fermi-legenda > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.35rem;
+}
+
+.fermi-legenda dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.fermi-legenda dd {
+    margin: 0;
 }
 
 .agenda-attesa {

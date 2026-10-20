@@ -70,13 +70,75 @@ class ReportController
         $this->requireReportAccess();
 
         $soglia = StudentiFermi::soglia($_GET['giorni'] ?? null);
+        $ordine = Ordinamento::daRichiesta(self::FERMI_ORDINABILI);
 
         View::render('reports/fermi', [
             'pageTitle' => 'Studenti fermi',
             'soglia' => $soglia,
-            'righe' => StudentiFermiModel::elenco($soglia, $this->allowedStudentIds()),
+            'ordine' => $ordine,
+            'righe' => $ordine->applica(StudentiFermiModel::elenco($soglia, $this->allowedStudentIds())),
             'restricted' => $this->allowedStudentIds() !== null,
         ]);
+    }
+
+    /**
+     * Le colonne di «Studenti fermi» che si ordinano: chiave dell'indirizzo
+     * => [campo, tipo, spareggio]. «Iscritto da» e «Ultima visita» si
+     * ordinano sui giorni che mostrano, «Ultima attivita'» sulla data vera,
+     * lo stato nell'ordine mai → entra → esce (`StudentiFermi::ordineStato`).
+     */
+    private const FERMI_ORDINABILI = [
+        'studente' => ['full_name', Ordinamento::TESTO, 'email'],
+        'corso' => ['course_title', Ordinamento::TESTO, 'full_name'],
+        'gruppo' => ['gruppo_nome', Ordinamento::TESTO, 'full_name'],
+        'iscritto' => ['iscritto_giorni', Ordinamento::NUMERO, 'full_name'],
+        'attivita' => ['ultima_at', Ordinamento::DATA, 'full_name'],
+        'visita' => ['visita_giorni', Ordinamento::NUMERO, 'full_name'],
+        'stato' => ['stato_ordine', Ordinamento::NUMERO, 'full_name'],
+        'avanzamento' => ['progress_pct', Ordinamento::NUMERO, 'full_name'],
+    ];
+
+    /**
+     * GET /reports/fermi/{formato} — la stessa tabella in XLSX o CSV (21/10,
+     * Alessandro), con la soglia e l'ordine scelti nella pagina. Le date
+     * sono intere, i giorni sono numeri: nel foglio si riordina e si filtra.
+     */
+    public function fermiDownload(array $params): void
+    {
+        $this->requireReportAccess();
+
+        $soglia = StudentiFermi::soglia($_GET['giorni'] ?? null);
+        $ordine = Ordinamento::daRichiesta(self::FERMI_ORDINABILI);
+        $formato = self::formato($params);
+        $xlsx = $formato === 'xlsx';
+        $righe = [];
+
+        foreach ($ordine->applica(StudentiFermiModel::elenco($soglia, $this->allowedStudentIds())) as $r) {
+            $righe[] = [
+                $r['full_name'],
+                $r['email'],
+                $r['course_title'],
+                $r['gruppo_nome'],
+                $r['enrolled_at'],
+                $r['iscritto_giorni'],
+                $r['ultima_at'] ?? '',
+                $r['ultima_cosa'] ?? '',
+                $r['giorni'],
+                $r['last_visit_at'] ?? '',
+                StudentiFermi::etichettaStato((string) $r['stato']),
+                self::decimale((float) $r['progress_pct'], $xlsx),
+            ];
+        }
+
+        $this->inviaReport(
+            $formato,
+            'studenti-fermi-' . $soglia . '-giorni-' . date('Y-m-d'),
+            ['Studente', 'Email', 'Corso', 'Gruppo', 'Iscritto il', 'Giorni dall\'iscrizione', 'Ultima attività il',
+                'Ultima attività', 'Giorni da fermo', 'Ultima visita al corso', 'Stato', 'Avanzamento %'],
+            $righe,
+            [4 => 'data', 5 => 'numero', 6 => 'data', 8 => 'numero', 9 => 'data', 11 => 'numero'],
+            'Studenti fermi'
+        );
     }
 
     /**
