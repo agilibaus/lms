@@ -48,7 +48,10 @@ $liveSessions = $ordineIncontri->applica(array_map(
 <div class="page-header">
     <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1><?= htmlspecialchars((string) $student['full_name']) ?></h1>
-    <p class="page-subtitle"><?= htmlspecialchars((string) $student['email']) ?> · <?= htmlspecialchars(Auth::roleLabel((string) $student['role'])) ?></p>
+    <?php /* Solo il ruolo sotto il nome (21/10, Alessandro): l'email sta
+             nell'elenco degli studenti e nei file scaricati, e per scrivere
+             c'e' «Scrivi» in «Studenti fermi». */ ?>
+    <p class="page-subtitle"><?= htmlspecialchars(Auth::roleLabel((string) $student['role'])) ?></p>
     <?php /* L'ultimo accesso alla piattaforma (20/10, «Studenti fermi»):
              vuoto finche' lo studente non torna dopo la migrazione. */ ?>
     <p class="page-subtitle">
