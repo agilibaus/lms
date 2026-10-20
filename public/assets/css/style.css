@@ -4337,7 +4337,10 @@ fieldset.checkbox-group legend {
    variante C2): sotto il titolo, perche' descrive la sessione; a destra
    restano solo i comandi. */
 .agenda-attesa {
-    font-size: 0.85rem;
+    /* La misura delle altre righe del riquadro (20/10, Alessandro): a 0,85
+       rem, appena piu' piccola del corso sopra, la differenza si notava
+       senza dire niente. */
+    font-size: 0.88rem;
     color: var(--color-text-muted);
 }
 
