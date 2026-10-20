@@ -4464,10 +4464,6 @@ fieldset.checkbox-group legend {
     color: var(--color-text-muted);
 }
 
-.tp-dall-incontro {
-    margin: 0 0 1rem;
-}
-
 /* ---------- «Griglia del corso» (21/10) ----------
 
    Una riga per studente, una colonna per modulo o per attivita'. E' l'unica

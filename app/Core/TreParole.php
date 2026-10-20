@@ -21,6 +21,11 @@ namespace App\Core;
  *   nomi non compaiono per sbaglio) o con il nome;
  * - **non si cambiano**: una volta inviate sono quelle.
  *
+ * Nessun collegamento dalla pagina dell'incontro (tolto il 21/10, patch
+ * 0261): legava le parole al modulo scelto per l'incontro, e irrigidiva il
+ * flusso. Il tutor le trova in «Tre parole», nel ramo del corso, che si
+ * apre sull'ultimo modulo con delle parole.
+ *
  * Qui le regole, senza database: i dati in `TreParoleModel`.
  */
 final class TreParole
