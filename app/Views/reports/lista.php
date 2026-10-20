@@ -114,6 +114,9 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
     </div>
 </form>
 
+<?php /* Il conteggio e la tabella in un riquadro bianco, come nel resto
+         della piattaforma (20/10); la ricerca resta sopra, sulla pagina. */ ?>
+<section class="card report-elenco-riquadro">
 <p class="report-conteggio">
     <?php if ($cerca === ''): ?>
         <strong><?= (int) $totale ?></strong>
@@ -196,3 +199,4 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
         </nav>
     <?php endif; ?>
 <?php endif; ?>
+</section>

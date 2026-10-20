@@ -62,6 +62,8 @@ $rows = $ordine->applica($rows);
              spazio la tabella diventa un elenco di schede. I `role` espliciti
              servono perché cambiando il `display` la tabella perderebbe le
              proprie semantiche. */ ?>
+    <section class="card">
+        <h2>Iscritti (<?= count($rows) ?>)</h2>
     <div class="tabella-schede">
     <table class="data-table" role="table">
         <thead role="rowgroup">
@@ -114,6 +116,7 @@ $rows = $ordine->applica($rows);
         </tbody>
     </table>
     </div>
+    </section>
 <?php endif; ?>
 
 <script src="/assets/js/dropdown.js"></script>

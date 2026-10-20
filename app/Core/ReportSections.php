@@ -58,7 +58,7 @@ class ReportSections
     {
         return [
             'courses' => [
-                'titolo' => 'Per corso',
+                'titolo' => 'Corsi',
                 'singolare' => 'corso',
                 'plurale' => 'corsi',
                 'articolo' => 'i',
@@ -68,7 +68,7 @@ class ReportSections
                 'cerca' => ['title' => 'Corso'],
             ],
             'groups' => [
-                'titolo' => 'Per gruppo',
+                'titolo' => 'Gruppi',
                 'singolare' => 'gruppo',
                 'plurale' => 'gruppi',
                 'articolo' => 'i',
@@ -78,7 +78,7 @@ class ReportSections
                 'cerca' => ['name' => 'Gruppo', 'tutor_name' => 'Tutor'],
             ],
             'students' => [
-                'titolo' => 'Per studente',
+                'titolo' => 'Studenti',
                 'singolare' => 'studente',
                 'plurale' => 'studenti',
                 'articolo' => 'gli',
@@ -88,7 +88,7 @@ class ReportSections
                 'cerca' => ['full_name' => 'Studente', 'email' => 'Email'],
             ],
             'live' => [
-                'titolo' => 'Per incontro dal vivo',
+                'titolo' => 'Sessioni live',
                 'singolare' => 'incontro',
                 'plurale' => 'incontri',
                 'articolo' => 'gli',
@@ -104,7 +104,7 @@ class ReportSections
                 ],
             ],
             'fruizione' => [
-                'titolo' => 'Fruizione dei video',
+                'titolo' => 'Video',
                 'singolare' => 'corso con video',
                 'plurale' => 'corsi con video',
                 'articolo' => 'i',

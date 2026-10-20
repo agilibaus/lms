@@ -33,15 +33,13 @@ declare(strict_types=1);
     <?php foreach ($sezioni as $chiave => $s): ?>
         <?php $quanti = $conteggi[$chiave] ?? 0; ?>
         <a class="report-taglio" href="/reports/elenco/<?= htmlspecialchars($chiave) ?>">
-            <span class="report-taglio-titolo"><?= htmlspecialchars($s['titolo']) ?></span>
-            <?php /* Il numero prima della frase: e' la cosa che si cerca
-                     aprendo questa pagina, e metterlo in fondo vorrebbe dire
-                     leggere la descrizione per trovarlo. */ ?>
-            <span class="report-taglio-numero">
-                <?= (int) $quanti ?>
-                <span class="report-taglio-unita">
-                    <?= htmlspecialchars($quanti === 1 ? $s['singolare'] : $s['plurale']) ?>
-                </span>
+            <?php /* Il nome e, accanto, quanti sono (20/10, Alessandro, variante
+                     A): «Corsi (4)», con il numero nella misura e nel colore di
+                     prima. E' la cosa che si cerca aprendo la pagina, e cosi'
+                     si legge insieme al nome invece che su una riga a parte. */ ?>
+            <span class="report-taglio-titolo">
+                <?= htmlspecialchars($s['titolo']) ?>
+                <span class="report-taglio-numero">(<?= (int) $quanti ?>)</span>
             </span>
             <span class="report-taglio-nota"><?= htmlspecialchars($s['occhiello']) ?></span>
         </a>

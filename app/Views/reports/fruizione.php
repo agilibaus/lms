@@ -51,6 +51,8 @@ $righe = $ordine->applica($righe);
     <?php /* Con molte lezioni la tabella diventa più larga dello schermo:
              scorre in orizzontale invece di stringere le colonne fino a
              renderle illeggibili. */ ?>
+    <section class="card">
+        <h2>Studenti (<?= count($righe) ?>)</h2>
     <div class="tabella-larga">
         <table class="data-table">
             <caption class="sr-only">
@@ -113,6 +115,7 @@ $righe = $ordine->applica($righe);
         Un trattino vuol dire che la durata di quel video non è nota, quindi non c'è un
         denominatore per la percentuale.
     </p>
+    </section>
 <?php endif; ?>
 
 <details class="nota-metodo">
