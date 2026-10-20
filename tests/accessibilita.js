@@ -508,6 +508,8 @@ const PAGINE_INTERNE = [
     // saltate. Stanno in elenco perché hanno tabelle larghe, ed è lì che le
     // regressioni sullo scorrimento orizzontale si nascondono.
     ['/reports/courses/1', 'Report per corso'],
+    ['/reports/courses/1/griglia', 'Griglia del corso'],
+    ['/reports/courses/1/griglia?modulo=1', 'Griglia del corso, modulo aperto'],
     ['/reports/students/2', 'Report per studente'],
     ['/reports/groups/1', 'Report per gruppo'],
     ['/lessons/1/edit', 'Modifica lezione'],

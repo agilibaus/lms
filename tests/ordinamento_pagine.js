@@ -100,6 +100,7 @@ const PAGINE = [
     ['/reports/elenco/live', 'Elenco per incontro'],
     ['/reports/elenco/fruizione', 'Elenco fruizione'],
     ['/reports/courses/1', 'Report per corso'],
+    ['/reports/courses/1/griglia', 'Griglia del corso'],
     ['/reports/students/2', 'Report per studente'],
     ['/reports/groups/1', 'Report per gruppo'],
     ['/reports/fruizione/1', 'Fruizione per corso'],

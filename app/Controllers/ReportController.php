@@ -7,12 +7,14 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Auth\StudentScope;
 use App\Core\Csv;
+use App\Core\GrigliaCorso;
 use App\Core\Ordinamento;
 use App\Core\ReportSections;
 use App\Core\StudentiFermi;
 use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\CourseModel;
+use App\Models\GrigliaCorsoModel;
 use App\Models\GroupModel;
 use App\Models\LiveSessionAttendanceModel;
 use App\Models\LiveSessionModel;
@@ -364,6 +366,174 @@ class ReportController
             [3 => 'numero'],
             'Corso'
         );
+    }
+
+    // ---------------------------------------------------------------
+    // Griglia del corso
+    // ---------------------------------------------------------------
+
+    /** Le colonne della griglia che si ordinano: lo studente e l'avanzamento. */
+    private const GRIGLIA_ORDINABILI = [
+        'studente' => ['full_name', Ordinamento::TESTO, 'email'],
+        'avanzamento' => ['progress_pct', Ordinamento::NUMERO, 'full_name'],
+    ];
+
+    /**
+     * GET /reports/courses/{id}/griglia — una riga per studente, una colonna
+     * per modulo o, con `?modulo=N`, per attivita' di quel modulo (21/10).
+     * Le regole in `GrigliaCorso`, i dati in `GrigliaCorsoModel`.
+     */
+    public function griglia(array $params): void
+    {
+        $dati = $this->datiGriglia((int) $params['id']);
+
+        if ($dati === null) {
+            return;
+        }
+
+        View::render('reports/griglia', [
+            'pageTitle' => 'Griglia · ' . $dati['course']['title'],
+        ] + $dati + [
+            'modulo' => GrigliaCorso::modulo($_GET['modulo'] ?? null, count($dati['moduli'])),
+        ]);
+    }
+
+    /**
+     * GET /reports/courses/{id}/griglia/{formato} — la griglia in XLSX o CSV,
+     * sempre con tutte le attivita' in colonna: nel foglio si filtra meglio
+     * che a schermo. Il gruppo scelto e l'ordine valgono anche qui.
+     */
+    public function grigliaDownload(array $params): void
+    {
+        $dati = $this->datiGriglia((int) $params['id']);
+
+        if ($dati === null) {
+            return;
+        }
+
+        $formato = self::formato($params);
+        $xlsx = $formato === 'xlsx';
+        $intestazioni = ['Studente', 'Email', 'Gruppo'];
+        $tipi = [];
+
+        foreach ($dati['moduli'] as $n => $m) {
+            foreach ($m['voci'] as $v) {
+                $titolo = GrigliaCorso::intestazione($n + 1, $v['tipo'], $v['titolo']);
+
+                if ($v['tipo'] === GrigliaCorso::QUESTIONARIO) {
+                    $tipi[count($intestazioni)] = 'numero';
+                    $intestazioni[] = $titolo . ' · punteggio migliore %';
+                    $intestazioni[] = $titolo . ' · superato';
+                } else {
+                    if ($v['tipo'] === GrigliaCorso::LEZIONE) {
+                        $tipi[count($intestazioni)] = 'data';
+                    }
+                    $intestazioni[] = $titolo;
+                }
+            }
+        }
+
+        $tipi[count($intestazioni)] = 'numero';
+        $intestazioni[] = 'Avanzamento %';
+        $tipi[count($intestazioni)] = 'data';
+        $intestazioni[] = 'Completato il';
+        $intestazioni[] = 'Certificato';
+
+        $righe = [];
+
+        foreach ($dati['studenti'] as $s) {
+            $riga = [$s['full_name'], $s['email'], implode(', ', $s['gruppi'])];
+
+            foreach ($dati['moduli'] as $m) {
+                foreach ($m['voci'] as $v) {
+                    $c = $s['caselle'][$v['chiave']];
+
+                    // Le lezioni con la data in cui sono state completate;
+                    // gli incontri con una parola; il questionario con il
+                    // punteggio migliore e se e' superato.
+                    if ($v['tipo'] === GrigliaCorso::QUESTIONARIO) {
+                        $riga[] = isset($c['punteggio']) ? self::decimale((float) $c['punteggio'], $xlsx) : '';
+                        $riga[] = match ($c['stato']) {
+                            GrigliaCorso::FATTO => 'sì',
+                            GrigliaCorso::TENTATO => 'no',
+                            default => '',
+                        };
+                    } elseif ($v['tipo'] === GrigliaCorso::LEZIONE) {
+                        $riga[] = $c['quando'] ?? '';
+                    } else {
+                        $riga[] = match ($c['stato']) {
+                            GrigliaCorso::FATTO => 'presente',
+                            GrigliaCorso::ASSENTE => 'assente',
+                            GrigliaCorso::FUTURO => 'non ancora svolto',
+                            default => 'non previsto',
+                        };
+                    }
+                }
+            }
+
+            $riga[] = self::decimale($s['progress_pct'], $xlsx);
+            $riga[] = $s['completed_at'] ?? '';
+            $riga[] = $s['certificato'] ? 'sì' : '';
+            $righe[] = $riga;
+        }
+
+        $this->inviaReport(
+            $formato,
+            'griglia-' . Csv::slug((string) $dati['course']['title']) . '-' . date('Y-m-d'),
+            $intestazioni,
+            $righe,
+            $tipi,
+            'Griglia'
+        );
+    }
+
+    /**
+     * Quello che serve alla griglia, a schermo e nel file: il corso, i
+     * moduli con le attivita', i gruppi fra cui scegliere, gli studenti del
+     * perimetro (del gruppo scelto) nell'ordine scelto. Null se il corso non
+     * c'e' (la risposta e' gia' partita).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function datiGriglia(int $courseId): ?array
+    {
+        $this->requireReportAccess();
+
+        $course = CourseModel::find($courseId);
+
+        if (!$course) {
+            http_response_code(404);
+            echo 'Corso non trovato.';
+
+            return null;
+        }
+
+        $this->requireVisibleCourse((int) $course['id']);
+
+        // Fra i gruppi del corso, quelli che chi guarda segue: il tutor
+        // sceglie fra i suoi, l'admin fra tutti.
+        $gruppi = GrigliaCorsoModel::gruppi((int) $course['id']);
+
+        if ($this->scopeTutorIds() !== null) {
+            $suoi = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
+            $gruppi = array_filter($gruppi, static fn (int $id): bool => in_array($id, $suoi, true), ARRAY_FILTER_USE_KEY);
+        }
+
+        $chiesto = filter_var($_GET['gruppo'] ?? null, FILTER_VALIDATE_INT);
+        $gruppo = $chiesto !== false && isset($gruppi[$chiesto]) ? (int) $chiesto : null;
+
+        $moduli = GrigliaCorsoModel::moduli((int) $course['id']);
+        $ordine = Ordinamento::daRichiesta(self::GRIGLIA_ORDINABILI);
+
+        return [
+            'course' => $course,
+            'moduli' => $moduli,
+            'gruppi' => $gruppi,
+            'gruppo' => $gruppo,
+            'ordine' => $ordine,
+            'studenti' => $ordine->applica(GrigliaCorsoModel::studenti((int) $course['id'], $moduli, $this->allowedStudentIds(), $gruppo)),
+            'restricted' => $this->allowedStudentIds() !== null,
+        ];
     }
 
     // ---------------------------------------------------------------

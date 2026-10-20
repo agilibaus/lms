@@ -203,6 +203,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/reports', 'negato', 'gli studenti non hanno i report'],
             ['/reports/fermi', 'negato', 'né l\'elenco degli studenti fermi'],
             ['/reports/fermi/csv', 'negato', 'né scaricandolo'],
+            ['/reports/courses/' + A.corso + '/griglia', 'negato', 'né la griglia del suo corso'],
+            ['/reports/courses/' + A.corso + '/griglia/csv', 'negato', 'né scaricandola'],
             // Gli elenchi sono pagine nuove, con un indirizzo diverso da
             // quello dell'indice: una porta nuova va provata, non dedotta
             // dal fatto che quella accanto è chiusa.
@@ -307,6 +309,9 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/quizzes/' + A.quiz + '/edit', 'consentito', 'può modificare il quiz del corso A'],
             ['/questions/' + A.domanda + '/edit', 'consentito', 'domanda del suo quiz'],
             ['/reports/courses/' + A.corso, 'consentito', 'report del suo corso'],
+            ['/reports/courses/' + A.corso + '/griglia', 'consentito', 'la griglia del suo corso'],
+            ['/reports/courses/' + B.corso + '/griglia', 'negato', 'la griglia di un corso non suo'],
+            ['/reports/courses/' + B.corso + '/griglia/csv', 'negato', 'nemmeno scaricandola'],
             ['/lessons/' + B.lezione + '/edit', 'negato', 'lezione di un corso non suo'],
             ['/quizzes/' + B.quiz + '/edit', 'negato', 'quiz di un corso non suo'],
             ['/questions/' + B.domanda + '/edit', 'negato', 'domanda del quiz di un collega'],
@@ -353,6 +358,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 'l\'elenco si apre: a restringerlo sono le righe, non la porta'],
             ['/reports/courses/' + A.corso, 'consentito', 'corso del tutor che segue'],
             ['/reports/courses/' + B.corso, 'negato', 'corso di un tutor che non segue'],
+            ['/reports/courses/' + A.corso + '/griglia', 'consentito', 'la griglia del corso del tutor che segue'],
+            ['/reports/courses/' + B.corso + '/griglia', 'negato', 'la griglia di un corso di un tutor che non segue'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
             ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente del tutor che segue'],
             // Gli incontri (17/10): l'assistente apre quelli del suo elenco,
@@ -393,6 +400,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/courses/' + B.corso, 'consentito', 'l\'admin vede tutto'],
             ['/lessons/' + B.lezione + '/edit', 'consentito', 'l\'admin modifica tutto'],
             ['/reports/courses/' + B.corso, 'consentito', 'nessuna restrizione sui report'],
+            ['/reports/courses/' + B.corso + '/griglia', 'consentito', 'e nessuna sulla griglia'],
             ['/attempts/' + B.tentativo, 'consentito', 'l\'admin vede i tentativi di tutti'],
             ['/live/' + B.incontro, 'consentito', 'l\'admin apre ogni incontro'],
             ['/lessons/' + B.lezione + '/fruizione', 'consentito', 'l\'admin vede la fruizione di ogni lezione'],
@@ -519,6 +527,18 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                         pulito,
                         pulito ? [] : ['stato ' + risposta.status() + (html.includes(emailB) ? ', «' + emailB + '» compare' : '')]
                     );
+                    // La griglia del corso A, dove lo studente B e' iscritto
+                    // per la prova: la riga non c'e', ne' a schermo ne' nel file.
+                    await page.goto(BASE + '/reports/courses/' + A.corso + '/griglia');
+                    const rigaB = '/reports/students/' + d.utenti.studenteB + '"';
+                    const grigliaPulita = !(await page.content()).includes(rigaB);
+                    const csvGriglia = await page.evaluate(async (u) => (await (await fetch(u, { credentials: 'same-origin' })).text()), '/reports/courses/' + A.corso + '/griglia/csv');
+                    const csvGrigliaPulito = csvGriglia.includes('Studente;Email;Gruppo') && !csvGriglia.includes(emailB);
+                    check(
+                        email + ' → la griglia del corso non ha la riga dello studente del mondo B, nemmeno nel CSV',
+                        grigliaPulita && csvGrigliaPulito,
+                        grigliaPulita && csvGrigliaPulito ? [] : ['pagina: ' + (grigliaPulita ? 'pulita' : 'c\'è') + ', CSV: ' + (csvGrigliaPulito ? 'pulito' : csvGriglia.slice(0, 80))]
+                    );
                     // Il file scaricato ha lo stesso perimetro della pagina.
                     const csv = await page.evaluate(async () => (await (await fetch('/reports/fermi/csv?giorni=30', { credentials: 'same-origin' })).text()));
                     // Prima si controlla che sia davvero il file: una pagina
@@ -536,9 +556,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 const admin = await entra(browser, 'admin@test.it');
                 await admin.page.goto(BASE + '/reports/fermi?giorni=30');
                 const csvAdmin = await admin.page.evaluate(async () => (await (await fetch('/reports/fermi/csv?giorni=30', { credentials: 'same-origin' })).text()));
-                const loTrova = (await admin.page.content()).includes(emailB) && csvAdmin.includes(emailB);
+                await admin.page.goto(BASE + '/reports/courses/' + A.corso + '/griglia');
+                const nellaGriglia = (await admin.page.content()).includes('/reports/students/' + d.utenti.studenteB + '"');
+                await admin.page.goto(BASE + '/reports/fermi?giorni=30');
+                const loTrova = (await admin.page.content()).includes(emailB) && csvAdmin.includes(emailB) && nellaGriglia;
                 check(
-                    'controprova: l\'amministratore lo vede fra i fermi, nella pagina e nel CSV',
+                    'controprova: l\'amministratore lo vede fra i fermi, nella pagina e nel CSV, e nella griglia',
                     loTrova,
                     loTrova ? [] : ['se non lo vedesse nemmeno lui, le prove qui sopra non direbbero niente']
                 );

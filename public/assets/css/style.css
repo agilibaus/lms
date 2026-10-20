@@ -2787,7 +2787,8 @@ body.has-focus-video {
    tabella non deve sembrare piena di collegamenti blu. Che siano cliccabili
    lo dicono il puntatore, la sottolineatura al passaggio e la freccia su
    quella attiva. */
-.data-table th .ordina {
+.data-table th .ordina,
+.griglia th .ordina {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -2798,14 +2799,16 @@ body.has-focus-video {
     margin: -0.15rem 0;
 }
 
-.data-table th .ordina:hover {
+.data-table th .ordina:hover,
+.griglia th .ordina:hover {
     text-decoration: underline;
     color: var(--color-text);
 }
 
 /* La colonna su cui si sta ordinando si distingue senza dover cercare la
    freccia: e' piu' scura e piu' marcata delle altre. */
-.data-table th .ordina-attiva {
+.data-table th .ordina-attiva,
+.griglia th .ordina-attiva {
     color: var(--color-text);
     font-weight: 700;
 }
@@ -4334,6 +4337,208 @@ fieldset.checkbox-group legend {
 /* «Si entra da 15 minuti prima» nei riquadri delle Sessioni live (20/10,
    variante C2): sotto il titolo, perche' descrive la sessione; a destra
    restano solo i comandi. */
+/* «Scarica» e «Griglia del corso» in cima al report del corso: sulla stessa
+   linea, anche se la tendina e il collegamento hanno margini diversi. */
+.report-comandi {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.report-comandi > * {
+    margin: 0;
+}
+
+/* ---------- «Griglia del corso» (21/10) ----------
+
+   Una riga per studente, una colonna per modulo o per attivita'. E' l'unica
+   tabella dei Report che scorre in orizzontale: con un modulo aperto le
+   colonne possono essere molte. Il nome resta fermo a sinistra mentre si
+   scorre, e le cifre sono a larghezza fissa perche' «2/4» sopra «3/4» si
+   confrontino con un'occhiata. Le caselle sono centrate: sono segni da
+   scorrere con gli occhi in colonna, non testo da leggere. */
+.griglia-filtri {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.griglia-filtri .agenda-viste {
+    flex-wrap: wrap;
+    margin: 0 0.8rem 0 0;
+}
+
+.griglia-filtri .agenda-viste a {
+    min-height: 2.2rem;
+    min-width: 2.4rem;
+    justify-content: center;
+    padding: 0 0.7rem;
+}
+
+.griglia-filtri-etichetta {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* `position: relative` perche' i testi `.sr-only` delle caselle sono
+   `absolute`: senza un antenato posizionato dentro il contenitore che scorre
+   si appoggiavano alla pagina, e la allargavano fino a 849 px su un telefono
+   di 390. Stesso difetto trovato nelle intestazioni ordinabili. */
+.griglia-scorre {
+    position: relative;
+    overflow-x: auto;
+}
+
+.griglia {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.griglia th,
+.griglia td {
+    padding: 0.55rem 0.45rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
+    font-size: 0.92rem;
+    white-space: nowrap;
+}
+
+.griglia thead th {
+    vertical-align: bottom;
+    white-space: normal;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text-muted);
+}
+
+.griglia .griglia-nome {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--color-surface);
+    text-align: left;
+    font-weight: 400;
+}
+
+.griglia thead .griglia-nome {
+    font-weight: 600;
+}
+
+.griglia tbody .griglia-nome a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--color-text);
+}
+
+.griglia .griglia-testo {
+    text-align: left;
+}
+
+.griglia .griglia-separa {
+    border-left: 1px solid var(--color-border);
+}
+
+.griglia-modulo {
+    min-width: 4.6rem;
+}
+
+.griglia-modulo a {
+    color: var(--color-text);
+}
+
+.griglia-voce {
+    min-width: 5.5rem;
+    max-width: 9rem;
+    color: var(--color-text) !important;
+}
+
+.griglia-numero {
+    display: block;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.griglia-titolo-modulo {
+    border-bottom: 2px solid var(--color-primary) !important;
+    color: var(--color-text) !important;
+    font-size: 0.88rem !important;
+}
+
+.griglia-fatto {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.griglia-fatto svg {
+    width: 1rem;
+    height: 1rem;
+    vertical-align: -0.15em;
+}
+
+.griglia-zero,
+.griglia-nulla {
+    color: var(--color-text-muted);
+}
+
+.griglia-assente,
+.griglia-bocciato {
+    color: var(--color-danger);
+}
+
+.griglia-voto,
+.griglia-avanzamento {
+    font-weight: 600;
+}
+
+.griglia-bocciato {
+    font-weight: 500;
+}
+
+.griglia tfoot th,
+.griglia tfoot td {
+    border-bottom: 0;
+    background: var(--color-bg);
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.griglia tfoot .griglia-nome {
+    background: var(--color-bg);
+    font-weight: 600;
+}
+
+.griglia-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.4rem;
+    margin: 1rem 0 0;
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+}
+
+.griglia-legenda strong {
+    color: var(--color-text);
+}
+
+.griglia-legenda strong.griglia-fatto {
+    color: var(--color-primary);
+}
+
+.griglia-legenda strong.griglia-assente {
+    color: var(--color-danger);
+}
+
 /* ---------- «Studenti fermi» (21/10) ----------
 
    Lo stato e' un pallino; che cosa vuol dire lo dice la legenda sotto la

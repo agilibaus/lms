@@ -26,13 +26,16 @@ $rows = $ordine->applica($rows);
     <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
-        <?= (int) $totals['lessons'] ?> lezioni · <?= (int) $totals['quizzes'] ?> questionari ·
-        <?= count($rows) ?> iscritti
+        <?= (int) $totals['lessons'] ?> <?= (int) $totals['lessons'] === 1 ? 'lezione' : 'lezioni' ?> ·
+        <?= (int) $totals['quizzes'] ?> <?= (int) $totals['quizzes'] === 1 ? 'questionario' : 'questionari' ?> ·
+        <?= count($rows) ?> <?= count($rows) === 1 ? 'iscritto' : 'iscritti' ?>
     </p>
     <?php /* Stessa tendina dell'elenco dei report: XLSX prima perche' si apre
              con un doppio clic, CSV per chi deve darlo in pasto a un programma.
-             `details`/`summary` funziona senza JavaScript. */ ?>
-    <p>
+             `details`/`summary` funziona senza JavaScript. In un `div`, non in
+             un `p`: un `details` dentro un paragrafo lo chiude, e il
+             paragrafo restava vuoto. */ ?>
+    <div class="report-comandi">
         <details class="dropdown">
             <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica</summary>
             <div class="dropdown-menu">
@@ -42,7 +45,10 @@ $rows = $ordine->applica($rows);
                 <a href="/reports/courses/<?= (int) $course['id'] ?>/csv">CSV</a>
             </div>
         </details>
-    </p>
+        <?php /* Un collegamento a un'altra pagina, senza icona (vocabolario
+                 delle icone in `Icona`). */ ?>
+        <a href="/reports/courses/<?= (int) $course['id'] ?>/griglia" class="btn btn-secondary">Griglia del corso</a>
+    </div>
 </div>
 
 <?php if (!empty($_SESSION['flash_success'])): ?>

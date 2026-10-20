@@ -171,6 +171,9 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
                         <?php endforeach; ?>
                         <td role="cell" data-label="Azioni" class="col-azioni row-actions">
                             <a href="<?= $esc($base) ?>">Dettaglio</a>
+                            <?php if ($chiave === 'courses'): ?>
+                                <a href="<?= $esc($base) ?>/griglia">Griglia</a>
+                            <?php endif; ?>
                             <?= $scarica($base) ?>
                         </td>
                     </tr>

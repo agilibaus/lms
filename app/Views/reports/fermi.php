@@ -162,3 +162,5 @@ $legenda = [
         </dl>
     <?php endif; ?>
 </section>
+
+<script src="/assets/js/dropdown.js"></script>

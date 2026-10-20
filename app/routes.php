@@ -169,6 +169,10 @@ $router->get('/reports/elenco/{sezione}', [ReportController::class, 'lista']);
  * collegamenti a «/csv» continuano a funzionare e un indirizzo inventato
  * non produce un file a sorpresa.
  */
+// La griglia prima di `{formato}`: altrimenti «griglia» verrebbe preso per un
+// formato e finirebbe in un CSV del report del corso.
+$router->get('/reports/courses/{id}/griglia', [ReportController::class, 'griglia']);
+$router->get('/reports/courses/{id}/griglia/{formato}', [ReportController::class, 'grigliaDownload']);
 $router->get('/reports/courses/{id}', [ReportController::class, 'course']);
 $router->get('/reports/courses/{id}/{formato}', [ReportController::class, 'courseDownload']);
 $router->get('/reports/students/{id}', [ReportController::class, 'student']);
