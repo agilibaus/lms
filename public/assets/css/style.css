@@ -3723,18 +3723,18 @@ fieldset.checkbox-group legend {
     font-weight: 600;
 }
 
-/* Il numero e' la cosa che si cerca aprendo la pagina: grande, in cifre a
-   larghezza fissa come nelle tabelle, cosi' i riquadri affiancati si
-   leggono in colonna. */
+/* Il numero accanto al nome, «Corsi (4)»: verde e in grassetto, alla
+   misura del titolo (20/10, Alessandro: a 1,6 rem pesava piu' del nome).
+   Cifre a larghezza fissa, come nelle tabelle. */
 .report-taglio-numero {
-    font-size: 1.6rem;
+    font-size: 1rem;
     font-weight: 700;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
     color: var(--color-primary);
 }
 
-/* I due testi secondari del riquadro NON usano `--color-text-muted`, ed e'
+/* Il testo secondario del riquadro NON usa `--color-text-muted`, ed e'
    una scelta misurata, non una dimenticanza.
 
    Il grigio tenue vale 4,80:1 sul bianco — passa — ma il riquadro e' un
@@ -3748,12 +3748,6 @@ fieldset.checkbox-group legend {
    `#5A554F` e' lo stesso tono gia' usato per `.badge-muted`, scelto la
    volta scorsa per la stessa ragione: 7,38:1 sul bianco e 6,42:1 sullo
    sfondo del passaggio. Un tono in piu' invece di due. */
-.report-taglio-unita {
-    font-size: 0.92rem;
-    font-weight: 400;
-    color: #5A554F;
-}
-
 .report-taglio-nota {
     font-size: 0.88rem;
     line-height: 1.4;
