@@ -44,9 +44,10 @@ use App\Core\QuizScoring;
 
 <?php if ($concluso): ?>
     <?php /* Superato al 100% (23/10, Alessandro): il questionario resta
-             visibile ma spento, e non si rifà. */ ?>
+             visibile ma spento, e non si rifà. Con sole domande aperte
+             non si supera, si consegna: «Consegnato». */ ?>
     <div class="alert alert-success quiz-concluso-avviso">
-        <?= Icona::svg('check-circle-fill') ?><strong><?= htmlspecialchars(QuizScoring::CONCLUSO) ?></strong>
+        <?= Icona::svg('check-circle-fill') ?><strong><?= htmlspecialchars(QuizScoring::fraseConcluso(QuizScoring::conteggioValutate($questions))) ?></strong>
     </div>
 <?php elseif ($best !== null): ?>
     <div class="alert <?= $best['passed'] ? 'alert-success' : 'alert-warning' ?>">

@@ -132,5 +132,8 @@ check('99,99%: aperto', !QuizScoring::concluso(['score_pct' => 99.99, 'passed' =
 check('100%: concluso', QuizScoring::concluso(['score_pct' => 100.0, 'passed' => true, 'attempts' => 3]));
 check('sole domande aperte (100 alla consegna): concluso', QuizScoring::concluso(['score_pct' => QuizScoring::percentuale(0, 0), 'passed' => true, 'attempts' => 1]));
 
+check('concluso con domande valutate: «Superato al 100%»', QuizScoring::fraseConcluso(2) === 'Superato al 100%: il questionario è concluso.');
+check('concluso con sole domande aperte: «Consegnato»', QuizScoring::fraseConcluso(0) === 'Consegnato: il questionario è concluso.');
+
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail === 0 ? 0 : 1);

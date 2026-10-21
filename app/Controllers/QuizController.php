@@ -476,14 +476,15 @@ class QuizController
             $this->redirect('/quizzes/' . $quiz['id']);
         }
 
+        $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
+
         // Superato al 100% (23/10): concluso, niente altri tentativi, anche
         // con un invio costruito a mano o da una pagina rimasta aperta.
         if (QuizScoring::concluso(QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']))) {
-            $_SESSION['flash_error'] = QuizScoring::CONCLUSO . ' Il nuovo tentativo non è stato salvato.';
+            $_SESSION['flash_error'] = QuizScoring::fraseConcluso(QuizScoring::conteggioValutate($questions))
+                . ' Il nuovo tentativo non è stato salvato.';
             $this->redirect('/quizzes/' . $quiz['id']);
         }
-
-        $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
 
         if ($questions === []) {
             $_SESSION['flash_error'] = 'Questo quiz non ha ancora domande.';

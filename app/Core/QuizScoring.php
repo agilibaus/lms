@@ -153,6 +153,18 @@ class QuizScoring
     /** La frase del questionario concluso, nella pagina e nei rifiuti. */
     public const CONCLUSO = 'Superato al 100%: il questionario è concluso.';
 
+    /** Per un questionario di sole domande aperte, che si consegna e non si supera (23/10). */
+    public const CONSEGNATO = 'Consegnato: il questionario è concluso.';
+
+    /**
+     * La frase giusta per un questionario concluso: «Consegnato» se non ha
+     * domande che fanno punteggio, «Superato al 100%» altrimenti.
+     */
+    public static function fraseConcluso(int $valutate): string
+    {
+        return $valutate === 0 ? self::CONSEGNATO : self::CONCLUSO;
+    }
+
     /**
      * Quante domande di un quiz fanno punteggio.
      *
