@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Core\Csrf;
 use App\Core\H5P;
@@ -24,7 +23,6 @@ use App\Core\Icona;
  */
 
 $id = (int) $quiz['id'];
-$studente = Auth::hasRole('studente');
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
@@ -48,12 +46,6 @@ $studente = Auth::hasRole('studente');
 <?php endif; ?>
 
 <section class="h5p-questionario" aria-label="Esercizio">
-    <p class="form-hint h5p-istruzioni">
-        Svolgi l'esercizio e premi il pulsante di verifica alla fine: ogni verifica è un tentativo, e vale il migliore.
-        <?php if (!$studente): ?>
-            <strong>Anteprima per lo staff:</strong> il punteggio non viene salvato.
-        <?php endif; ?>
-    </p>
     <div id="h5p-contenitore" class="h5p-contenitore"
          data-percorso="/quizzes/<?= $id ?>/h5p"
          data-salva="/quizzes/<?= $id ?>/h5p/tentativo"
