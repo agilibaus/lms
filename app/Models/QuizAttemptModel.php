@@ -21,21 +21,26 @@ class QuizAttemptModel
      *
      * @param list<array{question_id: int, selected_option_id: int|null, answer_text: string|null, is_correct: bool}> $answers
      */
-    public static function create(int $userId, int $quizId, float $scorePct, bool $passed, array $answers): int
+    /**
+     * @param array{raw: float, max: float}|null $h5p il punteggio di un questionario H5P come lo dice l'esercizio
+     */
+    public static function create(int $userId, int $quizId, float $scorePct, bool $passed, array $answers, ?array $h5p = null): int
     {
         $db = Database::connection();
         $db->beginTransaction();
 
         try {
             $stmt = $db->prepare(
-                'INSERT INTO quiz_attempts (user_id, quiz_id, score_pct, passed)
-                 VALUES (:user_id, :quiz_id, :score_pct, :passed)'
+                'INSERT INTO quiz_attempts (user_id, quiz_id, score_pct, passed, h5p_raw, h5p_max)
+                 VALUES (:user_id, :quiz_id, :score_pct, :passed, :h5p_raw, :h5p_max)'
             );
             $stmt->execute([
                 'user_id' => $userId,
                 'quiz_id' => $quizId,
                 'score_pct' => $scorePct,
                 'passed' => $passed ? 1 : 0,
+                'h5p_raw' => $h5p['raw'] ?? null,
+                'h5p_max' => $h5p['max'] ?? null,
             ]);
 
             $attemptId = (int) $db->lastInsertId();
@@ -71,6 +76,15 @@ class QuizAttemptModel
         }
     }
 
+    /** Quanti tentativi ha un questionario, di tutti gli studenti. */
+    public static function countForQuiz(int $quizId): int
+    {
+        $stmt = Database::connection()->prepare('SELECT COUNT(*) FROM quiz_attempts WHERE quiz_id = :quiz_id');
+        $stmt->execute(['quiz_id' => $quizId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM quiz_attempts WHERE id = :id LIMIT 1');
@@ -86,7 +100,7 @@ class QuizAttemptModel
     public static function forUserAndQuiz(int $userId, int $quizId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, score_pct, passed, attempted_at
+            'SELECT id, score_pct, passed, h5p_raw, h5p_max, attempted_at
              FROM quiz_attempts
              WHERE user_id = :user_id AND quiz_id = :quiz_id
              ORDER BY attempted_at DESC, id DESC'

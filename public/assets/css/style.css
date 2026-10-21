@@ -4351,6 +4351,104 @@ fieldset.checkbox-group legend {
     margin: 0;
 }
 
+/* ---------- Questionari H5P (22/10) ----------
+
+   La scelta del tipo nel nuovo questionario, il contenuto nella pagina
+   dello studente, la frase sotto l'esercizio che dice se il tentativo e'
+   stato salvato. L'esercizio vive in un iframe del riproduttore: qui solo
+   il suo contorno. */
+.quiz-tipo {
+    margin: 0 0 1.2rem;
+    padding: 0;
+    border: 0;
+}
+
+.quiz-tipo legend {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+}
+
+.form .quiz-tipo-scelta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 0.5rem;
+    font-weight: 400;
+}
+
+.form .quiz-tipo-scelta .form-hint {
+    display: block;
+    margin: 0.1rem 0 0;
+}
+
+.quiz-tipo-file {
+    margin: 0.6rem 0 0 1.6rem;
+}
+
+/* Il file serve solo per H5P: si vede quando lo si sceglie. Dove `:has`
+   non c'e' resta visibile, e per un questionario a domande il server lo
+   ignora. */
+.quiz-tipo:has(input[value="domande"]:checked) .quiz-tipo-file {
+    display: none;
+}
+
+.quiz-h5p-titolo {
+    margin: 1.4rem 0 0.4rem;
+    font-size: 1rem;
+}
+
+.quiz-h5p-attuale {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.8rem;
+    margin: 0 0 0.9rem;
+}
+
+.quiz-h5p-attuale .form-hint {
+    margin: 0;
+}
+
+.quiz-h5p-file {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.h5p-questionario {
+    margin: 0 0 1.5rem;
+}
+
+.h5p-istruzioni {
+    margin: 0 0 0.8rem;
+}
+
+.h5p-contenitore {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fff;
+}
+
+.h5p-contenitore .h5p-iframe-wrapper {
+    background: transparent !important;
+}
+
+.h5p-esito {
+    min-height: 1.5em;
+    margin: 0.8rem 0 0;
+    color: var(--color-text-muted);
+}
+
+.h5p-esito-superato {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.h5p-esito-non-superato,
+.h5p-esito-errore {
+    color: var(--color-danger);
+}
+
 /* ---------- «Tre parole» (21/10) ----------
 
    Il riquadro dello studente sopra i moduli, con il filo verde a sinistra

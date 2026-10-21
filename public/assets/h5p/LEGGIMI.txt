@@ -1,0 +1,7 @@
+h5p-standalone 3.8.0 (licenza MIT, LICENSE in questa cartella)
+https://www.npmjs.com/package/h5p-standalone
+
+Il riproduttore dei questionari H5P (22/10). Solo i file che servono:
+main.bundle.js, frame.bundle.js, styles/, fonts/, images/.
+Per aggiornarlo: scaricare la versione nuova, sostituire questi file,
+riprovare i tipi di contenuto in uso (e il foglio /h5p/tema.css).

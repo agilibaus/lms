@@ -352,6 +352,13 @@ CREATE TABLE quizzes (
     module_id       INT UNSIGNED NOT NULL,
     title           VARCHAR(200) NOT NULL,
     passing_score_pct INT UNSIGNED NOT NULL DEFAULT 70,
+    -- 'domande' come finora, o 'h5p': un contenuto H5P (Lumi) al posto delle
+    -- domande (2026_10_22_h5p.sql). Cartella sotto storage/h5p scelta da
+    -- Pistacchio, tipo di contenuto, nome del file caricato.
+    kind            ENUM('domande', 'h5p') NOT NULL DEFAULT 'domande',
+    h5p_dir         VARCHAR(100) NULL DEFAULT NULL,
+    h5p_library     VARCHAR(120) NULL DEFAULT NULL,
+    h5p_file        VARCHAR(255) NULL DEFAULT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -382,6 +389,9 @@ CREATE TABLE quiz_attempts (
     quiz_id         INT UNSIGNED NOT NULL,
     score_pct       DECIMAL(5,2) NOT NULL,
     passed          TINYINT(1) NOT NULL DEFAULT 0,
+    -- Il punteggio di un questionario H5P come lo dice l'esercizio («5 su 5»).
+    h5p_raw         DECIMAL(8,2) NULL DEFAULT NULL,
+    h5p_max         DECIMAL(8,2) NULL DEFAULT NULL,
     attempted_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,

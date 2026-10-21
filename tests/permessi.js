@@ -646,6 +646,64 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        // --- Questionari H5P: i file del contenuto e il punteggio ----------
+        //
+        // Il questionario del mondo A diventa per la durata della prova un
+        // questionario H5P, con un pacchetto minimo aperto da
+        // `H5PArchivio::apri` (lo stesso codice del caricamento). Lo
+        // studente A apre i file e salva un tentativo; lo studente B, che
+        // non e' iscritto, no; un indirizzo con «..» non esce dalla
+        // cartella; un punteggio senza senso non si salva.
+
+        console.log('\n--- Questionari H5P: file del contenuto e punteggio');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const dir = php(`
+                $f = tempnam(sys_get_temp_dir(), "h5p");
+                $z = new ZipArchive(); $z->open($f, ZipArchive::OVERWRITE);
+                $z->addFromString("h5p.json", json_encode(["title" => "Prova", "mainLibrary" => "H5P.Prova"]));
+                $z->addFromString("content/content.json", "{}");
+                $z->close();
+                $a = App\\Core\\H5PArchivio::apri($f, (int) $argv[1]); unlink($f);
+                App\\Models\\QuizModel::impostaH5P((int) $argv[1], $a["dir"], $a["libreria"], "prova.h5p");
+                echo $a["dir"];`, A.quiz).trim();
+            const file = '/quizzes/' + A.quiz + '/h5p/content/content.json';
+            const tentativo = '/quizzes/' + A.quiz + '/h5p/tentativo';
+
+            try {
+                const stud = await entra(browser, 'stud@test.it');
+                let r = await esitoGet(stud.page, file);
+                check('studente del mondo A → un file del suo questionario H5P: consentito', r.esito === 'consentito', r.esito === 'consentito' ? [] : [r.come]);
+                r = await esitoGet(stud.page, '/quizzes/' + A.quiz + '/h5p/%2e%2e/%2e%2e/%2e%2e/config/config.php');
+                check('studente del mondo A → «..» fuori dalla cartella del contenuto: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                r = await esitoPost(stud.page, tentativo, [['raw', '3'], ['max', '4']]);
+                check('studente del mondo A → salva un tentativo: consentito', r.esito === 'consentito', r.esito === 'consentito' ? [] : [r.come]);
+                r = await esitoPost(stud.page, tentativo, [['raw', '9'], ['max', '4']]);
+                check('studente del mondo A → un punteggio oltre il massimo: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                await stud.ctx.close();
+
+                const salvati = php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM quiz_attempts WHERE quiz_id = " . (int) $argv[1] . " AND h5p_raw = 3 AND h5p_max = 4")->fetchColumn();', A.quiz).trim();
+                check('il tentativo e nel database, con «3 su 4»', salvati === '1', salvati === '1' ? [] : ['trovati ' + salvati]);
+
+                const strano = await entra(browser, 'strano@test.it');
+                r = await esitoGet(strano.page, file);
+                check('studente del mondo B → un file del questionario del mondo A: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                r = await esitoPost(strano.page, tentativo, [['raw', '4'], ['max', '4']]);
+                check('studente del mondo B → un tentativo nel questionario del mondo A: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                await strano.ctx.close();
+            } finally {
+                php(`
+                    $pdo = App\\Core\\Database::connection();
+                    $pdo->prepare("DELETE FROM quiz_attempts WHERE quiz_id = ? AND h5p_raw IS NOT NULL")->execute([(int) $argv[1]]);
+                    $pdo->prepare("UPDATE quizzes SET kind = 'domande', h5p_dir = NULL, h5p_library = NULL, h5p_file = NULL WHERE id = ?")->execute([(int) $argv[1]]);
+                    App\\Core\\H5PArchivio::elimina($argv[2]);`, A.quiz, dir);
+            }
+        }
+
         // --- l'elenco dei certificati: che cosa c'è dentro ----------------
         //
         // /certificates si apre a tutti: lo studente vede i propri, lo staff

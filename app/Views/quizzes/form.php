@@ -7,6 +7,8 @@ use App\Core\Csrf;
 /** @var array $module */
 /** @var array|null $course */
 /** @var array|null $quiz */
+/** @var bool $h5pDisponibile si puo' caricare un contenuto H5P (estensione zip) */
+$h5pDisponibile ??= false;
 
 $action = $quiz === null
     ? '/modules/' . (int) $module['id'] . '/quiz'
@@ -23,8 +25,34 @@ $action = $quiz === null
     <?php unset($_SESSION['flash_error']); ?>
 <?php endif; ?>
 
-<form action="<?= $action ?>" method="post" class="form">
+<form action="<?= $action ?>" method="post" class="form" enctype="multipart/form-data">
     <?= Csrf::field() ?>
+    <?php /* Che questionario (22/10): le domande scritte qui, come finora, o un
+             contenuto interattivo H5P creato con Lumi. Il campo del file si
+             vede solo scegliendo H5P (CSS, `:has`); senza, resta visibile
+             e il server lo ignora per un questionario a domande. */ ?>
+    <?php if ($quiz === null): ?>
+        <fieldset class="quiz-tipo">
+            <legend>Tipo di questionario</legend>
+            <label class="quiz-tipo-scelta">
+                <input type="radio" name="kind" value="domande" checked>
+                <span><strong>Domande</strong> <span class="form-hint">Le scrivi qui, una per una.</span></span>
+            </label>
+            <label class="quiz-tipo-scelta">
+                <input type="radio" name="kind" value="h5p" <?= $h5pDisponibile ? '' : 'disabled' ?>>
+                <span><strong>Contenuto H5P</strong> <span class="form-hint">Un esercizio interattivo creato con Lumi (file .h5p): il punteggio lo calcola l'esercizio.</span></span>
+            </label>
+            <?php if (!$h5pDisponibile): ?>
+                <p class="form-hint">Per i contenuti H5P serve l'estensione zip di PHP, che su questo server non c'è.</p>
+            <?php endif; ?>
+            <div class="quiz-tipo-file">
+                <label for="h5p">File .h5p</label>
+                <input type="file" id="h5p" name="h5p" accept=".h5p" aria-describedby="h5p-aiuto">
+                <p class="form-hint" id="h5p-aiuto">Serve un esercizio con domande, che dà un punteggio (Question Set, Drag the Words, Fill in the Blanks…): i contenuti da guardare o esplorare, come Accordion o Timeline, non si caricano come questionario. In Lumi: «Esporta», formato H5P. Conviene impostare l'italiano prima di esportare, così anche i pulsanti dell'esercizio sono in italiano.</p>
+            </div>
+        </fieldset>
+    <?php endif; ?>
+
     <label for="title">Titolo del questionario</label>
     <input type="text" id="title" name="title" maxlength="200" required
            value="<?= htmlspecialchars($quiz['title'] ?? '') ?>">

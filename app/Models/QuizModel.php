@@ -66,6 +66,22 @@ class QuizModel
         return (int) $db->lastInsertId();
     }
 
+    /**
+     * Un questionario H5P (22/10): il contenuto caricato, nella sua cartella
+     * sotto storage/h5p. La cartella vecchia la toglie chi chiama, dopo.
+     */
+    public static function impostaH5P(int $id, string $dir, string $libreria, string $file): void
+    {
+        Database::connection()->prepare(
+            "UPDATE quizzes SET kind = 'h5p', h5p_dir = :dir, h5p_library = :libreria, h5p_file = :file WHERE id = :id"
+        )->execute([
+            'dir' => $dir,
+            'libreria' => mb_substr($libreria, 0, 120),
+            'file' => mb_substr($file, 0, 255),
+            'id' => $id,
+        ]);
+    }
+
     public static function update(int $id, string $title, int $passingScorePct): void
     {
         $stmt = Database::connection()->prepare(

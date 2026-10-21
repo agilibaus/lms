@@ -18,6 +18,7 @@ use App\Controllers\CertificateController;
 use App\Controllers\CourseController;
 use App\Controllers\FontController;
 use App\Controllers\GroupPageController;
+use App\Controllers\H5PController;
 use App\Controllers\LessonController;
 use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
@@ -142,6 +143,17 @@ $router->get('/questions/{id}/edit', [QuizController::class, 'editQuestionForm']
 $router->post('/questions/{id}', [QuizController::class, 'updateQuestion']);
 $router->post('/questions/{id}/move', [QuizController::class, 'moveQuestion']);
 $router->post('/questions/{id}/delete', [QuizController::class, 'destroyQuestion']);
+// Questionari H5P (22/10): i file del contenuto per il riproduttore (fino a
+// sei livelli di cartelle, quanti ne usano le librerie H5P), il punteggio a
+// fine esercizio, il foglio di stile del tema dentro l'esercizio.
+$router->get('/quizzes/{id}/h5p/{p1}', [H5PController::class, 'file']);
+$router->get('/quizzes/{id}/h5p/{p1}/{p2}', [H5PController::class, 'file']);
+$router->get('/quizzes/{id}/h5p/{p1}/{p2}/{p3}', [H5PController::class, 'file']);
+$router->get('/quizzes/{id}/h5p/{p1}/{p2}/{p3}/{p4}', [H5PController::class, 'file']);
+$router->get('/quizzes/{id}/h5p/{p1}/{p2}/{p3}/{p4}/{p5}', [H5PController::class, 'file']);
+$router->get('/quizzes/{id}/h5p/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}', [H5PController::class, 'file']);
+$router->post('/quizzes/{id}/h5p/tentativo', [H5PController::class, 'tentativo']);
+$router->get('/h5p/tema.css', [H5PController::class, 'tema']);
 $router->get('/quizzes/{id}', [QuizController::class, 'show']);
 $router->post('/quizzes/{id}/attempts', [QuizController::class, 'submit']);
 $router->get('/attempts/{id}', [QuizController::class, 'result']);

@@ -9,6 +9,7 @@
 /storage/certificates/*
 /storage/welcomes/*
 /storage/bacheca/*
+/storage/h5p/*
 /storage/installed.lock
 /storage/mail/*
 !/storage/mail/.gitkeep
@@ -22,6 +23,7 @@
 !/storage/certificates/.gitkeep
 !/storage/welcomes/.gitkeep
 !/storage/bacheca/.gitkeep
+!/storage/h5p/.gitkeep
 .env
 .env.local
 *.log

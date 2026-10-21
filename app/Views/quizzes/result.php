@@ -19,8 +19,12 @@ $scorePct = (float) $attempt['score_pct'];
 // non torna in un quiz che contiene domande aperte.
 $correct = (int) round($scorePct / 100 * $scoredCount);
 
+// Un questionario H5P (22/10) non ha domande in Pistacchio: il punteggio
+// e' quello dell'esercizio, «5 su 5».
+$h5p = ($quiz['kind'] ?? '') === 'h5p';
+
 // Un quiz di sole domande aperte non si supera né si fallisce: si consegna.
-$soloAperte = $scoredCount === 0;
+$soloAperte = $scoredCount === 0 && !$h5p;
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
@@ -42,6 +46,12 @@ $soloAperte = $scoredCount === 0;
         <p class="result-score"><?= number_format($scorePct, 0) ?>%</p>
         <p class="result-label"><?= $passed ? 'Questionario superato' : 'Questionario non superato' ?></p>
         <p class="result-detail">
+            <?php if ($h5p): ?>
+                <?php if ($attempt['h5p_raw'] !== null && $attempt['h5p_max'] !== null): ?>
+                    Esercizio interattivo: <?= htmlspecialchars(App\Core\H5P::punti((float) $attempt['h5p_raw'], (float) $attempt['h5p_max'])) ?> ·
+                <?php endif; ?>
+                soglia richiesta <?= (int) $quiz['passing_score_pct'] ?>%
+            <?php else: ?>
             <?= $correct ?> risposte corrette su <?= (int) $scoredCount ?> ·
             soglia richiesta <?= (int) $quiz['passing_score_pct'] ?>%
             <?php if ($questionCount > $scoredCount): ?>
@@ -49,6 +59,7 @@ $soloAperte = $scoredCount === 0;
                 <?= (int) ($questionCount - $scoredCount) ?>
                 <?= $questionCount - $scoredCount === 1 ? 'domanda aperta non entra' : 'domande aperte non entrano' ?>
                 nel punteggio.
+            <?php endif; ?>
             <?php endif; ?>
         </p>
     </div>

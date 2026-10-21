@@ -10,6 +10,7 @@ use App\Auth\CourseRights;
 use App\Auth\StudentScope;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
+use App\Core\H5PArchivio;
 use App\Core\QuizScoring;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -73,6 +74,7 @@ class QuizController
             'module' => $module,
             'course' => CourseModel::find((int) $module['course_id']),
             'quiz' => null,
+            'h5pDisponibile' => H5PArchivio::disponibile(),
         ]);
     }
 
@@ -100,6 +102,26 @@ class QuizController
             $this->redirect('/modules/' . $module['id'] . '/quiz/create');
         }
 
+        // Il questionario H5P (22/10): si crea con il suo contenuto, o non si
+        // crea. Il file si controlla prima di creare il questionario, la
+        // cartella si apre dopo (porta il suo numero).
+        if (($_POST['kind'] ?? '') === 'h5p') {
+            $file = $this->fileH5P('/modules/' . $module['id'] . '/quiz/create', true);
+            $quizId = QuizModel::create((int) $module['id'], $title, $this->passingScoreFromPost());
+
+            try {
+                $aperto = H5PArchivio::apri($file['tmp_name'], $quizId);
+            } catch (\RuntimeException $e) {
+                QuizModel::delete($quizId);
+                $_SESSION['flash_error'] = $e->getMessage();
+                $this->redirect('/modules/' . $module['id'] . '/quiz/create');
+            }
+
+            QuizModel::impostaH5P($quizId, $aperto['dir'], $aperto['libreria'], (string) $file['name']);
+            $_SESSION['flash_success'] = 'Questionario creato con il contenuto «' . ($aperto['titolo'] !== '' ? $aperto['titolo'] : $file['name']) . '».';
+            $this->redirect('/quizzes/' . $quizId . '/edit');
+        }
+
         $quizId = QuizModel::create((int) $module['id'], $title, $this->passingScoreFromPost());
 
         $this->redirect('/quizzes/' . $quizId . '/edit');
@@ -123,6 +145,20 @@ class QuizController
             $this->notFound('Questionario non trovato.');
             return;
         }
+
+        if (($quiz['kind'] ?? '') === 'h5p') {
+            View::render('quizzes/edit_h5p', [
+                'pageTitle' => 'Modifica quiz',
+                'quiz' => $quiz,
+                'module' => $module,
+                'course' => CourseModel::find((int) $module['course_id']),
+                'tentativi' => QuizAttemptModel::countForQuiz((int) $quiz['id']),
+                'h5pDisponibile' => H5PArchivio::disponibile(),
+            ]);
+
+            return;
+        }
+
         $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
         $optionsByQuestion = [];
 
@@ -164,6 +200,28 @@ class QuizController
 
         QuizModel::update((int) $quiz['id'], $title, $this->passingScoreFromPost());
 
+        // Un contenuto H5P nuovo al posto del vecchio (22/10): la cartella
+        // nuova prima, la vecchia si toglie solo quando la nuova e' a posto.
+        // I tentativi gia' svolti restano.
+        if (($quiz['kind'] ?? '') === 'h5p') {
+            $file = $this->fileH5P('/quizzes/' . $quiz['id'] . '/edit', false);
+
+            if ($file !== null) {
+                try {
+                    $aperto = H5PArchivio::apri($file['tmp_name'], (int) $quiz['id']);
+                } catch (\RuntimeException $e) {
+                    $_SESSION['flash_error'] = $e->getMessage() . ' Il contenuto di prima è rimasto.';
+                    $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
+                }
+
+                QuizModel::impostaH5P((int) $quiz['id'], $aperto['dir'], $aperto['libreria'], (string) $file['name']);
+                H5PArchivio::elimina($quiz['h5p_dir'] ?? null);
+                $_SESSION['flash_success'] = 'Contenuto sostituito con «' . ($aperto['titolo'] !== '' ? $aperto['titolo'] : $file['name']) . '».';
+            } else {
+                $_SESSION['flash_success'] = 'Impostazioni salvate.';
+            }
+        }
+
         $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
     }
 
@@ -181,6 +239,7 @@ class QuizController
 
         $module = ModuleModel::find((int) $quiz['module_id']);
         QuizModel::delete((int) $quiz['id']);
+        H5PArchivio::elimina($quiz['h5p_dir'] ?? null);
 
         $this->redirect('/courses/' . ($module['course_id'] ?? ''));
     }
@@ -199,6 +258,12 @@ class QuizController
         if (!$quiz) {
             $this->notFound('Questionario non trovato.');
             return;
+        }
+
+        // Un questionario H5P non ha domande: il contenuto e' l'esercizio.
+        if (($quiz['kind'] ?? '') === 'h5p') {
+            $_SESSION['flash_error'] = 'Questo è un questionario H5P: le domande stanno nel contenuto, non si aggiungono qui.';
+            $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
         }
 
         try {
@@ -327,6 +392,24 @@ class QuizController
             return;
         }
 
+        // Il questionario H5P (22/10): il riproduttore al posto delle
+        // domande. Aprendo la pagina si segna in sessione che i file del
+        // contenuto si possono servire (`H5PController::file`).
+        if (($quiz['kind'] ?? '') === 'h5p') {
+            $_SESSION[H5PController::SESSIONE][(int) $quiz['id']] = true;
+
+            View::render('quizzes/take_h5p', [
+                'pageTitle' => $quiz['title'],
+                'quiz' => $quiz,
+                'module' => $module,
+                'course' => $course,
+                'attempts' => QuizAttemptModel::forUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
+                'best' => QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
+            ]);
+
+            return;
+        }
+
         $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
         $optionsByQuestion = [];
         $correctCountByQuestion = [];
@@ -379,6 +462,11 @@ class QuizController
 
         if (!$this->guardQuizAccess($module)) {
             return;
+        }
+
+        // Un questionario H5P salva i tentativi da solo, a fine esercizio.
+        if (($quiz['kind'] ?? '') === 'h5p') {
+            $this->redirect('/quizzes/' . $quiz['id']);
         }
 
         $questions = QuizQuestionModel::forQuiz((int) $quiz['id']);
@@ -592,6 +680,39 @@ class QuizController
         }
 
         return true;
+    }
+
+    /**
+     * Il file .h5p arrivato dal modulo. Null se non ne e' stato scelto uno
+     * e non era obbligatorio; altrimenti si torna a `$indietro` con la frase
+     * che dice cosa non va.
+     *
+     * @return array{name: string, tmp_name: string}|null
+     */
+    private function fileH5P(string $indietro, bool $obbligatorio): ?array
+    {
+        $f = $_FILES['h5p'] ?? null;
+        $errore = is_array($f) ? (int) ($f['error'] ?? UPLOAD_ERR_NO_FILE) : UPLOAD_ERR_NO_FILE;
+
+        if ($errore === UPLOAD_ERR_NO_FILE && !$obbligatorio) {
+            return null;
+        }
+
+        $messaggio = match (true) {
+            !H5PArchivio::disponibile() => 'Per i contenuti H5P serve l\'estensione zip di PHP, che su questo server non c\'è.',
+            $errore === UPLOAD_ERR_NO_FILE => 'Scegli il file .h5p esportato da Lumi.',
+            $errore === UPLOAD_ERR_INI_SIZE, $errore === UPLOAD_ERR_FORM_SIZE => 'Il file supera il limite del server (' . \App\Core\Upload::humanIniLimit() . ').',
+            $errore !== UPLOAD_ERR_OK || !is_uploaded_file((string) $f['tmp_name']) => 'Il file non è arrivato per intero: riprova.',
+            strtolower(pathinfo((string) $f['name'], PATHINFO_EXTENSION)) !== 'h5p' => 'Il file deve essere un pacchetto .h5p (in Lumi: Esporta, formato H5P).',
+            default => null,
+        };
+
+        if ($messaggio !== null) {
+            $_SESSION['flash_error'] = $messaggio;
+            $this->redirect($indietro);
+        }
+
+        return ['name' => basename((string) $f['name']), 'tmp_name' => (string) $f['tmp_name']];
     }
 
     private function passingScoreFromPost(): int
