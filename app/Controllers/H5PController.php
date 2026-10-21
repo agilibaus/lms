@@ -213,7 +213,11 @@ class H5PController
      * esercizi (22/10). Solo per i tipi provati: i pulsanti di tutti gli
      * esercizi a domande di H5P (Verifica, Riprova, Mostra soluzione) e i
      * riquadri di «Drag the Words», grigi e non colorati (un riquadro
-     * vuoto verde chiaro sembrerebbe gia' giusto). Gli altri tipi restano
+     * vuoto verde chiaro sembrerebbe gia' giusto). Sempre in «Drag the
+     * Words» (23/10), la parola sotto il mouse o trascinata (era rosa) e
+     * quella gia' messa in un riquadro (era azzurra) prendono la tinta
+     * chiara e il filo del tema; una parola messa e sotto il mouse ha il
+     * filo piu' spesso. Dopo la verifica giuste e sbagliate restano di H5P. Gli altri tipi restano
      * con i colori di H5P. I colori vengono da `Theme::valori()`, che li ha gia' controllati;
      * il verde e il rosso di giusto e sbagliato restano quelli di H5P,
      * perche' hanno un significato.
@@ -267,6 +271,23 @@ class H5PController
 .h5p-drag-text .h5p-drag-dropzone-container .ui-droppable.ui-droppable-hover {
     background: var(--h5p-primario-chiaro);
     box-shadow: inset 0 0 0 2px var(--h5p-primario);
+}
+.h5p-drag-text [aria-grabbed].h5p-drag-dropped:not(.h5p-drag-draggable-correct):not(.h5p-drag-draggable-wrong) {
+    color: #1c1c1a;
+    border-color: var(--h5p-primario);
+    background: var(--h5p-primario-chiaro);
+}
+.h5p-drag-text [aria-grabbed='true'],
+.h5p-drag-text [aria-grabbed]:not(.ui-draggable-disabled):hover {
+    color: #1c1c1a;
+    border-color: var(--h5p-primario);
+    background: var(--h5p-primario-chiaro);
+}
+.h5p-drag-text [aria-grabbed].h5p-drag-dropped:not(.ui-draggable-disabled):hover {
+    color: #1c1c1a;
+    border-color: var(--h5p-primario);
+    background: var(--h5p-primario-chiaro);
+    box-shadow: inset 0 0 0 1px var(--h5p-primario);
 }
 CSS;
     }
