@@ -4449,6 +4449,130 @@ fieldset.checkbox-group legend {
     color: var(--color-danger);
 }
 
+/* ---------- Contenuti H5P nelle lezioni (23/10) ----------
+
+   Nella lezione: l'esercizio nel suo riquadro bianco, dove l'autore ha messo
+   il segnaposto, con una riga sotto. Le regole delle figure e degli iframe
+   del testo (16:9 per i video) qui non valgono: l'altezza la decide il
+   riproduttore. `clear` per il capolettera: con un primo paragrafo corto,
+   la lettera alta tre righe finiva sopra l'esercizio. */
+.lesson-content .lezione-h5p {
+    clear: both;
+    margin: 1.4rem 0;
+}
+
+.lesson-content .lezione-h5p iframe {
+    aspect-ratio: auto;
+    border-radius: 0;
+}
+
+.lesson-content .lezione-h5p-nota {
+    margin-top: 0.4rem;
+}
+
+.lesson-content .lezione-h5p-errore {
+    color: var(--color-danger);
+}
+
+/* Il primo paragrafo contiene il suo capolettera, qualunque cosa venga
+   dopo (dove c'e' `initial-letter` la lettera non e' un float, e `clear`
+   da solo non basta). */
+.lesson-content:not(.mce-content-body) > p:first-child {
+    display: flow-root;
+}
+
+/* Nell'editor: il segnaposto, un blocco tratteggiato che si sposta intero. */
+.mce-content-body .h5p-segnaposto {
+    display: block;
+    margin: 1rem 0;
+    padding: 0.9rem 1rem;
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-primary-soft);
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: default;
+}
+
+.mce-content-body .h5p-segnaposto-eliminato {
+    border-color: var(--color-danger);
+    background: #fff;
+    color: var(--color-danger);
+    font-weight: 400;
+}
+
+/* In Modifica lezione. Un fieldset e' largo almeno quanto il suo
+   contenuto, e un campo file e' piu' largo di un telefono. */
+.h5p-lezione-fieldset {
+    min-width: 0;
+}
+
+.h5p-lezione-fieldset input[type="file"] {
+    max-width: 100%;
+}
+
+/* In Modifica lezione: l'elenco dei contenuti caricati. */
+.h5p-lezione-elenco {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+}
+
+.h5p-lezione-elenco li {
+    /* Per il campo del file `.sr-only`, che e' `absolute`. */
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.h5p-lezione-elenco .form-hint {
+    margin: 0;
+}
+
+.h5p-lezione-nome {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.h5p-lezione-comandi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1.2rem;
+    margin-left: auto;
+}
+
+.lesson-form .h5p-lezione-sostituisci {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    margin: 0;
+    color: var(--color-primary);
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.h5p-lezione-sostituisci:hover,
+.h5p-lezione-file:focus-visible + .h5p-lezione-sostituisci {
+    text-decoration: underline;
+}
+
+.h5p-lezione-file:focus-visible + .h5p-lezione-sostituisci {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.h5p-lezione-scelto {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--color-primary);
+}
+
 /* ---------- «Tre parole» (21/10) ----------
 
    Il riquadro dello studente sopra i moduli, con il filo verde a sinistra

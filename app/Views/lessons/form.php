@@ -6,12 +6,16 @@ use App\Controllers\LessonController;
 use App\Core\Csrf;
 use App\Core\Icona;
 use App\Core\FileType;
+use App\Core\H5P;
+use App\Core\LezioneH5P;
 use App\Core\OrphanFiles;
 use App\Core\Upload;
 
 /** @var array $module */
 /** @var array|null $lesson */
 /** @var array $materials */
+/** @var array $h5p i contenuti H5P della lezione (23/10) */
+$h5p ??= [];
 $isEdit = $lesson !== null;
 // L'id della lezione, 0 quando si sta creando: la vista serve a entrambe le cose,
 // e la riga esiste solo nel secondo caso.
@@ -52,7 +56,9 @@ $provider = $lesson['video_provider'] ?? 'none';
         <?php if (!$isEdit): ?>
             Le immagini si possono caricare dopo aver creato la lezione.
         <?php endif; ?>
-        I documenti da scaricare (PDF e altri) si aggiungono più in basso, tra i materiali.
+        I documenti da scaricare (PDF e altri) si aggiungono più in basso, tra i materiali;
+        gli esercizi H5P in «Contenuti interattivi H5P», e si mettono nel testo con
+        <em>Esercizio H5P</em> nella barra dell'editor.
     </p>
 
     <label for="duration_seconds">Durata (secondi)</label>
@@ -118,6 +124,52 @@ $provider = $lesson['video_provider'] ?? 'none';
         </div>
     </fieldset>
 
+    <?php
+    /* I contenuti H5P della lezione (23/10). Aggiunte e sostituzioni
+       viaggiano con questo modulo e si fanno al «Salva», dopo il testo: chi
+       carica un esercizio e poi lo mette nel testo non perde niente.
+       «Elimina» invece appartiene a un modulo suo, piu' in basso
+       (l'attributo `form`): un pulsante di invio qui dentro, prima di
+       «Salva», sarebbe quello che parte premendo Invio nel titolo. */
+    $nelTesto = LezioneH5P::segnaposti($lesson['content_html'] ?? null);
+    ?>
+    <fieldset class="video-fieldset h5p-lezione-fieldset" id="contenuti-h5p">
+        <legend>Contenuti interattivi H5P</legend>
+
+        <?php if ($h5p !== []): ?>
+            <ul class="h5p-lezione-elenco">
+                <?php foreach ($h5p as $c): ?>
+                    <?php $cid = (int) $c['id']; ?>
+                    <li>
+                        <span class="h5p-lezione-nome"><?= htmlspecialchars((string) $c['h5p_file']) ?></span>
+                        <span class="form-hint">
+                            <?= htmlspecialchars(H5P::nome((string) $c['h5p_library'])) ?>
+                            · <?= in_array($cid, $nelTesto, true) ? 'nel testo' : 'dopo il testo' ?>
+                        </span>
+                        <span class="h5p-lezione-comandi">
+                            <?php /* Il campo del file c'e', ma si vede come «Sostituisci»:
+                                     la sua etichetta apre la scelta del file. */ ?>
+                            <input type="file" id="h5p-sostituisci-<?= $cid ?>" name="h5p_sostituisci[<?= $cid ?>]" accept=".h5p"
+                                   class="sr-only h5p-lezione-file" aria-describedby="h5p-scelto-<?= $cid ?>">
+                            <label for="h5p-sostituisci-<?= $cid ?>" class="h5p-lezione-sostituisci">Sostituisci<span class="sr-only"> <?= htmlspecialchars((string) $c['h5p_file']) ?></span></label>
+                            <button type="submit" form="h5p-elimina-<?= $cid ?>" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
+                        </span>
+                        <span class="form-hint h5p-lezione-scelto" id="h5p-scelto-<?= $cid ?>" data-h5p-scelto hidden></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <label for="h5p_nuovi">Aggiungi un contenuto .h5p</label>
+        <input type="file" id="h5p_nuovi" name="h5p_nuovi[]" accept=".h5p" multiple>
+        <p class="hint">
+            Qualunque contenuto H5P creato con Lumi, anche più d'uno: si aggiunge al «<?= $isEdit ? 'Salva' : 'Crea lezione' ?>».
+            Per metterlo nel testo usa <em>Esercizio H5P</em> nella barra dell'editor; se non lo metti, compare dopo il testo.
+            Lo studente deve usare tutti gli esercizi per segnare la lezione come completata.
+            Il punteggio non viene salvato: un esercizio che deve contare va caricato come questionario del modulo.
+        </p>
+    </fieldset>
+
     <?php /* «Annulla» accanto a «Crea lezione» e a «Salva» (14/10, Alessandro:
              ovunque si crea o si salva): non salva niente e riporta al corso,
              alla scheda del modulo della lezione. */ ?>
@@ -126,6 +178,13 @@ $provider = $lesson['video_provider'] ?? 'none';
         <a href="/courses/<?= (int) $module['course_id'] ?>#modulo-<?= (int) $module['id'] ?>" class="btn btn-secondary">Annulla</a>
     </div>
 </form>
+
+<?php foreach ($h5p as $c): ?>
+    <form id="h5p-elimina-<?= (int) $c['id'] ?>" action="/lessons/<?= $lessonId ?>/h5p/<?= (int) $c['id'] ?>/delete" method="post"
+          data-h5p-elimina="<?= htmlspecialchars((string) $c['h5p_file']) ?>" hidden>
+        <?= Csrf::field() ?>
+    </form>
+<?php endforeach; ?>
 
 <?php if ($isEdit && $provider !== 'none'): ?>
     <?php /* Il rendiconto si raggiunge da qui e non dal menu: riguarda una
@@ -232,6 +291,7 @@ $provider = $lesson['video_provider'] ?? 'none';
 <?php endif; ?>
 
 <script src="/assets/vendor/tinymce/tinymce.min.js"></script>
+<script src="/assets/js/h5p-editor.js"></script>
 <script>
     // L'editor sta in casa: nessuna chiamata al cloud di TinyMCE e nessuna
     // chiave API. Il salvataggio ripassa comunque dal sanificatore lato server.
@@ -244,7 +304,7 @@ $provider = $lesson['video_provider'] ?? 'none';
         branding: false,
         menubar: 'edit insert format table',
         plugins: 'advlist autolink autoresize charmap code fullscreen image link lists media searchreplace table wordcount',
-        toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | link image media table | removeformat code fullscreen',
+        toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | link image media table h5p | removeformat code fullscreen',
         // Gli stessi blocchi accettati dal sanificatore: h1 no, e' il titolo della pagina.
         block_formats: 'Paragrafo=p; Titolo=h2; Sottotitolo=h3; Sotto-sottotitolo=h4; Preformattato=pre',
         autoresize_bottom_margin: 24,
@@ -282,6 +342,14 @@ $provider = $lesson['video_provider'] ?? 'none';
 
         content_css: '/assets/css/style.css',
         body_class: 'lesson-content',
+        // Il segnaposto di un contenuto H5P (23/10): un blocco che si sposta,
+        // si copia e si cancella intero, e non si scrive dentro.
+        setup: function (editor) {
+            window.PistacchioH5PEditor && window.PistacchioH5PEditor(editor, <?= json_encode(array_map(
+                static fn (array $c): array => ['id' => (int) $c['id'], 'etichetta' => LezioneH5P::etichetta($c), 'voce' => $c['h5p_file'] . ' · ' . H5P::nome((string) $c['h5p_library'])],
+                $h5p
+            ), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+        },
         convert_urls: false,
         // Scheda "Carica" nella finestra dell'immagine: senza, l'unico modo di
         // inserire un'immagine sarebbe trascinarla dentro l'editor.

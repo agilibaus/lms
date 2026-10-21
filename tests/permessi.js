@@ -665,8 +665,9 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const dir = php(`
                 $f = tempnam(sys_get_temp_dir(), "h5p");
                 $z = new ZipArchive(); $z->open($f, ZipArchive::OVERWRITE);
-                $z->addFromString("h5p.json", json_encode(["title" => "Prova", "mainLibrary" => "H5P.Prova"]));
+                $z->addFromString("h5p.json", json_encode(["title" => "Prova", "mainLibrary" => "H5P.Prova", "preloadedDependencies" => [["machineName" => "H5P.Prova", "majorVersion" => 1, "minorVersion" => 0]]]));
                 $z->addFromString("content/content.json", "{}");
+                $z->addFromString("H5P.Prova-1.0/library.json", "{}");
                 $z->close();
                 $a = App\\Core\\H5PArchivio::apri($f, (int) $argv[1]); unlink($f);
                 App\\Models\\QuizModel::impostaH5P((int) $argv[1], $a["dir"], $a["libreria"], "prova.h5p");
@@ -701,6 +702,69 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     $pdo->prepare("DELETE FROM quiz_attempts WHERE quiz_id = ? AND h5p_raw IS NOT NULL")->execute([(int) $argv[1]]);
                     $pdo->prepare("UPDATE quizzes SET kind = 'domande', h5p_dir = NULL, h5p_library = NULL, h5p_file = NULL WHERE id = ?")->execute([(int) $argv[1]]);
                     App\\Core\\H5PArchivio::elimina($argv[2]);`, A.quiz, dir);
+            }
+        }
+
+        // --- Contenuti H5P nelle lezioni (23/10) ---------------------------
+        //
+        // Un contenuto nella lezione del mondo A e uno in quella del modulo
+        // ancora chiuso. I file si servono a chi puo' aprire la lezione: lo
+        // studente A si', ma non quelli della lezione chiusa; lo studente B
+        // no. Un indirizzo con la cartella di prima (dopo una sostituzione)
+        // non serve niente. Eliminare un contenuto e' di chi modifica il corso.
+
+        console.log('\n--- Contenuti H5P nelle lezioni: file ed eliminazione');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const crea = (lezione) => php(`
+                $f = tempnam(sys_get_temp_dir(), "h5p");
+                $z = new ZipArchive(); $z->open($f, ZipArchive::OVERWRITE);
+                $z->addFromString("h5p.json", json_encode(["title" => "Fisarmonica", "mainLibrary" => "H5P.Accordion", "preloadedDependencies" => [["machineName" => "H5P.Accordion", "majorVersion" => 1, "minorVersion" => 0]]]));
+                $z->addFromString("content/content.json", "{}");
+                $z->addFromString("H5P.Accordion-1.0/library.json", "{}");
+                $z->close();
+                $a = App\\Core\\H5PArchivio::apriPerLezione($f, (int) $argv[1]); unlink($f);
+                $id = App\\Models\\LessonH5PModel::create((int) $argv[1], $a, "prova.h5p");
+                echo App\\Controllers\\H5PController::percorsoLezione(App\\Models\\LessonH5PModel::find($id)), " ", $id, " ", $a["dir"];`, lezione).trim().split(' ');
+            const [aperta, idAperta, dirAperta] = crea(A.lezione);
+            const [chiusa, idChiusa, dirChiusa] = crea(A.lezione_chiusa);
+
+            try {
+                const stud = await entra(browser, 'stud@test.it');
+                let r = await esitoGet(stud.page, aperta + '/content/content.json');
+                check('studente del mondo A → un file di un contenuto H5P della sua lezione: consentito', r.esito === 'consentito', r.esito === 'consentito' ? [] : [r.come]);
+                r = await esitoGet(stud.page, aperta.replace(/-[0-9a-f]{12}$/, '-000000000000') + '/content/content.json');
+                check('studente del mondo A → lo stesso contenuto con la cartella sbagliata: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                r = await esitoGet(stud.page, chiusa + '/content/content.json');
+                check('studente del mondo A → un contenuto H5P di un modulo non ancora aperto: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                r = await esitoGet(stud.page, aperta + '/%2e%2e/%2e%2e/config/config.php');
+                check('studente del mondo A → «..» fuori dalla cartella del contenuto: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                r = await esitoPost(stud.page, '/lessons/' + A.lezione + '/h5p/' + idAperta + '/delete', []);
+                check('studente del mondo A → elimina un contenuto H5P: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                await stud.ctx.close();
+
+                const strano = await entra(browser, 'strano@test.it');
+                r = await esitoGet(strano.page, aperta + '/content/content.json');
+                check('studente del mondo B → un file di un contenuto H5P del mondo A: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                await strano.ctx.close();
+
+                const tutorB = await entra(browser, 'tutor2@test.it');
+                r = await esitoPost(tutorB.page, '/lessons/' + A.lezione + '/h5p/' + idAperta + '/delete', []);
+                check('tutor del mondo B → elimina un contenuto H5P del mondo A: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                await tutorB.ctx.close();
+
+                const restano = php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM lesson_h5p WHERE id = " . (int) $argv[1])->fetchColumn();', idAperta).trim();
+                check('il contenuto c è ancora', restano === '1', restano === '1' ? [] : ['trovati ' + restano]);
+            } finally {
+                php(`
+                    $pdo = App\\Core\\Database::connection();
+                    $pdo->prepare("DELETE FROM lesson_h5p WHERE id IN (?, ?)")->execute([(int) $argv[1], (int) $argv[2]]);
+                    App\\Core\\H5PArchivio::elimina($argv[3]);
+                    App\\Core\\H5PArchivio::elimina($argv[4]);`, idAperta, idChiusa, dirAperta, dirChiusa);
             }
         }
 

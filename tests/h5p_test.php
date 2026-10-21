@@ -150,9 +150,15 @@ if (!H5PArchivio::disponibile()) {
         }
     };
 
-    $accordion = ['h5p.json' => '{"title":"Fisarmonica","mainLibrary":"H5P.Accordion"}', 'content/content.json' => '{}'];
+    $accordion = [
+        'h5p.json' => '{"title":"Fisarmonica","mainLibrary":"H5P.Accordion","preloadedDependencies":[{"machineName":"H5P.Accordion","majorVersion":1,"minorVersion":0}]}',
+        'content/content.json' => '{}',
+        'H5P.Accordion-1.0/library.json' => '{}',
+    ];
     $msg = $rifiutato($accordion);
-    check('un Accordion come questionario rifiutato, con il suo nome', $msg !== null && str_contains($msg, 'Accordion'), (string) $msg);
+    check('un Accordion come questionario rifiutato, con il suo nome', $msg !== null && str_contains($msg, '«Accordion»') && str_contains($msg, 'lezione'), (string) $msg);
+    $msg = $rifiutato(['h5p.json' => $base['h5p.json'], 'content/content.json' => '{}']);
+    check('senza il codice della libreria rifiutato (23/10)', $msg !== null && str_contains($msg, 'H5P.Prova'), (string) $msg);
     check('zip slip rifiutato', $rifiutato($base + ['../../fuori.json' => '{}']) !== null);
     check('php rifiutato', $rifiutato($base + ['H5P.Prova-1.2/x.php' => '<?php']) !== null);
     check('html rifiutato', $rifiutato($base + ['content/x.html' => '<script>']) !== null);

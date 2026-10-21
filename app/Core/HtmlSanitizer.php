@@ -38,7 +38,9 @@ class HtmlSanitizer
         'table' => [], 'thead' => [], 'tbody' => [], 'tfoot' => [],
         'tr' => [], 'th' => ['colspan', 'rowspan', 'scope'], 'td' => ['colspan', 'rowspan'],
         'caption' => [], 'colgroup' => ['span'], 'col' => ['span'],
-        'span' => [], 'div' => [],
+        // `data-h5p`: il segnaposto di un contenuto H5P della lezione
+        // (23/10, App\Core\LezioneH5P), solo con un numero.
+        'span' => [], 'div' => ['data-h5p'],
         'iframe' => ['src', 'width', 'height', 'title', 'allow', 'allowfullscreen', 'frameborder'],
     ];
 
@@ -174,6 +176,10 @@ class HtmlSanitizer
             }
 
             if (($name === 'href' || $name === 'src') && !self::isSafeUrl($attribute->nodeValue ?? '', $name)) {
+                $element->removeAttribute($attribute->nodeName);
+            }
+
+            if ($name === 'data-h5p' && preg_match('/^\d{1,10}$/', (string) $attribute->nodeValue) !== 1) {
                 $element->removeAttribute($attribute->nodeName);
             }
         }

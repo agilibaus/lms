@@ -281,6 +281,21 @@ CREATE TABLE lesson_materials (
     INDEX idx_lesson_materials_order (lesson_id, position)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Contenuti H5P di una lezione (2026_10_23_h5p_lezioni.sql): messi nel testo
+-- con un segnaposto <div data-h5p="id">, o dopo il testo. Nessun punteggio.
+CREATE TABLE lesson_h5p (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    lesson_id       INT UNSIGNED NOT NULL,
+    h5p_dir         VARCHAR(100) NOT NULL,
+    h5p_library     VARCHAR(120) NOT NULL,
+    h5p_title       VARCHAR(200) NOT NULL DEFAULT '',
+    h5p_file        VARCHAR(255) NOT NULL,
+    position        SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_lesson_h5p_order (lesson_id, position),
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ---------------------------------------------------
 -- Iscrizioni
 -- ---------------------------------------------------

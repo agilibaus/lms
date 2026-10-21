@@ -124,6 +124,39 @@ final class H5P
         'H5P.ThreeImage' => 'Virtual Tour (360)',
     ];
 
+    /**
+     * Il nome con cui Lumi presenta i tipi piu' usati (23/10): «Drag the
+     * Words» dice di piu' di «H5P.DragText 1.10». Quelli senza punteggio
+     * stanno in SENZA_PUNTEGGIO; per gli altri, il nome tecnico senza «H5P.».
+     */
+    public const NOMI = [
+        'H5P.DragText' => 'Drag the Words',
+        'H5P.Blanks' => 'Fill in the Blanks',
+        'H5P.MultiChoice' => 'Multiple Choice',
+        'H5P.SingleChoiceSet' => 'Single Choice Set',
+        'H5P.TrueFalse' => 'True/False Question',
+        'H5P.QuestionSet' => 'Question Set',
+        'H5P.DragQuestion' => 'Drag and Drop',
+        'H5P.MarkTheWords' => 'Mark the Words',
+        'H5P.Summary' => 'Summary',
+        'H5P.Flashcards' => 'Flashcards',
+        'H5P.MemoryGame' => 'Memory Game',
+        'H5P.ImageSequencing' => 'Image Sequencing',
+        'H5P.ImagePair' => 'Image Pairing',
+        'H5P.ImageHotspotQuestion' => 'Find the Hotspot',
+        'H5P.ImageMultipleHotspotQuestion' => 'Find Multiple Hotspots',
+        'H5P.Essay' => 'Essay',
+        'H5P.Crossword' => 'Crossword',
+        'H5P.SortParagraphs' => 'Sort the Paragraphs',
+        'H5P.ArithmeticQuiz' => 'Arithmetic Quiz',
+        'H5P.Questionnaire' => 'Questionnaire',
+        'H5P.CoursePresentation' => 'Course Presentation',
+        'H5P.InteractiveVideo' => 'Interactive Video',
+        'H5P.InteractiveBook' => 'Interactive Book',
+        'H5P.BranchingScenario' => 'Branching Scenario',
+        'H5P.Column' => 'Column',
+    ];
+
     public const SALTA = 'salta';
     public const RIFIUTA = 'rifiuta';
 
@@ -248,6 +281,18 @@ final class H5P
         }
 
         return ['raw' => round($raw, 2), 'max' => round($max, 2), 'pct' => round($raw / $max * 100, 2)];
+    }
+
+    /**
+     * Il nome del tipo di contenuto da `h5p_library` («H5P.DragText 1.10»):
+     * «Drag the Words».
+     */
+    public static function nome(string $libreria): string
+    {
+        $principale = (string) strtok(trim($libreria), ' ');
+
+        return self::NOMI[$principale] ?? self::SENZA_PUNTEGGIO[$principale]
+            ?? (str_starts_with($principale, 'H5P.') ? substr($principale, 4) : $principale);
     }
 
     /** Il tipo di un file da servire, dall'estensione; null se non e' fra le ammesse. */

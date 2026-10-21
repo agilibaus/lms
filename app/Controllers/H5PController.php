@@ -13,13 +13,15 @@ use App\Core\H5PArchivio;
 use App\Core\QuizScoring;
 use App\Core\Theme;
 use App\Models\EnrollmentModel;
+use App\Models\LessonH5PModel;
+use App\Models\LessonModel;
 use App\Models\ModuleModel;
 use App\Models\QuizAttemptModel;
 use App\Models\QuizModel;
 
 /**
- * I questionari H5P (22/10) dal lato del browser: i file del contenuto per
- * il riproduttore, il punteggio che arriva a fine esercizio, il foglio di
+ * I questionari H5P (22/10) e i contenuti H5P delle lezioni (23/10) dal
+ * lato del browser: i file del contenuto per il riproduttore, il punteggio che arriva a fine esercizio, il foglio di
  * stile con i colori e il carattere del tema. Caricamento e pagine stanno
  * in `QuizController`; le regole in `App\Core\H5P`.
  */
@@ -27,6 +29,9 @@ class H5PController
 {
     /** La chiave di sessione dei questionari H5P gia' aperti (vedi `file()`). */
     public const SESSIONE = 'h5p_aperti';
+
+    /** La stessa cosa per i contenuti delle lezioni (23/10), per id del contenuto. */
+    public const SESSIONE_LEZIONI = 'h5p_lezioni_aperti';
 
     /**
      * GET /quizzes/{id}/h5p/{p1}[/{p2}…] — un file del contenuto.
@@ -52,12 +57,64 @@ class H5PController
         }
 
         if (!$giaAperto && !self::puoAprire($quiz)) {
-            http_response_code(403);
-            header('Content-Type: text/plain; charset=utf-8');
-            echo 'Non puoi aprire questo contenuto.';
-            exit;
+            $this->vietato();
         }
 
+        $this->manda((string) $quiz['h5p_dir'], $params);
+    }
+
+    /**
+     * GET /lessons/{id}/h5p/{contenuto}/{p1}[/{p2}…] — un file di un
+     * contenuto H5P della lezione (23/10). Come `file()`: il permesso per
+     * intero la prima volta, poi la sessione aperta dalla pagina della
+     * lezione.
+     *
+     * `{contenuto}` e' l'id con la parte casuale della cartella
+     * («12-a1b2c3d4e5f6», `self::chiave()`): sostituito il file, l'id resta
+     * (i segnaposto nel testo valgono ancora) ma l'indirizzo cambia, e il
+     * browser non mescola file vecchi e nuovi dalla sua cache.
+     */
+    public function fileLezione(array $params): void
+    {
+        Auth::requireLogin();
+
+        if (preg_match('/^(\d{1,10})-([0-9a-f]{12})$/', (string) $params['contenuto'], $m) !== 1) {
+            $this->manca();
+        }
+
+        $id = (int) $m[1];
+        $giaAperto = !empty($_SESSION[self::SESSIONE_LEZIONI][$id]);
+        session_write_close();
+
+        $contenuto = LessonH5PModel::find($id);
+
+        if ($contenuto === null || (int) $contenuto['lesson_id'] !== (int) $params['id']
+            || self::chiave($contenuto) !== $params['contenuto']) {
+            $this->manca();
+        }
+
+        if (!$giaAperto && !self::puoAprireLezione((int) $contenuto['lesson_id'])) {
+            $this->vietato();
+        }
+
+        $this->manda((string) $contenuto['h5p_dir'], $params);
+    }
+
+    /** «12-a1b2c3d4e5f6»: l'id del contenuto e la parte casuale della sua cartella. */
+    public static function chiave(array $contenuto): string
+    {
+        return (int) $contenuto['id'] . '-' . substr((string) $contenuto['h5p_dir'], -12);
+    }
+
+    /** L'indirizzo da cui il riproduttore prende i file di un contenuto della lezione. */
+    public static function percorsoLezione(array $contenuto): string
+    {
+        return '/lessons/' . (int) $contenuto['lesson_id'] . '/h5p/' . self::chiave($contenuto);
+    }
+
+    /** Il file `p1/p2/…` della cartella del contenuto, con il tipo deciso qui. */
+    private function manda(string $dir, array $params): never
+    {
         $segmenti = [];
 
         for ($i = 1; isset($params['p' . $i]); $i++) {
@@ -65,7 +122,7 @@ class H5PController
         }
 
         $percorso = implode('/', $segmenti);
-        $file = H5PArchivio::file((string) $quiz['h5p_dir'], $percorso);
+        $file = H5PArchivio::file($dir, $percorso);
         $tipo = H5P::tipo($percorso);
 
         if ($file === null || $tipo === null) {
@@ -218,6 +275,27 @@ CSS;
      * Se chi chiede puo' aprire il questionario: le stesse regole della sua
      * pagina (staff; studente iscritto al corso, con il modulo aperto).
      */
+    /**
+     * Se chi chiede puo' aprire i contenuti di una lezione: le regole della
+     * sua pagina (staff; studente iscritto al corso, con il modulo aperto).
+     */
+    public static function puoAprireLezione(int $lessonId): bool
+    {
+        $lezione = LessonModel::find($lessonId);
+        $module = $lezione === null ? null : ModuleModel::find((int) $lezione['module_id']);
+
+        if ($module === null) {
+            return false;
+        }
+
+        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+            return true;
+        }
+
+        return EnrollmentModel::find((int) Auth::id(), (int) $module['course_id']) !== null
+            && !CourseAccess::isModuleLocked((int) Auth::id(), (int) $module['id']);
+    }
+
     public static function puoAprire(array $quiz): bool
     {
         $module = ModuleModel::find((int) $quiz['module_id']);
@@ -232,6 +310,14 @@ CSS;
 
         return EnrollmentModel::find((int) Auth::id(), (int) $module['course_id']) !== null
             && !CourseAccess::isModuleLocked((int) Auth::id(), (int) $module['id']);
+    }
+
+    private function vietato(): never
+    {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Non puoi aprire questo contenuto.';
+        exit;
     }
 
     private function manca(): never

@@ -8,12 +8,15 @@ use App\Core\Csrf;
 use App\Core\Icona;
 use App\Core\VideoPoster;
 use App\Core\FileType;
+use App\Controllers\H5PController;
+use App\Core\LezioneH5P;
 use App\Core\VideoEmbed;
 
 /** @var array $lesson */
 /** @var array $module */
 /** @var array $course */
 /** @var array $materials */
+/** @var array $h5p i contenuti H5P della lezione (23/10) */
 /** @var bool $completed */
 /** @var array $liveSessions */
 /** @var int|null $riprendiDa secondo da cui riprendere, null se non c'e' niente da riprendere */
@@ -58,8 +61,38 @@ $conVideo = $lesson['video_provider'] !== 'none';
 // presentazione e regola didattica evita che cambiare idea sull'una tocchi
 // l'altra.
 $soloVideo = $conVideo
-    && trim(strip_tags((string) ($lesson['content_html'] ?? ''))) === ''
-    && $materials === [];
+    && LezioneH5P::testoSenzaSegnaposti($lesson['content_html'] ?? null) === ''
+    && $materials === []
+    && $h5p === [];
+
+// I contenuti H5P (23/10): ognuno al posto del suo segnaposto nel testo,
+// quelli non messi dopo il testo. Lo studente li deve usare tutti per
+// segnare la lezione come completata (h5p-lezione.js).
+$h5pPerId = [];
+
+foreach ($h5p as $c) {
+    $h5pPerId[(int) $c['id']] = $c;
+}
+
+$esercizio = static function (int $id) use ($h5pPerId): string {
+    $c = $h5pPerId[$id];
+    $titolo = trim((string) $c['h5p_title']) !== '' ? (string) $c['h5p_title'] : (string) $c['h5p_file'];
+
+    return '<figure class="lezione-h5p" data-lezione-h5p'
+        . ' data-percorso="' . htmlspecialchars(H5PController::percorsoLezione($c)) . '"'
+        . ' data-titolo="' . htmlspecialchars('Esercizio interattivo: ' . $titolo) . '">'
+        . '<div class="h5p-contenitore"></div>'
+        . '<noscript><p class="empty-state">Per usare questo esercizio serve JavaScript attivo nel browser.</p></noscript>'
+        . '<figcaption class="lezione-h5p-nota">Esercizio interattivo · non dà una valutazione</figcaption>'
+        . '</figure>';
+};
+
+$composto = LezioneH5P::componi($lesson['content_html'] ?? null, array_keys($h5pPerId), $esercizio);
+$testoLezione = $composto['html'];
+
+foreach (LezioneH5P::dopoIlTesto($h5p, $composto['messi']) as $c) {
+    $testoLezione .= $esercizio((int) $c['id']);
+}
 
 $iframe = VideoEmbed::isIframeProvider((string) $lesson['video_provider']);
 $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (int) $lesson['id'], $conVideo);
@@ -178,8 +211,8 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
     </section>
 <?php endif; ?>
 
-<?php if (!empty($lesson['content_html'])): ?>
-    <div class="lesson-content"><?= $lesson['content_html'] ?></div>
+<?php if ($testoLezione !== ''): ?>
+    <div class="lesson-content"><?= $testoLezione ?></div>
 <?php endif; ?>
 
 <?php if (!empty($materials)): ?>
@@ -221,6 +254,11 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                 Avvia il video per poter segnare la lezione come completata.
             </span>
         <?php endif; ?>
+        <?php if ($h5p !== []): ?>
+            <?php /* Lo scrive h5p-lezione.js, che disabilita il pulsante
+                     finche' gli esercizi non sono stati usati tutti. */ ?>
+            <span class="form-hint" data-avviso-h5p role="status" hidden></span>
+        <?php endif; ?>
     </form>
 <?php endif; ?>
 
@@ -242,4 +280,9 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
                 data-token="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES) ?>"
                 data-durata="<?= (int) ($lesson['duration_seconds'] ?? 0) ?>"></script>
     <?php endif; ?>
+<?php endif; ?>
+
+<?php if ($h5p !== []): ?>
+    <script src="/assets/h5p/main.bundle.js"></script>
+    <script src="/assets/js/h5p-lezione.js"></script>
 <?php endif; ?>

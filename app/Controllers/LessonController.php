@@ -7,6 +7,8 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Core\FileStream;
+use App\Core\H5PArchivio;
+use App\Core\LezioneH5P;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\HtmlSanitizer;
@@ -17,6 +19,7 @@ use App\Core\VideoEmbed;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
+use App\Models\LessonH5PModel;
 use App\Models\LessonMaterialModel;
 use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
@@ -70,6 +73,7 @@ class LessonController
             'module' => $module,
             'lesson' => null,
             'materials' => [],
+            'h5p' => [],
         ]);
     }
 
@@ -111,7 +115,7 @@ class LessonController
             $_SESSION['flash_error'] = $e->getMessage();
         }
 
-        $_SESSION['flash_success'] = 'Lezione creata.';
+        $_SESSION['flash_success'] = 'Lezione creata.' . $this->handleH5PUploads($lessonId);
         $this->warnMissingVideoRef($provider);
 
         header('Location: /lessons/' . $lessonId . '/edit');
@@ -157,12 +161,21 @@ class LessonController
             return;
         }
 
+        $h5p = LessonH5PModel::forLesson((int) $lesson['id']);
+
+        // I file dei contenuti si servono a chi ha aperto la pagina senza
+        // rifare tutti i controlli a ogni richiesta (H5PController::fileLezione).
+        foreach ($h5p as $contenuto) {
+            $_SESSION[H5PController::SESSIONE_LEZIONI][(int) $contenuto['id']] = true;
+        }
+
         View::render('lessons/show', [
             'pageTitle' => $lesson['title'],
             'lesson' => $lesson,
             'module' => $module,
             'course' => $course,
             'materials' => LessonMaterialModel::forLesson((int) $lesson['id']),
+            'h5p' => $h5p,
             'completed' => LessonProgressModel::isCompleted((int) Auth::id(), (int) $lesson['id']),
             // Solo gli incontri che chi guarda puo' aprire (17/10, LiveScope):
             // un tutor che legge la lezione del corso di un collega non vede
@@ -235,6 +248,7 @@ class LessonController
             'module' => $module,
             'lesson' => $lesson,
             'materials' => LessonMaterialModel::forLesson((int) $lesson['id']),
+            'h5p' => LessonH5PModel::forLesson((int) $lesson['id']),
         ]);
     }
 
@@ -271,7 +285,7 @@ class LessonController
             $this->durationFromPost()
         );
 
-        $_SESSION['flash_success'] = 'Lezione salvata.';
+        $_SESSION['flash_success'] = 'Lezione salvata.' . $this->handleH5PUploads((int) $lesson['id']);
         $this->warnMissingVideoRef($provider);
 
         try {
@@ -342,8 +356,16 @@ class LessonController
         // Chi elimina viene avvisato che quei file rimangono, perche' da quel
         // momento nessuna pagina li nomina piu'.
         $files = OrphanFiles::forLesson((int) $lesson['id'], $lesson, true);
+        // I contenuti H5P invece si tolgono (23/10): sono cartelle estratte da
+        // Pistacchio, non file caricati, e il .h5p da cui vengono e' di chi
+        // l'ha creato con Lumi.
+        $cartelleH5P = LessonH5PModel::dirsForLesson((int) $lesson['id']);
 
         LessonModel::delete((int) $lesson['id']);
+
+        foreach ($cartelleH5P as $cartella) {
+            H5PArchivio::elimina($cartella);
+        }
 
         $_SESSION['flash_success'] = match (true) {
             $files['count'] === 0 => 'Lezione eliminata.',
@@ -542,6 +564,37 @@ class LessonController
         LessonMaterialModel::delete((int) $material['id']);
 
         header('Location: /lessons/' . $material['lesson_id'] . '/edit');
+        exit;
+    }
+
+    /**
+     * POST /lessons/{id}/h5p/{contenuto}/delete — toglie un contenuto H5P
+     * dalla lezione e la sua cartella dal disco (23/10). Un segnaposto
+     * rimasto nel testo non mostra piu' niente, e l'editor lo dice.
+     */
+    public function deleteH5P(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEditLesson((int) $params['id']);
+
+        $contenuto = LessonH5PModel::find((int) $params['contenuto']);
+
+        if ($contenuto === null || (int) $contenuto['lesson_id'] !== (int) $params['id']) {
+            http_response_code(404);
+            echo 'Contenuto non trovato.';
+            return;
+        }
+
+        LessonH5PModel::delete((int) $contenuto['id']);
+        H5PArchivio::elimina((string) $contenuto['h5p_dir']);
+
+        $lesson = LessonModel::find((int) $contenuto['lesson_id']);
+        $nelTesto = in_array((int) $contenuto['id'], LezioneH5P::segnaposti($lesson['content_html'] ?? null), true);
+
+        $_SESSION['flash_success'] = 'Contenuto «' . $contenuto['h5p_file'] . '» eliminato.'
+            . ($nelTesto ? ' Il suo segnaposto è ancora nel testo e non mostra più niente: puoi cancellarlo dall\'editor.' : '');
+
+        header('Location: /lessons/' . (int) $contenuto['lesson_id'] . '/edit#contenuti-h5p');
         exit;
     }
 
@@ -913,6 +966,111 @@ class LessonController
         );
 
         LessonModel::updateVideoRef($lessonId, $stored['stored_path']);
+    }
+
+    /**
+     * I contenuti H5P scelti nel modulo della lezione (23/10): quelli nuovi
+     * (`h5p_nuovi[]`) e quelli sostituiti (`h5p_sostituisci[id]`, stesso id:
+     * il segnaposto nel testo resta valido). Si fa dopo aver salvato il
+     * testo: un file che non va non fa perdere niente, e l'errore dice quale.
+     *
+     * @return string la frase da aggiungere al «Lezione salvata.», vuota se
+     *                non e' arrivato nessun contenuto
+     */
+    private function handleH5PUploads(int $lessonId): string
+    {
+        $fatti = [];
+        $errori = [];
+
+        foreach (self::fileArrivati('h5p_nuovi') as $f) {
+            try {
+                $contenuto = H5PArchivio::apriPerLezione(self::fileH5PValido($f), $lessonId);
+                LessonH5PModel::create($lessonId, $contenuto, self::nomeFile($f));
+                $fatti[] = 'aggiunto «' . self::nomeFile($f) . '»';
+            } catch (\RuntimeException $e) {
+                $errori[] = '«' . self::nomeFile($f) . '» non è stato aggiunto: ' . $e->getMessage();
+            }
+        }
+
+        foreach (self::fileArrivati('h5p_sostituisci') as $id => $f) {
+            $vecchio = LessonH5PModel::find((int) $id);
+
+            if ($vecchio === null || (int) $vecchio['lesson_id'] !== $lessonId) {
+                continue;
+            }
+
+            try {
+                $contenuto = H5PArchivio::apriPerLezione(self::fileH5PValido($f), $lessonId);
+                LessonH5PModel::replace((int) $vecchio['id'], $contenuto, self::nomeFile($f));
+                H5PArchivio::elimina((string) $vecchio['h5p_dir']);
+                $fatti[] = '«' . $vecchio['h5p_file'] . '» sostituito con «' . self::nomeFile($f) . '»';
+            } catch (\RuntimeException $e) {
+                $errori[] = '«' . $vecchio['h5p_file'] . '» non è stato sostituito: ' . $e->getMessage();
+            }
+        }
+
+        if ($errori !== []) {
+            $_SESSION['flash_error'] = trim(($_SESSION['flash_error'] ?? '') . ' ' . implode(' ', $errori));
+        }
+
+        return $fatti === [] ? '' : ' Contenuti H5P: ' . implode(', ', $fatti) . '.';
+    }
+
+    /**
+     * I file arrivati in un campo, uno per chiave, senza quelli lasciati
+     * vuoti: `campo[]` (chiavi 0, 1…) o `campo[id]`.
+     *
+     * @return array<int|string, array{name: string, tmp_name: string, error: int}>
+     */
+    private static function fileArrivati(string $campo): array
+    {
+        $f = $_FILES[$campo] ?? null;
+
+        if (!is_array($f) || !is_array($f['name'] ?? null)) {
+            return [];
+        }
+
+        $arrivati = [];
+
+        foreach ($f['name'] as $chiave => $nome) {
+            $errore = (int) ($f['error'][$chiave] ?? UPLOAD_ERR_NO_FILE);
+
+            if ($errore === UPLOAD_ERR_NO_FILE || !is_string($nome)) {
+                continue;
+            }
+
+            $arrivati[$chiave] = ['name' => $nome, 'tmp_name' => (string) ($f['tmp_name'][$chiave] ?? ''), 'error' => $errore];
+        }
+
+        return $arrivati;
+    }
+
+    /**
+     * Il percorso del file caricato, se e' un .h5p arrivato per intero.
+     *
+     * @param array{name: string, tmp_name: string, error: int} $f
+     * @throws \RuntimeException
+     */
+    private static function fileH5PValido(array $f): string
+    {
+        $messaggio = match (true) {
+            $f['error'] === UPLOAD_ERR_INI_SIZE, $f['error'] === UPLOAD_ERR_FORM_SIZE => 'supera il limite del server (' . Upload::humanIniLimit() . ').',
+            $f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name']) => 'non è arrivato per intero, riprova.',
+            strtolower(pathinfo($f['name'], PATHINFO_EXTENSION)) !== 'h5p' => 'deve essere un pacchetto .h5p (in Lumi: Esporta, formato H5P).',
+            default => null,
+        };
+
+        if ($messaggio !== null) {
+            throw new \RuntimeException($messaggio);
+        }
+
+        return $f['tmp_name'];
+    }
+
+    /** @param array{name: string} $f */
+    private static function nomeFile(array $f): string
+    {
+        return mb_substr(basename(str_replace('\\', '/', $f['name'])), 0, 255);
     }
 
     private function handleMaterialUploads(int $lessonId): void
