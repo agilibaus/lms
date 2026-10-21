@@ -397,6 +397,7 @@ class QuizController
         // contenuto si possono servire (`H5PController::file`).
         if (($quiz['kind'] ?? '') === 'h5p') {
             $_SESSION[H5PController::SESSIONE][(int) $quiz['id']] = true;
+            $best = QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']);
 
             View::render('quizzes/take_h5p', [
                 'pageTitle' => $quiz['title'],
@@ -404,7 +405,8 @@ class QuizController
                 'module' => $module,
                 'course' => $course,
                 'attempts' => QuizAttemptModel::forUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
-                'best' => QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
+                'best' => $best,
+                'concluso' => Auth::hasRole('studente') && QuizScoring::concluso($best),
             ]);
 
             return;
@@ -429,6 +431,8 @@ class QuizController
             );
         }
 
+        $best = QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']);
+
         View::render('quizzes/take', [
             'pageTitle' => $quiz['title'],
             'quiz' => $quiz,
@@ -438,7 +442,10 @@ class QuizController
             'optionsByQuestion' => $optionsByQuestion,
             'correctCountByQuestion' => $correctCountByQuestion,
             'attempts' => QuizAttemptModel::forUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
-            'best' => QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']),
+            'best' => $best,
+            // Superato al 100% (23/10): la pagina e' spenta. Solo per lo
+            // studente: lo staff lo guarda in anteprima.
+            'concluso' => Auth::hasRole('studente') && QuizScoring::concluso($best),
         ]);
     }
 
@@ -466,6 +473,13 @@ class QuizController
 
         // Un questionario H5P salva i tentativi da solo, a fine esercizio.
         if (($quiz['kind'] ?? '') === 'h5p') {
+            $this->redirect('/quizzes/' . $quiz['id']);
+        }
+
+        // Superato al 100% (23/10): concluso, niente altri tentativi, anche
+        // con un invio costruito a mano o da una pagina rimasta aperta.
+        if (QuizScoring::concluso(QuizAttemptModel::bestForUserAndQuiz((int) Auth::id(), (int) $quiz['id']))) {
+            $_SESSION['flash_error'] = QuizScoring::CONCLUSO . ' Il nuovo tentativo non è stato salvato.';
             $this->redirect('/quizzes/' . $quiz['id']);
         }
 

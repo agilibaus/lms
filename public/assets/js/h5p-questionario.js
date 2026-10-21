@@ -34,6 +34,12 @@
     }
 
     function salva(raw, max) {
+        // Superato al 100% (23/10): la pagina e' spenta, e il server
+        // rifiuterebbe comunque il tentativo.
+        if (contenitore.hasAttribute('data-concluso')) {
+            return;
+        }
+
         var corpo = new FormData();
         corpo.append(dati.campo, dati.token);
         corpo.append('raw', String(raw));

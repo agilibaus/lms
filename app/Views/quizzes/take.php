@@ -17,14 +17,14 @@ use App\Core\QuizScoring;
 /** @var array<int, int> $correctCountByQuestion quante risposte corrette ha ogni domanda */
 /** @var array $attempts */
 /** @var array|null $best */
+/** @var bool $concluso superato al 100% dallo studente: tutto spento (23/10) */
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
     <h1><?= htmlspecialchars($quiz['title']) ?></h1>
     <p class="page-subtitle">
         Modulo: <?= htmlspecialchars($module['title']) ?> ·
-        soglia di superamento <?= (int) $quiz['passing_score_pct'] ?>% ·
-        tentativi illimitati
+        soglia di superamento <?= (int) $quiz['passing_score_pct'] ?>%<?= $concluso ? '' : ' · tentativi illimitati' ?>
     </p>
 </div>
 
@@ -42,7 +42,13 @@ use App\Core\QuizScoring;
     <?php unset($_SESSION['flash_error']); ?>
 <?php endif; ?>
 
-<?php if ($best !== null): ?>
+<?php if ($concluso): ?>
+    <?php /* Superato al 100% (23/10, Alessandro): il questionario resta
+             visibile ma spento, e non si rifà. */ ?>
+    <div class="alert alert-success quiz-concluso-avviso">
+        <?= Icona::svg('check-circle-fill') ?><strong><?= htmlspecialchars(QuizScoring::CONCLUSO) ?></strong>
+    </div>
+<?php elseif ($best !== null): ?>
     <div class="alert <?= $best['passed'] ? 'alert-success' : 'alert-warning' ?>">
         Miglior risultato: <?= number_format($best['score_pct'], 0) ?>%
         (<?= $best['passed'] ? 'superato' : 'non superato' ?>) su <?= (int) $best['attempts'] === 1 ? '1 tentativo' : (int) $best['attempts'] . ' tentativi' ?>.
@@ -52,8 +58,11 @@ use App\Core\QuizScoring;
 <?php if ($questions === []): ?>
     <p class="empty-state">Questo questionario non ha ancora domande.</p>
 <?php else: ?>
-    <form action="/quizzes/<?= (int) $quiz['id'] ?>/attempts" method="post" class="quiz-form">
+    <form action="/quizzes/<?= (int) $quiz['id'] ?>/attempts" method="post" class="quiz-form<?= $concluso ? ' quiz-concluso' : '' ?>">
         <?= Csrf::field() ?>
+        <?php /* Concluso: un `fieldset` disattivato spegne in un colpo solo
+                 tutte le risposte e il pulsante, anche da tastiera. */ ?>
+        <fieldset class="quiz-concluso-campi" <?= $concluso ? 'disabled' : '' ?>>
         <ol class="quiz-question-list">
             <?php foreach ($questions as $indice => $question): ?>
                 <?php
@@ -144,11 +153,14 @@ use App\Core\QuizScoring;
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Invia risposte</button>
                 <?php /* «Annulla» (14/10): non invia niente e torna al corso, alla scheda del modulo. */ ?>
-                <a href="/courses/<?= (int) $module['course_id'] ?>#modulo-<?= (int) $module['id'] ?>" class="btn btn-secondary">Annulla</a>
+                <?php if (!$concluso): ?>
+                    <a href="/courses/<?= (int) $module['course_id'] ?>#modulo-<?= (int) $module['id'] ?>" class="btn btn-secondary">Annulla</a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <p class="form-hint">Anteprima per lo staff: l'invio è riservato agli studenti iscritti.</p>
         <?php endif; ?>
+        </fieldset>
     </form>
 
     <?php /* In fondo e non in testa: lo script cerca i campi, quindi deve

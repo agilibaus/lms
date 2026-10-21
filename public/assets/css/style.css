@@ -4429,6 +4429,30 @@ fieldset.checkbox-group legend {
     background: transparent !important;
 }
 
+/* Il questionario superato al 100% (23/10): visibile ma spento. */
+.quiz-concluso-avviso {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quiz-concluso-campi {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.quiz-concluso .quiz-question-list,
+.h5p-concluso {
+    opacity: 0.5;
+}
+
+.h5p-concluso {
+    pointer-events: none;
+    user-select: none;
+}
+
 .h5p-esito {
     min-height: 1.5em;
     margin: 0.8rem 0 0;

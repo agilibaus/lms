@@ -172,6 +172,15 @@ class H5PController
             $this->json(200, ['anteprima' => true, 'messaggio' => 'Anteprima: il punteggio non viene salvato.']);
         }
 
+        $userId = (int) Auth::id();
+
+        // Superato al 100% (23/10): concluso. La pagina e' spenta, ma un
+        // punteggio puo' arrivare lo stesso (una scheda rimasta aperta, un
+        // invio a mano): non si salva.
+        if (QuizScoring::concluso(QuizAttemptModel::bestForUserAndQuiz($userId, (int) $quiz['id']))) {
+            $this->json(409, ['errore' => QuizScoring::CONCLUSO . ' Il nuovo tentativo non è stato salvato.']);
+        }
+
         $punteggio = H5P::punteggio($_POST['raw'] ?? null, $_POST['max'] ?? null);
 
         if ($punteggio === null) {
@@ -182,7 +191,6 @@ class H5PController
         // La stessa regola dei questionari a domande, con «1» domanda
         // valutata: c'e' sempre un punteggio.
         $superato = QuizScoring::superato($punteggio['pct'], $soglia, 1);
-        $userId = (int) Auth::id();
 
         QuizAttemptModel::create($userId, (int) $quiz['id'], $punteggio['pct'], $superato, [], $punteggio);
 

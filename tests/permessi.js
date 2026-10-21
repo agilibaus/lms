@@ -685,10 +685,23 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 check('studente del mondo A → salva un tentativo: consentito', r.esito === 'consentito', r.esito === 'consentito' ? [] : [r.come]);
                 r = await esitoPost(stud.page, tentativo, [['raw', '9'], ['max', '4']]);
                 check('studente del mondo A → un punteggio oltre il massimo: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                // Superato al 100% (23/10): da li' in poi e' concluso.
+                r = await esitoPost(stud.page, tentativo, [['raw', '4'], ['max', '4']]);
+                check('studente del mondo A → salva un tentativo al 100%: consentito', r.esito === 'consentito', r.esito === 'consentito' ? [] : [r.come]);
+                r = await esitoPost(stud.page, tentativo, [['raw', '2'], ['max', '4']]);
+                check('studente del mondo A → un altro tentativo dopo il 100%: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                await stud.page.goto(BASE + '/quizzes/' + A.quiz);
+                const spento = await stud.page.evaluate(() => {
+                    const c = document.querySelector('#h5p-contenitore');
+                    return !!c && c.hasAttribute('inert') && document.body.textContent.includes('Superato al 100%: il questionario è concluso.');
+                });
+                check('studente del mondo A → dopo il 100% l esercizio è spento, con l avviso', spento, spento ? [] : ['non spento']);
                 await stud.ctx.close();
 
                 const salvati = php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM quiz_attempts WHERE quiz_id = " . (int) $argv[1] . " AND h5p_raw = 3 AND h5p_max = 4")->fetchColumn();', A.quiz).trim();
                 check('il tentativo e nel database, con «3 su 4»', salvati === '1', salvati === '1' ? [] : ['trovati ' + salvati]);
+                const dopo = php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM quiz_attempts WHERE quiz_id = " . (int) $argv[1] . " AND h5p_raw = 2")->fetchColumn();', A.quiz).trim();
+                check('il tentativo dopo il 100% non è nel database', dopo === '0', dopo === '0' ? [] : ['trovati ' + dopo]);
 
                 const strano = await entra(browser, 'strano@test.it');
                 r = await esitoGet(strano.page, file);
@@ -702,6 +715,44 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     $pdo->prepare("DELETE FROM quiz_attempts WHERE quiz_id = ? AND h5p_raw IS NOT NULL")->execute([(int) $argv[1]]);
                     $pdo->prepare("UPDATE quizzes SET kind = 'domande', h5p_dir = NULL, h5p_library = NULL, h5p_file = NULL WHERE id = ?")->execute([(int) $argv[1]]);
                     App\\Core\\H5PArchivio::elimina($argv[2]);`, A.quiz, dir);
+            }
+        }
+
+        // --- Questionario a domande concluso al 100% (23/10) ---------------
+        //
+        // Con un tentativo al 100% nel database, un nuovo invio non si salva
+        // e la pagina mostra le domande spente.
+
+        console.log('\n--- Questionario a domande concluso al 100%');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const conta = () => php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM quiz_attempts a JOIN users u ON u.id = a.user_id WHERE u.email = \'stud@test.it\' AND a.quiz_id = " . (int) $argv[1])->fetchColumn();', A.quiz).trim();
+            const aggiunto = php(`
+                $pdo = App\\Core\\Database::connection();
+                $u = (int) $pdo->query("SELECT id FROM users WHERE email = 'stud@test.it'")->fetchColumn();
+                $pdo->prepare("INSERT INTO quiz_attempts (user_id, quiz_id, score_pct, passed) VALUES (?, ?, 100, 1)")->execute([$u, (int) $argv[1]]);
+                echo $pdo->lastInsertId();`, A.quiz).trim();
+
+            try {
+                const prima = conta();
+                const stud = await entra(browser, 'stud@test.it');
+                await esitoPost(stud.page, '/quizzes/' + A.quiz + '/attempts', []);
+                const dopo = conta();
+                check('studente del mondo A → un nuovo invio dopo il 100%: non salvato', prima === dopo, prima === dopo ? [] : [prima + ' → ' + dopo]);
+                await stud.page.goto(BASE + '/quizzes/' + A.quiz);
+                const spento = await stud.page.evaluate(() => {
+                    const f = document.querySelector('.quiz-concluso-campi');
+                    const b = document.querySelector('.quiz-form button[type="submit"]');
+                    return (!f || f.disabled) && (!b || b.matches(':disabled')) && document.body.textContent.includes('Superato al 100%: il questionario è concluso.');
+                });
+                check('studente del mondo A → dopo il 100% le domande sono spente, con l avviso', spento, spento ? [] : ['non spento']);
+                await stud.ctx.close();
+            } finally {
+                php('App\\Core\\Database::connection()->prepare("DELETE FROM quiz_attempts WHERE id = ?")->execute([(int) $argv[1]]);', aggiunto);
             }
         }
 

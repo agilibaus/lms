@@ -6,6 +6,7 @@ use App\Auth\CourseRights;
 use App\Core\Csrf;
 use App\Core\H5P;
 use App\Core\Icona;
+use App\Core\QuizScoring;
 
 /**
  * Lo svolgimento di un questionario H5P (22/10): l'esercizio nel
@@ -20,6 +21,7 @@ use App\Core\Icona;
  * @var array|null $course
  * @var array $attempts
  * @var array|null $best
+ * @var bool $concluso superato al 100% dallo studente: esercizio spento (23/10)
  */
 
 $id = (int) $quiz['id'];
@@ -29,8 +31,7 @@ $id = (int) $quiz['id'];
     <h1><?= htmlspecialchars($quiz['title']) ?></h1>
     <p class="page-subtitle">
         Modulo: <?= htmlspecialchars($module['title']) ?> ·
-        soglia di superamento <?= (int) $quiz['passing_score_pct'] ?>% ·
-        tentativi illimitati
+        soglia di superamento <?= (int) $quiz['passing_score_pct'] ?>%<?= $concluso ? '' : ' · tentativi illimitati' ?>
     </p>
 </div>
 
@@ -38,7 +39,13 @@ $id = (int) $quiz['id'];
     <p><a href="/quizzes/<?= $id ?>/edit" class="btn btn-primary btn-con-icona"><?= Icona::svg('pencil') ?>Modifica questionario</a></p>
 <?php endif; ?>
 
-<?php if ($best !== null): ?>
+<?php if ($concluso): ?>
+    <?php /* Superato al 100% (23/10, Alessandro): il questionario resta
+             visibile ma spento, e non si rifà. */ ?>
+    <div class="alert alert-success quiz-concluso-avviso">
+        <?= Icona::svg('check-circle-fill') ?><strong><?= htmlspecialchars(QuizScoring::CONCLUSO) ?></strong>
+    </div>
+<?php elseif ($best !== null): ?>
     <div class="alert <?= $best['passed'] ? 'alert-success' : 'alert-warning' ?>">
         Miglior risultato: <?= number_format((float) $best['score_pct'], 0) ?>%
         (<?= $best['passed'] ? 'superato' : 'non superato' ?>) su <?= (int) $best['attempts'] === 1 ? '1 tentativo' : (int) $best['attempts'] . ' tentativi' ?>.
@@ -46,7 +53,11 @@ $id = (int) $quiz['id'];
 <?php endif; ?>
 
 <section class="h5p-questionario" aria-label="Esercizio">
-    <div id="h5p-contenitore" class="h5p-contenitore"
+    <?php /* Concluso: l'esercizio si vede ma e' spento (`inert`: niente
+             mouse, niente tastiera, anche dentro l'iframe), e lo script non
+             manda punteggi. */ ?>
+    <div id="h5p-contenitore" class="h5p-contenitore<?= $concluso ? ' h5p-concluso' : '' ?>"
+         <?= $concluso ? 'inert data-concluso' : '' ?>
          data-percorso="/quizzes/<?= $id ?>/h5p"
          data-salva="/quizzes/<?= $id ?>/h5p/tentativo"
          data-token="<?= htmlspecialchars(Csrf::token()) ?>"

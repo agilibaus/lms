@@ -136,6 +136,24 @@ class QuizScoring
     }
 
     /**
+     * Se un questionario e' concluso per lo studente (23/10, Alessandro): lo
+     * ha superato al 100%, e non c'e' piu' niente da migliorare. La pagina lo
+     * mostra spento, e un nuovo tentativo (a domande o H5P) si rifiuta.
+     * Si ricava dai tentativi salvati: vale anche per chi era gia' al 100%,
+     * e resta anche se il questionario viene cambiato dopo. Un questionario
+     * di sole domande aperte vale 100 alla consegna, e si conclude li'.
+     *
+     * @param array{score_pct: float}|null $migliore da `QuizAttemptModel::bestForUserAndQuiz`
+     */
+    public static function concluso(?array $migliore): bool
+    {
+        return $migliore !== null && (float) $migliore['score_pct'] >= 100.0;
+    }
+
+    /** La frase del questionario concluso, nella pagina e nei rifiuti. */
+    public const CONCLUSO = 'Superato al 100%: il questionario è concluso.';
+
+    /**
      * Quante domande di un quiz fanno punteggio.
      *
      * @param list<array{question_type?: string}> $domande

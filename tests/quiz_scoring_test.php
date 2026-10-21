@@ -124,5 +124,13 @@ check('le aperte non entrano nel denominatore', $punteggio === 66.67);
 check('con soglia 60 e\' superato', QuizScoring::superato($punteggio, 60, $valutate));
 check('con soglia 70 non lo e\'', !QuizScoring::superato($punteggio, 70, $valutate));
 
+echo PHP_EOL . 'Questionario concluso al 100% (23/10)' . PHP_EOL;
+
+check('nessun tentativo: aperto', !QuizScoring::concluso(null));
+check('superato al 90%: si puo ancora migliorare', !QuizScoring::concluso(['score_pct' => 90.0, 'passed' => true, 'attempts' => 2]));
+check('99,99%: aperto', !QuizScoring::concluso(['score_pct' => 99.99, 'passed' => true, 'attempts' => 1]));
+check('100%: concluso', QuizScoring::concluso(['score_pct' => 100.0, 'passed' => true, 'attempts' => 3]));
+check('sole domande aperte (100 alla consegna): concluso', QuizScoring::concluso(['score_pct' => QuizScoring::percentuale(0, 0), 'passed' => true, 'attempts' => 1]));
+
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail === 0 ? 0 : 1);
