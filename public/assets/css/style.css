@@ -3218,6 +3218,11 @@ body.has-focus-video {
     font-size: 0.85rem;
 }
 
+/* La riga del certificato in fondo ai moduli (22/10). */
+.corso-certificato-mancano {
+    margin: 1rem 0 0;
+}
+
 /* ---------- Alert e badge aggiuntivi ---------- */
 
 .alert-success {
@@ -6432,10 +6437,13 @@ details[open] > summary .obiettivo-se-aperto {
 .moduli-barra {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    /* Solo il comando, a destra (22/10); e un po' d'aria fra il benvenuto
+       del tutor e il primo modulo. */
+    justify-content: flex-end;
     flex-wrap: wrap;
     gap: 0.3rem 1rem;
-    margin: 0 0 0.6rem;
+    min-height: var(--tap-target);
+    margin: 1.75rem 0 0.6rem;
     font-size: 0.9rem;
     color: var(--color-text-muted);
 }

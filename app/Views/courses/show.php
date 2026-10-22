@@ -114,11 +114,6 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             <a href="/certificates/<?= (int) $certificate['id'] ?>/download">scarica il PDF</a>.
         </p>
     </div>
-<?php elseif ($eligibility !== null && !$eligibility['eligible']): ?>
-    <p class="course-progress-hint">
-        Per ottenere il certificato: lezioni <?= (int) $eligibility['lessons_done'] ?>/<?= (int) $eligibility['lessons_total'] ?>,
-        questionari superati <?= (int) $eligibility['quizzes_passed'] ?>/<?= (int) $eligibility['quizzes_total'] ?>.
-    </p>
 <?php endif; ?>
 
 <?php /* «Tre parole» alla fine di un modulo (21/10): solo per lo studente. */ ?>
@@ -141,13 +136,15 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
              aperto e niente di questo. */ ?>
     <?php if ($statiModuli !== null): ?>
         <?php
-        $nModuli = count($modules);
-        $nCompletati = count(array_filter($statiModuli, static fn (string $s): bool => $s === Percorso::COMPLETATO));
         $ciSonoRighe = count(array_filter($statiModuli, static fn (string $s): bool
             => $s === Percorso::COMPLETATO || $s === Percorso::DA_FARE)) > 0;
         ?>
+        <?php /* Solo il comando (22/10, Alessandro, variante B): il conto
+                 «8 moduli · 1 completato» e la riga del certificato, qui
+                 sopra, erano due conti diversi prima ancora di cominciare.
+                 L'avanzamento lo dicono i moduli (spunta, «In corso»); il
+                 certificato sta in fondo, dopo l'ultimo modulo. */ ?>
         <div class="moduli-barra" id="moduli">
-            <span><?= $nModuli ?> <?= $nModuli === 1 ? 'modulo' : 'moduli' ?> · <?= $nCompletati ?> <?= $nCompletati === 1 ? 'completato' : 'completati' ?></span>
             <?php if ($tuttiModuli): ?>
                 <a class="moduli-comando" href="/courses/<?= (int) $course['id'] ?>#moduli"><?= $moduloInCorso !== null ? 'Mostra solo il modulo in corso' : 'Richiudi i moduli' ?></a>
             <?php elseif ($ciSonoRighe): ?>
@@ -405,6 +402,25 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             <?php endif; ?>
         <?php endforeach; ?>
     </div>
+<?php endif; ?>
+
+<?php if (($certificate === null || $certificate['revoked_at'] !== null) && $eligibility !== null && !$eligibility['eligible']): ?>
+    <?php
+    // In fondo, dopo l'ultimo modulo (22/10, Alessandro): e' li' che ci si
+    // chiede che cosa manca. Solo le parti che mancano davvero.
+    $mancano = [];
+
+    if ((int) $eligibility['lessons_done'] < (int) $eligibility['lessons_total']) {
+        $mancano[] = 'completa tutte le lezioni (' . (int) $eligibility['lessons_done'] . ' di ' . (int) $eligibility['lessons_total'] . ')';
+    }
+
+    if ((int) $eligibility['quizzes_passed'] < (int) $eligibility['quizzes_total']) {
+        $mancano[] = 'supera tutti i questionari (' . (int) $eligibility['quizzes_passed'] . ' di ' . (int) $eligibility['quizzes_total'] . ')';
+    }
+    ?>
+    <?php if ($mancano !== []): ?>
+        <p class="course-progress-hint corso-certificato-mancano">Per il certificato: <?= htmlspecialchars(implode(' e ', $mancano)) ?>.</p>
+    <?php endif; ?>
 <?php endif; ?>
 
 <?php require __DIR__ . '/_questions.php'; ?>

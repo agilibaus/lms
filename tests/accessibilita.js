@@ -2178,8 +2178,8 @@ async function giroBenvenuto(browser) {
         // il primo modulo e' in corso, con «In corso», «0 di 1 lezioni fatte»
         // e, sulla riga della lezione, «Inizia da qui» (13/10); quello
         // chiuso e' il prossimo, aperto, con «Prossimo» e la data; il terzo e'
-        // una riga «1 lezione» che si apre. Sopra, «3 moduli · 0 completati»
-        // e «Mostra tutti i moduli».
+        // una riga «1 lezione» che si apre. Sopra, solo «Mostra tutti i
+        // moduli» (22/10); la riga del certificato dopo i moduli.
         const gerarchiaModuli = await page.evaluate(() => {
             const carte = [...document.querySelectorAll('.module-card')];
             const riga = document.querySelector('details.modulo-riga:not([open])');
@@ -2187,7 +2187,18 @@ async function giroBenvenuto(browser) {
             const conto = carte[0] ? carte[0].querySelector('.lezioni-fatte') : null;
             const daQui = carte[0] ? carte[0].querySelector('.lesson-list-item.da-qui') : null;
             return {
-                barra: barra ? barra.querySelector('span').textContent.replace(/\s+/g, ' ').trim() : null,
+                barra: barra ? barra.textContent.replace(/\s+/g, ' ').trim() : null,
+                // La riga del certificato in fondo, dopo i moduli (22/10).
+                // Lo studente della semina ha gia' il certificato: allora la
+                // riga non c'e', e c'e' il riquadro verde in alto.
+                certificato: (() => {
+                    const r = document.querySelector('.corso-certificato-mancano');
+                    const l = document.querySelector('.module-list');
+                    if (r === null) {
+                        return document.querySelector('.alert-success a[href$="/download"]') !== null;
+                    }
+                    return l !== null && !!(l.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING);
+                })(),
                 comando: barra && barra.querySelector('.moduli-comando') ? barra.querySelector('.moduli-comando').textContent.trim() : null,
                 carte: carte.length,
                 inCorso: carte[0] ? carte[0].classList.contains('modulo-in-corso')
@@ -2211,8 +2222,10 @@ async function giroBenvenuto(browser) {
                 && gerarchiaModuli.prossimo === 'Prossimo' && gerarchiaModuli.prossimoChiuso
                 && gerarchiaModuli.riga === '1 lezione' && gerarchiaModuli.rigaComando === 'Mostra' && gerarchiaModuli.rigaLezioneVisibile === false,
             [JSON.stringify(gerarchiaModuli)]);
-        check('gerarchia: sopra i moduli «3 moduli · 0 completati» e «Mostra tutti i moduli»',
-            gerarchiaModuli.barra === '3 moduli · 0 completati' && gerarchiaModuli.comando === 'Mostra tutti i moduli', [JSON.stringify(gerarchiaModuli)]);
+        check('gerarchia: sopra i moduli solo «Mostra tutti i moduli», senza conti (22/10)',
+            gerarchiaModuli.barra === 'Mostra tutti i moduli' && gerarchiaModuli.comando === 'Mostra tutti i moduli', [JSON.stringify(gerarchiaModuli)]);
+        check('gerarchia: la riga del certificato dopo i moduli, o il certificato già ottenuto in alto (22/10)',
+            gerarchiaModuli.certificato === true, [JSON.stringify(gerarchiaModuli)]);
         if (gerarchiaModuli.riga !== null) {
             await page.click('details.modulo-riga > summary');
             const aperta = await page.evaluate(() => ({
