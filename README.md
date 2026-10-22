@@ -33,6 +33,13 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 - **Profilo personale**: ogni utente compila i propri dati e carica un'immagine, che compare tonda accanto al suo nome
 - **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
 - **Sessioni live** integrate con **Google Meet**, tramite Google Calendar API (`conferenceData`) — richiede un account di servizio Google con accesso al Calendar
+- **Esercizi interattivi H5P** creati con Lumi: come questionario del modulo, con il punteggio, o
+  dentro le lezioni, dove li mette chi scrive
+- **Bacheca** di ogni corso: risorse condivise per categorie, pubblicate da admin e tutor e
+  proposte dagli studenti
+- **Tre parole** alla fine di ogni modulo, da rileggere negli incontri su Meet
+- **Report** «Studenti fermi» e «Griglia del corso», oltre ai tagli per corso, gruppo, studente,
+  incontro e video
 
 ## Stato del progetto
 
@@ -62,12 +69,21 @@ In sviluppo iniziale.
 - ✅ Email di avviso quando si apre un modulo a rilascio programmato (comando da cron)
 - ✅ Tutte le pagine responsive, verificate automaticamente a tre larghezze
 - ✅ Controlli automatici di accessibilità e dei permessi per ruolo
+- ✅ Bacheca delle risorse di ogni corso, con le proposte degli studenti
+- ✅ Il ramo del corso nella barra laterale (Bacheca, L'esperto risponde, Il mio gruppo, Tre parole)
+- ✅ Report «Studenti fermi» e «Griglia del corso»
+- ✅ Tre parole alla fine di ogni modulo
+- ✅ Esercizi H5P (Lumi) come questionario e nelle lezioni
+- ✅ Questionari conclusi al 100%: si vedono spenti e non si rifanno
+- ✅ Icone accanto ai comandi, secondo un vocabolario e dei principi scritti
+- ✅ Versione in un file (`VERSION`) e pagina «Informazioni su Pistacchio LMS»
 
 ## Requisiti
 
 - PHP **8.1 o superiore**, con estensioni `pdo_mysql`, `mbstring`, `dom`, `gd` (le ultime due richieste da Dompdf per i certificati)
-- Estensione `zip` per il download dei report in XLSX. **Non è obbligatoria**: dove manca,
-  il pulsante XLSX non compare e resta il CSV
+- Estensione `zip` per il download dei report in XLSX e per gli **esercizi H5P** (un file `.h5p`
+  è un archivio zip). **Non è obbligatoria**: dove manca, il pulsante XLSX non compare e resta il
+  CSV, e un file `.h5p` caricato viene rifiutato con un messaggio che lo dice
 - MySQL 8+ o MariaDB 10.6+
 - Server web con supporto al rewrite degli URL (Apache + `mod_rewrite`, oppure Nginx configurato in modo equivalente)
 - Composer (autoload PSR-4 e installazione di Dompdf: senza `composer install` i certificati non possono essere generati)
@@ -130,9 +146,9 @@ creazione del database, primo amministratore e impostazioni facoltative.
    fuso orario, Bunny/Cloudflare Stream e Google Meet, tutte compilabili anche in seguito.
 
 4. **Al termine, elimina la cartella `public/install`**
-   La procedura si disattiva da sola — scrive `storage/installed.lock` e si rifiuta di
-   ripartire finché nel database ci sono utenti — ma rimuovere la cartella è la garanzia
-   definitiva. Controlla anche che in `.env` ci sia `APP_DEBUG=0`: in produzione gli errori
+   La procedura si disattiva da sola — scrive `storage/installed.lock`, e dal 16/10 è chiusa
+   anche quando c'è il `.env`, senza leggerlo (per reinstallare da zero vanno tolti tutti e
+   due) — ma rimuovere la cartella è la garanzia definitiva. Controlla anche che in `.env` ci sia `APP_DEBUG=0`: in produzione gli errori
    non devono finire sotto gli occhi degli utenti.
 
 Se la cartella del progetto non è scrivibile, l'installer non può salvare `.env`: in quel caso
@@ -146,9 +162,7 @@ ordine di data), ad esempio:
 ```bash
 mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
 ```
-Le ultime due sono `2026_10_04_agenda_calendario.sql` e
-`2026_10_04_agenda_calendario_date.sql`, che aggiungono `users.calendar_token` e le sue due
-date per l'indirizzo personale del calendario (vedi **Agenda**).
+Le più recenti sono nella tabella qui sotto, in fondo.
 
 Le migrazioni vanno applicate **in ordine di data**, e ciascuna si puo' rieseguire senza
 danni. Le piu' recenti:
@@ -182,6 +196,12 @@ danni. Le piu' recenti:
 | `2026_10_12_giro_del_cerchio.sql` | `group_questions`, `group_answers` e `live_session_rsvps`: il giro del cerchio e «Ci sarò» nella pagina del gruppo |
 | `2026_10_12_iscrizione_confermata.sql` | `enrollments.confirmation_pending`: l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, in coda per `bin/avvisi`. Va impostato anche il comando, ogni quarto d'ora |
 | `2026_10_13_tentativi_accesso.sql` | `login_failures`: le password sbagliate degli ultimi tentativi di accesso, per il limite ai tentativi |
+| `2026_10_17_bacheca.sql` | la Bacheca: categorie, risorse, proposte, «Questa me la tengo», «Come l'ho utilizzata»; i permessi `board.manage` e `board.manage_own`; l'email «Nuova proposta per la bacheca» |
+| `2026_10_17_bacheca_colori.sql` | il colore delle categorie diventa un `#RRGGBB` |
+| `2026_10_20_studenti_fermi.sql` | `users.last_seen_at` ed `enrollments.last_visit_at`, per il report «Studenti fermi» |
+| `2026_10_21_tre_parole.sql` | `courses.three_words_since` e la tabella `module_words`: le tre parole alla fine di ogni modulo |
+| `2026_10_22_h5p.sql` | `quizzes.kind`, `h5p_dir`, `h5p_library`, `h5p_file`; `quiz_attempts.h5p_raw` e `h5p_max`: i questionari H5P |
+| `2026_10_23_h5p_lezioni.sql` | la tabella `lesson_h5p`: gli esercizi H5P dentro le lezioni |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -202,6 +222,8 @@ torna indietro, se non svuotando la casella a mano.
   /assets/fonts       → Albert Sans per le pagine pubbliche (vedi LEGGIMI.md nella cartella)
                         i caratteri scelti dal catalogo NON stanno qui ma in storage/fonts
   /assets/vendor/tinymce → editor di testo ricco (vedi README-pistacchio.md nella cartella)
+  /assets/h5p         → riproduttore h5p-standalone 3.8.0 (MIT, vedi LEGGIMI.txt nella cartella)
+  /assets/img         → logo e icone della scheda del browser
   /install            → procedura di installazione guidata (da eliminare dopo l'uso)
   index.php           → front controller
   .htaccess           → rewrite verso index.php
@@ -212,7 +234,8 @@ torna indietro, se non svuotando la casella a mano.
     /Admin             → pannello di amministrazione: Admin, User, Group, Course,
                         Permission, Settings
   /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
-  /Auth               → login, sessione, permessi per ruolo (Auth.php)
+  /Auth               → login, sessione, permessi per ruolo (Auth.php); chi vede chi
+                         (CourseRights, StudentScope, GroupPeers, BachecaScope)
   /Core               → Router minimale, Database (PDO), Env, View, Settings, Url
                          Upload, FileType, OrphanFiles          → file caricati
                          VideoEmbed, VideoPoster, BunnyToken, WatchIntervals → video
@@ -221,6 +244,9 @@ torna indietro, se non svuotando la casella a mano.
                          Csv, Xlsx, Ics                         → formati di scambio
                          ReportSections                         → i cinque tagli dei report
                          Csrf, HtmlSanitizer, PasswordPolicy, PasswordGenerator → sicurezza
+                         H5P, H5PArchivio, LezioneH5P           → esercizi interattivi
+                         Bacheca, TreParole, StudentiFermi, GrigliaCorso, Presenza
+                         Icona, CorsoCorrente, Versione, Ambiente → interfaccia e informazioni
     /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
     /Mail              → client SMTP scritto in casa, trasporti e testi dei messaggi
   /Views
@@ -240,6 +266,8 @@ torna indietro, se non svuotando la casella a mano.
   /course-covers       → copertine dei corsi, in due misure
   /group-logos         → logo dei gruppi
   /certificates
+  /bacheca             → file delle risorse della Bacheca, una cartella per corso
+  /h5p                 → esercizi H5P aperti dai file .h5p, una cartella per contenuto
   /google              → chiave dell'account di servizio (permessi 0600)
   /mail                → messaggi .eml quando MAIL_TRANSPORT=log
   /logs                → uscita dei comandi da cron
@@ -249,6 +277,7 @@ torna indietro, se non svuotando la casella a mano.
   google-fonts.json    → elenco delle famiglie del catalogo (solo nomi, 50 KB)
   /migrations         → migrazioni incrementali per installazioni gia' esistenti
 /tests                 → vedi la sezione «Test» più sotto per l'elenco completo
+VERSION                → la versione installata (vedi «Versione»)
 ```
 
 ## Questionari, certificati e report
@@ -281,7 +310,20 @@ Quattro tipi di domanda:
 Le domande aperte restano **fuori dal conteggio**, sia al numeratore sia al denominatore: un
 questionario di sole domande aperte risulta consegnato e superato, senza percentuale. Le risposte si
 leggono nel report del singolo studente. La logica sta tutta in `App\Core\QuizScoring`, con
-46 test.
+53 test.
+
+**Un questionario superato al 100% è concluso** (21/10, Alessandro): non c'è più niente da
+migliorare. La pagina lo mostra **visibile ma spento** — risposte e «Invia risposte»
+disattivati, e senza «Annulla»; in un questionario H5P l'esercizio non risponde né al mouse né
+alla tastiera (`inert`) — con «Superato al 100%: il questionario è concluso.» al posto del
+miglior risultato, e senza «tentativi illimitati» nel sottotitolo. I tentativi restano, con il
+loro dettaglio. **Il blocco è anche sul server**: un invio o un punteggio H5P che arrivano a
+questionario concluso non si salvano. Si ricava dai tentativi salvati (`QuizScoring::concluso()`):
+vale anche per chi era già al 100%, e resta se il questionario viene cambiato dopo. Un
+questionario di **sole domande aperte** vale 100 alla consegna, e dice «Consegnato: il
+questionario è concluso.». Lo staff lo vede sempre in anteprima.
+
+**Un questionario può essere un esercizio H5P** invece delle domande: vedi **Esercizi H5P**.
 
 **Quanto si può scrivere in una risposta aperta**: 3.000 caratteri
 (`QuizController::MAX_OPEN_CHARS`), dichiarati in tre posti con tre mestieri diversi. Il
@@ -441,9 +483,16 @@ dentro a una tabella è un pannello che qualcosa può ritagliare — è successo
 per cui ora un controllo automatico apre ogni tendina della piattaforma e verifica che il
 suo pannello non esca da un contenitore che scorre.
 
+Dal 20/10 i riquadri dell'indice si chiamano **Corsi, Gruppi, Studenti, Sessioni live, Video**,
+con il numero accanto al nome («Corsi (4)»), e nelle pagine interne conteggio, tabella e pagine
+stanno in un riquadro bianco; nei dettagli la tabella ha il suo titolo («Iscritti (n)», «Membri
+(n)», «Studenti (n)»). Nel dettaglio dello studente, sotto il nome, c'è solo il ruolo (niente
+email), con l'ultimo accesso.
+
 | Report | Contenuto |
 |---|---|
-| Per corso | Iscritti con progresso, lezioni completate, questionari superati, stato certificato |
+| **Studenti fermi** | Il primo riquadro. Vedi sotto |
+| Per corso | Iscritti con progresso, lezioni completate, questionari superati, stato certificato; da qui la **Griglia del corso** |
 | Per gruppo | Membri del gruppo incrociati con i corsi assegnati al gruppo (con il simbolo del gruppo accanto al nome, come nel pannello) |
 | Per studente | Tutti i corsi dello studente, con dettaglio tentativi, punteggi e risposte aperte |
 | Per incontro dal vivo | Presenze, con l'origine del dato (piattaforma o segnata a mano) |
@@ -452,9 +501,32 @@ suo pannello non esca da un contenitore che scorre.
 L'XLSX non richiede dipendenze: il file lo scrive `App\Core\Xlsx`, che ha bisogno
 dell'estensione `zip`. Dove manca, il pulsante XLSX non compare e resta il CSV.
 
-I permessi seguono `role_permissions`: `report.view` (admin, tutor) da' accesso completo,
-`report.view_assigned` (assistente) limita la vista agli studenti dei gruppi seguiti dai tutor
-che affianca (tabella `assistant_tutors`).
+I permessi seguono `role_permissions`: `report.view` (admin, tutor) e `report.view_assigned`
+(assistente). **Chi vede quali studenti** lo decide `App\Auth\StudentScope`: l'admin tutti, il
+tutor gli studenti dei suoi gruppi, l'assistente quelli dei gruppi dei tutor che affianca
+(tabella `assistant_tutors`). Dal 17/10 la stessa regola vale anche fuori dai report: la pagina
+di un tentativo di questionario, l'elenco e il download dei certificati, la fruizione dei video
+di una lezione.
+
+#### Studenti fermi
+`/reports/fermi`: chi non ha attività in un corso da almeno **7, 14 o 30 giorni** (di base 14), o
+non l'ha mai iniziato. Colonne: Studente (senza email), Corso, Gruppo, Iscritto da, **Ultima
+attività** — l'ultima cosa fatta, senza verbo e senza «da N giorni» («18/09 · incontro «Tappa
+1»») —, Ultima visita al corso e Stato. Lo stato è un **pallino**: grigio «non ha mai iniziato»,
+ocra «entra ma non avanza», rosso «non entra più», con il testo per i lettori di schermo e la
+legenda sotto la tabella. Tutte le colonne si ordinano (lo stato per gravità), e la pagina si
+scarica in XLSX e CSV con la soglia, l'ordine e il perimetro di chi guarda. I dati vengono da
+`users.last_seen_at` ed `enrollments.last_visit_at`, che `App\Core\Presenza` scrive al più ogni
+cinque minuti; le regole stanno in `App\Core\StudentiFermi`.
+
+#### Griglia del corso
+`/reports/courses/{id}/griglia`, dal report del corso e dall'elenco dei corsi: una riga per
+studente, una colonna per modulo («2/3», con la spunta se completo) o, aprendo un modulo, una per
+ogni sua attività — lezioni e incontri fatti o no, «assente» agli incontri passati, **il
+punteggio migliore** del questionario. In fondo, quanti hanno completato ogni modulo o fatto ogni
+attività. Gli incontri futuri o di un altro gruppo non contano. Filtro per gruppo quando il corso
+ne ha più d'uno, ordine per studente e per avanzamento, scaricamento con tutte le attività. Il
+tutor vede solo i suoi studenti. Regole in `App\Core\GrigliaCorso`.
 
 ## Pannello di amministrazione
 
@@ -658,12 +730,34 @@ cifre, spazi e punteggiatura, senza lettere — escono come prima. Il foglio di 
 non ne aveva bisogno: scrive i testi come testo. `tests/csv_test.php` prova le celle,
 `permessi.js` le intestazioni e il CSV vero degli utenti.
 
+**Robustezza** (16–17/10), ciascuna con il suo test:
+
+- **Il testo fisso di una rotta vale solo per se stesso** (`router_test.php`): il punto di
+  `/calendario/{token}.ics` valeva un carattere qualunque, e il calendario rispondeva anche a
+  indirizzi storpiati.
+- **I file consegnati a pezzi** (`filestream_test.php`): `Range: bytes=-N` dà gli ultimi N byte;
+  un file mancante risponde 404, uno illeggibile 500 con la causa nel log.
+- **Il `.env` si legge anche con il BOM** che il Blocco note di Windows aggiunge (si perdeva la
+  prima riga) e con una virgoletta sola nel valore (`env_test.php`).
+- **L'installer è chiuso anche se c'è il `.env`** (`installer_test.php`).
+- **Niente SVG**: nessun campo di caricamento accetta un SVG, nemmeno rinominato `.png`
+  (`svg_test.php`).
+
 ## Sessioni live (Google Meet)
 
 Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**: i
 partecipanti attesi sono gli iscritti al corso del modulo e i membri del gruppo. Le sessioni si
 gestiscono da `/live` (permesso `course.edit`: admin e tutor); gli studenti vedono solo quelle
-che li riguardano.
+che li riguardano. **Un incontro si apre solo se è nel proprio elenco** (17/10, `LiveScope`):
+l'admin tutti, il tutor quelli dei suoi corsi e dei suoi gruppi, studenti e assistenti quelli di
+cui sono destinatari. Prima un tutor apriva l'incontro del gruppo di un collega scrivendo
+l'indirizzo, e riceveva il link Meet.
+
+**Chi partecipa vede i riquadri dell'Agenda** (20/10), non la tabella dello staff: «In programma»
+dal più vicino e «Concluse» chiuse come lo Storico, dal più recente. Nel riquadro data e orario,
+titolo, corso e modulo o gruppo, «Si entra da 15 minuti prima» sotto il titolo; a destra solo i
+comandi: «Aggiungi al calendario» finché l'incontro non è cominciato e, per ultimo, «Entra» nella
+finestra d'ingresso. Lo staff tiene la tabella.
 
 ### Come nasce il link Meet
 Alla creazione della sessione l'applicazione crea un evento su Google Calendar chiedendo
@@ -1115,18 +1209,25 @@ numero dei moduli (`App\Core\Percorso`):
   sulle lezioni, non sul questionario.
 - **Prossimo**: il primo modulo non completato dopo quello in corso. Aperto, con «Prossimo»,
   anche se chiuso per data: si vede quando si apre.
-- **Completato**: lezioni completate e questionario superato. Una riga, «✓ … completato · 3
-  lezioni», che si apre con «Mostra».
+- **Completato**: lezioni completate e questionario superato. Una riga con la spunta, «… completato
+  · 3 lezioni», che si apre con «Mostra».
 - **Gli altri**: una riga con il numero delle lezioni («nessuna lezione» per un modulo vuoto), la
   data di apertura («si apre il 15/11/2026») o «si sblocca con il questionario del modulo
   precedente».
 
 Con due o tre moduli la pagina resta quasi com'era; con otto si vedono il presente, il passo
-dopo e poche righe. Sopra i moduli: «8 moduli · 3 completati» e **«Mostra tutti i moduli»**,
-che apre tutto per quella visita (`?moduli=tutti`, quindi anche senza JavaScript) e diventa
+dopo e poche righe. **Sopra i moduli c'è solo «Mostra tutti i moduli»**, a destra (22/10,
+Alessandro, variante B: il conto «8 moduli · 3 completati» e la riga del certificato, lì sopra,
+erano due conti diversi prima ancora di cominciare; l'avanzamento lo dicono i moduli). Il comando
+apre tutto per quella visita (`?moduli=tutti`, quindi anche senza JavaScript) e diventa
 «Mostra solo il modulo in corso»; alla visita dopo si riparte dalla regola, e la scelta non si
 ricorda. A corso finito non c'è un modulo in corso: sono tutte righe «completato». **Lo staff vede
 tutto aperto**, senza etichette né «Riprendi».
+
+**Quello che manca per il certificato sta in fondo**, dopo l'ultimo modulo, e dice solo le parti
+che mancano davvero: «Per il certificato: completa tutte le lezioni (2 di 16) e supera tutti i
+questionari (1 di 2).». Ottenuto il certificato la riga sparisce, e in alto resta il riquadro
+verde con «scarica il PDF».
 
 `tests/percorso_test.php` prova gli stati e da quale lezione riprendere; `accessibilita.js`, nel giro da
 studente, il modulo in corso, il prossimo chiuso, la riga che si apre e «Mostra tutti i moduli»;
@@ -1197,6 +1298,8 @@ non va. È solo aspetto (`::first-letter`): il testo e quello che legge un letto
 cambiano. Dove il browser ha `initial-letter` (Chrome, Edge, Safari) la lettera si allinea da sola
 su tre righe; altrove (Firefox) scorre a sinistra con misure calcolate, e l'allineamento è
 approssimato. La descrizione del corso è larga quanto gli altri blocchi della pagina.
+**Il primo paragrafo contiene la sua lettera** (`display: flow-root`, 21/10): con un paragrafo
+corto la lettera alta tre righe finiva sopra il blocco dopo, per esempio un esercizio H5P.
 
 **Non nell'editor della lezione** (14/10, Alessandro). L'editor carica il foglio di stile della
 piattaforma e dà al testo la classe della lezione, così il capolettera compariva mentre si
@@ -1395,6 +1498,165 @@ email (`METHOD:REQUEST`, con organizzatore e invitato): un calendario sottoscrit
 non invita, e mandare dei REQUEST in un feed vorrebbe dire chiedere a ogni rilettura di
 rispondere a un invito già accettato.
 
+## La barra laterale: il ramo del corso
+
+Dal 17/10 (Alessandro, variante C del mockup) le voci che riguardano un corso compaiono solo
+**dentro un corso**: un ramo subito sotto «I miei corsi» (per lo staff «Corsi») con il nome del
+corso e, rientrate, **Bacheca**, **L'esperto risponde**, **Il mio gruppo** (lo studente, il suo
+gruppo in quel corso) e **Tre parole** (il tutor del gruppo e l'admin, se il corso le chiede).
+Il ramo è sempre uno solo, quello del corso aperto; si cambia corso da «I miei corsi». Ogni voce
+la vede solo chi la può aprire; sulla Bacheca, per chi modera, il numero delle proposte da
+valutare. L'admin, che è l'esperto, ha «Domande» come prima.
+
+«Dentro un corso» vuol dire ogni pagina i cui dati lo dicono — la pagina del corso, lezioni,
+questionari, Modifica corso, report e fruizione del corso, Bacheca, «L'esperto risponde», Tre
+parole: lo legge `View::render()` dai dati `course`, `module` o `corso` (`App\Core\CorsoCorrente`),
+così una pagina nuova di un corso ha il ramo da sola.
+
+## Bacheca
+
+Una per corso (17/10, Alessandro): le risorse condivise, per **categorie**. La leggono gli iscritti
+di tutti i gruppi, i tutor dei gruppi del corso, l'assistente (in sola lettura) e l'admin. La
+prima pagina è una griglia di riquadri, uno per categoria, con la tinta chiara, il filo e il
+titolo nel colore della categoria, la descrizione e il numero delle risorse pubblicate.
+
+- **Le categorie** le crea l'admin nel riquadro «Bacheca» di Modifica corso: nome, colore,
+  descrizione fino a 200 caratteri, ordine. **Il colore è libero**, da una tavolozza continua
+  (tinte in orizzontale, dal chiaro allo scuro, in OKLCH, più l'intensità e il selettore del
+  browser, che senza JavaScript basta da solo): il filo e la tinta usano il colore scelto, il
+  titolo la stessa tinta scurita solo quanto serve a leggersi (almeno 4,5:1). Una categoria con
+  delle risorse non si elimina.
+- **Le risorse** hanno titolo, tipo («Scheda pratica», «Promemoria», video, podcast, articolo,
+  altro), categoria, link facoltativo (solo http/https) e descrizione. **Video e podcast sono
+  solo link**, mai incorporati. Pubblicano l'admin e i tutor del corso (permessi `board.manage` e
+  `board.manage_own`), e possono allegare un file: **solo documenti** (PDF, Word, PowerPoint,
+  Excel, testo), **al massimo 3 MB** o meno se il php.ini ne accetta meno. Il file si controlla
+  anche nel browser appena lo si sceglie, e il server ricontrolla. Nella categoria prima le
+  risorse in evidenza, poi dalla più recente.
+- **Gli studenti propongono** una risorsa, senza file. La proposta resta in attesa finché il tutor
+  del loro gruppo, o l'admin, non la pubblica (scegliendo la categoria) o la scarta, con
+  un'email al tutor per ogni proposta nuova. Lo studente vede lo stato in «Le tue proposte».
+- **«Questa me la tengo»** è privato, con la scheda «Le mie risorse». **«Come l'ho utilizzata»**,
+  fino a 500 caratteri, uno per persona, si pubblica subito con l'avvertenza sui dettagli
+  privati; chi modera lo può nascondere, e resta visibile a chi l'ha scritto.
+
+Regole in `App\Auth\BachecaScope` (chi vede, pubblica e modera) e `App\Core\Bacheca` (campi,
+link, ordine, colori). I file stanno in `storage/bacheca/`. Migrazioni
+`2026_10_17_bacheca.sql` e `2026_10_17_bacheca_colori.sql`.
+
+## Tre parole
+
+Idea di Alessandro (20/10) per gli incontri su Meet che seguono ogni modulo: lo studente,
+completato un modulo, scrive **le prime tre parole che gli vengono** — sensazioni, emozioni,
+stati d'animo, pensieri, immagini —, fino a 30 caratteri ciascuna. Il riquadro sta nella pagina
+del corso, sopra i moduli.
+
+- **Facoltative**: il riquadro resta finché non risponde, ma non blocca niente.
+- **Corso per corso**: si attivano in Modifica corso, spente di partenza, e **si chiedono solo
+  per i moduli completati da quel momento** (`courses.three_words_since`), non per quelli finiti
+  prima.
+- **Con il nome, e non si cambiano**: lo studente legge «Il tuo tutor e l'amministratore possono
+  leggerle. Una volta inviate non si cambiano.»
+- **Le leggono il tutor del gruppo e l'admin** in «Tre parole», nel ramo del corso: **anonime di
+  partenza** — le parole che tornano, dalla più frequente, e le terne in un ordine che non dice
+  chi le ha scritte (in un Meet con lo schermo condiviso i nomi non compaiono per sbaglio) — e
+  «Con i nomi» a richiesta, con chi ha completato il modulo ma non ha ancora risposto. Un modulo
+  alla volta; la pagina si apre sull'ultimo con delle parole.
+
+Regole in `App\Core\TreParole`. Migrazione `2026_10_21_tre_parole.sql`.
+
+## Esercizi H5P
+
+Esercizi interattivi creati con **Lumi** (l'editor H5P per computer) ed esportati come file
+`.h5p`, mostrati con il riproduttore **h5p-standalone 3.8.0** (MIT, in `public/assets/h5p/`)
+**dentro un iframe**: lo studente li vede come in Lumi e gli stili della piattaforma non entrano
+nell'esercizio. **Carattere e colori del tema** sì, da `/h5p/tema.css`: i pulsanti degli esercizi
+a domande nel colore principale, i riquadri e le parole di «Drag the Words» nella tinta del tema;
+il verde e il rosso di giusto e sbagliato restano quelli di H5P, perché hanno un significato.
+
+**Sicurezza, livello base** (21/10, Alessandro). Un `.h5p` è un archivio zip con dentro anche
+codice JavaScript: lo caricano solo admin e tutor del corso; si apre **voce per voce** in una
+cartella di `storage/h5p/` scelta da Pistacchio (niente «..», niente percorsi assoluti, niente
+php, html, `.htaccess`, solo le estensioni di H5P più js e css nelle librerie, al massimo 3.000
+file e 300 MB) e **deve contenere il codice della sua libreria principale**. I file li serve PHP
+a chi può aprire il questionario o la lezione, con il tipo deciso dal server e `nosniff`. Il
+livello rafforzato — i file da un sottodominio a parte — si potrà aggiungere cambiando solo
+l'indirizzo dei file.
+
+### Come questionario del modulo
+Creando un questionario si sceglie «Domande» o «Contenuto H5P» e si carica il file. **Solo tipi
+che danno un punteggio**: Accordion, Timeline, Dialog Cards, Image Hotspots e gli altri da
+guardare o esplorare si rifiutano con il loro nome, perché come questionario non verrebbero mai
+superati. **Ogni verifica è un tentativo**, vale il migliore, e griglia, report, completamento
+del modulo, sblocco e certificato funzionano come per i questionari a domande; accanto alla
+percentuale «5 su 5». Il punteggio arriva dagli eventi xAPI dell'esercizio principale (non delle
+singole domande di un Question Set) e il server controlla che abbia senso (numeri, fra zero e il
+massimo). Si sostituisce il file in Modifica questionario. Schermo intero spento: copriva il
+titolo sul telefono.
+
+### Dentro le lezioni
+In Modifica lezione, «Contenuti interattivi H5P»: **uno o più contenuti**, oltre al questionario
+del modulo, di **qualunque tipo**. Aggiungi e Sostituisci si fanno al «Salva», insieme al testo,
+così caricare un esercizio non fa perdere niente; «Elimina» ricarica la pagina, e se il testo ha
+modifiche non salvate lo dice prima.
+
+**Dove compare lo decide chi scrive**: il pulsante **«Esercizio H5P»** della barra dell'editor
+elenca i contenuti della lezione e mette quello scelto nel punto del cursore, come segnaposto
+tratteggiato («Esercizio interattivo: stop.h5p (Drag the Words)») che si sposta, si copia e si
+cancella intero. Nel testo salvato è `<div data-h5p="12">…</div>`: il sanificatore lascia
+l'attributo solo su un `div` e solo con un numero. Nella lezione, al suo posto, c'è l'esercizio,
+con sotto «Esercizio interattivo · non dà una valutazione». Un contenuto non messo nel testo
+compare dopo il testo; messo due volte, compare una volta; il segnaposto di un contenuto
+eliminato non mostra niente, e nell'editor diventa rosso. Sostituire un contenuto tiene il suo
+posto nel testo e cambia l'indirizzo dei file, così il browser non usa la copia vecchia.
+Eliminare la lezione toglie anche le cartelle dei suoi contenuti.
+
+**Nessun punteggio si salva**, ma **«Segna come completata» si sblocca quando lo studente ha
+usato tutti gli esercizi** della lezione — una risposta, un clic o un Invio dentro l'esercizio,
+una voce aperta: guardarlo non basta —, con il conto accanto al pulsante («Usa i due esercizi per
+poter segnare la lezione come completata (1 su 2).»). Gli esercizi usati si ricordano per la
+scheda, ricaricando la pagina non si ricomincia. Come per il video, la regola sta nel browser:
+senza JavaScript, o se un esercizio non si carica, il pulsante resta usabile. Gli esercizi si
+avviano uno dopo l'altro, perché il riproduttore li prepara in una variabile globale della pagina.
+
+Regole in `App\Core\H5P` (voci dell'archivio, `h5p.json`, punteggi, nomi dei tipi),
+`App\Core\H5PArchivio` (apertura e file) e `App\Core\LezioneH5P` (segnaposto); lo script
+`h5p-questionario.js` per i questionari, `h5p-lezione.js` e `h5p-editor.js` per le lezioni.
+Migrazioni `2026_10_22_h5p.sql` e `2026_10_23_h5p_lezioni.sql`.
+
+## Icone
+
+Dal 18/10 accanto ai comandi ci sono le icone di **Bootstrap Icons 1.11.3** (MIT), scritte come
+SVG nella pagina da `App\Core\Icona`, **sempre accanto alla parola** e nascoste ai lettori di
+schermo.
+
+- **Il vocabolario**: una parola ha sempre la stessa icona, e l'icona segue quello che il comando
+  fa — più per creare, matita per modificare, **cestino solo dove si perde qualcosa**, cerchio con
+  la X per «tolgo, ma non cancello», frecce per riordinare, spunta piena per «fatto» e
+  «completato».
+- **I principi** (Nielsen Group, scritti nella classe): un'icona solo se si riconosce a colpo
+  d'occhio; sì ad azioni standard, comandi ripetuti nelle righe, stati e tipi; **no alla
+  navigazione**, ai concetti astratti, alle metafore inventate e alla decorazione; poche icone
+  diverse per schermata.
+- **Niente segni scritti a mano** (✓, ↑, ↓) nelle viste.
+
+`tests/icona_test.php` controlla il vocabolario, le pagine che lo seguono, l'assenza di icone sui
+collegamenti di navigazione e di segni scritti a mano.
+
+## Versione e «Informazioni su Pistacchio LMS»
+
+La versione sta nel file **`VERSION`**, nella cartella principale, nel formato
+`maggiore.minore.patch`: le prime due cifre le decide chi guida il progetto, la terza è il numero
+della patch che l'ha portata, e ogni patch la aggiorna. La legge `App\Core\Versione` dal file e
+non da git, perché sul server la cartella `.git` di solito non c'è.
+
+In **Impostazioni**, in fondo, la tessera «Informazioni su Pistacchio LMS» porta a una pagina con
+il logo, il nome, la versione, il collegamento al repository (in una scheda nuova) e **i dati per
+l'assistenza**: la versione di PHP, il database («MySQL 8.0.30», «MariaDB 10.11.14») e la data
+d'installazione, presa da `storage/installed.lock` o, senza, dal `.env` (`App\Core\Ambiente`).
+La vede solo chi apre le impostazioni: la versione esatta, mostrata a tutti, aiuterebbe chi cerca
+un'installazione con un difetto noto.
+
 ## Test
 
 Due famiglie. I test PHP girano da soli; i due file `.js` usano Playwright e hanno bisogno del
@@ -1421,6 +1683,21 @@ php tests/lesson_video_test.php     # scelta del provider e dei riferimenti vide
 php tests/live_session_mail_test.php   # testi delle email degli incontri
 php tests/email_modelli_test.php    # le email: elenco, segnaposto, chiusura, nome della piattaforma, Rispondi a
 php tests/xlsx_test.php             # il file XLSX scritto in casa
+php tests/router_test.php           # rotte: il testo fisso vale solo per se stesso, ogni rotta trova il suo indirizzo
+php tests/filestream_test.php       # file a pezzi: richieste a suffisso, file mancante o illeggibile
+php tests/env_test.php              # .env con il BOM e con le virgolette spaiate
+php tests/installer_test.php        # installer aperto o chiuso
+php tests/svg_test.php              # nessun campo di caricamento accetta un SVG
+php tests/bacheca_test.php          # bacheca: campi, link, tipi e limite dei file, colori e titolo leggibile
+php tests/corso_corrente_test.php   # di quale corso è una pagina (il ramo della barra laterale)
+php tests/versione_test.php         # il file VERSION
+php tests/ambiente_test.php         # i dati per l'assistenza: PHP, database, data d'installazione
+php tests/icona_test.php            # le icone: vocabolario, niente segni scritti a mano, niente icone sulla navigazione
+php tests/studenti_fermi_test.php   # studenti fermi: soglie, stati, ultima attività, ordine
+php tests/griglia_corso_test.php    # griglia del corso: stati delle attività, conteggi, punteggio migliore
+php tests/tre_parole_test.php       # tre parole: normalizzazione, a chi si chiedono, parole che tornano, ordine anonimo
+php tests/h5p_test.php              # H5P: voci ammesse dell'archivio, h5p.json, punteggi, apertura dei pacchetti
+php tests/lezione_h5p_test.php      # H5P nelle lezioni: segnaposto, sanificatore, composizione, apertura per lezione
 
 # richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
@@ -1439,11 +1716,16 @@ php tests/csv_test.php              # CSV: i testi-formula escono con l'apostrof
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 3.000 controlli su 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 214 prove: ogni ruolo prova a raggiungere le cose di un altro, più il benvenuto, i gruppi, le foto, le presentazioni, il benvenuto del tutor e la sua foto, gli a capo nei campi con il limite, e obiettivo e descrizione con i tag: testo pieno, rifiuto oltre il limite, pagina del corso ripulita
+node tests/accessibilita.js         # circa 4.700 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 470 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, la bacheca, il ramo del corso, le tre parole, i file H5P, i questionari conclusi e molto altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
-node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero
+node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero (crea e toglie da sé 55 studenti per la seconda pagina)
 ```
+
+Il 22/10, sul database di sviluppo: 46 file PHP con 1.709 controlli, `accessibilita.js` 4.679,
+`permessi.js` 470, `ordinamento_pagine.js` 301, `coerenza_moduli.js` 16, tutti superati.
+`permessi.js` e `accessibilita.js` rifanno la semina all'inizio: vanno lanciati uno dopo l'altro,
+mai insieme.
 
 ### I tre controlli automatici che vale la pena conoscere
 
@@ -1531,6 +1813,12 @@ Il file video viene preso in considerazione **solo** se la tendina del provider 
 compare un avviso. I campi dei provider non scelti ora spariscono davvero: la regola CSS
 `display: flex` vinceva sull'attributo `hidden`, così il campo "carica file video" si vedeva
 anche con la tendina su "Nessuno".
+
+**L'eccezione degli esercizi H5P** (21/10): la cartella di un contenuto H5P si toglie quando il
+contenuto si sostituisce o si elimina, e con il questionario o la lezione a cui appartiene. Non è
+un file caricato ma l'archivio aperto da Pistacchio, e il `.h5p` da cui viene resta a chi l'ha
+creato con Lumi. Eliminando un modulo o un corso interi, invece, le cartelle `storage/h5p/` dei
+loro contenuti per ora restano sul disco.
 
 ### Dove si vedono i file scollegati
 
@@ -1922,6 +2210,12 @@ principale, le pagine di accesso, la verifica pubblica del certificato e l'insta
 Le immagini sono ricavate da `pistacchio_icon.png` **ritagliando sul contenuto**: l'originale ha
 margini trasparenti che, ridotti a 16 px, lasciavano la forma minuscola in mezzo al nulla.
 
+**Il logo nuovo** (17/10): un fiore, un petalo arancio fra due foglie verdi. Sta in tutte le misure:
+`pistacchio_icon.png` (1200 px, in cima a questo file), `assets/img/pistacchio.png` (96 px: la
+barra laterale e la pagina di accesso affiancata), le due icone della scheda e del telefono e
+`favicon.ico`. Il disegno è più largo che alto: ogni file è un quadrato con il logo al centro,
+così tag e dimensioni nelle pagine restano quelli di prima.
+
 ## Logo del gruppo
 
 Nel modulo di creazione e in quello di modifica di un gruppo si può caricare un logo o simbolo.
@@ -2264,11 +2558,15 @@ l'admin** non sono membri dei gruppi che guidano, e il profilo non glieli elenca
 dall'elenco **Gruppi**, con «Vai al gruppo» in ogni riga, e da **Modifica gruppo**, con «vai al
 gruppo» sotto il titolo (12/10). Il titolo è «Gruppo» seguito dal nome
 («Gruppo Verde»), perché un nome di una parola da solo non dice di che pagina si tratta; se il
-nome comincia già con «Gruppo», la parola non si ripete. Non c'è una voce nella barra laterale, per
-scelta: è una pagina che si apre ogni tanto, non un luogo dove si torna.
+nome comincia già con «Gruppo», la parola non si ripete. A sinistra del nome, a 44 px,
+l'immagine del gruppo (o le sue iniziali, come nell'elenco dei gruppi). Dal 18/10 lo studente la
+trova anche nel **ramo del corso** della barra laterale, «Il mio gruppo» (vedi **La barra
+laterale**); aperta da lì, la pagina tiene il ramo anche dopo una risposta o un «Ci sarò».
 
 - **Su computer** i partecipanti stanno **in cerchio**, con il tutor al centro e i nomi verso
-  l'esterno: di fianco sui due lati, sopra in cima e sotto in fondo.
+  l'esterno: di fianco sui due lati, sopra in cima e sotto in fondo. Dal 16/10 foto e fumetto
+  sono più grandi del 10% (studenti 70 px, tutor 114, cerchio di 33 rem); la soglia a cui
+  compare il cerchio resta 52 rem.
 - **Tutte le foto hanno un bordo sottile**, tutor compreso: 1 px del colore principale
   della tavolozza. È un'ombra (`box-shadow`) e non un bordo, così non cambia la
   misura della foto né sposta il cerchio.
@@ -2280,7 +2578,9 @@ tabelle: dove non è supportata resta la griglia. La geometria sta in `App\Core\
 senza database, ed è provata da `tests/cerchio_test.php`.
 
 La pagina la aprono i partecipanti, il tutor del gruppo e l'amministratore — la stessa regola
-delle foto, nella stessa classe.
+delle foto, nella stessa classe. **I nomi interi li vedono solo l'admin e il tutor di quel
+gruppo** (17/10): un tutor che in un altro gruppo è solo membro vede i compagni come ciascuno ha
+scelto, nel cerchio, nel giro del cerchio, in «Ci sarò» e nelle domande passate.
 
 **La pagina del gruppo si scalda** (12/10, Alessandro, variante B del mockup: chiara e leggibile
 prima che calda, e regge gruppi di qualunque misura):
@@ -2300,6 +2600,11 @@ prima che calda, e regge gruppi di qualunque misura):
   cancellarla. Chi l'ha scritta la vede ancora, con la nota che è nascosta, e non la può più
   cambiare; «Rimetti» la rende di nuovo visibile.
 - Nel cerchio resta un gesto solo, la presentazione: la conversazione sta sotto.
+- **I riquadri dell'incontro e del giro ci sono sempre** (17/10): senza un incontro in programma
+  «Nessun incontro in programma, per ora.»; senza una domanda, a chi non la può fare «Il tutor non
+  ha ancora fatto una domanda al gruppo. Quando la farà, la trovi qui.». **«Prossimo incontro del
+  gruppo» e «Il giro del cerchio» sono titoli** (h2, 16 px), e il titolo dell'incontro e la
+  domanda diventano h3.
 - **Tre riquadri bianchi uguali** (13/10, Alessandro, variante A del mockup): anche il cerchio
   (o la griglia) sta in un riquadro come l'incontro e il giro del cerchio, senza un titolo suo —
   «Gruppo Giallo» in cima dice già chi sono. Fra un riquadro e l'altro 20 px. Nel cerchio i nomi
@@ -2410,7 +2715,9 @@ Due email nuove partono invece dalla pagina, subito:
   collegamento per scaricarlo;
 - **«La tua domanda ha una risposta»**, allo studente che l'ha fatta, quando l'esperto la
   pubblica: con la domanda, la risposta e il collegamento alle domande e risposte del corso.
-  Una correzione successiva non manda niente.
+  Una correzione successiva non manda niente;
+- **«Nuova proposta per la bacheca»** (17/10), al tutor del gruppo dello studente che propone una
+  risorsa, o agli amministratori se lo studente non ha un tutor.
 
 ## Le email e la pagina Impostazioni › Messaggi email
 
