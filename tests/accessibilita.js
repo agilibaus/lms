@@ -2207,6 +2207,27 @@ async function giroBenvenuto(browser) {
                     const ultimo = figli[figli.length - 1].getBoundingClientRect().bottom;
                     return { fraModuli, domanda: Math.round(qa.getBoundingClientRect().top - ultimo) };
                 })(),
+                // La riga del titolo nella tinta tenue del tema, il riquadro
+                // (e quindi il contenuto aperto) bianco (23/10, variante C).
+                tinta: (() => {
+                    const riga = document.querySelector('section.qa .qa-riga');
+                    const apri = document.querySelector('section.qa .qa-apri');
+                    if (riga === null || apri === null) {
+                        return null;
+                    }
+                    const vale = (v) => {
+                        const e = document.createElement('div');
+                        e.style.background = 'var(' + v + ')';
+                        document.body.append(e);
+                        const c = getComputedStyle(e).backgroundColor;
+                        e.remove();
+                        return c;
+                    };
+                    return {
+                        riga: getComputedStyle(riga).backgroundColor === vale('--color-primary-soft'),
+                        riquadro: getComputedStyle(apri).backgroundColor === vale('--color-surface'),
+                    };
+                })(),
                 comando: barra && barra.querySelector('.moduli-comando') ? barra.querySelector('.moduli-comando').textContent.trim() : null,
                 carte: carte.length,
                 inCorso: carte[0] ? carte[0].classList.contains('modulo-in-corso')
@@ -2236,6 +2257,9 @@ async function giroBenvenuto(browser) {
             gerarchiaModuli.stacchi !== null && gerarchiaModuli.stacchi.fraModuli.length > 0
                 && gerarchiaModuli.stacchi.domanda > Math.max(...gerarchiaModuli.stacchi.fraModuli),
             [JSON.stringify(gerarchiaModuli.stacchi)]);
+        check('pagina del corso: «Fai una domanda all\'esperto» ha la riga del titolo tinta e il riquadro bianco (23/10)',
+            gerarchiaModuli.tinta !== null && gerarchiaModuli.tinta.riga && gerarchiaModuli.tinta.riquadro,
+            [JSON.stringify(gerarchiaModuli.tinta)]);
         if (gerarchiaModuli.riga !== null) {
             await page.click('details.modulo-riga > summary');
             const aperta = await page.evaluate(() => ({

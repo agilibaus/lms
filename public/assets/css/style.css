@@ -6724,9 +6724,16 @@ details[open] > summary .obiettivo-se-aperto {
 .qa-apri {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
     border-radius: var(--radius-md);
 }
 
+/* La riga del titolo nella tinta tenue del tema, con il bordo
+   dell'obiettivo del corso (23/10, Alessandro, variante C): si stacca dai
+   moduli, che sono bianchi. Solo la riga: aperta, il contenuto resta
+   bianco sotto una linea, perche' il testo di aiuto e il contatore sulla
+   tinta scendevano a 4,18:1 (4,06 con la tavolozza prugna) e l'etichetta
+   «Pubblicata», che ha la tinta come fondo, spariva. */
 .qa-riga {
     display: flex;
     align-items: center;
@@ -6736,6 +6743,21 @@ details[open] > summary .obiettivo-se-aperto {
     list-style: none;
     cursor: pointer;
     border-radius: var(--radius-md);
+    background: var(--color-primary-soft);
+}
+
+/* La linea sotto la riga aperta e' un'ombra, non un bordo: un bordo
+   allungava la riga di 1 px aprendola, e la riga non deve cambiare
+   altezza mentre la si tocca (0152). */
+.qa-apri[open] > .qa-riga {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    box-shadow: 0 1px 0 var(--color-border);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
+}
+
+.qa-apri[open] > .qa-contenuto {
+    /* 1 px in piu': quello che la linea, essendo un'ombra, non occupa. */
+    padding-top: calc(1.1rem + 1px);
 }
 
 .qa-riga::-webkit-details-marker {
