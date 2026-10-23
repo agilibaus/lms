@@ -2205,7 +2205,13 @@ async function giroBenvenuto(browser) {
                         fraModuli.push(Math.round(figli[i].getBoundingClientRect().top - figli[i - 1].getBoundingClientRect().bottom));
                     }
                     const ultimo = figli[figli.length - 1].getBoundingClientRect().bottom;
-                    return { fraModuli, domanda: Math.round(qa.getBoundingClientRect().top - ultimo) };
+                    // Fra l'obiettivo e il benvenuto subito sotto, la distanza
+                    // fra due moduli (23/10).
+                    const ob = document.querySelector('section.obiettivo-corso:not(details section), details.obiettivo-ridotto');
+                    const bv = ob ? ob.nextElementSibling : null;
+                    const benvenuto = bv && bv.matches('section.tutor-benvenuto, details.tutor-benvenuto-ridotto')
+                        ? Math.round(bv.getBoundingClientRect().top - ob.getBoundingClientRect().bottom) : null;
+                    return { fraModuli, domanda: Math.round(qa.getBoundingClientRect().top - ultimo), benvenuto };
                 })(),
                 // La tinta tenue del tema solo sulla prossima cosa da fare
                 // (23/10): l'obiettivo del corso e la domanda all'esperto
@@ -2275,6 +2281,10 @@ async function giroBenvenuto(browser) {
         check('pagina del corso: «Fai una domanda all\'esperto» stacca dall\'ultimo modulo più dei moduli fra loro (23/10)',
             gerarchiaModuli.stacchi !== null && gerarchiaModuli.stacchi.fraModuli.length > 0
                 && gerarchiaModuli.stacchi.domanda > Math.max(...gerarchiaModuli.stacchi.fraModuli),
+            [JSON.stringify(gerarchiaModuli.stacchi)]);
+        check('prima visita: fra l\'obiettivo del corso e il benvenuto del tutor la distanza fra due moduli (23/10)',
+            gerarchiaModuli.stacchi !== null && gerarchiaModuli.stacchi.benvenuto !== null
+                && gerarchiaModuli.stacchi.fraModuli.every((d) => d === gerarchiaModuli.stacchi.benvenuto),
             [JSON.stringify(gerarchiaModuli.stacchi)]);
         check('pagina del corso: la tinta tenue solo sulla prossima lezione; obiettivo e domanda all\'esperto bianchi (23/10)',
             gerarchiaModuli.tinta !== null && gerarchiaModuli.tinta.daQuiTenue
@@ -2384,7 +2394,13 @@ async function giroBenvenuto(browser) {
                 const b = document.querySelector(testo);
                 return a && b ? Math.round((b.getBoundingClientRect().left - a.getBoundingClientRect().right) * 10) / 10 : null;
             };
+            const lista2 = document.querySelector('.module-list');
+            const figli2 = lista2 ? [...lista2.children].filter((e) => e.getBoundingClientRect().height > 0) : [];
+            const ob = document.querySelector('details.obiettivo-ridotto');
+            const bv = document.querySelector('details.tutor-benvenuto-ridotto');
             return {
+                fraModuli: figli2.length > 1 ? Math.round(figli2[1].getBoundingClientRect().top - figli2[0].getBoundingClientRect().bottom) : null,
+                obiettivoBenvenuto: ob && bv && ob.nextElementSibling === bv ? Math.round(bv.getBoundingClientRect().top - ob.getBoundingClientRect().bottom) : null,
                 distanze: [
                     distanza('details.obiettivo-ridotto > summary .icona-riquadro', 'details.obiettivo-ridotto > summary .obiettivo-ridotto-nome'),
                     distanza('details.obiettivo-ridotto section.obiettivo-corso .icona-riquadro', 'details.obiettivo-ridotto section.obiettivo-corso h2'),
@@ -2401,6 +2417,9 @@ async function giroBenvenuto(browser) {
             ['obiettivo', 'tutor', 'esperto'].every((k) => segni[k] !== null
                 && Math.abs(segni[k].lato - segni.attesa) <= 0.5 && Math.abs(segni[k].scarto) <= 0.5),
             [JSON.stringify(segni)]);
+        check('quarta visita: fra l\'obiettivo ridotto e il benvenuto ridotto la distanza fra due moduli (23/10)',
+            segni.fraModuli !== null && segni.obiettivoBenvenuto === segni.fraModuli,
+            [JSON.stringify({ fraModuli: segni.fraModuli, obiettivoBenvenuto: segni.obiettivoBenvenuto })]);
         check('quarta visita: il titolo sta alla stessa distanza dal suo segno nell\'obiettivo (ridotto e completo), nel benvenuto e nell\'esperto (23/10)',
             segni.distanze.every((d) => d !== null) && Math.max(...segni.distanze) - Math.min(...segni.distanze) <= 0.5,
             [JSON.stringify(segni.distanze)]);

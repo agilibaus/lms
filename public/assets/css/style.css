@@ -6343,6 +6343,22 @@ fieldset.checkbox-group legend {
     margin: 0 0 1.6rem;
 }
 
+/* Fra l'obiettivo e il benvenuto del tutor subito sotto, la distanza fra
+   due moduli, 1 rem (23/10, Alessandro): sono due riquadri dello stesso
+   tipo, uno dopo l'altro. Senza il benvenuto resta 1,6 rem. Dove `:has()`
+   manca resta 1,6 rem anche qui: e' il ripiego. Nell'obiettivo ridotto e
+   riaperto la scheda dentro non ha margine suo: lo stacco lo da' il
+   `details`, e un margine dentro si fonderebbe con il suo, e vincerebbe il
+   maggiore. */
+.obiettivo-corso:has(+ .tutor-benvenuto, + .tutor-benvenuto-ridotto),
+.obiettivo-ridotto:has(+ .tutor-benvenuto, + .tutor-benvenuto-ridotto) {
+    margin-bottom: 1rem;
+}
+
+.obiettivo-ridotto > .obiettivo-corso {
+    margin-bottom: 0;
+}
+
 .obiettivo-ridotto > summary {
     display: flex;
     align-items: center;
