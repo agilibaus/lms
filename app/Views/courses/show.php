@@ -81,7 +81,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
              benvenuto del tutor. Completo nelle prime tre visite, poi una riga
              che si riapre con «Mostra», come il benvenuto. */ ?>
     <?php $schedaObiettivo = '<section class="obiettivo-corso" aria-labelledby="obiettivo-corso-titolo">'
-        . '<div class="obiettivo-corso-testa"><span class="bersaglio" aria-hidden="true"></span>'
+        . '<div class="obiettivo-corso-testa">' . Icona::svg('bullseye', 'icona-riquadro')
         . '<h2 id="obiettivo-corso-titolo">Obiettivo del corso</h2></div>'
         . '<div class="testo-breve">' . TestoBreve::html((string) $course['objective']) . '</div>'
         . '</section>'; ?>
@@ -90,7 +90,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
     <?php else: ?>
         <details class="obiettivo-ridotto">
             <summary>
-                <span class="bersaglio" aria-hidden="true"></span>
+                <?= Icona::svg('bullseye', 'icona-riquadro') ?>
                 <span class="obiettivo-ridotto-nome">Obiettivo del corso</span>
                 <span class="obiettivo-comando"><span class="obiettivo-se-chiuso">Mostra</span><span class="obiettivo-se-aperto">Nascondi</span></span>
             </summary>
@@ -267,7 +267,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                     <?php else: ?>
                         <details class="obiettivo-modulo-ridotto">
                             <summary>
-                                <span class="bersaglio bersaglio-piccolo" aria-hidden="true"></span>
+                                <?= Icona::svg('bullseye', 'icona-riquadro-piccola') ?>
                                 <span>Obiettivo del modulo ·</span>
                                 <span class="obiettivo-comando"><span class="obiettivo-se-chiuso">Mostra</span><span class="obiettivo-se-aperto">Nascondi</span></span>
                             </summary>

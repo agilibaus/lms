@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Models\QuestionModel;
 
 /**
@@ -48,6 +49,7 @@ $stati = [
 <section class="qa" id="domande" aria-labelledby="qa-titolo">
     <details class="qa-apri"<?= $aperta ? ' open' : '' ?>>
     <summary class="qa-riga">
+        <?= Icona::svg('question-circle', 'icona-riquadro') ?>
         <span class="qa-riga-testo">
             <h2 id="qa-titolo">Fai una domanda all'esperto</h2>
         </span>

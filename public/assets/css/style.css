@@ -6270,17 +6270,19 @@ fieldset.checkbox-group legend {
    L'obiettivo del corso e del modulo (11/10, Alessandro)
    ==========================================================
 
-   Il corso: un riquadro dopo la descrizione, largo quanto i moduli, con il
-   fondo verde chiaro e il bersaglio, perche' non si legga come un modulo.
+   Il corso: un riquadro dopo la descrizione, largo quanto i moduli, bianco
+   come loro e con l'icona del bersaglio (`bullseye`), perche' non si legga
+   come un modulo. Bianco dal 23/10 (Alessandro): la tinta tenue del tema
+   segna solo la prossima cosa da fare («Riprendi da qui»); usata anche qui
+   diceva due cose diverse.
    Completo nelle prime tre visite dello studente, poi una riga che si
    riapre, disegnata come quella del benvenuto del tutor. Il modulo: sotto
    il titolo, con un filetto a sinistra; completo nel modulo in corso,
    ridotto negli altri. Lo staff li vede sempre completi. La regola sta in
    `App\Core\Obiettivo`. */
 .obiettivo-corso {
-    background: var(--color-primary-soft);
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
     border-radius: var(--radius-md);
     padding: 1.1rem 1.25rem;
     margin: 0 0 1.6rem;
@@ -6302,23 +6304,27 @@ fieldset.checkbox-group legend {
     line-height: 1.55;
 }
 
-/* Il bersaglio: una forma, non un carattere (le decorazioni da mettere al
-   pixel, §5): anelli del colore principale disegnati con un gradiente. */
-.bersaglio {
-    width: 2.4rem;
-    height: 2.4rem;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--color-primary) 0 18%, var(--color-surface) 19% 38%,
-        var(--color-primary) 39% 56%, var(--color-surface) 57% 100%);
-    box-shadow: 0 0 0 1px var(--color-primary);
+/* Il segno dei riquadri «in piu'» della pagina del corso (23/10): l'icona
+   a sinistra del titolo, nel colore principale, a 24 px — `bullseye` per
+   l'obiettivo, `question-circle` per la domanda all'esperto. Nella riga
+   ridotta dell'obiettivo del modulo, a 15 px, la misura del suo testo.
+   Fino al 23/10 era un bersaglio disegnato con un gradiente. */
+/* Con `.icona` davanti: la regola generale delle icone (1,05 em) sta piu'
+   in basso nel foglio e, a parita' di peso, vincerebbe lei. */
+.icona.icona-riquadro,
+.icona.icona-riquadro-piccola {
+    flex: 0 0 auto;
+    color: var(--color-primary);
 }
 
-.bersaglio-piccolo {
-    width: 0.95rem;
-    height: 0.95rem;
-    background: radial-gradient(circle, var(--color-primary) 0 22%, var(--color-surface) 23% 45%,
-        var(--color-primary) 46% 68%, var(--color-surface) 69% 100%);
+.icona.icona-riquadro {
+    width: 24px;
+    height: 24px;
+}
+
+.icona.icona-riquadro-piccola {
+    width: 15px;
+    height: 15px;
 }
 
 .obiettivo-ridotto {
@@ -6331,9 +6337,8 @@ fieldset.checkbox-group legend {
     gap: 0.8rem;
     list-style: none;
     cursor: pointer;
-    background: var(--color-primary-soft);
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
     border-radius: var(--radius-md);
     padding: 0.5rem 0.8rem;
     font-size: 0.92rem;
@@ -6724,16 +6729,14 @@ details[open] > summary .obiettivo-se-aperto {
 .qa-apri {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
     border-radius: var(--radius-md);
 }
 
-/* La riga del titolo nella tinta tenue del tema, con il bordo
-   dell'obiettivo del corso (23/10, Alessandro, variante C): si stacca dai
-   moduli, che sono bianchi. Solo la riga: aperta, il contenuto resta
-   bianco sotto una linea, perche' il testo di aiuto e il contatore sulla
-   tinta scendevano a 4,18:1 (4,06 con la tavolozza prugna) e l'etichetta
-   «Pubblicata», che ha la tinta come fondo, spariva. */
+/* La riga del titolo, bianca come i moduli, con `question-circle` a
+   sinistra (23/10, Alessandro; la tinta della 0271 e' stata tolta: e' il
+   segno della prossima cosa da fare). Piu' alta di una riga di modulo
+   (16 px sopra e sotto contro 8), apposta: la domanda all'esperto e' un
+   elemento importante del corso, e in fondo alla pagina deve spiccare. */
 .qa-riga {
     display: flex;
     align-items: center;
@@ -6743,21 +6746,6 @@ details[open] > summary .obiettivo-se-aperto {
     list-style: none;
     cursor: pointer;
     border-radius: var(--radius-md);
-    background: var(--color-primary-soft);
-}
-
-/* La linea sotto la riga aperta e' un'ombra, non un bordo: un bordo
-   allungava la riga di 1 px aprendola, e la riga non deve cambiare
-   altezza mentre la si tocca (0152). */
-.qa-apri[open] > .qa-riga {
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    box-shadow: 0 1px 0 var(--color-border);
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--color-primary) 16%, var(--color-primary-soft));
-}
-
-.qa-apri[open] > .qa-contenuto {
-    /* 1 px in piu': quello che la linea, essendo un'ombra, non occupa. */
-    padding-top: calc(1.1rem + 1px);
 }
 
 .qa-riga::-webkit-details-marker {

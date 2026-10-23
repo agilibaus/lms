@@ -2207,14 +2207,11 @@ async function giroBenvenuto(browser) {
                     const ultimo = figli[figli.length - 1].getBoundingClientRect().bottom;
                     return { fraModuli, domanda: Math.round(qa.getBoundingClientRect().top - ultimo) };
                 })(),
-                // La riga del titolo nella tinta tenue del tema, il riquadro
-                // (e quindi il contenuto aperto) bianco (23/10, variante C).
+                // La tinta tenue del tema solo sulla prossima cosa da fare
+                // (23/10): l'obiettivo del corso e la domanda all'esperto
+                // sono bianchi, ciascuno con il suo segno a sinistra del
+                // titolo (`bullseye`, `question-circle`).
                 tinta: (() => {
-                    const riga = document.querySelector('section.qa .qa-riga');
-                    const apri = document.querySelector('section.qa .qa-apri');
-                    if (riga === null || apri === null) {
-                        return null;
-                    }
                     const vale = (v) => {
                         const e = document.createElement('div');
                         e.style.background = 'var(' + v + ')';
@@ -2223,9 +2220,31 @@ async function giroBenvenuto(browser) {
                         e.remove();
                         return c;
                     };
+                    // Il fondo che si vede: il primo antenato non trasparente.
+                    const fondo = (el) => {
+                        for (let e = el; e; e = e.parentElement) {
+                            const c = getComputedStyle(e).backgroundColor;
+                            if (c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') {
+                                return c;
+                            }
+                        }
+                        return null;
+                    };
+                    const tenue = vale('--color-primary-soft');
+                    const bianco = vale('--color-surface');
+                    const obiettivo = document.querySelector('section.obiettivo-corso');
+                    const riga = document.querySelector('section.qa .qa-riga');
+                    const daQui = document.querySelector('.lesson-list-item.da-qui, .module-quiz-row.da-qui');
+                    if (obiettivo === null || riga === null || daQui === null) {
+                        return null;
+                    }
+                    const primo = (el) => el.firstElementChild ? el.firstElementChild.getAttribute('class') : null;
                     return {
-                        riga: getComputedStyle(riga).backgroundColor === vale('--color-primary-soft'),
-                        riquadro: getComputedStyle(apri).backgroundColor === vale('--color-surface'),
+                        obiettivoBianco: fondo(obiettivo) === bianco,
+                        obiettivoIcona: primo(obiettivo.querySelector('.obiettivo-corso-testa')),
+                        espertoBianco: fondo(riga) === bianco,
+                        espertoIcona: primo(riga),
+                        daQuiTenue: fondo(daQui) === tenue,
                     };
                 })(),
                 comando: barra && barra.querySelector('.moduli-comando') ? barra.querySelector('.moduli-comando').textContent.trim() : null,
@@ -2257,8 +2276,14 @@ async function giroBenvenuto(browser) {
             gerarchiaModuli.stacchi !== null && gerarchiaModuli.stacchi.fraModuli.length > 0
                 && gerarchiaModuli.stacchi.domanda > Math.max(...gerarchiaModuli.stacchi.fraModuli),
             [JSON.stringify(gerarchiaModuli.stacchi)]);
-        check('pagina del corso: «Fai una domanda all\'esperto» ha la riga del titolo tinta e il riquadro bianco (23/10)',
-            gerarchiaModuli.tinta !== null && gerarchiaModuli.tinta.riga && gerarchiaModuli.tinta.riquadro,
+        check('pagina del corso: la tinta tenue solo sulla prossima lezione; obiettivo e domanda all\'esperto bianchi (23/10)',
+            gerarchiaModuli.tinta !== null && gerarchiaModuli.tinta.daQuiTenue
+                && gerarchiaModuli.tinta.obiettivoBianco && gerarchiaModuli.tinta.espertoBianco,
+            [JSON.stringify(gerarchiaModuli.tinta)]);
+        check('pagina del corso: bullseye accanto a «Obiettivo del corso», question-circle accanto a «Fai una domanda all\'esperto» (23/10)',
+            gerarchiaModuli.tinta !== null
+                && /\bicona-bullseye\b/.test(gerarchiaModuli.tinta.obiettivoIcona || '')
+                && /\bicona-question-circle\b/.test(gerarchiaModuli.tinta.espertoIcona || ''),
             [JSON.stringify(gerarchiaModuli.tinta)]);
         if (gerarchiaModuli.riga !== null) {
             await page.click('details.modulo-riga > summary');
