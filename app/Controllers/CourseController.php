@@ -257,7 +257,6 @@ class CourseController
             'quizPassedByModule' => $quizPassedByModule,
             'moduleLocks' => $isStudent ? CourseAccess::locks($userId, $courseId) : [],
             'certificate' => $isStudent ? CertificateModel::findForUserAndCourse($userId, $courseId) : null,
-            'eligibility' => $isStudent ? CertificateService::eligibility($userId, $courseId) : null,
         ]);
     }
 

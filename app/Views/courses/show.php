@@ -20,7 +20,6 @@ use App\Core\TestoBreve;
 /** @var array<int, bool> $quizPassedByModule */
 /** @var array<int, array{motivo: string, available_from: ?string}> $moduleLocks */
 /** @var array|null $certificate */
-/** @var array|null $eligibility */
 /** @var string|null $obiettivoCorso «completo», «ridotto», o null senza obiettivo */
 /** @var array{chiedi: ?array, mie: array<int, array>, esito: ?array}|null $treParole solo per lo studente */
 /** @var bool $tuttiCompleti lo staff vede gli obiettivi sempre completi */
@@ -402,25 +401,6 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             <?php endif; ?>
         <?php endforeach; ?>
     </div>
-<?php endif; ?>
-
-<?php if (($certificate === null || $certificate['revoked_at'] !== null) && $eligibility !== null && !$eligibility['eligible']): ?>
-    <?php
-    // In fondo, dopo l'ultimo modulo (22/10, Alessandro): e' li' che ci si
-    // chiede che cosa manca. Solo le parti che mancano davvero.
-    $mancano = [];
-
-    if ((int) $eligibility['lessons_done'] < (int) $eligibility['lessons_total']) {
-        $mancano[] = 'completa tutte le lezioni (' . (int) $eligibility['lessons_done'] . ' di ' . (int) $eligibility['lessons_total'] . ')';
-    }
-
-    if ((int) $eligibility['quizzes_passed'] < (int) $eligibility['quizzes_total']) {
-        $mancano[] = 'supera tutti i questionari (' . (int) $eligibility['quizzes_passed'] . ' di ' . (int) $eligibility['quizzes_total'] . ')';
-    }
-    ?>
-    <?php if ($mancano !== []): ?>
-        <p class="course-progress-hint corso-certificato-mancano">Per il certificato: <?= htmlspecialchars(implode(' e ', $mancano)) ?>.</p>
-    <?php endif; ?>
 <?php endif; ?>
 
 <?php require __DIR__ . '/_questions.php'; ?>

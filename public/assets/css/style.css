@@ -3218,11 +3218,6 @@ body.has-focus-video {
     font-size: 0.85rem;
 }
 
-/* La riga del certificato in fondo ai moduli (22/10). */
-.corso-certificato-mancano {
-    margin: 1rem 0 0;
-}
-
 /* ---------- Alert e badge aggiuntivi ---------- */
 
 .alert-success {
@@ -6710,7 +6705,10 @@ details[open] > summary .obiettivo-se-aperto {
 
 .qa {
     /* 1,5 rem come ogni elemento che stacca da quello sopra (0109, 0110):
-       ripiegata e' una riga sola, e con 2,5 sembrava scollegata (08/10). */
+       ripiegata e' una riga sola, e con 2,5 sembrava scollegata (08/10).
+       Piu' dello stacco fra due moduli, apposta (23/10, Alessandro): la
+       domanda all'esperto non e' un modulo del corso, e' un'occasione in
+       piu' per chiarire i dubbi. */
     margin-top: 1.5rem;
 }
 

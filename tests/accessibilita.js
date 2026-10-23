@@ -2179,7 +2179,7 @@ async function giroBenvenuto(browser) {
         // e, sulla riga della lezione, «Inizia da qui» (13/10); quello
         // chiuso e' il prossimo, aperto, con «Prossimo» e la data; il terzo e'
         // una riga «1 lezione» che si apre. Sopra, solo «Mostra tutti i
-        // moduli» (22/10); la riga del certificato dopo i moduli.
+        // moduli» (22/10).
         const gerarchiaModuli = await page.evaluate(() => {
             const carte = [...document.querySelectorAll('.module-card')];
             const riga = document.querySelector('details.modulo-riga:not([open])');
@@ -2188,16 +2188,24 @@ async function giroBenvenuto(browser) {
             const daQui = carte[0] ? carte[0].querySelector('.lesson-list-item.da-qui') : null;
             return {
                 barra: barra ? barra.textContent.replace(/\s+/g, ' ').trim() : null,
-                // La riga del certificato in fondo, dopo i moduli (22/10).
-                // Lo studente della semina ha gia' il certificato: allora la
-                // riga non c'e', e c'e' il riquadro verde in alto.
-                certificato: (() => {
-                    const r = document.querySelector('.corso-certificato-mancano');
+                // La domanda all'esperto stacca dall'ultimo modulo piu' di
+                // quanto un modulo stacchi dall'altro (23/10): non e' un modulo
+                // del corso. (La riga del certificato in fondo e' stata tolta
+                // il 23/10; il suo controllo con lei: lo studente della semina
+                // ha il certificato, e la riga qui non sarebbe mai comparsa.)
+                stacchi: (() => {
                     const l = document.querySelector('.module-list');
-                    if (r === null) {
-                        return document.querySelector('.alert-success a[href$="/download"]') !== null;
+                    const qa = document.querySelector('section.qa');
+                    if (l === null || qa === null) {
+                        return null;
                     }
-                    return l !== null && !!(l.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING);
+                    const figli = [...l.children].filter((e) => e.getBoundingClientRect().height > 0);
+                    const fraModuli = [];
+                    for (let i = 1; i < figli.length; i++) {
+                        fraModuli.push(Math.round(figli[i].getBoundingClientRect().top - figli[i - 1].getBoundingClientRect().bottom));
+                    }
+                    const ultimo = figli[figli.length - 1].getBoundingClientRect().bottom;
+                    return { fraModuli, domanda: Math.round(qa.getBoundingClientRect().top - ultimo) };
                 })(),
                 comando: barra && barra.querySelector('.moduli-comando') ? barra.querySelector('.moduli-comando').textContent.trim() : null,
                 carte: carte.length,
@@ -2224,8 +2232,10 @@ async function giroBenvenuto(browser) {
             [JSON.stringify(gerarchiaModuli)]);
         check('gerarchia: sopra i moduli solo «Mostra tutti i moduli», senza conti (22/10)',
             gerarchiaModuli.barra === 'Mostra tutti i moduli' && gerarchiaModuli.comando === 'Mostra tutti i moduli', [JSON.stringify(gerarchiaModuli)]);
-        check('gerarchia: la riga del certificato dopo i moduli, o il certificato già ottenuto in alto (22/10)',
-            gerarchiaModuli.certificato === true, [JSON.stringify(gerarchiaModuli)]);
+        check('pagina del corso: «Fai una domanda all\'esperto» stacca dall\'ultimo modulo più dei moduli fra loro (23/10)',
+            gerarchiaModuli.stacchi !== null && gerarchiaModuli.stacchi.fraModuli.length > 0
+                && gerarchiaModuli.stacchi.domanda > Math.max(...gerarchiaModuli.stacchi.fraModuli),
+            [JSON.stringify(gerarchiaModuli.stacchi)]);
         if (gerarchiaModuli.riga !== null) {
             await page.click('details.modulo-riga > summary');
             const aperta = await page.evaluate(() => ({
