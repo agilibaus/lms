@@ -6220,7 +6220,9 @@ fieldset.checkbox-group legend {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: 0.5rem 0.8rem;
+    /* 1,25 rem ai lati come i moduli (23/10): foto e icone dei riquadri
+       partono dalla stessa linea dei titoli dei moduli. */
+    padding: 0.5rem 1.25rem;
     font-size: 0.92rem;
 }
 
@@ -6291,7 +6293,9 @@ fieldset.checkbox-group legend {
 .obiettivo-corso-testa {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    /* 0,8 rem come le righe del benvenuto, dell'obiettivo ridotto e
+       dell'esperto: il titolo sta alla stessa distanza dal suo segno. */
+    gap: 0.8rem;
     margin-bottom: 0.55rem;
 }
 
@@ -6305,9 +6309,12 @@ fieldset.checkbox-group legend {
 }
 
 /* Il segno dei riquadri «in piu'» della pagina del corso (23/10): l'icona
-   a sinistra del titolo, nel colore principale, a 24 px — `bullseye` per
-   l'obiettivo, `question-circle` per la domanda all'esperto. Nella riga
-   ridotta dell'obiettivo del modulo, a 15 px, la misura del suo testo.
+   a sinistra del titolo, nel colore principale — `bullseye` per l'obiettivo,
+   `question-circle` per la domanda all'esperto. A 24 px dentro un cerchio
+   bianco di 2,4 rem con il filo verde: la stessa misura e la stessa forma
+   della foto del tutor nella riga del benvenuto, che le sta accanto
+   (variante B, Alessandro). Nella riga ridotta dell'obiettivo del modulo,
+   dentro il modulo, l'icona e' nuda, a 15 px, la misura del suo testo.
    Fino al 23/10 era un bersaglio disegnato con un gradiente. */
 /* Con `.icona` davanti: la regola generale delle icone (1,05 em) sta piu'
    in basso nel foglio e, a parita' di peso, vincerebbe lei. */
@@ -6318,8 +6325,13 @@ fieldset.checkbox-group legend {
 }
 
 .icona.icona-riquadro {
-    width: 24px;
-    height: 24px;
+    box-sizing: border-box;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: calc((2.4rem - 24px) / 2);
+    border-radius: 50%;
+    background: var(--color-surface);
+    box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .icona.icona-riquadro-piccola {
@@ -6340,7 +6352,7 @@ fieldset.checkbox-group legend {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: 0.5rem 0.8rem;
+    padding: 0.5rem 1.25rem;  /* come i moduli (23/10) */
     font-size: 0.92rem;
 }
 
@@ -6734,15 +6746,16 @@ details[open] > summary .obiettivo-se-aperto {
 
 /* La riga del titolo, bianca come i moduli, con `question-circle` a
    sinistra (23/10, Alessandro; la tinta della 0271 e' stata tolta: e' il
-   segno della prossima cosa da fare). Piu' alta di una riga di modulo
-   (16 px sopra e sotto contro 8), apposta: la domanda all'esperto e' un
-   elemento importante del corso, e in fondo alla pagina deve spiccare. */
+   segno della prossima cosa da fare). Piu' alta di una riga di modulo,
+   apposta: la domanda all'esperto e' un elemento importante del corso, e in
+   fondo alla pagina deve spiccare. Con il cerchio di 2,4 rem e 0,55 rem
+   sopra e sotto e' alta 56 px su computer, contro 41,6 di un modulo. */
 .qa-riga {
     display: flex;
     align-items: center;
     gap: 0.8rem;
     min-height: var(--tap-target);
-    padding: 1rem 1.25rem;
+    padding: 0.55rem 1.25rem;
     list-style: none;
     cursor: pointer;
     border-radius: var(--radius-md);

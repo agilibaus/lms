@@ -2362,6 +2362,48 @@ async function giroBenvenuto(browser) {
                 && obiettivoRidotto.completoFuori === 0 && obiettivoRiaperto !== null
                 && obiettivoRiaperto.visibile && obiettivoRiaperto.comando === 'Nascondi',
             [JSON.stringify({ obiettivoRidotto, obiettivoRiaperto })]);
+        // I segni dei riquadri «in piu'» (23/10): obiettivo ridotto, foto del
+        // tutor nel benvenuto ridotto e domanda all'esperto hanno la stessa
+        // misura (2,4 rem) e partono dalla stessa linea dei titoli dei moduli
+        // (bordo del riquadro + 1,25 rem).
+        const segni = await page.evaluate(() => {
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const lista = document.querySelector('.module-list');
+            const linea = lista ? lista.getBoundingClientRect().left + 1 + 1.25 * rem : null;
+            const misura = (sel) => {
+                const e = document.querySelector(sel);
+                if (e === null) {
+                    return null;
+                }
+                const r = e.getBoundingClientRect();
+                return { lato: Math.round(r.width * 10) / 10, scarto: linea === null ? null : Math.round((r.left - linea) * 10) / 10 };
+            };
+            // Dal segno al testo che gli sta accanto, la stessa distanza.
+            const distanza = (segno, testo) => {
+                const a = document.querySelector(segno);
+                const b = document.querySelector(testo);
+                return a && b ? Math.round((b.getBoundingClientRect().left - a.getBoundingClientRect().right) * 10) / 10 : null;
+            };
+            return {
+                distanze: [
+                    distanza('details.obiettivo-ridotto > summary .icona-riquadro', 'details.obiettivo-ridotto > summary .obiettivo-ridotto-nome'),
+                    distanza('details.obiettivo-ridotto section.obiettivo-corso .icona-riquadro', 'details.obiettivo-ridotto section.obiettivo-corso h2'),
+                    distanza('details.tutor-benvenuto-ridotto > summary .tutor-benvenuto-miniatura', 'details.tutor-benvenuto-ridotto > summary .tutor-benvenuto-ridotto-nome'),
+                    distanza('section.qa .qa-riga .icona-riquadro', 'section.qa .qa-riga .qa-riga-testo'),
+                ],
+                attesa: Math.round(2.4 * rem * 10) / 10,
+                obiettivo: misura('details.obiettivo-ridotto > summary .icona-riquadro'),
+                tutor: misura('details.tutor-benvenuto-ridotto > summary .tutor-benvenuto-miniatura'),
+                esperto: misura('section.qa .qa-riga .icona-riquadro'),
+            };
+        });
+        check('quarta visita: obiettivo, foto del tutor ed esperto hanno un segno della stessa misura, allineato ai titoli dei moduli (23/10)',
+            ['obiettivo', 'tutor', 'esperto'].every((k) => segni[k] !== null
+                && Math.abs(segni[k].lato - segni.attesa) <= 0.5 && Math.abs(segni[k].scarto) <= 0.5),
+            [JSON.stringify(segni)]);
+        check('quarta visita: il titolo sta alla stessa distanza dal suo segno nell\'obiettivo (ridotto e completo), nel benvenuto e nell\'esperto (23/10)',
+            segni.distanze.every((d) => d !== null) && Math.max(...segni.distanze) - Math.min(...segni.distanze) <= 0.5,
+            [JSON.stringify(segni.distanze)]);
         check('quarta visita: l\'obiettivo del modulo in corso resta completo', obiettivoRidotto.inCorso,
             [JSON.stringify(obiettivoRidotto)]);
 
