@@ -14,7 +14,6 @@ use App\Core\LiveScope;
 use App\Core\Mail\LiveSessionNotifier;
 use App\Core\View;
 use App\Models\CourseModel;
-use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
 use App\Models\LiveSessionAttendanceModel;
 use App\Models\LiveSessionModel;
@@ -574,7 +573,7 @@ class LiveSessionController
                 $data['description'],
                 new \DateTimeImmutable($data['starts_at']),
                 new \DateTimeImmutable($data['ends_at']),
-                $this->participantEmailsFor($data['module_id'], $data['group_id'])
+                array_column(LiveSessionModel::attesiPer($data['module_id'], $data['group_id'], $data['ends_at']), 'email')
             );
         } catch (GoogleException $e) {
             error_log('[Google] ' . $e->getMessage());
@@ -608,7 +607,7 @@ class LiveSessionController
                 $data['description'],
                 new \DateTimeImmutable($data['starts_at']),
                 new \DateTimeImmutable($data['ends_at']),
-                $this->participantEmailsFor($data['module_id'], $data['group_id'])
+                $this->participantEmails((int) $session['id'])
             );
         } catch (GoogleException $e) {
             error_log('[Google] ' . $e->getMessage());
@@ -665,33 +664,6 @@ class LiveSessionController
     private function participantEmails(int $sessionId): array
     {
         return array_column(LiveSessionModel::participants($sessionId), 'email');
-    }
-
-    /**
-     * Email dei partecipanti attesi, prima che la sessione esista in tabella.
-     *
-     * @return string[]
-     */
-    private function participantEmailsFor(?int $moduleId, ?int $groupId): array
-    {
-        $emails = [];
-
-        if ($moduleId !== null) {
-            $module = ModuleModel::find($moduleId);
-
-            if ($module !== null) {
-                $emails = array_merge($emails, array_column(
-                    EnrollmentModel::forCourse((int) $module['course_id']),
-                    'email'
-                ));
-            }
-        }
-
-        if ($groupId !== null) {
-            $emails = array_merge($emails, array_column(GroupModel::members($groupId), 'email'));
-        }
-
-        return array_values(array_unique($emails));
     }
 
     /**

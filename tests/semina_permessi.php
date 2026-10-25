@@ -656,6 +656,40 @@ $pdo->prepare('INSERT INTO board_uses (resource_id, user_id, body) VALUES (:r, :
     ->execute(['r' => $a['bacheca_risorsa'], 'u' => $altroGruppo, 'b' => 'Racconto dell’altra classe: lo leggono solo i suoi compagni.']);
 $a['bacheca_uso_altra'] = (int) $pdo->lastInsertId();
 
+// Chi e' atteso a un incontro (25/10, conflitti 1 e 2). L'incontro del
+// mondo A ha modulo e gruppo: e' del solo gruppo, e lo studente dell'altra
+// classe — iscritto allo stesso corso — non lo vede piu'. Un incontro di
+// tutto il corso (solo il modulo) e' degli iscritti entro la sua fine che,
+// quando e' stato creato, non avevano finito il corso: quello futuro e'
+// dello studente di A e dell'altra classe, non di chi il corso l'aveva gia'
+// finito; quello passato, creato venti giorni fa e finito dieci giorni fa,
+// e' dello studente di A (iscritto da sessanta) e di chi ha finito ieri,
+// non dello studente dell'altra classe, iscritto oggi. Chi ha finito ha gia'
+// scelto come mostrare il nome: senza, ogni pagina lo porterebbe al primo
+// accesso, che risponde 200 e farebbe passare per «consentito» un rifiuto.
+$pdo->prepare('UPDATE enrollments SET enrolled_at = NOW() - INTERVAL 60 DAY WHERE user_id = :u AND course_id = :c')
+    ->execute(['u' => $studenteA, 'c' => $a['corso']]);
+$pdo->prepare(
+    'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at, name_display)
+     VALUES (:e, :p, "Studente", "Finito", "studente", 1, NOW(), NOW(), "full")
+     ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), is_active = 1, welcome_seen_at = NOW(), name_display = "full"'
+)->execute(['e' => 'finito@test.it', 'p' => password_hash('Password1!', PASSWORD_DEFAULT)]);
+$finito = utente($pdo, 'finito@test.it');
+$pdo->prepare('INSERT INTO enrollments (user_id, course_id, enrolled_at, progress_pct, completed_at)
+               VALUES (:u, :c, NOW() - INTERVAL 60 DAY, 100, NOW() - INTERVAL 1 DAY)')
+    ->execute(['u' => $finito, 'c' => $a['corso']]);
+$pdo->prepare('INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, meet_link, created_by)
+               VALUES (:m, NULL, :t, DATE_ADD(NOW(), INTERVAL 4 DAY),
+                       DATE_ADD(NOW(), INTERVAL 4 DAY) + INTERVAL 60 MINUTE,
+                       "https://meet.google.com/prova-permessi-corso", :a)')
+    ->execute(['m' => $a['modulo'], 't' => MARCHIO . ' mondo A incontro del corso', 'a' => $admin]);
+$a['incontro_corso'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, meet_link, created_by, created_at)
+               VALUES (:m, NULL, :t, NOW() - INTERVAL 10 DAY - INTERVAL 60 MINUTE, NOW() - INTERVAL 10 DAY,
+                       "https://meet.google.com/prova-permessi-corso-passato", :a, NOW() - INTERVAL 20 DAY)')
+    ->execute(['m' => $a['modulo'], 't' => MARCHIO . ' mondo A incontro del corso passato', 'a' => $admin]);
+$a['incontro_corso_passato'] = (int) $pdo->lastInsertId();
+
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
 // no, e nel loro benvenuto non deve comparire niente. Si riscrivono a ogni
@@ -770,6 +804,7 @@ echo json_encode([
         'studenteNuovo' => $studenteNuovo,
         'altroGruppo' => $altroGruppo,
         'tutorTre' => $tutorTre,
+        'finito' => $finito,
     ],
     'gruppo_cerchio' => $gruppoCerchio,
     'domanda_aperta' => $domandaAperta,

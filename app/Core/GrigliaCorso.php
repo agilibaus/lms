@@ -15,8 +15,9 @@ namespace App\Core;
  * - `vuoto`: lezione non completata, questionario mai fatto;
  * - `assente`: incontro gia' passato senza la sua presenza;
  * - `futuro`: incontro non ancora svolto;
- * - `non_previsto`: incontro riservato a un gruppo di cui lo studente non fa
- *   parte.
+ * - `non_previsto`: incontro a cui lo studente non e' atteso: di un gruppo di
+ *   cui non fa parte, o di tutto il corso ma prima della sua iscrizione o
+ *   dopo che l'aveva finito (25/10).
  * Solo fatto/non fatto, niente video a meta' (decisione del 21/10).
  *
  * I CONTI. Le attivita' `futuro` e `non_previsto` non contano, ne' sopra
@@ -93,14 +94,13 @@ final class GrigliaCorso
     }
 
     /**
-     * Lo stato di un incontro per uno studente.
-     *
-     * @param int|null $gruppoIncontro il gruppo a cui l'incontro e' riservato (null: tutto il corso)
-     * @param int[]    $gruppiStudente
+     * Lo stato di un incontro per uno studente. `$atteso` viene dalla regola
+     * degli incontri (`LiveSessionModel::atteso`, 25/10): chi non e' atteso
+     * — un altro gruppo, o una classe di un altro periodo — non e' assente.
      */
-    public static function statoIncontro(bool $presente, bool $futuro, ?int $gruppoIncontro, array $gruppiStudente): string
+    public static function statoIncontro(bool $presente, bool $futuro, bool $atteso): string
     {
-        if ($gruppoIncontro !== null && !in_array($gruppoIncontro, $gruppiStudente, true)) {
+        if (!$atteso) {
             return self::NON_PREVISTO;
         }
 

@@ -9,13 +9,46 @@ use App\Core\Database;
 /**
  * Accesso dati per la tabella `live_sessions`.
  *
- * Una sessione e' legata a un modulo di corso e/o a un gruppo: il pubblico
- * sono gli iscritti al corso del modulo piu' i membri del gruppo.
+ * Una sessione e' legata a un modulo di corso e/o a un gruppo. Chi e'
+ * atteso lo dice `atteso()`, una regola sola (25/10).
  */
 class LiveSessionModel
 {
     /** Quante ore prima dell'inizio parte il promemoria. */
     public const ORE_PROMEMORIA = 7;
+
+    /**
+     * CHI E' ATTESO A UN INCONTRO (25/10, Alessandro): una regola sola, per
+     * l'elenco, l'ingresso, la pagina della lezione, gli inviti, i
+     * promemoria, gli avvisi, i report e la Griglia del corso.
+     *
+     *   - con un gruppo, con o senza modulo: i membri del gruppo. Il modulo
+     *     e' il tema, e decide da quando lo studente vede l'incontro
+     *     (`LiveScope`). Fino al 25/10 con modulo e gruppo si sommavano gli
+     *     iscritti al corso e il gruppo, e l'incontro di una classe arrivava
+     *     a tutte le altre, link Meet compreso; la Griglia invece lo
+     *     trattava gia' come del solo gruppo.
+     *   - con il solo modulo, cioe' tutto il corso: gli iscritti al corso che
+     *     non l'avevano gia' finito quando l'incontro e' nato, e che si sono
+     *     iscritti prima della sua fine. Chi ha finito mesi prima non riceve
+     *     l'invito; chi arriva dopo non lo trova fra i suoi incontri passati
+     *     e non risulta assente.
+     *
+     * E' un'espressione SQL su `ls` (un incontro, anche non ancora salvato:
+     * `attesiPer()`) e sull'utente dato, un id numerico o una colonna.
+     */
+    public static function atteso(string $utente): string
+    {
+        return "((ls.group_id IS NOT NULL AND EXISTS (
+                      SELECT 1 FROM group_members gm_a
+                      WHERE gm_a.group_id = ls.group_id AND gm_a.user_id = {$utente}))
+                 OR (ls.group_id IS NULL AND EXISTS (
+                      SELECT 1 FROM modules m_a
+                      INNER JOIN enrollments e_a ON e_a.course_id = m_a.course_id
+                      WHERE m_a.id = ls.module_id AND e_a.user_id = {$utente}
+                        AND e_a.enrolled_at <= ls.ends_at
+                        AND (e_a.completed_at IS NULL OR e_a.completed_at > ls.created_at))))";
+    }
 
     /**
      * La finestra d'ingresso, scritta una volta sola.
@@ -73,24 +106,13 @@ class LiveSessionModel
     }
 
     /**
-     * Sessioni visibili a uno studente: quelle dei corsi a cui e' iscritto
-     * e quelle dei gruppi di cui fa parte.
+     * Gli incontri a cui uno studente e' atteso (`atteso()`).
      */
     public static function forUser(int $userId): array
     {
-        $stmt = Database::connection()->prepare(
-            self::BASE_SELECT . '
-             WHERE (ls.module_id IS NOT NULL AND EXISTS (
-                        SELECT 1 FROM enrollments e
-                        WHERE e.user_id = :user_id_course AND e.course_id = m.course_id))
-                OR (ls.group_id IS NOT NULL AND EXISTS (
-                        SELECT 1 FROM group_members gm
-                        WHERE gm.user_id = :user_id_group AND gm.group_id = ls.group_id))
-             ORDER BY ls.starts_at DESC'
-        );
-        $stmt->execute(['user_id_course' => $userId, 'user_id_group' => $userId]);
-
-        return $stmt->fetchAll();
+        return Database::connection()->query(
+            self::BASE_SELECT . ' WHERE ' . self::atteso((string) $userId) . ' ORDER BY ls.starts_at DESC'
+        )->fetchAll();
     }
 
     /**
@@ -319,23 +341,68 @@ class LiveSessionModel
     }
 
     /**
-     * Partecipanti attesi: iscritti al corso del modulo e membri del gruppo.
+     * Partecipanti attesi (`atteso()`), attivi.
      */
     public static function participants(int $sessionId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT DISTINCT u.id, u.full_name, u.email
+            'SELECT u.id, u.full_name, u.email
              FROM live_sessions ls
-             LEFT JOIN modules m ON m.id = ls.module_id
-             LEFT JOIN enrollments e ON e.course_id = m.course_id
-             LEFT JOIN group_members gm ON gm.group_id = ls.group_id
-             INNER JOIN users u ON u.id = e.user_id OR u.id = gm.user_id
+             INNER JOIN users u ON ' . self::atteso('u.id') . '
              WHERE ls.id = :session_id AND u.is_active = 1
              ORDER BY u.full_name, u.email'
         );
         $stmt->execute(['session_id' => $sessionId]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Gli attesi di un incontro che non e' ancora salvato (l'evento di Google
+     * si crea prima della riga): la stessa regola, su un incontro nato adesso.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function attesiPer(?int $moduleId, ?int $groupId, string $endsAt): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.id, u.full_name, u.email
+             FROM (SELECT CAST(:m AS UNSIGNED) AS module_id, CAST(:g AS UNSIGNED) AS group_id,
+                          NOW() AS created_at, CAST(:fine AS DATETIME) AS ends_at) ls
+             INNER JOIN users u ON ' . self::atteso('u.id') . '
+             WHERE u.is_active = 1
+             ORDER BY u.full_name, u.email'
+        );
+        $stmt->execute(['m' => $moduleId, 'g' => $groupId, 'fine' => $endsAt]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Per ogni incontro dato, gli id degli attesi (anche non piu' attivi: la
+     * Griglia mostra anche chi ha finito il corso).
+     *
+     * @param list<int> $sessionIds
+     * @return array<int, list<int>>
+     */
+    public static function attesi(array $sessionIds): array
+    {
+        if ($sessionIds === []) {
+            return [];
+        }
+
+        $per = [];
+
+        foreach (Database::connection()->query(
+            'SELECT ls.id AS session_id, u.id AS user_id
+             FROM live_sessions ls
+             INNER JOIN users u ON ' . self::atteso('u.id') . '
+             WHERE ls.id IN (' . implode(',', array_map('intval', $sessionIds)) . ')'
+        ) as $r) {
+            $per[(int) $r['session_id']][] = (int) $r['user_id'];
+        }
+
+        return $per;
     }
 
     /**
@@ -353,14 +420,11 @@ class LiveSessionModel
     public static function participantsWithAttendance(int $sessionId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT DISTINCT u.id, u.full_name, u.email,
+            'SELECT u.id, u.full_name, u.email,
                     a.joined_at, a.source,
                     TIMESTAMPDIFF(MINUTE, ls.starts_at, a.joined_at) AS delay_minutes
              FROM live_sessions ls
-             LEFT JOIN modules m ON m.id = ls.module_id
-             LEFT JOIN enrollments e ON e.course_id = m.course_id
-             LEFT JOIN group_members gm ON gm.group_id = ls.group_id
-             INNER JOIN users u ON u.id = e.user_id OR u.id = gm.user_id
+             INNER JOIN users u ON ' . self::atteso('u.id') . '
              LEFT JOIN live_session_attendance a ON a.session_id = ls.id AND a.user_id = u.id
              WHERE ls.id = :session_id AND u.is_active = 1
              ORDER BY u.full_name, u.email'
@@ -384,12 +448,8 @@ class LiveSessionModel
                     g.name AS group_name,
                     (SELECT COUNT(*) FROM live_session_attendance a
                       WHERE a.session_id = ls.id AND a.joined_at IS NOT NULL) AS attended,
-                    (SELECT COUNT(DISTINCT u.id)
-                       FROM users u
-                       LEFT JOIN enrollments e ON e.user_id = u.id AND e.course_id = m.course_id
-                       LEFT JOIN group_members gm ON gm.user_id = u.id AND gm.group_id = ls.group_id
-                      WHERE u.is_active = 1
-                        AND (e.user_id IS NOT NULL OR gm.user_id IS NOT NULL)) AS expected
+                    (SELECT COUNT(*) FROM users u
+                      WHERE u.is_active = 1 AND ' . self::atteso('u.id') . ') AS expected
              FROM live_sessions ls
              LEFT JOIN modules m ON m.id = ls.module_id
              LEFT JOIN courses c ON c.id = m.course_id
@@ -416,17 +476,10 @@ class LiveSessionModel
              LEFT JOIN courses c ON c.id = m.course_id
              LEFT JOIN `groups` g ON g.id = ls.group_id
              LEFT JOIN live_session_attendance a ON a.session_id = ls.id AND a.user_id = :user_id_attendance
-             WHERE EXISTS (SELECT 1 FROM enrollments e
-                           WHERE e.course_id = m.course_id AND e.user_id = :user_id_course)
-                OR EXISTS (SELECT 1 FROM group_members gm
-                           WHERE gm.group_id = ls.group_id AND gm.user_id = :user_id_group)
+             WHERE ' . self::atteso((string) $userId) . '
              ORDER BY ls.starts_at DESC'
         );
-        $stmt->execute([
-            'user_id_attendance' => $userId,
-            'user_id_course' => $userId,
-            'user_id_group' => $userId,
-        ]);
+        $stmt->execute(['user_id_attendance' => $userId]);
 
         return $stmt->fetchAll();
     }
@@ -437,21 +490,9 @@ class LiveSessionModel
     public static function isParticipant(int $sessionId, int $userId): bool
     {
         $stmt = Database::connection()->prepare(
-            'SELECT 1
-             FROM live_sessions ls
-             LEFT JOIN modules m ON m.id = ls.module_id
-             WHERE ls.id = :session_id
-               AND (EXISTS (SELECT 1 FROM enrollments e
-                            WHERE e.course_id = m.course_id AND e.user_id = :user_id_course)
-                 OR EXISTS (SELECT 1 FROM group_members gm
-                            WHERE gm.group_id = ls.group_id AND gm.user_id = :user_id_group))
-             LIMIT 1'
+            'SELECT 1 FROM live_sessions ls WHERE ls.id = :session_id AND ' . self::atteso((string) $userId) . ' LIMIT 1'
         );
-        $stmt->execute([
-            'session_id' => $sessionId,
-            'user_id_course' => $userId,
-            'user_id_group' => $userId,
-        ]);
+        $stmt->execute(['session_id' => $sessionId]);
 
         return (bool) $stmt->fetchColumn();
     }

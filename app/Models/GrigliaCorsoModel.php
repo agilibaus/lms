@@ -176,13 +176,13 @@ final class GrigliaCorsoModel
             $membri[(int) $r['user_id']][(int) $r['id']] = (string) $r['name'];
         }
 
-        // Anche i gruppi a cui il corso non e' assegnato contano per gli
-        // incontri riservati: l'incontro di un gruppo e' di chi ne fa parte.
-        $tuttiIGruppi = [];
-
-        foreach ($pdo->query("SELECT user_id, group_id FROM group_members WHERE user_id IN ($utenti)") as $r) {
-            $tuttiIGruppi[(int) $r['user_id']][] = (int) $r['group_id'];
-        }
+        // Chi e' atteso a ciascun incontro: la regola degli incontri, una sola
+        // (`LiveSessionModel::atteso`, 25/10). Agli altri l'incontro e' «non
+        // previsto»: un altro gruppo, o una classe di un altro periodo.
+        $attesi = LiveSessionModel::attesi(array_values(array_unique(array_map(
+            static fn (array $v): int => $v['id'],
+            array_filter($voci, static fn (array $v): bool => $v['tipo'] === GrigliaCorso::INCONTRO)
+        ))));
 
         $righe = [];
 
@@ -199,8 +199,7 @@ final class GrigliaCorsoModel
                         'stato' => GrigliaCorso::statoIncontro(
                             isset($presenze[$u][$v['id']]),
                             $v['futuro'],
-                            $v['gruppo_id'],
-                            $tuttiIGruppi[$u] ?? []
+                            in_array($u, $attesi[$v['id']] ?? [], true)
                         ),
                         'quando' => ($presenze[$u][$v['id']] ?? '') ?: null,
                     ],

@@ -236,6 +236,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/materials/' + A.materiale_chiuso + '/download', 'negato',
                 'materiale di un modulo non ancora aperto'],
             ['/live/' + A.incontro_chiuso, 'negato', 'incontro di un modulo non ancora aperto'],
+            // Chi e' atteso a un incontro (25/10): uno di tutto il corso e'
+            // suo, anche quello passato, perche' era iscritto prima che finisse.
+            ['/live/' + A.incontro_corso, 'consentito', 'incontro di tutto il suo corso'],
+            ['/live/' + A.incontro_corso_passato, 'consentito', 'incontro di tutto il corso, finito quando era già iscritto'],
             ['/lessons/' + A.lezione, 'consentito',
                 'controprova: il modulo aperto dello stesso corso resta aperto'],
 
@@ -427,6 +431,19 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/bacheca/risorse/' + B.bacheca_proposta + '/modifica', 'consentito', 'e le corregge'],
             ['/bacheca/risorse/' + B.bacheca_risorsa + '/download', 'consentito', 'controprova: il file di B esiste'],
         ]],
+        // Chi e' atteso a un incontro (25/10, conflitti 1 e 2). Con modulo e
+        // gruppo l'incontro e' del solo gruppo, non di tutti gli iscritti al
+        // corso; con il solo modulo e' degli iscritti prima che finisse che,
+        // quando e' stato creato, non avevano ancora finito il corso.
+        ['altrogruppo@test.it', 'studente dell\'altra classe del corso A', [
+            ['/live/' + A.incontro, 'negato', 'incontro del gruppo di un\'altra classe, anche se il modulo è del suo corso'],
+            ['/live/' + A.incontro_corso, 'consentito', 'controprova: l\'incontro di tutto il suo corso è suo'],
+            ['/live/' + A.incontro_corso_passato, 'negato', 'incontro di tutto il corso finito prima della sua iscrizione'],
+        ]],
+        ['finito@test.it', 'studente che aveva già finito il corso A', [
+            ['/live/' + A.incontro_corso, 'negato', 'incontro di tutto il corso creato quando l\'aveva già finito'],
+            ['/live/' + A.incontro_corso_passato, 'consentito', 'controprova: creato quando non l\'aveva ancora finito'],
+        ]],
     ];
 
     try {
@@ -444,6 +461,54 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 );
             }
 
+            await ctx.close();
+        }
+
+        // --- chi e' atteso a un incontro, nella griglia del corso ---------
+        //
+        // La porta dell'incontro e la griglia usano la stessa regola
+        // (`LiveSessionModel::atteso`): a chi non e' atteso l'incontro e'
+        // «non previsto», non «assente». Si legge il CSV dell'admin, che ha
+        // tutte le righe, e una parola per casella.
+
+        console.log('\n--- chi è atteso a un incontro: la griglia del corso A');
+
+        {
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            const csv = await page.evaluate(async (u) => (await (await fetch(u, { credentials: 'same-origin' })).text()),
+                '/reports/courses/' + A.corso + '/griglia/csv');
+            const righe = csv.replace(/^\uFEFF/, '').split(/\r?\n/).filter((r) => r !== '').map((r) => {
+                const sep = csv.includes(';') ? ';' : ',';
+                const out = []; let cur = ''; let q = false;
+                for (let i = 0; i < r.length; i++) {
+                    const ch = r[i];
+                    if (q) { if (ch === '"' && r[i + 1] === '"') { cur += '"'; i++; } else if (ch === '"') q = false; else cur += ch; }
+                    else if (ch === '"') q = true; else if (ch === sep) { out.push(cur); cur = ''; } else cur += ch;
+                }
+                out.push(cur);
+                return out;
+            });
+            const testa = righe[0] || [];
+            const colonna = (fine) => testa.findIndex((t) => t.endsWith(fine));
+            const casella = (email, fine) => {
+                const r = righe.find((x) => x[1] === email);
+                const c = colonna(fine);
+                return r && c >= 0 ? r[c] : '(manca)';
+            };
+            const ATTESE = [
+                ['stud@test.it', 'mondo A incontro del corso passato', 'assente', 'era iscritto prima che finisse'],
+                ['stud@test.it', 'mondo A incontro concluso', 'assente', 'l\'incontro passato del suo gruppo'],
+                ['altrogruppo@test.it', 'mondo A incontro del corso passato', 'non previsto', 'finito prima della sua iscrizione'],
+                ['altrogruppo@test.it', 'mondo A incontro concluso', 'non previsto', 'l\'incontro di un altro gruppo dello stesso corso'],
+                ['altrogruppo@test.it', 'mondo A incontro del corso', 'non ancora svolto', 'controprova: quello futuro di tutto il corso è suo'],
+                ['finito@test.it', 'mondo A incontro del corso', 'non previsto', 'creato quando aveva già finito il corso'],
+                ['finito@test.it', 'mondo A incontro del corso passato', 'assente', 'controprova: creato quando non l\'aveva ancora finito'],
+            ];
+            for (const [email, titolo, atteso, perche] of ATTESE) {
+                const v = casella(email, titolo);
+                check('griglia del corso A → ' + email + ', «' + titolo + '»: ' + atteso + ' (' + perche + ')',
+                    v === atteso, v === atteso ? [] : ['ottenuto «' + v + '»']);
+            }
             await ctx.close();
         }
 

@@ -78,7 +78,9 @@ $toInput = static function (?string $value): string {
         <?php endforeach; ?>
     </select>
     <p class="form-hint">
-        Indica almeno uno dei due: i partecipanti sono gli iscritti al corso del modulo e i membri del gruppo.
+        Indica almeno uno dei due. Con il solo modulo l’incontro è per tutti gli iscritti al corso che non l’hanno
+        ancora finito; con un gruppo è solo per quel gruppo, e il modulo ne è il tema: lo studente lo vede da quando
+        il modulo è aperto.
     </p>
 
     <label for="meet_link">Link Meet manuale (facoltativo)</label>

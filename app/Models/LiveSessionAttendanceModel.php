@@ -108,17 +108,9 @@ class LiveSessionAttendanceModel
                 (SELECT COUNT(*) FROM live_session_attendance a
                   WHERE a.user_id = :user_id_attended AND a.joined_at IS NOT NULL) AS attended,
                 (SELECT COUNT(*) FROM live_sessions ls
-                   LEFT JOIN modules m ON m.id = ls.module_id
-                  WHERE EXISTS (SELECT 1 FROM enrollments e
-                                WHERE e.course_id = m.course_id AND e.user_id = :user_id_course)
-                     OR EXISTS (SELECT 1 FROM group_members gm
-                                WHERE gm.group_id = ls.group_id AND gm.user_id = :user_id_group)) AS total'
+                  WHERE ' . LiveSessionModel::atteso((string) $userId) . ') AS total'
         );
-        $stmt->execute([
-            'user_id_attended' => $userId,
-            'user_id_course' => $userId,
-            'user_id_group' => $userId,
-        ]);
+        $stmt->execute(['user_id_attended' => $userId]);
         $row = $stmt->fetch();
 
         return [

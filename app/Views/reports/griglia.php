@@ -85,7 +85,7 @@ $casella = static function (array $c) use ($esc): string {
         GrigliaCorso::FATTO => '<span class="griglia-fatto"' . ($quando === null ? '' : ' title="' . $esc($quando) . '"') . '>' . Icona::svg('check-circle-fill') . '</span><span class="sr-only">fatto</span>',
         GrigliaCorso::ASSENTE => '<span class="griglia-assente">assente</span>',
         GrigliaCorso::FUTURO => '<span class="griglia-nulla" title="non ancora svolto" aria-hidden="true">—</span><span class="sr-only">non ancora svolto</span>',
-        GrigliaCorso::NON_PREVISTO => '<span class="griglia-nulla" title="riservato a un altro gruppo" aria-hidden="true">—</span><span class="sr-only">non previsto</span>',
+        GrigliaCorso::NON_PREVISTO => '<span class="griglia-nulla" title="non previsto per lo studente" aria-hidden="true">—</span><span class="sr-only">non previsto</span>',
         default => '<span class="sr-only">non fatto</span>',
     };
 };
@@ -290,7 +290,7 @@ $casella = static function (array $c) use ($esc): string {
                 <span><span class="griglia-fatto"><?= Icona::svg('check-circle-fill') ?></span> fatto</span>
                 <span><strong>90%</strong> questionario: punteggio migliore, <span class="griglia-fatto"><?= Icona::svg('check-circle-fill') ?></span> se superato</span>
                 <span><strong class="griglia-assente">assente</strong> all’incontro</span>
-                <span><strong aria-hidden="true">—</strong> incontro non ancora svolto, o di un altro gruppo</span>
+                <span><strong aria-hidden="true">—</strong> incontro non ancora svolto, o non previsto per lo studente</span>
             </p>
         <?php endif; ?>
     <?php endif; ?>

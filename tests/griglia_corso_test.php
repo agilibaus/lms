@@ -60,12 +60,12 @@ check('e non e completo', !G::completo($conto), '0 su 0 non e un modulo finito')
 
 echo PHP_EOL . 'Gli stati' . PHP_EOL;
 
-check('incontro passato, presente', G::statoIncontro(true, false, null, []) === G::FATTO);
-check('incontro passato, non presente', G::statoIncontro(false, false, null, []) === G::ASSENTE);
-check('incontro non ancora finito, non presente', G::statoIncontro(false, true, null, []) === G::FUTURO, 'durante l incontro chi non e entrato non e ancora assente');
-check('incontro in corso, gia entrato', G::statoIncontro(true, true, null, []) === G::FATTO);
-check('incontro di un gruppo di cui non fa parte', G::statoIncontro(false, false, 7, [3, 4]) === G::NON_PREVISTO);
-check('incontro del suo gruppo', G::statoIncontro(false, false, 7, [3, 7]) === G::ASSENTE);
+check('incontro passato, presente', G::statoIncontro(true, false, true) === G::FATTO);
+check('incontro passato, non presente', G::statoIncontro(false, false, true) === G::ASSENTE);
+check('incontro non ancora finito, non presente', G::statoIncontro(false, true, true) === G::FUTURO, 'durante l incontro chi non e entrato non e ancora assente');
+check('incontro in corso, gia entrato', G::statoIncontro(true, true, true) === G::FATTO);
+check('incontro a cui non e atteso (un altro gruppo, un altro periodo): non previsto', G::statoIncontro(false, false, false) === G::NON_PREVISTO);
+check('incontro futuro a cui non e atteso: non previsto, non futuro', G::statoIncontro(false, true, false) === G::NON_PREVISTO);
 check('questionario superato', G::statoQuestionario(true) === G::FATTO);
 check('questionario non superato', G::statoQuestionario(false) === G::TENTATO);
 check('questionario mai fatto', G::statoQuestionario(null) === G::VUOTO);
