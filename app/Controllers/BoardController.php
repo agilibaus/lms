@@ -47,7 +47,7 @@ class BoardController
             $courseId = (int) $corso['id'];
             $partecipa = BachecaScope::partecipa($courseId);
             $dati += [
-                'categorie' => BoardModel::categorie($courseId),
+                'categorie' => self::categorieVisibili($courseId),
                 'partecipa' => $partecipa,
                 'tenute' => $partecipa ? count(BoardModel::tenute((int) Auth::id(), $courseId)) : 0,
                 'daValutare' => count(BoardModel::inAttesa($courseId, BachecaScope::moderati($courseId))),
@@ -73,7 +73,7 @@ class BoardController
         $courseId = (int) $categoria['course_id'];
         $this->leggibile($courseId);
 
-        $tutte = BoardModel::pubblicate($courseId, (int) $categoria['id']);
+        $tutte = BachecaScope::visibili(BoardModel::pubblicate($courseId, (int) $categoria['id']), $courseId);
         $tenute = BoardModel::tenute((int) Auth::id(), $courseId);
         $mie = ($_GET['mie'] ?? '') === '1';
         $mieQui = array_values(array_filter($tutte, static fn (array $r): bool => in_array((int) $r['id'], $tenute, true)));
@@ -103,7 +103,7 @@ class BoardController
         $courseId = (int) $corso['id'];
         $tenute = BoardModel::tenute((int) Auth::id(), $courseId);
         $mie = array_values(array_filter(
-            BoardModel::pubblicate($courseId),
+            BachecaScope::visibili(BoardModel::pubblicate($courseId), $courseId),
             static fn (array $r): bool => in_array((int) $r['id'], $tenute, true)
         ));
 
@@ -134,6 +134,7 @@ class BoardController
         View::render('bacheca/form', [
             'pageTitle' => 'Condividi una risorsa',
             'corso' => $corso,
+            'moduli' => BachecaScope::moduliDaScegliere($courseId),
             'categorie' => BoardModel::categorie($courseId),
             'risorsa' => self::vecchi(),
             'azione' => '/bacheca/corsi/' . $courseId . '/condividi',
@@ -160,6 +161,7 @@ class BoardController
         View::render('bacheca/form', [
             'pageTitle' => 'Nuova risorsa',
             'corso' => $corso,
+            'moduli' => BachecaScope::moduliDaScegliere($courseId),
             'categorie' => BoardModel::categorie($courseId),
             'risorsa' => $vecchi,
             'azione' => '/bacheca/corsi/' . $courseId . '/nuova',
@@ -194,6 +196,7 @@ class BoardController
         View::render('bacheca/proposte', [
             'pageTitle' => 'Proposte da valutare',
             'corso' => $corso,
+            'moduli' => BachecaScope::moduliDaScegliere($courseId),
             'categorie' => BoardModel::categorie($courseId),
             'proposte' => $proposte,
         ]);
@@ -207,6 +210,7 @@ class BoardController
         View::render('bacheca/form', [
             'pageTitle' => $risorsa['status'] === Bacheca::PENDING ? 'Correggi la proposta' : 'Modifica la risorsa',
             'corso' => CourseModel::find($courseId),
+            'moduli' => BachecaScope::moduliDaScegliere($courseId),
             'categorie' => BoardModel::categorie($courseId),
             'risorsa' => self::vecchi() + $risorsa,
             'azione' => '/bacheca/risorse/' . (int) $risorsa['id'],
@@ -295,7 +299,7 @@ class BoardController
 
         if ($risorsa['status'] === Bacheca::PENDING) {
             if (($_POST['publish'] ?? '') === '1') {
-                BoardModel::pubblica($id, (int) $dati['category_id'], (int) Auth::id());
+                BoardModel::pubblica($id, (int) $dati['category_id'], (int) $dati['module_id'], (int) Auth::id());
                 $this->torna('/bacheca/proposte?corso=' . $courseId, 'Proposta corretta e pubblicata.', true);
             }
 
@@ -315,13 +319,18 @@ class BoardController
         $risorsa = $this->daGestire((int) $params['id']);
         $courseId = (int) $risorsa['course_id'];
         $categoria = (int) ($_POST['category_id'] ?? $risorsa['category_id']);
+        $modulo = (int) ($_POST['module_id'] ?? $risorsa['module_id']);
         $dietro = '/bacheca/proposte?corso=' . $courseId;
+
+        if (!in_array($modulo, self::idModuli($courseId), true)) {
+            $this->torna($dietro, 'Scegli il modulo a cui serve la risorsa.', false);
+        }
 
         if (!in_array($categoria, self::idCategorie($courseId), true)) {
             $this->torna($dietro, 'Scegli una categoria di questa bacheca.', false);
         }
 
-        $fatto = $risorsa['status'] === Bacheca::PENDING && BoardModel::pubblica((int) $risorsa['id'], $categoria, (int) Auth::id());
+        $fatto = $risorsa['status'] === Bacheca::PENDING && BoardModel::pubblica((int) $risorsa['id'], $categoria, $modulo, (int) Auth::id());
         $this->torna($dietro, $fatto ? 'Proposta pubblicata.' : 'Questa proposta era già stata valutata.', $fatto);
     }
 
@@ -419,7 +428,8 @@ class BoardController
 
         $pubblicata = $risorsa['status'] === Bacheca::PUBLISHED;
 
-        if (!($pubblicata ? BachecaScope::puoLeggere((int) $risorsa['course_id']) : BachecaScope::gestisce($risorsa))) {
+        if (!($pubblicata ? BachecaScope::puoLeggere((int) $risorsa['course_id']) && BachecaScope::vedeRisorsa($risorsa)
+            : BachecaScope::gestisce($risorsa))) {
             $this->ferma(403, 'Non puoi scaricare questo file.');
         }
 
@@ -457,9 +467,15 @@ class BoardController
         $usi = BoardModel::usi(array_map(static fn (array $r): int => (int) $r['id'], $risorse));
         $partecipa = BachecaScope::partecipa($courseId);
 
-        return array_map(static function (array $r) use ($chi, $modera, $usi, $tenute, $partecipa): array {
+        return array_map(static function (array $r) use ($chi, $modera, $usi, $tenute, $partecipa, $courseId): array {
             $autore = $r['author_id'] === null ? null : (int) $r['author_id'];
-            $nome = $autore === null ? '' : PersonName::shown(self::persona($r, $autore), $chi, $modera($autore));
+            $ruolo = $autore === null ? null : (string) $r['author_role'];
+            // Lo studente che l'ha proposta lo vede la sua classe (25/10): per
+            // gli altri la risorsa e' «Condivisa in bacheca».
+            if ($ruolo === 'studente' && !BachecaScope::vedeLaPersona($autore, $courseId)) {
+                $ruolo = null;
+            }
+            $nome = $ruolo === null ? '' : PersonName::shown(self::persona($r, (int) $autore), $chi, $modera($autore));
             $suoi = [];
             $mio = null;
 
@@ -475,6 +491,12 @@ class BoardController
                     continue;
                 }
 
+                // I racconti sono della classe (25/10): li vede chi e' nei
+                // gruppi del corso con chi li ha scritti, e chi lo modera.
+                if (!BachecaScope::vedeLaPersona($diChi, $courseId)) {
+                    continue;
+                }
+
                 $suoi[] = $u + [
                     'autore' => PersonName::shown(self::persona($u, $diChi), $chi, $modera($diChi)),
                     'nascosto' => $nascosto,
@@ -483,7 +505,7 @@ class BoardController
             }
 
             return $r + [
-                'chi' => Bacheca::attribuzione($autore === null ? null : (string) $r['author_role'], $nome),
+                'chi' => Bacheca::attribuzione($ruolo, $nome),
                 'quando' => date('d/m/Y', strtotime((string) ($r['published_at'] ?? $r['created_at']))),
                 'gestisce' => BachecaScope::gestisce($r),
                 'tenuta' => in_array((int) $r['id'], $tenute, true),
@@ -528,6 +550,35 @@ class BoardController
     }
 
     /**
+     * I moduli che chi scrive puo' scegliere: per lo studente quelli aperti
+     * per lui, per lo staff tutti (`BachecaScope::moduliDaScegliere`).
+     *
+     * @return list<int>
+     */
+    private static function idModuli(int $courseId): array
+    {
+        return array_map(static fn (array $m): int => (int) $m['id'], BachecaScope::moduliDaScegliere($courseId));
+    }
+
+    /**
+     * Le categorie, con il numero delle pubblicate che chi guarda vede: per
+     * lo studente solo quelle dei moduli aperti per lui.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function categorieVisibili(int $courseId): array
+    {
+        $per = [];
+
+        foreach (BachecaScope::visibili(BoardModel::pubblicate($courseId), $courseId) as $r) {
+            $per[(int) $r['category_id']] = ($per[(int) $r['category_id']] ?? 0) + 1;
+        }
+
+        return array_map(static fn (array $c): array => ['pubblicate' => $per[(int) $c['id']] ?? 0] + $c,
+            BoardModel::categorie($courseId));
+    }
+
+    /**
      * I campi dal modulo, controllati; se qualcosa non va, torna a `$dietro`
      * con l'errore e con quello che si era scritto.
      *
@@ -535,7 +586,7 @@ class BoardController
      */
     private function campi(int $courseId, string $dietro): array
     {
-        $esito = Bacheca::valida($_POST, self::idCategorie($courseId));
+        $esito = Bacheca::valida($_POST, self::idCategorie($courseId), self::idModuli($courseId));
         $_SESSION['bacheca_old'] = $esito['dati'] + ['featured' => ($_POST['featured'] ?? '') === '1' ? 1 : 0];
 
         if ($esito['errore'] !== null) {
@@ -617,7 +668,8 @@ class BoardController
 
         $risorsa = BoardModel::risorsa($id);
 
-        if ($risorsa === null || $risorsa['status'] !== Bacheca::PUBLISHED || !BachecaScope::puoLeggere((int) $risorsa['course_id'])) {
+        if ($risorsa === null || $risorsa['status'] !== Bacheca::PUBLISHED || !BachecaScope::puoLeggere((int) $risorsa['course_id'])
+            || !BachecaScope::vedeRisorsa($risorsa)) {
             $this->ferma(403, 'Questa risorsa non è nella tua bacheca.');
         }
 

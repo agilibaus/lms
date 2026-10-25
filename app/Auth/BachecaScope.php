@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Auth;
 
+use App\Core\CourseAccess;
 use App\Models\BoardModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
+use App\Models\ModuleModel;
 use App\Models\UserModel;
 
 /**
@@ -22,6 +24,16 @@ use App\Models\UserModel;
  *     tutor di un gruppo dello studente che ha accesso al corso, con
  *     `board.manage_own`.
  *   - PROPONE e racconta come l'ha utilizzata: lo studente iscritto.
+ *
+ * Dal 25/10 (Alessandro), due regole in piu':
+ *   - una risorsa appartiene a un modulo, e lo studente la vede solo
+ *     quando quel modulo e' aperto per lui (`CourseAccess`, la regola di
+ *     lezioni, materiali e incontri); lo staff le vede tutte;
+ *   - la risorsa e' di tutti, le persone sono della classe: i racconti
+ *     «Come l'ho utilizzata» e il nome di chi ha proposto una risorsa li
+ *     vedono la persona stessa, i compagni dei suoi gruppi del corso, chi la
+ *     modera (il tutor del suo gruppo, l'admin). L'assistente no, come per
+ *     foto e presentazioni.
  */
 final class BachecaScope
 {
@@ -94,8 +106,13 @@ final class BachecaScope
             return [];
         }
 
-        return BoardModel::studentiDelTutor((int) Auth::id(), $courseId);
+        $chiave = (int) Auth::id() . ':' . $courseId;
+
+        return self::$moderati[$chiave] ??= BoardModel::studentiDelTutor((int) Auth::id(), $courseId);
     }
+
+    /** @var array<string, list<int>> letti una volta per richiesta */
+    private static array $moderati = [];
 
     public static function puoModerare(?int $studentId, int $courseId): bool
     {
@@ -122,6 +139,80 @@ final class BachecaScope
 
         return self::puoPubblicare($courseId) && ($autore === (int) Auth::id() || self::puoModerare($autore, $courseId));
     }
+
+    /**
+     * I moduli del corso chiusi per chi guarda: le loro risorse non le vede.
+     * Per lo staff nessuno (`CourseAccess::locks`).
+     *
+     * @return list<int>
+     */
+    public static function moduliChiusi(int $courseId): array
+    {
+        return array_map('intval', CourseAccess::lockedModuleIds((int) Auth::id(), $courseId));
+    }
+
+    /**
+     * I moduli fra cui chi scrive sceglie: per lo studente quelli aperti per
+     * lui (una risorsa di un modulo chiuso non la vedrebbe nemmeno chi l'ha
+     * proposta), per lo staff tutti.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function moduliDaScegliere(int $courseId): array
+    {
+        $chiusi = self::moduliChiusi($courseId);
+
+        return array_values(array_filter(
+            ModuleModel::forCourse($courseId),
+            static fn (array $m): bool => !in_array((int) $m['id'], $chiusi, true)
+        ));
+    }
+
+    /** @param array<string, mixed> $risorsa */
+    public static function vedeRisorsa(array $risorsa): bool
+    {
+        return !in_array((int) $risorsa['module_id'], self::moduliChiusi((int) $risorsa['course_id']), true);
+    }
+
+    /**
+     * Solo le risorse dei moduli aperti per chi guarda.
+     *
+     * @param list<array<string, mixed>> $risorse
+     * @return list<array<string, mixed>>
+     */
+    public static function visibili(array $risorse, int $courseId): array
+    {
+        $chiusi = self::moduliChiusi($courseId);
+
+        return array_values(array_filter(
+            $risorse,
+            static fn (array $r): bool => !in_array((int) $r['module_id'], $chiusi, true)
+        ));
+    }
+
+    /**
+     * Se chi guarda vede la persona dietro un contributo di uno studente
+     * (un racconto, il nome di chi ha proposto): la persona stessa, chi la
+     * modera, i compagni dei suoi gruppi del corso.
+     */
+    public static function vedeLaPersona(?int $studente, int $courseId): bool
+    {
+        if ($studente === null) {
+            return false;
+        }
+
+        $chi = (int) Auth::id();
+        // Una pagina della bacheca chiede di molti racconti: i compagni si
+        // leggono una volta per persona e corso.
+        self::$compagni[$chi . ':' . $courseId] ??= BoardModel::compagni($chi, $courseId);
+
+        return $studente === $chi
+            || self::puoModerare($studente, $courseId)
+            || in_array($studente, self::$compagni[$chi . ':' . $courseId], true);
+    }
+
+    /** @var array<string, list<int>> */
+    private static array $compagni = [];
 
     /** Propone e racconta: lo studente iscritto al corso. */
     public static function partecipa(int $courseId): bool

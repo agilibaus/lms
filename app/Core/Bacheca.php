@@ -200,17 +200,21 @@ final class Bacheca
     }
 
     /**
-     * I campi di una risorsa dal modulo, controllati: titolo, tipo,
-     * categoria (fra quelle del corso), link, descrizione.
+     * I campi di una risorsa dal modulo, controllati: titolo, tipo, modulo
+     * (fra quelli che chi scrive puo' scegliere), categoria (fra quelle del
+     * corso), link, descrizione. Il modulo e' obbligatorio (25/10): decide
+     * da quando lo studente vede la risorsa.
      *
      * @param array<string, mixed> $campi
      * @param list<int> $categorie
+     * @param list<int> $moduli
      * @return array{dati: array<string, mixed>, errore: ?string}
      */
-    public static function valida(array $campi, array $categorie): array
+    public static function valida(array $campi, array $categorie, array $moduli): array
     {
         $titolo = trim((string) ($campi['title'] ?? ''));
         $tipo = (string) ($campi['kind'] ?? '');
+        $modulo = (int) ($campi['module_id'] ?? 0);
         $categoria = (int) ($campi['category_id'] ?? 0);
         $link = self::link((string) ($campi['url'] ?? ''));
         $descrizione = trim(str_replace("\r\n", "\n", (string) ($campi['description'] ?? '')));
@@ -218,6 +222,7 @@ final class Bacheca
         $dati = [
             'title' => $titolo,
             'kind' => $tipo,
+            'module_id' => $modulo,
             'category_id' => $categoria,
             'url' => $link === '' ? null : $link,
             'description' => $descrizione,
@@ -227,6 +232,7 @@ final class Bacheca
             $titolo === '' => 'Scrivi il titolo della risorsa.',
             mb_strlen($titolo) > self::MAX_TITOLO => 'Il titolo supera i ' . self::MAX_TITOLO . ' caratteri.',
             !isset(self::TIPI[$tipo]) => 'Scegli il tipo di risorsa.',
+            !in_array($modulo, $moduli, true) => 'Scegli il modulo a cui serve la risorsa.',
             !in_array($categoria, $categorie, true) => 'Scegli una categoria di questa bacheca.',
             $link === null => 'Il link non è valido: deve essere un indirizzo web, che comincia con https://.',
             $descrizione === '' => 'Scrivi la descrizione: che cos’è, a cosa serve, quando può essere utile, come usarla.',

@@ -571,10 +571,13 @@ function bachecaDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, strin
     $vuota = (int) $pdo->lastInsertId();
 
     $ris = $pdo->prepare(
-        'INSERT INTO board_resources (course_id, category_id, author_id, title, kind, url, description, file_path, file_name, file_size,
+        'INSERT INTO board_resources (course_id, category_id, module_id, author_id, title, kind, url, description, file_path, file_name, file_size,
                                       status, featured, published_at, created_at)
-         VALUES (:c, :k, :a, :t, :ki, :u, :d, :fp, :fn, :fs, :s, :f, :pa, NOW() - INTERVAL :g DAY)'
+         VALUES (:c, :k, :m, :a, :t, :ki, :u, :d, :fp, :fn, :fs, :s, :f, :pa, NOW() - INTERVAL :g DAY)'
     );
+    // Ogni risorsa ha il suo modulo (25/10): tutte in quello aperto, tranne
+    // una nel modulo chiuso da una data, con il file sul disco come le altre
+    // (senza, un download rifiutato sarebbe un 404 e non un permesso).
     $righe = [
         'risorsa' => [$categoria, $tutor, 'Dieci domande per aprire una conversazione ' . $lettera, 'scheda', null,
             'Una pagina di domande aperte da usare a tavola o in macchina, quando il dialogo sembra inceppato.',
@@ -588,11 +591,14 @@ function bachecaDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, strin
             'Un’app gratuita per dividere le faccende di casa tra fratelli.', null, null, null, 'pending', 0, 1],
         'scartata' => [$categoria, $studente, 'Una proposta non pubblicata ' . $lettera, 'altro', null,
             'Questa il tutor non l’ha pubblicata.', null, null, null, 'discarded', 0, 4],
+        'risorsa_chiusa' => [$categoria, $tutor, 'Per il modulo che si apre fra trenta giorni ' . $lettera, 'scheda', null,
+            'Una scheda che lo studente vedrà quando il modulo si apre.',
+            'bacheca/prova-permessi.pdf', 'modulo-chiuso.pdf', filesize($file), 'published', 0, 1],
     ];
     $ids = [];
 
     foreach ($righe as $chiave => [$k, $a, $t, $ki, $u, $d, $fp, $fn, $fs, $st, $f, $giorni]) {
-        $ris->execute(['c' => $mondo['corso'], 'k' => $k, 'a' => $a, 't' => $t, 'ki' => $ki, 'u' => $u, 'd' => $d,
+        $ris->execute(['c' => $mondo['corso'], 'k' => $k, 'm' => $chiave === 'risorsa_chiusa' ? $mondo['modulo_chiuso'] : $mondo['modulo'], 'a' => $a, 't' => $t, 'ki' => $ki, 'u' => $u, 'd' => $d,
             'fp' => $fp, 'fn' => $fn, 'fs' => $fs, 's' => $st, 'f' => $f,
             'pa' => $st === 'published' ? date('Y-m-d H:i:s', time() - $giorni * 86400) : null, 'g' => $giorni]);
         $ids['bacheca_' . $chiave] = (int) $pdo->lastInsertId();
@@ -612,6 +618,43 @@ function bachecaDiProva(PDO $pdo, array $mondo, int $studente, int $tutor, strin
 
 $a += bachecaDiProva($pdo, $a, $studenteA, $tutorA, 'A');
 $b += bachecaDiProva($pdo, $b, $studenteB, $tutorB, 'B');
+
+// Un'altra classe dello stesso corso A (25/10): un gruppo con un tutor suo,
+// il terzo, e uno studente. La risorsa e' di tutti, le persone della classe:
+// lo studente di A non deve leggere il suo racconto ne' il suo nome sulla
+// risorsa che ha proposto, e lui non deve leggere quelli dello studente di
+// A; il tutor di A non legge quelli dell'altra classe, il terzo tutor non
+// legge quelli del gruppo di A. Il terzo tutor e non il tutor di A, cosi' il
+// perimetro del tutor di A non cambia; e un tutor ci vuole, perche' un
+// gruppo senza mostra «—» nella colonna Tutor, e `ordinamento_pagine.js`
+// salterebbe la prova dell'ordine alfabetico di quella colonna. Gli utenti
+// restano fra una semina e l'altra, come i compagni.
+$pdo->prepare(
+    'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at)
+     VALUES (:e, :p, "Tutor", "Tre", "tutor", 1, NOW(), NOW())
+     ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), role = "tutor", is_active = 1'
+)->execute(['e' => 'tutor3@test.it', 'p' => password_hash('Password1!', PASSWORD_DEFAULT)]);
+$tutorTre = utente($pdo, 'tutor3@test.it');
+$pdo->prepare(
+    'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at, name_display)
+     VALUES (:e, :p, "Studente", "Altrogruppo", "studente", 1, NOW(), NOW(), "full")
+     ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), last_name = VALUES(last_name), is_active = 1, name_display = "full", welcome_seen_at = NOW()'
+)->execute(['e' => 'altrogruppo@test.it', 'p' => password_hash('Password1!', PASSWORD_DEFAULT)]);
+$altroGruppo = utente($pdo, 'altrogruppo@test.it');
+$pdo->prepare('INSERT INTO `groups` (name, tutor_id) VALUES (:n, :t)')->execute(['n' => MARCHIO . ' mondo A altra classe', 't' => $tutorTre]);
+$a['altra_classe'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO group_course_access (group_id, course_id) VALUES (:g, :c)')->execute(['g' => $a['altra_classe'], 'c' => $a['corso']]);
+$pdo->prepare('INSERT INTO group_members (group_id, user_id) VALUES (:g, :u)')->execute(['g' => $a['altra_classe'], 'u' => $altroGruppo]);
+$pdo->prepare('INSERT INTO enrollments (user_id, course_id) VALUES (:u, :c)')->execute(['u' => $altroGruppo, 'c' => $a['corso']]);
+$pdo->prepare(
+    'INSERT INTO board_resources (course_id, category_id, module_id, author_id, title, kind, url, description, status, decided_by, published_at)
+     VALUES (:c, :k, :m, :a, :t, "articolo", "https://esempio.invalid/altra-classe", "Proposta da uno studente di un\'altra classe.", "published", :by, NOW())'
+)->execute(['c' => $a['corso'], 'k' => $a['bacheca_categoria'], 'm' => $a['modulo'], 'a' => $altroGruppo,
+    't' => 'Una risorsa proposta dall\'altra classe A', 'by' => $admin]);
+$a['bacheca_risorsa_altra'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO board_uses (resource_id, user_id, body) VALUES (:r, :u, :b)')
+    ->execute(['r' => $a['bacheca_risorsa'], 'u' => $altroGruppo, 'b' => 'Racconto dell’altra classe: lo leggono solo i suoi compagni.']);
+$a['bacheca_uso_altra'] = (int) $pdo->lastInsertId();
 
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
@@ -725,6 +768,8 @@ echo json_encode([
         'studenteA' => $studenteA,
         'studenteB' => $studenteB,
         'studenteNuovo' => $studenteNuovo,
+        'altroGruppo' => $altroGruppo,
+        'tutorTre' => $tutorTre,
     ],
     'gruppo_cerchio' => $gruppoCerchio,
     'domanda_aperta' => $domandaAperta,

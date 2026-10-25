@@ -1956,13 +1956,16 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             let s = await entra(browser, 'stud@test.it');
             let html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
-            check('studente → i riquadri contano le sole pubblicate: 2 risorse, 1 risorsa, Nessuna risorsa (17/10: era «Ancora nessuna risorsa»)',
-                html.includes('2 risorse') && html.includes('1 risorsa') && html.includes('>Nessuna risorsa<') && !html.includes('Ancora nessuna'));
+            // Nella prima categoria le pubblicate sono quattro, ma una sta nel
+            // modulo chiuso da una data (25/10): lo studente ne conta tre.
+            check('studente → i riquadri contano le sole pubblicate dei moduli aperti: 3 risorse, 1 risorsa, Nessuna risorsa (17/10, 25/10)',
+                html.includes('3 risorse') && html.includes('1 risorsa') && html.includes('>Nessuna risorsa<') && !html.includes('Ancora nessuna'));
             check('studente → «Le mie risorse (1)» e «Condividi una risorsa»; niente «Nuova risorsa» né «Valuta»',
                 html.includes('Le mie risorse (1)') && html.includes('Condividi una risorsa') && !html.includes('Nuova risorsa') && !html.includes('>Valuta<'));
             await s.ctx.close();
             s = await entra(browser, 'admin@test.it');
             html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
+            check('admin → conta anche la risorsa del modulo chiuso: 4 risorse (25/10)', html.includes('4 risorse'));
             check('admin → il collegamento alle categorie si chiama «Gestione categorie» (17/10)',
                 html.includes('>Gestione categorie<') && !html.includes('Gestisci le categorie'));
             await s.ctx.close();
@@ -1999,6 +2002,92 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             html = await testoDi(s.page, '/bacheca?corso=' + A.corso);
             check('tutor A → «1 proposta da valutare» e il numero accanto a «Bacheca» nel ramo del corso',
                 html.includes('1 proposta da valutare') && new RegExp('href="/bacheca\\?corso=' + A.corso + '"[^>]*>Bacheca\\s*<span class="nav-conteggio">1').test(html));
+            // La Bacheca per modulo e per classe (25/10). Il modulo: una
+            // risorsa del modulo chiuso da una data non si vede, non si tiene,
+            // non si racconta e non si scarica, e lo studente non la propone
+            // in quel modulo; lo staff la vede. La classe: i racconti e il
+            // nome di chi ha proposto li vedono i compagni dei gruppi del
+            // corso e chi li modera; uno studente di un'altra classe dello
+            // stesso corso, il tutor di un gruppo non suo e l'assistente no.
+            {
+                const CHIUSA = 'Per il modulo che si apre fra trenta giorni A';
+                const ALTRA = 'altra classe A';
+                const RACCONTO_A = 'la terza domanda ha funzionato';
+                const RACCONTO_ALTRA = 'lo leggono solo i suoi compagni';
+                const cat = '/bacheca/categorie/' + A.bacheca_categoria;
+                let t = await entra(browser, 'stud@test.it');
+                let h = await testoDi(t.page, cat);
+                check('studente A → la risorsa del modulo chiuso non c\'è; quella dell\'altra classe sì (25/10)',
+                    !h.includes(CHIUSA) && h.includes(ALTRA));
+                check('studente A → la risorsa dell\'altra classe è «Condivisa in bacheca», senza il nome di chi l\'ha proposta',
+                    h.includes('Condivisa in bacheca') && !h.includes('Studente Altrogruppo'));
+                check('studente A → legge il proprio racconto, non quello dell\'altra classe',
+                    h.includes(RACCONTO_A) && !h.includes(RACCONTO_ALTRA));
+                for (const [url, campi, cosa] of [
+                    ['/bacheca/risorse/' + A.bacheca_risorsa_chiusa + '/tengo', [], 'tenersi la risorsa del modulo chiuso'],
+                    ['/bacheca/risorse/' + A.bacheca_risorsa_chiusa + '/uso', [['body', 'x']], 'raccontarla'],
+                ]) {
+                    const r = await esitoPost(t.page, url, campi);
+                    check('studente A → POST ' + url + ' (' + cosa + '): negato', r.esito === 'negato', [r.come]);
+                }
+                const scarica = await esitoGet(t.page, '/bacheca/risorse/' + A.bacheca_risorsa_chiusa + '/download');
+                check('studente A → scaricare il file della risorsa del modulo chiuso: negato', scarica.esito === 'negato', [scarica.come]);
+                h = await testoDi(t.page, '/bacheca/condividi?corso=' + A.corso);
+                const scelta = (h.match(/name="module_id"[\s\S]*?<\/select>/) || [''])[0];
+                check('studente A → proponendo, il modulo prima della categoria, solo fra i moduli aperti',
+                    scelta !== '' && h.indexOf('name="module_id"') < h.indexOf('name="category_id"')
+                    && scelta.includes('mondo A modulo') && !scelta.includes('modulo chiuso'), [scelta.replace(/\s+/g, ' ')]);
+                await esitoPost(t.page, '/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta nel modulo chiuso A'], ['kind', 'scheda'],
+                    ['module_id', String(A.modulo_chiuso)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'x']]);
+                await esitoPost(t.page, '/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta senza modulo A'], ['kind', 'scheda'],
+                    ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'x']]);
+                // Si guarda «Le tue proposte»: il modulo, rifiutato, ripropone il
+                // titolo nel campo, e lo conterrebbe comunque.
+                h = await testoDi(t.page, '/bacheca/condividi?corso=' + A.corso);
+                const mie = h.slice(h.indexOf('Le tue proposte'));
+                check('studente A → una proposta nel modulo chiuso, o senza modulo, non nasce',
+                    h.includes('Le tue proposte') && !mie.includes('Proposta nel modulo chiuso A') && !mie.includes('Proposta senza modulo A'));
+                await t.ctx.close();
+
+                t = await entra(browser, 'altrogruppo@test.it');
+                h = await testoDi(t.page, cat);
+                check('studente dell\'altra classe → legge il suo racconto, non quello dello studente A',
+                    h.includes(RACCONTO_ALTRA) && !h.includes(RACCONTO_A));
+                check('studente dell\'altra classe → la proposta dello studente A è «Condivisa in bacheca», senza nome',
+                    h.includes('Ascoltare senza correggere A') && !h.includes('Proposta da Studente Prova'));
+                await t.ctx.close();
+
+                t = await entra(browser, 'tutor1@test.it');
+                h = await testoDi(t.page, cat);
+                check('tutor A → vede la risorsa del modulo chiuso, e i racconti e i nomi del suo gruppo',
+                    h.includes(CHIUSA) && h.includes(RACCONTO_A) && h.includes('Proposta da Studente Prova'));
+                check('tutor A → del gruppo non suo nessun racconto e nessun nome',
+                    !h.includes(RACCONTO_ALTRA) && !h.includes('Studente Altrogruppo'));
+                h = await testoDi(t.page, '/bacheca/nuova?corso=' + A.corso);
+                check('tutor A → pubblicando sceglie fra tutti i moduli, anche quello chiuso', h.includes('mondo A modulo chiuso'));
+                await t.ctx.close();
+
+                t = await entra(browser, 'tutor3@test.it');
+                h = await testoDi(t.page, cat);
+                check('tutor dell\'altra classe → i racconti e i nomi della sua classe, non quelli del gruppo di A',
+                    h.includes(RACCONTO_ALTRA) && h.includes('Proposta da Studente Altrogruppo')
+                    && !h.includes(RACCONTO_A) && !h.includes('Proposta da Studente Prova'));
+                await t.ctx.close();
+
+                t = await entra(browser, 'assist@test.it');
+                h = await testoDi(t.page, cat);
+                check('assistente → nessun racconto e nessun nome di studente, come per foto e presentazioni',
+                    !h.includes(RACCONTO_A) && !h.includes(RACCONTO_ALTRA) && !h.includes('Proposta da Studente'));
+                await t.ctx.close();
+
+                t = await entra(browser, 'admin@test.it');
+                h = await testoDi(t.page, cat);
+                check('admin → tutte le risorse, tutti i racconti, tutti i nomi',
+                    h.includes(CHIUSA) && h.includes(RACCONTO_A) && h.includes(RACCONTO_ALTRA)
+                    && h.includes('Proposta da Studente Prova') && h.includes('Proposta da Studente Altrogruppo'));
+                await t.ctx.close();
+            }
+
                         // Il file di una risorsa (17/10): fino a 3 MB, o meno se il
             // php.ini del server ne accetta meno. Un file appena oltre si
             // ferma con il motivo, e la risorsa non nasce; uno piccolo passa.
@@ -2009,6 +2098,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     const aiuto = (await s.page.textContent('#bacheca-file-aiuto')).replace(/\s+/g, ' ').trim();
                     await s.page.fill('#bacheca-titolo', titolo);
                     await s.page.selectOption('#bacheca-tipo', 'scheda');
+                    await s.page.selectOption('#bacheca-modulo', String(A.modulo));
                     await s.page.fill('#bacheca-descrizione', 'Descrizione di permessi.js.');
                     const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(byte - 9, 0x20)]);
                     await s.page.setInputFiles('#bacheca-file', { name: 'prova-limite.pdf', mimeType: 'application/pdf', buffer: pdf });
@@ -2055,6 +2145,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 await s.page.goto(BASE + '/bacheca/nuova?corso=' + A.corso);
                 await s.page.evaluate(() => { const c = document.querySelector('#bacheca-file'); c.removeAttribute('accept'); });
                 await s.page.fill('#bacheca-titolo', 'Audio di permessi.js');
+                await s.page.selectOption('#bacheca-modulo', String(A.modulo));
                 await s.page.fill('#bacheca-descrizione', 'Descrizione.');
                 await s.page.setInputFiles('#bacheca-file', { name: 'podcast.mp3', mimeType: 'audio/mpeg', buffer: Buffer.alloc(10 * 1024, 0x20) });
                 await s.page.evaluate(() => { const c = document.querySelector('#bacheca-file'); c.setCustomValidity(''); c.closest('form').noValidate = true; });
@@ -2204,49 +2295,49 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             // il tutor di B non tocca la proposta dello studente di A prima che
             // il tutor di A la pubblichi.
             ['strano@test.it', 'studente B (bacheca)', [
-                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato',
+                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato',
                     'proporre una risorsa in un corso a cui non è iscritto'],
                 ['/bacheca/risorse/' + A.bacheca_risorsa + '/tengo', [], 'negato', 'tenersi una risorsa di un\'altra bacheca'],
                 ['/bacheca/risorse/' + A.bacheca_risorsa + '/uso', [['body', 'x']], 'negato', 'raccontarla'],
             ]],
             ['stud@test.it', 'studente A (bacheca, rifiuti)', [
-                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria)]], 'negato',
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)]], 'negato',
                     'pubblicare la propria proposta'],
                 ['/bacheca/risorse/' + A.bacheca_risorsa + '/togli', [], 'negato', 'togliere una risorsa dalla bacheca'],
                 ['/bacheca/risorse/' + A.bacheca_risorsa + '/evidenza', [['si', '0']], 'negato', 'cambiare l\'evidenza'],
                 ['/bacheca/usi/' + A.bacheca_uso_nascosto, [['azione', 'rimetti']], 'negato', 'rimettere il proprio racconto nascosto'],
-                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare senza passare dal tutor'],
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare senza passare dal tutor'],
                 ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', '#4F7256']], 'negato', 'creare una categoria'],
                 ['/admin/bacheca/categorie/' + A.bacheca_categoria_vuota + '/elimina', [], 'negato', 'eliminare una categoria'],
             ]],
             ['tutor2@test.it', 'tutor B (bacheca)', [
-                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria)]], 'negato',
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)]], 'negato',
                     'pubblicare la proposta di uno studente di un collega'],
                 ['/bacheca/risorse/' + A.bacheca_proposta + '/scarta', [], 'negato', 'non pubblicarla'],
-                ['/bacheca/risorse/' + A.bacheca_risorsa, [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'correggere una risorsa della bacheca di un collega'],
+                ['/bacheca/risorse/' + A.bacheca_risorsa, [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'correggere una risorsa della bacheca di un collega'],
                 ['/bacheca/risorse/' + A.bacheca_risorsa + '/togli', [], 'negato', 'toglierla'],
                 ['/bacheca/usi/' + A.bacheca_uso, [['azione', 'nascondi']], 'negato', 'nascondere il racconto di uno studente di un collega'],
-                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare nella bacheca di un collega'],
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare nella bacheca di un collega'],
                 ['/admin/courses/' + B.corso + '/bacheca/categorie', [['name', 'x'], ['color', '#4F7256']], 'negato',
                     'creare una categoria: le crea l\'admin, anche nel corso suo'],
             ]],
             ['assist@test.it', 'assistente (bacheca)', [
-                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare'],
-                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'proporre: propongono gli studenti'],
-                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria)]], 'negato', 'valutare una proposta'],
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'pubblicare'],
+                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'negato', 'proporre: propongono gli studenti'],
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)]], 'negato', 'valutare una proposta'],
                 ['/bacheca/usi/' + A.bacheca_uso, [['azione', 'nascondi']], 'negato', 'moderare un racconto'],
             ]],
             ['stud@test.it', 'studente A (bacheca)', [
-                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'consentito', 'proporre una risorsa nel proprio corso'],
+                ['/bacheca/corsi/' + A.corso + '/condividi', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'consentito', 'proporre una risorsa nel proprio corso'],
                 ['/bacheca/risorse/' + A.bacheca_risorsa_digitale + '/tengo', [], 'consentito', 'tenersi una risorsa'],
                 ['/bacheca/risorse/' + A.bacheca_risorsa_digitale + '/uso', [['body', 'Racconto di permessi.js.']], 'consentito',
                     'raccontare come l\'ha utilizzata'],
             ]],
             ['tutor1@test.it', 'tutor A (bacheca)', [
                 ['/bacheca/usi/' + A.bacheca_uso_nascosto, [['azione', 'rimetti']], 'consentito', 'rimettere il racconto di un suo studente'],
-                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria2)]], 'consentito',
+                ['/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria2)]], 'consentito',
                     'pubblicare la proposta di un suo studente, in un\'altra categoria'],
-                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'consentito', 'pubblicare nel corso dei suoi gruppi'],
+                ['/bacheca/corsi/' + A.corso + '/nuova', [['title', 'Proposta di permessi.js'], ['kind', 'scheda'], ['module_id', String(A.modulo)], ['category_id', String(A.bacheca_categoria)], ['url', ''], ['description', 'Descrizione di permessi.js.']], 'consentito', 'pubblicare nel corso dei suoi gruppi'],
                 ['/admin/courses/' + A.corso + '/bacheca/categorie', [['name', 'x'], ['color', '#4F7256']], 'negato', 'creare una categoria'],
             ]],
             ['admin@test.it', 'admin (bacheca)', [

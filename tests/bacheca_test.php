@@ -142,22 +142,25 @@ check('in evidenza sopra, poi dalla più recente', $ids === [5, 3, 4, 2, 1], imp
 // ---------------------------------------------------------------
 echo PHP_EOL . 'I campi di una risorsa' . PHP_EOL;
 
-$buona = ['title' => ' Dieci domande ', 'kind' => 'scheda', 'category_id' => '7', 'url' => '', 'description' => "Riga uno\r\nriga due"];
-$r = Bacheca::valida($buona, [7, 8]);
+$buona = ['title' => ' Dieci domande ', 'kind' => 'scheda', 'module_id' => '3', 'category_id' => '7', 'url' => '', 'description' => "Riga uno\r\nriga due"];
+$r = Bacheca::valida($buona, [7, 8], [3, 4]);
 check('una risorsa giusta passa', $r['errore'] === null, (string) $r['errore']);
 check('il titolo senza spazi ai lati', ($r['dati']['title'] ?? '') === 'Dieci domande');
 check('la categoria come numero', ($r['dati']['category_id'] ?? 0) === 7);
+check('il modulo come numero (25/10)', ($r['dati']['module_id'] ?? 0) === 3);
 check('il link vuoto diventa null', array_key_exists('url', $r['dati']) && $r['dati']['url'] === null);
 check('l\'a capo conta un carattere', ($r['dati']['description'] ?? '') === "Riga uno\nriga due");
 
 $pieno = str_repeat("a\r\n", Bacheca::MAX_DESCRIZIONE / 2);
-check('una descrizione piena di a capo sta nel limite', Bacheca::valida(['description' => $pieno] + $buona, [7])['errore'] === null);
+check('una descrizione piena di a capo sta nel limite', Bacheca::valida(['description' => $pieno] + $buona, [7], [3])['errore'] === null);
 
 $errori = [
     [['title' => ''], 'manca il titolo'],
     [['title' => str_repeat('t', Bacheca::MAX_TITOLO + 1)], 'titolo troppo lungo'],
     [['kind' => 'romanzo'], 'tipo sconosciuto'],
     [['category_id' => '99'], 'categoria di un altro corso'],
+    [['module_id' => ''], 'manca il modulo (25/10)'],
+    [['module_id' => '99'], 'un modulo che chi scrive non puo\' scegliere (chiuso, o di un altro corso)'],
     [['description' => '   '], 'manca la descrizione'],
     [['description' => str_repeat('d', Bacheca::MAX_DESCRIZIONE + 1)], 'descrizione troppo lunga'],
     [['url' => 'javascript:alert(1)'], 'link non valido'],
@@ -166,11 +169,13 @@ $errori = [
 ];
 
 foreach ($errori as [$cambio, $cosa]) {
-    $esito = Bacheca::valida($cambio + $buona, [7, 8]);
+    $esito = Bacheca::valida($cambio + $buona, [7, 8], [3, 4]);
     check('si ferma: ' . $cosa, $esito['errore'] !== null && $esito['errore'] !== '', (string) $esito['errore']);
 }
 
-check('un video con il link passa', Bacheca::valida(['kind' => 'video', 'url' => 'https://esempio.it/v'] + $buona, [7])['errore'] === null);
+$senzaModulo = Bacheca::valida(['module_id' => ''] + $buona, [7, 8], [3, 4]);
+check('senza modulo, il messaggio dice di sceglierlo', $senzaModulo['errore'] === 'Scegli il modulo a cui serve la risorsa.', (string) $senzaModulo['errore']);
+check('un video con il link passa', Bacheca::valida(['kind' => 'video', 'url' => 'https://esempio.it/v'] + $buona, [7], [3])['errore'] === null);
 
 // ---------------------------------------------------------------
 echo PHP_EOL . 'Chi l\'ha condivisa' . PHP_EOL;

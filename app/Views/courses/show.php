@@ -247,7 +247,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                             <?php endif; ?>
                             <a href="/modules/<?= $moduleId ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?><span class="sr-only">Modifica </span>Modulo</a>
                             <form action="/modules/<?= $moduleId ?>/delete" method="post"
-                                  onsubmit="return confirm('Eliminare questo modulo e tutte le sue lezioni?');">
+                                  onsubmit="return confirm('Eliminare questo modulo, tutte le sue lezioni e le sue risorse della Bacheca?');">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                             </form>

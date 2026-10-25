@@ -661,6 +661,9 @@ CREATE TABLE board_resources (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     course_id       INT UNSIGNED NOT NULL,
     category_id     INT UNSIGNED NOT NULL,
+    -- Il modulo a cui serve (25/10): obbligatorio; lo studente vede la
+    -- risorsa solo quando quel modulo e' aperto per lui.
+    module_id       INT UNSIGNED NOT NULL,
     author_id       INT UNSIGNED NULL,
     title           VARCHAR(150) NOT NULL,
     kind            ENUM('scheda','checklist','video','podcast','articolo','altro') NOT NULL DEFAULT 'altro',
@@ -677,8 +680,10 @@ CREATE TABLE board_resources (
     KEY idx_course_status (course_id, status),
     KEY idx_category_status (category_id, status),
     KEY idx_author (author_id),
+    KEY idx_module_status (module_id, status),
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES board_categories(id) ON DELETE CASCADE,
+    CONSTRAINT fk_board_resources_module FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (decided_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

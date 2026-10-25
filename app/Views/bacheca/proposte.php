@@ -10,12 +10,14 @@ use App\Core\Icona;
  * Le proposte degli studenti da valutare (17/10): il tutor vede quelle dei
  * suoi studenti, l'admin tutte. Per ognuna: chi la propone (per intero,
  * come lo staff vede sempre i suoi), il gruppo, il testo, e tre comandi:
- * «Pubblica» nella categoria scelta, «Correggi prima di pubblicare»,
+ * «Pubblica» nel modulo e nella categoria scelti (il modulo dello studente
+ * gia' selezionato, 25/10), «Correggi prima di pubblicare»,
  * «Non pubblicare». «Non pubblicare» e' un modulo a se': un comando
  * distruttivo dentro quello di «Pubblica» ne diventerebbe l'invio
  * predefinito.
  *
  * @var array<string, mixed> $corso
+ * @var list<array<string, mixed>> $moduli
  * @var list<array<string, mixed>> $categorie
  * @var list<array<string, mixed>> $proposte
  */
@@ -53,6 +55,14 @@ $courseId = (int) $corso['id'];
         <div class="bacheca-decidi">
             <form action="/bacheca/risorse/<?= $pid ?>/pubblica" method="post" class="form-inline">
                 <?= Csrf::field() ?>
+                <label for="proposta-<?= $pid ?>-modulo">Modulo</label>
+                <select id="proposta-<?= $pid ?>-modulo" name="module_id">
+                    <?php foreach ($moduli as $m): ?>
+                        <option value="<?= (int) $m['id'] ?>" <?= (int) $m['id'] === (int) $p['module_id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars((string) $m['title']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
                 <label for="proposta-<?= $pid ?>-categoria">Categoria</label>
                 <select id="proposta-<?= $pid ?>-categoria" name="category_id">
                     <?php foreach ($categorie as $c): ?>

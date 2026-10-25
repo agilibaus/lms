@@ -15,7 +15,12 @@ use App\Core\FileType;
  *   - la modifica: di una pubblicata, o di una proposta da correggere prima
  *     di pubblicarla («Salva e pubblica»).
  *
+ * Il modulo della risorsa viene prima della categoria ed e' obbligatorio
+ * (25/10): la risorsa si vede da quando il modulo e' aperto. Lo studente
+ * sceglie fra i moduli aperti per lui, lo staff fra tutti.
+ *
  * @var array<string, mixed> $corso
+ * @var list<array<string, mixed>> $moduli
  * @var list<array<string, mixed>> $categorie
  * @var array<string, mixed> $risorsa valori da mostrare (vuoto per una nuova)
  * @var string $azione
@@ -50,6 +55,8 @@ $stati = [
 
 <?php if ($categorie === []): ?>
     <p class="empty-state">La bacheca di questo corso non ha ancora categorie: le crea l'admin da «Modifica corso».</p>
+<?php elseif ($moduli === []): ?>
+    <p class="empty-state">Il corso non ha ancora moduli: ogni risorsa della bacheca appartiene a un modulo.</p>
 <?php else: ?>
     <section class="card" aria-label="<?= htmlspecialchars((string) $pageTitle, ENT_QUOTES) ?>">
         <form action="<?= htmlspecialchars($azione, ENT_QUOTES) ?>" method="post" class="form"<?= $staff ? ' enctype="multipart/form-data"' : '' ?>>
@@ -64,6 +71,20 @@ $stati = [
                     <option value="<?= $chiave ?>" <?= ($risorsa['kind'] ?? 'scheda') === $chiave ? 'selected' : '' ?>><?= $nome ?></option>
                 <?php endforeach; ?>
             </select>
+
+            <label for="bacheca-modulo">Modulo</label>
+            <select id="bacheca-modulo" name="module_id" required aria-describedby="bacheca-modulo-aiuto">
+                <option value="">Scegli il modulo</option>
+                <?php foreach ($moduli as $m): ?>
+                    <option value="<?= (int) $m['id'] ?>" <?= (int) ($risorsa['module_id'] ?? 0) === (int) $m['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars((string) $m['title']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <p class="form-hint" id="bacheca-modulo-aiuto">
+                <?= $staff ? 'La risorsa si vede da quando il modulo è aperto per lo studente.'
+                    : 'Scegli il modulo a cui serve: la risorsa si vede da quando il modulo è aperto. Il tutor lo può cambiare.' ?>
+            </p>
 
             <label for="bacheca-categoria">Categoria</label>
             <select id="bacheca-categoria" name="category_id" <?= $staff ? '' : 'aria-describedby="bacheca-categoria-aiuto"' ?>>

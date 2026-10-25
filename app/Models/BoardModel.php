@@ -196,10 +196,10 @@ final class BoardModel
     {
         $db = Database::connection();
         $db->prepare(
-            'INSERT INTO board_resources (course_id, category_id, author_id, title, kind, url, description, status, decided_by, published_at)
-             VALUES (:c, :k, :a, :t, :ki, :u, :d, :s, :by, :at)'
+            'INSERT INTO board_resources (course_id, category_id, module_id, author_id, title, kind, url, description, status, decided_by, published_at)
+             VALUES (:c, :k, :m, :a, :t, :ki, :u, :d, :s, :by, :at)'
         )->execute([
-            'c' => $courseId, 'k' => $dati['category_id'], 'a' => $authorId, 't' => $dati['title'], 'ki' => $dati['kind'],
+            'c' => $courseId, 'k' => $dati['category_id'], 'm' => $dati['module_id'], 'a' => $authorId, 't' => $dati['title'], 'ki' => $dati['kind'],
             'u' => $dati['url'], 'd' => $dati['description'], 's' => $stato,
             'by' => $stato === Bacheca::PUBLISHED ? $authorId : null,
             'at' => $stato === Bacheca::PUBLISHED ? date('Y-m-d H:i:s') : null,
@@ -212,8 +212,8 @@ final class BoardModel
     public static function aggiorna(int $id, array $dati): void
     {
         Database::connection()->prepare(
-            'UPDATE board_resources SET category_id = :k, title = :t, kind = :ki, url = :u, description = :d WHERE id = :id'
-        )->execute(['id' => $id, 'k' => $dati['category_id'], 't' => $dati['title'], 'ki' => $dati['kind'],
+            'UPDATE board_resources SET category_id = :k, module_id = :m, title = :t, kind = :ki, url = :u, description = :d WHERE id = :id'
+        )->execute(['id' => $id, 'k' => $dati['category_id'], 'm' => $dati['module_id'], 't' => $dati['title'], 'ki' => $dati['kind'],
             'u' => $dati['url'], 'd' => $dati['description']]);
     }
 
@@ -223,14 +223,17 @@ final class BoardModel
             ->execute(['id' => $id, 'p' => $path, 'n' => $nome, 'b' => $byte]);
     }
 
-    /** Pubblica una proposta in attesa, nella categoria scelta da chi la pubblica. */
-    public static function pubblica(int $id, int $categoryId, int $chi): bool
+    /**
+     * Pubblica una proposta in attesa, nella categoria e nel modulo scelti
+     * da chi la pubblica.
+     */
+    public static function pubblica(int $id, int $categoryId, int $moduleId, int $chi): bool
     {
         $stmt = Database::connection()->prepare(
-            "UPDATE board_resources SET status = 'published', category_id = :k, decided_by = :by, published_at = NOW()
+            "UPDATE board_resources SET status = 'published', category_id = :k, module_id = :m, decided_by = :by, published_at = NOW()
              WHERE id = :id AND status = 'pending'"
         );
-        $stmt->execute(['id' => $id, 'k' => $categoryId, 'by' => $chi]);
+        $stmt->execute(['id' => $id, 'k' => $categoryId, 'm' => $moduleId, 'by' => $chi]);
 
         return $stmt->rowCount() === 1;
     }
@@ -354,6 +357,28 @@ final class BoardModel
     {
         Database::connection()->prepare('UPDATE board_uses SET hidden_at = :h, hidden_by = :b WHERE id = :id')
             ->execute(['id' => $id, 'h' => $chi === null ? null : date('Y-m-d H:i:s'), 'b' => $chi]);
+    }
+
+    /**
+     * Gli studenti che stanno in un gruppo con questa persona, fra i gruppi
+     * che hanno accesso al corso (25/10): i compagni di classe di cui legge
+     * racconti e nomi nella Bacheca. Chi non ha un gruppo nel corso non ne
+     * ha.
+     *
+     * @return list<int>
+     */
+    public static function compagni(int $userId, int $courseId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT DISTINCT altri.user_id
+             FROM group_members mio
+             INNER JOIN group_course_access gca ON gca.group_id = mio.group_id AND gca.course_id = :c
+             INNER JOIN group_members altri ON altri.group_id = mio.group_id
+             WHERE mio.user_id = :u'
+        );
+        $stmt->execute(['u' => $userId, 'c' => $courseId]);
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
     }
 
     // -----------------------------------------------------------------
