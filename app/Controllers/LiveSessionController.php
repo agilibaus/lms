@@ -45,6 +45,9 @@ class LiveSessionController
             // porte chiuse e' peggio di un elenco piu' corto.
             'sessions' => LiveScope::elencoPer((int) Auth::id()),
             'canManage' => $isStaff,
+            // L'assistente vede la tabella dello staff, in sola lettura
+            // (26/10, conflitto 6).
+            'tabella' => $isStaff || Auth::hasRole('assistente'),
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
     }
@@ -67,14 +70,17 @@ class LiveSessionController
         }
 
         // Presenze e partecipanti solo per le sessioni del proprio perimetro.
+        // L'assistente le legge, senza cambiarle (26/10, conflitto 6).
         $canManage = $this->canManage() && $this->inScope($session);
+        $vedePresenze = $canManage || Auth::hasRole('assistente');
 
         View::render('live/show', [
             'pageTitle' => $session['title'],
             'session' => $session,
             'canManage' => $canManage,
-            'participants' => $canManage ? LiveSessionModel::participants((int) $session['id']) : [],
-            'attendance' => $canManage ? LiveSessionAttendanceModel::forSession((int) $session['id']) : [],
+            'vedePresenze' => $vedePresenze,
+            'participants' => $vedePresenze ? LiveSessionModel::participants((int) $session['id']) : [],
+            'attendance' => $vedePresenze ? LiveSessionAttendanceModel::forSession((int) $session['id']) : [],
             'hasJoined' => LiveSessionAttendanceModel::hasJoined((int) $session['id'], (int) Auth::id()),
         ]);
     }
@@ -89,6 +95,7 @@ class LiveSessionController
             'session' => null,
             'modules' => $this->moduleOptions(),
             'groups' => $this->groupOptions(),
+            'soloGruppo' => !Auth::hasRole('admin'),
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
     }
@@ -149,6 +156,7 @@ class LiveSessionController
             'session' => $session,
             'modules' => $this->moduleOptions(),
             'groups' => $this->groupOptions(),
+            'soloGruppo' => !Auth::hasRole('admin'),
             'googleConfigured' => MeetCalendar::isConfigured(),
         ]);
     }
@@ -321,8 +329,9 @@ class LiveSessionController
             $this->fail('Questa sessione non ha ancora un link Meet.', '/live/' . (int) $session['id']);
         }
 
-        // Lo staff entra senza comparire fra i presenti.
-        if (!$this->canManage()) {
+        // Lo staff entra senza comparire fra i presenti, assistente compreso
+        // (26/10): partecipa per lavoro, non e' uno studente atteso.
+        if (!$this->canManage() && !Auth::hasRole('assistente')) {
             LiveSessionAttendanceModel::markJoined((int) $session['id'], (int) Auth::id());
         }
 
@@ -514,20 +523,26 @@ class LiveSessionController
             return 'Gruppo non trovato.';
         }
 
-        // Un tutor programma incontri solo per i moduli dei suoi corsi o per i
-        // suoi gruppi: la tendina mostra gia' solo quelli, ma una richiesta
-        // costruita a mano non passa dalla tendina.
+        // Il tutor programma incontri per i suoi gruppi (26/10, conflitto 2):
+        // il gruppo e' obbligatorio, e il modulo, se c'e', e' di un corso del
+        // gruppo. Gli incontri di tutto il corso li crea l'admin. La tendina
+        // mostra gia' solo questi, ma una richiesta costruita a mano non passa
+        // dalla tendina.
         if (!Auth::hasRole('admin')) {
+            if ($data['group_id'] === null) {
+                return 'Scegli il gruppo: gli incontri per tutto il corso li crea l\'amministrazione.';
+            }
+
+            if (!$this->isMyGroup($data['group_id'])) {
+                return 'Il gruppo scelto non è uno dei tuoi.';
+            }
+
             if ($data['module_id'] !== null) {
                 $module = ModuleModel::find($data['module_id']);
 
-                if ($module !== null && !CourseRights::canEdit((int) $module['course_id'])) {
-                    return 'Il modulo scelto appartiene a un corso non assegnato ai tuoi gruppi.';
+                if ($module !== null && !in_array((int) $module['course_id'], GroupModel::courseIds($data['group_id']), true)) {
+                    return 'Il modulo scelto non è di un corso del gruppo.';
                 }
-            }
-
-            if ($data['group_id'] !== null && !$this->isMyGroup($data['group_id'])) {
-                return 'Il gruppo scelto non è uno dei tuoi.';
             }
         }
 
@@ -673,9 +688,11 @@ class LiveSessionController
     {
         $options = [];
 
+        // Il tutor sceglie il tema fra i moduli dei corsi dei suoi gruppi.
+        $suoi = Auth::hasRole('admin') ? null : CourseRights::courseIdsFor((int) Auth::id());
+
         foreach (CourseModel::allForStaff() as $course) {
-            // Il tutor programma incontri solo nei corsi dei suoi gruppi.
-            if (!CourseRights::canEdit((int) $course['id'])) {
+            if ($suoi !== null && !in_array((int) $course['id'], $suoi, true)) {
                 continue;
             }
 

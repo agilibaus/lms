@@ -13,6 +13,7 @@ use App\Core\Ordinamento;
 /** @var bool $canDelete */
 /** @var list<array<string, mixed>>|null $welcomes null se chi guarda non puo' caricare benvenuti */
 /** @var list<array<string, mixed>>|null $bacheca le categorie della bacheca; null se chi guarda non le gestisce */
+/** @var bool $tutor il tutor del corso (26/10): il suo benvenuto e i suoi studenti, in sola lettura */
 
 $courseId = (int) $course['id'];
 
@@ -35,14 +36,17 @@ $enrollments = $ordineIscritti->applica($enrollments);
     <a href="/admin/courses" class="back-link"><span class="back-link-testo">Gestione corsi</span></a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
-        <?= count($enrollments) ?> iscritti ·
-        <a href="/courses/<?= $courseId ?>">gestisci contenuti</a> ·
+        <?= count($enrollments) ?> <?= count($enrollments) === 1 ? 'iscritto' : 'iscritti' ?> ·
+        <a href="/courses/<?= $courseId ?>"><?= $tutor ? 'contenuti' : 'gestisci contenuti' ?></a> ·
         <a href="/reports/courses/<?= $courseId ?>">report</a>
     </p>
 </div>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
+<?php /* Dal 26/10 i dati, la copertina e gli iscritti li gestisce l'admin;
+         il tutor qui ha il suo benvenuto e l'elenco dei suoi studenti. */ ?>
+<?php if (!$tutor): ?>
 <section class="card">
     <h2>Dati del corso</h2>
     <form action="/admin/courses/<?= $courseId ?>" method="post" class="form">
@@ -56,6 +60,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
 </section>
 
 <?php require __DIR__ . '/_cover.php'; ?>
+<?php endif; ?>
 
 <?php if ($welcomes !== null): ?>
     <?php require __DIR__ . '/_welcomes.php'; ?>
@@ -116,7 +121,12 @@ $enrollments = $ordineIscritti->applica($enrollments);
 <section class="card">
     <h2>Iscritti</h2>
     <p class="card-meta">
-        Le iscrizioni possono arrivare anche dai gruppi: assegnando il corso a un gruppo, i membri vengono iscritti qui.
+        <?php if ($tutor): ?>
+            I tuoi studenti in questo corso: si iscrivono dai tuoi gruppi. Le altre iscrizioni e le richieste dal
+            catalogo le gestisce l’amministrazione.
+        <?php else: ?>
+            Le iscrizioni possono arrivare anche dai gruppi: assegnando il corso a un gruppo, i membri vengono iscritti qui.
+        <?php endif; ?>
     </p>
 
     <?php if ($enrollments === []): ?>
@@ -130,7 +140,9 @@ $enrollments = $ordineIscritti->applica($enrollments);
                 <?= $ordineIscritti->th('Studente', 'studente') ?>
                 <?= $ordineIscritti->th('Iscritto il', 'iscritto') ?>
                 <?= $ordineIscritti->th('Progresso', 'progresso') ?>
-                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                <?php if (!$tutor): ?>
+                    <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                <?php endif; ?>
             </tr>
             </thead>
             <tbody role="rowgroup">
@@ -147,6 +159,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                             <span class="badge badge-success">completato</span>
                         <?php endif; ?>
                     </td>
+                    <?php if (!$tutor): ?>
                     <td role="cell" class="row-actions">
                         <form action="/admin/courses/<?= $courseId ?>/enrollments/<?= (int) $row['user_id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere l’iscrizione? Progresso, tentativi dei questionari e certificato di questo corso verranno eliminati.');">
@@ -154,6 +167,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                             <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Rimuovi</button>
                         </form>
                     </td>
+                    <?php endif; ?>
                 </tr>
             <?php endforeach; ?>
             </tbody>

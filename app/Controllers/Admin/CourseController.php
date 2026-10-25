@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\Admin\TutorWelcomeController;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Auth\StudentScope;
 use App\Core\CourseCover;
 use App\Core\Mail\Mailer;
 use App\Core\TestoBreve;
@@ -54,9 +55,17 @@ class CourseController extends AdminController
     {
         Auth::requirePermission('course.create', 'course.edit', 'course.delete');
 
+        // Il tutor vede i corsi dei suoi gruppi (26/10): li' trova il suo
+        // benvenuto e i suoi studenti; i contenuti li modifica l'admin.
+        $tutor = !Auth::hasRole('admin');
+        $suoi = CourseRights::courseIdsFor((int) Auth::id());
+
         View::render('admin/courses/index', [
             'pageTitle' => 'Gestione corsi',
-            'courses' => CourseModel::allForStaff(),
+            'courses' => $tutor
+                ? array_values(array_filter(CourseModel::allForStaff(), static fn (array $c): bool => in_array((int) $c['id'], $suoi, true)))
+                : CourseModel::allForStaff(),
+            'tutor' => $tutor,
             'canCreate' => Auth::can('course.create'),
             'canDelete' => Auth::can('course.delete'),
             // Solo le richieste dei corsi che chi guarda puo' gestire (13/10):
@@ -106,7 +115,15 @@ class CourseController extends AdminController
     public function editForm(array $params): void
     {
         Auth::requirePermission('course.edit');
-        CourseRights::requireEdit((int) $params['id']);
+
+        // L'admin modifica il corso; il tutor apre la pagina dei corsi dei
+        // suoi gruppi per il suo benvenuto e i suoi studenti, in sola lettura
+        // (26/10, conflitti 1 e 3).
+        $tutor = !CourseRights::canEdit((int) $params['id']);
+
+        if ($tutor && !in_array((int) $params['id'], CourseRights::courseIdsFor((int) Auth::id()), true)) {
+            CourseRights::requireEdit((int) $params['id']);
+        }
 
         $course = CourseModel::find((int) $params['id']);
 
@@ -118,12 +135,18 @@ class CourseController extends AdminController
         $enrolled = EnrollmentModel::forCourse((int) $course['id']);
         $enrolledIds = array_map(static fn (array $row): int => (int) $row['user_id'], $enrolled);
 
+        if ($tutor) {
+            $suoi = StudentScope::studentiNelCorso((int) $course['id']) ?? [];
+            $enrolled = array_values(array_filter($enrolled, static fn (array $r): bool => in_array((int) $r['user_id'], $suoi, true)));
+        }
+
         View::render('admin/courses/edit', [
             'pageTitle' => $course['title'],
+            'tutor' => $tutor,
             'course' => array_merge($course, self::riprendi((int) $course['id']) ?? []),
-            'requests' => EnrollmentRequestModel::pendingForCourse((int) $course['id']),
+            'requests' => $tutor ? [] : EnrollmentRequestModel::pendingForCourse((int) $course['id']),
             'enrollments' => $enrolled,
-            'availableStudents' => array_values(array_filter(
+            'availableStudents' => $tutor ? [] : array_values(array_filter(
                 UserModel::byRoles(['studente']),
                 static fn (array $u): bool => !in_array((int) $u['id'], $enrolledIds, true)
             )),

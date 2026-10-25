@@ -55,8 +55,9 @@ final class CorsoCorrente
      * mostrare.
      *
      * - Bacheca: per chi la legge (`BachecaScope::puoLeggere`).
-     * - «L'esperto risponde»: per lo studente iscritto e per il tutor del
-     *   corso, che la legge come uno studente. L'admin, che e' l'esperto,
+     * - «L'esperto risponde»: per lo studente iscritto, per il tutor del
+     *   corso, che la legge come uno studente, e dal 26/10 per l'assistente
+     *   nei corsi dei suoi tutor, senza i nomi di chi ha chiesto. L'admin, che e' l'esperto,
      *   ha «Domande».
      * - «Il mio gruppo» (18/10): per lo studente iscritto, il suo gruppo in
      *   quel corso (`GroupModel::delloStudenteNelCorso`), se ne ha uno.
@@ -74,7 +75,10 @@ final class CorsoCorrente
         $userId = (int) Auth::id();
         $bacheca = BachecaScope::puoLeggere($courseId);
         $iscritto = Auth::hasRole('studente') && EnrollmentModel::find($userId, $courseId) !== null;
-        $esperto = $iscritto || (Auth::hasRole('tutor') && in_array($courseId, CourseRights::courseIdsFor($userId), true));
+        // L'assistente la legge nei corsi dei suoi tutor, come la Bacheca
+        // (26/10, conflitto 7).
+        $esperto = $iscritto || (Auth::hasRole('tutor') && in_array($courseId, CourseRights::courseIdsFor($userId), true))
+            || (Auth::hasRole('assistente') && $bacheca);
         $gruppo = $iscritto ? GroupModel::delloStudenteNelCorso($userId, $courseId) : null;
 
         // «Tre parole» (21/10): per l'admin e per il tutor di un gruppo del

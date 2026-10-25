@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Auth\CourseRights;
 use App\Core\Csrf;
 use App\Core\Icona;
 use App\Core\Ordinamento;
@@ -13,6 +12,7 @@ use App\Models\CourseModel;
 /** @var bool $canCreate */
 /** @var bool $canDelete */
 /** @var int $pendingRequests */
+/** @var bool $tutor il tutor (26/10): i corsi dei suoi gruppi, per il benvenuto e i suoi studenti */
 
 $ordine = Ordinamento::daRichiesta([
     'titolo' => ['title', Ordinamento::TESTO],
@@ -28,7 +28,11 @@ $courses = $ordine->applica($courses);
 ?>
 <div class="page-header">
     <h1>Gestione corsi</h1>
-    <p class="page-subtitle">Creazione, pubblicazione e iscrizioni. I contenuti (moduli, lezioni, questionari) si gestiscono dalla scheda del corso.</p>
+    <?php if ($tutor): ?>
+        <p class="page-subtitle">I corsi dei tuoi gruppi: il tuo benvenuto e i tuoi studenti. I contenuti li modifica l’amministrazione.</p>
+    <?php else: ?>
+        <p class="page-subtitle">Creazione, pubblicazione e iscrizioni. I contenuti (moduli, lezioni, questionari) si gestiscono dalla scheda del corso.</p>
+    <?php endif; ?>
     <?php if ($canCreate): ?>
         <p><a href="/admin/courses/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo corso</a></p>
     <?php endif; ?>
@@ -56,13 +60,10 @@ $courses = $ordine->applica($courses);
         <?php foreach ($courses as $course): ?>
             <tr role="row">
                 <td role="cell" data-label="Titolo">
-                    <?php if (CourseRights::canEdit((int) $course['id'])): ?>
-                        <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
-                    <?php else: ?>
-                        <?php /* Corso non assegnato ai gruppi del tutor: lo vede, non lo modifica. */ ?>
-                        <?= htmlspecialchars((string) $course['title']) ?>
-                        <span class="badge">sola lettura</span>
-                    <?php endif; ?>
+                    <?php /* Dal 26/10 il tutor vede qui solo i corsi dei suoi gruppi,
+                             e la pagina del corso gli mostra il suo benvenuto e i
+                             suoi studenti. */ ?>
+                    <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
                     <span class="cell-sub">/<?= htmlspecialchars((string) $course['slug']) ?></span>
                 </td>
                 <td role="cell" data-label="Stato">
@@ -83,9 +84,7 @@ $courses = $ordine->applica($courses);
                 </td>
                 <td role="cell" class="row-actions">
                     <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
-                    <?php if (CourseRights::canEdit((int) $course['id'])): ?>
-                        <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
-                    <?php endif; ?>
+                    <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                     <?php if ($canDelete): ?>
                         <form action="/admin/courses/<?= (int) $course['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare il corso con moduli, lezioni, questionari, iscrizioni e certificati?');">
@@ -101,6 +100,7 @@ $courses = $ordine->applica($courses);
     </div>
 <?php endif; ?>
 
+<?php if (!$tutor): ?>
 <?php
 // Riepilogo dei file caricati che nessuna lezione usa piu'. Sta qui, in un
 // punto solo del pannello, perche' il calcolo legge le cartelle di /storage
@@ -141,3 +141,4 @@ $scollegati = OrphanFiles::summary();
         </p>
     <?php endif; ?>
 </section>
+<?php endif; ?>

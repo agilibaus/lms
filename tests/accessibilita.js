@@ -2915,6 +2915,28 @@ async function giroBenvenuto(browser) {
         // riga «Vai al gruppo»; da Modifica gruppo, in alto. Si segue il
         // collegamento: la pagina si apre, ed e' quella del gruppo giusto,
         // con i comandi di chi modera.
+        // Le pagine del tutor cambiate il 26/10: «Gestione corsi» con i corsi
+        // dei suoi gruppi, la pagina del corso con il suo benvenuto e i suoi
+        // studenti in sola lettura, la nuova sessione con il gruppo per primo.
+        // Con gli id di `seme`: la semina qui sopra ha rifatto i corsi.
+        await esamina(tp, '/admin/courses', 'Gestione corsi (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(tp, '/admin/courses/' + seme.A.corso + '/edit', 'Corso: benvenuto e studenti (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        await esamina(tp, '/live/create', 'Nuova sessione (tutor)', BERSAGLIO_MINIMO, daTelefono);
+        {
+            // L'assistente (26/10): gli incontri dei gruppi del suo tutor in
+            // sola lettura e «L'esperto risponde» del suo corso.
+            const ctxAss = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+            const ap = await ctxAss.newPage();
+            await ap.goto(BASE + '/login');
+            await ap.fill('input[name="email"]', 'assist@test.it');
+            await ap.fill('input[name="password"]', PASS);
+            await ap.click('form.auth-form button[type="submit"]');
+            await ap.waitForLoadState('networkidle');
+            await esamina(ap, '/live', 'Sessioni live (assistente)', BERSAGLIO_MINIMO, daTelefono);
+            await esamina(ap, '/live/' + seme.A.incontro_imminente, 'Incontro in sola lettura (assistente)', BERSAGLIO_MINIMO, daTelefono);
+            await esamina(ap, '/domande-e-risposte?corso=' + seme.A.corso, 'L\'esperto risponde (assistente)', BERSAGLIO_MINIMO, daTelefono);
+            await ctxAss.close();
+        }
         await esamina(tp, '/admin/groups', 'Gruppi (tutor)', BERSAGLIO_MINIMO, daTelefono);
         const righeGruppi = await tp.evaluate(() => [...document.querySelectorAll('.data-table tbody tr')].map((tr) => ({
             gestione: (tr.querySelector('a.group-name') || {}).getAttribute ? tr.querySelector('a.group-name').getAttribute('href') : null,

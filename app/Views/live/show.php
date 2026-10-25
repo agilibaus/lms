@@ -8,6 +8,7 @@ use App\Core\Icona;
 
 /** @var array $session */
 /** @var bool $canManage */
+/** @var bool $vedePresenze chi organizza, e l'assistente in sola lettura (26/10) */
 /** @var array $participants */
 /** @var array<int, array{joined_at: string|null, source: string}> $attendance */
 /** @var bool $hasJoined */
@@ -124,12 +125,16 @@ $apribile = (bool) ($session['joinable'] ?? false);
     </section>
 <?php endif; ?>
 
-<?php if ($canManage): ?>
+<?php if ($vedePresenze): ?>
     <section class="card">
         <h2>Presenze</h2>
         <p class="card-meta">
-            L’ingresso viene registrato quando lo studente apre il Meet da questa piattaforma; qui puoi
-            correggerlo o segnare le presenze a mano, anche a sessione conclusa.
+            <?php if ($canManage): ?>
+                L’ingresso viene registrato quando lo studente apre il Meet da questa piattaforma; qui puoi
+                correggerlo o segnare le presenze a mano, anche a sessione conclusa.
+            <?php else: ?>
+                L’ingresso viene registrato quando lo studente apre il Meet da questa piattaforma.
+            <?php endif; ?>
         </p>
 
         <?php if ($participants === []): ?>
@@ -143,7 +148,9 @@ $apribile = (bool) ($session['joinable'] ?? false);
                     <?= $ordine->th('Partecipante', 'partecipante') ?>
                     <?= $ordine->th('Ingresso', 'ingresso') ?>
                     <?= $ordine->th('Origine', 'origine') ?>
-                    <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                    <?php if ($canManage): ?>
+                        <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                    <?php endif; ?>
                 </tr>
                 </thead>
                 <tbody role="rowgroup">
@@ -173,6 +180,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
                                 <span class="badge badge-danger">assente</span>
                             <?php endif; ?>
                         </td>
+                        <?php if ($canManage): ?>
                         <td role="cell" class="row-actions">
                             <form action="/live/<?= $id ?>/attendance/<?= (int) $participant['id'] ?>" method="post">
                                 <?= Csrf::field() ?>
@@ -182,6 +190,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
                                 </button>
                             </form>
                         </td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -189,7 +198,9 @@ $apribile = (bool) ($session['joinable'] ?? false);
             </div>
         <?php endif; ?>
     </section>
+<?php endif; ?>
 
+<?php if ($canManage): ?>
     <?php /* Solo il comando e una breve spiegazione, senza titolo (Elena,
                  07/10): un titolo «Elimina …» sopra un comando «Elimina
                  definitivamente» diceva la stessa cosa due volte. Un `div` e non

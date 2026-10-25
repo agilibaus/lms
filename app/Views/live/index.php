@@ -7,6 +7,7 @@ use App\Core\Icona;
 
 /** @var array $sessions */
 /** @var bool $canManage */
+/** @var bool $tabella la tabella dello staff: chi organizza, e l'assistente in sola lettura (26/10) */
 /** @var bool $googleConfigured */
 
 $now = new DateTimeImmutable('now');
@@ -25,7 +26,7 @@ $sessions = $ordine->applica($sessions);
     <p class="page-subtitle">
         <?= $canManage
             ? 'Incontri su Google Meet collegati a un modulo di corso o a un gruppo.'
-            : 'Gli incontri dal vivo dei tuoi corsi e gruppi.' ?>
+            : ($tabella ? 'Gli incontri dei gruppi che segui con il tuo tutor, in sola lettura.' : 'Gli incontri dal vivo dei tuoi corsi e gruppi.') ?>
     </p>
     <?php if ($canManage): ?>
         <p><a href="/live/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova sessione</a></p>
@@ -43,7 +44,7 @@ $sessions = $ordine->applica($sessions);
 
 <?php if ($sessions === []): ?>
     <p class="empty-state">Nessuna sessione in programma.</p>
-<?php elseif (!$canManage): ?>
+<?php elseif (!$tabella): ?>
     <?php /* Chi partecipa vede i riquadri dell'Agenda (20/10); la tabella
              e' per chi organizza. */ ?>
     <?php require __DIR__ . '/_elenco.php'; ?>
@@ -126,7 +127,7 @@ $sessions = $ordine->applica($sessions);
                     <?php endif; ?>
                 </td>
                 <td role="cell" class="row-actions">
-                    <?php if ($canManage): ?>
+                    <?php if ($canManage && \App\Core\LiveScope::gestibile($session)): ?>
                         <a href="/live/<?= (int) $session['id'] ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?>Modifica</a>
                     <?php endif; ?>
                 </td>

@@ -56,32 +56,63 @@ $toInput = static function (?string $value): string {
     <input type="datetime-local" id="ends_at" name="ends_at" required
            value="<?= htmlspecialchars($toInput($session['ends_at'] ?? null)) ?>">
 
-    <label for="module_id">Modulo di corso</label>
-    <select id="module_id" name="module_id">
-        <option value="0">— nessuno —</option>
-        <?php foreach ($modules as $module): ?>
-            <option value="<?= (int) $module['id'] ?>"
-                <?= (int) ($session['module_id'] ?? 0) === (int) $module['id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars((string) $module['label']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
+    <?php if ($soloGruppo): ?>
+        <?php /* Il tutor (26/10, conflitto 2): prima il gruppo, obbligatorio;
+                 il modulo e' il tema, facoltativo. Gli incontri per tutto il
+                 corso li crea l'admin. */ ?>
+        <label for="group_id">Gruppo</label>
+        <select id="group_id" name="group_id" required>
+            <?php foreach ($groups as $group): ?>
+                <option value="<?= (int) $group['id'] ?>"
+                    <?= (int) ($session['group_id'] ?? 0) === (int) $group['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars((string) $group['name']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
 
-    <label for="group_id">Gruppo</label>
-    <select id="group_id" name="group_id">
-        <option value="0">— nessuno —</option>
-        <?php foreach ($groups as $group): ?>
-            <option value="<?= (int) $group['id'] ?>"
-                <?= (int) ($session['group_id'] ?? 0) === (int) $group['id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars((string) $group['name']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-    <p class="form-hint">
-        Indica almeno uno dei due. Con il solo modulo l’incontro è per tutti gli iscritti al corso che non l’hanno
-        ancora finito; con un gruppo è solo per quel gruppo, e il modulo ne è il tema: lo studente lo vede da quando
-        il modulo è aperto.
-    </p>
+        <label for="module_id">Modulo (facoltativo)</label>
+        <select id="module_id" name="module_id" aria-describedby="live-destinatari">
+            <option value="0">— nessuno —</option>
+            <?php foreach ($modules as $module): ?>
+                <option value="<?= (int) $module['id'] ?>"
+                    <?= (int) ($session['module_id'] ?? 0) === (int) $module['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars((string) $module['label']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="form-hint" id="live-destinatari">
+            L’incontro è per il gruppo. Il modulo, se lo indichi, ne è il tema: lo studente lo vede da quando il
+            modulo è aperto. Gli incontri per tutto il corso li crea l’amministrazione.
+        </p>
+    <?php else: ?>
+        <label for="module_id">Modulo di corso</label>
+        <select id="module_id" name="module_id">
+            <option value="0">— nessuno —</option>
+            <?php foreach ($modules as $module): ?>
+                <option value="<?= (int) $module['id'] ?>"
+                    <?= (int) ($session['module_id'] ?? 0) === (int) $module['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars((string) $module['label']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <label for="group_id">Gruppo</label>
+        <select id="group_id" name="group_id">
+            <option value="0">— nessuno —</option>
+            <?php foreach ($groups as $group): ?>
+                <option value="<?= (int) $group['id'] ?>"
+                    <?= (int) ($session['group_id'] ?? 0) === (int) $group['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars((string) $group['name']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="form-hint">
+            Indica almeno uno dei due. Con il solo modulo l’incontro è per tutti gli iscritti al corso che non l’hanno
+            ancora finito; con un gruppo è solo per quel gruppo, e il modulo ne è il tema: lo studente lo vede da quando
+            il modulo è aperto.
+        </p>
+
+    <?php endif; ?>
 
     <label for="meet_link">Link Meet manuale (facoltativo)</label>
     <input type="url" id="meet_link" name="meet_link" maxlength="255" placeholder="https://meet.google.com/..."

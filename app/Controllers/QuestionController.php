@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Auth\CourseRights;
+use App\Auth\BachecaScope;
 use App\Core\CourseAccess;
 use App\Core\PersonName;
 use App\Auth\Auth;
@@ -110,21 +110,18 @@ class QuestionController
 
         $studente = Auth::hasRole('studente');
 
-        if (!$studente && !Auth::hasRole('tutor')) {
+        if (!$studente && !Auth::hasRole('tutor', 'assistente')) {
             http_response_code(403);
-            echo 'Questa pagina e\' per gli studenti e i tutor: le domande si gestiscono da «Domande».';
+            echo 'Questa pagina e\' per studenti, tutor e assistenti: le domande si gestiscono da «Domande».';
             return;
         }
 
         $userId = (int) Auth::id();
         // Lo studente vede i corsi a cui e' iscritto; il tutor quelli dei suoi
-        // gruppi (CourseRights::courseIdsFor), in sola lettura.
-        $corsi = $studente
-            ? CourseModel::enrolledForUser($userId)
-            : array_values(array_filter(array_map(
-                static fn (int $id): ?array => CourseModel::find($id),
-                CourseRights::courseIdsFor($userId)
-            )));
+        // gruppi, l'assistente quelli dei suoi tutor (26/10, conflitto 7): gli
+        // stessi della Bacheca, in sola lettura. L'assistente non vede i nomi
+        // (`vedeIlNome`: non e' compagno ne' tutor di nessuno).
+        $corsi = $studente ? CourseModel::enrolledForUser($userId) : BachecaScope::corsi();
         usort($corsi, static fn (array $a, array $b): int => strcasecmp((string) $a['title'], (string) $b['title']));
         $chiesto = (int) ($_GET['corso'] ?? 0);
         $corso = null;

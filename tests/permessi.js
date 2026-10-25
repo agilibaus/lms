@@ -310,9 +310,13 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente del gruppo di un collega'],
 
             ['/courses/' + A.corso, 'consentito', 'è il corso dei suoi gruppi'],
-            ['/lessons/' + A.lezione + '/edit', 'consentito', 'può modificare le lezioni del corso A'],
-            ['/quizzes/' + A.quiz + '/edit', 'consentito', 'può modificare il quiz del corso A'],
-            ['/questions/' + A.domanda + '/edit', 'consentito', 'domanda del suo quiz'],
+            // Dal 26/10 (conflitto 1) i contenuti del corso li modifica solo
+            // l'admin, anche nel corso dei suoi gruppi.
+            ['/lessons/' + A.lezione + '/edit', 'negato', 'le lezioni del corso dei suoi gruppi le modifica l\'admin'],
+            ['/quizzes/' + A.quiz + '/edit', 'negato', 'il quiz del corso dei suoi gruppi lo modifica l\'admin'],
+            ['/questions/' + A.domanda + '/edit', 'negato', 'le domande del quiz le modifica l\'admin'],
+            ['/modules/' + A.modulo + '/edit', 'negato', 'il modulo del corso dei suoi gruppi lo modifica l\'admin'],
+            ['/admin/courses/' + A.corso + '/edit', 'consentito', 'la pagina del corso dei suoi gruppi, con il suo benvenuto e i suoi studenti'],
             ['/reports/courses/' + A.corso, 'consentito', 'report del suo corso'],
             ['/reports/courses/' + A.corso + '/griglia', 'consentito', 'la griglia del suo corso'],
             ['/reports/courses/' + B.corso + '/griglia', 'negato', 'la griglia di un corso non suo'],
@@ -331,10 +335,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/settings', 'negato', 'le impostazioni sono dell\'admin'],
             ['/admin/settings/informazioni', 'negato', 'nemmeno la versione installata (18/10)'],
 
-            // Lo staff non è mai soggetto al rilascio: un modulo che si apre
-            // fra un mese va preparato oggi, e chi lo prepara deve entrarci.
-            ['/lessons/' + A.lezione_chiusa + '/edit', 'consentito',
-                'il tutor prepara il modulo chiuso prima che si apra'],
+            // Lo staff non è mai soggetto al rilascio: il tutor legge il
+            // modulo chiuso prima che si apra (dal 26/10 non lo modifica).
+            ['/lessons/' + A.lezione_chiusa, 'consentito',
+                'il tutor legge il modulo chiuso prima che si apra'],
             ['/live/' + A.incontro_chiuso, 'consentito',
                 'l\'incontro del modulo chiuso è suo da organizzare'],
             ['/gruppi/' + A.gruppo, 'consentito', 'è il tutor del gruppo, anche se non ne è membro'],
@@ -370,11 +374,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/tre-parole?corso=' + A.corso, 'negato', 'le tre parole le leggono il tutor e l\'amministrazione, non l\'assistente'],
             ['/reports/students/' + d.utenti.studenteB, 'negato', 'studente fuori dal suo perimetro'],
             ['/attempts/' + A.tentativo, 'consentito', 'tentativo di uno studente del tutor che segue'],
-            // Gli incontri (17/10): l'assistente apre quelli del suo elenco,
-            // dove compare come destinatario, come uno studente. Quelli dei
-            // gruppi del suo tutor non ci sono, e quindi nemmeno la pagina.
+            // Gli incontri (26/10, conflitto 6): l'assistente vede quelli dei
+            // gruppi del suo tutor, in sola lettura.
             ['/live/' + B.incontro, 'negato', 'incontro di un tutor che non segue'],
-            ['/live/' + A.incontro, 'negato', 'incontro di un gruppo di cui non fa parte: non è nel suo elenco'],
+            ['/live/' + A.incontro, 'consentito', 'incontro del gruppo del tutor che segue'],
+            ['/live/' + A.incontro + '/edit', 'negato', 'ma non lo modifica'],
             ['/attempts/' + B.tentativo, 'negato', 'tentativo di uno studente fuori dal suo perimetro'],
             ['/certificates/' + A.certificato + '/download', 'consentito', 'certificato di uno studente del tutor che segue'],
             ['/certificates/' + B.certificato + '/download', 'negato', 'certificato di uno studente fuori dal suo perimetro'],
@@ -1472,7 +1476,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     ['/live/' + A.incontro, 'negato', 'l\'incontro del gruppo di un\'altra classe dello stesso corso'],
                     ['/live/' + A.incontro + '/edit', 'negato', 'né modificarlo'],
                     ['/reports/live/' + A.incontro, 'negato', 'né nei report'],
-                    ['/live/' + A.incontro_corso, 'consentito', 'controprova: l\'incontro di tutto il corso sì'],
+                    ['/live/' + A.incontro_corso, 'negato', 'nemmeno l\'incontro di tutto il corso: lo gestisce l\'admin'],
                 ]],
                 ['tutor1@test.it', 'tutor A', [
                     ['/live/' + A.incontro + '/edit', 'consentito', 'controprova: l\'incontro del suo gruppo lo modifica'],
@@ -1494,8 +1498,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 if (email === 'tutor3@test.it') {
                     await page.goto(BASE + '/live');
                     const html = await page.content();
-                    check('tutor dell\'altra classe → fra le sessioni live non c\'è l\'incontro del gruppo A',
-                        !html.includes('/live/' + A.incontro + '"') && html.includes('/live/' + A.incontro_corso), []);
+                    check('tutor dell\'altra classe → fra le sessioni live non c\'è l\'incontro del gruppo A né quello di tutto il corso',
+                        !html.includes('/live/' + A.incontro + '"') && !html.includes('/live/' + A.incontro_corso + '"'), []);
                     await page.goto(BASE + '/reports/elenco/courses');
                     const riga = await page.locator('tr', { hasText: '[prova-permessi] mondo A' }).first().innerText();
                     const iscritti = riga.split('\t').map((x) => x.trim())[1];
@@ -1524,6 +1528,73 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await page.goto(BASE + '/reports');
             const avviso = await page.locator('.page-header').innerText();
             check('assistente → in Report l\'avviso dice «dal tuo tutor di riferimento»', avviso.includes('tutor di riferimento'), [avviso]);
+            await ctx.close();
+        }
+
+        // --- tutor e assistente: corso, iscritti, incontri, esperto (26/10) ---
+        //
+        // Conflitti 1, 2, 3, 6 e 7, con le correzioni di Alessandro: i
+        // contenuti e le iscrizioni del corso sono dell'admin; il tutor vede
+        // in «Gestione corsi» i corsi dei suoi gruppi, con il suo benvenuto e
+        // i suoi studenti in sola lettura; vede e crea solo incontri dei suoi
+        // gruppi. L'assistente vede gli incontri dei gruppi del suo tutor in
+        // sola lettura e legge «L'esperto risponde» senza nomi.
+
+        console.log('\n--- tutor e assistente: corso, iscritti, incontri, esperto');
+
+        {
+            let { ctx, page } = await entra(browser, 'tutor1@test.it');
+            await page.goto(BASE + '/courses/' + A.corso + '?moduli=tutti');
+            const modifiche = await page.$$eval('.main-content a[href$="/edit"], .main-content a[href*="/modules/create"]', (a) => a.map((x) => x.getAttribute('href')));
+            check('tutor A → nella pagina del corso dei suoi gruppi nessun comando di modifica', modifiche.length === 0, [JSON.stringify(modifiche)]);
+            await page.goto(BASE + '/admin/courses');
+            const elenco = await page.locator('.main-content').innerText();
+            check('tutor A → in «Gestione corsi» solo i corsi dei suoi gruppi',
+                elenco.includes('[prova-permessi] mondo A') && !elenco.includes('[prova-permessi] mondo B') && !elenco.includes('File sul server'), []);
+            await page.goto(BASE + '/admin/courses/' + A.corso + '/edit');
+            const scheda = await page.locator('.main-content').innerText();
+            const iscritti = await page.$$eval('.main-content td[data-label="Studente"]', (t) => t.map((x) => x.textContent));
+            check('tutor A → nella pagina del corso il suo benvenuto e solo i suoi studenti, senza dati del corso',
+                scheda.includes('Il tuo benvenuto') && !scheda.includes('Dati del corso') && !scheda.includes('Copertina')
+                    && iscritti.some((x) => x.includes('stud@test.it')) && !iscritti.some((x) => x.includes('altrogruppo@test.it')),
+                [JSON.stringify(iscritti)]);
+            const comandi = await page.$$eval('.main-content form[action*="/enrollments"]', (f) => f.length);
+            check('tutor A → non iscrive e non toglie studenti dal corso', comandi === 0, ['moduli: ' + comandi]);
+            for (const [url, campi, perche] of [
+                ['/admin/courses/' + A.corso + '/enrollments', [['user_id', String(d.utenti.studenteNuovo)]], 'iscrivere a mano è dell\'admin'],
+                ['/admin/courses/' + A.corso + '/enrollments/' + d.utenti.studenteA + '/delete', [], 'togliere uno studente dal corso è dell\'admin'],
+            ]) {
+                const r = await esitoPost(page, url, campi, '/admin/courses/' + A.corso + '/edit');
+                check('tutor A → POST ' + url + ': negato', r.esito === 'negato', r.esito === 'negato' ? [] : ['ottenuto «' + r.esito + '» — ' + perche]);
+            }
+            await page.goto(BASE + '/live/create');
+            const gruppo = await page.$eval('#group_id', (g) => ({ obbligatorio: g.required, nessuno: [...g.options].some((o) => o.value === '0') }));
+            check('tutor A → nella nuova sessione il gruppo è obbligatorio', gruppo.obbligatorio && !gruppo.nessuno, [JSON.stringify(gruppo)]);
+            const TITOLO = '[prova-permessi] incontro di tutto il corso scritto a mano';
+            const token = await page.$eval('input[name="_token"]', (i) => i.value);
+            await page.evaluate(async ([t, m, titolo]) => {
+                const dati = new URLSearchParams({ _token: t, title: titolo, starts_at: '2031-01-10T10:00', ends_at: '2031-01-10T11:00', module_id: m, group_id: '0' });
+                await fetch('/live', { method: 'POST', body: dati, credentials: 'same-origin', redirect: 'manual' });
+            }, [token, String(A.modulo), TITOLO]);
+            await ctx.close();
+            ({ ctx, page } = await entra(browser, 'admin@test.it'));
+            await page.goto(BASE + '/live');
+            check('tutor A → un incontro di tutto il corso scritto a mano non si salva', !(await page.content()).includes(TITOLO), []);
+            await ctx.close();
+
+            ({ ctx, page } = await entra(browser, 'assist@test.it'));
+            await page.goto(BASE + '/live');
+            const lista = await page.content();
+            check('assistente → fra le sessioni live gli incontri del gruppo del suo tutor, senza «Nuova sessione» né «Modifica»',
+                lista.includes('/live/' + A.incontro_imminente + '/join') && !lista.includes('/live/create') && !lista.includes('/edit"'), []);
+            await page.goto(BASE + '/live/' + A.incontro_imminente);
+            const pagina = await page.locator('.main-content').innerText();
+            check('assistente → nella pagina dell\'incontro le presenze, senza «Segna presente» né «Elimina»',
+                pagina.includes('Presenze') && !pagina.includes('Segna presente') && !pagina.includes('Elimina sessione') && !pagina.includes('Invia inviti'), []);
+            await page.goto(BASE + '/domande-e-risposte?corso=' + A.corso);
+            const chi = await page.$$eval('.qa-chi', (p) => p.map((x) => x.textContent.trim()).filter((t) => t.startsWith('Chiesto da')));
+            check('assistente → legge «L\'esperto risponde» del corso del suo tutor, senza i nomi',
+                chi.length > 0 && chi.every((t) => t.startsWith('Chiesto da uno studente del corso')), [JSON.stringify(chi)]);
             await ctx.close();
         }
 
@@ -1577,7 +1648,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     ['/admin/courses/' + A.corso + '/edit', [A.corso, 'Corsi', [['Bacheca', B_(A.corso), false, '1'], ['L\'esperto risponde', E_(A.corso), false]]], 'Modifica corso'],
                 ]],
                 ['assist@test.it', 'assistente', [
-                    [B_(A.corso), [A.corso, 'Corsi', [['Bacheca', B_(A.corso), true]]], 'la bacheca che legge; «L\'esperto risponde» non è sua'],
+                    [B_(A.corso), [A.corso, 'Corsi', [['Bacheca', B_(A.corso), true], ['L\'esperto risponde', E_(A.corso), false]]], 'la bacheca che legge, e dal 26/10 «L\'esperto risponde», come il suo tutor'],
                 ]],
                 ['admin@test.it', 'admin', [
                     ['/admin/courses/' + B.corso + '/edit', [B.corso, 'Corsi', [['Bacheca', B_(B.corso), false, '1']]], 'Modifica corso: la Bacheca, e la proposta di B da valutare; «L\'esperto risponde» no, ha «Domande»'],
@@ -1846,7 +1917,9 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 );
             };
 
-            const staff = await entra(browser, 'tutor1@test.it');
+            // Dal 26/10 il quiz lo modifica solo l'admin (conflitto 1): la
+            // via c'e' per lui, e non per il tutor ne' per lo studente.
+            const staff = await entra(browser, 'admin@test.it');
 
             for (const [url, dove] of [
                 ['/courses/' + A.corso, 'dalla pagina del corso'],
@@ -1854,7 +1927,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ]) {
                 const c = await viaDa(staff.page, url);
                 check(
-                    'tutor A → si arriva a modificare il quiz ' + dove,
+                    'admin → si arriva a modificare il quiz ' + dove,
                     c,
                     c ? [] : ['nessun collegamento a /quizzes/' + A.quiz + '/edit']
                 );
@@ -1862,17 +1935,19 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             await staff.ctx.close();
 
-            // Controprova: allo studente quella via non si mostra. Senza,
-            // le due prove qui sopra passerebbero anche con il collegamento
-            // stampato per tutti.
-            const studente = await entra(browser, 'stud@test.it');
-            const visto = await viaDa(studente.page, '/quizzes/' + A.quiz);
-            check(
-                'controprova: allo studente il collegamento non compare',
-                !visto,
-                visto ? ['lo studente vede la via per modificare il quiz'] : []
-            );
-            await studente.ctx.close();
+            // Controprova: al tutor e allo studente quella via non si mostra.
+            // Senza, le due prove qui sopra passerebbero anche con il
+            // collegamento stampato per tutti.
+            for (const [email, chi] of [['tutor1@test.it', 'al tutor'], ['stud@test.it', 'allo studente']]) {
+                const altro = await entra(browser, email);
+                const visto = await viaDa(altro.page, '/courses/' + A.corso) || await viaDa(altro.page, '/quizzes/' + A.quiz);
+                check(
+                    'controprova: ' + chi + ' il collegamento non compare',
+                    !visto,
+                    visto ? ['vede la via per modificare il quiz'] : []
+                );
+                await altro.ctx.close();
+            }
         }
 
         // --- l'agenda: quello che non deve contenere ---------------------

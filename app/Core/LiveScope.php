@@ -24,18 +24,18 @@ use App\Models\UserModel;
  * LE TRE DECISIONI, che non sono la stessa cosa:
  *
  *   - `gestibile()`  — «e' roba mia da organizzare»: l'admin tutto, il
- *     tutor gli incontri dei gruppi di cui e' tutor e quelli di tutto il
- *     corso nei corsi che puo' modificare (26/10: un incontro con un gruppo
- *     e' del suo tutor anche se ha un modulo). E' quella che decide se
- *     compaiono i comandi di modifica.
+ *     tutor gli incontri dei gruppi di cui e' tutor (26/10: un incontro con
+ *     un gruppo e' del suo tutor anche se ha un modulo; quelli di tutto il
+ *     corso sono dell'admin). E' quella che decide se compaiono i comandi
+ *     di modifica.
  *   - `visibile()`   — «lo posso aprire»: se e' nel mio elenco. Dal 17/10;
  *     prima lo staff apriva qualunque incontro, link Meet compreso, anche
  *     quelli che il suo elenco non mostrava.
  *   - `elencoPer()`  — l'elenco che ne esce per chi sta guardando: l'admin
- *     tutto, il tutor gli incontri dei suoi gruppi e quelli di tutto il corso
- *     nei corsi dei suoi gruppi, studenti e assistenti
- *     gli incontri di cui sono destinatari, meno quelli di un modulo non
- *     ancora aperto (§8.7).
+ *     tutto, il tutor gli incontri dei suoi gruppi (26/10), l'assistente
+ *     quelli dei gruppi dei suoi tutor, in sola lettura; gli studenti gli
+ *     incontri di cui sono destinatari, meno quelli di un modulo non ancora
+ *     aperto (§8.7).
  */
 class LiveScope
 {
@@ -141,29 +141,28 @@ class LiveScope
             return array_values(LiveSessionModel::all());
         }
 
-        if ($ruolo === 'tutor') {
-            $corsi = CourseRights::courseIdsFor($userId);
-            $gruppi = array_map(
-                static fn (array $g): int => (int) $g['id'],
-                GroupModel::forTutor($userId)
-            );
+        // Il tutor vede gli incontri dei suoi gruppi, e solo quelli (26/10,
+        // Alessandro, conflitto 2): non quelli del gruppo di un'altra classe
+        // dello stesso corso, e nemmeno quelli di tutto il corso, che sono
+        // dell'admin. L'assistente vede gli stessi dei tutor che affianca, in
+        // sola lettura (conflitto 6): ci entra, non li gestisce.
+        if ($ruolo === 'tutor' || $ruolo === 'assistente') {
+            $tutor = $ruolo === 'tutor' ? [$userId] : UserModel::tutorIdsForAssistant($userId);
+            $gruppi = [];
+
+            foreach ($tutor as $t) {
+                foreach (GroupModel::forTutor($t) as $g) {
+                    $gruppi[] = (int) $g['id'];
+                }
+            }
 
             return array_values(array_filter(
                 LiveSessionModel::all(),
-                static function (array $s) use ($corsi, $gruppi): bool {
-                    // Gli incontri dei suoi gruppi, e quelli di tutto il
-                    // corso nei corsi dei suoi gruppi (26/10): non quelli
-                    // del gruppo di un'altra classe dello stesso corso.
-                    if (!empty($s['group_id'])) {
-                        return in_array((int) $s['group_id'], $gruppi, true);
-                    }
-
-                    return !empty($s['course_id']) && in_array((int) $s['course_id'], $corsi, true);
-                }
+                static fn (array $s): bool => !empty($s['group_id']) && in_array((int) $s['group_id'], $gruppi, true)
             ));
         }
 
-        // Studenti e assistenti: gli incontri di cui sono destinatari, meno
+        // Gli studenti: gli incontri di cui sono destinatari, meno
         // quelli di un modulo non ancora aperto **per loro**. Il blocco si
         // chiede con l'identificativo esplicito, non con quello in
         // sessione, per lo stesso motivo di tutto il resto qui dentro.

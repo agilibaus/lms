@@ -952,26 +952,22 @@ class ReportController
 
     /**
      * Gli incontri di uno studente che chi guarda segue: quelli dei gruppi
-     * del perimetro e quelli di tutto il corso nei corsi che lo studente fa
-     * con lui.
+     * del perimetro (26/10).
      *
      * @return list<array<string, mixed>>
      */
     private function incontriVisibili(int $studentId): array
     {
         $incontri = LiveSessionModel::forUserWithAttendance($studentId);
-        $corsi = StudentScope::corsiDi($studentId);
         $gruppi = StudentScope::gruppiIds();
 
-        if ($corsi === null || $gruppi === null) {
+        if ($gruppi === null) {
             return $incontri;
         }
 
         return array_values(array_filter(
             $incontri,
-            static fn (array $s): bool => !empty($s['group_id'])
-                ? in_array((int) $s['group_id'], $gruppi, true)
-                : !empty($s['course_id']) && in_array((int) $s['course_id'], $corsi, true)
+            static fn (array $s): bool => !empty($s['group_id']) && in_array((int) $s['group_id'], $gruppi, true)
         ));
     }
 
@@ -1056,16 +1052,13 @@ class ReportController
             return true;
         }
 
-        // Un incontro con un gruppo e' di quel gruppo, anche se ha un modulo
-        // (26/10, conflitto 2): si vede se il gruppo e' nel perimetro. Uno
-        // di tutto il corso si vede se il corso e' nel perimetro.
-        if (!empty($session['group_id'])) {
-            $groups = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
+        // Gli incontri dei gruppi del perimetro, e solo quelli (26/10,
+        // conflitto 2): non quelli del gruppo di un'altra classe dello
+        // stesso corso, e nemmeno quelli di tutto il corso, che sono
+        // dell'admin. Le stesse di «Sessioni live» (`LiveScope`).
+        $groups = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
 
-            return in_array((int) $session['group_id'], $groups, true);
-        }
-
-        return !empty($session['course_id']) && in_array((int) $session['course_id'], $courses, true);
+        return !empty($session['group_id']) && in_array((int) $session['group_id'], $groups, true);
     }
 
     /**

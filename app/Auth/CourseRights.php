@@ -9,16 +9,19 @@ use App\Core\Database;
 /**
  * Chi puo' modificare quale corso.
  *
- * La regola, decisa il 28/09 (pistacchio-lms.md §8.0):
+ * DAL 26/10 (Alessandro, conflitto 1 della verifica su tutor e assistente):
+ * **i contenuti del corso li modifica solo l'admin.** Un corso e' di tutte le
+ * classi che lo seguono: con due classi nello stesso corso, il tutor
+ * dell'una cambiava moduli, lezioni, questionari e date anche per l'altra.
+ * Il tutor gestisce quello che e' della sua classe (date del gruppo,
+ * incontri del gruppo, benvenuto, Bacheca) e legge il corso.
  *
- * - l'**admin** modifica tutti i corsi;
- * - il **tutor** modifica solo i corsi assegnati ai **suoi** gruppi, cioe' i
- *   corsi collegati in `group_course_access` ai gruppi di cui e' il tutor;
- * - nessun altro modifica corsi.
+ * Fino al 26/10 valeva la regola del 28/09 (pistacchio-lms.md §8.0): il
+ * tutor modificava i corsi assegnati ai suoi gruppi.
  *
- * Tutti gli altri corsi il tutor li vede in sola lettura. La stessa regola vale
- * per i report, le sessioni live e la correzione dei quiz: e' il perimetro di
- * lavoro del tutor, non solo dei contenuti.
+ * `courseIdsFor()` resta: non dice piu' che cosa il tutor modifica, ma qual
+ * e' il suo perimetro, cioe' i corsi dei suoi gruppi (report, Bacheca,
+ * incontri, il suo benvenuto).
  *
  * Sta in un posto solo di proposito. Prima ogni azione controllava soltanto il
  * ruolo ("sei admin o tutor?"), in una quarantina di punti diversi, e da ognuno
@@ -38,15 +41,7 @@ class CourseRights
             return false;
         }
 
-        if (Auth::hasRole('admin')) {
-            return true;
-        }
-
-        if (!Auth::hasRole('tutor')) {
-            return false;
-        }
-
-        return in_array($courseId, self::tutorCourseIds((int) Auth::id()), true);
+        return Auth::hasRole('admin');
     }
 
     /**
@@ -65,7 +60,7 @@ class CourseRights
 
         if (!self::canEdit($courseId)) {
             http_response_code(403);
-            exit('Accesso negato: questo corso non è assegnato ai tuoi gruppi, puoi solo consultarlo.');
+            exit('Accesso negato: i contenuti del corso li modifica l\'amministrazione, puoi solo consultarlo.');
         }
     }
 
@@ -102,22 +97,14 @@ class CourseRights
     }
 
     /**
-     * Corsi su cui l'utente in sessione lavora: null significa "tutti" (admin).
-     * Serve a restringere elenchi e report senza ripetere la regola.
+     * Corsi che l'utente in sessione modifica: null significa "tutti"
+     * (admin), nessuno per gli altri (dal 26/10).
      *
      * @return int[]|null
      */
     public static function editableCourseIds(): ?array
     {
-        if (Auth::hasRole('admin')) {
-            return null;
-        }
-
-        if (Auth::hasRole('tutor')) {
-            return self::tutorCourseIds((int) Auth::id());
-        }
-
-        return [];
+        return Auth::hasRole('admin') ? null : [];
     }
 
     /**
@@ -132,14 +119,13 @@ class CourseRights
     // ---------------------------------------------------------------
 
     /**
-     * I corsi che un tutor puo' modificare, **senza passare dalla
-     * sessione**.
+     * I corsi dei gruppi di un tutor — il suo perimetro, non piu' quello che
+     * modifica (26/10) — **senza passare dalla sessione**.
      *
      * Serve al calendario sottoscritto, che risponde a un programma e non
      * a una persona: li' `Auth` non c'e', ma la regola di chi vede cosa
-     * dev'essere la stessa di sempre. Da qui la stessa query di
-     * `canEdit()`, chiamata con un identificativo esplicito invece che con
-     * quello in sessione.
+     * dev'essere la stessa di sempre: per questo si chiama con un
+     * identificativo esplicito invece che con quello in sessione.
      *
      * @return int[]
      */
