@@ -32,8 +32,8 @@ $campo = static fn (?string $d): string => $d === null ? '' : str_replace(' ', '
     <form action="/admin/groups/<?= $groupId ?>/courses/<?= $courseId ?>/date" method="post" class="form">
         <?= Csrf::field() ?>
         <p class="form-hint">
-            Lascia vuoto per allineare la data del modulo alla data del corso. Con una data, per gli studenti di
-            questo gruppo il modulo si apre quel giorno, e ricevono l’email dell’apertura.
+            Lascia vuoto per seguire l’avanzamento del corso. Con una data, per gli studenti di questo gruppo il
+            modulo si apre quel giorno, e ricevono l’email dell’apertura.
         </p>
 
         <?php if ($modules === []): ?>

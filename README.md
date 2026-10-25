@@ -745,8 +745,19 @@ non ne aveva bisogno: scrive i testi come testo. `tests/csv_test.php` prova le c
 
 ## Sessioni live (Google Meet)
 
-Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**: i
-partecipanti attesi sono gli iscritti al corso del modulo e i membri del gruppo. Le sessioni si
+Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**. **Chi è
+atteso lo dice una regola sola** (25/10, `LiveSessionModel::atteso()`), usata da elenco, ingresso,
+pagina della lezione, inviti di Google, promemoria, report e Griglia del corso:
+
+- **con un gruppo**, con o senza modulo, i membri del gruppo. Il modulo è il tema, e decide da
+  quando lo studente vede l'incontro. Prima, con modulo e gruppo, si sommavano gli iscritti al
+  corso e il gruppo, e l'incontro di una classe arrivava a tutte le altre, link Meet compreso;
+- **con il solo modulo**, cioè tutto il corso, gli iscritti al corso che si sono iscritti prima
+  della fine dell'incontro e che, quando l'incontro è stato creato, non avevano ancora finito il
+  corso. Per gli altri l'incontro è «non previsto»: non lo vedono e nella Griglia non risultano
+  assenti.
+
+Le sessioni si
 gestiscono da `/live` (permesso `course.edit`: admin e tutor); gli studenti vedono solo quelle
 che li riguardano. **Un incontro si apre solo se è nel proprio elenco** (17/10, `LiveScope`):
 l'admin tutti, il tutor quelli dei suoi corsi e dei suoi gruppi, studenti e assistenti quelli di
@@ -1359,8 +1370,13 @@ ricerca sta in fondo.
   **scarta**, e lo studente la vede «Non pubblicata».
 - **L'archivio lo vedono tutti gli iscritti al corso, di ogni gruppo**, diviso per modulo
   nell'ordine del corso con «Il corso in generale» in fondo, ciascuna domanda in un `details`.
-  L'autore compare **come ha scelto nel profilo** (`PersonName::shown()`); lo staff lo vede
-  per intero. **La ricerca** cerca nelle domande e nelle risposte, senza JavaScript
+  **La risposta è di tutti, la persona è della classe** (25/10, la regola della Bacheca):
+  - una domanda su un modulo si legge quando quel modulo è aperto per chi guarda; lo staff le
+    legge tutte, e quelle sul corso in generale sono sempre visibili. Si chiede solo sui moduli
+    aperti: il menu non offre i chiusi, e il server li rifiuta;
+  - il nome di chi ha chiesto, **come l'ha scelto nel profilo** (`PersonName::shown()`), lo
+    vedono lui, i compagni dei suoi gruppi del corso e il tutor di quei gruppi, che lo vede per
+    intero; per tutti gli altri, tutor compresi, è «uno studente del corso». **La ricerca** cerca nelle domande e nelle risposte, senza JavaScript
   (`?corso=…&cerca=…` sulla pagina «L'esperto risponde»); `%` e `_` si cercano come testo.
 - **Correggere e togliere** (08/10). Nella pagina «Domande», sotto quelle in attesa, la parte
   **«Pubblicate»**, divisa per corso: ogni domanda si apre per correggere domanda, modulo e
