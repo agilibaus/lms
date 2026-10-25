@@ -63,7 +63,8 @@ $members = $ordineMembri->applica($members);
     <h2>Corsi assegnati</h2>
     <p class="card-meta">
         Assegnare un corso iscrive tutti i membri del gruppo; chi entra dopo viene iscritto automaticamente.
-        Rimuovendo il corso le iscrizioni già create restano attive.
+        Rimuovendo il corso le iscrizioni già create restano attive. Ogni corso ha le date di apertura dei
+        moduli; con «Date dei moduli» questo gruppo può avere le sue.
     </p>
 
     <?php if ($courses === []): ?>
@@ -73,6 +74,8 @@ $members = $ordineMembri->applica($members);
             <?php foreach ($courses as $course): ?>
                 <li>
                     <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
+                    <?php /* Le date dei moduli per questo gruppo (26/10, conflitto 3). */ ?>
+                    <a href="/admin/groups/<?= $groupId ?>/courses/<?= (int) $course['id'] ?>/date" class="link-btn comando-con-icona"><?= Icona::svg('pencil') ?>Date dei moduli</a>
                     <form action="/admin/groups/<?= $groupId ?>/courses/<?= (int) $course['id'] ?>/delete" method="post"
                           onsubmit="return confirm('Rimuovere il corso dal gruppo? Gli iscritti restano tali.');">
                         <?= Csrf::field() ?>

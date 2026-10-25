@@ -13,6 +13,8 @@ use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
+use App\Models\GroupModuleDateModel;
+use App\Models\ModuleModel;
 use App\Models\UserModel;
 
 /**
@@ -356,6 +358,92 @@ class GroupController extends AdminController
             'Corso rimosso dal gruppo. Gli iscritti restano tali: rimuovili dalla scheda del corso se necessario.',
             '/admin/groups/' . (int) $group['id'] . '/edit'
         );
+    }
+
+    /**
+     * «Date dei moduli» (26/10, Alessandro, conflitto 3): le date di apertura
+     * dei moduli di un corso per questo gruppo. Le gestisce chi gestisce il
+     * gruppo, solo per i corsi assegnati al gruppo.
+     */
+    public function moduleDatesForm(array $params): void
+    {
+        [$group, $course] = $this->groupCourse($params);
+
+        if ($group === null) {
+            return;
+        }
+
+        View::render('admin/groups/module_dates', [
+            'pageTitle' => 'Date dei moduli',
+            'group' => $group,
+            'course' => $course,
+            'modules' => ModuleModel::forCourse((int) $course['id']),
+            'dates' => GroupModuleDateModel::forGroupCourse((int) $group['id'], (int) $course['id']),
+        ]);
+    }
+
+    public function saveModuleDates(array $params): void
+    {
+        [$group, $course] = $this->groupCourse($params);
+
+        if ($group === null) {
+            return;
+        }
+
+        $date = [];
+
+        foreach ((array) ($_POST['date'] ?? []) as $moduleId => $valore) {
+            $date[(int) $moduleId] = self::dataDalCampo((string) $valore);
+        }
+
+        GroupModuleDateModel::save((int) $group['id'], (int) $course['id'], $date);
+        $this->success('Date dei moduli salvate.', '/admin/groups/' . (int) $group['id'] . '/edit');
+    }
+
+    /**
+     * Il gruppo, se chi chiede lo gestisce, e il corso, se e' assegnato al
+     * gruppo; altrimenti risponde (403 o 404) e torna [null, null].
+     *
+     * @return array{0: ?array<string, mixed>, 1: ?array<string, mixed>}
+     */
+    private function groupCourse(array $params): array
+    {
+        $this->requireGroupAccess();
+        $group = $this->findManageableGroup((int) $params['id']);
+
+        if ($group === null) {
+            return [null, null];
+        }
+
+        $courseId = (int) $params['courseId'];
+        $course = in_array($courseId, GroupModel::courseIds((int) $group['id']), true) ? CourseModel::find($courseId) : null;
+
+        if ($course === null) {
+            $this->notFound('Corso non assegnato a questo gruppo.');
+
+            return [null, null];
+        }
+
+        return [$group, $course];
+    }
+
+    /**
+     * Il valore di un campo `datetime-local`, o null se vuoto: il gruppo
+     * segue la data del corso. Come per «Disponibile dal» del modulo, una
+     * data incomprensibile (un POST costruito a mano) diventa null.
+     */
+    private static function dataDalCampo(string $valore): ?string
+    {
+        $valore = trim($valore);
+
+        if ($valore === '') {
+            return null;
+        }
+
+        $data = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $valore)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $valore);
+
+        return $data === false ? null : $data->format('Y-m-d H:i:s');
     }
 
     // ---------------------------------------------------------------

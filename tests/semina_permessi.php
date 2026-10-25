@@ -706,6 +706,28 @@ $domanda->execute(['c' => $a['corso'], 'm' => $a['modulo_chiuso'], 's' => $stude
     'q' => 'Domanda sul modulo chiuso del mondo A?', 'r' => 'Risposta sul modulo chiuso.', 'by' => $admin]);
 $a['domanda_modulo_chiuso'] = (int) $pdo->lastInsertId();
 
+// Le date dei moduli per gruppo (26/10, conflitto 3): un modulo del corso A
+// che per il corso si apre fra trenta giorni, per l'altra classe si e'
+// aperto ieri e per il gruppo di A si apre fra venti. Lo studente
+// dell'altra classe ne apre la lezione, quello di A no, e vede la data del
+// suo gruppo. L'altra classe e' iscritta da cinque giorni, cosi' l'apertura
+// di ieri le deve l'email (e l'incontro del corso passato, finito dieci
+// giorni fa, resta non suo).
+$pdo->prepare('UPDATE enrollments SET enrolled_at = NOW() - INTERVAL 5 DAY WHERE user_id = :u AND course_id = :c')
+    ->execute(['u' => $altroGruppo, 'c' => $a['corso']]);
+// Con l'obiettivo, come gli altri moduli del corso A: la pagina del corso
+// da staff li vuole tutti completi (`accessibilita.js`).
+$pdo->prepare('INSERT INTO modules (course_id, title, objective, position, available_from) VALUES (:c, :t, :o, 3, NOW() + INTERVAL 30 DAY)')
+    ->execute(['c' => $a['corso'], 't' => MARCHIO . ' mondo A modulo con le date del gruppo', 'o' => 'Aprirsi quando la classe è pronta.']);
+$a['modulo_gruppo'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO lessons (module_id, title, content_html, position) VALUES (:m, :t, :h, 0)')
+    ->execute(['m' => $a['modulo_gruppo'], 't' => MARCHIO . ' mondo A lezione con le date del gruppo', 'h' => '<p>Si apre con la data del gruppo.</p>']);
+$a['lezione_gruppo'] = (int) $pdo->lastInsertId();
+$dataGruppo = $pdo->prepare('INSERT INTO group_module_dates (group_id, module_id, available_from) VALUES (:g, :m, NOW() + INTERVAL :n DAY)');
+$dataGruppo->execute(['g' => $a['altra_classe'], 'm' => $a['modulo_gruppo'], 'n' => -1]);
+$dataGruppo->execute(['g' => $a['gruppo'], 'm' => $a['modulo_gruppo'], 'n' => 20]);
+$a['data_gruppo_A'] = (string) $pdo->query("SELECT DATE_FORMAT(NOW() + INTERVAL 20 DAY, '%Y-%m-%d')")->fetchColumn();
+
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
 // no, e nel loro benvenuto non deve comparire niente. Si riscrivono a ogni

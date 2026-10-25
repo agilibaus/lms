@@ -242,6 +242,8 @@ $router->post('/admin/groups/{id}/members', [AdminGroupController::class, 'addMe
 $router->post('/admin/groups/{id}/members/{userId}/delete', [AdminGroupController::class, 'removeMember']);
 $router->post('/admin/groups/{id}/courses', [AdminGroupController::class, 'addCourse']);
 $router->post('/admin/groups/{id}/courses/{courseId}/delete', [AdminGroupController::class, 'removeCourse']);
+$router->get('/admin/groups/{id}/courses/{courseId}/date', [AdminGroupController::class, 'moduleDatesForm']);
+$router->post('/admin/groups/{id}/courses/{courseId}/date', [AdminGroupController::class, 'saveModuleDates']);
 
 $router->get('/admin/courses', [AdminCourseController::class, 'index']);
 $router->get('/admin/courses/create', [AdminCourseController::class, 'createForm']);

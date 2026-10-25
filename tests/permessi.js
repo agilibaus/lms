@@ -1369,6 +1369,92 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
 
+        // --- le date dei moduli per gruppo (26/10, conflitto 3) -------------
+        //
+        // Il modulo «con le date del gruppo» per il corso si apre fra trenta
+        // giorni, per l'altra classe si e' aperto ieri, per il gruppo di A si
+        // apre fra venti. La data dello studente vale ovunque: l'ingresso,
+        // la pagina del corso, l'agenda, il riepilogo dei corsi e le email
+        // dell'apertura. Le date le scrive chi gestisce il gruppo.
+
+        console.log('\n--- le date dei moduli per gruppo');
+
+        {
+            const D = (g, c) => '/admin/groups/' + g + '/courses/' + c + '/date';
+            const PORTE = [
+                ['stud@test.it', 'studente A', [
+                    ['/lessons/' + A.lezione_gruppo, 'negato', 'per il suo gruppo il modulo si apre fra venti giorni'],
+                    [D(A.gruppo, A.corso), 'negato', 'le date del gruppo non sono sue da scrivere'],
+                ]],
+                ['altrogruppo@test.it', 'studente dell\'altra classe', [
+                    ['/lessons/' + A.lezione_gruppo, 'consentito', 'per il suo gruppo il modulo si è aperto ieri, anche se per il corso no'],
+                    ['/lessons/' + A.lezione_chiusa, 'negato', 'controprova: dove il suo gruppo non ha date vale quella del corso'],
+                ]],
+                ['tutor1@test.it', 'tutor A', [
+                    [D(A.gruppo, A.corso), 'consentito', 'le date del suo gruppo'],
+                    [D(A.altra_classe, A.corso), 'negato', 'non quelle del gruppo di un collega'],
+                    [D(A.gruppo, B.corso), 'negato', 'non per un corso che il gruppo non ha'],
+                ]],
+                ['tutor3@test.it', 'tutor dell\'altra classe', [
+                    [D(A.altra_classe, A.corso), 'consentito', 'le date del suo gruppo'],
+                    [D(A.gruppo, A.corso), 'negato', 'non quelle del gruppo di un collega'],
+                ]],
+            ];
+            for (const [email, nome, prove] of PORTE) {
+                const { ctx, page } = await entra(browser, email);
+                for (const [url, atteso, perche] of prove) {
+                    const r = await esitoGet(page, url);
+                    check(nome + ' → ' + url + ': ' + atteso, r.esito === atteso,
+                        r.esito === atteso ? [] : ['ottenuto «' + r.esito + '» (' + r.come + ') — ' + perche]);
+                }
+                if (email === 'stud@test.it') {
+                    const [y, m, g] = A.data_gruppo_A.split('-').map(Number);
+                    const attesa = g + '/' + m + '/' + y;
+                    await page.goto(BASE + '/courses/' + A.corso + '?moduli=tutti');
+                    const testo = await page.locator('#modulo-' + A.modulo_gruppo).innerText();
+                    check('studente A → nella pagina del corso il modulo si apre alla data del suo gruppo, non del corso',
+                        testo.includes(attesa), ['cercato «' + attesa + '»']);
+                }
+                if (email === 'tutor3@test.it') {
+                    const negato = await esitoPost(page, D(A.gruppo, A.corso), [['date[' + A.modulo_gruppo + ']', '']], D(A.altra_classe, A.corso));
+                    check('tutor dell\'altra classe → non salva le date del gruppo di un collega', negato.esito === 'negato', [negato.come]);
+                }
+                await ctx.close();
+            }
+
+            // Le altre tre strade della stessa data, lette dai modelli: le
+            // email dell'apertura, l'agenda e il riepilogo dei corsi.
+            const radice = path.join(__dirname, '..');
+            const codice = `require 'vendor/autoload.php';
+                $p = array_values(array_filter(App\\Models\\ModuleUnlockModel::pending(5000), fn ($r) => (int) $r['module_id'] === ${A.modulo_gruppo}));
+                $agenda = null;
+                foreach (App\\Models\\AgendaModel::apertureDi(${d.utenti.studenteA}) as $r) { if ((int) $r['id'] === ${A.modulo_gruppo}) { $agenda = substr((string) $r['available_from'], 0, 10); } }
+                echo json_encode(['email' => array_map('intval', array_column($p, 'user_id')), 'agenda' => $agenda,
+                    'prossima' => substr((string) (App\\Models\\LessonProgressModel::availabilitySummary(${d.utenti.studenteA})[${A.corso}]['prossima'] ?? ''), 0, 10)]);`;
+            const m = JSON.parse(execFileSync('php', ['-r', codice], { encoding: 'utf8', cwd: radice }));
+            check('email dell\'apertura → allo studente dell\'altra classe, per cui il modulo si è aperto ieri, e non allo studente di A',
+                m.email.includes(d.utenti.altroGruppo) && !m.email.includes(d.utenti.studenteA), [JSON.stringify(m)]);
+            check('agenda dello studente A → l\'apertura alla data del suo gruppo', m.agenda === A.data_gruppo_A, [JSON.stringify(m)]);
+            check('riepilogo dei corsi dello studente A → la prossima apertura è quella del suo gruppo', m.prossima === A.data_gruppo_A, [JSON.stringify(m)]);
+
+            // Salvare e togliere una data: si scrive, si rilegge, si toglie.
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            const input = 'input[name="date[' + A.modulo_dopo + ']"]';
+            await page.goto(BASE + D(A.gruppo, A.corso));
+            await page.fill(input, '2031-03-15T09:00');
+            await Promise.all([page.waitForNavigation(), page.click('.main-content form button[type=submit]')]);
+            await page.goto(BASE + D(A.gruppo, A.corso));
+            const salvata = await page.inputValue(input);
+            await page.fill(input, '');
+            await Promise.all([page.waitForNavigation(), page.click('.main-content form button[type=submit]')]);
+            await page.goto(BASE + D(A.gruppo, A.corso));
+            const tolta = await page.inputValue(input);
+            const restaLaltra = await page.inputValue('input[name="date[' + A.modulo_gruppo + ']"]');
+            check('admin → una data del gruppo si salva e si toglie, e le altre restano',
+                salvata === '2031-03-15T09:00' && tolta === '' && restaLaltra !== '', [JSON.stringify({ salvata, tolta, restaLaltra })]);
+            await ctx.close();
+        }
+
         // --- il ramo del corso nella sidebar (17/10, variante C) -------------
         //
         // Bacheca e «L'esperto risponde» compaiono solo dentro un corso, in un

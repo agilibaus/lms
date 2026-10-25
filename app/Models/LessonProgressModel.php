@@ -88,7 +88,7 @@ class LessonProgressModel
              INNER JOIN lessons l ON l.module_id = m.id
              LEFT JOIN lesson_progress lp ON lp.lesson_id = l.id AND lp.user_id = e.user_id
              WHERE e.user_id = :user_id
-               AND (m.available_from IS NULL OR m.available_from <= NOW())
+               AND (' . ModuleModel::dataPer('e.user_id') . ' IS NULL OR ' . ModuleModel::dataPer('e.user_id') . ' <= NOW())
              GROUP BY m.course_id'
         );
         $stmt->execute(['user_id' => $userId]);
@@ -104,10 +104,10 @@ class LessonProgressModel
         }
 
         $stmt = $db->prepare(
-            'SELECT m.course_id, MIN(m.available_from) AS prossima
+            'SELECT m.course_id, MIN(' . ModuleModel::dataPer('e.user_id') . ') AS prossima
              FROM enrollments e
              INNER JOIN modules m ON m.course_id = e.course_id
-             WHERE e.user_id = :user_id AND m.available_from > NOW()
+             WHERE e.user_id = :user_id AND ' . ModuleModel::dataPer('e.user_id') . ' > NOW()
              GROUP BY m.course_id'
         );
         $stmt->execute(['user_id' => $userId]);

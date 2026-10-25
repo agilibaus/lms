@@ -15,8 +15,9 @@ use App\Models\QuizModel;
  * Due regole indipendenti chiudono un modulo, e una basta:
  *
  *   per data   il modulo ha `available_from` nel futuro. E' il rilascio
- *              progressivo (§8.7): una data di calendario uguale per tutti
- *              gli studenti. Campo vuoto = sempre aperto.
+ *              progressivo (§8.7): la data del corso, o quella del gruppo
+ *              dello studente se ne ha una (26/10, `ModuleModel::dataPer`).
+ *              Campo vuoto = sempre aperto.
  *   per quiz   un modulo precedente ha `quiz_required` e il suo quiz non e'
  *              ancora stato superato. Questa regola **incatena**: blocca
  *              tutti i moduli che vengono dopo, non solo il primo.
@@ -49,7 +50,9 @@ class CourseAccess
         $locks = [];
         $catena = false;
 
-        foreach (ModuleModel::forCourse($courseId) as $module) {
+        // Con la data dello studente: quella del suo gruppo, se ne ha una
+        // (26/10, `ModuleModel::dataPer`).
+        foreach (ModuleModel::forCourse($courseId, $userId) as $module) {
             $moduleId = (int) $module['id'];
 
             // La data per prima: e' il motivo piu' preciso da mostrare, e

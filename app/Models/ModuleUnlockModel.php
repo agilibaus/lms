@@ -38,6 +38,10 @@ class ModuleUnlockModel
      * passata, anche settimane dopo. Il modulo chiuso da un questionario non
      * superato lo esclude il comando, che sa calcolarlo (`CourseAccess`).
      *
+     * La data e' quella dello studente (26/10): del suo gruppo, se ne ha
+     * una, altrimenti del corso. Una classe che comincia a marzo riceve
+     * l'avviso quando il modulo si apre per lei.
+     *
      * Il limite e' la cintura: se il comando resta fermo a lungo e si
      * riaccende, parte un blocco per volta invece di una raffica.
      *
@@ -47,6 +51,10 @@ class ModuleUnlockModel
      */
     public static function pending(int $limit = 500): array
     {
+        // La data di ciascuno studente: quella del suo gruppo, se ne ha una
+        // (26/10, `ModuleModel::dataPer`).
+        $data = ModuleModel::dataPer('u.id');
+
         $stmt = Database::connection()->prepare(
             "SELECT m.id AS module_id, u.id AS user_id, u.email, u.full_name,
                     m.title AS module_title, c.id AS course_id, c.title AS course_title
@@ -56,14 +64,14 @@ class ModuleUnlockModel
              INNER JOIN users u ON u.id = e.user_id
              LEFT JOIN module_unlock_notifications n
                     ON n.module_id = m.id AND n.user_id = u.id
-             WHERE m.available_from IS NOT NULL
-               AND m.available_from <= NOW()
+             WHERE {$data} IS NOT NULL
+               AND {$data} <= NOW()
                AND c.is_published = 1
                AND u.is_active = 1
                AND u.role = 'studente'
-               AND e.enrolled_at <= m.available_from
+               AND e.enrolled_at <= {$data}
                AND n.id IS NULL
-             ORDER BY m.available_from, m.id, u.id
+             ORDER BY {$data}, m.id, u.id
              LIMIT " . (int) max(1, $limit)
         );
         $stmt->execute();

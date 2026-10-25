@@ -62,7 +62,8 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
         Lascia vuoto per tenere il modulo aperto da subito. Con una data, gli studenti
         vedono il titolo del modulo in grigio con l’indicazione di quando si aprirà, e
         non possono aprirne le lezioni, i questionari, i materiali né gli incontri dal vivo.
-        La data è uguale per tutti gli studenti e il giorno dell’apertura ricevono un’email.
+        È la data di tutto il corso: un gruppo può averne una sua, da «Date dei moduli» nella pagina del
+        gruppo. Il giorno dell’apertura gli studenti ricevono un’email.
     </p>
 
     <?php /* «Annulla» accanto a «Crea modulo» e a «Salva» (14/10, Alessandro:

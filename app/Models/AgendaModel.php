@@ -50,14 +50,15 @@ class AgendaModel
      * dopo un po' ci pensa la vista, che mostra il passato richiuso.
      *
      * `available_from IS NOT NULL` esclude i moduli senza data, che sono
-     * sempre aperti e quindi non sono un evento di nessun giorno.
+     * sempre aperti e quindi non sono un evento di nessun giorno. La data e'
+     * la sua: quella del suo gruppo, se ne ha una (26/10).
      *
      * @return array<int, array<string, mixed>>
      */
     public static function apertureDi(int $userId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT m.id, m.title, m.available_from, m.course_id,
+            'SELECT m.id, m.title, ' . ModuleModel::dataPer('e.user_id') . ' AS available_from, m.course_id,
                     c.title AS course_title,
                     (SELECT l.id FROM lessons l
                       WHERE l.module_id = m.id
@@ -65,8 +66,8 @@ class AgendaModel
                FROM modules m
                JOIN courses c ON c.id = m.course_id
                JOIN enrollments e ON e.course_id = m.course_id AND e.user_id = :user_id
-              WHERE m.available_from IS NOT NULL
-              ORDER BY m.available_from'
+              WHERE ' . ModuleModel::dataPer('e.user_id') . ' IS NOT NULL
+              ORDER BY available_from'
         );
         $stmt->execute(['user_id' => $userId]);
 

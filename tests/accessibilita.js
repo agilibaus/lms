@@ -585,6 +585,9 @@ PAGINE_INTERNE.push(
     ['/lessons/' + SEMINATI.lezione + '/fruizione', 'Fruizione senza durata (semina)'],
     ['/questions/' + SEMINATI.domanda_vero_falso + '/edit', 'Modifica domanda vero/falso (semina)'],
     ['/admin/groups/' + SEMINATI.gruppo + '/edit', 'Modifica gruppo con corso (semina)'],
+    // Le date dei moduli del gruppo (26/10): una tabella con un campo data
+    // per riga, che sul telefono diventa schede.
+    ['/admin/groups/' + SEMINATI.gruppo + '/courses/' + SEMINATI.corso + '/date', 'Date dei moduli del gruppo (semina)'],
     ['/reports/groups/' + SEMINATI.gruppo, 'Report per gruppo con certificato (semina)'],
     // Il gruppo da otto con il tutor al centro: e' il solo che fa un cerchio
     // vero, con nomi sui due fianchi, in alto e in basso, e uno lungo.
@@ -1650,7 +1653,8 @@ EXTRA['Corso con obiettivi, da staff (semina)'] = async (page, nome) => {
         gerarchia: document.querySelectorAll('.moduli-barra, details.modulo-riga, .etichetta-modulo, .lezioni-fatte, .da-qui, .modulo-in-corso').length,
     }));
     check(nome + ': obiettivo del corso e di ogni modulo completi', stato.corso === 1 && stato.ridotti === 0
-        && stato.moduli.length === 3 && stato.moduli.every(Boolean), [JSON.stringify(stato)]);
+        // Quattro moduli nel corso A della semina, dal 26/10.
+        && stato.moduli.length === 4 && stato.moduli.every(Boolean), [JSON.stringify(stato)]);
     check(nome + ': tutti i moduli aperti, senza etichette né «Riprendi»', stato.gerarchia === 0, [JSON.stringify(stato)]);
 };
 
@@ -2317,7 +2321,9 @@ async function giroBenvenuto(browser) {
             }));
             await altra.close();
             check('gerarchia: «Mostra tutti i moduli» apre tutto, e il comando diventa «Mostra solo il modulo in corso»',
-                tutti.carte === 3 && tutti.righe === 0 && tutti.comando === 'Mostra solo il modulo in corso', [JSON.stringify(tutti)]);
+                // Quattro: i moduli del corso A della semina (dal 26/10 anche
+                // quello con le date del gruppo).
+                tutti.carte === 4 && tutti.righe === 0 && tutti.comando === 'Mostra solo il modulo in corso', [JSON.stringify(tutti)]);
         }
 
         await page.goto(BASE + url);

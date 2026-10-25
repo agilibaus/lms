@@ -238,6 +238,19 @@ CREATE TABLE modules (
     INDEX idx_modules_available_from (available_from)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- La data di apertura di un modulo per un gruppo (26/10): vale per gli
+-- studenti del gruppo al posto di quella del modulo (`ModuleModel::dataPer`).
+-- Nessuna riga = il gruppo segue la data del corso.
+CREATE TABLE group_module_dates (
+    group_id        INT UNSIGNED NOT NULL,
+    module_id       INT UNSIGNED NOT NULL,
+    available_from  DATETIME NOT NULL,
+    PRIMARY KEY (group_id, module_id),
+    KEY idx_group_module_dates_module (module_id),
+    CONSTRAINT fk_group_module_dates_group FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_module_dates_module FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Un'email di sblocco gia' mandata. La riga si scrive PRIMA dell'invio:
 -- la chiave unica e' cio' che impedisce i doppioni.
 CREATE TABLE module_unlock_notifications (

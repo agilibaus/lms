@@ -24,16 +24,48 @@ class ModuleModel
      * `available_from` NULL vuol dire «sempre aperto»: e' il comportamento di
      * tutti i moduli che esistevano prima di questa funzione.
      */
-    public static function forCourse(int $courseId): array
+    public static function forCourse(int $courseId, ?int $userId = null): array
     {
+        // Con lo studente, la data e' la sua (`dataPer`, 26/10): quella del
+        // suo gruppo, se ne ha una, altrimenti quella del corso.
+        $data = $userId === null ? 'm.available_from' : self::dataPer((string) $userId);
         $stmt = Database::connection()->prepare(
-            'SELECT id, course_id, title, objective, position, quiz_required, available_from,
-                    (available_from IS NULL OR available_from <= NOW()) AS is_available
-             FROM modules WHERE course_id = :course_id ORDER BY position, id'
+            "SELECT m.id, m.course_id, m.title, m.objective, m.position, m.quiz_required,
+                    {$data} AS available_from,
+                    ({$data} IS NULL OR {$data} <= NOW()) AS is_available
+             FROM modules m WHERE m.course_id = :course_id ORDER BY m.position, m.id"
         );
         $stmt->execute(['course_id' => $courseId]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * LA DATA DI APERTURA PER UNO STUDENTE (26/10, Alessandro, conflitto 3).
+     *
+     * La data sul modulo e' quella di tutto il corso. Un gruppo — la classe —
+     * ne puo' avere una sua (`group_module_dates`, dalla pagina del gruppo):
+     * per lo studente vale quella del suo gruppo, se c'e', altrimenti quella
+     * del corso. Se e' in piu' gruppi del corso con una data loro, vale la
+     * piu' vicina. Contano solo i gruppi che hanno il corso.
+     *
+     * Prima la data era di calendario e uguale per tutti: una classe che
+     * cominciava a marzo trovava aperti i moduli di novembre, senza le email
+     * dell'apertura.
+     *
+     * E' un'espressione SQL sul modulo `$m` e sull'utente dato, un id
+     * numerico o una colonna: la usano il blocco (`CourseAccess`), il riepilogo
+     * dei corsi, l'agenda e le email dell'apertura. NULL = aperto da subito.
+     */
+    public static function dataPer(string $utente, string $m = 'm'): string
+    {
+        return "COALESCE((SELECT MIN(gmd.available_from)
+                            FROM group_module_dates gmd
+                            INNER JOIN group_members gm_d ON gm_d.group_id = gmd.group_id
+                            INNER JOIN group_course_access gca_d
+                                    ON gca_d.group_id = gmd.group_id AND gca_d.course_id = {$m}.course_id
+                           WHERE gmd.module_id = {$m}.id AND gm_d.user_id = {$utente}),
+                         {$m}.available_from)";
     }
 
     /**
