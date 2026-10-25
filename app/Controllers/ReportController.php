@@ -16,7 +16,6 @@ use App\Core\Xlsx;
 use App\Models\CourseModel;
 use App\Models\GrigliaCorsoModel;
 use App\Models\GroupModel;
-use App\Models\LiveSessionAttendanceModel;
 use App\Models\LiveSessionModel;
 use App\Models\QuizAttemptModel;
 use App\Models\ReportModel;
@@ -56,7 +55,7 @@ class ReportController
             'pageTitle' => 'Report',
             'sezioni' => ReportSections::tutte(),
             'conteggi' => $sezioni,
-            'fermi' => count(StudentiFermiModel::elenco(StudentiFermi::SOGLIA_INIZIALE, $this->allowedStudentIds())),
+            'fermi' => count($this->fermiNelPerimetro(StudentiFermi::SOGLIA_INIZIALE)),
             'restricted' => $this->allowedStudentIds() !== null,
         ]);
     }
@@ -78,7 +77,7 @@ class ReportController
             'pageTitle' => 'Studenti fermi',
             'soglia' => $soglia,
             'ordine' => $ordine,
-            'righe' => $ordine->applica(StudentiFermiModel::elenco($soglia, $this->allowedStudentIds())),
+            'righe' => $ordine->applica($this->fermiNelPerimetro($soglia)),
             'restricted' => $this->allowedStudentIds() !== null,
         ]);
     }
@@ -115,7 +114,7 @@ class ReportController
         $xlsx = $formato === 'xlsx';
         $righe = [];
 
-        foreach ($ordine->applica(StudentiFermiModel::elenco($soglia, $this->allowedStudentIds())) as $r) {
+        foreach ($ordine->applica($this->fermiNelPerimetro($soglia)) as $r) {
             $righe[] = [
                 $r['full_name'],
                 $r['email'],
@@ -197,14 +196,16 @@ class ReportController
     {
         switch ($chiave) {
             case 'courses':
-                return $this->filterCourses(ReportModel::coursesOverview());
+                // I numeri contano solo gli studenti del perimetro (26/10,
+                // conflitto 5), come le righe che si aprono dal corso.
+                return $this->filterCourses(ReportModel::coursesOverview(StudentScope::sqlNelPerimetro('%u', 'c.id')));
 
             case 'groups':
                 return $this->visibleGroups();
 
             case 'students':
                 $allowed = $this->allowedStudentIds();
-                $students = ReportModel::studentsOverview();
+                $students = ReportModel::studentsOverview(StudentScope::sqlNelPerimetro('u.id', '%c'));
 
                 if ($allowed !== null) {
                     $students = array_values(array_filter(
@@ -216,7 +217,7 @@ class ReportController
                 return $students;
 
             case 'live':
-                return $this->filterSessions(LiveSessionModel::overview());
+                return $this->filterSessions(LiveSessionModel::overview(StudentScope::sqlNelPerimetro('%u', 'm.course_id')));
 
             case 'fruizione':
                 return $this->filterCourses(VideoProgressModel::coursesWithVideo());
@@ -531,7 +532,7 @@ class ReportController
             'gruppi' => $gruppi,
             'gruppo' => $gruppo,
             'ordine' => $ordine,
-            'studenti' => $ordine->applica(GrigliaCorsoModel::studenti((int) $course['id'], $moduli, $this->allowedStudentIds(), $gruppo)),
+            'studenti' => $ordine->applica(GrigliaCorsoModel::studenti((int) $course['id'], $moduli, StudentScope::studentiNelCorso((int) $course['id']), $gruppo)),
             'restricted' => $this->allowedStudentIds() !== null,
         ];
     }
@@ -638,7 +639,7 @@ class ReportController
         $lezioni = VideoProgressModel::videoLessonsForCourse($courseId);
         $righe = VideoProgressModel::courseMatrix($courseId, $lezioni);
 
-        $allowed = $this->allowedStudentIds();
+        $allowed = StudentScope::studentiNelCorso($courseId);
 
         if ($allowed !== null) {
             $righe = array_values(array_filter(
@@ -664,7 +665,7 @@ class ReportController
             return;
         }
 
-        $courses = ReportModel::studentDetail((int) $student['id']);
+        $courses = $this->corsiVisibili((int) $student['id'], ReportModel::studentDetail((int) $student['id']));
         $quizzesByCourse = [];
 
         foreach ($courses as $course) {
@@ -674,13 +675,15 @@ class ReportController
             );
         }
 
+        $incontri = $this->incontriVisibili((int) $student['id']);
+
         View::render('reports/student', [
             'pageTitle' => 'Report · ' . $student['full_name'],
             'student' => $student,
             'courses' => $courses,
             'quizzesByCourse' => $quizzesByCourse,
-            'liveAttendance' => LiveSessionAttendanceModel::summaryForUser((int) $student['id']),
-            'liveSessions' => LiveSessionModel::forUserWithAttendance((int) $student['id']),
+            'liveAttendance' => self::presenze($incontri),
+            'liveSessions' => $incontri,
         ]);
     }
 
@@ -699,7 +702,7 @@ class ReportController
 
         $rows = [];
 
-        foreach (ReportModel::studentDetail((int) $student['id']) as $row) {
+        foreach ($this->corsiVisibili((int) $student['id'], ReportModel::studentDetail((int) $student['id'])) as $row) {
             $rows[] = [
                 $row['course_title'],
                 $row['enrolled_at'],
@@ -715,7 +718,7 @@ class ReportController
         // allargare la tabella con campi che per i corsi resterebbero vuoti,
         // si aggiungono in fondo, dopo una riga bianca e una loro intestazione.
         // Un foglio di calcolo li legge come un secondo blocco.
-        $sessions = LiveSessionModel::forUserWithAttendance((int) $student['id']);
+        $sessions = $this->incontriVisibili((int) $student['id']);
 
         if ($sessions !== []) {
             $rows[] = [];
@@ -904,6 +907,88 @@ class ReportController
         return StudentScope::studentIds();
     }
 
+    /**
+     * Gli Studenti fermi del perimetro: solo le coppie studente-corso che
+     * chi guarda segue (26/10).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fermiNelPerimetro(int $soglia): array
+    {
+        $righe = StudentiFermiModel::elenco($soglia, $this->allowedStudentIds());
+        $coppie = StudentScope::coppie();
+
+        if ($coppie === null) {
+            return $righe;
+        }
+
+        return array_values(array_filter(
+            $righe,
+            static fn (array $r): bool => in_array((int) $r['course_id'], $coppie[(int) $r['user_id']] ?? [], true)
+        ));
+    }
+
+    /**
+     * Dei corsi di uno studente, quelli che chi guarda segue (26/10,
+     * conflitto 4): i corsi che lo studente fa in un gruppo dei tutor del
+     * perimetro.
+     *
+     * @param list<array<string, mixed>> $corsi
+     * @return list<array<string, mixed>>
+     */
+    private function corsiVisibili(int $studentId, array $corsi): array
+    {
+        $visibili = StudentScope::corsiDi($studentId);
+
+        if ($visibili === null) {
+            return $corsi;
+        }
+
+        return array_values(array_filter(
+            $corsi,
+            static fn (array $c): bool => in_array((int) $c['course_id'], $visibili, true)
+        ));
+    }
+
+    /**
+     * Gli incontri di uno studente che chi guarda segue: quelli dei gruppi
+     * del perimetro e quelli di tutto il corso nei corsi che lo studente fa
+     * con lui.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function incontriVisibili(int $studentId): array
+    {
+        $incontri = LiveSessionModel::forUserWithAttendance($studentId);
+        $corsi = StudentScope::corsiDi($studentId);
+        $gruppi = StudentScope::gruppiIds();
+
+        if ($corsi === null || $gruppi === null) {
+            return $incontri;
+        }
+
+        return array_values(array_filter(
+            $incontri,
+            static fn (array $s): bool => !empty($s['group_id'])
+                ? in_array((int) $s['group_id'], $gruppi, true)
+                : !empty($s['course_id']) && in_array((int) $s['course_id'], $corsi, true)
+        ));
+    }
+
+    /**
+     * Presenze sugli incontri dati: quanti seguiti, su quanti attesi.
+     *
+     * @param list<array<string, mixed>> $incontri
+     * @return array{attended: int, total: int}
+     */
+    private static function presenze(array $incontri): array
+    {
+        return [
+            'attended' => count(array_filter($incontri, static fn (array $s): bool => $s['joined_at'] !== null)),
+            'total' => count($incontri),
+        ];
+    }
+
     private function visibleGroups(): array
     {
         $tutors = $this->scopeTutorIds();
@@ -971,13 +1056,16 @@ class ReportController
             return true;
         }
 
-        if (!empty($session['course_id']) && in_array((int) $session['course_id'], $courses, true)) {
-            return true;
+        // Un incontro con un gruppo e' di quel gruppo, anche se ha un modulo
+        // (26/10, conflitto 2): si vede se il gruppo e' nel perimetro. Uno
+        // di tutto il corso si vede se il corso e' nel perimetro.
+        if (!empty($session['group_id'])) {
+            $groups = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
+
+            return in_array((int) $session['group_id'], $groups, true);
         }
 
-        $groups = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
-
-        return !empty($session['group_id']) && in_array((int) $session['group_id'], $groups, true);
+        return !empty($session['course_id']) && in_array((int) $session['course_id'], $courses, true);
     }
 
     /**
@@ -1021,7 +1109,7 @@ class ReportController
     private function courseRows(int $courseId): array
     {
         $rows = ReportModel::courseDetail($courseId);
-        $allowed = $this->allowedStudentIds();
+        $allowed = StudentScope::studentiNelCorso($courseId);
 
         if ($allowed === null) {
             return $rows;
@@ -1087,7 +1175,13 @@ class ReportController
     private function liveSessionRows(int $sessionId): array
     {
         $rows = LiveSessionModel::participantsWithAttendance($sessionId);
-        $allowed = $this->allowedStudentIds();
+        // Di un incontro di tutto il corso, gli studenti di quel corso nel
+        // perimetro (26/10); di un incontro di gruppo, i membri del gruppo,
+        // che sono tutti nel perimetro se il gruppo lo e'.
+        $sessione = LiveSessionModel::find($sessionId);
+        $allowed = !empty($sessione['group_id']) || empty($sessione['course_id'])
+            ? $this->allowedStudentIds()
+            : StudentScope::studentiNelCorso((int) $sessione['course_id']);
 
         if ($allowed === null) {
             return $rows;

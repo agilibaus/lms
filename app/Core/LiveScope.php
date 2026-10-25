@@ -24,13 +24,16 @@ use App\Models\UserModel;
  * LE TRE DECISIONI, che non sono la stessa cosa:
  *
  *   - `gestibile()`  — «e' roba mia da organizzare»: l'admin tutto, il
- *     tutor i corsi che puo' modificare e i gruppi di cui e' tutor. E'
- *     quella che decide se compaiono i comandi di modifica.
+ *     tutor gli incontri dei gruppi di cui e' tutor e quelli di tutto il
+ *     corso nei corsi che puo' modificare (26/10: un incontro con un gruppo
+ *     e' del suo tutor anche se ha un modulo). E' quella che decide se
+ *     compaiono i comandi di modifica.
  *   - `visibile()`   — «lo posso aprire»: se e' nel mio elenco. Dal 17/10;
  *     prima lo staff apriva qualunque incontro, link Meet compreso, anche
  *     quelli che il suo elenco non mostrava.
  *   - `elencoPer()`  — l'elenco che ne esce per chi sta guardando: l'admin
- *     tutto, il tutor i suoi corsi e i suoi gruppi, studenti e assistenti
+ *     tutto, il tutor gli incontri dei suoi gruppi e quelli di tutto il corso
+ *     nei corsi dei suoi gruppi, studenti e assistenti
  *     gli incontri di cui sono destinatari, meno quelli di un modulo non
  *     ancora aperto (§8.7).
  */
@@ -42,14 +45,16 @@ class LiveScope
             return true;
         }
 
-        if (
-            !empty($session['module_id']) && isset($session['course_id'])
-            && CourseRights::canEdit((int) $session['course_id'])
-        ) {
-            return true;
+        // Un incontro con un gruppo e' del gruppo anche se ha un modulo
+        // (26/10, conflitto 2): lo gestisce il tutor di quel gruppo, non il
+        // tutor di un'altra classe dello stesso corso. Uno di tutto il corso
+        // lo gestisce chi puo' modificare il corso.
+        if (!empty($session['group_id'])) {
+            return self::gruppoMio((int) $session['group_id']);
         }
 
-        return !empty($session['group_id']) && self::gruppoMio((int) $session['group_id']);
+        return !empty($session['module_id']) && isset($session['course_id'])
+            && CourseRights::canEdit((int) $session['course_id']);
     }
 
     /**
@@ -146,11 +151,14 @@ class LiveScope
             return array_values(array_filter(
                 LiveSessionModel::all(),
                 static function (array $s) use ($corsi, $gruppi): bool {
-                    if (!empty($s['course_id']) && in_array((int) $s['course_id'], $corsi, true)) {
-                        return true;
+                    // Gli incontri dei suoi gruppi, e quelli di tutto il
+                    // corso nei corsi dei suoi gruppi (26/10): non quelli
+                    // del gruppo di un'altra classe dello stesso corso.
+                    if (!empty($s['group_id'])) {
+                        return in_array((int) $s['group_id'], $gruppi, true);
                     }
 
-                    return !empty($s['group_id']) && in_array((int) $s['group_id'], $gruppi, true);
+                    return !empty($s['course_id']) && in_array((int) $s['course_id'], $corsi, true);
                 }
             ));
         }

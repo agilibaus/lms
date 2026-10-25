@@ -728,6 +728,31 @@ $dataGruppo->execute(['g' => $a['altra_classe'], 'm' => $a['modulo_gruppo'], 'n'
 $dataGruppo->execute(['g' => $a['gruppo'], 'm' => $a['modulo_gruppo'], 'n' => 20]);
 $a['data_gruppo_A'] = (string) $pdo->query("SELECT DATE_FORMAT(NOW() + INTERVAL 20 DAY, '%Y-%m-%d')")->fetchColumn();
 
+// Lo studente seguito porta con se' solo i corsi che fa con chi lo segue
+// (26/10, conflitto 4 su tutor e assistente). Un corso C senza gruppi, a cui
+// lo studente di A e' iscritto da solo, con un tentativo e un certificato: il
+// tutor di A, che lo segue nel corso A, non ne vede niente; l'admin si'.
+// «Un corso…» perche' venga dopo «mondo A» in ordine alfabetico: lo
+// studente che apre la Bacheca di un corso non suo torna al primo dei suoi.
+$pdo->prepare('INSERT INTO courses (title, slug, description, is_published, enrollment_mode, created_by)
+               VALUES (:t, :s, "Corso senza gruppi della verifica dei permessi.", 1, "open", :a)')
+    ->execute(['t' => MARCHIO . ' un corso senza gruppi', 's' => 'prova-permessi-c-' . bin2hex(random_bytes(4)), 'a' => $admin]);
+$c = ['corso' => (int) $pdo->lastInsertId()];
+$pdo->prepare('INSERT INTO modules (course_id, title, position) VALUES (:c, :t, 0)')
+    ->execute(['c' => $c['corso'], 't' => MARCHIO . ' corso senza gruppi, modulo']);
+$c['modulo'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (:m, :t, 60)')
+    ->execute(['m' => $c['modulo'], 't' => MARCHIO . ' corso senza gruppi, quiz']);
+$c['quiz'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO enrollments (user_id, course_id) VALUES (:u, :c)')->execute(['u' => $studenteA, 'c' => $c['corso']]);
+$pdo->prepare('INSERT INTO quiz_attempts (user_id, quiz_id, score_pct, passed) VALUES (:u, :q, 0, 0)')
+    ->execute(['u' => $studenteA, 'q' => $c['quiz']]);
+$c['tentativo'] = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO certificates (user_id, course_id, certificate_code, file_path, issued_by)
+               VALUES (:u, :c, :k, "certificates/prova-permessi.pdf", :a)')
+    ->execute(['u' => $studenteA, 'c' => $c['corso'], 'k' => 'PROVA-C-' . strtoupper(bin2hex(random_bytes(6))), 'a' => $admin]);
+$c['certificato'] = (int) $pdo->lastInsertId();
+
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
 // no, e nel loro benvenuto non deve comparire niente. Si riscrivono a ogni
@@ -849,4 +874,5 @@ echo json_encode([
     'risposta_nascosta' => $rispostaNascosta,
     'A' => $a,
     'B' => $b,
+    'C' => $c,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL;

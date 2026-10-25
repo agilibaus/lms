@@ -15,16 +15,23 @@ class ReportModel
 {
     /**
      * Elenco corsi con numero di iscritti, completati e certificati emessi.
+     *
+     * `$perimetro` (26/10) e' la condizione SQL di `StudentScope::sqlNelPerimetro`
+     * con `%u` al posto dello studente: i numeri contano solo gli studenti
+     * che chi guarda segue. null = tutti.
      */
-    public static function coursesOverview(): array
+    public static function coursesOverview(?string $perimetro = null): array
     {
+        $e = $perimetro === null ? '' : ' AND ' . str_replace('%u', 'e.user_id', $perimetro);
+        $ce = $perimetro === null ? '' : ' AND ' . str_replace('%u', 'ce.user_id', $perimetro);
+
         return Database::connection()->query(
-            'SELECT c.id, c.title, c.is_published,
-                    (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrolled_count,
-                    (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id AND e.completed_at IS NOT NULL) AS completed_count,
-                    (SELECT COUNT(*) FROM certificates ce WHERE ce.course_id = c.id AND ce.revoked_at IS NULL) AS certificate_count
+            "SELECT c.id, c.title, c.is_published,
+                    (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id{$e}) AS enrolled_count,
+                    (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id AND e.completed_at IS NOT NULL{$e}) AS completed_count,
+                    (SELECT COUNT(*) FROM certificates ce WHERE ce.course_id = c.id AND ce.revoked_at IS NULL{$ce}) AS certificate_count
              FROM courses c
-             ORDER BY c.title'
+             ORDER BY c.title"
         )->fetchAll();
     }
 
@@ -89,13 +96,20 @@ class ReportModel
 
     /**
      * Elenco studenti con numero di iscrizioni e certificati.
+     *
+     * `$perimetro` (26/10): la condizione di `StudentScope::sqlNelPerimetro`
+     * con `%c` al posto del corso; contano solo i corsi che chi guarda segue
+     * con quello studente. null = tutti.
      */
-    public static function studentsOverview(): array
+    public static function studentsOverview(?string $perimetro = null): array
     {
+        $e = $perimetro === null ? '' : ' AND ' . str_replace('%c', 'e.course_id', $perimetro);
+        $c = $perimetro === null ? '' : ' AND ' . str_replace('%c', 'c.course_id', $perimetro);
+
         return Database::connection()->query(
             "SELECT u.id, u.full_name, u.email, u.is_active,
-                    (SELECT COUNT(*) FROM enrollments e WHERE e.user_id = u.id) AS enrolled_count,
-                    (SELECT COUNT(*) FROM certificates c WHERE c.user_id = u.id AND c.revoked_at IS NULL) AS certificate_count
+                    (SELECT COUNT(*) FROM enrollments e WHERE e.user_id = u.id{$e}) AS enrolled_count,
+                    (SELECT COUNT(*) FROM certificates c WHERE c.user_id = u.id AND c.revoked_at IS NULL{$c}) AS certificate_count
              FROM users u
              WHERE u.role = 'studente'
              ORDER BY u.full_name, u.email"

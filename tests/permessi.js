@@ -1455,6 +1455,78 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
 
+        // --- tutor e assistente: il perimetro sul corso (26/10) --------------
+        //
+        // Conflitti 2, 4 e 5 della verifica su tutor e assistente, e il testo
+        // sbagliato. Un incontro con un gruppo e' del tutor di quel gruppo,
+        // anche se ha un modulo; di uno studente il tutor vede i corsi che
+        // fa con lui (il corso C, senza gruppi, no); i numeri dei report
+        // contano solo i suoi studenti.
+
+        console.log('\n--- tutor e assistente: il perimetro sul corso');
+
+        {
+            const C = d.C;
+            const PORTE = [
+                ['tutor3@test.it', 'tutor dell\'altra classe', [
+                    ['/live/' + A.incontro, 'negato', 'l\'incontro del gruppo di un\'altra classe dello stesso corso'],
+                    ['/live/' + A.incontro + '/edit', 'negato', 'né modificarlo'],
+                    ['/reports/live/' + A.incontro, 'negato', 'né nei report'],
+                    ['/live/' + A.incontro_corso, 'consentito', 'controprova: l\'incontro di tutto il corso sì'],
+                ]],
+                ['tutor1@test.it', 'tutor A', [
+                    ['/live/' + A.incontro + '/edit', 'consentito', 'controprova: l\'incontro del suo gruppo lo modifica'],
+                    ['/attempts/' + C.tentativo, 'negato', 'il tentativo del suo studente in un corso che non segue'],
+                    ['/certificates/' + C.certificato + '/download', 'negato', 'il certificato del suo studente in un corso che non segue'],
+                    ['/attempts/' + A.tentativo, 'consentito', 'controprova: il tentativo nel corso A sì'],
+                ]],
+                ['admin@test.it', 'amministratore', [
+                    ['/attempts/' + C.tentativo, 'consentito', 'controprova: l\'admin vede tutto'],
+                ]],
+            ];
+            for (const [email, nome, prove] of PORTE) {
+                const { ctx, page } = await entra(browser, email);
+                for (const [url, atteso, perche] of prove) {
+                    const r = await esitoGet(page, url);
+                    check(nome + ' → ' + url + ': ' + atteso, r.esito === atteso,
+                        r.esito === atteso ? [] : ['ottenuto «' + r.esito + '» (' + r.come + ') — ' + perche]);
+                }
+                if (email === 'tutor3@test.it') {
+                    await page.goto(BASE + '/live');
+                    const html = await page.content();
+                    check('tutor dell\'altra classe → fra le sessioni live non c\'è l\'incontro del gruppo A',
+                        !html.includes('/live/' + A.incontro + '"') && html.includes('/live/' + A.incontro_corso), []);
+                    await page.goto(BASE + '/reports/elenco/courses');
+                    const riga = await page.locator('tr', { hasText: '[prova-permessi] mondo A' }).first().innerText();
+                    const iscritti = riga.split('\t').map((x) => x.trim())[1];
+                    check('tutor dell\'altra classe → nei report «Corsi» il corso A conta solo il suo studente', iscritti === '1', [riga]);
+                    await page.goto(BASE + '/reports/elenco/live');
+                    const live = await page.content();
+                    check('tutor dell\'altra classe → nei report «Incontri» non c\'è l\'incontro del gruppo A',
+                        !live.includes('/reports/live/' + A.incontro + '"'), []);
+                    await page.goto(BASE + '/reports');
+                    const avviso = await page.locator('.page-header').innerText();
+                    check('tutor → in Report l\'avviso dice «dei gruppi che segui»',
+                        avviso.includes('dei gruppi che segui') && !avviso.includes('tutor di riferimento'), [avviso]);
+                }
+                if (email === 'tutor1@test.it') {
+                    await page.goto(BASE + '/reports/students/' + d.utenti.studenteA);
+                    const testo = await page.locator('.main-content').innerText();
+                    check('tutor A → nel report del suo studente il corso A c\'è e il corso senza gruppi no',
+                        testo.includes('[prova-permessi] mondo A') && !testo.includes('corso senza gruppi'), []);
+                    await page.goto(BASE + '/certificates');
+                    const cert = await page.locator('.main-content').innerText();
+                    check('tutor A → fra i certificati non c\'è quello del corso senza gruppi', !cert.includes('corso senza gruppi'), []);
+                }
+                await ctx.close();
+            }
+            const { ctx, page } = await entra(browser, 'assist@test.it');
+            await page.goto(BASE + '/reports');
+            const avviso = await page.locator('.page-header').innerText();
+            check('assistente → in Report l\'avviso dice «dal tuo tutor di riferimento»', avviso.includes('tutor di riferimento'), [avviso]);
+            await ctx.close();
+        }
+
         // --- il ramo del corso nella sidebar (17/10, variante C) -------------
         //
         // Bacheca e «L'esperto risponde» compaiono solo dentro un corso, in un

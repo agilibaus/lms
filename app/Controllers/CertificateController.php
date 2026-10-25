@@ -29,7 +29,13 @@ class CertificateController
         View::render('certificates/index', [
             'pageTitle' => 'Certificati',
             'isStaff' => $isStaff,
-            'certificates' => $isStaff ? CertificateModel::all(StudentScope::studentIds()) : CertificateModel::forUser((int) Auth::id()),
+            // Dal 26/10 solo nei corsi che chi guarda segue con lo studente.
+            'certificates' => $isStaff
+                ? array_values(array_filter(
+                    CertificateModel::all(StudentScope::studentIds()),
+                    static fn (array $c): bool => StudentScope::puoVedereNelCorso((int) $c['user_id'], (int) $c['course_id'])
+                ))
+                : CertificateModel::forUser((int) Auth::id()),
             'dompdfAvailable' => CertificateService::dompdfAvailable(),
         ]);
     }
@@ -49,7 +55,8 @@ class CertificateController
         // Il proprio, o quello di uno studente che si segue, come l'elenco
         // (17/10). Prima bastava essere staff per scaricare quello di
         // chiunque.
-        if ((int) $certificate['user_id'] !== (int) Auth::id() && !StudentScope::puoVedere((int) $certificate['user_id'])) {
+        if ((int) $certificate['user_id'] !== (int) Auth::id()
+            && !StudentScope::puoVedereNelCorso((int) $certificate['user_id'], (int) $certificate['course_id'])) {
             http_response_code(403);
             echo 'Non puoi scaricare questo certificato.';
             return;

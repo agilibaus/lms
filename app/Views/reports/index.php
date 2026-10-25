@@ -27,7 +27,11 @@ use App\Core\StudentiFermi;
     </p>
     <?php if ($restricted): ?>
         <p class="page-subtitle">
-            Stai vedendo solo gli studenti dei gruppi seguiti dal tuo tutor di riferimento.
+            <?php /* Al tutor «che segui», all'assistente «del tuo tutor» (26/10):
+                     prima il tutor leggeva la frase dell'assistente. */ ?>
+            <?= \App\Auth\Auth::hasRole('assistente')
+                ? 'Stai vedendo solo gli studenti dei gruppi seguiti dal tuo tutor di riferimento.'
+                : 'Stai vedendo solo gli studenti dei gruppi che segui.' ?>
         </p>
     <?php endif; ?>
 </div>

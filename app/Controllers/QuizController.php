@@ -627,16 +627,22 @@ class QuizController
         // segue, con la stessa regola del report dello studente da cui si
         // arriva qui (17/10, StudentScope). Prima bastava il ruolo: qualunque
         // tutor o assistente apriva il tentativo di qualunque studente.
-        if ((int) $attempt['user_id'] !== (int) Auth::id() && !StudentScope::puoVedere((int) $attempt['user_id'])) {
-            http_response_code(403);
-            echo 'Non puoi consultare questo tentativo.';
-            return;
-        }
-
         $quiz = QuizModel::find((int) $attempt['quiz_id']);
 
         if ($quiz === null) {
             $this->notFound('Tentativo non trovato.');
+            return;
+        }
+
+        // Dal 26/10 anche nel corso giusto: dello studente si vedono i corsi
+        // che fa con chi guarda (`StudentScope::puoVedereNelCorso`), non i
+        // tentativi di un corso seguito con un altro tutor.
+        $corsoDelQuiz = (int) (ModuleModel::find((int) $quiz['module_id'])['course_id'] ?? 0);
+
+        if ((int) $attempt['user_id'] !== (int) Auth::id()
+            && !StudentScope::puoVedereNelCorso((int) $attempt['user_id'], $corsoDelQuiz)) {
+            http_response_code(403);
+            echo 'Non puoi consultare questo tentativo.';
             return;
         }
         $module = ModuleModel::find((int) $quiz['module_id']);

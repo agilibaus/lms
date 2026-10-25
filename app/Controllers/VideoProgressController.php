@@ -340,7 +340,8 @@ class VideoProgressController
             $durata > 0 ? $durata : null
         );
 
-        $studenti = StudentScope::studentIds();
+        // Gli studenti di questo corso che chi guarda segue (26/10).
+        $studenti = StudentScope::studentiNelCorso((int) $module['course_id']);
 
         if ($studenti !== null) {
             $righe = array_values(array_filter(

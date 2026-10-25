@@ -439,17 +439,24 @@ class LiveSessionModel
      *
      * @return array<int, array<string, mixed>>
      */
-    public static function overview(): array
+    public static function overview(?string $perimetro = null): array
     {
+        // Con il perimetro (26/10, `StudentScope::sqlNelPerimetro`, `%u` per
+        // lo studente) gli incontri di tutto il corso contano solo gli
+        // studenti che chi guarda segue; quelli di gruppo arrivano qui solo
+        // se il gruppo e' suo, e contano tutti i suoi membri.
+        $a = $perimetro === null ? '' : ' AND (ls.group_id IS NOT NULL OR ' . str_replace('%u', 'a.user_id', $perimetro) . ')';
+        $u = $perimetro === null ? '' : ' AND (ls.group_id IS NOT NULL OR ' . str_replace('%u', 'u.id', $perimetro) . ')';
+
         return Database::connection()->query(
             'SELECT ls.id, ls.title, ls.starts_at, ls.ends_at,
                     m.title AS module_title,
                     c.title AS course_title,
                     g.name AS group_name,
                     (SELECT COUNT(*) FROM live_session_attendance a
-                      WHERE a.session_id = ls.id AND a.joined_at IS NOT NULL) AS attended,
+                      WHERE a.session_id = ls.id AND a.joined_at IS NOT NULL' . $a . ') AS attended,
                     (SELECT COUNT(*) FROM users u
-                      WHERE u.is_active = 1 AND ' . self::atteso('u.id') . ') AS expected
+                      WHERE u.is_active = 1 AND ' . self::atteso('u.id') . $u . ') AS expected
              FROM live_sessions ls
              LEFT JOIN modules m ON m.id = ls.module_id
              LEFT JOIN courses c ON c.id = m.course_id
@@ -466,7 +473,7 @@ class LiveSessionModel
     public static function forUserWithAttendance(int $userId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT ls.id, ls.title, ls.starts_at, ls.ends_at,
+            'SELECT ls.id, ls.title, ls.starts_at, ls.ends_at, ls.group_id, m.course_id,
                     c.title AS course_title,
                     g.name AS group_name,
                     a.joined_at, a.source,
