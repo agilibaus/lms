@@ -179,6 +179,15 @@ class MeetCalendar
             'summary' => $title,
             'start' => ['dateTime' => $start->format(\DateTimeInterface::RFC3339), 'timeZone' => $this->timeZone],
             'end' => ['dateTime' => $end->format(\DateTimeInterface::RFC3339), 'timeZone' => $this->timeZone],
+            // Privacy (26/10, Alessandro): ogni invitato vede solo se stesso.
+            // Di default Google mostra a tutti la lista degli invitati, con
+            // le email: i compagni, e in un incontro di tutto il corso gli
+            // studenti di ogni classe, che la piattaforma non mostra mai. E
+            // nessun invitato puo' aggiungerne altri. Vale anche negli
+            // aggiornamenti (PATCH): un evento creato prima si sistema
+            // salvando l'incontro.
+            'guestsCanSeeOtherGuests' => false,
+            'guestsCanInviteOthers' => false,
         ];
 
         if ($description !== null && $description !== '') {

@@ -136,6 +136,10 @@ check('requestId presente', !empty($payload['conferenceData']['createRequest']['
 check('fuso orario Europe/Rome', $payload['start']['timeZone'] === 'Europe/Rome');
 check('inizio in RFC3339', $payload['start']['dateTime'] === '2026-09-20T18:30:00+02:00');
 check('due invitati validi (email malformata scartata)', count($payload['attendees']) === 2);
+// Privacy (26/10): la lista degli invitati non si mostra agli invitati, e
+// nessuno di loro ne aggiunge altri.
+check('gli invitati non vedono gli altri invitati', ($payload['guestsCanSeeOtherGuests'] ?? null) === false);
+check('gli invitati non ne invitano altri', ($payload['guestsCanInviteOthers'] ?? null) === false);
 
 // Il token viene riusato: la seconda chiamata non ripassa dal token endpoint.
 $transport2 = new FakeTransport([
@@ -207,6 +211,21 @@ $entryTransport = new FakeTransport([
 $calendar6 = new MeetCalendar(new ServiceAccountClient($credentials['client_email'], $credentials['private_key'], null, $entryTransport));
 $event6 = $calendar6->createEvent('Y', null, new DateTimeImmutable('2026-09-20 10:00'), new DateTimeImmutable('2026-09-20 11:00'));
 check('link video estratto da entryPoints', $event6['meet_link'] === 'https://meet.google.com/xyz-abcd-efg');
+
+// ---------------------------------------------------------------
+echo PHP_EOL . "Aggiornamento evento: la lista degli invitati resta nascosta" . PHP_EOL;
+
+// Un evento creato prima del 26/10 si sistema salvando l'incontro: anche il
+// PATCH porta le due impostazioni.
+$updTransport = new FakeTransport([
+    ['status' => 200, 'body' => json_encode(['access_token' => 't', 'expires_in' => 3600])],
+    ['status' => 200, 'body' => json_encode(['id' => 'evt_u', 'hangoutLink' => 'https://meet.google.com/u'])],
+]);
+$calendar7 = new MeetCalendar(new ServiceAccountClient($credentials['client_email'], $credentials['private_key'], null, $updTransport));
+$calendar7->updateEvent('evt_u', 'Z', null, new DateTimeImmutable('2026-09-20 10:00'), new DateTimeImmutable('2026-09-20 11:00'), ['sara@example.com']);
+$upd = json_decode($updTransport->requests[1]['body'], true);
+check('PATCH: gli invitati non vedono gli altri invitati', $updTransport->requests[1]['method'] === 'PATCH' && ($upd['guestsCanSeeOtherGuests'] ?? null) === false);
+check('PATCH: gli invitati non ne invitano altri', ($upd['guestsCanInviteOthers'] ?? null) === false);
 
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail === 0 ? 0 : 1);
