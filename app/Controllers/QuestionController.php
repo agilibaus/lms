@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\CourseRights;
+use App\Core\CourseAccess;
 use App\Core\PersonName;
 use App\Auth\Auth;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\BoardModel;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\ModuleModel;
@@ -28,6 +30,15 @@ use App\Models\UserModel;
  *   - L'archivio, «L'esperto risponde», lo leggono gli studenti dei loro
  *     corsi e i tutor dei corsi dei loro gruppi, «esattamente come uno
  *     studente» (Elena): in sola lettura.
+ *
+ * Dal 25/10 (Alessandro), la regola della Bacheca: la risposta e' di tutti,
+ * la persona e' della classe.
+ *   - Una domanda su un modulo si legge quando quel modulo e' aperto per chi
+ *     guarda (`CourseAccess`); lo staff le legge tutte. Si chiede solo sui
+ *     moduli aperti. Quelle sul corso in generale si leggono sempre.
+ *   - Il nome di chi ha chiesto lo vedono lui, i compagni dei suoi gruppi del
+ *     corso e il tutor di quei gruppi; per gli altri e' «uno studente del
+ *     corso».
  */
 class QuestionController
 {
@@ -64,6 +75,13 @@ class QuestionController
 
         if ($moduleId === false) {
             $this->torna($redirect, 'Il modulo scelto non è di questo corso.', false);
+        }
+
+        // Il menu offre solo i moduli aperti (25/10): uno chiuso arriva solo
+        // scrivendo la richiesta a mano, e la domanda non la leggerebbe
+        // nemmeno chi l'ha fatta.
+        if ($moduleId !== null && CourseAccess::isModuleLocked($userId, $moduleId)) {
+            $this->torna($redirect, 'Questo modulo non è ancora aperto.', false);
         }
 
         // Nessun tutor assegnato: la domanda va all'esperto, l'admin (09/10).
@@ -126,25 +144,26 @@ class QuestionController
             'cerca' => $cerca,
             // Il tutor vede gli autori per intero, come lo staff ovunque.
             'archivio' => $corso === null ? [] : self::archivio((int) $corso['id'], $cerca, $userId, !$studente),
-            // Quante sono senza la ricerca: sotto le cinque (`_archivio.php`)
-            // il campo non compare (21/10).
-            'totale' => $corso === null ? 0 : count(QuestionModel::published((int) $corso['id'])),
+            // Quante ne legge senza la ricerca: sotto le cinque
+            // (`_archivio.php`) il campo non compare (21/10).
+            'totale' => $corso === null ? 0 : count(self::leggibili((int) $corso['id'], QuestionModel::published((int) $corso['id']), $userId)),
             // Solo lo studente chiede: al tutor il rimando non serve.
             'puoChiedere' => $studente,
         ]);
     }
 
     /**
-     * Le pubblicate di un corso, con il nome dell'autore come lo vede chi
-     * guarda (PersonName::shown): per uno studente, come l'autore ha scelto.
+     * Le pubblicate di un corso che chi guarda legge, con il nome dell'autore
+     * come lo vede lui: per intero, o come l'autore l'ha scelto, se e' della
+     * sua classe (`vedeIlNome`); altrimenti «uno studente del corso».
      *
      * @return list<array<string, mixed>>
      */
     private static function archivio(int $courseId, string $cerca, int $chiGuarda, bool $vedeTutto): array
     {
         return array_map(
-            static fn (array $q): array => $q + ['autore' => $q['student_id'] === null
-                ? 'uno studente'
+            static fn (array $q): array => $q + ['autore' => !self::vedeIlNome($q['student_id'] === null ? null : (int) $q['student_id'], $chiGuarda, $courseId)
+                ? 'uno studente del corso'
                 : PersonName::shown(
                     ['id' => (int) $q['student_id'], 'first_name' => (string) $q['first_name'],
                      'last_name' => (string) $q['last_name'], 'full_name' => (string) $q['full_name'],
@@ -152,9 +171,50 @@ class QuestionController
                     $chiGuarda,
                     $vedeTutto
                 )],
-            QuestionModel::published($courseId, mb_substr($cerca, 0, 100))
+            self::leggibili($courseId, QuestionModel::published($courseId, mb_substr($cerca, 0, 100)), $chiGuarda)
         );
     }
+
+    /**
+     * Senza le domande dei moduli chiusi per chi guarda (25/10). Per lo staff
+     * nessun modulo e' chiuso.
+     *
+     * @param list<array<string, mixed>> $domande
+     * @return list<array<string, mixed>>
+     */
+    private static function leggibili(int $courseId, array $domande, int $chiGuarda): array
+    {
+        $chiusi = array_map('intval', CourseAccess::lockedModuleIds($chiGuarda, $courseId));
+
+        return array_values(array_filter(
+            $domande,
+            static fn (array $q): bool => $q['module_id'] === null || !in_array((int) $q['module_id'], $chiusi, true)
+        ));
+    }
+
+    /**
+     * Se chi guarda vede il nome di chi ha chiesto (25/10): e' lui, e' un
+     * compagno di uno dei suoi gruppi del corso, o e' il tutor di uno di quei
+     * gruppi. La stessa regola dei racconti della Bacheca, con gli stessi
+     * elenchi (`BoardModel`), letti una volta per pagina.
+     */
+    private static function vedeIlNome(?int $autore, int $chiGuarda, int $courseId): bool
+    {
+        if ($autore === null) {
+            return false;
+        }
+
+        $chiave = $chiGuarda . ':' . $courseId;
+        self::$classe[$chiave] ??= array_merge(
+            BoardModel::compagni($chiGuarda, $courseId),
+            BoardModel::studentiDelTutor($chiGuarda, $courseId)
+        );
+
+        return $autore === $chiGuarda || in_array($autore, self::$classe[$chiave], true);
+    }
+
+    /** @var array<string, list<int>> */
+    private static array $classe = [];
 
     public function index(array $params = []): void
     {

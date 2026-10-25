@@ -17,8 +17,10 @@ use App\Core\Database;
  *   - il tutor la puo' correggere e la pubblica con la risposta, oppure la
  *     scarta; nessuna risposta privata;
  *   - le pubblicate le vedono tutti gli iscritti al corso, di ogni gruppo,
- *     con il nome dell'autore come l'ha scelto nel profilo, divise per
- *     modulo e con la ricerca;
+ *     divise per modulo e con la ricerca; dal 25/10 quelle di un modulo solo
+ *     quando e' aperto per chi legge, e il nome dell'autore (come l'ha
+ *     scelto nel profilo) solo la sua classe e il suo tutor
+ *     (`QuestionController`);
  *   - una notifica al tutor per ogni domanda nuova; nessun avviso allo
  *     studente quando e' pubblicata.
  */

@@ -1302,6 +1302,73 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             await ctx.close();
         }
 
+        // --- l'esperto risponde come la Bacheca (25/10, conflitto 4) --------
+        //
+        // La risposta e' di tutti, la persona e' della classe: chi non e' della
+        // classe di chi ha chiesto legge «uno studente del corso». Una domanda
+        // su un modulo chiuso per chi legge non c'e', nemmeno per chi l'ha
+        // fatta; lo staff la legge. Si chiede solo sui moduli aperti.
+
+        console.log('\n--- l\'esperto risponde: nomi della classe e moduli aperti');
+
+        {
+            const ANONIMO = 'Chiesto da uno studente del corso';
+            const chi = (page) => page.$$eval('.qa-voce', (v) => Object.fromEntries(v.map((x) => [
+                x.querySelector('summary').textContent.trim(),
+                (x.querySelector('.qa-chi') || { textContent: '' }).textContent.split('·')[0].trim(),
+            ])));
+            const voce = (righe, parola) => Object.entries(righe).find(([q]) => q.includes(parola));
+            const CASI = [
+                ['stud@test.it', 'studente A', [
+                    ['altra classe', ANONIMO, true, 'la domanda dell\'altra classe è senza nome'],
+                    ['pubblicata sul modulo del mondo A', ANONIMO, false, 'controprova: la sua ha il suo nome'],
+                    ['modulo chiuso', null, null, 'la domanda sul modulo chiuso non c\'è, anche se è sua'],
+                ]],
+                ['altrogruppo@test.it', 'studente dell\'altra classe', [
+                    ['pubblicata sul modulo del mondo A', ANONIMO, true, 'la domanda dello studente di A è senza nome'],
+                    ['altra classe', ANONIMO, false, 'controprova: la sua ha il suo nome'],
+                    ['modulo chiuso', null, null, 'la domanda sul modulo chiuso non c\'è'],
+                ]],
+                ['tutor1@test.it', 'tutor A', [
+                    ['pubblicata sul modulo del mondo A', ANONIMO, false, 'il nome dello studente del suo gruppo'],
+                    ['altra classe', ANONIMO, true, 'non il nome dello studente di un\'altra classe'],
+                    ['modulo chiuso', ANONIMO, false, 'lo staff legge anche il modulo chiuso, con il nome del suo studente'],
+                ]],
+                ['tutor3@test.it', 'tutor dell\'altra classe', [
+                    ['altra classe', ANONIMO, false, 'il nome dello studente del suo gruppo'],
+                    ['pubblicata sul modulo del mondo A', ANONIMO, true, 'non il nome dello studente di A'],
+                ]],
+            ];
+            for (const [email, nome, prove] of CASI) {
+                const { ctx, page } = await entra(browser, email);
+                await page.goto(BASE + '/domande-e-risposte?corso=' + A.corso);
+                const righe = await chi(page);
+                for (const [parola, testo, uguale, perche] of prove) {
+                    const v = voce(righe, parola);
+                    const ok = testo === null ? v === undefined : (v !== undefined && (v[1] === testo) === uguale);
+                    check(nome + ' → «' + parola + '»: ' + perche, ok, ok ? [] : [JSON.stringify(righe)]);
+                }
+                await ctx.close();
+            }
+        }
+        {
+            const { ctx, page } = await entra(browser, 'stud@test.it');
+            await page.goto(BASE + '/courses/' + A.corso);
+            const scelte = await page.$$eval('#qa-modulo option', (o) => o.map((x) => x.value));
+            check('studente A → per chiedere, il modulo chiuso non si offre (e il suo aperto sì)',
+                !scelte.includes(String(A.modulo_chiuso)) && scelte.includes(String(A.modulo)), [JSON.stringify(scelte)]);
+            const token = await page.$eval('#domande input[name="_token"]', (i) => i.value);
+            const TESTO = 'Domanda scritta a mano sul modulo chiuso?';
+            await page.evaluate(async ([u, t, m, q]) => {
+                const d = new URLSearchParams({ _token: t, module_id: m, question: q });
+                await fetch(u, { method: 'POST', body: d, credentials: 'same-origin', redirect: 'manual' });
+            }, ['/courses/' + A.corso + '/domande', token, String(A.modulo_chiuso), TESTO]);
+            await page.goto(BASE + '/courses/' + A.corso);
+            const mie = await page.$$eval('.qa-mie-testo', (t) => t.map((x) => x.textContent.trim()));
+            check('studente A → una domanda sul modulo chiuso scritta a mano non si salva', !mie.includes(TESTO), [JSON.stringify(mie)]);
+            await ctx.close();
+        }
+
         // --- il ramo del corso nella sidebar (17/10, variante C) -------------
         //
         // Bacheca e «L'esperto risponde» compaiono solo dentro un corso, in un

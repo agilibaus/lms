@@ -690,6 +690,22 @@ $pdo->prepare('INSERT INTO live_sessions (module_id, group_id, title, starts_at,
     ->execute(['m' => $a['modulo'], 't' => MARCHIO . ' mondo A incontro del corso passato', 'a' => $admin]);
 $a['incontro_corso_passato'] = (int) $pdo->lastInsertId();
 
+// L'esperto risponde come la Bacheca (25/10, conflitto 4): una domanda
+// pubblicata dello studente dell'altra classe, sul modulo aperto, e una
+// dello studente di A sul modulo chiuso. Lo studente di A legge la prima
+// senza il nome di chi l'ha fatta, e non legge la seconda nemmeno se e' sua;
+// il tutor di A legge tutte e due, con il nome dello studente di A soltanto.
+$domanda = $pdo->prepare(
+    'INSERT INTO course_questions (course_id, module_id, student_id, question, answer, status, answered_by, answered_at)
+     VALUES (:c, :m, :s, :q, :r, "published", :by, NOW())'
+);
+$domanda->execute(['c' => $a['corso'], 'm' => $a['modulo'], 's' => $altroGruppo,
+    'q' => 'Domanda dell\'altra classe del mondo A?', 'r' => 'Risposta all\'altra classe.', 'by' => $admin]);
+$a['domanda_altra_classe'] = (int) $pdo->lastInsertId();
+$domanda->execute(['c' => $a['corso'], 'm' => $a['modulo_chiuso'], 's' => $studenteA,
+    'q' => 'Domanda sul modulo chiuso del mondo A?', 'r' => 'Risposta sul modulo chiuso.', 'by' => $admin]);
+$a['domanda_modulo_chiuso'] = (int) $pdo->lastInsertId();
+
 // I contatti del benvenuto (07/10): il tutor di A ha l'email per gli
 // studenti e il gruppo di A il link WhatsApp; il tutor di B e il suo gruppo
 // no, e nel loro benvenuto non deve comparire niente. Si riscrivono a ogni

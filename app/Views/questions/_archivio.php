@@ -8,8 +8,9 @@ declare(strict_types=1);
  *
  * Le domande pubblicate, divise per modulo nell'ordine del corso, con «Il
  * corso in generale» in fondo; ogni domanda e' un `details`, si apre senza
- * JavaScript. L'autore compare come ha scelto nel profilo (il nome l'ha gia'
- * deciso il controller, per chi guarda).
+ * JavaScript. L'autore compare come ha scelto nel profilo a chi e' della sua
+ * classe, e come «uno studente del corso» agli altri (25/10); lo decide il
+ * controller, per chi guarda, che toglie anche le domande dei moduli chiusi.
  *
  * LA RICERCA STA IN CIMA (21/10, Alessandro). Prima era in fondo (Elena,
  * 08/10: «non hai trovato quello che cercavi?»), ma con le domande di otto

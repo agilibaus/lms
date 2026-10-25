@@ -228,6 +228,8 @@ class CourseController
             ? Percorso::stati($modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)
             : null;
 
+        $chiusiPerLui = $isStudent ? array_map('intval', CourseAccess::lockedModuleIds($userId, $courseId)) : [];
+
         View::render('courses/show', [
             'pageTitle' => $course['title'],
             'welcome' => $welcome,
@@ -247,7 +249,12 @@ class CourseController
             'domande' => [
                 'mie' => $isStudent ? QuestionModel::ofStudent($courseId, $userId) : [],
                 'puoChiedere' => $isStudent,
-                'moduli' => ModuleModel::forCourse($courseId),
+                // Solo i moduli aperti per lui (25/10): la domanda su un
+                // modulo chiuso non la leggerebbe nemmeno chi l'ha fatta.
+                'moduli' => array_values(array_filter(
+                    ModuleModel::forCourse($courseId),
+                    static fn (array $m): bool => !in_array((int) $m['id'], $chiusiPerLui, true)
+                )),
             ],
             'course' => $course,
             'modules' => $modules,

@@ -88,8 +88,9 @@ $stati = [
                           maxlength="<?= QuestionModel::MAX_QUESTION_CHARS ?>"><?= htmlspecialchars((string) $vecchio['text']) ?></textarea>
             </div>
             <p class="form-hint" id="qa-domanda-aiuto">
-                La legge l'esperto. Se la pubblica, compare con la risposta in «L'esperto risponde», con il tuo
-                nome come hai scelto nel profilo. Prima di pubblicarla può correggerla.
+                La legge l’esperto. Se la pubblica, compare con la risposta in «L’esperto risponde»: il tuo nome,
+                come l’hai scelto nel profilo, lo vedono il tuo gruppo e il tuo tutor; per gli altri sei «uno
+                studente del corso». Prima di pubblicarla può correggerla.
             </p>
 
             <div class="form-actions">
