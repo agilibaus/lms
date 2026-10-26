@@ -3383,11 +3383,8 @@ body.has-focus-video {
     overflow-x: auto;
 }
 
-.ruoli-titoletto {
-    margin: 0.4rem 0;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
+.ruoli > .card > h2 {
+    font-size: 1.2rem;
 }
 
 .ruoli-sempre {
@@ -3399,16 +3396,29 @@ body.has-focus-video {
     margin-top: 0.3rem;
 }
 
-/* Un interruttore di Impostazioni › Ruoli (26/10): il nome in grassetto e,
-   sotto, che cosa fa acceso e spento, in testo normale. */
-.ruoli-interruttore {
+/* Un interruttore di Impostazioni › Ruoli (27/10, Alessandro): il nome a
+   1 rem e non in grassetto; sotto, che cosa fa acceso e spento, in testo
+   normale e nel colore del testo. */
+.form .ruoli-interruttore {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
     margin: 0.6rem 0;
     font-weight: 400;
 }
 
-.ruoli-interruttore .form-hint {
+.ruoli-interruttore-nome {
+    display: block;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.ruoli-interruttore-cosa {
     display: block;
     margin: 0.15rem 0 0;
+    font-size: 0.92rem;
+    font-weight: 400;
+    color: var(--color-text);
 }
 
 .form select,

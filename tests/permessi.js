@@ -3339,7 +3339,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const caselle = await amm.page.$$eval('input[type="checkbox"][name^="ruoli["]', (c) => c.map((x) => [x.name, x.checked]));
             const testo = await amm.page.locator('.main-content').innerText();
             check('admin → la pagina Ruoli ha i cinque interruttori, tutti accesi, e niente matrice',
-                caselle.length === 5 && caselle.every(([, c]) => c) && !testo.includes('role_permissions') && testo.includes('Sempre'),
+                caselle.length === 5 && caselle.every(([, c]) => c) && !testo.includes('role_permissions') && testo.includes('Non crea né elimina gruppi'),
                 [JSON.stringify(caselle)]);
 
             // Nucleo del tutor: non crea, non elimina, non assegna corsi.

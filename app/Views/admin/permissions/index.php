@@ -6,8 +6,9 @@ use App\Core\Csrf;
 
 /**
  * Impostazioni › Ruoli (26/10, Alessandro; mockup approvato). Per ogni ruolo
- * quello che fa sempre (il nucleo fisso di `App\Auth\Ruoli`) e i suoi
- * interruttori. Ogni frase deve essere vera: se cambia una regola, cambia
+ * quello che fa sempre (il nucleo fisso di `App\Auth\Ruoli`), in elenco, e
+ * sotto i suoi interruttori, con la casella (27/10: senza le etichette
+ * «Sempre» e «Interruttori»). Ogni frase deve essere vera: se cambia una regola, cambia
  * anche qui (le prove in `permessi.js` provano ogni interruttore acceso e
  * spento).
  *
@@ -68,8 +69,8 @@ $ruoli = [
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Ruoli</h1>
     <p class="page-subtitle">
-        Che cosa fa ogni ruolo. Quello che è sotto «Sempre» è fisso; gli interruttori li decide l’admin, e valgono
-        in tutte le pagine.
+        Che cosa fa ogni ruolo. Le opzioni con la casella le decide l’admin e valgono in tutte le pagine. Il resto
+        è fisso.
     </p>
 </div>
 
@@ -81,7 +82,6 @@ $ruoli = [
     <?php foreach ($ruoli as $nome => $ruolo): ?>
         <section class="card">
             <h2><?= htmlspecialchars($nome) ?></h2>
-            <h3 class="ruoli-titoletto">Sempre</h3>
             <ul class="ruoli-sempre">
                 <?php foreach ($ruolo['sempre'] as $frase): ?>
                     <li><?= htmlspecialchars($frase) ?></li>
@@ -89,7 +89,6 @@ $ruoli = [
             </ul>
 
             <?php if ($ruolo['interruttori'] !== []): ?>
-                <h3 class="ruoli-titoletto">Interruttori</h3>
                 <?php foreach ($ruolo['interruttori'] as $chiave => [$etichetta, $descrizione]): ?>
                     <?php $id = strtolower(str_replace('_', '-', $chiave)); ?>
                     <?php /* Il valore nascosto arriva anche a casella spenta: cosi'
@@ -99,8 +98,8 @@ $ruoli = [
                         <input type="checkbox" name="ruoli[<?= $chiave ?>]" value="1" id="<?= $id ?>"
                                aria-describedby="<?= $id ?>-cosa" <?= ($stato[$chiave] ?? true) ? 'checked' : '' ?>>
                         <span>
-                            <strong><?= htmlspecialchars($etichetta) ?></strong>
-                            <span class="form-hint" id="<?= $id ?>-cosa"><?= htmlspecialchars($descrizione) ?></span>
+                            <span class="ruoli-interruttore-nome"><?= htmlspecialchars($etichetta) ?></span>
+                            <span class="ruoli-interruttore-cosa" id="<?= $id ?>-cosa"><?= htmlspecialchars($descrizione) ?></span>
                         </span>
                     </label>
                 <?php endforeach; ?>
