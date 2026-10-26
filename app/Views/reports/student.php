@@ -152,10 +152,16 @@ $liveSessions = $ordineIncontri->applica(array_map(
                                          l'unico modo per arrivare alle risposte
                                          aperte, che nessuno puo' correggere a
                                          macchina e qualcuno deve leggere. */ ?>
-                                <?php if (!empty($quiz['last_attempt_id'])): ?>
+                                <?php /* Il collegamento solo a chi puo' aprire il
+                                         tentativo (26/10): l'assistente con
+                                         «Tentativi dei questionari» spento vede
+                                         la data, non il collegamento. */ ?>
+                                <?php if (!empty($quiz['last_attempt_id']) && \App\Auth\StudentScope::puoAprireTentativo((int) $student['id'], (int) $course['course_id'])): ?>
                                     <a href="/attempts/<?= (int) $quiz['last_attempt_id'] ?>">
                                         <?= htmlspecialchars((string) ($quiz['last_attempt_at'] ?? '—')) ?>
                                     </a>
+                                <?php elseif (!empty($quiz['last_attempt_id'])): ?>
+                                    <?= htmlspecialchars((string) ($quiz['last_attempt_at'] ?? '—')) ?>
                                 <?php else: ?>
                                     —
                                 <?php endif; ?>

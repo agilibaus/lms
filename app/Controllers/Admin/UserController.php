@@ -202,9 +202,9 @@ class UserController extends AdminController
             'assistantTutorIds' => UserModel::tutorIdsForAssistant((int) $user['id']),
             'roles' => $this->assignableRoles(),
             'groups' => $groups,
-            'canManageGroups' => Auth::canAny('group.manage', 'group.manage_own'),
-            // Solo i gruppi in cui questo utente puo' essere messo da chi guarda:
-            // un tutor con `group.manage_own` vede soltanto i propri.
+            'canManageGroups' => Auth::can('group.manage'),
+            // I gruppi in cui chi guarda puo' mettere questo utente: tutti per
+            // l'admin, nessuno per il tutor (26/10, `manageableGroups`).
             'availableGroups' => array_values(array_filter(
                 $this->manageableGroups(),
                 static fn (array $g): bool => !in_array((int) $g['id'], $currentIds, true)
@@ -618,20 +618,15 @@ class UserController extends AdminController
     }
 
     /**
-     * Gruppi su cui chi guarda ha potere: tutti con `group.manage`, i propri
-     * con `group.manage_own`, nessuno altrimenti.
+     * Gruppi in cui chi guarda mette o toglie un utente da questa pagina:
+     * tutti con `group.manage`, nessuno altrimenti (26/10). Il tutor qui
+     * gestisce solo i suoi assistenti, che non sono membri di gruppi; i
+     * membri dei suoi gruppi li gestisce, con l'interruttore acceso, dalla
+     * pagina del gruppo, e solo fra gli iscritti ai corsi del gruppo.
      */
     private function manageableGroups(): array
     {
-        if (Auth::can('group.manage')) {
-            return GroupModel::all();
-        }
-
-        if (Auth::can('group.manage_own')) {
-            return GroupModel::forTutor((int) Auth::id());
-        }
-
-        return [];
+        return Auth::can('group.manage') ? GroupModel::all() : [];
     }
 
     private function findManageableGroup(int $groupId): ?array

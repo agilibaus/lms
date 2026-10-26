@@ -185,6 +185,21 @@ final class StudentScope
     }
 
     /**
+     * Se chi guarda apre il tentativo di uno studente in un corso: la regola
+     * qui sopra e, per l'assistente, l'interruttore «Tentativi dei
+     * questionari» (26/10, `quiz.grade_assigned`; vale solo con «Report»
+     * acceso, `Ruoli`).
+     */
+    public static function puoAprireTentativo(int $studentId, int $courseId): bool
+    {
+        if (Auth::hasRole('assistente') && !Auth::can('quiz.grade_assigned')) {
+            return false;
+        }
+
+        return self::puoVedereNelCorso($studentId, $courseId);
+    }
+
+    /**
      * La stessa regola in SQL, sullo studente `$utente` e sul corso `$corso`
      * (colonne o numeri): null per l'admin, cioe' nessun filtro.
      */

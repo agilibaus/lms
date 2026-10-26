@@ -3310,6 +3310,167 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         }
 
         await ctx.close();
+
+        // --- i ruoli: nucleo fisso e cinque interruttori (26/10) ------------
+        //
+        // Ogni interruttore fa quello che dice, acceso e spento, anche
+        // scrivendo gli indirizzi a mano. Si spengono dalla pagina Ruoli
+        // dell'admin, cosi' si prova anche la pagina, e si riaccendono in
+        // ogni caso alla fine. In fondo al giro perche' qui un membro si
+        // aggiunge davvero a un gruppo.
+        console.log('\n--- i ruoli: nucleo fisso e interruttori');
+
+        const CHIAVI = ['ROLE_TUTOR_MEMBRI', 'ROLE_ASSISTENTE_REPORT', 'ROLE_ASSISTENTE_TENTATIVI', 'ROLE_ASSISTENTE_INCONTRI', 'ROLE_STUDENTE_PROPOSTE'];
+        const amm = await entra(browser, 'admin@test.it');
+        const imposta = async (accesi) => {
+            const campi = CHIAVI.map((k) => ['ruoli[' + k + ']', accesi.includes(k) ? '1' : '0']);
+            const r = await esitoPost(amm.page, '/admin/permissions', campi, '/admin/permissions');
+            if (r.esito !== 'consentito') throw new Error('Ruoli non salvati: ' + r.come);
+        };
+        const vede = async (email, url) => {
+            const { ctx, page } = await entra(browser, email);
+            const r = await esitoGet(page, url);
+            const html = r.esito === 'consentito' ? await page.content() : '';
+            await ctx.close();
+            return { esito: r.esito, html };
+        };
+        try {
+            await amm.page.goto(BASE + '/admin/permissions');
+            const caselle = await amm.page.$$eval('input[type="checkbox"][name^="ruoli["]', (c) => c.map((x) => [x.name, x.checked]));
+            const testo = await amm.page.locator('.main-content').innerText();
+            check('admin → la pagina Ruoli ha i cinque interruttori, tutti accesi, e niente matrice',
+                caselle.length === 5 && caselle.every(([, c]) => c) && !testo.includes('role_permissions') && testo.includes('Sempre'),
+                [JSON.stringify(caselle)]);
+
+            // Nucleo del tutor: non crea, non elimina, non assegna corsi.
+            {
+                const { ctx, page } = await entra(browser, 'tutor1@test.it');
+                const G = '/admin/groups/' + A.gruppo;
+                for (const [url, campi] of [
+                    ['/admin/groups', [['name', '[prova-permessi] gruppo del tutor']]],
+                    [G + '/delete', []],
+                    [G + '/courses', [['course_id', String(B.corso)]]],
+                    [G + '/courses/' + A.corso + '/delete', []],
+                ]) {
+                    const r = await esitoPost(page, url, campi, G + '/edit');
+                    check('tutor A → POST ' + url + ': negato', r.esito === 'negato', r.esito === 'negato' ? [] : ['ottenuto ' + r.come]);
+                }
+                const crea = await esitoGet(page, '/admin/groups/create');
+                check('tutor A → /admin/groups/create: negato', crea.esito === 'negato', [crea.come]);
+                await page.goto(BASE + '/admin/groups');
+                const elenco = await page.content();
+                check('tutor A → nei Gruppi niente «Nuovo gruppo» né «Elimina»', !elenco.includes('/admin/groups/create') && !elenco.includes('/delete"'), []);
+                await page.goto(BASE + G + '/edit');
+                const scelte = await page.$$eval('form[action$="/members"] option', (o) => o.map((x) => x.textContent));
+                const scheda = await page.content();
+                check('tutor A → fra chi aggiungere solo gli iscritti al corso senza gruppo: chi ha finito sì, l\'altra classe no',
+                    scelte.some((x) => x.includes('finito@test.it')) && !scelte.some((x) => x.includes('altrogruppo@test.it')) && !scelte.some((x) => x.includes('compagno1@')),
+                    [JSON.stringify(scelte)]);
+                check('tutor A → nella scheda del gruppo niente «Assegna corso» né «Elimina gruppo»',
+                    !scheda.includes('Assegna corso') && !scheda.includes('Elimina gruppo'), []);
+                const fuori = await esitoPost(page, G + '/members', [['user_id', String(d.utenti.altroGruppo)]], G + '/edit');
+                await page.goto(BASE + G + '/edit');
+                check('tutor A → chi ha già un gruppo nel corso non si aggiunge, nemmeno a mano',
+                    !(await page.content()).includes('altrogruppo@test.it'), [fuori.come]);
+                await esitoPost(page, G + '/members', [['user_id', String(d.utenti.finito)]], G + '/edit');
+                // Dalla scheda del suo assistente il tutor non lo mette nel
+                // gruppo: le schede utente sono dell'admin (29/09) e anche i
+                // gruppi da lì (26/10); per vederlo rosso vanno rotte tutte e
+                // due. Un rifiuto può essere un rimando, quindi si guarda il gruppo.
+                await esitoPost(page, '/admin/users/' + d.utenti.assistente + '/groups', [['group_id', String(A.gruppo)]], '/admin/users/' + d.utenti.assistente + '/edit');
+                await page.goto(BASE + G + '/edit');
+                check('tutor A → dalla scheda dell\'assistente non lo mette nel suo gruppo',
+                    !(await page.$$eval('table.data-table td', (c) => c.some((x) => x.textContent.includes('assist@test.it')))), []);
+                // Nella tabella dei membri: tolto dal gruppo, torna (giustamente)
+                // fra i candidati nella tendina.
+                const nellaTabella = async () => { await page.goto(BASE + G + '/edit'); return page.$$eval('table.data-table td', (c) => c.some((x) => x.textContent.includes('finito@test.it'))); };
+                const dentro = await nellaTabella();
+                await esitoPost(page, G + '/members/' + d.utenti.finito + '/delete', [], G + '/edit');
+                const tolto = !(await nellaTabella());
+                check('tutor A → con «Membri dei gruppi» acceso aggiunge un candidato e lo toglie', dentro && tolto, [JSON.stringify({ dentro, tolto })]);
+                await ctx.close();
+            }
+
+            // Tutti spenti.
+            await imposta([]);
+            {
+                const { ctx, page } = await entra(browser, 'tutor1@test.it');
+                const G = '/admin/groups/' + A.gruppo;
+                await page.goto(BASE + G + '/edit');
+                const scheda = await page.content();
+                check('spento «Membri dei gruppi» → nella scheda né aggiungi né rimuovi, e la frase lo dice',
+                    !scheda.includes('action="' + G + '/members"') && !scheda.includes('/members/' + d.utenti.studenteA + '/delete')
+                        && scheda.includes('I membri del gruppo li gestisce l’amministrazione'), []);
+                const ag = await esitoPost(page, G + '/members', [['user_id', String(d.utenti.finito)]], G + '/edit');
+                const rm = await esitoPost(page, G + '/members/' + d.utenti.studenteA + '/delete', [], G + '/edit');
+                check('spento «Membri dei gruppi» → POST aggiungi e togli: negati', ag.esito === 'negato' && rm.esito === 'negato', [ag.come, rm.come]);
+                await ctx.close();
+            }
+            {
+                const { ctx, page } = await entra(browser, 'assist@test.it');
+                for (const [url, perche] of [
+                    ['/reports', 'i report'],
+                    ['/reports/students/' + d.utenti.studenteA, 'il report dello studente'],
+                    ['/reports/courses/' + A.corso + '/griglia', 'la Griglia'],
+                    ['/reports/live/' + A.incontro, 'il report di un incontro'],
+                    ['/lessons/' + A.lezione + '/fruizione', 'la fruizione'],
+                    ['/certificates/' + A.certificato + '/download', 'il certificato'],
+                    ['/attempts/' + A.tentativo, 'il tentativo'],
+                    ['/live/' + A.incontro_imminente, 'l\'incontro'],
+                ]) {
+                    const r = await esitoGet(page, url);
+                    check('spenti gli interruttori dell\'assistente → ' + url + ': negato', r.esito === 'negato', r.esito === 'negato' ? [] : [perche + ': ' + r.come]);
+                }
+                await page.goto(BASE + '/');
+                const menu = await page.$$eval('.sidebar-nav a.nav-link', (a) => a.map((x) => x.getAttribute('href')));
+                check('spenti → nel menu dell\'assistente né «Report» né «Sessioni live»', !menu.includes('/reports') && !menu.includes('/live'), [JSON.stringify(menu)]);
+                await page.goto(BASE + '/agenda');
+                check('spento «Incontri» → nell\'Agenda dell\'assistente nessun incontro', !(await page.content()).includes('/live/' + A.incontro_imminente), []);
+                await ctx.close();
+            }
+            {
+                const { ctx, page } = await entra(browser, 'stud@test.it');
+                const c = await esitoGet(page, '/bacheca/condividi?corso=' + A.corso);
+                check('spento «Proposte in Bacheca» → /bacheca/condividi: negato', c.esito === 'negato', [c.come]);
+                const p = await esitoPost(page, '/bacheca/corsi/' + A.corso + '/condividi', [['title', 'x']], '/bacheca?corso=' + A.corso);
+                const u = await esitoPost(page, '/bacheca/risorse/' + A.bacheca_risorsa + '/uso', [['body', 'Un racconto scritto a mano.']], '/bacheca?corso=' + A.corso);
+                check('spento «Proposte in Bacheca» → proporre e raccontare a mano: negati', p.esito === 'negato' && u.esito === 'negato', [p.come, u.come]);
+                await page.goto(BASE + '/bacheca?corso=' + A.corso);
+                const bach = await page.content();
+                await page.goto(BASE + '/bacheca/categorie/' + A.bacheca_categoria);
+                const cat = await page.content();
+                check('spento «Proposte in Bacheca» → niente «Condividi una risorsa» né «Racconta», e «Le mie risorse» resta',
+                    !bach.includes('Condividi una risorsa') && bach.includes('Le mie risorse') && !cat.includes('/uso"'), []);
+                await ctx.close();
+            }
+
+            // Report acceso, tentativi spenti; poi incontri acceso, report spento.
+            await imposta(['ROLE_ASSISTENTE_REPORT']);
+            {
+                const r1 = await vede('assist@test.it', '/reports/students/' + d.utenti.studenteA);
+                const r2 = await vede('assist@test.it', '/attempts/' + A.tentativo);
+                check('«Report» acceso e «Tentativi» spento → il report sì, il tentativo no, e nel report nessun collegamento ai tentativi',
+                    r1.esito === 'consentito' && r2.esito === 'negato' && !r1.html.includes('/attempts/'), [r1.esito, r2.esito]);
+            }
+            await imposta(['ROLE_ASSISTENTE_TENTATIVI']);
+            {
+                const r = await vede('assist@test.it', '/attempts/' + A.tentativo);
+                check('«Tentativi» acceso ma «Report» spento → il tentativo no: vale solo con i report', r.esito === 'negato', [r.esito]);
+            }
+            await imposta(['ROLE_ASSISTENTE_INCONTRI']);
+            {
+                const r = await vede('assist@test.it', '/live/' + A.incontro_imminente);
+                check('«Incontri» acceso e «Report» spento → l\'incontro sì, le presenze no',
+                    r.esito === 'consentito' && !r.html.includes('>Presenze<'), [r.esito]);
+            }
+        } finally {
+            await imposta(CHIAVI);
+            await amm.ctx.close();
+        }
+        {
+            const r = await vede('assist@test.it', '/attempts/' + A.tentativo);
+            check('controprova: riaccesi, l\'assistente riapre il tentativo', r.esito === 'consentito', [r.esito]);
+        }
     } finally {
         await browser.close();
     }

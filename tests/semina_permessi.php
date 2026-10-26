@@ -46,6 +46,11 @@ const MARCHIO = '[prova-permessi]';
 
 $pdo = Database::connection();
 
+// Gli interruttori dei ruoli (26/10) ripartono tutti accesi: un giro di
+// prove che si ferma a meta' con qualcuno spento non lascia il giro dopo con
+// regole diverse.
+$pdo->exec("DELETE FROM settings WHERE setting_key LIKE 'ROLE\\_%'");
+
 // --- utenti: devono esistere gia', sono quelli dell'installazione di prova --
 function utente(PDO $pdo, string $email): int
 {

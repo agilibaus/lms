@@ -6,7 +6,6 @@ namespace App\Auth;
 
 use App\Core\Csrf;
 use App\Core\Welcome;
-use App\Models\RolePermissionModel;
 use App\Models\UserModel;
 
 /**
@@ -464,8 +463,8 @@ class Auth
     }
 
     /**
-     * Verifica un permesso puntuale letto da role_permissions
-     * (es. 'course.edit', 'quiz.grade_assigned').
+     * Verifica un permesso puntuale (es. 'course.edit', 'quiz.grade_assigned'):
+     * il nucleo del ruolo e gli interruttori accesi, da `Ruoli`.
      * Cache statica per richiesta: una sola query per ruolo.
      */
     public static function can(string $permissionKey): bool
@@ -476,8 +475,10 @@ class Auth
 
         $role = self::role();
 
+        // Dal 26/10 il nucleo fisso nel codice piu' gli interruttori accesi
+        // (`Ruoli`), non piu' la tabella `role_permissions`.
         if (!isset(self::$permissionCache[$role])) {
-            self::$permissionCache[$role] = RolePermissionModel::keysForRole($role);
+            self::$permissionCache[$role] = Ruoli::permessi($role);
         }
 
         return in_array($permissionKey, self::$permissionCache[$role], true);

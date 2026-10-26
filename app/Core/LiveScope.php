@@ -6,6 +6,7 @@ namespace App\Core;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Auth\Ruoli;
 use App\Models\GroupModel;
 use App\Models\LiveSessionModel;
 use App\Models\UserModel;
@@ -147,6 +148,13 @@ class LiveScope
         // dell'admin. L'assistente vede gli stessi dei tutor che affianca, in
         // sola lettura (conflitto 6): ci entra, non li gestisce.
         if ($ruolo === 'tutor' || $ruolo === 'assistente') {
+            // L'assistente solo con l'interruttore «Incontri» acceso (26/10).
+            // Si legge da `Ruoli` e non da `Auth::can`: qui puo' non esserci
+            // una sessione (il calendario sottoscritto).
+            if ($ruolo === 'assistente' && !Ruoli::acceso('ROLE_ASSISTENTE_INCONTRI')) {
+                return [];
+            }
+
             $tutor = $ruolo === 'tutor' ? [$userId] : UserModel::tutorIdsForAssistant($userId);
             $gruppi = [];
 

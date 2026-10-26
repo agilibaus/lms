@@ -16,6 +16,7 @@ use App\Core\Icona;
  * @var array<string, mixed>|null $corso
  * @var list<array<string, mixed>> $categorie
  * @var bool $partecipa
+ * @var bool $propone propone risorse: interruttore «Proposte in Bacheca» (26/10)
  * @var int $tenute
  * @var int $daValutare
  * @var bool $puoPubblicare
@@ -55,7 +56,7 @@ use App\Core\Icona;
             <?php endif; ?>
             <?php if ($partecipa): ?>
                 <a href="/bacheca/mie?corso=<?= $courseId ?>" class="bacheca-comando comando-con-icona"><?= Icona::svg('bookmark') ?>Le mie risorse (<?= $tenute ?>)</a>
-                <?php if ($categorie !== []): ?>
+                <?php if ($propone && $categorie !== []): ?>
                     <a href="/bacheca/condividi?corso=<?= $courseId ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Condividi una risorsa</a>
                 <?php endif; ?>
             <?php endif; ?>

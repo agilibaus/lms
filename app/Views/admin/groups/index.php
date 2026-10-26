@@ -24,7 +24,10 @@ $groups = $ordine->applica($groups);
             ? 'Classi e coorti: membri e corsi assegnati all’intero gruppo. Clicca sul nome del gruppo per visualizzare i dettagli.'
             : 'I gruppi di cui sei tutor. Clicca sul nome del gruppo per visualizzare i dettagli.' ?>
     </p>
-    <p><a href="/admin/groups/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo gruppo</a></p>
+    <?php /* Crea ed elimina i gruppi solo l'admin (26/10). */ ?>
+    <?php if ($canManageAll): ?>
+        <p><a href="/admin/groups/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo gruppo</a></p>
+    <?php endif; ?>
 </div>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
@@ -69,11 +72,13 @@ $groups = $ordine->applica($groups);
                              da qui e' l'unica strada per arrivarci. */ ?>
                     <a href="/gruppi/<?= (int) $group['id'] ?>">Vai al gruppo</a>
                     <a href="/reports/groups/<?= (int) $group['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
-                    <form action="/admin/groups/<?= (int) $group['id'] ?>/delete" method="post"
-                          onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
-                        <?= Csrf::field() ?>
-                        <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
-                    </form>
+                    <?php if ($canManageAll): ?>
+                        <form action="/admin/groups/<?= (int) $group['id'] ?>/delete" method="post"
+                              onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
+                            <?= Csrf::field() ?>
+                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
+                        </form>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>

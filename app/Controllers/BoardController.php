@@ -49,6 +49,7 @@ class BoardController
             $dati += [
                 'categorie' => self::categorieVisibili($courseId),
                 'partecipa' => $partecipa,
+                'propone' => BachecaScope::propone($courseId),
                 'tenute' => $partecipa ? count(BoardModel::tenute((int) Auth::id(), $courseId)) : 0,
                 'daValutare' => count(BoardModel::inAttesa($courseId, BachecaScope::moderati($courseId))),
                 'puoPubblicare' => BachecaScope::puoPubblicare($courseId),
@@ -125,7 +126,7 @@ class BoardController
 
         $corso = self::corsoScelto(BachecaScope::corsi());
 
-        if ($corso === null || !BachecaScope::partecipa((int) $corso['id'])) {
+        if ($corso === null || !BachecaScope::propone((int) $corso['id'])) {
             $this->ferma(403, 'Propongono una risorsa gli studenti iscritti al corso.');
         }
 
@@ -230,7 +231,7 @@ class BoardController
         $courseId = (int) $params['id'];
         $corso = CourseModel::find($courseId);
 
-        if ($corso === null || !BachecaScope::partecipa($courseId)) {
+        if ($corso === null || !BachecaScope::propone($courseId)) {
             $this->ferma(403, 'Propongono una risorsa gli studenti iscritti al corso.');
         }
 
@@ -377,7 +378,7 @@ class BoardController
         $risorsa = $this->pubblicataLeggibile((int) $params['id']);
         $dietro = Bacheca::torna((string) ($_POST['torna'] ?? ''), '/bacheca/categorie/' . (int) $risorsa['category_id']);
 
-        if (!BachecaScope::partecipa((int) $risorsa['course_id'])) {
+        if (!BachecaScope::propone((int) $risorsa['course_id'])) {
             $this->ferma(403, 'Raccontano come l\'hanno utilizzata gli studenti iscritti al corso.');
         }
 
@@ -465,7 +466,9 @@ class BoardController
         $moderati = BachecaScope::moderati($courseId);
         $modera = static fn (?int $id): bool => $moderati === null || ($id !== null && in_array($id, $moderati, true));
         $usi = BoardModel::usi(array_map(static fn (array $r): int => (int) $r['id'], $risorse));
-        $partecipa = BachecaScope::partecipa($courseId);
+        // Il modulo «Racconta come l'hai utilizzata» solo a chi propone
+        // (26/10, interruttore «Proposte in Bacheca»).
+        $partecipa = BachecaScope::propone($courseId);
 
         return array_map(static function (array $r) use ($chi, $modera, $usi, $tenute, $partecipa, $courseId): array {
             $autore = $r['author_id'] === null ? null : (int) $r['author_id'];

@@ -103,6 +103,15 @@ class Settings
         'WELCOME_VIDEO_REF',
     ];
 
+    /** Gli interruttori dei ruoli (26/10, `App\Auth\Ruoli`): '1' acceso, '0' spento. */
+    public const ROLE_KEYS = [
+        'ROLE_TUTOR_MEMBRI',
+        'ROLE_ASSISTENTE_REPORT',
+        'ROLE_ASSISTENTE_TENTATIVI',
+        'ROLE_ASSISTENTE_INCONTRI',
+        'ROLE_STUDENTE_PROPOSTE',
+    ];
+
     /** Chiavi da non rimandare mai al browser. */
     public const SECRET_KEYS = [
         'MAIL_PASSWORD',
@@ -117,6 +126,7 @@ class Settings
             || in_array($key, self::APPEARANCE_KEYS, true)
             || in_array($key, self::BUNNY_KEYS, true)
             || in_array($key, self::WELCOME_KEYS, true)
+            || in_array($key, self::ROLE_KEYS, true)
             || in_array($key, Mail\Modelli::chiaviSettings(), true);
     }
 

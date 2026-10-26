@@ -8,8 +8,8 @@ declare(strict_types=1);
  *   - **l'«Iscrizione confermata» delle iscrizioni fatte dallo staff**: va
  *     in coda, non per chi aspetta l'invito, non due volte, e la spedisce
  *     `Avvisi::conferme()` (cioe' `bin/avvisi`) a scaglioni;
- *   - **la richiesta di iscrizione** va a chi puo' decidere: gli admin e i
- *     tutor dei gruppi a cui il corso e' assegnato, non tutti i tutor;
+ *   - **la richiesta di iscrizione** va a chi puo' decidere: gli admin, non
+ *     i tutor (dal 26/10 iscrivere e' solo dell'admin);
  *   - **il promemoria degli incontri**: oggi, entro sette ore, solo con gli
  *     inviti partiti, una volta sola, senza allegato;
  *   - **«Corso completato»** all'emissione del certificato.
@@ -187,7 +187,9 @@ try {
     $decisori = array_map(static fn ($r) => (string) $r['email'], UserModel::decisoriRichiesta($pubblicato));
     $admin = (string) $pdo->query("SELECT email FROM users WHERE role = 'admin' AND is_active = 1 LIMIT 1")->fetchColumn();
 
-    check('il tutor del gruppo a cui il corso e\' assegnato', in_array('tutorcorso' . DOMINIO, $decisori, true));
+    // Dal 26/10 decide solo l'admin (0281): il tutor non riceve piu'
+    // l'avviso di una richiesta che non puo' decidere.
+    check('non il tutor del gruppo a cui il corso e\' assegnato: decide l\'admin', !in_array('tutorcorso' . DOMINIO, $decisori, true));
     check('un amministratore attivo', in_array($admin, $decisori, true));
     check('non il tutor di un gruppo con un altro corso', !in_array('altrotutor' . DOMINIO, $decisori, true));
     check('non un amministratore disattivato', !in_array('adminspento' . DOMINIO, $decisori, true));

@@ -214,9 +214,21 @@ final class BachecaScope
     /** @var array<string, list<int>> */
     private static array $compagni = [];
 
-    /** Propone e racconta: lo studente iscritto al corso. */
+    /**
+     * Lo studente iscritto al corso: si tiene le risorse («Le mie
+     * risorse»).
+     */
     public static function partecipa(int $courseId): bool
     {
         return Auth::hasRole('studente') && EnrollmentModel::find((int) Auth::id(), $courseId) !== null;
+    }
+
+    /**
+     * Propone risorse e racconta come le ha usate: lo studente iscritto, con
+     * l'interruttore «Proposte in Bacheca» acceso (26/10, `board.propose`).
+     */
+    public static function propone(int $courseId): bool
+    {
+        return self::partecipa($courseId) && Auth::can('board.propose');
     }
 }

@@ -72,7 +72,9 @@ class LiveSessionController
         // Presenze e partecipanti solo per le sessioni del proprio perimetro.
         // L'assistente le legge, senza cambiarle (26/10, conflitto 6).
         $canManage = $this->canManage() && $this->inScope($session);
-        $vedePresenze = $canManage || Auth::hasRole('assistente');
+        // Con l'interruttore «Report» (26/10): le presenze sono dati degli
+        // studenti, e senza i report l'assistente non li vede.
+        $vedePresenze = $canManage || (Auth::hasRole('assistente') && Auth::can('report.view_assigned'));
 
         View::render('live/show', [
             'pageTitle' => $session['title'],

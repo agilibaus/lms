@@ -640,7 +640,7 @@ class QuizController
         $corsoDelQuiz = (int) (ModuleModel::find((int) $quiz['module_id'])['course_id'] ?? 0);
 
         if ((int) $attempt['user_id'] !== (int) Auth::id()
-            && !StudentScope::puoVedereNelCorso((int) $attempt['user_id'], $corsoDelQuiz)) {
+            && !StudentScope::puoAprireTentativo((int) $attempt['user_id'], $corsoDelQuiz)) {
             http_response_code(403);
             echo 'Non puoi consultare questo tentativo.';
             return;

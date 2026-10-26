@@ -50,9 +50,9 @@ $sezioni = [
         'visibile' => $canSettings,
     ],
     [
-        'titolo' => 'Permessi',
+        'titolo' => 'Ruoli',
         'href' => '/admin/permissions',
-        'testo' => 'Che cosa può fare ciascun ruolo. È la pagina più delicata del pannello: una spunta tolta qui cambia il lavoro di qualcuno.',
+        'testo' => 'Che cosa fa ogni ruolo, e i cinque interruttori che decide l’admin. Un interruttore spento cambia il lavoro di qualcuno.',
         'visibile' => $canPermissions,
     ],
     [

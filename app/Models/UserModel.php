@@ -634,31 +634,20 @@ class UserModel
 
     /**
      * Chi avvisare di una richiesta di iscrizione a un corso: chi puo'
-     * davvero approvarla o rifiutarla (12/10). Sono gli account attivi con
-     * il permesso `course.edit` che possono modificare quel corso, cioe' gli
-     * admin e i tutor dei gruppi a cui il corso e' assegnato: la stessa
-     * regola di `CourseRights`. Prima la ricevevano tutti i tutor, anche di
-     * corsi che non potevano toccare.
+     * davvero approvarla o rifiutarla. Dal 26/10 sono solo gli admin attivi:
+     * dalla 0281 le richieste le decide l'amministrazione, e un tutor che
+     * riceveva l'avviso non poteva piu' fare niente. Fino al 26/10 la regola
+     * leggeva anche la tabella `role_permissions`, che non si usa piu'.
      *
      * @return list<array{id: int, email: string, full_name: string, first_name: string}>
      */
     public static function decisoriRichiesta(int $courseId): array
     {
-        $stmt = Database::connection()->prepare(
+        return Database::connection()->query(
             "SELECT u.id, u.email, u.full_name, u.first_name
              FROM users u
-             WHERE u.is_active = 1
-               AND EXISTS (SELECT 1 FROM role_permissions rp
-                           WHERE rp.role = u.role AND rp.permission_key = 'course.edit')
-               AND (u.role = 'admin'
-                    OR (u.role = 'tutor' AND EXISTS (
-                        SELECT 1 FROM group_course_access gca
-                        INNER JOIN `groups` g ON g.id = gca.group_id
-                        WHERE gca.course_id = :corso AND g.tutor_id = u.id)))
+             WHERE u.is_active = 1 AND u.role = 'admin'
              ORDER BY u.full_name, u.email"
-        );
-        $stmt->execute(['corso' => $courseId]);
-
-        return $stmt->fetchAll();
+        )->fetchAll();
     }
 }

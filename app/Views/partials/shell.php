@@ -183,7 +183,10 @@ use App\Core\Csrf;
                      staff le crea e le modifica, l'agenda e' il posto dove
                      si guardano. */ ?>
             <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
-            <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
+            <?php /* All'assistente solo con l'interruttore «Incontri» acceso (26/10). */ ?>
+            <?php if (!Auth::hasRole('assistente') || Auth::can('live.view_assigned')): ?>
+                <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
+            <?php endif; ?>
             <a href="/certificates" class="nav-link<?= $voce('/certificates') ?>">Certificati</a>
             <a href="/profilo" class="nav-link<?= $voce('/profilo') ?>">Profilo</a>
 

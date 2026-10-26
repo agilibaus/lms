@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
+use App\Auth\Ruoli;
+use App\Core\Settings;
 use App\Core\View;
-use App\Models\RolePermissionModel;
 
 /**
- * Matrice dei permessi per ruolo (tabella `role_permissions`).
+ * Impostazioni › Ruoli (26/10, Alessandro; fino al 26/10 «Permessi», la
+ * matrice della tabella `role_permissions`). Che cosa fa ogni ruolo: il
+ * nucleo fisso, descritto, e i cinque interruttori di `Ruoli`, che l'admin
+ * accende e spegne.
  *
- * L'accesso e' riservato al ruolo `admin` e non a un permesso configurabile:
- * un permesso che si puo' togliere da questa stessa pagina lascerebbe la
- * piattaforma senza nessuno in grado di rimetterlo.
+ * L'accesso e' riservato al ruolo `admin`, non a un permesso: nessun
+ * interruttore lo tocca.
  */
 class PermissionController extends AdminController
 {
@@ -21,12 +24,18 @@ class PermissionController extends AdminController
     {
         Auth::requireRole('admin');
 
+        $stato = [];
+
+        foreach (array_keys(Ruoli::INTERRUTTORI) as $chiave) {
+            // La casella mostra la scelta salvata, non l'effetto: «Tentativi»
+            // resta spuntato anche con «Report» spento, e la pagina dice che
+            // vale solo con «Report» acceso.
+            $stato[$chiave] = Settings::get($chiave, '1') !== '0';
+        }
+
         View::render('admin/permissions/index', [
-            'pageTitle' => 'Permessi',
-            'catalog' => RolePermissionModel::catalog(),
-            'matrix' => RolePermissionModel::matrix(),
-            'roles' => Auth::ROLES,
-            'extraKeys' => RolePermissionModel::extraKeys(),
+            'pageTitle' => 'Ruoli',
+            'stato' => $stato,
         ]);
     }
 
@@ -34,38 +43,14 @@ class PermissionController extends AdminController
     {
         Auth::requireRole('admin');
 
-        $submitted = is_array($_POST['permissions'] ?? null) ? $_POST['permissions'] : [];
-        $catalogKeys = RolePermissionModel::catalogKeys();
-        $stored = RolePermissionModel::matrix();
+        $scelte = is_array($_POST['ruoli'] ?? null) ? $_POST['ruoli'] : [];
 
-        foreach (Auth::ROLES as $role) {
-            $keys = is_array($submitted[$role] ?? null) ? array_map('strval', $submitted[$role]) : [];
-
-            // Si salvano solo chiavi note; quelle personalizzate aggiunte a mano
-            // in tabella non compaiono nella matrice e vanno conservate.
-            $keys = array_values(array_intersect($keys, $catalogKeys));
-            $extra = array_values(array_diff($stored[$role] ?? [], $catalogKeys));
-
-            // I permessi vietati per regola non passano, qualunque cosa arrivi.
-            $keys = array_values(array_filter(
-                $keys,
-                static fn (string $k): bool => !RolePermissionModel::isForbidden($role, $k)
-            ));
-
-            RolePermissionModel::setForRole($role, array_merge($keys, $extra));
-        }
-
-        // Garanzia minima: senza user.manage l'admin non potrebbe piu' gestire
-        // gli utenti, e nessun altro ruolo potrebbe restituirglielo.
-        $adminKeys = RolePermissionModel::keysForRole('admin');
-
-        if (!in_array('user.manage', $adminKeys, true)) {
-            RolePermissionModel::setForRole('admin', array_merge($adminKeys, ['user.manage']));
-            $_SESSION['flash_error'] = 'Il permesso "user.manage" è stato mantenuto per il ruolo admin: senza, il pannello utenti sarebbe irraggiungibile.';
+        foreach (array_keys(Ruoli::INTERRUTTORI) as $chiave) {
+            Settings::set($chiave, ($scelte[$chiave] ?? '0') === '1' ? '1' : '0', (int) Auth::id());
         }
 
         Auth::flushPermissionCache();
 
-        $this->success('Permessi aggiornati.', '/admin/permissions');
+        $this->success('Ruoli aggiornati.', '/admin/permissions');
     }
 }

@@ -14,6 +14,8 @@ use App\Core\Icona;
 /** @var array $courses */
 /** @var array $availableStudents */
 /** @var array $availableCourses */
+/** @var bool $gestisceTutto l'admin: crea, elimina, assegna corsi (26/10) */
+/** @var bool $gestisceMembri l'admin, o il tutor con «Membri dei gruppi» acceso */
 
 $groupId = (int) $group['id'];
 
@@ -62,9 +64,14 @@ $members = $ordineMembri->applica($members);
 <section class="card">
     <h2>Corsi assegnati</h2>
     <p class="card-meta">
-        Assegnare un corso iscrive tutti i membri del gruppo; chi entra dopo viene iscritto automaticamente.
-        Rimuovendo il corso le iscrizioni già create restano attive. Ogni corso ha le date di apertura dei
-        moduli; con «Date dei moduli» questo gruppo può avere le sue.
+        <?php if ($gestisceTutto): ?>
+            Assegnare un corso iscrive tutti i membri del gruppo; chi entra dopo viene iscritto automaticamente.
+            Rimuovendo il corso le iscrizioni già create restano attive. Ogni corso ha le date di apertura dei
+            moduli; con «Date dei moduli» questo gruppo può avere le sue.
+        <?php else: ?>
+            I corsi del gruppo li assegna l’amministrazione. Con «Date dei moduli» questo gruppo può avere le sue
+            date di apertura.
+        <?php endif; ?>
     </p>
 
     <?php if ($courses === []): ?>
@@ -76,11 +83,13 @@ $members = $ordineMembri->applica($members);
                     <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
                     <?php /* Le date dei moduli per questo gruppo (26/10, conflitto 3). */ ?>
                     <a href="/admin/groups/<?= $groupId ?>/courses/<?= (int) $course['id'] ?>/date" class="link-btn comando-con-icona"><?= Icona::svg('pencil') ?>Date dei moduli</a>
-                    <form action="/admin/groups/<?= $groupId ?>/courses/<?= (int) $course['id'] ?>/delete" method="post"
-                          onsubmit="return confirm('Rimuovere il corso dal gruppo? Gli iscritti restano tali.');">
-                        <?= Csrf::field() ?>
-                        <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi</button>
-                    </form>
+                    <?php if ($gestisceTutto): ?>
+                        <form action="/admin/groups/<?= $groupId ?>/courses/<?= (int) $course['id'] ?>/delete" method="post"
+                              onsubmit="return confirm('Rimuovere il corso dal gruppo? Gli iscritti restano tali.');">
+                            <?= Csrf::field() ?>
+                            <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi</button>
+                        </form>
+                    <?php endif; ?>
                 </li>
             <?php endforeach; ?>
         </ul>
@@ -103,6 +112,9 @@ $members = $ordineMembri->applica($members);
 
 <section class="card">
     <h2>Membri</h2>
+    <?php if (!$gestisceMembri): ?>
+        <p class="card-meta">I membri del gruppo li gestisce l’amministrazione.</p>
+    <?php endif; ?>
 
     <?php if ($members === []): ?>
         <p class="empty-state-small">Nessun membro.</p>
@@ -120,7 +132,9 @@ $members = $ordineMembri->applica($members);
                 <?= $ordineMembri->th('Nome', 'nome') ?>
                 <?= $ordineMembri->th('Email', 'email') ?>
                 <?= $ordineMembri->th('Nel gruppo dal', 'dal') ?>
-                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                <?php if ($gestisceMembri): ?>
+                    <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                <?php endif; ?>
             </tr>
             </thead>
             <tbody role="rowgroup">
@@ -129,6 +143,7 @@ $members = $ordineMembri->applica($members);
                     <td role="cell" data-label="Nome"><a href="/reports/students/<?= (int) $member['id'] ?>"><?= htmlspecialchars((string) $member['full_name']) ?></a></td>
                     <td role="cell" data-label="Email"><?= htmlspecialchars((string) $member['email']) ?></td>
                     <td role="cell" data-label="Nel gruppo dal"><?= htmlspecialchars((string) $member['joined_at']) ?></td>
+                    <?php if ($gestisceMembri): ?>
                     <td role="cell" class="row-actions">
                         <form action="/admin/groups/<?= $groupId ?>/members/<?= (int) $member['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere questo membro dal gruppo? Le iscrizioni ai corsi restano attive.');">
@@ -136,6 +151,7 @@ $members = $ordineMembri->applica($members);
                             <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi</button>
                         </form>
                     </td>
+                    <?php endif; ?>
                 </tr>
             <?php endforeach; ?>
             </tbody>
@@ -143,7 +159,9 @@ $members = $ordineMembri->applica($members);
         </div>
     <?php endif; ?>
 
-    <?php if ($availableStudents !== []): ?>
+    <?php if (!$gestisceMembri): ?>
+        <?php /* Niente da aggiungere: lo fa l'amministrazione (26/10). */ ?>
+    <?php elseif ($availableStudents !== []): ?>
         <form action="/admin/groups/<?= $groupId ?>/members" method="post" class="form form-inline">
             <?= Csrf::field() ?>
             <select name="user_id" aria-label="Studente da aggiungere">
@@ -155,8 +173,13 @@ $members = $ordineMembri->applica($members);
             </select>
             <button type="submit" class="btn btn-secondary">Aggiungi al gruppo</button>
         </form>
-    <?php else: ?>
+        <?php if (!$gestisceTutto): ?>
+            <p class="form-hint">Puoi aggiungere gli studenti già iscritti a un corso del gruppo che in quel corso non hanno ancora un gruppo.</p>
+        <?php endif; ?>
+    <?php elseif ($gestisceTutto): ?>
         <p class="form-hint">Tutti gli studenti registrati sono già nel gruppo.</p>
+    <?php else: ?>
+        <p class="form-hint">Nessuno studente da aggiungere: puoi aggiungere gli studenti già iscritti a un corso del gruppo che in quel corso non hanno ancora un gruppo.</p>
     <?php endif; ?>
 </section>
 
@@ -165,6 +188,7 @@ $members = $ordineMembri->applica($members);
          cosa due volte, e sembrava una sezione con qualcosa dentro. La
          conferma prima di eliminare resta. Un `div` e non una `section`:
          senza titolo non e' una sezione della pagina. */ ?>
+<?php if ($gestisceTutto): ?>
 <div class="card">
     <form action="/admin/groups/<?= $groupId ?>/delete" method="post"
           onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
@@ -172,3 +196,4 @@ $members = $ordineMembri->applica($members);
         <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina gruppo</button>
     </form>
 </div>
+<?php endif; ?>

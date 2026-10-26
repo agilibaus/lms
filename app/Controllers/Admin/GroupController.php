@@ -42,7 +42,10 @@ class GroupController extends AdminController
 
     public function createForm(array $params = []): void
     {
-        $this->requireGroupAccess();
+        // Crea ed elimina i gruppi, e assegna loro i corsi, solo l'admin
+        // (26/10, Alessandro): il gruppo e' la classe, e i suoi corsi
+        // decidono il perimetro del tutor.
+        Auth::requirePermission('group.manage');
 
         View::render('admin/groups/form', [
             'pageTitle' => 'Nuovo gruppo',
@@ -54,7 +57,7 @@ class GroupController extends AdminController
 
     public function store(array $params = []): void
     {
-        $this->requireGroupAccess();
+        Auth::requirePermission('group.manage');
 
         $data = $this->dataFromPost();
 
@@ -103,12 +106,19 @@ class GroupController extends AdminController
             'canChooseTutor' => Auth::can('group.manage'),
             'members' => GroupModel::members((int) $group['id']),
             'courses' => GroupModel::courses((int) $group['id']),
-            // Candidati: solo chi non e' gia' dentro.
-            'availableStudents' => array_values(array_filter(
-                UserModel::byRoles(['studente']),
-                static fn (array $u): bool => !in_array((int) $u['id'], $memberIds, true)
-            )),
-            'availableCourses' => array_values(array_filter(
+            // Dal 26/10: crea, elimina e assegna corsi solo l'admin; i membri
+            // l'admin e, con «Membri dei gruppi» acceso, il tutor.
+            'gestisceTutto' => Auth::can('group.manage'),
+            'gestisceMembri' => Auth::can('group.manage') || Auth::can('group.members_own'),
+            // Candidati: per l'admin chi non e' gia' dentro; per il tutor solo
+            // gli iscritti a un corso del gruppo senza un gruppo in quel corso.
+            'availableStudents' => Auth::can('group.manage')
+                ? array_values(array_filter(
+                    UserModel::byRoles(['studente']),
+                    static fn (array $u): bool => !in_array((int) $u['id'], $memberIds, true)
+                ))
+                : (Auth::can('group.members_own') ? GroupModel::candidati((int) $group['id']) : []),
+            'availableCourses' => !Auth::can('group.manage') ? [] : array_values(array_filter(
                 CourseModel::allForStaff(),
                 static fn (array $c): bool => !in_array((int) $c['id'], $courseIds, true)
             )),
@@ -234,7 +244,7 @@ class GroupController extends AdminController
 
     public function destroy(array $params): void
     {
-        $this->requireGroupAccess();
+        Auth::requirePermission('group.manage');
 
         $group = $this->findManageableGroup((int) $params['id']);
 
@@ -257,9 +267,7 @@ class GroupController extends AdminController
 
     public function addMember(array $params): void
     {
-        $this->requireGroupAccess();
-
-        $group = $this->findManageableGroup((int) $params['id']);
+        $group = $this->gruppoPerIMembri((int) $params['id']);
 
         if ($group === null) {
             return;
@@ -272,6 +280,14 @@ class GroupController extends AdminController
 
         if ($user === null) {
             $this->fail('Utente non trovato.', $redirect);
+        }
+
+        // Il tutor aggiunge solo chi e' gia' iscritto a un corso del gruppo e
+        // in quel corso non ha ancora un gruppo (26/10): non sceglie fra tutti
+        // gli studenti della piattaforma.
+        if (!Auth::can('group.manage')
+            && !in_array($userId, array_map(static fn (array $u): int => (int) $u['id'], GroupModel::candidati($groupId)), true)) {
+            $this->fail('Puoi aggiungere solo studenti già iscritti a un corso del gruppo e senza un gruppo in quel corso.', $redirect);
         }
 
         GroupModel::addMember($groupId, $userId);
@@ -290,9 +306,7 @@ class GroupController extends AdminController
 
     public function removeMember(array $params): void
     {
-        $this->requireGroupAccess();
-
-        $group = $this->findManageableGroup((int) $params['id']);
+        $group = $this->gruppoPerIMembri((int) $params['id']);
 
         if ($group === null) {
             return;
@@ -301,9 +315,31 @@ class GroupController extends AdminController
         GroupModel::removeMember((int) $group['id'], (int) $params['userId']);
 
         $this->success(
-            'Membro rimosso dal gruppo. Le iscrizioni ai corsi restano attive: rimuovile dalla scheda del corso se necessario.',
+            Auth::can('group.manage')
+                ? 'Membro rimosso dal gruppo. Le iscrizioni ai corsi restano attive: rimuovile dalla scheda del corso se necessario.'
+                : 'Membro rimosso dal gruppo. Le iscrizioni ai corsi restano attive: le gestisce l’amministrazione.',
             '/admin/groups/' . (int) $group['id'] . '/edit'
         );
+    }
+
+    /**
+     * Il gruppo di cui chi chiede gestisce i membri: l'admin tutti, il tutor
+     * i suoi se l'interruttore «Membri dei gruppi» e' acceso (26/10,
+     * `group.members_own`). Altrimenti 403, o 404 se il gruppo non c'e'.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function gruppoPerIMembri(int $groupId): ?array
+    {
+        $this->requireGroupAccess();
+
+        if (!Auth::can('group.manage') && !Auth::can('group.members_own')) {
+            $this->forbidden('I membri del gruppo li gestisce l\'amministrazione.');
+
+            return null;
+        }
+
+        return $this->findManageableGroup($groupId);
     }
 
     // ---------------------------------------------------------------
@@ -312,7 +348,7 @@ class GroupController extends AdminController
 
     public function addCourse(array $params): void
     {
-        $this->requireGroupAccess();
+        Auth::requirePermission('group.manage');
 
         $group = $this->findManageableGroup((int) $params['id']);
 
@@ -344,7 +380,7 @@ class GroupController extends AdminController
 
     public function removeCourse(array $params): void
     {
-        $this->requireGroupAccess();
+        Auth::requirePermission('group.manage');
 
         $group = $this->findManageableGroup((int) $params['id']);
 

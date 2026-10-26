@@ -3383,29 +3383,32 @@ body.has-focus-video {
     overflow-x: auto;
 }
 
-.permission-matrix th,
-.permission-matrix td {
-    white-space: nowrap;
+.ruoli-titoletto {
+    margin: 0.4rem 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
 }
 
-.permission-matrix td:first-child,
-.permission-matrix th:first-child {
-    white-space: normal;
-    min-width: 260px;
+.ruoli-sempre {
+    margin: 0 0 0.5rem;
+    padding-left: 1.25rem;
 }
 
-/* Le caselle della matrice non stanno dentro un'etichetta — sarebbero
-   sessantaquattro etichette in una tabella — quindi il bersaglio e' il
-   quadratino stesso, e alla misura predefinita del browser sono 13px. Qui
-   diventano bersagli veri, alla misura minima. */
-.permission-cell input[type="checkbox"] {
-    width: var(--tap-target);
-    height: var(--tap-target);
-    margin: 0;
+.ruoli-sempre li + li {
+    margin-top: 0.3rem;
 }
 
-.permission-cell {
-    text-align: center;
+/* Un interruttore di Impostazioni › Ruoli (26/10): il nome in grassetto e,
+   sotto, che cosa fa acceso e spento, in testo normale. */
+.ruoli-interruttore {
+    margin: 0.6rem 0;
+    font-weight: 400;
+}
+
+.ruoli-interruttore .form-hint {
+    display: block;
+    margin: 0.15rem 0 0;
 }
 
 .form select,

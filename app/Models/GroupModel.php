@@ -286,6 +286,32 @@ class GroupModel
     }
 
     /**
+     * Gli studenti che il tutor puo' aggiungere al gruppo (26/10, interruttore
+     * «Membri dei gruppi»): iscritti a un corso del gruppo e senza un gruppo
+     * in quel corso — questo compreso, quindi non gia' membri.
+     *
+     * @return list<array{id: int, full_name: string, email: string}>
+     */
+    public static function candidati(int $groupId): array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT DISTINCT u.id, u.full_name, u.email
+             FROM users u
+             INNER JOIN enrollments e ON e.user_id = u.id
+             INNER JOIN group_course_access gca ON gca.course_id = e.course_id AND gca.group_id = :g
+             WHERE u.role = 'studente'
+               AND NOT EXISTS (
+                   SELECT 1 FROM group_members gm2
+                   INNER JOIN group_course_access gca2 ON gca2.group_id = gm2.group_id AND gca2.course_id = e.course_id
+                   WHERE gm2.user_id = u.id)
+             ORDER BY u.full_name, u.email"
+        );
+        $stmt->execute(['g' => $groupId]);
+
+        return array_map(static fn (array $r): array => ['id' => (int) $r['id']] + $r, $stmt->fetchAll());
+    }
+
+    /**
      * @return int[] id dei corsi assegnati al gruppo
      */
     public static function courseIds(int $groupId): array
