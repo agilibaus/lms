@@ -56,14 +56,12 @@ $minutoSecondo = static function (int $secondi): string {
 // una ragione tecnica che allo studente non dice niente.
 $conVideo = $lesson['video_provider'] !== 'none';
 
-// Lo sblocco del pulsante "completata" e' un'altra cosa: riguarda solo le
-// lezioni che non hanno nient'altro da leggere o scaricare. Tenere separate
-// presentazione e regola didattica evita che cambiare idea sull'una tocchi
-// l'altra.
-$soloVideo = $conVideo
-    && LezioneH5P::testoSenzaSegnaposti($lesson['content_html'] ?? null) === ''
-    && $materials === []
-    && $h5p === [];
+// Lo sblocco del pulsante "completata" e' un'altra cosa (regola didattica,
+// non presentazione): dal 27/10 (Alessandro) ogni lezione con il video
+// aspetta che lo studente lo avvii, anche con testo, allegati o esercizi;
+// con gli esercizi ci vogliono tutte e due le cose. Fino al 27/10 valeva
+// solo per le lezioni con il solo video. La frase sotto il pulsante la
+// compone lesson-completa.js.
 
 // I contenuti H5P (23/10): ognuno al posto del suo segnaposto nel testo,
 // quelli non messi dopo il testo. Lo studente li deve usare tutti per
@@ -100,7 +98,7 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
 <?php if ($embed !== ''): ?>
     <div class="lesson-video" id="lesson-video"
          data-lesson="<?= (int) $lesson['id'] ?>"
-         <?= $soloVideo ? 'data-attende-avvio' : '' ?>>
+         data-attende-avvio>
 
         <?php /* Nascosta nell'HTML e scoperta dal JavaScript: senza, la
                  copertina resterebbe li' davanti a un player che nessuno puo'
@@ -245,21 +243,17 @@ $embed = VideoEmbed::render($lesson['video_provider'], $lesson['video_ref'], (in
              se il JavaScript non c'e' o qualcosa va storto, lo studente puo'
              comunque concludere la lezione. Uno bloccato e' un danno vero;
              uno che segna senza aver premuto play e' un fastidio. */ ?>
-    <form action="/lessons/<?= (int) $lesson['id'] ?>/complete" method="post"
-          <?= $soloVideo ? 'data-attende-avvio-form' : '' ?>>
+    <form action="/lessons/<?= (int) $lesson['id'] ?>/complete" method="post">
         <?= Csrf::field() ?>
         <button type="submit" class="btn btn-primary" data-completa>Segna come completata</button>
-        <?php if ($soloVideo): ?>
-            <span class="form-hint" data-avviso-avvio hidden>
-                Avvia il video per poter segnare la lezione come completata.
-            </span>
-        <?php endif; ?>
-        <?php if ($h5p !== []): ?>
-            <?php /* Lo scrive h5p-lezione.js, che disabilita il pulsante
-                     finche' gli esercizi non sono stati usati tutti. */ ?>
-            <span class="form-hint" data-avviso-h5p role="status" hidden></span>
-        <?php endif; ?>
+        <?php /* La frase la scrive lesson-completa.js, con quello che
+                 manca: «Guarda il video», «fai l'esercizio», o tutti e due. */ ?>
+        <span class="form-hint" data-avviso-completa role="status" hidden></span>
     </form>
+<?php endif; ?>
+
+<?php if ($embed !== '' || $h5p !== []): ?>
+    <script src="/assets/js/lesson-completa.js"></script>
 <?php endif; ?>
 
 <?php if ($embed !== ''): ?>

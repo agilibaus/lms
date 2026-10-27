@@ -183,6 +183,16 @@ function mondo(PDO $pdo, string $lettera, int $tutor, int $studente, int $admin)
                    'h' => '<p>Contenuto della lezione, primo paragrafo.</p><p>Secondo paragrafo.</p>']);
     $lezione = (int) $pdo->lastInsertId();
 
+    // Con `--lezioni-fatte` (permessi.js, 27/10) la lezione del modulo e'
+    // fatta: il questionario e' il test d'uscita e si apre solo con le
+    // lezioni del modulo completate, e quelle prove lo svolgono. Chi non
+    // l'ha fatta (l'altra classe) prova il questionario chiuso.
+    // accessibilita.js semina senza: guarda «Inizia da qui» sulla lezione.
+    if (in_array('--lezioni-fatte', $GLOBALS['argv'] ?? [], true)) {
+        $pdo->prepare('INSERT INTO lesson_progress (user_id, lesson_id) VALUES (:u, :l)')
+            ->execute(['u' => $studente, 'l' => $lezione]);
+    }
+
     $pdo->prepare('INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (:m, :t, 60)')
         ->execute(['m' => $modulo, 't' => $nome . ' quiz']);
     $quiz = (int) $pdo->lastInsertId();

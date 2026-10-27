@@ -85,6 +85,37 @@ check('«3 lezioni»', Percorso::lezioni(3) === '3 lezioni');
 check('«1 lezione»', Percorso::lezioni(1) === '1 lezione');
 check('«nessuna lezione»', Percorso::lezioni(0) === 'nessuna lezione');
 
+check('«questionario» per la verifica finale', Percorso::contenuto(0, true) === 'questionario');
+check('con lezioni conta le lezioni, anche con il questionario', Percorso::contenuto(2, true) === '2 lezioni');
+check('senza lezioni e senza questionario: «nessuna lezione»', Percorso::contenuto(0, false) === 'nessuna lezione');
+
+// ---------------------------------------------------------------
+echo PHP_EOL . 'Quando si apre il questionario (27/10)' . PHP_EOL;
+
+// Il corso di sopra, piu' un modulo vuoto (6) e la verifica finale (7):
+// nessuna lezione, un questionario.
+$moduliV = array_merge($moduli, [['id' => 6], ['id' => 7]]);
+$lezioniV = $lezioni + [6 => [], 7 => []];
+$quizV = [1 => ['id' => 9], 7 => ['id' => 70]];
+$chiuso = static fn (int $m, array $fatte, array $superati = []): ?string
+    => Percorso::questionarioChiuso($m, $moduliV, $lezioniV, $fatte, $quizV, $superati);
+$tutteLeLezioni = [10, 11, 20, 30, 40, 50];
+
+check('nessuna lezione fatta: chiuso, per le lezioni', $chiuso(1, []) === Percorso::CHIUSO_LEZIONI);
+check('una lezione su due: ancora chiuso', $chiuso(1, [10]) === Percorso::CHIUSO_LEZIONI);
+check('fatta solo la seconda: ancora chiuso', $chiuso(1, [11]) === Percorso::CHIUSO_LEZIONI);
+check('tutte le lezioni del modulo: aperto', $chiuso(1, [10, 11]) === null);
+check('le lezioni di altri moduli non contano', $chiuso(1, [20, 30, 40, 50]) === Percorso::CHIUSO_LEZIONI);
+check('verifica finale, moduli prima non finiti: chiusa, per i moduli', $chiuso(7, [10, 11]) === Percorso::CHIUSO_MODULI);
+check('verifica finale, lezioni tutte fatte ma un questionario prima non superato: chiusa',
+    $chiuso(7, $tutteLeLezioni) === Percorso::CHIUSO_MODULI);
+check('verifica finale, tutto completato prima: aperta (il modulo vuoto non conta)',
+    $chiuso(7, $tutteLeLezioni, [1 => true]) === null);
+check('verifica finale, manca una lezione di un modulo prima: chiusa',
+    $chiuso(7, [10, 11, 20, 30, 40], [1 => true]) === Percorso::CHIUSO_MODULI);
+check('i moduli dopo la verifica non contano',
+    Percorso::questionarioChiuso(7, array_merge($moduliV, [['id' => 8]]), $lezioniV + [8 => [['id' => 80]]], $tutteLeLezioni, $quizV, [1 => true]) === null);
+
 // ---------------------------------------------------------------
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail === 0 ? 0 : 1);

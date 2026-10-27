@@ -1,13 +1,14 @@
 /**
- * Video della lezione: copertina di avvio e, dove previsto, sblocco del
- * pulsante "Segna come completata".
+ * Video della lezione: copertina di avvio e sblocco del pulsante "Segna
+ * come completata".
  *
  * Due cose distinte, di proposito. La copertina è presentazione e vale per
  * ogni video, qualunque sia il provider: senza, una lezione con video su
  * Bunny e una con video caricato avrebbero un aspetto diverso per una ragione
  * tecnica che allo studente non dice niente. Lo sblocco è una regola
- * didattica e riguarda solo le lezioni che non hanno nient'altro da leggere:
- * il riquadro lo dichiara con l'attributo data-attende-avvio.
+ * didattica: dal 27/10 vale per ogni lezione con il video, anche con testo,
+ * allegati o esercizi (il riquadro lo dichiara con data-attende-avvio).
+ * La frase sotto il pulsante la compone lesson-completa.js.
  *
  * La copertina è nascosta nell'HTML e la scopre questo script: senza
  * JavaScript resta invisibile e il player si comporta come ha sempre fatto,
@@ -30,11 +31,9 @@
     var video = box.querySelector('video');
     var iframe = box.querySelector('iframe[data-src]');
 
-    // --- sblocco del pulsante (solo dove richiesto) -------------------
+    // --- sblocco del pulsante -----------------------------------------
 
     var waits = box.hasAttribute('data-attende-avvio');
-    var button = document.querySelector('[data-completa]');
-    var notice = document.querySelector('[data-avviso-avvio]');
     var key = 'lezione-avviata:' + (box.getAttribute('data-lesson') || '');
 
     function remembered() {
@@ -55,22 +54,16 @@
         }
     }
 
+    // «Guarda» e non «avvia» (27/10, Alessandro): basta avviarlo, ma
+    // l'invito e' a guardarlo tutto.
     function unlock() {
-        if (button !== null) {
-            button.disabled = false;
-        }
-
-        if (notice !== null) {
-            notice.hidden = true;
+        if (window.LezioneCompleta) {
+            window.LezioneCompleta.manca('video', null);
         }
     }
 
-    if (waits && button !== null && !remembered()) {
-        button.disabled = true;
-
-        if (notice !== null) {
-            notice.hidden = false;
-        }
+    if (waits && window.LezioneCompleta && !remembered()) {
+        window.LezioneCompleta.manca('video', 'guarda il video');
     }
 
     function started() {

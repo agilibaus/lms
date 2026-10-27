@@ -10,6 +10,7 @@ use App\Auth\CourseRights;
 use App\Auth\StudentScope;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
+use App\Core\Percorso;
 use App\Core\H5PArchivio;
 use App\Core\QuizScoring;
 use App\Core\View;
@@ -388,7 +389,7 @@ class QuizController
         }
         $course = CourseModel::find((int) $module['course_id']);
 
-        if (!$this->guardQuizAccess($module)) {
+        if (!$this->guardQuizAccess($module, $quiz)) {
             return;
         }
 
@@ -467,7 +468,7 @@ class QuizController
             return;
         }
 
-        if (!$this->guardQuizAccess($module)) {
+        if (!$this->guardQuizAccess($module, $quiz)) {
             return;
         }
 
@@ -680,7 +681,7 @@ class QuizController
      * Iscrizione al corso + modulo sbloccato. Restituisce false se ha gia'
      * emesso una risposta HTTP di errore.
      */
-    private function guardQuizAccess(array $module): bool
+    private function guardQuizAccess(array $module, array $quiz): bool
     {
         $courseId = (int) $module['course_id'];
 
@@ -697,6 +698,19 @@ class QuizController
                 echo 'Questo modulo è bloccato: supera prima il quiz del modulo precedente.';
 
                 return false;
+            }
+
+            // Il questionario e' il test d'uscita del modulo (27/10): si apre
+            // con le lezioni fatte, la verifica finale con i moduli prima
+            // completati. Chi ci arriva prima torna al corso, con la ragione.
+            $chiuso = CourseAccess::questionarioChiuso((int) Auth::id(), $module);
+
+            if ($chiuso !== null) {
+                $_SESSION['flash_error'] = 'Il questionario «' . $quiz['title'] . '» si apre quando hai '
+                    . ($chiuso === Percorso::CHIUSO_LEZIONI ? 'fatto le lezioni del modulo.' : 'completato i moduli precedenti.');
+                // Senza l'ancora del modulo: l'avviso sta in cima alla
+                // pagina, e saltando al modulo non si vedrebbe.
+                $this->redirect('/courses/' . $courseId);
             }
         }
 

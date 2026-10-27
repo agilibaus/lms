@@ -4150,6 +4150,12 @@ fieldset.checkbox-group legend {
     min-height: var(--tap-target);
 }
 
+/* Il questionario ancora chiuso (27/10): il nome in grigio, senza
+   collegamento. Si apre con le lezioni del modulo fatte. */
+.quiz-link-chiuso {
+    color: var(--color-text-muted);
+}
+
 /* «Modifica» e «Elimina» accanto a ogni domanda. */
 .question-item-actions a,
 .question-item-actions button {

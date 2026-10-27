@@ -230,6 +230,22 @@ class CourseController
 
         $chiusiPerLui = $isStudent ? array_map('intval', CourseAccess::lockedModuleIds($userId, $courseId)) : [];
 
+        // I questionari ancora chiusi (27/10, `Percorso::questionarioChiuso`):
+        // la stessa regola che applica la pagina del questionario.
+        $questionariChiusi = [];
+
+        if ($isStudent) {
+            foreach ($modules as $module) {
+                $moduleId = (int) $module['id'];
+
+                if ($quizByModule[$moduleId] !== null) {
+                    $questionariChiusi[$moduleId] = Percorso::questionarioChiuso(
+                        $moduleId, $modules, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule
+                    );
+                }
+            }
+        }
+
         View::render('courses/show', [
             'pageTitle' => $course['title'],
             'welcome' => $welcome,
@@ -262,6 +278,7 @@ class CourseController
             'completedLessonIds' => $completedLessonIds,
             'quizByModule' => $quizByModule,
             'quizPassedByModule' => $quizPassedByModule,
+            'questionariChiusi' => $questionariChiusi,
             'moduleLocks' => $isStudent ? CourseAccess::locks($userId, $courseId) : [],
             'certificate' => $isStudent ? CertificateModel::findForUserAndCourse($userId, $courseId) : null,
         ]);

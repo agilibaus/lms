@@ -337,8 +337,12 @@ CSS;
             return true;
         }
 
+        // Come la pagina del questionario: anche il questionario ancora
+        // chiuso (27/10, `CourseAccess::questionarioChiuso`), cosi' un
+        // punteggio mandato a mano prima delle lezioni non si salva.
         return EnrollmentModel::find((int) Auth::id(), (int) $module['course_id']) !== null
-            && !CourseAccess::isModuleLocked((int) Auth::id(), (int) $module['id']);
+            && !CourseAccess::isModuleLocked((int) Auth::id(), (int) $module['id'])
+            && CourseAccess::questionarioChiuso((int) Auth::id(), $module) === null;
     }
 
     private function vietato(): never

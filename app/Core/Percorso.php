@@ -117,6 +117,75 @@ final class Percorso
         return $prossima === null ? null : ['lezione' => $prossima, 'fatte' => $fatte, 'totale' => count($lessons)];
     }
 
+    /** Il questionario aspetta le lezioni del suo modulo. */
+    public const CHIUSO_LEZIONI = 'lezioni';
+
+    /** Il questionario di un modulo senza lezioni (la verifica finale) aspetta i moduli prima. */
+    public const CHIUSO_MODULI = 'moduli';
+
+    /**
+     * Se il questionario del modulo e' ancora chiuso per lo studente, e
+     * perche' (27/10, Alessandro): il questionario e' il test d'uscita del
+     * modulo, quindi si apre quando le lezioni del modulo sono tutte
+     * completate. Un modulo senza lezioni e con il questionario e' la
+     * verifica finale del corso: si apre quando i moduli prima di lui sono
+     * completati (lezioni fatte e questionario superato, `completato()`).
+     * Null se e' aperto.
+     *
+     * I moduli prima senza lezioni e senza questionario non contano: non
+     * c'e' niente da completare, e terrebbero chiusa la verifica per
+     * sempre. La chiusura per data o per questionario obbligatorio e'
+     * un'altra regola (`CourseAccess::locks`), e vale in piu'.
+     *
+     * @param list<array<string, mixed>> $modules nell'ordine del corso
+     * @param array<int, list<array<string, mixed>>> $lessonsByModule
+     * @param list<int> $completedLessonIds
+     * @param array<int, array<string, mixed>|null> $quizByModule
+     * @param array<int, bool> $quizPassedByModule
+     */
+    public static function questionarioChiuso(
+        int $moduleId,
+        array $modules,
+        array $lessonsByModule,
+        array $completedLessonIds,
+        array $quizByModule,
+        array $quizPassedByModule
+    ): ?string {
+        $lessons = $lessonsByModule[$moduleId] ?? [];
+
+        if ($lessons !== []) {
+            return self::riprendi($lessons, $completedLessonIds) === null ? null : self::CHIUSO_LEZIONI;
+        }
+
+        foreach ($modules as $module) {
+            $id = (int) $module['id'];
+
+            if ($id === $moduleId) {
+                return null;
+            }
+
+            if (($lessonsByModule[$id] ?? []) === [] && ($quizByModule[$id] ?? null) === null) {
+                continue;
+            }
+
+            if (!self::completato($id, $lessonsByModule, $completedLessonIds, $quizByModule, $quizPassedByModule)) {
+                return self::CHIUSO_MODULI;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Che cosa contiene un modulo, nella sua riga: «3 lezioni», o
+     * «questionario» per la verifica finale (nessuna lezione, il
+     * questionario).
+     */
+    public static function contenuto(int $nLezioni, bool $conQuestionario): string
+    {
+        return $nLezioni === 0 && $conQuestionario ? 'questionario' : self::lezioni($nLezioni);
+    }
+
     /** «3 lezioni», «1 lezione», «nessuna lezione». */
     public static function lezioni(int $n): string
     {

@@ -59,7 +59,8 @@ function check(etichetta, condizione, dettagli = []) {
 /** Semina i due mondi e restituisce gli identificativi. */
 function semina() {
     const radice = path.join(__dirname, '..');
-    const uscita = execFileSync('php', [path.join(radice, 'tests', 'semina_permessi.php')], {
+    // Con la lezione del modulo fatta: il questionario si apre solo dopo (27/10).
+    const uscita = execFileSync('php', [path.join(radice, 'tests', 'semina_permessi.php'), '--lezioni-fatte'], {
         encoding: 'utf8',
         cwd: radice,
     });
@@ -772,6 +773,16 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 const dopo = php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM quiz_attempts WHERE quiz_id = " . (int) $argv[1] . " AND h5p_raw = 2")->fetchColumn();', A.quiz).trim();
                 check('il tentativo dopo il 100% non è nel database', dopo === '0', dopo === '0' ? [] : ['trovati ' + dopo]);
 
+                // L'altra classe e' iscritta al corso A ma non ha fatto la
+                // lezione del modulo: il questionario e' ancora chiuso
+                // (27/10), anche i suoi file e il punteggio mandato a mano.
+                const altra = await entra(browser, 'altrogruppo@test.it');
+                r = await esitoGet(altra.page, file);
+                check('altra classe, lezione del modulo non fatta → un file del questionario H5P: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                r = await esitoPost(altra.page, tentativo, [['raw', '4'], ['max', '4']]);
+                check('altra classe, lezione del modulo non fatta → un tentativo H5P: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
+                await altra.ctx.close();
+
                 const strano = await entra(browser, 'strano@test.it');
                 r = await esitoGet(strano.page, file);
                 check('studente del mondo B → un file del questionario del mondo A: negato', r.esito === 'negato', r.esito === 'negato' ? [] : [r.come]);
@@ -784,6 +795,196 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     $pdo->prepare("DELETE FROM quiz_attempts WHERE quiz_id = ? AND h5p_raw IS NOT NULL")->execute([(int) $argv[1]]);
                     $pdo->prepare("UPDATE quizzes SET kind = 'domande', h5p_dir = NULL, h5p_library = NULL, h5p_file = NULL WHERE id = ?")->execute([(int) $argv[1]]);
                     App\\Core\\H5PArchivio::elimina($argv[2]);`, A.quiz, dir);
+            }
+        }
+
+        // --- Il questionario, test d'uscita del modulo (27/10) --------------
+        //
+        // Il questionario si apre con le lezioni del modulo completate; un
+        // modulo senza lezioni con il questionario e' la verifica finale, e
+        // si apre con i moduli prima completati. Chiuso, nella pagina del
+        // corso e' grigio e senza collegamento; chi ci arriva dall'indirizzo
+        // torna al corso con l'avviso, e un invio a mano non si salva. Lo
+        // studente A ha fatto la lezione (`--lezioni-fatte`), l'altra classe
+        // no.
+
+        console.log('\n--- Il questionario, test d\'uscita del modulo');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const rigaQuiz = (page, quiz) => page.evaluate((quiz) => {
+                const link = document.querySelector('.module-quiz-row a.quiz-link[href="/quizzes/' + quiz + '"]');
+                const chiuso = [...document.querySelectorAll('.module-quiz-row .quiz-link-chiuso')];
+                return { link: !!link, chiuso: chiuso.length, fallo: !!document.querySelector('.module-quiz-row .da-qui-comando[href="/quizzes/' + quiz + '"]') };
+            }, quiz);
+            const tentativiDi = (utente, quiz) => php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM quiz_attempts WHERE user_id = " . (int) $argv[1] . " AND quiz_id = " . (int) $argv[2])->fetchColumn();', utente, quiz).trim();
+
+            const altra = await entra(browser, 'altrogruppo@test.it');
+            await altra.page.goto(BASE + '/courses/' + A.corso);
+            let q = await rigaQuiz(altra.page, A.quiz);
+            check('altra classe, lezione non fatta → nel corso il questionario è grigio, senza collegamento né «Fallo ora»',
+                !q.link && q.chiuso >= 1 && !q.fallo, [JSON.stringify(q)]);
+            await altra.page.goto(BASE + '/quizzes/' + A.quiz);
+            // Senza l'ancora del modulo: l'avviso e' in cima, e saltando al
+            // modulo non si vedrebbe.
+            const arrivo = await altra.page.evaluate(() => ({
+                dove: location.pathname + location.hash,
+                avviso: (document.querySelector('.alert.alert-error') || {}).textContent || '',
+            }));
+            check('altra classe → il questionario dall\'indirizzo: torna al corso, con «si apre quando hai fatto le lezioni del modulo»',
+                arrivo.dove === '/courses/' + A.corso && arrivo.avviso.includes('si apre quando hai fatto le lezioni del modulo.'), [JSON.stringify(arrivo)]);
+            // Un invio completo, una risposta per domanda (l’ultima opzione,
+            // di solito sbagliata, e un testo per le aperte): aperto salva un
+            // tentativo, e la controprova qui sotto, con lo studente A, lo
+            // manda uguale e poi lo toglie.
+            const invio = JSON.parse(php(`
+                $pdo = App\\Core\\Database::connection();
+                $campi = [];
+                foreach ($pdo->query("SELECT id, question_type FROM quiz_questions WHERE quiz_id = " . (int) $argv[1]) as $q) {
+                    if ($q["question_type"] === "open") { $campi[] = ["open[" . $q["id"] . "]", "Una risposta."]; continue; }
+                    $o = (int) $pdo->query("SELECT id FROM quiz_options WHERE question_id = " . (int) $q["id"] . " ORDER BY position DESC, id DESC LIMIT 1")->fetchColumn();
+                    $campi[] = [$q["question_type"] === "multiple_choice" ? "answers[" . $q["id"] . "][]" : "answers[" . $q["id"] . "]", (string) $o];
+                }
+                echo json_encode($campi);`, A.quiz));
+            const prima = tentativiDi(d.utenti.altroGruppo, A.quiz);
+            await esitoPost(altra.page, '/quizzes/' + A.quiz + '/attempts', invio, '/courses/' + A.corso);
+            const dopo = tentativiDi(d.utenti.altroGruppo, A.quiz);
+            check('altra classe → un tentativo mandato a mano non si salva', prima === dopo, ['prima ' + prima + ', dopo ' + dopo]);
+            await altra.ctx.close();
+
+            const stud = await entra(browser, 'stud@test.it');
+            await stud.page.goto(BASE + '/courses/' + A.corso);
+            q = await rigaQuiz(stud.page, A.quiz);
+            check('controprova: studente A, lezione fatta → il questionario ha il collegamento e «Fallo ora»', q.link && q.fallo, [JSON.stringify(q)]);
+            const apre = await esitoGet(stud.page, '/quizzes/' + A.quiz);
+            check('controprova: studente A → il questionario si apre', apre.esito === 'consentito', [apre.come]);
+            const primaA = tentativiDi(d.utenti.studenteA, A.quiz);
+            const ultimo = php('echo (int) App\\Core\\Database::connection()->query("SELECT COALESCE(MAX(id), 0) FROM quiz_attempts")->fetchColumn();').trim();
+            await esitoPost(stud.page, '/quizzes/' + A.quiz + '/attempts', invio, '/quizzes/' + A.quiz);
+            const dopoA = tentativiDi(d.utenti.studenteA, A.quiz);
+            check('controprova: studente A → lo stesso invio salva il tentativo', Number(dopoA) === Number(primaA) + 1, ['prima ' + primaA + ', dopo ' + dopoA]);
+            php('App\\Core\\Database::connection()->prepare("DELETE FROM quiz_attempts WHERE id > ? AND user_id = ? AND quiz_id = ?")->execute([(int) $argv[1], (int) $argv[2], (int) $argv[3]]);', ultimo, d.utenti.studenteA, A.quiz);
+
+            // La verifica finale: un corso a parte con due moduli da una
+            // lezione e un terzo con il solo questionario, per lo studente A.
+            const [corso, l1, l2, verifica] = php(`
+                $pdo = App\\Core\\Database::connection();
+                $pdo->prepare("INSERT INTO courses (title, slug, description, is_published, created_by) VALUES (?, ?, '', 1, ?)")->execute(["[prova-permessi] verifica finale", "prova-permessi-verifica-" . time(), (int) $argv[2]]);
+                $c = (int) $pdo->lastInsertId();
+                $l = [];
+                foreach ([0, 1] as $i) {
+                    $pdo->prepare("INSERT INTO modules (course_id, title, position) VALUES (?, ?, ?)")->execute([$c, "Tappa " . ($i + 1), $i]);
+                    $m = (int) $pdo->lastInsertId();
+                    $pdo->prepare("INSERT INTO lessons (module_id, title, content_html, position) VALUES (?, ?, '<p>Testo.</p>', 0)")->execute([$m, "Lezione " . ($i + 1)]);
+                    $l[] = (int) $pdo->lastInsertId();
+                }
+                $pdo->prepare("INSERT INTO modules (course_id, title, position) VALUES (?, 'Verifica finale', 2)")->execute([$c]);
+                $m = (int) $pdo->lastInsertId();
+                $pdo->prepare("INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (?, 'Verifica del corso', 60)")->execute([$m]);
+                $q = (int) $pdo->lastInsertId();
+                $pdo->prepare("INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)")->execute([(int) $argv[1], $c]);
+                echo $c, " ", $l[0], " ", $l[1], " ", $q;`, d.utenti.studenteA, d.utenti.admin).trim().split(' ');
+
+            try {
+                await stud.page.goto(BASE + '/courses/' + corso);
+                const riga = await stud.page.evaluate(() => [...document.querySelectorAll('details.modulo-riga')]
+                    .map((x) => x.querySelector('.modulo-riga-titolo').textContent.trim() + ': ' + x.querySelector('.modulo-riga-stato').textContent.trim()));
+                check('verifica finale → finché è una riga dice «questionario», non «nessuna lezione»', riga.includes('Verifica finale: questionario'), [JSON.stringify(riga)]);
+                await stud.page.goto(BASE + '/courses/' + corso + '?moduli=tutti');
+                q = await rigaQuiz(stud.page, verifica);
+                const vuota = (await stud.page.content()).includes('Nessuna lezione in questo modulo.');
+                check('verifica finale, moduli prima non fatti → grigia, senza collegamento, e senza «Nessuna lezione»', !q.link && q.chiuso === 1 && !vuota, [JSON.stringify(q), 'nessuna lezione: ' + vuota]);
+                await stud.page.goto(BASE + '/quizzes/' + verifica);
+                let avviso = await stud.page.evaluate(() => location.pathname + ' ' + ((document.querySelector('.alert.alert-error') || {}).textContent || ''));
+                check('verifica finale dall\'indirizzo → torna al corso, con «si apre quando hai completato i moduli precedenti»',
+                    avviso.startsWith('/courses/' + corso + ' ') && avviso.includes('si apre quando hai completato i moduli precedenti.'), [avviso]);
+
+                await esitoPost(stud.page, '/lessons/' + l1 + '/complete', [], '/lessons/' + l1);
+                const meta = await esitoGet(stud.page, '/quizzes/' + verifica);
+                check('verifica finale, un modulo prima su due → ancora chiusa', meta.esito !== 'consentito' || (await stud.page.content()).includes('si apre quando hai completato i moduli precedenti'), [meta.come]);
+                await esitoPost(stud.page, '/lessons/' + l2 + '/complete', [], '/lessons/' + l2);
+                await stud.page.goto(BASE + '/courses/' + corso);
+                q = await rigaQuiz(stud.page, verifica);
+                check('verifica finale, moduli prima completati → si apre, con «Fallo ora»', q.link && q.fallo, [JSON.stringify(q)]);
+                await stud.page.goto(BASE + '/quizzes/' + verifica);
+                avviso = await stud.page.evaluate(() => location.pathname);
+                check('verifica finale, moduli prima completati → la pagina del questionario si apre', avviso === '/quizzes/' + verifica, [avviso]);
+            } finally {
+                await stud.ctx.close();
+                php('App\\Core\\Database::connection()->prepare("DELETE FROM courses WHERE id = ?")->execute([(int) $argv[1]]);', corso);
+            }
+        }
+
+        // --- «Segna come completata»: video da guardare, esercizi da fare ---
+        //
+        // Dal 27/10 ogni lezione con il video aspetta che lo studente lo
+        // avvii, anche con il testo; con gli esercizi H5P ci vogliono tutte e
+        // due le cose, e la frase dice quello che manca. La lezione del mondo
+        // A diventa per la prova una lezione con testo e video; l'altra classe
+        // non l'ha completata. Gli esercizi H5P si tengono «in caricamento»
+        // (le loro richieste non rispondono), cosi' restano da fare.
+
+        console.log('\n--- «Segna come completata»: video ed esercizi');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const prima = php('echo json_encode(App\\Core\\Database::connection()->query("SELECT video_provider, video_ref FROM lessons WHERE id = " . (int) $argv[1])->fetch(PDO::FETCH_ASSOC));', A.lezione);
+            const pulsante = (page) => page.evaluate(() => {
+                const b = document.querySelector('[data-completa]');
+                const h = document.querySelector('[data-avviso-completa]');
+                return { spento: !!b && b.disabled, frase: h && !h.hidden ? h.textContent.trim() : '' };
+            });
+            let h5p = null;
+
+            try {
+                php('App\\Core\\Database::connection()->prepare("UPDATE lessons SET video_provider = \'self_hosted\', video_ref = \'prova.mp4\' WHERE id = ?")->execute([(int) $argv[1]]);', A.lezione);
+
+                let altra = await entra(browser, 'altrogruppo@test.it');
+                await altra.page.goto(BASE + '/lessons/' + A.lezione);
+                let p = await pulsante(altra.page);
+                check('lezione con testo e video → il pulsante aspetta il video: «Guarda il video per poter segnare la lezione come completata.»',
+                    p.spento && p.frase === 'Guarda il video per poter segnare la lezione come completata.', [JSON.stringify(p)]);
+                await altra.page.click('[data-avvia]');
+                p = await pulsante(altra.page);
+                check('lezione con testo e video → avviato il video, il pulsante si accende e la frase sparisce', !p.spento && p.frase === '', [JSON.stringify(p)]);
+                await altra.ctx.close();
+
+                h5p = php(`
+                    $f = tempnam(sys_get_temp_dir(), "h5p");
+                    $z = new ZipArchive(); $z->open($f, ZipArchive::OVERWRITE);
+                    $z->addFromString("h5p.json", json_encode(["title" => "Fisarmonica", "mainLibrary" => "H5P.Accordion", "preloadedDependencies" => [["machineName" => "H5P.Accordion", "majorVersion" => 1, "minorVersion" => 0]]]));
+                    $z->addFromString("content/content.json", "{}");
+                    $z->addFromString("H5P.Accordion-1.0/library.json", "{}");
+                    $z->close();
+                    $a = App\\Core\\H5PArchivio::apriPerLezione($f, (int) $argv[1]); unlink($f);
+                    echo App\\Models\\LessonH5PModel::create((int) $argv[1], $a, "prova.h5p"), " ", $a["dir"];`, A.lezione).trim().split(' ');
+
+                altra = await entra(browser, 'altrogruppo@test.it');
+                await altra.page.route('**/lessons/' + A.lezione + '/h5p/**', () => {});
+                await altra.page.goto(BASE + '/lessons/' + A.lezione, { waitUntil: 'domcontentloaded' });
+                await altra.page.waitForSelector('[data-avviso-completa]:not([hidden])');
+                p = await pulsante(altra.page);
+                check('lezione con video ed esercizio → «Guarda il video e fai l’esercizio per poter segnare la lezione come completata.»',
+                    p.spento && p.frase === 'Guarda il video e fai l’esercizio per poter segnare la lezione come completata.', [JSON.stringify(p)]);
+                await altra.page.click('[data-avvia]');
+                p = await pulsante(altra.page);
+                check('lezione con video ed esercizio → avviato il video resta «Fai l’esercizio…», e il pulsante spento',
+                    p.spento && p.frase === 'Fai l’esercizio per poter segnare la lezione come completata.', [JSON.stringify(p)]);
+                await altra.ctx.close();
+            } finally {
+                const v = JSON.parse(prima);
+                php('App\\Core\\Database::connection()->prepare("UPDATE lessons SET video_provider = ?, video_ref = ? WHERE id = ?")->execute([$argv[1], $argv[2] === "" ? null : $argv[2], (int) $argv[3]]);',
+                    v.video_provider, v.video_ref || '', A.lezione);
+
+                if (h5p !== null) {
+                    php('App\\Core\\Database::connection()->prepare("DELETE FROM lesson_h5p WHERE id = ?")->execute([(int) $argv[1]]); App\\Core\\H5PArchivio::elimina($argv[2]);', h5p[0], h5p[1]);
+                }
             }
         }
 

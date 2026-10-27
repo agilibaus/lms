@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Auth\Auth;
+use App\Models\LessonModel;
+use App\Models\LessonProgressModel;
 use App\Models\ModuleModel;
 use App\Models\QuizAttemptModel;
 use App\Models\QuizModel;
@@ -110,6 +112,44 @@ class CourseAccess
         }
 
         return isset(self::locks($userId, (int) $module['course_id'])[$moduleId]);
+    }
+
+    /**
+     * Se il questionario di questo modulo e' ancora chiuso per lo studente
+     * (27/10): la regola e' `Percorso::questionarioChiuso`, qui con i dati
+     * del database. Null se e' aperto; per lo staff sempre aperto. Vale in
+     * piu' delle chiusure del modulo (`locks`), che si controllano prima.
+     *
+     * @param array<string, mixed> $module
+     */
+    public static function questionarioChiuso(int $userId, array $module): ?string
+    {
+        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+            return null;
+        }
+
+        $courseId = (int) $module['course_id'];
+        $modules = ModuleModel::forCourse($courseId);
+        $lessonsByModule = [];
+        $quizByModule = [];
+        $quizPassedByModule = [];
+
+        foreach ($modules as $m) {
+            $id = (int) $m['id'];
+            $lessonsByModule[$id] = LessonModel::forModule($id);
+            $quizByModule[$id] = QuizModel::forModule($id);
+            $quizPassedByModule[$id] = $quizByModule[$id] !== null
+                && QuizAttemptModel::hasPassed($userId, (int) $quizByModule[$id]['id']);
+        }
+
+        return Percorso::questionarioChiuso(
+            (int) $module['id'],
+            $modules,
+            $lessonsByModule,
+            array_map('intval', LessonProgressModel::completedLessonIdsForCourse($userId, $courseId)),
+            $quizByModule,
+            $quizPassedByModule
+        );
     }
 
     /**

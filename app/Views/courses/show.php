@@ -18,6 +18,7 @@ use App\Core\TestoBreve;
 /** @var int[] $completedLessonIds */
 /** @var array<int, array|null> $quizByModule */
 /** @var array<int, bool> $quizPassedByModule */
+/** @var array<int, ?string> $questionariChiusi per lo studente: perche' il questionario e' ancora chiuso, o null (`Percorso::questionarioChiuso`) */
 /** @var array<int, array{motivo: string, available_from: ?string}> $moduleLocks */
 /** @var array|null $certificate */
 /** @var string|null $obiettivoCorso «completo», «ridotto», o null senza obiettivo */
@@ -172,13 +173,13 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             <?php if (!$aperto): ?>
                 <?php
                 if ($stato === Percorso::COMPLETATO) {
-                    $statoRiga = 'completato · ' . Percorso::lezioni($nLezioni);
+                    $statoRiga = 'completato · ' . Percorso::contenuto($nLezioni, $quiz !== null);
                 } elseif ($lockedByDate) {
                     $statoRiga = 'si apre il ' . date('j/n/Y', strtotime((string) $lock['available_from']));
                 } elseif ($isLocked) {
                     $statoRiga = 'si sblocca con il questionario del modulo precedente';
                 } else {
-                    $statoRiga = Percorso::lezioni($nLezioni);
+                    $statoRiga = Percorso::contenuto($nLezioni, $quiz !== null);
                 }
                 ?>
                 <details class="modulo-riga <?= $stato === Percorso::COMPLETATO ? 'modulo-riga-completato' : '' ?>" id="modulo-<?= $moduleId ?>">
@@ -297,9 +298,14 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                          lezioni, non sul questionario. In un modulo chiuso
                          niente: c'e' la data. */ ?>
                 <?php $ripresa = null; $restaQuestionario = false; ?>
+                <?php /* Il questionario ancora chiuso (27/10): in grigio e
+                         senza collegamento, senza frase. Lo dicono gia'
+                         il posto in fondo al modulo, il conto delle lezioni
+                         e «Inizia da qui»; quando si apre ha «Fallo ora». */ ?>
+                <?php $questionarioChiuso = $questionariChiusi[$moduleId] ?? null; ?>
                 <?php if ($stato === Percorso::IN_CORSO && !$isLocked): ?>
                     <?php $ripresa = Percorso::riprendi($lessonsByModule[$moduleId] ?? [], $completedLessonIds); ?>
-                    <?php $restaQuestionario = $ripresa === null && $quiz !== null; ?>
+                    <?php $restaQuestionario = $ripresa === null && $quiz !== null && $questionarioChiuso === null; ?>
                 <?php endif; ?>
 
                 <?php if ($lockedByDate): ?>
@@ -317,7 +323,9 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                 <?php else: ?>
                     <?php $lessons = $lessonsByModule[$moduleId] ?? []; ?>
 
-                    <?php if (empty($lessons)): ?>
+                    <?php if (empty($lessons) && $quiz !== null): ?>
+                        <?php /* La verifica finale (27/10): solo il questionario. */ ?>
+                    <?php elseif (empty($lessons)): ?>
                         <p class="empty-state-small">Nessuna lezione in questo modulo.</p>
                     <?php else: ?>
                         <?php if ($ripresa !== null || $restaQuestionario): ?>
@@ -381,9 +389,15 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                          un lettore di schermo non lo annuncia. */ ?>
                                 <span class="ordine-vuoto" aria-hidden="true"></span>
                             <?php endif; ?>
-                            <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="quiz-link">
-                                <?= Icona::svg('clipboard-check') ?>Questionario: <?= htmlspecialchars((string) $quiz['title']) ?>
-                            </a>
+                            <?php if ($questionarioChiuso !== null): ?>
+                                <span class="quiz-link quiz-link-chiuso">
+                                    <?= Icona::svg('clipboard-check') ?>Questionario: <?= htmlspecialchars((string) $quiz['title']) ?>
+                                </span>
+                            <?php else: ?>
+                                <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="quiz-link">
+                                    <?= Icona::svg('clipboard-check') ?>Questionario: <?= htmlspecialchars((string) $quiz['title']) ?>
+                                </a>
+                            <?php endif; ?>
                             <?php if (!empty($quizPassedByModule[$moduleId])): ?>
                                 <span class="badge badge-success">superato</span>
                             <?php endif; ?>

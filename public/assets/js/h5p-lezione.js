@@ -38,9 +38,6 @@
     var VERBI = ['interacted', 'answered', 'completed', 'progressed', 'passed', 'failed', 'scored', 'responded'];
     var NUMERI = ['', 'l’esercizio', 'i due esercizi', 'i tre esercizi', 'i quattro esercizi', 'i cinque esercizi',
         'i sei esercizi', 'i sette esercizi', 'gli otto esercizi', 'i nove esercizi', 'i dieci esercizi'];
-
-    var pulsante = document.querySelector('[data-completa]');
-    var avviso = document.querySelector('[data-avviso-h5p]');
     var chiave = 'pistacchio-h5p-usati:' + location.pathname;
     var usati = {};
 
@@ -58,18 +55,17 @@
         var fatti = figure.filter(function (f) { return usati[percorso(f)]; }).length;
         var tutti = fatti === figure.length;
 
-        if (!pulsante || !avviso) {
+        // La frase la compone lesson-completa.js, insieme a quella del video
+        // se c'e' anche lui: «Guarda il video e fai l'esercizio…» (27/10).
+        if (!window.LezioneCompleta) {
             return;
         }
 
-        pulsante.disabled = !tutti;
-        avviso.hidden = tutti;
-
-        if (!tutti) {
-            avviso.textContent = 'Usa ' + (NUMERI[figure.length] || ('i ' + figure.length + ' esercizi'))
-                + ' per poter segnare la lezione come completata'
-                + (figure.length > 1 ? ' (' + fatti + ' su ' + figure.length + ').' : '.');
-        }
+        window.LezioneCompleta.manca(
+            'esercizi',
+            tutti ? null : 'fai ' + (NUMERI[figure.length] || ('i ' + figure.length + ' esercizi')),
+            figure.length > 1 ? fatti + ' su ' + figure.length : ''
+        );
     }
 
     function usato(f) {
