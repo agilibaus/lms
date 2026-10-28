@@ -38,11 +38,13 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
              completati. Accesa, «Questionario obbligatorio» sparisce
              (modulo-verifica.js): dopo la verifica non c'e' niente da
              bloccare, e il server lo salva comunque spento. */ ?>
-    <label class="checkbox-label">
+    <?php /* Le due caselle (28/10, Alessandro): il nome in grassetto, la
+             descrizione in testo normale (`.casella-descritta`). */ ?>
+    <label class="checkbox-label casella-descritta">
         <input type="checkbox" name="is_final" value="1" data-verifica-finale
                <?= !empty($valori['is_final']) ? 'checked' : '' ?>
                <?= !empty($module['is_final']) ? 'aria-describedby="is_final_aiuto"' : '' ?>>
-        Verifica finale: il modulo contiene solo il questionario finale del corso, che si apre quando lo studente ha completato tutti gli altri moduli. Sta sempre in fondo al corso, e ce n’è una sola per corso.
+        <span><span class="casella-nome">Verifica finale</span>: il modulo contiene solo il questionario finale del corso, che si apre quando lo studente ha completato tutti gli altri moduli. Sta sempre in fondo al corso, e ce n’è una sola per corso.</span>
     </label>
     <?php if (!empty($module['is_final'])): ?>
         <p class="hint" id="is_final_aiuto">
@@ -51,9 +53,9 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
         </p>
     <?php endif; ?>
 
-    <label class="checkbox-label" data-questionario-obbligatorio>
+    <label class="checkbox-label casella-descritta" data-questionario-obbligatorio>
         <input type="checkbox" name="quiz_required" value="1" <?= !empty($valori['quiz_required']) ? 'checked' : '' ?>>
-        Questionario obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il questionario di questo modulo
+        <span><span class="casella-nome">Questionario obbligatorio</span>: i moduli successivi restano bloccati finché lo studente non supera il questionario di questo modulo</span>
     </label>
 
     <?php /* L'obiettivo del modulo (11/10): facoltativo, 1.000 caratteri di

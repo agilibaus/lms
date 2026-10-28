@@ -3031,6 +3031,24 @@ body.has-focus-video {
     margin-top: 0.15rem;
 }
 
+/* Una casella con il nome e la descrizione (28/10, Alessandro: «Verifica
+   finale» e «Questionario obbligatorio» in «Nuovo modulo»): il nome in
+   grassetto, il resto in testo normale. */
+.stacked-form .casella-descritta {
+    font-weight: 400;
+}
+
+.casella-descritta .casella-nome {
+    font-weight: 600;
+}
+
+/* La casella a meta' della prima riga: riga 0,95 × 1,4 rem = 21,3 px,
+   casella 13 px, (21,3 - 13) / 2 = 4,1 px. Con il margine generico di
+   0,15 rem stava quasi 2 px piu' in alto. */
+.casella-descritta input[type="checkbox"] {
+    margin-top: 0.26rem;
+}
+
 /* `display: flex` qui sopra vince sull'attributo `hidden`: senza questa
    regola un'etichetta nascosta dal JavaScript resterebbe visibile (28/10,
    «Questionario obbligatorio» con la verifica finale accesa). */
