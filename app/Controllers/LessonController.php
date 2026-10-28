@@ -68,6 +68,8 @@ class LessonController
             return;
         }
 
+        $this->rifiutaNellaVerifica($module);
+
         View::render('lessons/form', [
             'pageTitle' => 'Nuova lezione',
             'module' => $module,
@@ -89,6 +91,8 @@ class LessonController
             echo 'Modulo non trovato.';
             return;
         }
+
+        $this->rifiutaNellaVerifica($module);
 
         $title = trim($_POST['title'] ?? '');
 
@@ -755,6 +759,24 @@ class LessonController
     // ---------------------------------------------------------------
     // Helper privati
     // ---------------------------------------------------------------
+
+    /**
+     * La verifica finale contiene solo il questionario (28/10): nessuna
+     * lezione, nemmeno scrivendo l'indirizzo a mano. Si torna al corso con
+     * la ragione.
+     *
+     * @param array<string, mixed> $module
+     */
+    private function rifiutaNellaVerifica(array $module): void
+    {
+        if (empty($module['is_final'])) {
+            return;
+        }
+
+        $_SESSION['flash_error'] = 'La verifica finale contiene solo il questionario: le lezioni vanno negli altri moduli.';
+        header('Location: /courses/' . (int) $module['course_id']);
+        exit;
+    }
 
     /**
      * Staff (admin/tutor/assistente) ha sempre accesso; lo studente solo se iscritto.

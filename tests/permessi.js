@@ -869,7 +869,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             php('App\\Core\\Database::connection()->prepare("DELETE FROM quiz_attempts WHERE id > ? AND user_id = ? AND quiz_id = ?")->execute([(int) $argv[1], (int) $argv[2], (int) $argv[3]]);', ultimo, d.utenti.studenteA, A.quiz);
 
             // La verifica finale: un corso a parte con due moduli da una
-            // lezione e un terzo con il solo questionario, per lo studente A.
+            // lezione e la verifica (dal 28/10 la dichiara la casella,
+            // `is_final`), per lo studente A.
             const [corso, l1, l2, verifica] = php(`
                 $pdo = App\\Core\\Database::connection();
                 $pdo->prepare("INSERT INTO courses (title, slug, description, is_published, created_by) VALUES (?, ?, '', 1, ?)")->execute(["[prova-permessi] verifica finale", "prova-permessi-verifica-" . time(), (int) $argv[2]]);
@@ -881,7 +882,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     $pdo->prepare("INSERT INTO lessons (module_id, title, content_html, position) VALUES (?, ?, '<p>Testo.</p>', 0)")->execute([$m, "Lezione " . ($i + 1)]);
                     $l[] = (int) $pdo->lastInsertId();
                 }
-                $pdo->prepare("INSERT INTO modules (course_id, title, position) VALUES (?, 'Verifica finale', 2)")->execute([$c]);
+                $pdo->prepare("INSERT INTO modules (course_id, title, position, is_final) VALUES (?, 'Verifica finale', 2, 1)")->execute([$c]);
                 $m = (int) $pdo->lastInsertId();
                 $pdo->prepare("INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (?, 'Verifica del corso', 60)")->execute([$m]);
                 $q = (int) $pdo->lastInsertId();
@@ -915,6 +916,164 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             } finally {
                 await stud.ctx.close();
                 php('App\\Core\\Database::connection()->prepare("DELETE FROM courses WHERE id = ?")->execute([(int) $argv[1]]);', corso);
+            }
+        }
+
+        // --- La verifica finale (28/10) -------------------------------------
+        //
+        // Un modulo che l'admin dichiara verifica finale con la casella: solo
+        // il questionario, sempre in fondo, una per corso. Non e' un
+        // contenuto: non si sceglie per incontri, Bacheca, domande, e non
+        // chiede le Tre parole. Si prova nel corso A, con un modulo creato
+        // dall'admin come dal pannello e tolto alla fine.
+
+        console.log('\n--- La verifica finale');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const ordine = () => php('echo json_encode(App\\Core\\Database::connection()->query("SELECT id, title, is_final, quiz_required FROM modules WHERE course_id = " . (int) $argv[1] . " ORDER BY position, id")->fetchAll(PDO::FETCH_ASSOC));', A.corso);
+            const leggi = () => JSON.parse(ordine());
+            const crea = '/courses/' + A.corso + '/modules';
+            const nuovo = '/courses/' + A.corso + '/modules/create';
+            const avviso = (page) => page.evaluate(() => ((document.querySelector('.alert.alert-error') || {}).textContent || '').trim());
+            // Il rifiuto e' un rimando con l'avviso in sessione: si apre la
+            // pagina dove torna, e si legge li'.
+            const rifiutoDi = async (page, url, campi, tokenDa, torna) => {
+                await esitoPost(page, url, campi, tokenDa);
+                await page.goto(BASE + torna);
+                return avviso(page);
+            };
+            const admin = await entra(browser, 'admin@test.it');
+            let verifica = null;
+            let altro = null;
+
+            try {
+                const primo = leggi().find((x) => Number(x.id) === Number(A.modulo));
+                const conLezioni = await rifiutoDi(admin.page, '/modules/' + A.modulo, [['title', primo.title], ['is_final', '1']],
+                    '/modules/' + A.modulo + '/edit', '/modules/' + A.modulo + '/edit');
+                check('admin → accenderla su un modulo con lezioni: rifiutato, con la frase',
+                    conLezioni.includes('Una verifica finale non ha lezioni: toglile prima di farne una verifica.')
+                    && leggi().every((x) => Number(x.is_final) === 0), [conLezioni]);
+
+                await esitoPost(admin.page, crea, [['title', 'Verifica di prova'], ['is_final', '1'], ['quiz_required', '1']], nuovo);
+                let m = leggi();
+                verifica = m.find((x) => x.title === 'Verifica di prova');
+                check('admin → crea la verifica finale: in fondo al corso, e senza «questionario obbligatorio»',
+                    !!verifica && m[m.length - 1].id === verifica.id && Number(verifica.is_final) === 1 && Number(verifica.quiz_required) === 0, [JSON.stringify(m)]);
+
+                await esitoPost(admin.page, crea, [['title', 'Tappa dopo la verifica']], nuovo);
+                m = leggi();
+                altro = m.find((x) => x.title === 'Tappa dopo la verifica');
+                check('admin → un modulo creato dopo va prima della verifica, che resta in fondo',
+                    !!altro && m[m.length - 1].id === verifica.id && m[m.length - 2].id === altro.id, [JSON.stringify(m.map((x) => x.title))]);
+
+                const rifiuto = await rifiutoDi(admin.page, crea, [['title', 'Seconda verifica'], ['is_final', '1']], nuovo, nuovo);
+                m = leggi();
+                check('admin → una seconda verifica nello stesso corso: rifiutata, con la frase',
+                    !m.some((x) => x.title === 'Seconda verifica') && rifiuto.includes('Questo corso ha già una verifica finale: «Verifica di prova». Ce ne può essere una sola per corso.'), [rifiuto]);
+
+                const seconda = await rifiutoDi(admin.page, '/modules/' + altro.id, [['title', 'Tappa dopo la verifica'], ['is_final', '1']],
+                    '/modules/' + altro.id + '/edit', '/modules/' + altro.id + '/edit');
+                check('admin → accenderla su un secondo modulo esistente: rifiutato',
+                    seconda.includes('Questo corso ha già una verifica finale') && leggi().filter((x) => Number(x.is_final) === 1).length === 1, [seconda]);
+
+                await admin.page.goto(BASE + '/courses/' + A.corso + '/modules/create');
+                const vietaLezioni = await esitoPost(admin.page, '/modules/' + verifica.id + '/lessons', [['title', 'Lezione nella verifica']], '/courses/' + A.corso);
+                const lezioni = php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM lessons WHERE module_id = " . (int) $argv[1])->fetchColumn();', verifica.id).trim();
+                await admin.page.goto(BASE + '/modules/' + verifica.id + '/lessons/create');
+                const daForm = { dove: new URL(admin.page.url()).pathname, avviso: await avviso(admin.page) };
+                check('admin → nessuna lezione nella verifica, né dal modulo né dall\'indirizzo',
+                    lezioni === '0' && daForm.dove === '/courses/' + A.corso && daForm.avviso.includes('La verifica finale contiene solo il questionario'), [vietaLezioni.come, lezioni, JSON.stringify(daForm)]);
+
+                await esitoPost(admin.page, '/modules/' + verifica.id + '/move', [['direction', 'up']], '/courses/' + A.corso);
+                await esitoPost(admin.page, '/modules/' + altro.id + '/move', [['direction', 'down']], '/courses/' + A.corso);
+                m = leggi();
+                check('admin → la verifica non sale, e nessun modulo scende sotto di lei',
+                    m[m.length - 1].id === verifica.id && m[m.length - 2].id === altro.id, [JSON.stringify(m.map((x) => x.title))]);
+
+                await admin.page.goto(BASE + '/courses/' + A.corso);
+                const carta = await admin.page.evaluate((id) => {
+                    const c = document.getElementById('modulo-' + id);
+                    const prima = c && c.previousElementSibling;
+                    return c && {
+                        etichetta: [...c.querySelectorAll('h2 .badge')].map((b) => b.textContent.trim()),
+                        lezione: !!c.querySelector('a[href$="/lessons/create"]'),
+                        frecce: [...c.querySelectorAll('button[title^="Sposta il modulo"]')].map((b) => b.disabled),
+                        giuPrima: prima ? (prima.querySelector('button[title="Sposta il modulo giù"]') || {}).disabled : null,
+                    };
+                }, verifica.id);
+                check('admin → nella pagina del corso: «verifica finale», senza «+ Lezione», frecce spente, e il modulo prima non scende',
+                    !!carta && carta.etichetta.includes('verifica finale') && !carta.lezione && carta.frecce.every((x) => x) && carta.giuPrima === true, [JSON.stringify(carta)]);
+
+                await admin.page.goto(BASE + '/modules/' + verifica.id + '/edit');
+                const scheda = await admin.page.evaluate(() => ({
+                    avviso: (document.getElementById('is_final_aiuto') || {}).textContent || '',
+                    obbligatorioVisibile: (() => { const l = document.querySelector('[data-questionario-obbligatorio]'); return !!l && getComputedStyle(l).display !== 'none'; })(),
+                }));
+                await admin.page.uncheck('[data-verifica-finale]');
+                const spenta = await admin.page.evaluate(() => getComputedStyle(document.querySelector('[data-questionario-obbligatorio]')).display !== 'none');
+                check('admin → «Modifica modulo» della verifica: l\'avviso sullo spegnerla, e «Questionario obbligatorio» nascosto finché è accesa',
+                    scheda.avviso.includes('Spegnendola, il modulo resta senza lezioni e il suo questionario si apre subito a tutti gli studenti')
+                    && !scheda.obbligatorioVisibile && spenta, [JSON.stringify(scheda), 'spenta: ' + spenta]);
+
+                await admin.page.goto(BASE + '/live/create');
+                const nelleSessioni = await admin.page.evaluate((id) => !!document.querySelector('select[name="module_id"] option[value="' + id + '"]'), verifica.id);
+                check('admin → la verifica non è fra i moduli di un incontro', !nelleSessioni, []);
+                const sessioni = (titolo) => php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM live_sessions WHERE title = " . App\\Core\\Database::connection()->quote($argv[1]))->fetchColumn();', titolo).trim();
+                const incontro = (titolo, modulo) => [['title', titolo], ['module_id', String(modulo)], ['group_id', String(A.gruppo)],
+                    ['starts_at', '2030-01-10T10:00'], ['ends_at', '2030-01-10T11:00']];
+                const rifiutoIncontro = await rifiutoDi(admin.page, '/live', incontro('[prova-permessi] ripasso sulla verifica', verifica.id), '/live/create', '/live/create');
+                await esitoPost(admin.page, '/live', incontro('[prova-permessi] ripasso controprova', A.modulo), '/live/create');
+                check('admin → un incontro sulla verifica, mandato a mano, non si salva (sul primo modulo sì)',
+                    sessioni('[prova-permessi] ripasso sulla verifica') === '0' && sessioni('[prova-permessi] ripasso controprova') === '1'
+                    && rifiutoIncontro.includes('La verifica finale non ha incontri: scegli un altro modulo.'), [rifiutoIncontro]);
+                php('App\\Core\\Database::connection()->exec("DELETE FROM live_sessions WHERE title = \'[prova-permessi] ripasso controprova\'");');
+
+                await admin.page.goto(BASE + '/tre-parole?corso=' + A.corso);
+                const treParole = (await admin.page.content()).includes('Verifica di prova');
+                check('admin → la verifica non è fra i moduli delle Tre parole', !treParole, []);
+
+                const stud = await entra(browser, 'stud@test.it');
+                await stud.page.goto(BASE + '/courses/' + A.corso);
+                const domande = await stud.page.evaluate((id) => !!document.querySelector('#qa-modulo option[value="' + id + '"]'), verifica.id);
+                await stud.page.goto(BASE + '/bacheca/condividi?corso=' + A.corso);
+                const bacheca = await stud.page.evaluate((id) => !!document.querySelector('select[name="module_id"] option[value="' + id + '"]'), verifica.id);
+                check('studente A → la verifica non è fra i moduli delle domande all\'esperto né della Bacheca', !domande && !bacheca, ['domande: ' + domande, 'bacheca: ' + bacheca]);
+                const domandeCon = (testo) => php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM course_questions WHERE question = " . App\\Core\\Database::connection()->quote($argv[1]))->fetchColumn();', testo).trim();
+                const domandePrima = domandeCon('Una domanda sulla verifica?');
+                await esitoPost(stud.page, '/courses/' + A.corso + '/domande', [['question', 'Una domanda sulla verifica?'], ['module_id', String(verifica.id)]], '/courses/' + A.corso);
+                const domandeDopo = domandeCon('Una domanda sulla verifica?');
+                await esitoPost(stud.page, '/courses/' + A.corso + '/domande', [['question', 'Una domanda di controprova?'], ['module_id', String(A.modulo)]], '/courses/' + A.corso);
+                const controprova = domandeCon('Una domanda di controprova?');
+                php('App\\Core\\Database::connection()->exec("DELETE FROM course_questions WHERE question = \'Una domanda di controprova?\'");');
+                // Le Tre parole: il corso le chiede, e lo studente A ha appena
+                // superato il questionario della verifica, quindi l'ha
+                // completata. Non gliele chiede lo stesso.
+                php(`
+                    $pdo = App\\Core\\Database::connection();
+                    $pdo->prepare("INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (?, 'Verifica di prova', 60)")->execute([(int) $argv[1]]);
+                    $q = (int) $pdo->lastInsertId();
+                    $pdo->prepare("INSERT INTO quiz_attempts (user_id, quiz_id, score_pct, passed) VALUES (?, ?, 100, 1)")->execute([(int) $argv[2], $q]);
+                    $pdo->prepare("UPDATE courses SET three_words_since = '2000-01-01 00:00:00' WHERE id = ?")->execute([(int) $argv[3]]);`,
+                    verifica.id, d.utenti.studenteA, A.corso);
+                await stud.page.goto(BASE + '/courses/' + A.corso);
+                const chiede = await stud.page.evaluate((id) => !!document.querySelector('form[action$="/moduli/' + id + '/tre-parole"]'), verifica.id);
+                check('studente A, verifica superata → la pagina del corso non chiede le Tre parole sulla verifica', !chiede, []);
+                const tre = await esitoPost(stud.page, '/courses/' + A.corso + '/moduli/' + verifica.id + '/tre-parole', [['parole[0]', 'a'], ['parole[1]', 'b'], ['parole[2]', 'c']], '/courses/' + A.corso);
+                check('studente A → una domanda o le Tre parole sulla verifica, mandate a mano: rifiutate',
+                    domandePrima === '0' && domandeDopo === '0' && controprova === '1' && tre.esito === 'negato',
+                    ['domande ' + domandePrima + '→' + domandeDopo + ', controprova ' + controprova, 'tre parole: ' + tre.come]);
+                await stud.ctx.close();
+            } finally {
+                await admin.ctx.close();
+                php(`
+                    $pdo = App\\Core\\Database::connection();
+                    $pdo->exec("DELETE FROM modules WHERE course_id = " . (int) $argv[1] . " AND title IN ('Verifica di prova', 'Tappa dopo la verifica', 'Seconda verifica')");
+                    $pdo->exec("DELETE FROM module_words WHERE course_id = " . (int) $argv[1]);
+                    $pdo->exec("UPDATE courses SET three_words_since = NULL WHERE id = " . (int) $argv[1]);`, A.corso);
             }
         }
 

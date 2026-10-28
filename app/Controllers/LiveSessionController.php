@@ -521,6 +521,12 @@ class LiveSessionController
             return 'Modulo non trovato.';
         }
 
+        // La verifica finale non e' un contenuto del corso (28/10): niente
+        // incontri, nemmeno con un invio costruito a mano.
+        if ($data['module_id'] !== null && !empty(ModuleModel::find($data['module_id'])['is_final'])) {
+            return 'La verifica finale non ha incontri: scegli un altro modulo.';
+        }
+
         if ($data['group_id'] !== null && GroupModel::find($data['group_id']) === null) {
             return 'Gruppo non trovato.';
         }
@@ -698,7 +704,8 @@ class LiveSessionController
                 continue;
             }
 
-            foreach (ModuleModel::forCourse((int) $course['id']) as $module) {
+            // Senza la verifica finale (28/10): non e' un contenuto del corso.
+            foreach (ModuleModel::contenuti((int) $course['id']) as $module) {
                 $options[] = [
                     'id' => (int) $module['id'],
                     'label' => $course['title'] . ' — ' . $module['title'],

@@ -30,7 +30,7 @@ class ModuleModel
         // suo gruppo, se ne ha una, altrimenti quella del corso.
         $data = $userId === null ? 'm.available_from' : self::dataPer((string) $userId);
         $stmt = Database::connection()->prepare(
-            "SELECT m.id, m.course_id, m.title, m.objective, m.position, m.quiz_required,
+            "SELECT m.id, m.course_id, m.title, m.objective, m.position, m.quiz_required, m.is_final,
                     {$data} AS available_from,
                     ({$data} IS NULL OR {$data} <= NOW()) AS is_available
              FROM modules m WHERE m.course_id = :course_id ORDER BY m.position, m.id"
@@ -38,6 +38,62 @@ class ModuleModel
         $stmt->execute(['course_id' => $courseId]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * I moduli del corso che sono contenuto, cioe' tutti tranne la verifica
+     * finale (28/10, Alessandro): la verifica e' uno strumento del corso, non
+     * qualcosa da imparare, quindi non si sceglie per un incontro, una
+     * risorsa della Bacheca, una domanda all'esperto, e non chiede le Tre
+     * parole.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function contenuti(int $courseId, ?int $userId = null): array
+    {
+        return array_values(array_filter(
+            self::forCourse($courseId, $userId),
+            static fn (array $m): bool => empty($m['is_final'])
+        ));
+    }
+
+    /**
+     * La verifica finale del corso, o null (ce n'e' al massimo una, 28/10).
+     * `$tranne` esclude un modulo: quello che si sta salvando.
+     */
+    public static function verificaFinale(int $courseId, ?int $tranne = null): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT * FROM modules WHERE course_id = :c AND is_final = 1 AND id <> :t ORDER BY id LIMIT 1'
+        );
+        $stmt->execute(['c' => $courseId, 't' => $tranne ?? 0]);
+        $module = $stmt->fetch();
+
+        return $module ?: null;
+    }
+
+    /**
+     * La verifica finale sta sempre in fondo al corso (28/10): dopo ogni
+     * modulo nuovo, ogni spostamento e ogni salvataggio la si rimette
+     * dopo tutti gli altri. Senza verifica non fa niente.
+     */
+    public static function verificaInFondo(int $courseId): void
+    {
+        $verifica = self::verificaFinale($courseId);
+
+        if ($verifica === null) {
+            return;
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare('SELECT COALESCE(MAX(position), -1) FROM modules WHERE course_id = :c AND id <> :v');
+        $stmt->execute(['c' => $courseId, 'v' => (int) $verifica['id']]);
+        $ultima = (int) $stmt->fetchColumn();
+
+        if ((int) $verifica['position'] <= $ultima) {
+            $db->prepare('UPDATE modules SET position = :p WHERE id = :v')
+                ->execute(['p' => $ultima + 1, 'v' => (int) $verifica['id']]);
+        }
     }
 
     /**
@@ -100,24 +156,31 @@ class ModuleModel
         string $title,
         bool $quizRequired = false,
         ?string $availableFrom = null,
-        ?string $objective = null
+        ?string $objective = null,
+        bool $isFinal = false
     ): int {
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO modules (course_id, title, objective, position, quiz_required, available_from)
-             VALUES (:course_id, :title, :objective, :position, :quiz_required, :available_from)'
+            'INSERT INTO modules (course_id, title, objective, position, quiz_required, is_final, available_from)
+             VALUES (:course_id, :title, :objective, :position, :quiz_required, :is_final, :available_from)'
         );
         $stmt->execute([
             'course_id' => $courseId,
             'title' => $title,
             'objective' => $objective,
             'position' => self::nextPosition($courseId),
-            'quiz_required' => $quizRequired ? 1 : 0,
+            // La verifica finale non blocca niente: dopo di lei non c'e'
+            // nessun modulo (28/10).
+            'quiz_required' => $quizRequired && !$isFinal ? 1 : 0,
+            'is_final' => $isFinal ? 1 : 0,
             'available_from' => $availableFrom,
         ]);
+        $id = (int) $db->lastInsertId();
 
-        return (int) $db->lastInsertId();
+        self::verificaInFondo($courseId);
+
+        return $id;
     }
 
     public static function update(
@@ -125,21 +188,29 @@ class ModuleModel
         string $title,
         bool $quizRequired = false,
         ?string $availableFrom = null,
-        ?string $objective = null
+        ?string $objective = null,
+        bool $isFinal = false
     ): void {
         $stmt = Database::connection()->prepare(
             'UPDATE modules
                 SET title = :title, objective = :objective, quiz_required = :quiz_required,
-                    available_from = :available_from
+                    is_final = :is_final, available_from = :available_from
               WHERE id = :id'
         );
         $stmt->execute([
             'title' => $title,
             'objective' => $objective,
-            'quiz_required' => $quizRequired ? 1 : 0,
+            'quiz_required' => $quizRequired && !$isFinal ? 1 : 0,
+            'is_final' => $isFinal ? 1 : 0,
             'available_from' => $availableFrom,
             'id' => $id,
         ]);
+
+        $module = self::find($id);
+
+        if ($module !== null) {
+            self::verificaInFondo((int) $module['course_id']);
+        }
     }
 
     public static function delete(int $id): void
@@ -180,7 +251,7 @@ class ModuleModel
         $order = $direction === 'up' ? 'DESC' : 'ASC';
 
         $stmt = $db->prepare(
-            'SELECT id, position FROM modules
+            'SELECT id, position, is_final FROM modules
              WHERE course_id = :parent AND (position, id) ' . $comparison . ' (:position, :id)
              ORDER BY position ' . $order . ', id ' . $order . ' LIMIT 1'
         );
@@ -193,6 +264,12 @@ class ModuleModel
 
         if (!$neighbour) {
             return; // gia' in cima o in fondo
+        }
+
+        // La verifica finale non si sposta, e nessun modulo scende sotto di
+        // lei (28/10): sta sempre in fondo.
+        if (!empty($row['is_final']) || !empty($neighbour['is_final'])) {
+            return;
         }
 
         // Posizioni identiche (dati importati): rinumerare e' l'unico modo di

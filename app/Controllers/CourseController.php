@@ -267,8 +267,9 @@ class CourseController
                 'puoChiedere' => $isStudent,
                 // Solo i moduli aperti per lui (25/10): la domanda su un
                 // modulo chiuso non la leggerebbe nemmeno chi l'ha fatta.
+                // Senza la verifica finale (28/10): non e' un contenuto.
                 'moduli' => array_values(array_filter(
-                    ModuleModel::forCourse($courseId),
+                    ModuleModel::contenuti($courseId),
                     static fn (array $m): bool => !in_array((int) $m['id'], $chiusiPerLui, true)
                 )),
             ],
@@ -310,6 +311,11 @@ class CourseController
             foreach ($modules as $m) {
                 $id = (int) $m['id'];
                 $il = $date[$id] ?? null;
+
+                // Le Tre parole non si chiedono sulla verifica finale (28/10).
+                if (!empty($m['is_final'])) {
+                    continue;
+                }
 
                 if (!isset($mie[$id]) && in_array($id, $completati, true)
                     && TreParole::daChiedere($il, (string) $chiesteDal) && (string) $il >= $ultima) {

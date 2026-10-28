@@ -213,6 +213,11 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         <?php elseif (!empty($module['quiz_required'])): ?>
                             <span class="badge">questionario obbligatorio</span>
                         <?php endif; ?>
+                        <?php /* La verifica finale (28/10): l'etichetta solo
+                                 allo staff; lo studente vede il titolo. */ ?>
+                        <?php if ($isStaff && !empty($module['is_final'])): ?>
+                            <span class="badge">verifica finale</span>
+                        <?php endif; ?>
                     </h2>
                     <?php if ($isStaff): ?>
                         <div class="module-card-actions">
@@ -225,14 +230,14 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                     <input type="hidden" name="direction" value="up">
                                     <button type="submit" class="icon-btn" title="Sposta il modulo su"
                                             aria-label="Sposta il modulo <?= htmlspecialchars($module['title']) ?> su"
-                                            <?= $moduleIndex === 0 ? 'disabled' : '' ?>><?= Icona::svg('arrow-up') ?></button>
+                                            <?= $moduleIndex === 0 || !empty($module['is_final']) ? 'disabled' : '' ?>><?= Icona::svg('arrow-up') ?></button>
                                 </form>
                                 <form action="/modules/<?= $moduleId ?>/move" method="post">
                                     <?= Csrf::field() ?>
                                     <input type="hidden" name="direction" value="down">
                                     <button type="submit" class="icon-btn" title="Sposta il modulo giù"
                                             aria-label="Sposta il modulo <?= htmlspecialchars($module['title']) ?> giù"
-                                            <?= $moduleIndex === count($modules) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
+                                            <?= $moduleIndex === count($modules) - 1 || !empty($module['is_final']) || !empty($modules[$moduleIndex + 1]['is_final']) ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                                 </form>
                             </span>
                             <?php /* Le icone del vocabolario (19/10): il più per creare, la
@@ -240,7 +245,10 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                      che prima diceva il «+» scritto, e ora dice l'icona, il
                                      lettore di schermo lo sente come parola: «Aggiungi
                                      Lezione», «Modifica Modulo». */ ?>
-                            <a href="/modules/<?= $moduleId ?>/lessons/create" class="comando-con-icona"><?= Icona::svg('plus-lg') ?><span class="sr-only">Aggiungi </span>Lezione</a>
+                            <?php /* La verifica finale contiene solo il questionario (28/10). */ ?>
+                            <?php if (empty($module['is_final'])): ?>
+                                <a href="/modules/<?= $moduleId ?>/lessons/create" class="comando-con-icona"><?= Icona::svg('plus-lg') ?><span class="sr-only">Aggiungi </span>Lezione</a>
+                            <?php endif; ?>
                             <?php if ($quiz === null): ?>
                                 <a href="/modules/<?= $moduleId ?>/quiz/create" class="comando-con-icona"><?= Icona::svg('plus-lg') ?><span class="sr-only">Aggiungi </span>Questionario</a>
                             <?php else: ?>
@@ -323,8 +331,10 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                 <?php else: ?>
                     <?php $lessons = $lessonsByModule[$moduleId] ?? []; ?>
 
-                    <?php if (empty($lessons) && $quiz !== null): ?>
-                        <?php /* La verifica finale (27/10): solo il questionario. */ ?>
+                    <?php if (empty($lessons) && ($quiz !== null || !empty($module['is_final']))): ?>
+                        <?php /* Solo il questionario (27/10), o la verifica finale
+                                 ancora senza (28/10): «Nessuna lezione» non
+                                 direbbe niente di utile. */ ?>
                     <?php elseif (empty($lessons)): ?>
                         <p class="empty-state-small">Nessuna lezione in questo modulo.</p>
                     <?php else: ?>

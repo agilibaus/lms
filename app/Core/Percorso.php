@@ -120,24 +120,28 @@ final class Percorso
     /** Il questionario aspetta le lezioni del suo modulo. */
     public const CHIUSO_LEZIONI = 'lezioni';
 
-    /** Il questionario di un modulo senza lezioni (la verifica finale) aspetta i moduli prima. */
+    /** Il questionario della verifica finale aspetta gli altri moduli. */
     public const CHIUSO_MODULI = 'moduli';
 
     /**
      * Se il questionario del modulo e' ancora chiuso per lo studente, e
-     * perche' (27/10, Alessandro): il questionario e' il test d'uscita del
-     * modulo, quindi si apre quando le lezioni del modulo sono tutte
-     * completate. Un modulo senza lezioni e con il questionario e' la
-     * verifica finale del corso: si apre quando i moduli prima di lui sono
-     * completati (lezioni fatte e questionario superato, `completato()`).
-     * Null se e' aperto.
+     * perche'. Null se e' aperto.
      *
-     * I moduli prima senza lezioni e senza questionario non contano: non
+     *   - un modulo qualunque (27/10, Alessandro): il questionario e' il
+     *     test d'uscita, e si apre con le lezioni del modulo tutte
+     *     completate. Senza lezioni e' aperto da subito;
+     *   - la verifica finale (28/10, `is_final`, la dichiara l'admin): si
+     *     apre quando lo studente ha completato tutti gli altri moduli del
+     *     corso (lezioni fatte e questionario superato, `completato()`).
+     *     Fino al 27/10 la verifica si riconosceva dalla forma (nessuna
+     *     lezione, il questionario): da qui solo dalla casella.
+     *
+     * Gli altri moduli senza lezioni e senza questionario non contano: non
      * c'e' niente da completare, e terrebbero chiusa la verifica per
      * sempre. La chiusura per data o per questionario obbligatorio e'
      * un'altra regola (`CourseAccess::locks`), e vale in piu'.
      *
-     * @param list<array<string, mixed>> $modules nell'ordine del corso
+     * @param list<array<string, mixed>> $modules nell'ordine del corso, con `is_final`
      * @param array<int, list<array<string, mixed>>> $lessonsByModule
      * @param list<int> $completedLessonIds
      * @param array<int, array<string, mixed>|null> $quizByModule
@@ -153,15 +157,27 @@ final class Percorso
     ): ?string {
         $lessons = $lessonsByModule[$moduleId] ?? [];
 
-        if ($lessons !== []) {
-            return self::riprendi($lessons, $completedLessonIds) === null ? null : self::CHIUSO_LEZIONI;
+        if ($lessons !== [] && self::riprendi($lessons, $completedLessonIds) !== null) {
+            return self::CHIUSO_LEZIONI;
+        }
+
+        $verifica = false;
+
+        foreach ($modules as $module) {
+            if ((int) $module['id'] === $moduleId) {
+                $verifica = !empty($module['is_final']);
+            }
+        }
+
+        if (!$verifica) {
+            return null;
         }
 
         foreach ($modules as $module) {
             $id = (int) $module['id'];
 
             if ($id === $moduleId) {
-                return null;
+                continue;
             }
 
             if (($lessonsByModule[$id] ?? []) === [] && ($quizByModule[$id] ?? null) === null) {

@@ -230,6 +230,9 @@ CREATE TABLE modules (
     position        INT UNSIGNED NOT NULL DEFAULT 0,
     -- se 1, i moduli successivi restano bloccati finche' il quiz di questo modulo non e' superato
     quiz_required   TINYINT(1) NOT NULL DEFAULT 0,
+    -- se 1, e' la verifica finale del corso (28/10): solo il questionario,
+    -- sempre in fondo, una per corso; si apre con gli altri moduli completati
+    is_final        TINYINT(1) NOT NULL DEFAULT 0,
     -- vuoto = sempre aperto; con una data il modulo si apre in quel momento (§8.7)
     available_from  DATETIME NULL DEFAULT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

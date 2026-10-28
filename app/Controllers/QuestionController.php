@@ -74,7 +74,7 @@ class QuestionController
         $moduleId = $this->moduloDelCorso((string) ($_POST['module_id'] ?? ''), $courseId);
 
         if ($moduleId === false) {
-            $this->torna($redirect, 'Il modulo scelto non è di questo corso.', false);
+            $this->torna($redirect, 'Il modulo scelto non è fra quelli del corso.', false);
         }
 
         // Il menu offre solo i moduli aperti (25/10): uno chiuso arriva solo
@@ -229,7 +229,7 @@ class QuestionController
         $moduli = [];
 
         foreach (array_unique(array_map(static fn (array $q): int => (int) $q['course_id'], [...$domande, ...$pubblicate])) as $courseId) {
-            $moduli[$courseId] = ModuleModel::forCourse($courseId);
+            $moduli[$courseId] = ModuleModel::contenuti($courseId);
         }
 
         View::render('questions/index', [
@@ -341,7 +341,7 @@ class QuestionController
         $moduleId = $this->moduloDelCorso((string) ($_POST['module_id'] ?? ''), (int) $domanda['course_id']);
 
         if ($moduleId === false) {
-            $this->torna($dove, 'Il modulo scelto non è di questo corso.', false);
+            $this->torna($dove, 'Il modulo scelto non è fra quelli del corso.', false);
         }
 
         return [$testo, $moduleId, $risposta];
@@ -388,7 +388,10 @@ class QuestionController
 
         $modulo = ModuleModel::find((int) $valore);
 
-        return $modulo !== null && (int) $modulo['course_id'] === $courseId ? (int) $modulo['id'] : false;
+        // La verifica finale non e' un contenuto del corso (28/10): una
+        // domanda non la riguarda.
+        return $modulo !== null && (int) $modulo['course_id'] === $courseId && empty($modulo['is_final'])
+            ? (int) $modulo['id'] : false;
     }
 
     /**

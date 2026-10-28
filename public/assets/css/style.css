@@ -3031,6 +3031,13 @@ body.has-focus-video {
     margin-top: 0.15rem;
 }
 
+/* `display: flex` qui sopra vince sull'attributo `hidden`: senza questa
+   regola un'etichetta nascosta dal JavaScript resterebbe visibile (28/10,
+   «Questionario obbligatorio» con la verifica finale accesa). */
+.checkbox-label[hidden] {
+    display: none;
+}
+
 /* ---------- Editor domande ---------- */
 
 .option-set {

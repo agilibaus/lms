@@ -33,7 +33,25 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
     <label for="title">Titolo del modulo</label>
     <input type="text" id="title" name="title" required value="<?= htmlspecialchars((string) ($valori['title'] ?? '')) ?>">
 
+    <?php /* La verifica finale (28/10, Alessandro): solo il questionario,
+             sempre in fondo, una per corso; si apre con gli altri moduli
+             completati. Accesa, «Questionario obbligatorio» sparisce
+             (modulo-verifica.js): dopo la verifica non c'e' niente da
+             bloccare, e il server lo salva comunque spento. */ ?>
     <label class="checkbox-label">
+        <input type="checkbox" name="is_final" value="1" data-verifica-finale
+               <?= !empty($valori['is_final']) ? 'checked' : '' ?>
+               <?= !empty($module['is_final']) ? 'aria-describedby="is_final_aiuto"' : '' ?>>
+        Verifica finale: il modulo contiene solo il questionario finale del corso, che si apre quando lo studente ha completato tutti gli altri moduli. Sta sempre in fondo al corso, e ce n’è una sola per corso.
+    </label>
+    <?php if (!empty($module['is_final'])): ?>
+        <p class="hint" id="is_final_aiuto">
+            Spegnendola, il modulo resta senza lezioni e il suo questionario si apre subito a tutti gli studenti,
+            anche a chi non ha completato gli altri moduli.
+        </p>
+    <?php endif; ?>
+
+    <label class="checkbox-label" data-questionario-obbligatorio>
         <input type="checkbox" name="quiz_required" value="1" <?= !empty($valori['quiz_required']) ? 'checked' : '' ?>>
         Questionario obbligatorio: i moduli successivi restano bloccati finché lo studente non supera il questionario di questo modulo
     </label>
@@ -44,6 +62,7 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
     <?= TestoBreve::campo('objective', 'Obiettivo del modulo', 'objective', ModuleController::MAX_OBJECTIVE_CHARS,
         (string) ($valori['objective'] ?? ''), 3) ?>
     <script src="/assets/js/quiz-open-count.js"></script>
+    <script src="/assets/js/modulo-verifica.js"></script>
 
     <?php /* Il valore in tabella e' "2026-11-15 09:00:00", il campo del
              browser vuole "2026-11-15T09:00": la T al posto dello spazio e

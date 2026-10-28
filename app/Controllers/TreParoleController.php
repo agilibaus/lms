@@ -41,7 +41,8 @@ class TreParoleController
         $modulo = ModuleModel::find((int) $params['modulo']);
         $chiesteDal = $course['three_words_since'] ?? null;
 
-        if ($modulo === null || (int) $modulo['course_id'] !== $courseId || $chiesteDal === null) {
+        // Non sulla verifica finale (28/10): non e' un modulo di contenuti.
+        if ($modulo === null || (int) $modulo['course_id'] !== $courseId || $chiesteDal === null || !empty($modulo['is_final'])) {
             $this->vietato('Questo corso non chiede le tre parole per questo modulo.');
         }
 
@@ -129,7 +130,7 @@ class TreParoleController
         // tutor tutti i suoi.
         $groupIds = $gruppo !== null ? [$gruppo] : ($admin ? null : array_keys($gruppi));
 
-        $moduli = ModuleModel::forCourse($courseId);
+        $moduli = ModuleModel::contenuti($courseId);
         $n = GrigliaCorso::modulo($_GET['modulo'] ?? null, count($moduli)) ?? self::moduloDiPartenza($moduli, $groupIds);
         $modulo = $moduli[$n - 1] ?? null;
         $righe = $modulo === null ? [] : TreParoleModel::delModulo((int) $modulo['id'], $groupIds);

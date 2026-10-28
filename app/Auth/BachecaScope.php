@@ -162,8 +162,9 @@ final class BachecaScope
     {
         $chiusi = self::moduliChiusi($courseId);
 
+        // Senza la verifica finale (28/10): non e' un contenuto del corso.
         return array_values(array_filter(
-            ModuleModel::forCourse($courseId),
+            ModuleModel::contenuti($courseId),
             static fn (array $m): bool => !in_array((int) $m['id'], $chiusi, true)
         ));
     }

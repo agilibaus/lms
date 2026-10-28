@@ -93,8 +93,8 @@ check('senza lezioni e senza questionario: «nessuna lezione»', Percorso::conte
 echo PHP_EOL . 'Quando si apre il questionario (27/10)' . PHP_EOL;
 
 // Il corso di sopra, piu' un modulo vuoto (6) e la verifica finale (7):
-// nessuna lezione, un questionario.
-$moduliV = array_merge($moduli, [['id' => 6], ['id' => 7]]);
+// nessuna lezione, un questionario, e la casella accesa (28/10).
+$moduliV = array_merge($moduli, [['id' => 6], ['id' => 7, 'is_final' => 1]]);
 $lezioniV = $lezioni + [6 => [], 7 => []];
 $quizV = [1 => ['id' => 9], 7 => ['id' => 70]];
 $chiuso = static fn (int $m, array $fatte, array $superati = []): ?string
@@ -113,8 +113,11 @@ check('verifica finale, tutto completato prima: aperta (il modulo vuoto non cont
     $chiuso(7, $tutteLeLezioni, [1 => true]) === null);
 check('verifica finale, manca una lezione di un modulo prima: chiusa',
     $chiuso(7, [10, 11, 20, 30, 40], [1 => true]) === Percorso::CHIUSO_MODULI);
-check('i moduli dopo la verifica non contano',
-    Percorso::questionarioChiuso(7, array_merge($moduliV, [['id' => 8]]), $lezioniV + [8 => [['id' => 80]]], $tutteLeLezioni, $quizV, [1 => true]) === null);
+check('la verifica aspetta tutti gli altri moduli, anche uno messo dopo di lei',
+    Percorso::questionarioChiuso(7, array_merge($moduliV, [['id' => 8]]), $lezioniV + [8 => [['id' => 80]]], $tutteLeLezioni, $quizV, [1 => true]) === Percorso::CHIUSO_MODULI);
+$senzaCasella = array_merge($moduli, [['id' => 6], ['id' => 7]]);
+check('un modulo con il solo questionario e la casella spenta: aperto da subito (non e\' una verifica)',
+    Percorso::questionarioChiuso(7, $senzaCasella, $lezioniV, [], $quizV, []) === null);
 
 // ---------------------------------------------------------------
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;

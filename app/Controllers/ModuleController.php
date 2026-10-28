@@ -9,6 +9,7 @@ use App\Auth\CourseRights;
 use App\Core\TestoBreve;
 use App\Core\View;
 use App\Models\CourseModel;
+use App\Models\LessonModel;
 use App\Models\ModuleModel;
 
 class ModuleController
@@ -69,13 +70,15 @@ class ModuleController
         }
 
         $this->rifiutaOltreIlLimite('corso', $courseId, '/courses/' . $courseId . '/modules/create');
+        $this->rifiutaSecondaVerifica($courseId, null, 'corso', $courseId, '/courses/' . $courseId . '/modules/create');
 
         ModuleModel::create(
             $courseId,
             $title,
             isset($_POST['quiz_required']),
             $this->availableFromPost(),
-            $this->objectivePost()
+            $this->objectivePost(),
+            isset($_POST['is_final'])
         );
 
         header('Location: /courses/' . $courseId);
@@ -131,12 +134,23 @@ class ModuleController
             exit;
         }
 
+        $indietro = '/modules/' . (int) $module['id'] . '/edit';
+        $this->rifiutaSecondaVerifica((int) $module['course_id'], (int) $module['id'], 'modulo', (int) $module['id'], $indietro);
+
+        // Una verifica finale non ha lezioni (28/10): accenderla su un
+        // modulo che ne ha si rifiuta, invece di nasconderle.
+        if (isset($_POST['is_final']) && empty($module['is_final']) && LessonModel::forModule((int) $module['id']) !== []) {
+            $this->rifiuta('modulo', (int) $module['id'], $indietro,
+                'Una verifica finale non ha lezioni: toglile prima di farne una verifica.');
+        }
+
         ModuleModel::update(
             (int) $module['id'],
             $title,
             isset($_POST['quiz_required']),
             $this->availableFromPost(),
-            $this->objectivePost()
+            $this->objectivePost(),
+            isset($_POST['is_final'])
         );
 
         header('Location: /courses/' . $module['course_id']);
@@ -169,17 +183,45 @@ class ModuleController
             return;
         }
 
+        $this->rifiuta($chi, $id, $redirect, $problema);
+    }
+
+    /**
+     * Una sola verifica finale per corso (28/10): accenderla su un secondo
+     * modulo si rifiuta, con il nome di quella che c'e' gia'.
+     */
+    private function rifiutaSecondaVerifica(int $courseId, ?int $questo, string $chi, int $id, string $redirect): void
+    {
+        if (!isset($_POST['is_final'])) {
+            return;
+        }
+
+        $gia = ModuleModel::verificaFinale($courseId, $questo);
+
+        if ($gia !== null) {
+            $this->rifiuta($chi, $id, $redirect, 'Questo corso ha già una verifica finale: «' . $gia['title']
+                . '». Ce ne può essere una sola per corso.');
+        }
+    }
+
+    /**
+     * Rifiuta il salvataggio con `$messaggio` e torna a `$redirect` con i
+     * campi come erano stati scritti (`RIPRENDI`).
+     */
+    private function rifiuta(string $chi, int $id, string $redirect, string $messaggio): never
+    {
         $_SESSION[self::RIPRENDI] = [
             'chi' => $chi,
             'id' => $id,
             'campi' => [
                 'title' => trim((string) ($_POST['title'] ?? '')),
-                'objective' => $objective,
+                'objective' => (string) $this->objectivePost(),
                 'quiz_required' => isset($_POST['quiz_required']) ? 1 : 0,
+                'is_final' => isset($_POST['is_final']) ? 1 : 0,
                 'available_from' => $this->availableFromPost(),
             ],
         ];
-        $_SESSION['flash_error'] = $problema;
+        $_SESSION['flash_error'] = $messaggio;
 
         header('Location: ' . $redirect);
         exit;
@@ -246,6 +288,8 @@ class ModuleController
             return;
         }
 
+        // La verifica finale non si sposta e nessun modulo scende sotto di
+        // lei: lo impedisce `move` (28/10).
         ModuleModel::move((int) $module['id'], ($_POST['direction'] ?? '') === 'up' ? 'up' : 'down');
 
         // L'ancora riporta al modulo appena spostato invece che in cima alla
