@@ -152,7 +152,9 @@ $provider = $lesson['video_provider'] ?? 'none';
                             <input type="file" id="h5p-sostituisci-<?= $cid ?>" name="h5p_sostituisci[<?= $cid ?>]" accept=".h5p"
                                    class="sr-only h5p-lezione-file" aria-describedby="h5p-scelto-<?= $cid ?>">
                             <label for="h5p-sostituisci-<?= $cid ?>" class="h5p-lezione-sostituisci">Sostituisci<span class="sr-only"> <?= htmlspecialchars((string) $c['h5p_file']) ?></span></label>
-                            <button type="submit" form="h5p-elimina-<?= $cid ?>" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
+                            <?php /* Come il video (29/10): toglie il contenuto dalla
+                                     lezione, i suoi file restano sul server. */ ?>
+                            <button type="submit" form="h5p-elimina-<?= $cid ?>" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Rimuovi dalla lezione</button>
                         </span>
                         <span class="form-hint h5p-lezione-scelto" id="h5p-scelto-<?= $cid ?>" data-h5p-scelto hidden></span>
                     </li>

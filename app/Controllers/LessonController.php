@@ -359,17 +359,11 @@ class LessonController
         // si eliminano solo le righe, che seguono via FK ON DELETE CASCADE.
         // Chi elimina viene avvisato che quei file rimangono, perche' da quel
         // momento nessuna pagina li nomina piu'.
+        // Dal 29/10 (Alessandro) anche le cartelle dei contenuti H5P, come
+        // gli altri file: restano, e si contano (`OrphanFiles`).
         $files = OrphanFiles::forLesson((int) $lesson['id'], $lesson, true);
-        // I contenuti H5P invece si tolgono (23/10): sono cartelle estratte da
-        // Pistacchio, non file caricati, e il .h5p da cui vengono e' di chi
-        // l'ha creato con Lumi.
-        $cartelleH5P = LessonH5PModel::dirsForLesson((int) $lesson['id']);
 
         LessonModel::delete((int) $lesson['id']);
-
-        foreach ($cartelleH5P as $cartella) {
-            H5PArchivio::elimina($cartella);
-        }
 
         $_SESSION['flash_success'] = match (true) {
             $files['count'] === 0 => 'Lezione eliminata.',
@@ -573,8 +567,10 @@ class LessonController
 
     /**
      * POST /lessons/{id}/h5p/{contenuto}/delete — toglie un contenuto H5P
-     * dalla lezione e la sua cartella dal disco (23/10). Un segnaposto
-     * rimasto nel testo non mostra piu' niente, e l'editor lo dice.
+     * dalla lezione (23/10). Dal 29/10 la sua cartella resta sul server,
+     * come un video tolto dalla lezione, e si conta fra i file non
+     * collegati. Un segnaposto rimasto nel testo non mostra piu' niente, e
+     * l'editor lo dice.
      */
     public function deleteH5P(array $params): void
     {
@@ -590,12 +586,12 @@ class LessonController
         }
 
         LessonH5PModel::delete((int) $contenuto['id']);
-        H5PArchivio::elimina((string) $contenuto['h5p_dir']);
 
         $lesson = LessonModel::find((int) $contenuto['lesson_id']);
         $nelTesto = in_array((int) $contenuto['id'], LezioneH5P::segnaposti($lesson['content_html'] ?? null), true);
 
-        $_SESSION['flash_success'] = 'Contenuto «' . $contenuto['h5p_file'] . '» eliminato.'
+        $_SESSION['flash_success'] = 'Contenuto «' . $contenuto['h5p_file'] . '» tolto dalla lezione. I suoi file restano sul server, in storage/h5p/'
+            . $contenuto['h5p_dir'] . ', ma nessuna lezione li usa più.'
             . ($nelTesto ? ' Il suo segnaposto è ancora nel testo e non mostra più niente: puoi cancellarlo dall\'editor.' : '');
 
         header('Location: /lessons/' . (int) $contenuto['lesson_id'] . '/edit#contenuti-h5p');
@@ -1024,8 +1020,9 @@ class LessonController
             try {
                 $contenuto = H5PArchivio::apriPerLezione(self::fileH5PValido($f), $lessonId);
                 LessonH5PModel::replace((int) $vecchio['id'], $contenuto, self::nomeFile($f));
-                H5PArchivio::elimina((string) $vecchio['h5p_dir']);
-                $fatti[] = '«' . $vecchio['h5p_file'] . '» sostituito con «' . self::nomeFile($f) . '»';
+                // La cartella di prima resta sul server (29/10), come un video sostituito.
+                $fatti[] = '«' . $vecchio['h5p_file'] . '» sostituito con «' . self::nomeFile($f) . '» (quello di prima resta sul server, in storage/h5p/'
+                    . $vecchio['h5p_dir'] . ')';
             } catch (\RuntimeException $e) {
                 $errori[] = '«' . $vecchio['h5p_file'] . '» non è stato sostituito: ' . $e->getMessage();
             }

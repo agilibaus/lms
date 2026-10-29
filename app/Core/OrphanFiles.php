@@ -9,6 +9,10 @@ use PDOException;
 /**
  * File caricati che nessuna lezione usa piu'.
  *
+ * Dal 29/10 (Alessandro) anche i contenuti H5P, di lezioni e questionari:
+ * come gli altri file non si cancellano mai da soli, e le loro cartelle in
+ * `storage/h5p` (`H5PArchivio`) si contano qui quando nessuno le usa.
+ *
  * Nascono perche' togliere un video dalla lezione, cambiare provider o
  * eliminare una lezione lasciano di proposito i file sul server: la
  * cancellazione e' un gesto separato e volontario. Il rovescio e' che quei
@@ -44,6 +48,22 @@ class OrphanFiles
         $count = 0;
         $bytes = 0;
         $folders = [];
+
+        // I contenuti H5P della lezione: le cartelle «l{lezione}-…».
+        $usateH5P = $all ? [] : self::cartelleH5PUsate();
+
+        if ($usateH5P !== null) {
+            foreach (glob(H5PArchivio::RADICE . '/l' . $lessonId . '-*', GLOB_ONLYDIR) ?: [] as $cartella) {
+                if (isset($usateH5P[basename($cartella)])) {
+                    continue;
+                }
+
+                $dentro = self::contaCartella($cartella);
+                $count += $dentro['count'];
+                $bytes += $dentro['bytes'];
+                $folders[] = 'storage/h5p/' . basename($cartella);
+            }
+        }
 
         foreach (self::LESSON_FOLDERS as $folder) {
             $directory = Upload::absolutePath($folder . '/' . $lessonId);
@@ -120,10 +140,91 @@ class OrphanFiles
             $totalBytes += $bytes;
         }
 
+        // I contenuti H5P che nessuna lezione e nessun questionario usa.
+        $usateH5P = self::cartelleH5PUsate() ?? [];
+        $h5p = ['count' => 0, 'bytes' => 0];
+
+        foreach (glob(H5PArchivio::RADICE . '/*', GLOB_ONLYDIR) ?: [] as $cartella) {
+            if (isset($usateH5P[basename($cartella)])) {
+                continue;
+            }
+
+            $dentro = self::contaCartella($cartella);
+            $h5p['count'] += $dentro['count'];
+            $h5p['bytes'] += $dentro['bytes'];
+        }
+
+        $folders['h5p'] = $h5p;
+        $totalCount += $h5p['count'];
+        $totalBytes += $h5p['bytes'];
+
         return [
             'total' => ['count' => $totalCount, 'bytes' => $totalBytes],
             'folders' => $folders,
         ];
+    }
+
+    /**
+     * I file di una cartella di contenuto H5P e quanto pesano: per dire,
+     * eliminando un questionario o togliendo un contenuto, che cosa resta
+     * sul server.
+     *
+     * @return array{count:int, bytes:int}
+     */
+    public static function cartellaH5P(?string $dir): array
+    {
+        if ($dir === null || $dir === '' || !preg_match('/^[a-z0-9-]+$/', $dir)) {
+            return ['count' => 0, 'bytes' => 0];
+        }
+
+        return self::contaCartella(H5PArchivio::RADICE . '/' . $dir);
+    }
+
+    /**
+     * @return array{count:int, bytes:int}
+     */
+    private static function contaCartella(string $cartella): array
+    {
+        $count = 0;
+        $bytes = 0;
+
+        if (!is_dir($cartella)) {
+            return ['count' => 0, 'bytes' => 0];
+        }
+
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($cartella, \FilesystemIterator::SKIP_DOTS));
+
+        foreach ($it as $f) {
+            if ($f->isFile()) {
+                $count++;
+                $bytes += (int) $f->getSize();
+            }
+        }
+
+        return ['count' => $count, 'bytes' => $bytes];
+    }
+
+    /**
+     * Le cartelle H5P che una lezione o un questionario usano, come chiavi.
+     * Null senza database: meglio non contare niente che contare tutto.
+     *
+     * @return array<string, true>|null
+     */
+    private static function cartelleH5PUsate(): ?array
+    {
+        try {
+            $usate = [];
+            $pdo = Database::connection();
+
+            foreach ($pdo->query('SELECT h5p_dir FROM quizzes WHERE h5p_dir IS NOT NULL
+                                  UNION SELECT h5p_dir FROM lesson_h5p')->fetchAll() as $r) {
+                $usate[(string) $r['h5p_dir']] = true;
+            }
+
+            return $usate;
+        } catch (PDOException $e) {
+            return null;
+        }
     }
 
     public static function humanSize(int $bytes): string

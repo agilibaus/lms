@@ -919,6 +919,42 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        // --- L'avviso delle richieste di iscrizione (29/10) ----------------
+        //
+        // Con una richiesta sola, al singolare: prima diceva «Ci sono 1
+        // richieste». Le due righe si creano qui e si tolgono alla fine; con
+        // altre richieste gia' in attesa nel database si prova solo il
+        // plurale.
+
+        console.log('\n--- L\'avviso delle richieste di iscrizione');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const chiedi = (corso) => php('App\\Core\\Database::connection()->prepare("INSERT INTO enrollment_requests (user_id, course_id, message) VALUES (?, ?, \'prova\')")->execute([(int) $argv[1], (int) $argv[2]]);', d.utenti.studenteNuovo, corso);
+            const gia = Number(php('echo (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM enrollment_requests WHERE status = \'pending\'")->fetchColumn();').trim());
+            const admin = await entra(browser, 'admin@test.it');
+            const avviso = async () => { await admin.page.goto(BASE + '/admin/courses'); return admin.page.evaluate(() => ((document.querySelector('.alert.alert-warning') || {}).textContent || '').replace(/\s+/g, ' ').trim()); };
+
+            try {
+                chiedi(A.corso);
+                const una = await avviso();
+                if (gia === 0) {
+                    check('admin → una richiesta in attesa: «C’è 1 richiesta di iscrizione in attesa: la trovi nella scheda del corso interessato.»',
+                        una === 'C’è 1 richiesta di iscrizione in attesa: la trovi nella scheda del corso interessato.', [una]);
+                }
+                chiedi(B.corso);
+                const due = await avviso();
+                check('admin → più richieste in attesa: al plurale, con il numero',
+                    due === 'Ci sono ' + (gia + 2) + ' richieste di iscrizione in attesa: le trovi nella scheda dei corsi interessati.', [due]);
+            } finally {
+                await admin.ctx.close();
+                php('App\\Core\\Database::connection()->prepare("DELETE FROM enrollment_requests WHERE user_id = ? AND message = \'prova\'")->execute([(int) $argv[1]]);', d.utenti.studenteNuovo);
+            }
+        }
+
         // --- La verifica finale (28/10) -------------------------------------
         //
         // Un modulo che l'admin dichiara verifica finale con la casella: solo
@@ -1245,6 +1281,137 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     $pdo->prepare("DELETE FROM lesson_h5p WHERE id IN (?, ?)")->execute([(int) $argv[1], (int) $argv[2]]);
                     App\\Core\\H5PArchivio::elimina($argv[3]);
                     App\\Core\\H5PArchivio::elimina($argv[4]);`, idAperta, idChiusa, dirAperta, dirChiusa);
+            }
+        }
+
+        // --- I file H5P restano sul server, come gli altri (29/10) ----------
+        //
+        // Come video, materiali e immagini: togliere un contenuto H5P dalla
+        // lezione, sostituirlo, eliminare la lezione o il questionario non
+        // cancella la sua cartella in storage/h5p, e chi lo fa lo sa. Le
+        // cartelle non usate si contano in Gestione corsi. Tutto in un corso
+        // di prova, tolto alla fine con le sue cartelle.
+
+        console.log('\n--- I file H5P restano sul server');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const fs = require('fs');
+            const os = require('os');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const esiste = (dir) => fs.existsSync(path.join(radice, 'storage', 'h5p', dir));
+            const dirLezione = (id) => php('echo (string) App\\Core\\Database::connection()->query("SELECT h5p_dir FROM lesson_h5p WHERE id = " . (int) $argv[1])->fetchColumn();', id).trim();
+            const dirQuiz = (id) => php('echo (string) App\\Core\\Database::connection()->query("SELECT h5p_dir FROM quizzes WHERE id = " . (int) $argv[1])->fetchColumn();', id).trim();
+            // Un pacchetto .h5p minimo, sul disco, per i campi «scegli file».
+            const pacchetto = (libreria) => {
+                const f = path.join(os.tmpdir(), 'prova-' + libreria + '-' + process.pid + '.h5p');
+                php(`
+                    $z = new ZipArchive(); $z->open($argv[1], ZipArchive::CREATE | ZipArchive::OVERWRITE);
+                    $z->addFromString("h5p.json", json_encode(["title" => "Prova", "mainLibrary" => $argv[2], "preloadedDependencies" => [["machineName" => $argv[2], "majorVersion" => 1, "minorVersion" => 0]]]));
+                    $z->addFromString("content/content.json", "{}");
+                    $z->addFromString($argv[2] . "-1.0/library.json", "{}");
+                    $z->close();`, f, libreria);
+                return f;
+            };
+            const [corso, lezione, quiz, c1, c2] = php(`
+                $pdo = App\\Core\\Database::connection();
+                $pdo->prepare("INSERT INTO courses (title, slug, description, is_published, created_by) VALUES (?, ?, '', 0, ?)")->execute(["[prova-permessi] file h5p", "prova-permessi-h5p-" . time(), (int) $argv[1]]);
+                $c = (int) $pdo->lastInsertId();
+                $pdo->prepare("INSERT INTO modules (course_id, title, position) VALUES (?, 'Tappa', 0)")->execute([$c]);
+                $m = (int) $pdo->lastInsertId();
+                $pdo->prepare("INSERT INTO lessons (module_id, title, content_html, position) VALUES (?, 'Lezione con esercizi', '<p>Testo.</p>', 0)")->execute([$m]);
+                $l = (int) $pdo->lastInsertId();
+                $pdo->prepare("INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (?, 'Questionario H5P', 60)")->execute([$m]);
+                $q = (int) $pdo->lastInsertId();
+                $f = tempnam(sys_get_temp_dir(), "h5p");
+                $ids = [];
+                foreach ([1, 2] as $i) {
+                    $z = new ZipArchive(); $z->open($f, ZipArchive::OVERWRITE);
+                    $z->addFromString("h5p.json", json_encode(["title" => "Fisarmonica", "mainLibrary" => "H5P.Accordion", "preloadedDependencies" => [["machineName" => "H5P.Accordion", "majorVersion" => 1, "minorVersion" => 0]]]));
+                    $z->addFromString("content/content.json", "{}");
+                    $z->addFromString("H5P.Accordion-1.0/library.json", "{}");
+                    $z->close();
+                    $a = App\\Core\\H5PArchivio::apriPerLezione($f, $l);
+                    $ids[] = App\\Models\\LessonH5PModel::create($l, $a, "esercizio" . $i . ".h5p");
+                }
+                $z = new ZipArchive(); $z->open($f, ZipArchive::OVERWRITE);
+                $z->addFromString("h5p.json", json_encode(["title" => "Prova", "mainLibrary" => "H5P.Prova", "preloadedDependencies" => [["machineName" => "H5P.Prova", "majorVersion" => 1, "minorVersion" => 0]]]));
+                $z->addFromString("content/content.json", "{}");
+                $z->addFromString("H5P.Prova-1.0/library.json", "{}");
+                $z->close();
+                $a = App\\Core\\H5PArchivio::apri($f, $q);
+                App\\Models\\QuizModel::impostaH5P($q, $a["dir"], $a["libreria"], "prova.h5p");
+                unlink($f);
+                echo $c, " ", $l, " ", $q, " ", $ids[0], " ", $ids[1];`, d.utenti.admin).trim().split(' ');
+            const cartelle = [dirLezione(c1), dirLezione(c2), dirQuiz(quiz)];
+            const admin = await entra(browser, 'admin@test.it');
+            const avviso = (page) => page.evaluate(() => [...document.querySelectorAll('.alert')].map((a) => a.textContent.replace(/\s+/g, ' ').trim()).join(' | '));
+
+            try {
+                // 1. Togliere un contenuto dalla lezione. Prima la domanda che
+                // il browser fa (annullata), poi il comando.
+                await admin.page.goto(BASE + '/lessons/' + lezione + '/edit');
+                let domanda = '';
+                admin.page.once('dialog', (dialogo) => { domanda = dialogo.message(); dialogo.dismiss(); });
+                await admin.page.click('button[form="h5p-elimina-' + c1 + '"]');
+                check('admin → la domanda prima di togliere un contenuto H5P dice che i file restano',
+                    domanda === 'Togliere «esercizio1.h5p» dalla lezione? I suoi file restano sul server.' && dirLezione(c1) !== '', [domanda]);
+                await esitoPost(admin.page, '/lessons/' + lezione + '/h5p/' + c1 + '/delete', [], '/lessons/' + lezione + '/edit');
+                await admin.page.goto(BASE + '/lessons/' + lezione + '/edit');
+                let a = await avviso(admin.page);
+                check('admin → «Rimuovi dalla lezione» di un contenuto H5P: tolto, e la cartella resta sul server, e lo dice',
+                    dirLezione(c1) === '' && esiste(cartelle[0]) && a.includes('tolto dalla lezione. I suoi file restano sul server, in storage/h5p/' + cartelle[0]), [a]);
+                const comando = await admin.page.evaluate(() => [...document.querySelectorAll('.h5p-lezione-comandi button')].map((b) => b.textContent.trim()));
+                check('admin → nella lezione il comando è «Rimuovi dalla lezione», non «Elimina»', comando.length === 1 && comando[0] === 'Rimuovi dalla lezione', [JSON.stringify(comando)]);
+                const scollegati = await admin.page.evaluate(() => (document.body.textContent.match(/ci sono (\d+) file caricati che nessun\s+contenuto usa più/) || [])[1] || '0');
+                check('admin → nella lezione la cartella tolta si conta fra i file che nessun contenuto usa più', Number(scollegati) >= 3, [scollegati]);
+
+                // 2. Sostituire il contenuto rimasto, dal modulo della lezione.
+                await admin.page.setInputFiles('#h5p-sostituisci-' + c2, pacchetto('H5P.Accordion'));
+                await admin.page.click('.form-actions button[type="submit"]');
+                await admin.page.waitForLoadState('networkidle');
+                const nuova = dirLezione(c2);
+                check('admin → sostituito un contenuto della lezione, quello di prima resta sul server',
+                    nuova !== '' && nuova !== cartelle[1] && esiste(cartelle[1]), [nuova, cartelle[1]]);
+                cartelle.push(nuova);
+
+                // 3. Sostituire il contenuto del questionario.
+                await admin.page.goto(BASE + '/quizzes/' + quiz + '/edit');
+                await admin.page.setInputFiles('#h5p', pacchetto('H5P.Prova'));
+                await admin.page.click('form button[type="submit"].btn-primary');
+                await admin.page.waitForLoadState('networkidle');
+                const nuovaQ = dirQuiz(quiz);
+                a = await avviso(admin.page);
+                check('admin → sostituito il contenuto del questionario, quello di prima resta sul server, e lo dice',
+                    nuovaQ !== cartelle[2] && esiste(cartelle[2]) && a.includes('Quello di prima resta sul server, in storage/h5p/' + cartelle[2]), [a]);
+                cartelle.push(nuovaQ);
+
+                // 4. Eliminare il questionario e la lezione.
+                await esitoPost(admin.page, '/quizzes/' + quiz + '/delete', [], '/quizzes/' + quiz + '/edit');
+                await admin.page.goto(BASE + '/courses/' + corso);
+                a = await avviso(admin.page);
+                check('admin → eliminato il questionario, il suo contenuto H5P resta sul server, e lo dice',
+                    esiste(nuovaQ) && a.includes('restano sul server, in storage/h5p/' + nuovaQ), [a]);
+                await esitoPost(admin.page, '/lessons/' + lezione + '/delete', [], '/lessons/' + lezione + '/edit');
+                await admin.page.goto(BASE + '/courses/' + corso);
+                a = await avviso(admin.page);
+                check('admin → eliminata la lezione, i suoi contenuti H5P restano sul server, e lo dice',
+                    esiste(nuova) && a.includes('storage/h5p/' + nuova), [a]);
+
+                // 5. In Gestione corsi si contano.
+                await admin.page.goto(BASE + '/admin/courses');
+                const riga = await admin.page.evaluate(() => {
+                    const r = [...document.querySelectorAll('.orphan-summary tr')].find((x) => x.textContent.includes('storage/h5p'));
+                    return r ? Number(r.querySelectorAll('td')[1].textContent) : 0;
+                });
+                check('admin → in Gestione corsi le cartelle H5P non usate si contano, nella riga storage/h5p', riga >= cartelle.length, ['file: ' + riga]);
+            } finally {
+                await admin.ctx.close();
+                php(`
+                    App\\Core\\Database::connection()->prepare("DELETE FROM courses WHERE id = ?")->execute([(int) $argv[1]]);
+                    foreach (array_slice($argv, 2) as $d) { App\\Core\\H5PArchivio::elimina($d); }`, corso, ...cartelle.filter((x) => x));
             }
         }
 

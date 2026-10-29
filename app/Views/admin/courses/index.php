@@ -42,7 +42,12 @@ $courses = $ordine->applica($courses);
 
 <?php if ($pendingRequests > 0): ?>
     <div class="alert alert-warning">
-        Ci sono <?= (int) $pendingRequests ?> richieste di iscrizione in attesa: le trovi nella scheda dei corsi interessati.
+        <?php /* Con una sola richiesta, al singolare (29/10: «Ci sono 1 richieste»). */ ?>
+        <?php if ($pendingRequests === 1): ?>
+            C’è 1 richiesta di iscrizione in attesa: la trovi nella scheda del corso interessato.
+        <?php else: ?>
+            Ci sono <?= (int) $pendingRequests ?> richieste di iscrizione in attesa: le trovi nella scheda dei corsi interessati.
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 
@@ -108,16 +113,17 @@ $courses = $ordine->applica($courses);
 $scollegati = OrphanFiles::summary();
 ?>
 <section class="card orphan-summary">
-    <h2>File sul server non collegati a nessuna lezione</h2>
+    <h2>File sul server non collegati a nessuna lezione o questionario</h2>
 
     <?php if ($scollegati['total']['count'] === 0): ?>
-        <p class="card-meta">Nessuno: ogni file caricato è usato da una lezione.</p>
+        <p class="card-meta">Nessuno: ogni file caricato è usato da una lezione o da un questionario.</p>
     <?php else: ?>
         <p class="card-meta">
             Restano <strong><?= (int) $scollegati['total']['count'] ?></strong> file per
             <strong><?= htmlspecialchars(OrphanFiles::humanSize($scollegati['total']['bytes'])) ?></strong>.
-            Nascono togliendo un video dalla lezione senza eliminarlo, sostituendone uno, o
-            eliminando una lezione: la piattaforma non cancella mai da sola i file caricati.
+            Nascono togliendo dalla lezione un video (senza eliminarlo) o un contenuto H5P, sostituendone
+            uno, o eliminando una lezione, un questionario, un modulo o un corso: la piattaforma non
+            cancella mai da sola i file caricati.
         </p>
 
         <table class="data-table">

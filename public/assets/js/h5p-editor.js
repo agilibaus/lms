@@ -130,7 +130,7 @@
 
         var editor = window.tinymce && window.tinymce.activeEditor;
         var cambiato = editor && editor.isDirty();
-        var domanda = 'Eliminare «' + modulo.getAttribute('data-h5p-elimina') + '» dalla lezione?'
+        var domanda = 'Togliere «' + modulo.getAttribute('data-h5p-elimina') + '» dalla lezione? I suoi file restano sul server.'
             + (cambiato ? '\n\nHai modifiche non salvate nel testo: andranno perse. Annulla e premi prima «Salva».' : '');
 
         if (!window.confirm(domanda)) {

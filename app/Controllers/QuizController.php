@@ -12,6 +12,7 @@ use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\Percorso;
 use App\Core\H5PArchivio;
+use App\Core\OrphanFiles;
 use App\Core\QuizScoring;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -216,8 +217,9 @@ class QuizController
                 }
 
                 QuizModel::impostaH5P((int) $quiz['id'], $aperto['dir'], $aperto['libreria'], (string) $file['name']);
-                H5PArchivio::elimina($quiz['h5p_dir'] ?? null);
-                $_SESSION['flash_success'] = 'Contenuto sostituito con «' . ($aperto['titolo'] !== '' ? $aperto['titolo'] : $file['name']) . '».';
+                // Quello di prima resta sul server (29/10), come un video sostituito.
+                $_SESSION['flash_success'] = 'Contenuto sostituito con «' . ($aperto['titolo'] !== '' ? $aperto['titolo'] : $file['name']) . '».'
+                    . (!empty($quiz['h5p_dir']) ? ' Quello di prima resta sul server, in storage/h5p/' . $quiz['h5p_dir'] . '.' : '');
             } else {
                 $_SESSION['flash_success'] = 'Impostazioni salvate.';
             }
@@ -239,8 +241,16 @@ class QuizController
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
+        // Il contenuto H5P resta sul server (29/10), come i file di una
+        // lezione eliminata, e chi elimina lo sa.
+        $resta = OrphanFiles::cartellaH5P($quiz['h5p_dir'] ?? null);
         QuizModel::delete((int) $quiz['id']);
-        H5PArchivio::elimina($quiz['h5p_dir'] ?? null);
+
+        if ($resta['count'] > 0) {
+            $_SESSION['flash_success'] = 'Questionario eliminato. I file del suo contenuto H5P ('
+                . OrphanFiles::humanSize($resta['bytes']) . ') restano sul server, in storage/h5p/' . $quiz['h5p_dir']
+                . ', e non sono più collegati a nessun questionario.';
+        }
 
         $this->redirect('/courses/' . ($module['course_id'] ?? ''));
     }
