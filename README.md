@@ -21,15 +21,19 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 - **Report/dashboard** su progressi utente/corso, risultati dei questionari, presenze alle sessioni live e
   tempi di fruizione dei video, tutti scaricabili in CSV e XLSX
 - **Rilascio progressivo**: ogni modulo puo' avere una data di apertura, con avviso via email
-  agli iscritti il giorno in cui si apre
-- **Ruoli utente**, con privilegi configurabili nella tabella `role_permissions` (nessun privilegio hardcodato nel codice):
+  agli iscritti il giorno in cui si apre; ogni gruppo può avere le sue date
+- **Percorso**: il questionario di un modulo è il suo test d'uscita e si apre a lezioni fatte;
+  la **verifica finale**, un modulo dichiarato tale, si apre a moduli completati
+- **Quattro ruoli**, ciascuno con un **nucleo fisso** scritto nel codice e, per tre di loro,
+  **cinque interruttori** che l'admin accende e spegne da Impostazioni › Ruoli
+  (`App\Auth\Ruoli`, vedi **Ruoli**):
   
   | Ruolo | Ambito |
   |---|---|
-  | `admin` | Gestione completa: corsi, utenti, gruppi, permessi, certificati |
-  | `tutor` | Modifica corsi assegnati, corregge quiz, segue gruppi/coorti, gestisce i propri assistenti |
-  | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), non l'admin: correzioni e report solo sugli ambiti assegnati |
-  | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge quiz, scarica i propri certificati |
+  | `admin` | Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni; risponde come esperto |
+  | `tutor` | Legge i corsi e lavora sulla sua classe: cura i suoi gruppi, i loro incontri, la Bacheca e i report dei suoi studenti |
+  | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), in sola lettura: report, tentativi e incontri dei loro studenti, secondo gli interruttori |
+  | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge i questionari, scarica i propri certificati |
 - **Profilo personale**: ogni utente compila i propri dati e carica un'immagine, che compare tonda accanto al suo nome
 - **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
 - **Sessioni live** integrate con **Google Meet**, tramite Google Calendar API (`conferenceData`) — richiede un account di servizio Google con accesso al Calendar
@@ -56,7 +60,7 @@ In sviluppo iniziale.
 - ✅ Importazione di utenti da file CSV, con anteprima e inviti mandati a scaglioni
 - ✅ Tabelle ordinabili dal nome della colonna, dal server e senza JavaScript
 - ✅ Agenda con vista a elenco e a mese, e calendario .ics da sottoscrivere
-- ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e matrice dei permessi
+- ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e ruoli
 - ✅ Protezione CSRF su tutte le richieste POST
 - ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
 - ✅ Procedura di installazione guidata dal browser
@@ -77,6 +81,12 @@ In sviluppo iniziale.
 - ✅ Questionari conclusi al 100%: si vedono spenti e non si rifanno
 - ✅ Icone accanto ai comandi, secondo un vocabolario e dei principi scritti
 - ✅ Versione in un file (`VERSION`) e pagina «Informazioni su Pistacchio LMS»
+- ✅ Bacheca ed «L'esperto risponde» per modulo: la risorsa è di tutti, la persona è della classe
+- ✅ Incontri: chi è atteso lo dice una regola sola; date dei moduli per gruppo
+- ✅ Tutor e assistente: il corso è dell'admin, il tutor lavora sulla sua classe
+- ✅ Ruoli: un nucleo fisso e cinque interruttori che fanno quello che dicono
+- ✅ Il questionario come test d'uscita del modulo, e la verifica finale del corso
+- ✅ Revisione del codice prima della produzione (29/10): otto correzioni
 
 ## Requisiti
 
@@ -202,6 +212,9 @@ danni. Le piu' recenti:
 | `2026_10_21_tre_parole.sql` | `courses.three_words_since` e la tabella `module_words`: le tre parole alla fine di ogni modulo |
 | `2026_10_22_h5p.sql` | `quizzes.kind`, `h5p_dir`, `h5p_library`, `h5p_file`; `quiz_attempts.h5p_raw` e `h5p_max`: i questionari H5P |
 | `2026_10_23_h5p_lezioni.sql` | la tabella `lesson_h5p`: gli esercizi H5P dentro le lezioni |
+| `2026_10_25_bacheca_moduli.sql` | `board_resources.module_id` obbligatorio: ogni risorsa della Bacheca appartiene a un modulo (le esistenti prendono il primo modulo del loro corso) |
+| `2026_10_26_date_moduli_gruppo.sql` | la tabella `group_module_dates`: le date dei moduli di un gruppo |
+| `2026_10_28_verifica_finale.sql` | `modules.is_final`: la verifica finale, spenta per tutti i moduli esistenti |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -234,12 +247,12 @@ torna indietro, se non svuotando la casella a mano.
     /Admin             → pannello di amministrazione: Admin, User, Group, Course,
                         Permission, Settings
   /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
-  /Auth               → login, sessione, permessi per ruolo (Auth.php); chi vede chi
-                         (CourseRights, StudentScope, GroupPeers, BachecaScope)
+  /Auth               → login, sessione, permessi per ruolo (Auth.php, Ruoli.php); chi vede chi
+                         (CourseRights, StudentScope, LiveScope, GroupPeers, BachecaScope)
   /Core               → Router minimale, Database (PDO), Env, View, Settings, Url
                          Upload, FileType, OrphanFiles          → file caricati
                          VideoEmbed, VideoPoster, BunnyToken, WatchIntervals → video
-                         CourseAccess, QuizScoring, CertificateService → regole didattiche
+                         CourseAccess, Percorso, QuizScoring, CertificateService → regole didattiche
                          CourseCover, GroupLogo, AvatarImage, AuthLayout → immagini e aspetto
                          Csv, Xlsx, Ics                         → formati di scambio
                          ReportSections                         → i cinque tagli dei report
@@ -324,6 +337,41 @@ questionario di **sole domande aperte** vale 100 alla consegna, e dice «Consegn
 questionario è concluso.». Lo staff lo vede sempre in anteprima.
 
 **Un questionario può essere un esercizio H5P** invece delle domande: vedi **Esercizi H5P**.
+Non però il questionario obbligatorio di un modulo né la verifica finale (vedi sotto).
+
+**Il questionario è il test d'uscita del modulo** (27/10, Alessandro): si apre quando lo
+studente ha completato tutte le lezioni del modulo. Prima è nella pagina del corso in grigio e
+senza collegamento, senza frase; chi lo apre dall'indirizzo torna al corso con «… si apre
+quando hai fatto le lezioni del modulo.». La regola è una sola, `Percorso::questionarioChiuso`,
+e la applicano la pagina del corso, la pagina del questionario, l'invio delle risposte e, per i
+questionari H5P, i file e il punteggio. Lo staff non è mai bloccato.
+
+**La verifica finale** (28/10, Alessandro) è un modulo che l'admin dichiara tale con la casella
+«Verifica finale» in «Nuovo modulo» e «Modifica modulo» (`modules.is_final`):
+
+- **solo il questionario**: niente «+ Lezione», una lezione mandata a mano si rifiuta, e la
+  casella non si accende su un modulo che ha lezioni;
+- **si apre quando lo studente ha completato tutti gli altri moduli** del corso («… si apre
+  quando hai completato i moduli precedenti.»);
+- **sempre in fondo**: un modulo nuovo va prima di lei, le frecce non la spostano e nessun
+  modulo scende sotto di lei;
+- **una sola per corso**: la seconda si rifiuta con il nome della prima;
+- accesa, «Questionario obbligatorio» sparisce (`modulo-verifica.js`) e si salva spento: dopo di
+  lei non c'è niente da bloccare. Spegnendola, un avviso dice che il suo questionario si
+  aprirebbe subito a tutti;
+- **non è un contenuto del corso**: non si sceglie per gli incontri, le risorse della Bacheca e
+  le domande all'esperto, e non chiede le Tre parole; anche gli invii costruiti a mano si
+  rifiutano (`ModuleModel::contenuti()`);
+- nella pagina del corso l'etichetta «verifica finale» la vede solo lo staff.
+
+**Un questionario H5P non può essere obbligatorio né la verifica finale** (29/10, Alessandro): il
+suo punteggio lo manda il browser e si può falsificare, mentre quei due decidono il percorso.
+Restano a domande, corrette da Pistacchio. In «Nuovo questionario» di un modulo obbligatorio o
+della verifica finale «Contenuto H5P» è spento, con la frase che dice perché; in «Modifica
+modulo» di un modulo con un questionario H5P le due caselle sono spente (se erano già accese
+restano attive, per poterle spegnere). Il server rifiuta in tutti e due i versi
+(`QuizModel::h5pAmmesso()`). Il certificato è un attestato di frequenza: un questionario H5P
+ordinario conta per il certificato come gli altri, ed è un rischio accettato.
 
 **Quanto si può scrivere in una risposta aperta**: 3.000 caratteri
 (`QuizController::MAX_OPEN_CHARS`), dichiarati in tre posti con tre mestieri diversi. Il
@@ -379,8 +427,9 @@ soggetto al blocco**: un modulo chiuso va preparato prima che si apra.
 
 **Per questionario obbligatorio.** Se un modulo ha il flag "questionario obbligatorio", tutti i moduli
 successivi restano bloccati finche' lo studente non supera quel questionario. Un modulo marcato come
-obbligatorio ma privo di questionario — o con un questionario senza domande — non blocca nulla, per evitare
-vicoli ciechi.
+obbligatorio ma privo di questionario — o con un questionario senza domande, o H5P senza il suo
+contenuto — non blocca nulla, per evitare vicoli ciechi. (Fino al 29/10 non bloccava nemmeno un
+questionario H5P con il contenuto; dal 29/10 un questionario obbligatorio è sempre a domande.)
 
 **Per data (rilascio progressivo).** Ogni modulo ha un campo **"Disponibile dal"**: vuoto vuol
 dire aperto, con una data il modulo si apre in quel momento, uguale per tutti gli studenti.
@@ -388,6 +437,15 @@ Lo studente vede il titolo in grigio con la data e non puo' aprire **ne' le lezi
 questionari, ne' i materiali scaricabili, ne' gli incontri dal vivo** di quel modulo: sono quattro
 ingressi distinti nel codice, e il controllo e' in tutti e quattro, perche' nascondere un
 collegamento non e' bloccarlo.
+
+**Ogni gruppo può avere le sue date** (26/10, Alessandro). La data sul modulo resta quella di
+tutto il corso; dalla pagina del gruppo, «Date dei moduli» (`/admin/groups/{id}/courses/{corso}/date`,
+admin e tutor del gruppo, solo per i corsi assegnati al gruppo) dà una data per modulo a quella
+classe. Campo vuoto: il modulo segue la data del corso. Per lo studente vale la data del suo
+gruppo, se c'è (fra più gruppi dello stesso corso, la più vicina), altrimenti quella del corso
+(`ModuleModel::dataPer`): per il blocco di lezioni, questionari, materiali, incontri e Bacheca,
+per la pagina del corso, l'Agenda, il riepilogo dei corsi e l'email del giorno dell'apertura.
+Tabella `group_module_dates`, migrazione `2026_10_26_date_moduli_gruppo.sql`.
 
 Le due regole si incatenano nel verso giusto: un modulo chiuso per data che ha il questionario
 obbligatorio chiude anche quelli dopo, perche' il suo questionario non si puo' fare.
@@ -442,7 +500,7 @@ lezioni del corso **e** superato tutti i questionari presenti. Il PDF (A4 orizzo
 Dompdf) viene salvato in `storage/certificates/` e non e' mai raggiungibile direttamente da
 `public/`: il download passa da un endpoint autenticato. Ogni certificato ha un codice di
 verifica pubblico consultabile su `/verify/{codice}`, pagina che non richiede login e mostra
-solo intestatario, corso e data. Admin e tutor possono emettere un certificato manualmente
+solo intestatario, corso e data. L'admin può emettere un certificato manualmente
 (anche in deroga ai requisiti) o revocarlo: un certificato revocato non e' piu' scaricabile,
 risulta "revocato" nella verifica pubblica e non viene rigenerato dall'emissione automatica.
 
@@ -501,12 +559,16 @@ email), con l'ultimo accesso.
 L'XLSX non richiede dipendenze: il file lo scrive `App\Core\Xlsx`, che ha bisogno
 dell'estensione `zip`. Dove manca, il pulsante XLSX non compare e resta il CSV.
 
-I permessi seguono `role_permissions`: `report.view` (admin, tutor) e `report.view_assigned`
-(assistente). **Chi vede quali studenti** lo decide `App\Auth\StudentScope`: l'admin tutti, il
+I permessi vengono da `App\Auth\Ruoli`: `report.view` (admin, tutor) e, per l'assistente,
+l'interruttore «Report» (`report.view_assigned`) e, solo con quello acceso, «Tentativi dei
+questionari». **Chi vede quali studenti** lo decide `App\Auth\StudentScope`: l'admin tutti, il
 tutor gli studenti dei suoi gruppi, l'assistente quelli dei gruppi dei tutor che affianca
-(tabella `assistant_tutors`). Dal 17/10 la stessa regola vale anche fuori dai report: la pagina
-di un tentativo di questionario, l'elenco e il download dei certificati, la fruizione dei video
-di una lezione.
+(tabella `assistant_tutors`). **Dal 25/10 ragiona per coppie studente-corso**: di uno studente il
+tutor (e il suo assistente) vede i corsi che lo studente fa in un gruppo di quel tutor, non gli
+altri. Vale fuori dai report — la pagina di un tentativo, l'elenco e il download dei certificati,
+la fruizione dei video, gli incontri, Studenti fermi, la Griglia — e gli elenchi dei report
+(Corsi, Studenti, Incontri) contano solo gli studenti del perimetro, come le pagine che si aprono
+da lì. In Report il tutor legge «Stai vedendo solo gli studenti dei gruppi che segui».
 
 #### Studenti fermi
 `/reports/fermi`: chi non ha attività in un corso da almeno **7, 14 o 30 giorni** (di base 14), o
@@ -539,13 +601,13 @@ reimpostazione password. **La password iniziale la genera la piattaforma** e si 
 volta sola: è temporanea, e al primo accesso l'utente deve sceglierne una propria. Chiunque
 può cambiarla in qualsiasi momento dal proprio **Profilo**; il cambio chiude tutte le altre
 sessioni aperte e manda un avviso per email. La regola è almeno 8 caratteri con lettere e
-cifre (`App\Core\PasswordPolicy`). Serve `user.manage`; chi ha solo `assistant.manage`
-(il tutor) vede e gestisce esclusivamente i propri assistenti e non può assegnare altri ruoli.
+cifre (`App\Core\PasswordPolicy`). Serve `user.manage`, cioè l'admin.
 
 Alcune protezioni sono deliberatamente rigide, per non restare chiusi fuori:
 un amministratore non può cambiare il proprio ruolo, disattivarsi o eliminarsi; deve sempre
 restare almeno un admin attivo; un utente che risulta autore di corsi non è eliminabile
-(`courses.created_by` è `ON DELETE RESTRICT`) e va semmai disattivato. L'eliminazione di un
+(`courses.created_by` è `ON DELETE RESTRICT`) e va semmai disattivato; lo stesso per chi ha creato
+degli incontri dal vivo (29/10: prima la pagina dava errore, ora lo dice). L'eliminazione di un
 utente rimuove a cascata iscrizioni, progressi, tentativi e certificati: per conservare lo
 storico è preferibile disattivarlo.
 
@@ -560,26 +622,33 @@ sostituisce ma non la toglie. Il campo lo mostra uno script solo quando il ruolo
 
 La scheda dell'utente mostra anche **i gruppi a cui partecipa** (tutor e numero di corsi del
 gruppo), e permette di aggiungerlo o toglierlo da lì: le stesse azioni della scheda del gruppo,
-con gli stessi effetti sulle iscrizioni. L'elenco a tendina contiene solo i gruppi che chi
-guarda può gestire — tutti con `group.manage`, i propri con `group.manage_own`, nessuno senza
-quei permessi (in quel caso i gruppi si vedono ma non si modificano).
+con gli stessi effetti sulle iscrizioni.
 
 ### Gruppi (`/admin/groups`)
-Classi/coorti con tutor responsabile, membri e corsi assegnati. Serve `group.manage` (tutti i
-gruppi) oppure `group.manage_own` (solo quelli di cui si è tutor; chi crea un gruppo ne diventa
-responsabile e non può cederlo).
+Classi/coorti con tutor responsabile, membri e corsi assegnati. **Creare ed eliminare i gruppi e
+assegnare i corsi è dell'admin** (`group.manage`). Il tutor (`group.manage_own`) cura i gruppi di
+cui è tutor: nome, immagine, descrizione, link WhatsApp, **date dei moduli** (vedi **Sblocco
+progressivo dei moduli**); i membri solo con l'interruttore «Membri dei gruppi» acceso (vedi
+**Ruoli**).
 
-**Assegnare un corso al gruppo iscrive i membri al corso**, e chi entra nel gruppo in un secondo
-momento viene iscritto ai corsi già assegnati. L'operazione è idempotente: riassegnare un corso
+**Assegnare un corso al gruppo iscrive i membri al corso**, e chi entra nel gruppo per mano
+dell'admin viene iscritto ai corsi già assegnati. L'operazione è idempotente: riassegnare un corso
 non azzera il progresso di chi era già iscritto. Le operazioni inverse — togliere un membro dal
 gruppo o un corso dal gruppo — **non** cancellano le iscrizioni, perché con esse sparirebbero
 progresso, tentativi dei questionari e certificati; per rimuoverle davvero si usa la scheda del corso.
 
+**Il tutor aggiunge al suo gruppo solo chi è già iscritto** a un corso del gruppo e non fa già
+parte di un altro gruppo con un corso in comune, e **non iscrive** a nessun altro corso (29/10):
+iscrivere è dell'admin. Sotto «Aggiungi al gruppo» la frase lo dice: «Puoi aggiungere gli
+studenti già iscritti ai corsi del gruppo, purché non facciano già parte di un altro gruppo per lo
+stesso corso.» (`GroupModel::candidati()`).
+
 ### Corsi e iscrizioni (`/admin/courses`)
-Creazione (`course.create`), modifica e iscrizioni (`course.edit`), eliminazione
-(`course.delete`). Lo slug è generato dal titolo e reso univoco in automatico. I contenuti
-(moduli, lezioni, questionari) restano nella scheda del corso. La rimozione di un'iscrizione cancella
-progresso e certificato di quel corso: viene chiesta conferma.
+Creazione, modifica, iscrizioni ed eliminazione sono dell'admin. Lo slug è generato dal titolo e
+reso univoco in automatico. I contenuti (moduli, lezioni, questionari) restano nella scheda del
+corso. La rimozione di un'iscrizione cancella progresso e certificato di quel corso: viene chiesta
+conferma. **Il tutor** in Gestione corsi vede i corsi dei suoi gruppi; aprendone uno trova il suo
+benvenuto da registrare e i suoi studenti, in sola lettura (vedi **Chi modifica cosa**).
 
 **La descrizione è lunga al massimo 3.000 caratteri** (10/10), con il contatore sulla riga
 dell'etichetta, allineato al bordo destro del campo: lo stesso della presentazione nel profilo e
@@ -647,14 +716,28 @@ stesso contatore. Il limite sta in `EnrollmentRequestModel::MAX_MESSAGE_CHARS`; 
 larga altrettanto dalla migrazione `2026_10_10_richiesta_iscrizione.sql`. `accessibilita.js`
 controlla il contatore nel catalogo quando c'è un corso su richiesta, e altrimenti lo dice e salta.
 
-### Permessi (`/admin/permissions`)
-Matrice ruoli × permessi su `role_permissions`, con le chiavi effettivamente controllate dal
-codice (`RolePermissionModel::catalog()`). Le modifiche hanno effetto immediato.
+### Ruoli (`/admin/permissions`)
+**Impostazioni › Ruoli** (26/10, Alessandro) dice che cosa fa ogni ruolo: per ciascuno, in
+elenco, quello che fa sempre, e sotto i suoi interruttori con la casella. Ha preso il posto della
+matrice dei permessi, che diceva che i permessi si cambiavano da lì: non era vero per circa metà
+dei controlli, che guardavano il ruolo e ignoravano le caselle, e alcune caselle non le leggeva
+nessuno. **Un interruttore deve fare davvero quello che dice**: per questo sono pochi, e ciascuno
+è rispettato da tutte le pagine e le azioni che tocca.
 
-Questa pagina è l'unica riservata al **ruolo** `admin` anziché a un permesso: un permesso
-revocabile da qui potrebbe lasciare la piattaforma senza nessuno in grado di ripristinarlo.
-Per lo stesso motivo `user.manage` viene sempre mantenuto al ruolo admin. Eventuali chiavi
-personalizzate inserite a mano in tabella non vengono toccate dal salvataggio.
+Il **nucleo fisso** sta in `App\Auth\Ruoli::NUCLEO`. Gli **interruttori**:
+
+| Ruolo | Interruttore | Acceso | Spento |
+|---|---|---|---|
+| Tutor | Membri dei gruppi | aggiunge al suo gruppo gli studenti già iscritti a un corso del gruppo che non sono in un altro gruppo con lo stesso corso, senza iscriverli ad altri corsi, e toglie i membri | i membri li gestisce solo l'admin, e il tutor li vede |
+| Assistente | Report | report di corso, studente e gruppo, Griglia, Studenti fermi, fruizione, report degli incontri e certificati degli studenti dei suoi tutor | nessuno di questi, e il menu «Report» sparisce |
+| Assistente | Tentativi dei questionari | apre i tentativi, con tutte le risposte; vale solo con «Report» acceso | nei report vede i punteggi, non il tentativo |
+| Assistente | Incontri | vede in Sessioni live, Agenda e calendario gli incontri dei gruppi dei suoi tutor, ci entra senza risultare presente, ne legge le presenze se «Report» è acceso | non li vede |
+| Studente | Proposte in Bacheca | propone risorse e racconta come le ha usate | legge e salva, non propone né racconta; quello che aveva proposto resta |
+
+Gli interruttori stanno in `settings` (`ROLE_*`): spento vale solo `'0'`, e senza riga sono
+accesi, com'era prima del 26/10. La pagina la apre solo il **ruolo** `admin`. La tabella
+`role_permissions` resta nel database ma non si legge più. `tests/ruoli_test.php` prova la
+regola, `permessi.js` ogni interruttore acceso, spento e nelle combinazioni.
 
 ## Sicurezza dei form (CSRF)
 
@@ -743,6 +826,27 @@ non ne aveva bisogno: scrive i testi come testo. `tests/csv_test.php` prova le c
 - **Niente SVG**: nessun campo di caricamento accetta un SVG, nemmeno rinominato `.png`
   (`svg_test.php`).
 
+**La revisione del codice del 29/10**, prima della produzione (quattro revisori separati, poi
+ogni rilievo verificato sul codice). Le correzioni, ciascuna con la sua prova:
+
+- **Gli indirizzi nelle email senza `APP_URL`** (`App\Core\Url::base`, `url_test.php`): usavano
+  l'host dichiarato da chi faceva la richiesta, quindi un link di reimpostazione della password
+  poteva puntare a un altro sito. Ora l'host della richiesta vale solo per uno di sviluppo sul
+  proprio computer (`localhost`, `127.0.0.1`, `[::1]`, `*.test`, `*.localhost`); altrimenti
+  `localhost` e una riga nel log. In produzione `APP_URL` va compilato.
+- **Allegati di un corso altrui**: un tutor che indicava una lezione inesistente arrivava agli
+  allegati di qualunque corso. Ora chi non è admin riceve 404 quando il corso non si trova, e il
+  materiale deve essere della lezione dell'indirizzo.
+- **La registrazione ripetuta** di un indirizzo mai confermato prende nome e password
+  dell'ultima, il link di prima non vale più, e ha il limite del rinvio.
+- **Recupero della password e rinvio della conferma** vanno all'indirizzo salvato, non a quello
+  scritto (il database ignora gli accenti nei confronti).
+- **Il fuso del database**: ogni connessione imposta `time_zone` sullo scarto orario di PHP
+  (`fuso_orario_test.php`). Su un MySQL in UTC le aperture dei moduli e «Entra» arrivavano in
+  ritardo.
+- **Gli inviti un giro alla volta** (`GET_LOCK`, vedi **Importazione di utenti**).
+- **Un utente che ha creato incontri** non si elimina, con la ragione.
+
 ## Sessioni live (Google Meet)
 
 Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**. **Chi è
@@ -758,11 +862,14 @@ pagina della lezione, inviti di Google, promemoria, report e Griglia del corso:
   assenti.
 
 Le sessioni si
-gestiscono da `/live` (permesso `course.edit`: admin e tutor); gli studenti vedono solo quelle
-che li riguardano. **Un incontro si apre solo se è nel proprio elenco** (17/10, `LiveScope`):
-l'admin tutti, il tutor quelli dei suoi corsi e dei suoi gruppi, studenti e assistenti quelli di
-cui sono destinatari. Prima un tutor apriva l'incontro del gruppo di un collega scrivendo
-l'indirizzo, e riceveva il link Meet.
+gestiscono da `/live`; gli studenti vedono solo quelle che li riguardano. **L'admin** crea e
+gestisce tutti gli incontri, compresi quelli di tutto il corso. **Il tutor** (25/10) vede, crea e
+gestisce solo gli incontri dei suoi gruppi: il gruppo è obbligatorio, il modulo è il tema; il
+tutor di un'altra classe dello stesso corso non li trova nell'elenco, nella pagina né nei report.
+**L'assistente**, con l'interruttore «Incontri», vede quelli dei gruppi dei suoi tutor in sola
+lettura e ci entra senza risultare presente. **Un incontro si apre solo se è nel proprio
+elenco** (17/10, `LiveScope`): prima un tutor apriva l'incontro del gruppo di un collega
+scrivendo l'indirizzo, e riceveva il link Meet.
 
 **Chi partecipa vede i riquadri dell'Agenda** (20/10), non la tabella dello staff: «In programma»
 dal più vicino e «Concluse» chiuse come lo Storico, dal più recente. Nel riquadro data e orario,
@@ -775,6 +882,12 @@ Alla creazione della sessione l'applicazione crea un evento su Google Calendar c
 contestualmente una conferenza Meet (`conferenceData.createRequest`, con
 `conferenceDataVersion=1`) e salva `google_event_id` e `meet_link`. Modificando la sessione
 l'evento viene allineato; eliminandola, l'evento viene rimosso dal calendario.
+
+**La lista degli invitati è nascosta** (25/10): di base Google mostra a ogni invitato gli altri,
+con le email — in un incontro di gruppo quelle dei compagni, in uno di tutto il corso quelle
+degli studenti di ogni classe. Gli eventi si creano e si aggiornano con
+`guestsCanSeeOtherGuests` e `guestsCanInviteOthers` a `false`. Gli eventi creati prima si
+sistemano salvando l'incontro.
 
 **Se Google non è configurato o risponde con un errore, la sessione viene salvata lo stesso**:
 l'utente riceve un avviso e può incollare un link Meet creato a mano, oppure riprovare la
@@ -855,7 +968,7 @@ automaticamente a ogni giro.
 Il modo normale per una tabella larga è `.tabella-schede`, che sotto i 50 rem di spazio
 disponibile la trasforma in un elenco di schede — con *container query*, quindi in base allo
 spazio che la tabella ha davvero, non alla larghezza della finestra. Dove le schede non hanno
-senso (la matrice dei permessi, che ha una colonna per permesso) c'è il ripiego: scorrimento
+senso (fino al 26/10 la matrice dei permessi, che aveva una colonna per permesso) c'è il ripiego: scorrimento
 orizzontale **dentro il proprio riquadro**, senza trascinarsi dietro la pagina.
 
 ## Comandi e collegamenti: come si riconoscono
@@ -974,8 +1087,7 @@ come **una fila di comandi sopra alle schede**. Nasconderla del tutto avrebbe to
 l'ordinamento proprio dove la tabella è più scomoda, e avrebbe lasciato dei collegamenti
 raggiungibili con il tasto di tabulazione ma invisibili.
 
-Restano **non ordinabili**, e per scelta: la matrice dei permessi (caselle, non righe da
-confrontare), il questionario da svolgere, gli elenchi di moduli e lezioni dentro un corso — lì
+Restano **non ordinabili**, e per scelta: il questionario da svolgere, gli elenchi di moduli e lezioni dentro un corso — lì
 l'ordine è deciso a mano dal tutor, cioè *è* il contenuto — e le singole colonne che mostrano
 un campo **oppure** un altro («Corso o gruppo»): ordinarle su uno dei due manderebbe in fondo
 tutte le righe dell'altro, con l'aria di un difetto.
@@ -1047,6 +1159,11 @@ sostituiva — credenziali giuste respinte, e con una posta instabile ogni quart
 Resta un caso: un'email consegnata nonostante l'errore, a un utente che non ha ancora fatto
 accesso. Al giro dopo ne riceve un'altra, e vale la password della seconda; appena entra con
 quella, esce dalla coda.
+
+**Un giro alla volta** (29/10): il comando e il pulsante della pagina Utenti prendono un blocco
+del database (`GET_LOCK('pistacchio_inviti')`). Prima due giri insieme — il cron e un clic, o due
+cron sovrapposti — potevano dare due password diverse alla stessa persona. Se un giro è già in
+corso, il comando lo scrive nel log e il pulsante lo dice, e non parte niente.
 
 **Se il cron non gira, nessuno entra.** È più grave del rilascio dei moduli, dove un cron
 fermo fa mancare solo un avviso: qui chi è stato importato non ha una password finché
@@ -1183,8 +1300,10 @@ diventava un riquadro con il bordo allineato a sinistra.
 Scelto da Alessandro l'11/10 su un mockup. Le regole stanno in `App\Core\Obiettivo`.
 
 - **L'obiettivo del corso** ha un riquadro suo, subito dopo la descrizione e prima del benvenuto
-  del tutor, largo quanto i moduli, con il fondo verde chiaro e un bersaglio (una forma, non un
-  carattere), perché non si legga come un modulo. Per lo studente è **completo nelle prime tre
+  del tutor, largo quanto i moduli, bianco come i moduli e con l'icona `bullseye` nel colore
+  principale dentro un cerchio di 2,4 rem con il filo verde, la stessa misura e la stessa forma
+  della foto del tutor nella riga del benvenuto (23/10, Alessandro), perché non si legga come un
+  modulo. Fra il suo riquadro e quello del benvenuto c'è la distanza fra due moduli, 16 px. Per lo studente è **completo nelle prime tre
   visite**, poi diventa una riga, «Obiettivo del corso … Mostra», come quella del benvenuto:
   «Mostra» lo riapre, «Nascondi» lo richiude; le due parole stanno attaccate al bordo destro,
   alla stessa distanza di quelle del benvenuto subito sotto (12/10). Le visite si contano in `course_objective_views`,
@@ -1235,10 +1354,15 @@ apre tutto per quella visita (`?moduli=tutti`, quindi anche senza JavaScript) e 
 ricorda. A corso finito non c'è un modulo in corso: sono tutte righe «completato». **Lo staff vede
 tutto aperto**, senza etichette né «Riprendi».
 
-**Quello che manca per il certificato sta in fondo**, dopo l'ultimo modulo, e dice solo le parti
-che mancano davvero: «Per il certificato: completa tutte le lezioni (2 di 16) e supera tutti i
-questionari (1 di 2).». Ottenuto il certificato la riga sparisce, e in alto resta il riquadro
-verde con «scarica il PDF».
+**Niente riga del certificato** (23/10, Alessandro): quella in fondo ai moduli, «Per il
+certificato: completa tutte le lezioni…», è stata tolta; se e dove rimetterla si decide più
+avanti. A certificato ottenuto resta il riquadro verde con «scarica il PDF». **La tinta tenue del
+tema segna solo la prossima cosa da fare** («Riprendi da qui», «Inizia da qui», «Fallo ora»):
+obiettivo del corso ed esperto sono bianchi come i moduli, e a distinguerli è la loro icona.
+
+**Il questionario ancora chiuso** (le lezioni del modulo non sono tutte fatte, o, per la verifica
+finale, i moduli prima) è in grigio e senza collegamento, senza frase; la verifica finale nella
+sua riga dice «questionario» e, aperta, non mostra «Nessuna lezione». Vedi **Questionari**.
 
 `tests/percorso_test.php` prova gli stati e da quale lezione riprendere; `accessibilita.js`, nel giro da
 studente, il modulo in corso, il prossimo chiuso, la riga che si apre e «Mostra tutti i moduli»;
@@ -1341,11 +1465,15 @@ lezione, alla scheda del suo modulo. La regola generale sta in «I moduli da com
   menu per scegliere il corso (lo studente fra quelli a cui è iscritto, il tutor fra quelli dei
   suoi gruppi; con un corso solo il menu non c'è). Un corso non suo, scritto a mano
   nell'indirizzo, non si apre: si mostra il primo dei suoi. Il tutor la legge come uno studente,
-  in sola lettura, e vede gli autori per intero come lo staff ovunque. L'admin ha «Domande».
+  in sola lettura; l'assistente, nei corsi dei suoi tutor, senza i nomi di chi ha chiesto.
+  L'admin ha «Domande».
 - **In fondo a ogni corso, «Fai una domanda all'esperto»**, ripiegata in una riga con «Mostra»,
   che la apre e diventa «Nascondi» (un `details`, senza JavaScript). Dentro il modulo per
   chiedere («La legge l'esperto…»), il collegamento «Leggi le risposte dell'esperto per questo
-  corso» e «Le tue domande».
+  corso» e «Le tue domande». La riga è bianca come i moduli, con l'icona `question-circle` nel
+  cerchio di 2,4 rem, ed è più alta di quella di un modulo e staccata di 24 px dall'ultimo
+  (contro i 16 fra due moduli): non è un modulo del corso, ma un'occasione in più per chiarire
+  i dubbi (23/10, Alessandro).
   **Si apre da sola** dopo l'invio di una domanda e dopo un invio respinto; alla visita
   successiva riparte chiusa. Il comando ha sempre lo spazio della parola più lunga, così la
   riga non cambia forma aprendola.
@@ -1552,13 +1680,27 @@ titolo nel colore della categoria, la descrizione e il numero delle risorse pubb
 - **Gli studenti propongono** una risorsa, senza file. La proposta resta in attesa finché il tutor
   del loro gruppo, o l'admin, non la pubblica (scegliendo la categoria) o la scarta, con
   un'email al tutor per ogni proposta nuova. Lo studente vede lo stato in «Le tue proposte».
+  Proporre e raccontare dipendono dall'interruttore «Proposte in Bacheca» (vedi **Ruoli**).
 - **«Questa me la tengo»** è privato, con la scheda «Le mie risorse». **«Come l'ho utilizzata»**,
   fino a 500 caratteri, uno per persona, si pubblica subito con l'avvertenza sui dettagli
   privati; chi modera lo può nascondere, e resta visibile a chi l'ha scritto.
+- **Ogni risorsa appartiene a un modulo** del suo corso (25/10, Alessandro), obbligatorio, e lo
+  studente la vede solo quando quel modulo è aperto per lui: la stessa regola di lezioni,
+  materiali e incontri (data di apertura, anche quella del suo gruppo, e questionario
+  obbligatorio). Lo staff le vede tutte. Il campo «Modulo» sta prima della categoria: lo studente
+  che propone sceglie fra i moduli aperti per lui, chi pubblica fra tutti, e il tutor lo può
+  cambiare. Il modulo non si mostra sulla risorsa. Il blocco è anche sul server: una risorsa di
+  un modulo chiuso non si tiene, non si racconta, non si scarica, e una proposta in un modulo
+  chiuso non nasce. I conti dei riquadri contano solo le risorse che chi guarda vede. Eliminare
+  un modulo elimina anche le sue risorse (i file restano sul server), e la conferma lo dice.
+- **La risorsa è di tutti, le persone sono della classe**: i racconti «Come l'ho utilizzata» e
+  il nome di chi ha proposto una risorsa li vedono la persona stessa, i compagni dei suoi gruppi
+  del corso e chi la modera (il tutor del suo gruppo, l'admin). Per gli altri la risorsa proposta
+  da uno studente è «Condivisa in bacheca». L'assistente non li vede, come foto e presentazioni.
 
 Regole in `App\Auth\BachecaScope` (chi vede, pubblica e modera) e `App\Core\Bacheca` (campi,
 link, ordine, colori). I file stanno in `storage/bacheca/`. Migrazioni
-`2026_10_17_bacheca.sql` e `2026_10_17_bacheca_colori.sql`.
+`2026_10_17_bacheca.sql`, `2026_10_17_bacheca_colori.sql` e `2026_10_25_bacheca_moduli.sql`.
 
 ## Tre parole
 
@@ -1610,11 +1752,16 @@ singole domande di un Question Set) e il server controlla che abbia senso (numer
 massimo). Si sostituisce il file in Modifica questionario. Schermo intero spento: copriva il
 titolo sul telefono.
 
+**Il punteggio lo manda il browser**, e chi sa usare gli strumenti per sviluppatori lo può
+falsificare: il server controlla che abbia senso, non che sia vero. Per questo un questionario
+H5P **non può essere il questionario obbligatorio né la verifica finale** (29/10, vedi
+**Questionari**).
+
 ### Dentro le lezioni
 In Modifica lezione, «Contenuti interattivi H5P»: **uno o più contenuti**, oltre al questionario
 del modulo, di **qualunque tipo**. Aggiungi e Sostituisci si fanno al «Salva», insieme al testo,
-così caricare un esercizio non fa perdere niente; «Elimina» ricarica la pagina, e se il testo ha
-modifiche non salvate lo dice prima.
+così caricare un esercizio non fa perdere niente; «Rimuovi dalla lezione» ricarica la pagina, e
+se il testo ha modifiche non salvate lo dice prima.
 
 **Dove compare lo decide chi scrive**: il pulsante **«Esercizio H5P»** della barra dell'editor
 elenca i contenuti della lezione e mette quello scelto nel punto del cursore, come segnaposto
@@ -1625,12 +1772,15 @@ con sotto «Esercizio interattivo · non dà una valutazione». Un contenuto non
 compare dopo il testo; messo due volte, compare una volta; il segnaposto di un contenuto
 eliminato non mostra niente, e nell'editor diventa rosso. Sostituire un contenuto tiene il suo
 posto nel testo e cambia l'indirizzo dei file, così il browser non usa la copia vecchia.
-Eliminare la lezione toglie anche le cartelle dei suoi contenuti.
+Le cartelle dei contenuti restano sul server come gli altri file caricati (vedi **File
+caricati**).
 
 **Nessun punteggio si salva**, ma **«Segna come completata» si sblocca quando lo studente ha
 usato tutti gli esercizi** della lezione — una risposta, un clic o un Invio dentro l'esercizio,
-una voce aperta: guardarlo non basta —, con il conto accanto al pulsante («Usa i due esercizi per
-poter segnare la lezione come completata (1 su 2).»). Gli esercizi usati si ricordano per la
+una voce aperta: guardarlo non basta —, con il conto nella frase sotto il pulsante («Fai i due
+esercizi per poter segnare la lezione come completata (1 su 2).»; con un video da guardare,
+«Guarda il video e fai i due esercizi…», vedi **Copertina di avvio e completamento delle
+lezioni**). Gli esercizi usati si ricordano per la
 scheda, ricaricando la pagina non si ricomincia. Come per il video, la regola sta nel browser:
 senza JavaScript, o se un esercizio non si carica, il pulsante resta usabile. Gli esercizi si
 avviano uno dopo l'altro, perché il riproduttore li prepara in una variabile globale della pagina.
@@ -1714,6 +1864,7 @@ php tests/griglia_corso_test.php    # griglia del corso: stati delle attività, 
 php tests/tre_parole_test.php       # tre parole: normalizzazione, a chi si chiedono, parole che tornano, ordine anonimo
 php tests/h5p_test.php              # H5P: voci ammesse dell'archivio, h5p.json, punteggi, apertura dei pacchetti
 php tests/lezione_h5p_test.php      # H5P nelle lezioni: segnaposto, sanificatore, composizione, apertura per lezione
+php tests/url_test.php              # l'indirizzo dei collegamenti senza APP_URL: solo un host di sviluppo
 
 # richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
 php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
@@ -1728,20 +1879,23 @@ php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, 
 php tests/giro_test.php             # pagina del gruppo: chi pone, risponde e modera; domanda aperta e archivio; «Ci sarò»
 php tests/accesso_test.php          # limite ai tentativi di accesso (5 per account, avvisi, blocco di un'ora; IP) e cookie di sessione protetto
 php tests/csv_test.php              # CSV: i testi-formula escono con l'apostrofo, numeri e telefoni come sono
+php tests/ruoli_test.php            # ruoli: nucleo fisso e cinque interruttori, «Tentativi» solo con «Report»
+php tests/fuso_orario_test.php      # la connessione al database usa lo scarto orario di PHP
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 4.700 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 470 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, la bacheca, il ramo del corso, le tre parole, i file H5P, i questionari conclusi e molto altro
+node tests/accessibilita.js         # circa 5.000 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 656 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, gli interruttori dei ruoli, la bacheca, il ramo del corso, le tre parole, i file H5P, il percorso e la verifica finale e molto altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero (crea e toglie da sé 55 studenti per la seconda pagina)
 ```
 
-Il 22/10, sul database di sviluppo: 46 file PHP con 1.709 controlli, `accessibilita.js` 4.679,
-`permessi.js` 470, `ordinamento_pagine.js` 301, `coerenza_moduli.js` 16, tutti superati.
-`permessi.js` e `accessibilita.js` rifanno la semina all'inizio: vanno lanciati uno dopo l'altro,
-mai insieme.
+Il 29/10, sul database di sviluppo: 49 file PHP con 1.761 controlli, `accessibilita.js` 5.025,
+`permessi.js` 656, `ordinamento_pagine.js` 307, `coerenza_moduli.js` 16, tutti superati, anche con
+MySQL in UTC. `permessi.js` e `accessibilita.js` rifanno la semina all'inizio (`permessi.js` con
+`--lezioni-fatte`, che segna come fatta la lezione del mondo A, così le prove possono svolgere
+il questionario, che si apre a lezioni fatte): vanno lanciati uno dopo l'altro, mai insieme.
 
 ### I tre controlli automatici che vale la pena conoscere
 
@@ -1830,11 +1984,11 @@ compare un avviso. I campi dei provider non scelti ora spariscono davvero: la re
 `display: flex` vinceva sull'attributo `hidden`, così il campo "carica file video" si vedeva
 anche con la tendina su "Nessuno".
 
-**L'eccezione degli esercizi H5P** (21/10): la cartella di un contenuto H5P si toglie quando il
-contenuto si sostituisce o si elimina, e con il questionario o la lezione a cui appartiene. Non è
-un file caricato ma l'archivio aperto da Pistacchio, e il `.h5p` da cui viene resta a chi l'ha
-creato con Lumi. Eliminando un modulo o un corso interi, invece, le cartelle `storage/h5p/` dei
-loro contenuti per ora restano sul disco.
+**Vale anche per gli esercizi H5P** (29/10, Alessandro; dal 21/10 c'era un'eccezione): le
+cartelle in `storage/h5p/` non si cancellano mai da sole, né togliendo il contenuto dalla lezione
+(«Rimuovi dalla lezione»), né sostituendolo, né eliminando lezione, questionario, modulo o corso.
+I messaggi dicono che restano e dove, e si contano fra i file scollegati, nella riga
+`storage/h5p`.
 
 ### Dove si vedono i file scollegati
 
@@ -1844,8 +1998,8 @@ loro contenuti per ora restano sul disco.
   costa una lettura di tre cartelle invece di tutte.
 
 Si contano confrontando il disco con i riferimenti nel database: `lessons.video_ref`,
-`lesson_materials.file_path` e — per le immagini, che non hanno una tabella — i nomi citati
-dentro `content_html`. Vanno cancellati a mano: nessuna pagina può sapere se servono ancora.
+`lesson_materials.file_path`, le cartelle H5P di questionari e lezioni e — per le immagini, che
+non hanno una tabella — i nomi citati dentro `content_html`. Vanno cancellati a mano: nessuna pagina può sapere se servono ancora.
 
 ## Limiti di caricamento (video e materiali)
 
@@ -2052,7 +2206,7 @@ Alessandro), e lo stesso giorno anche accanto a **«Pubblica», «Condividi», �
 - **una pagina con un modulo solo** (nuovo e modifica di modulo, lezione, utente, gruppo,
   incontro e questionario; nuovo corso; le impostazioni del questionario; lo svolgimento del
   questionario, che torna al corso senza inviare; le impostazioni di Aspetto, Video di benvenuto, Bunny, Google Meet,
-  Server di posta; i Permessi; la reimpostazione della password): **esce senza salvare** e torna
+  Server di posta; la reimpostazione della password): **esce senza salvare** e torna
   alla pagina da cui si arriva — la stessa del collegamento «indietro» in cima, per la password
   la pagina d'accesso. È un collegamento con l'aspetto di un pulsante;
 - **una pagina con più moduli da salvare** (Messaggi email, il Profilo, Modifica corso con la
@@ -2269,24 +2423,23 @@ aperta con `PDO::ERRMODE_EXCEPTION`.
 
 ## Chi modifica cosa: tutor e assistenti
 
-Regola decisa il 28/09 (`pistacchio-lms.md` §8.0), tutta in `App\Auth\CourseRights`:
+**Il corso è dell'admin, il tutor lavora sulla sua classe** (25/10, Alessandro; fino al 25/10 il
+tutor modificava i corsi assegnati ai suoi gruppi). In `App\Auth\CourseRights`:
 
-- l'**admin** modifica tutti i corsi, ed è il solo a crearli, a riordinarli e ad assegnare
-  tutor e assistenti;
-- il **tutor** modifica solo i corsi assegnati ai **suoi** gruppi. Gli altri li vede in sola
-  lettura: nessun comando di modifica, e in Gestione corsi l'etichetta "sola lettura";
-- la stessa regola vale per **report** e **sessioni live**: il tutor vede i suoi corsi, i suoi
-  gruppi e i loro studenti;
-- l'**assistente** può affiancare **più tutor** (tabella `assistant_tutors`) e vede i report
-  degli studenti dei gruppi di tutti.
+- l'**admin** crea, modifica, riordina ed elimina i corsi e i loro contenuti — moduli, lezioni,
+  questionari, materiali, date del corso, dati e copertina —, iscrive, toglie iscritti, decide le
+  richieste di iscrizione e assegna tutor e assistenti;
+- il **tutor** legge il corso. In Gestione corsi vede i corsi dei suoi gruppi; aprendone uno
+  trova il suo benvenuto da registrare e i suoi studenti, in sola lettura. Le date della sua
+  classe le dà da «Date dei moduli», nella pagina del gruppo; gli incontri sono quelli dei suoi
+  gruppi; report, tentativi e certificati quelli dei suoi studenti, nei corsi che fanno nei suoi
+  gruppi (`StudentScope`, a coppie studente-corso);
+- l'**assistente** affianca **più tutor** (tabella `assistant_tutors`) in sola lettura, secondo
+  gli interruttori di **Ruoli**.
 
-Prima ogni azione su moduli, lezioni e questionari controllava solo il ruolo, in una quarantina di
-punti: ora passano tutti da `CourseRights::requireEdit*()`, che ferma con un 403 anche chi
-scrive a mano l'indirizzo di un corso altrui.
-
-Il permesso `assistant.manage` al tutor è **vietato per regola**, non per scelta: la matrice dei
-permessi lo mostra bloccato, e il salvataggio lo rifiuta anche se arriva da una richiesta
-costruita a mano (`RolePermissionModel::FORBIDDEN`).
+Ogni azione su moduli, lezioni e questionari passa da `CourseRights::requireEdit*()`, che ferma
+anche chi scrive a mano l'indirizzo; quando il corso non si trova, chi non è admin riceve 404
+(29/10). Il tutor non gestisce assistenti: `assistant.manage` non è nel suo nucleo.
 
 Due migrazioni, in quest'ordine. `2026_09_29_tutor_assistenti.sql` crea `assistant_tutors`,
 vi trasferisce i legami esistenti di `users.supervising_tutor_id` e toglie il permesso al
@@ -2348,11 +2501,11 @@ scambia la posizione è la riga **adiacente nell'ordine di visualizzazione**, no
 `position ± 1`: dopo un'eliminazione le posizioni hanno dei buchi, e righe importate potrebbero
 condividere lo zero — in quel caso si rinumera prima di scambiare.
 
-## Copertina di avvio e completamento delle lezioni di solo video
+## Copertina di avvio e completamento delle lezioni
 
 Sono due cose distinte, tenute separate di proposito: la copertina è **presentazione** e vale
-per ogni video; lo sblocco del pulsante è una **regola didattica** e riguarda solo certe
-lezioni. Legarle significherebbe che cambiare idea sull'una tocca l'altra.
+per ogni video; lo sblocco del pulsante è una **regola didattica**. Legarle significherebbe che
+cambiare idea sull'una tocca l'altra.
 
 ### La copertina, per ogni video
 
@@ -2374,11 +2527,15 @@ copertina il player è nascosto, e allargarlo darebbe una pagina nera attorno a 
 vuoto. `lesson-video.js` annuncia l'avvio con un evento e `lesson-focus.js` lo ascolta, per cui
 il primo va caricato prima del secondo.
 
-### Lo sblocco, per le lezioni di solo video
+### Lo sblocco, per ogni lezione con il video
 
-In una lezione che contiene **solo** un video — niente testo, niente materiali — il pulsante
-"Segna come completata" resta disabilitato finché lo studente non avvia il video. Il clic sulla
-copertina è il segnale, e per i video sul nostro server vale anche l'evento `play` del player.
+**Dal 27/10 (Alessandro) in ogni lezione con un video**, anche con testo o allegati, il pulsante
+"Segna come completata" resta disabilitato finché lo studente non avvia il video; prima valeva
+solo per le lezioni di solo video. Con gli esercizi H5P ci vogliono tutte e due le cose. Sotto il
+pulsante una frase sola dice quello che manca, composta da `lesson-completa.js`: «Guarda il video
+per poter segnare la lezione come completata.», «Fai l'esercizio…», o «Guarda il video e fai
+l'esercizio…». Il clic sulla copertina è il segnale, e per i video sul nostro server vale anche
+l'evento `play` del player.
 
 Il pulsante è **abilitato nell'HTML** e lo disabilita `public/assets/js/lesson-video.js`, lo
 stesso script della copertina: senza JavaScript, o se qualcosa va storto, lo studente può
@@ -2415,7 +2572,7 @@ JavaScript la pagina resta esattamente quella di prima.
 
 **Impostazioni → Server di posta elettronica** e **Amministrazione → Google Meet** permettono di
 cambiare la configurazione senza aprire il `.env`. Le due pagine richiedono il permesso
-`settings.manage`, assegnato all'admin e spostabile dalla matrice dei permessi.
+`settings.manage`, che fa parte del nucleo fisso dell'admin (vedi **Ruoli**).
 
 I valori finiscono nella tabella `settings`, con chiavi che hanno gli stessi nomi delle
 variabili d'ambiente, e **hanno la precedenza sul `.env`**. Svuotare un campo cancella la riga
@@ -2680,6 +2837,12 @@ riuscita e non viene inviata alcuna email: la registrazione non deve diventare u
 scoprire chi è iscritto alla piattaforma. Stesso criterio per il recupero password, che risponde
 sempre allo stesso modo. Entrambi i flussi accettano al massimo 5 richieste all'ora per account.
 
+**Un indirizzo registrato e mai confermato si può registrare di nuovo** (29/10): valgono nome e
+password dell'ultima registrazione, il link di prima non vale più, e la richiesta ha lo stesso
+limite del rinvio della conferma. Recupero della password e rinvio della conferma scrivono
+**all'indirizzo salvato**, non a quello scritto nel campo: il database confronta gli indirizzi
+senza badare agli accenti.
+
 Gli account creati dallo staff e quello dell'amministratore creato dall'installer nascono già
 verificati: l'indirizzo lo ha scelto chi li ha creati.
 
@@ -2689,7 +2852,7 @@ Ogni corso ha un campo `enrollment_mode`, impostabile dalla sua scheda in *Gesti
 | Modalità | Cosa comporta |
 |---|---|
 | `closed` (predefinita) | Iscrive solo lo staff, oppure l'assegnazione del corso a un gruppo. Il corso non compare nel catalogo |
-| `request` | Lo studente chiede di iscriversi, con un messaggio facoltativo; gli admin e i tutor dei gruppi a cui il corso è assegnato ricevono un'email con il messaggio e decidono dalla scheda del corso |
+| `request` | Lo studente chiede di iscriversi, con un messaggio facoltativo; gli admin ricevono un'email con il messaggio e decidono dalla scheda del corso (dal 26/10 solo loro) |
 | `open` | Lo studente si iscrive da solo dal catalogo, senza attese |
 
 Il catalogo (`/catalogo`, voce *Esplora corsi*) elenca solo corsi **pubblicati** in modalità
