@@ -31,6 +31,15 @@ class Database
                         PDO::ATTR_EMULATE_PREPARES => false,
                     ]
                 );
+
+                // L'orologio del database come quello di PHP (29/10, revisione
+                // del codice). Le date si scrivono in ora italiana (APP_TIMEZONE,
+                // config.php) e si confrontano con NOW() in SQL: su un MySQL in
+                // UTC un modulo da aprire alle 9 si apriva alle 10 o alle 11, e
+                // «Entra» compariva in ritardo. Si passa lo scarto di adesso
+                // (+01:00, +02:00 con l'ora legale) e non il nome del fuso, che
+                // MySQL conosce solo se il fornitore ha caricato le sue tabelle.
+                self::$instance->exec("SET time_zone = '" . date('P') . "'");
             } catch (PDOException $e) {
                 error_log('[DB] Connessione fallita: ' . $e->getMessage());
                 http_response_code(500);

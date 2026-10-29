@@ -34,7 +34,7 @@ $ruoli = [
         ],
         'interruttori' => [
             'ROLE_TUTOR_MEMBRI' => ['Membri dei gruppi',
-                'Aggiunge al suo gruppo gli studenti già iscritti a un corso del gruppo che in quel corso non hanno ancora un gruppo, e ne toglie i membri. Spento: i membri li gestisce solo l’admin, e il tutor li vede.'],
+                'Aggiunge al suo gruppo gli studenti già iscritti a un corso del gruppo che non sono in un altro gruppo con lo stesso corso, senza iscriverli ad altri corsi, e ne toglie i membri. Spento: i membri li gestisce solo l’admin, e il tutor li vede.'],
         ],
     ],
     'Assistente' => [

@@ -97,8 +97,16 @@ class RegistrationController
             $userId = UserModel::create($email, $password, $firstName, $lastName, 'studente', true, false);
             $this->sendVerification($userId, $email, $fullName);
         } elseif (($existing['email_verified_at'] ?? null) === null) {
-            // Registrazione ripetuta di un account mai confermato: nuovo link.
-            $this->sendVerification((int) $existing['id'], $email, (string) $existing['full_name']);
+            // Registrazione ripetuta di un account mai confermato (29/10): nome
+            // e password diventano questi, il link di prima smette di valere
+            // (`UserTokenModel::issue`), e il nuovo parte all'indirizzo salvato.
+            // Con lo stesso limite del rinvio.
+            if (UserTokenModel::countRecent((int) $existing['id'], UserTokenModel::PURPOSE_VERIFICATION, 3600) >= self::MAX_TOKENS_PER_HOUR) {
+                $_SESSION['verification_notice'] = 'Hai già richiesto il link più volte: controlla la posta, anche nello spam, e riprova fra un\'ora.';
+            } else {
+                UserModel::riprendiRegistrazione((int) $existing['id'], $firstName, $lastName, $password);
+                $this->sendVerification((int) $existing['id'], (string) $existing['email'], $fullName);
+            }
         }
 
         unset($_SESSION['register_old']);
@@ -164,7 +172,8 @@ class RegistrationController
             if (UserTokenModel::countRecent((int) $user['id'], UserTokenModel::PURPOSE_VERIFICATION, 3600) >= self::MAX_TOKENS_PER_HOUR) {
                 $_SESSION['verification_notice'] = 'Hai già richiesto il link più volte: controlla la posta, anche nello spam, e riprova fra un\'ora.';
             } else {
-                $this->sendVerification((int) $user['id'], $email, (string) $user['full_name']);
+                // All'indirizzo salvato, non a quello scritto (29/10).
+                $this->sendVerification((int) $user['id'], (string) $user['email'], (string) $user['full_name']);
             }
         }
 

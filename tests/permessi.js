@@ -919,6 +919,168 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        // --- Revisione del codice del 29/10 ---------------------------------
+        //
+        // Una prova per ciascuno dei difetti trovati dalla revisione e
+        // corretti: allegati di un corso cancellati da un tutor, membri dei
+        // gruppi, registrazione ripetuta, questionario H5P obbligatorio, utente
+        // con incontri, indirizzo del recupero della password. Tutto quello
+        // che si crea si toglie alla fine.
+
+        console.log('\n--- Revisione del codice del 29/10');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const fs = require('fs');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const uno = (sql, ...argomenti) => php('$s = App\\Core\\Database::connection()->prepare($argv[1]); $s->execute(array_slice($argv, 2)); echo (string) $s->fetchColumn();', sql, ...argomenti).trim();
+            const esegui = (sql, ...argomenti) => php('App\\Core\\Database::connection()->prepare($argv[1])->execute(array_slice($argv, 2));', sql, ...argomenti);
+
+            // 1. Allegati: l'id della lezione nell'indirizzo e' quello su cui si
+            // controlla il permesso, il materiale deve essere suo.
+            {
+                const presente = () => uno('SELECT COUNT(*) FROM lesson_materials WHERE id = ?', A.materiale);
+                const tutor = await entra(browser, 'tutor1@test.it');
+                let r = await esitoPost(tutor.page, '/lessons/999999999/materials/' + A.materiale + '/delete', []);
+                check('tutor A → cancellare un allegato indicando una lezione che non esiste: negato, e l\'allegato c\'è ancora',
+                    r.esito === 'negato' && presente() === '1', [r.come, presente()]);
+                r = await esitoPost(tutor.page, '/lessons/999999999/materials/' + A.materiale + '/move', [['direction', 'up']]);
+                check('tutor A → spostare un allegato indicando una lezione che non esiste: negato', r.esito === 'negato', [r.come]);
+                // Lo ferma gia' il controllo dei permessi, con il suo «Non
+                // trovato.», non solo il controllo del materiale dopo.
+                await tutor.page.goto(BASE + '/profilo');
+                const testo = await tutor.page.evaluate(async (url) => {
+                    const t = document.querySelector('input[name="_token"]').value;
+                    const res = await fetch(url, { method: 'POST', body: new URLSearchParams({ _token: t }), credentials: 'same-origin', redirect: 'manual' });
+                    return res.status + ' ' + (await res.text()).trim();
+                }, '/lessons/999999999/materials/' + A.materiale + '/delete');
+                check('tutor A → una lezione che non esiste la ferma il controllo dei permessi', testo === '404 Non trovato.', [testo]);
+                await tutor.ctx.close();
+                const admin = await entra(browser, 'admin@test.it');
+                r = await esitoPost(admin.page, '/lessons/' + A.lezione_chiusa + '/materials/' + A.materiale + '/delete', []);
+                check('admin → un allegato chiesto con una lezione che non è la sua: non trovato, e c\'è ancora',
+                    r.esito === 'negato' && presente() === '1', [r.come, presente()]);
+                await admin.ctx.close();
+            }
+
+            // 2. Membri dei gruppi: un corso condiviso fra il gruppo di A e
+            // quello di B. Chi e' nel gruppo di B non e' un candidato per il
+            // tutor A; chi lo e', aggiunto dal tutor, non viene iscritto agli
+            // altri corsi del gruppo.
+            const condiviso = php(`
+                $pdo = App\\Core\\Database::connection();
+                $pdo->prepare("INSERT INTO courses (title, slug, description, is_published, created_by) VALUES (?, ?, '', 0, ?)")->execute(["[prova-permessi] corso condiviso", "prova-permessi-condiviso-" . time(), (int) $argv[1]]);
+                echo $pdo->lastInsertId();`, d.utenti.admin).trim();
+            try {
+                esegui('INSERT INTO group_course_access (group_id, course_id) VALUES (?, ?), (?, ?)', A.gruppo, condiviso, B.gruppo, condiviso);
+                esegui('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)', d.utenti.finito, condiviso);
+                esegui('INSERT INTO group_members (group_id, user_id) VALUES (?, ?)', B.gruppo, d.utenti.finito);
+                esegui('INSERT IGNORE INTO enrollments (user_id, course_id) VALUES (?, ?)', d.utenti.studenteNuovo, A.corso);
+                const tutor = await entra(browser, 'tutor1@test.it');
+                await tutor.page.goto(BASE + '/admin/groups/' + A.gruppo + '/edit');
+                const scelte = await tutor.page.$$eval('form[action$="/members"] option', (o) => o.map((x) => x.textContent));
+                check('tutor A → chi è nel gruppo di un altro tutor con un corso in comune non è fra i candidati, anche se in un altro corso non ha gruppo',
+                    !scelte.some((x) => x.includes('finito@test.it')), [JSON.stringify(scelte)]);
+                const fuori = await esitoPost(tutor.page, '/admin/groups/' + A.gruppo + '/members', [['user_id', String(d.utenti.finito)]], '/admin/groups/' + A.gruppo + '/edit');
+                const dentroA = uno('SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?', A.gruppo, d.utenti.finito);
+                check('tutor A → e non si aggiunge nemmeno a mano', dentroA === '0', [fuori.come]);
+                await esitoPost(tutor.page, '/admin/groups/' + A.gruppo + '/members', [['user_id', String(d.utenti.studenteNuovo)]], '/admin/groups/' + A.gruppo + '/edit');
+                const membro = uno('SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?', A.gruppo, d.utenti.studenteNuovo);
+                const iscritto = uno('SELECT COUNT(*) FROM enrollments WHERE course_id = ? AND user_id = ?', condiviso, d.utenti.studenteNuovo);
+                check('tutor A → aggiunge un candidato al gruppo senza iscriverlo agli altri corsi del gruppo',
+                    membro === '1' && iscritto === '0', ['membro ' + membro, 'iscritto al corso condiviso ' + iscritto]);
+                await tutor.ctx.close();
+            } finally {
+                esegui('DELETE FROM group_members WHERE (group_id = ? AND user_id = ?) OR (group_id = ? AND user_id IN (?, ?))', B.gruppo, d.utenti.finito, A.gruppo, d.utenti.studenteNuovo, d.utenti.finito);
+                esegui('DELETE FROM enrollments WHERE user_id = ? AND course_id = ?', d.utenti.studenteNuovo, A.corso);
+                esegui('DELETE FROM courses WHERE id = ?', condiviso);
+            }
+
+            // 3. Registrazione ripetuta di un indirizzo mai confermato: nome e
+            // password diventano quelli dell'ultima, e il link di prima non vale.
+            {
+                const email = 'registrazione-ripetuta@example.invalid';
+                const ospite = await browser.newContext();
+                const pagina = await ospite.newPage();
+                const registra = (nome, password) => esitoPost(pagina, '/register', [['first_name', nome], ['last_name', 'Prova'], ['email', email], ['password', password], ['password_confirm', password]], '/register');
+                try {
+                    await registra('Primo', 'PrimaPassword1');
+                    await registra('Secondo', 'SecondaPassword2');
+                    const vale = php('$u = App\\Models\\UserModel::findByEmail($argv[1]); echo json_encode([$u["full_name"], password_verify("SecondaPassword2", $u["password_hash"]), password_verify("PrimaPassword1", $u["password_hash"]), (int) App\\Core\\Database::connection()->query("SELECT COUNT(*) FROM user_tokens WHERE used_at IS NULL AND purpose = \'email_verification\' AND user_id = " . (int) $u["id"])->fetchColumn()]);', email).trim();
+                    check('registrazione ripetuta di un indirizzo mai confermato → nome e password dell\'ultima, un solo link valido',
+                        vale === '["Secondo Prova",true,false,1]', [vale]);
+                } finally {
+                    await ospite.close();
+                    esegui('DELETE FROM users WHERE email = ?', email);
+                }
+            }
+
+            // 4. Un questionario H5P obbligatorio blocca i moduli dopo.
+            {
+                const lezioneDopo = Number(uno('SELECT id FROM lessons WHERE module_id = ? ORDER BY id LIMIT 1', A.modulo_dopo));
+                // Come un questionario H5P vero, senza righe in quiz_questions:
+                // quelle del questionario a domande si spostano per la prova.
+                const domande = php('echo implode(",", App\\Core\\Database::connection()->query("SELECT id FROM quiz_questions WHERE quiz_id = " . (int) $argv[1])->fetchAll(PDO::FETCH_COLUMN));', A.quiz).trim();
+                try {
+                    if (domande !== '') {
+                        php('App\\Core\\Database::connection()->exec("UPDATE quiz_questions SET quiz_id = " . (int) $argv[1] . " WHERE id IN (" . implode(",", array_map("intval", explode(",", $argv[2]))) . ")");', B.quiz, domande);
+                    }
+                    esegui("UPDATE quizzes SET kind = 'h5p', h5p_dir = 'q0-prova', h5p_library = 'H5P.Prova 1.0' WHERE id = ?", A.quiz);
+                    esegui('UPDATE modules SET quiz_required = 1 WHERE id = ?', A.modulo);
+                    const stud = await entra(browser, 'stud@test.it');
+                    const r = await esitoGet(stud.page, '/lessons/' + lezioneDopo);
+                    check('studente A → con un questionario H5P obbligatorio non superato, la lezione di un modulo dopo è chiusa', r.esito === 'negato', [r.come]);
+                    await stud.ctx.close();
+                } finally {
+                    if (domande !== '') {
+                        php('App\\Core\\Database::connection()->exec("UPDATE quiz_questions SET quiz_id = " . (int) $argv[1] . " WHERE id IN (" . implode(",", array_map("intval", explode(",", $argv[2]))) . ")");', A.quiz, domande);
+                    }
+                    esegui("UPDATE quizzes SET kind = 'domande', h5p_dir = NULL, h5p_library = NULL WHERE id = ?", A.quiz);
+                    esegui('UPDATE modules SET quiz_required = 0 WHERE id = ?', A.modulo);
+                }
+            }
+
+            // 5. Un utente che ha creato un incontro non si elimina: lo dice,
+            // invece di una pagina di errore.
+            {
+                const utente = php(`
+                    $pdo = App\\Core\\Database::connection();
+                    $id = App\\Models\\UserModel::create("creatore-incontri@example.invalid", "Password1!", "Creatore", "Incontri", "tutor");
+                    $pdo->prepare("INSERT INTO live_sessions (module_id, title, starts_at, ends_at, created_by) VALUES (?, '[prova-permessi] incontro del creatore', NOW() + INTERVAL 40 DAY, NOW() + INTERVAL 40 DAY + INTERVAL 1 HOUR, ?)")->execute([(int) $argv[1], $id]);
+                    echo $id;`, A.modulo).trim();
+                const admin = await entra(browser, 'admin@test.it');
+                try {
+                    await esitoPost(admin.page, '/admin/users/' + utente + '/delete', [], '/admin/users');
+                    await admin.page.goto(BASE + '/admin/users');
+                    const avviso = await admin.page.evaluate(() => ((document.querySelector('.alert.alert-error') || {}).textContent || '').trim());
+                    check('admin → eliminare chi ha creato un incontro: rifiutato con la frase, e l\'utente c\'è ancora',
+                        uno('SELECT COUNT(*) FROM users WHERE id = ?', utente) === '1' && avviso.includes('ha creato uno o più incontri dal vivo e non può essere eliminato'), [avviso]);
+                } finally {
+                    await admin.ctx.close();
+                    esegui('DELETE FROM live_sessions WHERE created_by = ?', utente);
+                    esegui('DELETE FROM users WHERE id = ?', utente);
+                }
+            }
+
+            // 6. Il recupero della password scrive all'indirizzo salvato, non a
+            // quello scritto: il database trova «stud@tèst.it» come «stud@test.it».
+            {
+                esegui("DELETE FROM user_tokens WHERE purpose = 'password_reset' AND user_id = ?", d.utenti.studenteA);
+                const cartella = path.join(radice, 'storage', 'mail');
+                const prima = new Set(fs.existsSync(cartella) ? fs.readdirSync(cartella) : []);
+                const ospite = await browser.newContext();
+                const pagina = await ospite.newPage();
+                await esitoPost(pagina, '/password/dimenticata', [['email', 'stud@tèst.it']], '/password/dimenticata');
+                await ospite.close();
+                const nuovi = (fs.existsSync(cartella) ? fs.readdirSync(cartella) : []).filter((f) => !prima.has(f));
+                check('recupero password con «stud@tèst.it» → l\'email parte a stud@test.it, non all\'indirizzo scritto',
+                    nuovi.length === 1 && nuovi[0].includes('stud-test-it'), [JSON.stringify(nuovi)]);
+                esegui("DELETE FROM user_tokens WHERE purpose = 'password_reset' AND user_id = ?", d.utenti.studenteA);
+            }
+        }
+
         // --- L'avviso delle richieste di iscrizione (29/10) ----------------
         //
         // Con una richiesta sola, al singolare: prima diceva «Ci sono 1

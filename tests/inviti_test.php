@@ -142,6 +142,29 @@ try {
     $mettiInCoda();
     check('in coda: la password dell\'invito si scrive', UserModel::setInvitePassword($id, 'DaInvito6'));
 
+    echo PHP_EOL . 'Un invio alla volta (29/10)' . PHP_EOL;
+
+    // Un altro giro in corso: un'altra connessione tiene il blocco. Questo
+    // giro non deve scrivere password ne' mandare niente, nemmeno a chi e' in
+    // coda. Due giri insieme davano due password diverse alla stessa persona.
+    $mettiInCoda();
+    $prima = (string) $db->query('SELECT password_hash FROM users WHERE id = ' . $id)->fetchColumn();
+    $altroGiro = new PDO(
+        sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', App\Core\Env::get('DB_HOST', '127.0.0.1'), App\Core\Env::get('DB_NAME', 'lms')),
+        App\Core\Env::get('DB_USER', 'root'),
+        App\Core\Env::get('DB_PASS', '')
+    );
+    $altroGiro->query("SELECT GET_LOCK('" . Invites::BLOCCO . "', 0)");
+    $posta = new PostaDiProva(true);
+    Mailer::setTransport($posta);
+    $esito = Invites::mandaScaglione();
+    $dopo = (string) $db->query('SELECT password_hash FROM users WHERE id = ' . $id)->fetchColumn();
+    check('con un altro giro in corso: occupato, nessuna email, nessuna password scritta',
+        $esito['occupato'] === true && $esito['mandati'] === 0 && $posta->mandati === [] && $prima === $dopo && $inCoda());
+    $altroGiro->query("SELECT RELEASE_LOCK('" . Invites::BLOCCO . "')");
+    $altroGiro = null;
+    Mailer::setTransport(null);
+
     echo PHP_EOL . 'Il comando vero, con la posta che non risponde' . PHP_EOL;
 
     $altri = (int) $db->query('SELECT COUNT(*) FROM users WHERE invite_pending = 1 AND id <> ' . $id)->fetchColumn();

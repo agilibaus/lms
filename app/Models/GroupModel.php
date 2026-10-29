@@ -287,8 +287,13 @@ class GroupModel
 
     /**
      * Gli studenti che il tutor puo' aggiungere al gruppo (26/10, interruttore
-     * «Membri dei gruppi»): iscritti a un corso del gruppo e senza un gruppo
-     * in quel corso — questo compreso, quindi non gia' membri.
+     * «Membri dei gruppi»): iscritti ad almeno un corso del gruppo, e in
+     * nessun gruppo — questo compreso — che abbia uno dei corsi del gruppo.
+     *
+     * Fino al 29/10 bastava non avere un gruppo nel corso dell'iscrizione: uno
+     * studente iscritto al corso A senza gruppo e al corso B nel gruppo di un
+     * altro tutor entrava, e il perimetro (membri × corsi del gruppo) dava al
+     * tutor anche i suoi dati del corso B (revisione del codice).
      *
      * @return list<array{id: int, full_name: string, email: string}>
      */
@@ -302,11 +307,12 @@ class GroupModel
              WHERE u.role = 'studente'
                AND NOT EXISTS (
                    SELECT 1 FROM group_members gm2
-                   INNER JOIN group_course_access gca2 ON gca2.group_id = gm2.group_id AND gca2.course_id = e.course_id
+                   INNER JOIN group_course_access gca2 ON gca2.group_id = gm2.group_id
+                   INNER JOIN group_course_access gca3 ON gca3.course_id = gca2.course_id AND gca3.group_id = :g2
                    WHERE gm2.user_id = u.id)
              ORDER BY u.full_name, u.email"
         );
-        $stmt->execute(['g' => $groupId]);
+        $stmt->execute(['g' => $groupId, 'g2' => $groupId]);
 
         return array_map(static fn (array $r): array => ['id' => (int) $r['id']] + $r, $stmt->fetchAll());
     }

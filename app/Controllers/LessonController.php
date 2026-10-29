@@ -413,7 +413,9 @@ class LessonController
 
         $material = LessonMaterialModel::find((int) $params['materialId']);
 
-        if (!$material) {
+        // Il materiale dev'essere della lezione dell'indirizzo, quella su cui
+        // si e' controllato il permesso (29/10).
+        if (!$material || (int) $material['lesson_id'] !== (int) $params['id']) {
             http_response_code(404);
             echo 'Materiale non trovato.';
             return;
@@ -552,7 +554,9 @@ class LessonController
 
         $material = LessonMaterialModel::find((int) $params['materialId']);
 
-        if (!$material) {
+        // Il materiale dev'essere della lezione dell'indirizzo, quella su cui
+        // si e' controllato il permesso (29/10).
+        if (!$material || (int) $material['lesson_id'] !== (int) $params['id']) {
             http_response_code(404);
             echo 'Materiale non trovato.';
             return;

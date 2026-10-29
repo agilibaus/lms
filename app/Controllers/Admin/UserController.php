@@ -65,6 +65,10 @@ class UserController extends AdminController
 
         $esito = Invites::mandaScaglione();
 
+        if ($esito['occupato']) {
+            $this->fail('Un altro invio è in corso: riprova fra qualche minuto.', '/admin/users');
+        }
+
         if ($esito['mandati'] === 0 && $esito['falliti'] === []) {
             $this->success('Non c\'erano inviti da mandare.', '/admin/users');
         }
@@ -366,6 +370,15 @@ class UserController extends AdminController
         if (UserModel::countCoursesCreated($id) > 0) {
             $this->fail(
                 'Questo utente risulta autore di uno o più corsi e non può essere eliminato: disattivalo.',
+                '/admin/users'
+            );
+        }
+
+        // Come per i corsi (29/10, revisione del codice): prima il database
+        // rifiutava e l'admin vedeva una pagina di errore 500.
+        if (UserModel::countLiveSessionsCreated($id) > 0) {
+            $this->fail(
+                'Questo utente ha creato uno o più incontri dal vivo e non può essere eliminato: disattivalo.',
                 '/admin/users'
             );
         }

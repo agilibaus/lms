@@ -47,14 +47,23 @@ class CourseRights
     /**
      * Come canEdit(), ma ferma la richiesta con un 403 se la risposta e' no.
      *
-     * Un corso che non esiste non viene fermato qui: ci pensa il controller con
-     * il suo 404, che per chi ha sbagliato indirizzo dice la cosa giusta.
+     * Un corso che non esiste: per l'admin ci pensa il controller con il suo
+     * 404. Per tutti gli altri si ferma qui, con un 404 (29/10, revisione
+     * del codice): prima la richiesta passava, e un'azione che prende l'id
+     * della lezione dall'indirizzo e l'oggetto da un altro parametro (i
+     * materiali) faceva cancellare a un tutor gli allegati di qualunque
+     * corso, indicando una lezione inesistente.
      */
     public static function requireEdit(?int $courseId): void
     {
         Auth::requireLogin();
 
         if ($courseId === null) {
+            if (!Auth::hasRole('admin')) {
+                http_response_code(404);
+                exit('Non trovato.');
+            }
+
             return;
         }
 

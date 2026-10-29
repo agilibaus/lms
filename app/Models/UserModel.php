@@ -422,6 +422,18 @@ class UserModel
      * Numero di corsi creati dall'utente: `courses.created_by` e' ON DELETE RESTRICT,
      * quindi un autore di corsi non puo' essere eliminato.
      */
+    /**
+     * Gli incontri dal vivo creati da questo utente: come per i corsi, il
+     * database non lascia eliminare chi ne ha creati (`created_by` RESTRICT).
+     */
+    public static function countLiveSessionsCreated(int $id): int
+    {
+        $stmt = Database::connection()->prepare('SELECT COUNT(*) FROM live_sessions WHERE created_by = :id');
+        $stmt->execute(['id' => $id]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function countCoursesCreated(int $id): int
     {
         $stmt = Database::connection()->prepare('SELECT COUNT(*) FROM courses WHERE created_by = :id');
@@ -438,6 +450,29 @@ class UserModel
      *                                 admin: l'utente dovra' sceglierne una
      *                                 sua al primo accesso.
      */
+    /**
+     * Una registrazione ripetuta per un indirizzo mai confermato (29/10,
+     * revisione del codice): nome, cognome e password diventano quelli
+     * dell'ultima registrazione. Prima restavano quelli della prima, e chi si
+     * registrava per primo con l'indirizzo di un altro si teneva l'account
+     * quando il vero titolare, registrandosi a sua volta, lo confermava.
+     * Non tocca mai un account gia' confermato.
+     */
+    public static function riprendiRegistrazione(int $id, string $firstName, string $lastName, string $password): void
+    {
+        Database::connection()->prepare(
+            'UPDATE users
+                SET first_name = :first_name, last_name = :last_name,
+                    password_hash = :password_hash, password_changed_at = NOW()
+              WHERE id = :id AND email_verified_at IS NULL'
+        )->execute([
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            'id' => $id,
+        ]);
+    }
+
     public static function create(
         string $email,
         string $password,

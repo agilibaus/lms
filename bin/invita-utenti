@@ -57,6 +57,12 @@ foreach ($argv as $arg) {
 
 $esito = Invites::mandaScaglione($quanti);
 
+// Un altro giro e' ancora in corso (29/10): questo non manda niente.
+if ($esito['occupato']) {
+    echo date('Y-m-d H:i:s') . ' — un altro invio è in corso: questo giro non manda niente.' . PHP_EOL;
+    exit(0);
+}
+
 $righe = [
     date('Y-m-d H:i:s') . ' — inviti mandati: ' . $esito['mandati'],
     'in coda ne restano: ' . $esito['restano'],

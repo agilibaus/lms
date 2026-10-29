@@ -49,7 +49,11 @@ class PasswordResetController
             $link = Url::to('/password/reimposta/' . $token);
 
             try {
-                Mailer::send(Mailer::passwordReset($email, (string) $user['full_name'], $link));
+                // All'indirizzo salvato, non a quello scritto nel modulo (29/10,
+                // revisione del codice): il database confronta gli indirizzi
+                // senza badare agli accenti, e «gmáil.com» trovava l'account di
+                // «gmail.com» mandando il link a un dominio simile.
+                Mailer::send(Mailer::passwordReset((string) $user['email'], (string) $user['full_name'], $link));
             } catch (MailException $e) {
                 error_log('[Mail] ' . $e->getMessage());
 

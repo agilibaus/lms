@@ -174,12 +174,12 @@ $members = $ordineMembri->applica($members);
             <button type="submit" class="btn btn-secondary">Aggiungi al gruppo</button>
         </form>
         <?php if (!$gestisceTutto): ?>
-            <p class="form-hint">Puoi aggiungere gli studenti già iscritti a un corso del gruppo che in quel corso non hanno ancora un gruppo.</p>
+            <p class="form-hint">Puoi aggiungere gli studenti già iscritti ai corsi del gruppo, purché non facciano già parte di un altro gruppo per lo stesso corso.</p>
         <?php endif; ?>
     <?php elseif ($gestisceTutto): ?>
         <p class="form-hint">Tutti gli studenti registrati sono già nel gruppo.</p>
     <?php else: ?>
-        <p class="form-hint">Nessuno studente da aggiungere: puoi aggiungere gli studenti già iscritti a un corso del gruppo che in quel corso non hanno ancora un gruppo.</p>
+        <p class="form-hint">Nessuno studente da aggiungere: puoi aggiungere gli studenti già iscritti ai corsi del gruppo, purché non facciano già parte di un altro gruppo per lo stesso corso.</p>
     <?php endif; ?>
 </section>
 

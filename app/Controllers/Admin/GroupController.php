@@ -111,7 +111,8 @@ class GroupController extends AdminController
             'gestisceTutto' => Auth::can('group.manage'),
             'gestisceMembri' => Auth::can('group.manage') || Auth::can('group.members_own'),
             // Candidati: per l'admin chi non e' gia' dentro; per il tutor solo
-            // gli iscritti a un corso del gruppo senza un gruppo in quel corso.
+            // gli iscritti a un corso del gruppo che non sono in un altro gruppo con
+            // lo stesso corso (`GroupModel::candidati`, 29/10).
             'availableStudents' => Auth::can('group.manage')
                 ? array_values(array_filter(
                     UserModel::byRoles(['studente']),
@@ -287,14 +288,19 @@ class GroupController extends AdminController
         // gli studenti della piattaforma.
         if (!Auth::can('group.manage')
             && !in_array($userId, array_map(static fn (array $u): int => (int) $u['id'], GroupModel::candidati($groupId)), true)) {
-            $this->fail('Puoi aggiungere solo studenti già iscritti a un corso del gruppo e senza un gruppo in quel corso.', $redirect);
+            $this->fail('Puoi aggiungere solo studenti già iscritti ai corsi del gruppo, purché non facciano già parte di un altro gruppo per lo stesso corso.', $redirect);
         }
 
         GroupModel::addMember($groupId, $userId);
 
-        // Chi entra nel gruppo viene iscritto ai corsi gia' assegnati.
+        // Chi entra nel gruppo viene iscritto ai corsi gia' assegnati, ma solo
+        // se lo aggiunge l'admin: iscrivere e' dell'admin (26/10). Fino al
+        // 29/10 lo faceva anche il tutor, che iscriveva cosi' a corsi mai
+        // comprati (revisione del codice).
         // L'«Iscrizione confermata» la manda bin/avvisi (12/10).
-        $created = EnrollmentModel::enrollMany([$userId], GroupModel::courseIds($groupId), true);
+        $created = Auth::can('group.manage')
+            ? EnrollmentModel::enrollMany([$userId], GroupModel::courseIds($groupId), true)
+            : 0;
 
         $this->success(
             $created > 0

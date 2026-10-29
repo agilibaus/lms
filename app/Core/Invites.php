@@ -45,14 +45,44 @@ class Invites
     /** Quando e' girato l'ultima volta il comando. */
     public const KEY_LAST_RUN = 'INVITES_LAST_RUN_AT';
 
+    /** Il nome del blocco che tiene un solo invio alla volta (29/10). */
+    public const BLOCCO = 'pistacchio_inviti';
+
     /**
      * Manda il prossimo scaglione.
      *
-     * @return array{mandati: int, falliti: list<string>, restano: int}
+     * UN INVIO ALLA VOLTA (29/10, revisione del codice). Due giri insieme
+     * (il cron e il pulsante «Manda», o un giro lento e il successivo)
+     * prendevano le stesse persone: ognuno scriveva una password e la
+     * mandava, e la prima email arrivata aveva una password che non valeva
+     * piu'. Ora un giro tiene un blocco del database (GET_LOCK) finche' non
+     * finisce; un altro giro che lo trova occupato non manda niente e lo
+     * dice (`occupato`). Il blocco si libera da solo anche se il giro si
+     * interrompe, perche' appartiene alla connessione.
+     *
+     * @return array{mandati: int, falliti: list<string>, restano: int, occupato: bool}
      */
     public static function mandaScaglione(?int $quanti = null): array
     {
         $quanti ??= self::PER_SCAGLIONE;
+        $pdo = Database::connection();
+
+        if ((int) $pdo->query("SELECT GET_LOCK('" . self::BLOCCO . "', 0)")->fetchColumn() !== 1) {
+            return ['mandati' => 0, 'falliti' => [], 'restano' => UserModel::countPendingInvites(), 'occupato' => true];
+        }
+
+        try {
+            return self::giro($quanti);
+        } finally {
+            $pdo->query("SELECT RELEASE_LOCK('" . self::BLOCCO . "')");
+        }
+    }
+
+    /**
+     * @return array{mandati: int, falliti: list<string>, restano: int, occupato: bool}
+     */
+    private static function giro(int $quanti): array
+    {
         $mandati = 0;
         $falliti = [];
 
@@ -90,6 +120,7 @@ class Invites
             'mandati' => $mandati,
             'falliti' => $falliti,
             'restano' => UserModel::countPendingInvites(),
+            'occupato' => false,
         ];
     }
 }

@@ -82,8 +82,11 @@ class CourseAccess
             $quiz = QuizModel::forModule($moduleId);
 
             // Un modulo marcato come obbligatorio ma senza quiz (o con quiz vuoto)
-            // non blocca nulla: sarebbe un vicolo cieco per lo studente.
-            if ($quiz === null || QuizModel::countQuestions((int) $quiz['id']) === 0) {
+            // non blocca nulla: sarebbe un vicolo cieco per lo studente. Un
+            // questionario H5P non ha righe in `quiz_questions`: e' vuoto solo
+            // senza il suo contenuto (29/10, revisione del codice: prima un
+            // H5P obbligatorio non bloccava mai i moduli dopo).
+            if ($quiz === null || self::vuoto($quiz)) {
                 continue;
             }
 
@@ -93,6 +96,21 @@ class CourseAccess
         }
 
         return $locks;
+    }
+
+    /**
+     * Un questionario che non si puo' svolgere: a domande senza domande, H5P
+     * senza contenuto.
+     *
+     * @param array<string, mixed> $quiz
+     */
+    public static function vuoto(array $quiz): bool
+    {
+        if (($quiz['kind'] ?? '') === 'h5p') {
+            return empty($quiz['h5p_dir']);
+        }
+
+        return QuizModel::countQuestions((int) $quiz['id']) === 0;
     }
 
     /**
