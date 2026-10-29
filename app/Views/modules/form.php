@@ -9,6 +9,8 @@ use App\Core\Csrf;
 /** @var array $course */
 /** @var array|null $module */
 /** @var array|null $riprendi */
+/** @var bool $quizH5P il questionario del modulo e' un contenuto H5P */
+$quizH5P ??= false;
 $isEdit = $module !== null;
 // I valori dei campi: quelli del modulo, o quelli appena scritti se il
 // salvataggio e' stato rifiutato per l'obiettivo oltre il limite (11/10).
@@ -43,7 +45,9 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
     <label class="checkbox-label casella-descritta">
         <input type="checkbox" name="is_final" value="1" data-verifica-finale
                <?= !empty($valori['is_final']) ? 'checked' : '' ?>
-               <?= !empty($module['is_final']) ? 'aria-describedby="is_final_aiuto"' : '' ?>>
+               <?= $quizH5P && empty($valori['is_final']) ? 'disabled' : '' ?>
+               <?php $descritta = trim((!empty($module['is_final']) ? 'is_final_aiuto ' : '') . ($quizH5P ? 'quiz_h5p_aiuto' : '')); ?>
+               <?= $descritta !== '' ? 'aria-describedby="' . $descritta . '"' : '' ?>>
         <span><span class="casella-nome">Verifica finale</span>: il modulo contiene solo il questionario finale del corso, che si apre quando lo studente ha completato tutti gli altri moduli. Sta sempre in fondo al corso, e ce n’è una sola per corso.</span>
     </label>
     <?php if (!empty($module['is_final'])): ?>
@@ -54,9 +58,20 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
     <?php endif; ?>
 
     <label class="checkbox-label casella-descritta" data-questionario-obbligatorio>
-        <input type="checkbox" name="quiz_required" value="1" <?= !empty($valori['quiz_required']) ? 'checked' : '' ?>>
+        <input type="checkbox" name="quiz_required" value="1" <?= !empty($valori['quiz_required']) ? 'checked' : '' ?>
+               <?= $quizH5P && empty($valori['quiz_required']) ? 'disabled' : '' ?>
+               <?= $quizH5P ? 'aria-describedby="quiz_h5p_aiuto"' : '' ?>>
         <span><span class="casella-nome">Questionario obbligatorio</span>: i moduli successivi restano bloccati finché lo studente non supera il questionario di questo modulo</span>
     </label>
+    <?php /* Il questionario del modulo e' H5P (29/10): le due caselle non si
+             accendono (il server lo rifiuta comunque). Gia' accese da prima
+             restano attive, per poterle spegnere. */ ?>
+    <?php if ($quizH5P): ?>
+        <p class="hint" id="quiz_h5p_aiuto">
+            Il questionario di questo modulo è un contenuto H5P: non può essere obbligatorio né la verifica finale,
+            che devono avere un questionario a domande.
+        </p>
+    <?php endif; ?>
 
     <?php /* L'obiettivo del modulo (11/10): facoltativo, 1.000 caratteri di
              testo visibile con il contatore, e qualche tag HTML. Si scrive

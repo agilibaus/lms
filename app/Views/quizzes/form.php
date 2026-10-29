@@ -9,6 +9,8 @@ use App\Core\Csrf;
 /** @var array|null $quiz */
 /** @var bool $h5pDisponibile si puo' caricare un contenuto H5P (estensione zip) */
 $h5pDisponibile ??= false;
+/** @var bool $h5pAmmesso il modulo non e' ne' obbligatorio ne' la verifica finale (29/10) */
+$h5pAmmesso ??= true;
 
 $action = $quiz === null
     ? '/modules/' . (int) $module['id'] . '/quiz'
@@ -39,10 +41,12 @@ $action = $quiz === null
                 <span><strong>Domande</strong> <span class="form-hint">Le scrivi qui, una per una.</span></span>
             </label>
             <label class="quiz-tipo-scelta">
-                <input type="radio" name="kind" value="h5p" <?= $h5pDisponibile ? '' : 'disabled' ?>>
+                <input type="radio" name="kind" value="h5p" <?= $h5pDisponibile && $h5pAmmesso ? '' : 'disabled' ?>>
                 <span><strong>Contenuto H5P</strong> <span class="form-hint">Un esercizio interattivo creato con Lumi (file .h5p): il punteggio lo calcola l'esercizio.</span></span>
             </label>
-            <?php if (!$h5pDisponibile): ?>
+            <?php if (!$h5pAmmesso): ?>
+                <p class="form-hint">Non disponibile in questo modulo: <?= !empty($module['is_final']) ? 'la verifica finale' : 'il questionario è obbligatorio, e' ?> deve essere a domande, corrette da Pistacchio.</p>
+            <?php elseif (!$h5pDisponibile): ?>
                 <p class="form-hint">Per i contenuti H5P serve l'estensione zip di PHP, che su questo server non c'è.</p>
             <?php endif; ?>
             <div class="quiz-tipo-file">

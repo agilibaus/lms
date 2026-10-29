@@ -77,6 +77,7 @@ class QuizController
             'course' => CourseModel::find((int) $module['course_id']),
             'quiz' => null,
             'h5pDisponibile' => H5PArchivio::disponibile(),
+            'h5pAmmesso' => QuizModel::h5pAmmesso($module),
         ]);
     }
 
@@ -108,6 +109,13 @@ class QuizController
         // crea. Il file si controlla prima di creare il questionario, la
         // cartella si apre dopo (porta il suo numero).
         if (($_POST['kind'] ?? '') === 'h5p') {
+            // Non nel questionario obbligatorio ne' nella verifica finale
+            // (29/10): il punteggio H5P lo manda il browser.
+            if (!QuizModel::h5pAmmesso($module)) {
+                $_SESSION['flash_error'] = QuizModel::H5P_NON_AMMESSO;
+                $this->redirect('/modules/' . $module['id'] . '/quiz/create');
+            }
+
             $file = $this->fileH5P('/modules/' . $module['id'] . '/quiz/create', true);
             $quizId = QuizModel::create((int) $module['id'], $title, $this->passingScoreFromPost());
 

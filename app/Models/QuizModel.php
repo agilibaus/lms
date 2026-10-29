@@ -11,6 +11,23 @@ use App\Core\Database;
  */
 class QuizModel
 {
+    /**
+     * Un questionario H5P non decide niente (29/10, Alessandro): il suo
+     * punteggio lo manda il browser e si puo' falsificare, quindi non puo'
+     * essere il questionario obbligatorio di un modulo ne' la verifica
+     * finale. Quelli sono a domande, corretti da Pistacchio. Il pannello lo
+     * fa rispettare da tutte e due le parti: niente H5P in un modulo cosi',
+     * e niente casella accesa su un modulo con un H5P.
+     */
+    public const H5P_NON_AMMESSO = 'Il questionario obbligatorio e la verifica finale devono essere a domande, '
+        . 'corrette da Pistacchio: un contenuto H5P non è ammesso.';
+
+    /** Il modulo (riga di `modules`) puo' avere un questionario H5P. */
+    public static function h5pAmmesso(array $module): bool
+    {
+        return empty($module['quiz_required']) && empty($module['is_final']);
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM quizzes WHERE id = :id LIMIT 1');

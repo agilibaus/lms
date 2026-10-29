@@ -11,6 +11,7 @@ use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\LessonModel;
 use App\Models\ModuleModel;
+use App\Models\QuizModel;
 
 class ModuleController
 {
@@ -105,6 +106,7 @@ class ModuleController
             'course' => $course,
             'module' => $module,
             'riprendi' => self::riprendi('modulo', (int) $module['id']),
+            'quizH5P' => (QuizModel::forModule((int) $module['id'])['kind'] ?? '') === 'h5p',
         ]);
     }
 
@@ -142,6 +144,14 @@ class ModuleController
         if (isset($_POST['is_final']) && empty($module['is_final']) && LessonModel::forModule((int) $module['id']) !== []) {
             $this->rifiuta('modulo', (int) $module['id'], $indietro,
                 'Una verifica finale non ha lezioni: toglile prima di farne una verifica.');
+        }
+
+        // Un questionario H5P non puo' essere obbligatorio ne' la verifica
+        // finale (29/10): il suo punteggio lo manda il browser.
+        if ((isset($_POST['quiz_required']) || isset($_POST['is_final']))
+            && (QuizModel::forModule((int) $module['id'])['kind'] ?? '') === 'h5p') {
+            $this->rifiuta('modulo', (int) $module['id'], $indietro, QuizModel::H5P_NON_AMMESSO
+                . ' Per farlo, sostituisci il questionario di questo modulo con uno a domande.');
         }
 
         ModuleModel::update(

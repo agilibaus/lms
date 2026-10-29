@@ -1275,6 +1275,125 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             }
         }
 
+        // --- Il questionario H5P: né obbligatorio né verifica finale (29/10) --
+        //
+        // Il punteggio H5P lo manda il browser, e si puo' falsificare: un
+        // questionario H5P non puo' essere il questionario obbligatorio di un
+        // modulo ne' la verifica finale. Si prova da tutte e due le parti, nel
+        // corso A, con moduli creati per la prova e tolti alla fine: la
+        // casella non si accende su un modulo con un H5P, e un H5P non si
+        // crea in un modulo con la casella accesa. Ogni rifiuto ha la sua
+        // controprova, dove la stessa azione passa.
+
+        console.log('\n--- Il questionario H5P: né obbligatorio né verifica finale');
+
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const PREFISSO = '[prova-h5p] ';
+            const moduli = () => JSON.parse(php('$s = App\\Core\\Database::connection()->prepare("SELECT m.id, m.title, m.quiz_required, m.is_final, q.kind FROM modules m LEFT JOIN quizzes q ON q.module_id = m.id WHERE m.course_id = ? AND m.title LIKE ? ORDER BY m.id"); $s->execute([(int) $argv[1], $argv[2] . "%"]); echo json_encode($s->fetchAll(PDO::FETCH_ASSOC));', A.corso, PREFISSO));
+            const modulo = (titolo) => moduli().find((x) => x.title === PREFISSO + titolo);
+            const crea = '/courses/' + A.corso + '/modules';
+            const nuovo = '/courses/' + A.corso + '/modules/create';
+            const avviso = (page) => page.evaluate(() => ((document.querySelector('.alert.alert-error') || {}).textContent || '').trim());
+            const rifiutoDi = async (page, url, campi, tokenDa, torna) => {
+                await esitoPost(page, url, campi, tokenDa);
+                await page.goto(BASE + torna);
+                return avviso(page);
+            };
+            const FRASE = 'Il questionario obbligatorio e la verifica finale devono essere a domande, corrette da Pistacchio: un contenuto H5P non è ammesso.';
+            const admin = await entra(browser, 'admin@test.it');
+
+            try {
+                // Un modulo con un questionario H5P, come dopo il caricamento
+                // del file (la riga basta: il file non si apre).
+                await esitoPost(admin.page, crea, [['title', PREFISSO + 'Con H5P']], nuovo);
+                const conH5P = modulo('Con H5P');
+                php('App\\Core\\Database::connection()->prepare("INSERT INTO quizzes (module_id, title, kind, h5p_dir, h5p_library, h5p_file) VALUES (?, \'Esercizio H5P\', \'h5p\', \'prova-h5p\', \'H5P.QuestionSet 1.20\', \'prova.h5p\')")->execute([(int) $argv[1]]);', conH5P.id);
+                const modifica = '/modules/' + conH5P.id;
+                const scheda = modifica + '/edit';
+
+                const obbligatorio = await rifiutoDi(admin.page, modifica, [['title', PREFISSO + 'Con H5P'], ['quiz_required', '1']], scheda, scheda);
+                check('admin → «Questionario obbligatorio» su un modulo con un H5P: rifiutato, con la frase',
+                    Number(modulo('Con H5P').quiz_required) === 0 && obbligatorio.includes(FRASE), [obbligatorio]);
+
+                const finale = await rifiutoDi(admin.page, modifica, [['title', PREFISSO + 'Con H5P'], ['is_final', '1']], scheda, scheda);
+                check('admin → «Verifica finale» su un modulo con un H5P: rifiutata, con la frase',
+                    Number(modulo('Con H5P').is_final) === 0 && finale.includes(FRASE), [finale]);
+
+                await esitoPost(admin.page, modifica, [['title', PREFISSO + 'Con H5P rinominato']], scheda);
+                check('admin → controprova: lo stesso modulo senza le caselle si salva', !!modulo('Con H5P rinominato'), [JSON.stringify(moduli())]);
+                php('App\\Core\\Database::connection()->prepare("UPDATE modules SET title = ? WHERE id = ?")->execute([$argv[1], (int) $argv[2]]);', PREFISSO + 'Con H5P', conH5P.id);
+
+                const caselle = () => admin.page.evaluate(() => {
+                    const c = (n) => document.querySelector('input[name="' + n + '"]');
+                    const aiuto = document.getElementById('quiz_h5p_aiuto');
+                    return {
+                        obbligatorio: c('quiz_required').disabled, finale: c('is_final').disabled,
+                        acceso: c('quiz_required').checked,
+                        aiuto: aiuto ? aiuto.textContent.replace(/\s+/g, ' ').trim() : '',
+                        descritte: (c('quiz_required').getAttribute('aria-describedby') || '') + '|' + (c('is_final').getAttribute('aria-describedby') || ''),
+                    };
+                });
+                await admin.page.goto(BASE + scheda);
+                const spente = await caselle();
+                check('admin → «Modifica modulo» con un H5P: le due caselle spente, e la frase che dice perché',
+                    spente.obbligatorio && spente.finale && spente.descritte === 'quiz_h5p_aiuto|quiz_h5p_aiuto'
+                    && spente.aiuto === 'Il questionario di questo modulo è un contenuto H5P: non può essere obbligatorio né la verifica finale, che devono avere un questionario a domande.',
+                    [JSON.stringify(spente)]);
+
+                // Una combinazione di prima della regola: la casella accesa
+                // resta attiva, cosi' si puo' spegnere, e spenta si salva.
+                php('App\\Core\\Database::connection()->exec("UPDATE modules SET quiz_required = 1 WHERE id = " . (int) $argv[1]);', conH5P.id);
+                await admin.page.goto(BASE + scheda);
+                const vecchia = await caselle();
+                await esitoPost(admin.page, modifica, [['title', PREFISSO + 'Con H5P']], scheda);
+                check('admin → «Questionario obbligatorio» già acceso con un H5P: la casella si può spegnere, e si salva spenta',
+                    !vecchia.obbligatorio && vecchia.acceso && vecchia.finale && Number(modulo('Con H5P').quiz_required) === 0, [JSON.stringify(vecchia)]);
+
+                await admin.page.goto(BASE + '/modules/' + A.modulo + '/edit');
+                const libere = await caselle();
+                check('admin → controprova: in un modulo senza H5P le caselle sono attive, senza la frase',
+                    !libere.obbligatorio && !libere.finale && libere.aiuto === '' && !libere.descritte.includes('quiz_h5p_aiuto'), [JSON.stringify(libere)]);
+
+                // Dall'altra parte: niente H5P in un modulo obbligatorio o
+                // nella verifica finale. Senza file il rifiuto sarebbe del
+                // file; la frase dice che e' quello giusto.
+                await esitoPost(admin.page, crea, [['title', PREFISSO + 'Obbligatorio'], ['quiz_required', '1']], nuovo);
+                await esitoPost(admin.page, crea, [['title', PREFISSO + 'Verifica'], ['is_final', '1']], nuovo);
+                await esitoPost(admin.page, crea, [['title', PREFISSO + 'Libero']], nuovo);
+                const quizNuovo = (m) => '/modules/' + modulo(m).id + '/quiz/create';
+                const radio = () => admin.page.evaluate(() => {
+                    const r = document.querySelector('input[name="kind"][value="h5p"]');
+                    return { spento: !!r && r.disabled, frase: [...document.querySelectorAll('fieldset.quiz-tipo > .form-hint')].map((p) => p.textContent.trim()).join(' | ') };
+                });
+                for (const [nome, frase] of [
+                    ['Obbligatorio', 'Non disponibile in questo modulo: il questionario è obbligatorio, e deve essere a domande, corrette da Pistacchio.'],
+                    ['Verifica', 'Non disponibile in questo modulo: la verifica finale deve essere a domande, corrette da Pistacchio.'],
+                ]) {
+                    await admin.page.goto(BASE + quizNuovo(nome));
+                    const r = await radio();
+                    const rifiuto = await rifiutoDi(admin.page, quizNuovo(nome).replace(/\/create$/, ''), [['title', 'Esercizio'], ['kind', 'h5p']], quizNuovo(nome), quizNuovo(nome));
+                    check('admin → nuovo questionario in «' + nome + '»: «Contenuto H5P» spento con la frase, e mandato a mano rifiutato',
+                        r.spento && r.frase === frase && rifiuto.includes(FRASE) && !modulo(nome).kind, [JSON.stringify(r), rifiuto]);
+                }
+
+                await admin.page.goto(BASE + quizNuovo('Libero'));
+                const libero = await radio();
+                const nelLibero = await rifiutoDi(admin.page, quizNuovo('Libero').replace(/\/create$/, ''), [['title', 'Esercizio'], ['kind', 'h5p']], quizNuovo('Libero'), quizNuovo('Libero'));
+                check('admin → controprova: in un modulo libero «Contenuto H5P» è attivo, e senza file il rifiuto è del file',
+                    !libero.spento && !libero.frase.includes('Non disponibile') && !nelLibero.includes(FRASE) && nelLibero !== '', [JSON.stringify(libero), nelLibero]);
+
+                await esitoPost(admin.page, quizNuovo('Obbligatorio').replace(/\/create$/, ''), [['title', 'Domande'], ['kind', 'domande']], quizNuovo('Obbligatorio'));
+                check('admin → controprova: nel modulo obbligatorio un questionario a domande si crea', modulo('Obbligatorio').kind === 'domande', [JSON.stringify(modulo('Obbligatorio'))]);
+            } finally {
+                await admin.ctx.close();
+                php('$s = App\\Core\\Database::connection()->prepare("DELETE FROM modules WHERE course_id = ? AND title LIKE ?"); $s->execute([(int) $argv[1], $argv[2] . "%"]);', A.corso, PREFISSO);
+            }
+        }
+
         // --- «Segna come completata»: video da guardare, esercizi da fare ---
         //
         // Dal 27/10 ogni lezione con il video aspetta che lo studente lo
