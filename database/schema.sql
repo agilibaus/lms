@@ -57,7 +57,7 @@ CREATE TABLE users (
     -- E' una credenziale, non un identificativo: chi ha il link vede gli
     -- impegni di questa persona senza fare l'accesso. Si rigenera dal
     -- profilo, e rigenerarlo invalida il link vecchio.
-    calendar_token  VARCHAR(64) NULL DEFAULT NULL UNIQUE,
+    calendar_token  VARCHAR(64) NULL DEFAULT NULL,
     -- Quando e' stato creato e quando e' stato letto l'ultima volta: una
     -- credenziale di cui non si sa niente non si sa nemmeno quando
     -- revocarla. Non si registra CHI ha letto: la data basta a decidere,
@@ -68,7 +68,12 @@ CREATE TABLE users (
     -- («Studenti fermi», 2026_10_20). Solo l'ultima volta, non ogni accesso.
     last_seen_at    DATETIME NULL DEFAULT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- Indici con i nomi delle migrazioni che li hanno creati
+    -- (2026_10_04_agenda_calendario.sql, 2026_10_05_importazione_utenti.sql):
+    -- un database installato da qui e uno aggiornato a migrazioni sono uguali.
+    UNIQUE KEY uq_users_calendar_token (calendar_token),
+    KEY idx_invite_pending (invite_pending)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------
@@ -444,7 +449,9 @@ CREATE TABLE quiz_attempt_answers (
     is_correct      TINYINT(1) NOT NULL,
     FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE,
-    FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id) ON DELETE SET NULL
+    -- Il nome e' quello di 2026_10_01_quiz_tipi_domanda.sql.
+    CONSTRAINT fk_risposta_opzione
+        FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------
