@@ -11,6 +11,8 @@ use App\Core\Csrf;
 /** @var array|null $riprendi */
 /** @var bool $quizH5P il questionario del modulo e' un contenuto H5P */
 $quizH5P ??= false;
+/** @var bool $senzaQuestionario il modulo non ha ancora un questionario (30/10) */
+$senzaQuestionario ??= false;
 $isEdit = $module !== null;
 // I valori dei campi: quelli del modulo, o quelli appena scritti se il
 // salvataggio e' stato rifiutato per l'obiettivo oltre il limite (11/10).
@@ -42,19 +44,33 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
              bloccare, e il server lo salva comunque spento. */ ?>
     <?php /* Le due caselle (28/10, Alessandro): il nome in grassetto, la
              descrizione in testo normale (`.casella-descritta`). */ ?>
-    <label class="checkbox-label casella-descritta">
-        <input type="checkbox" name="is_final" value="1" data-verifica-finale
-               <?= !empty($valori['is_final']) ? 'checked' : '' ?>
-               <?= $quizH5P && empty($valori['is_final']) ? 'disabled' : '' ?>
-               <?php $descritta = trim((!empty($module['is_final']) ? 'is_final_aiuto ' : '') . ($quizH5P ? 'quiz_h5p_aiuto' : '')); ?>
-               <?= $descritta !== '' ? 'aria-describedby="' . $descritta . '"' : '' ?>>
-        <span><span class="casella-nome">Verifica finale</span>: il modulo contiene solo il questionario finale del corso, che si apre quando lo studente ha completato tutti gli altri moduli. Sta sempre in fondo al corso, e ce n’è una sola per corso.</span>
-    </label>
-    <?php if (!empty($module['is_final'])): ?>
-        <p class="hint" id="is_final_aiuto">
-            Spegnendola, il modulo resta senza lezioni e il suo questionario si apre subito a tutti gli studenti,
-            anche a chi non ha completato gli altri moduli.
-        </p>
+    <?php /* Dal 30/10 la verifica finale nasce dalla sua pagina, con il
+             questionario: in «Nuovo modulo» la casella non c'e'. Qui si
+             accende solo su un modulo che ha gia' un questionario, e
+             accesa cancella l'obiettivo (la verifica non ne ha). */ ?>
+    <?php if ($isEdit): ?>
+        <?php
+        $finale = !empty($module['is_final']);
+        $spentaSenza = $senzaQuestionario && !$finale;
+        $descritta = trim(($finale ? 'is_final_aiuto ' : '') . ($quizH5P ? 'quiz_h5p_aiuto ' : '')
+            . ($spentaSenza ? 'verifica_senza_questionario_aiuto' : ''));
+        ?>
+        <label class="checkbox-label casella-descritta">
+            <input type="checkbox" name="is_final" value="1" data-verifica-finale
+                   <?= !empty($valori['is_final']) ? 'checked' : '' ?>
+                   <?= ($quizH5P || $spentaSenza) && empty($valori['is_final']) ? 'disabled' : '' ?>
+                   <?= $descritta !== '' ? 'aria-describedby="' . $descritta . '"' : '' ?>>
+            <span><span class="casella-nome">Verifica finale</span>: il modulo contiene solo il questionario finale del corso, che si apre quando lo studente ha completato tutti gli altri moduli. Sta sempre in fondo al corso, e ce n’è una sola per corso.</span>
+        </label>
+        <?php if ($finale): ?>
+            <p class="hint" id="is_final_aiuto">
+                Spegnendola, il modulo resta senza lezioni e il suo questionario si apre subito a tutti gli studenti,
+                anche a chi non ha completato gli altri moduli.
+            </p>
+        <?php endif; ?>
+        <?php if ($spentaSenza): ?>
+            <p class="hint" id="verifica_senza_questionario_aiuto"><?= htmlspecialchars(ModuleController::VERIFICA_SENZA_QUESTIONARIO) ?></p>
+        <?php endif; ?>
     <?php endif; ?>
 
     <label class="checkbox-label casella-descritta" data-questionario-obbligatorio>
@@ -76,8 +92,12 @@ $action = $isEdit ? '/modules/' . $moduleId : '/courses/' . $course['id'] . '/mo
     <?php /* L'obiettivo del modulo (11/10): facoltativo, 1.000 caratteri di
              testo visibile con il contatore, e qualche tag HTML. Si scrive
              qui; dove lo vedranno gli studenti non e' ancora deciso. */ ?>
-    <?= TestoBreve::campo('objective', 'Obiettivo del modulo', 'objective', ModuleController::MAX_OBJECTIVE_CHARS,
-        (string) ($valori['objective'] ?? ''), 3) ?>
+    <?php /* La verifica finale non ha obiettivo (30/10): il campo non c'e', e
+             accendendo la casella sparisce (modulo-verifica.js). */ ?>
+    <?php if (empty($module['is_final'])): ?>
+        <?= TestoBreve::campo('objective', 'Obiettivo del modulo', 'objective', ModuleController::MAX_OBJECTIVE_CHARS,
+            (string) ($valori['objective'] ?? ''), 3) ?>
+    <?php endif; ?>
     <script src="/assets/js/quiz-open-count.js"></script>
     <script src="/assets/js/modulo-verifica.js"></script>
 

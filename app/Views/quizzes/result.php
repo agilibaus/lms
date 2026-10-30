@@ -91,7 +91,7 @@ $soloAperte = $scoredCount === 0 && !$h5p;
 
 <div class="form-actions">
     <?php if (!$passed && !$soloAperte): ?>
-        <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="btn btn-primary">Riprova il quiz</a>
+        <a href="/quizzes/<?= (int) $quiz['id'] ?>" class="btn btn-primary">Riprova il questionario</a>
     <?php endif; ?>
     <a href="/courses/<?= (int) $module['course_id'] ?>" class="btn btn-secondary">Torna al corso</a>
 </div>

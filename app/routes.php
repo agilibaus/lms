@@ -98,6 +98,9 @@ $router->get('/courses/{id}', [CourseController::class, 'show']);
 
 $router->get('/courses/{courseId}/modules/create', [ModuleController::class, 'createForm']);
 $router->post('/courses/{courseId}/modules', [ModuleController::class, 'store']);
+// La verifica finale nasce con il suo questionario (30/10).
+$router->get('/courses/{courseId}/verifica-finale/create', [ModuleController::class, 'verificaForm']);
+$router->post('/courses/{courseId}/verifica-finale', [ModuleController::class, 'verificaStore']);
 $router->get('/modules/{id}/edit', [ModuleController::class, 'editForm']);
 $router->post('/modules/{id}', [ModuleController::class, 'update']);
 $router->post('/modules/{id}/delete', [ModuleController::class, 'destroy']);

@@ -122,7 +122,16 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <?php endif; ?>
 
 <?php if ($isStaff): ?>
-    <p><a href="/courses/<?= (int) $course['id'] ?>/modules/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo modulo</a></p>
+    <?php /* «Verifica finale» accanto a «Nuovo modulo» (30/10, Alessandro):
+             la verifica nasce con il suo questionario, dalla sua pagina, e
+             il comando c'e' finche' il corso non ne ha una. */ ?>
+    <?php $conVerifica = array_filter($modules, static fn (array $m): bool => !empty($m['is_final'])) !== []; ?>
+    <p class="comandi-corso">
+        <a href="/courses/<?= (int) $course['id'] ?>/modules/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo modulo</a>
+        <?php if (!$conVerifica): ?>
+            <a href="/courses/<?= (int) $course['id'] ?>/verifica-finale/create" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Verifica finale</a>
+        <?php endif; ?>
+    </p>
 <?php endif; ?>
 
 <?php if (empty($modules)): ?>

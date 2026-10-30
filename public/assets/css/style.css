@@ -8177,6 +8177,13 @@ details[open] > summary .obiettivo-se-aperto {
     gap: 0.45rem;
 }
 
+/* «Nuovo modulo» e «Verifica finale» nella pagina del corso (30/10). */
+.comandi-corso {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 /* La spunta piena: lezione e modulo completati, la risorsa che ci si tiene,
    la risposta corretta nell'anteprima del questionario. */
 .modulo-riga-spunta .icona {

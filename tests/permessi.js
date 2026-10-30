@@ -1147,6 +1147,16 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const admin = await entra(browser, 'admin@test.it');
             let verifica = null;
             let altro = null;
+            // Dal 30/10 la verifica nasce dalla sua pagina, con il questionario
+            // e la prima domanda; un questionario a domande nasce con la sua
+            // prima domanda; la sola domanda non si elimina.
+            const verificaNuova = '/courses/' + A.corso + '/verifica-finale/create';
+            const verificaCrea = '/courses/' + A.corso + '/verifica-finale';
+            const domanda = (testo = 'Che cosa vuol dire fermarsi?') => [['question_text', testo], ['question_type', 'single_choice'],
+                ['options[]', 'Notare quello che succede'], ['options[]', 'Smettere di pensare'], ['correct_option', '0']];
+            const quizDi = (modulo) => JSON.parse(php('echo json_encode(App\\Core\\Database::connection()->query("SELECT q.id, q.title, q.kind, q.passing_score_pct, (SELECT COUNT(*) FROM quiz_questions x WHERE x.quiz_id = q.id) AS domande FROM quizzes q WHERE q.module_id = " . (int) $argv[1])->fetch(PDO::FETCH_ASSOC));', modulo));
+            const FRASE_SENZA = 'La verifica finale ha bisogno del suo questionario a domande: aggiungilo prima da «Questionario», poi accendi la casella.';
+            const comando = () => admin.page.evaluate((u) => !!document.querySelector('.comandi-corso a[href="' + u + '"]'), verificaNuova);
 
             try {
                 const primo = leggi().find((x) => Number(x.id) === Number(A.modulo));
@@ -1156,11 +1166,151 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     conLezioni.includes('Una verifica finale non ha lezioni: toglile prima di farne una verifica.')
                     && leggi().every((x) => Number(x.is_final) === 0), [conLezioni]);
 
-                await esitoPost(admin.page, crea, [['title', 'Verifica di prova'], ['is_final', '1'], ['quiz_required', '1']], nuovo);
+                // «Nuovo modulo» non fa piu' verifiche; il comando sta nel corso.
+                await admin.page.goto(BASE + nuovo);
+                const casellaInNuovo = await admin.page.evaluate(() => !!document.querySelector('input[name="is_final"]'));
+                await admin.page.goto(BASE + '/courses/' + A.corso);
+                const comandoPrima = await comando();
+                check('admin → «Nuovo modulo» senza la casella «Verifica finale», e nel corso il comando «Verifica finale»',
+                    !casellaInNuovo && comandoPrima, ['casella: ' + casellaInNuovo, 'comando: ' + comandoPrima]);
+
+                await esitoPost(admin.page, crea, [['title', 'Tappa senza questionario'], ['is_final', '1']], nuovo);
+                const tappa = leggi().find((x) => x.title === 'Tappa senza questionario');
+                check('admin → «is_final» mandato a mano a «Nuovo modulo»: il modulo nasce normale',
+                    !!tappa && Number(tappa.is_final) === 0, [JSON.stringify(tappa)]);
+                const tappaScheda = '/modules/' + tappa.id + '/edit';
+                const finaleDi = () => JSON.parse(php('echo json_encode(App\\Core\\Database::connection()->query("SELECT is_final, objective FROM modules WHERE id = " . (int) $argv[1])->fetch(PDO::FETCH_ASSOC));', tappa.id));
+
+                await admin.page.goto(BASE + tappaScheda);
+                const casella = await admin.page.evaluate(() => {
+                    const c = document.querySelector('input[name="is_final"]');
+                    const a = document.getElementById('verifica_senza_questionario_aiuto');
+                    return { spenta: c.disabled, descritta: c.getAttribute('aria-describedby') || '', aiuto: a ? a.textContent.trim() : '' };
+                });
+                const senza = await rifiutoDi(admin.page, '/modules/' + tappa.id, [['title', 'Tappa senza questionario'], ['is_final', '1']], tappaScheda, tappaScheda);
+                check('admin → «Verifica finale» su un modulo senza questionario: casella spenta con la frase, e mandata a mano rifiutata',
+                    casella.spenta && casella.descritta === 'verifica_senza_questionario_aiuto' && casella.aiuto === FRASE_SENZA
+                    && senza.includes(FRASE_SENZA) && Number(finaleDi().is_final) === 0, [JSON.stringify(casella), senza]);
+
+                // Il questionario a domande nasce con la prima domanda.
+                const quizNuovo = '/modules/' + tappa.id + '/quiz/create';
+                const quizCrea = '/modules/' + tappa.id + '/quiz';
+                const soloTitolo = await rifiutoDi(admin.page, quizCrea, [['title', 'Domande della tappa'], ['kind', 'domande']], quizNuovo, quizNuovo);
+                const ripreso = await admin.page.evaluate(() => {
+                    const l = document.querySelector('fieldset[data-prima-domanda] > legend');
+                    return { titolo: (document.getElementById('title') || {}).value, riquadro: l ? l.textContent.trim() : '' };
+                });
+                check('admin → nuovo questionario senza la prima domanda: rifiutato, nessun questionario, la pagina torna con il titolo e «Prima domanda»',
+                    soloTitolo.includes('Il testo della domanda è obbligatorio.') && quizDi(tappa.id) === false
+                    && ripreso.titolo === 'Domande della tappa' && ripreso.riquadro === 'Prima domanda', [soloTitolo, JSON.stringify(ripreso)]);
+
+                const unaOpzione = await rifiutoDi(admin.page, quizCrea, [['title', 'Domande della tappa'], ['kind', 'domande'],
+                    ['question_text', 'Una domanda a metà?'], ['question_type', 'single_choice'], ['options[]', 'Sola'], ['options[]', ''], ['correct_option', '0']],
+                    quizNuovo, quizNuovo);
+                const ripresa = await admin.page.evaluate(() => {
+                    const g = document.querySelector('[data-prima-domanda] [data-options="single_choice"]');
+                    const t = document.querySelector('[data-prima-domanda] textarea');
+                    return g && t ? {
+                        testo: t.value,
+                        opzione: g.querySelector('input[type="text"]').value,
+                        giusta: g.querySelector('input[type="radio"]').checked,
+                    } : {};
+                });
+                check('admin → prima domanda con un\'opzione sola: rifiutata, e la domanda torna come era stata scritta',
+                    unaOpzione.includes('Servono almeno 2 opzioni di risposta.') && quizDi(tappa.id) === false
+                    && ripresa.testo === 'Una domanda a metà?' && ripresa.opzione === 'Sola' && ripresa.giusta, [unaOpzione, JSON.stringify(ripresa)]);
+
+                await esitoPost(admin.page, quizCrea, [['title', 'Domande della tappa'], ['kind', 'domande'], ...domanda()], quizNuovo);
+                const q = quizDi(tappa.id);
+                check('admin → controprova: con la prima domanda il questionario nasce, con una domanda',
+                    !!q && q.kind === 'domande' && Number(q.domande) === 1, [JSON.stringify(q)]);
+
+                // La sola domanda non si elimina.
+                const primaDomanda = () => php('echo (int) App\\Core\\Database::connection()->query("SELECT MIN(id) FROM quiz_questions WHERE quiz_id = " . (int) $argv[1])->fetchColumn();', q.id).trim();
+                const qScheda = '/quizzes/' + q.id + '/edit';
+                const sola = primaDomanda();
+                const ultima = await rifiutoDi(admin.page, '/questions/' + sola + '/delete', [], qScheda, qScheda);
+                check('admin → la sola domanda non si elimina, e l\'avviso dice le due strade',
+                    ultima === 'Un questionario non resta senza domande: aggiungine un’altra prima di eliminare questa, oppure elimina il questionario.'
+                    && Number(quizDi(tappa.id).domande) === 1, [ultima]);
+                await esitoPost(admin.page, '/quizzes/' + q.id + '/questions', domanda('Una seconda domanda?'), qScheda);
+                await esitoPost(admin.page, '/questions/' + sola + '/delete', [], qScheda);
+                check('admin → controprova: con due domande, una si elimina',
+                    Number(quizDi(tappa.id).domande) === 1 && primaDomanda() !== sola, [JSON.stringify(quizDi(tappa.id))]);
+
+                // Con il questionario la casella si accende, e l'obiettivo se ne va.
+                php('App\\Core\\Database::connection()->exec("UPDATE modules SET objective = \'Un obiettivo da togliere\' WHERE id = " . (int) $argv[1]);', tappa.id);
+                await admin.page.goto(BASE + tappaScheda);
+                const conQ = await admin.page.evaluate(() => {
+                    const c = document.querySelector('input[name="is_final"]');
+                    return { spenta: c.disabled, descritta: c.getAttribute('aria-describedby') || '' };
+                });
+                await admin.page.check('[data-verifica-finale]');
+                const obiettivoNascosto = await admin.page.evaluate(() => {
+                    const c = document.getElementById('objective');
+                    const o = c && c.closest('.campo-contato');
+                    const a = document.getElementById('objective-aiuto');
+                    return !!o && !!a && getComputedStyle(o).display === 'none' && getComputedStyle(a).display === 'none';
+                });
+                await esitoPost(admin.page, '/modules/' + tappa.id, [['title', 'Tappa senza questionario'], ['is_final', '1'], ['objective', 'Un obiettivo da togliere']], tappaScheda);
+                const accesa = finaleDi();
+                check('admin → controprova: con il questionario la casella si accende, senza frasi; l\'obiettivo, nascosto accendendola, si cancella',
+                    !conQ.spenta && conQ.descritta === ''
+                    && obiettivoNascosto && Number(accesa.is_final) === 1 && accesa.objective === null,
+                    [JSON.stringify(conQ), 'nascosto: ' + obiettivoNascosto, JSON.stringify(accesa)]);
+                await admin.page.goto(BASE + tappaScheda);
+                const campoObiettivo = await admin.page.evaluate(() => !!document.querySelector('[name="objective"]'));
+                check('admin → «Modifica modulo» della verifica: il campo dell\'obiettivo non c\'è', !campoObiettivo, []);
+
+                // Con la verifica fatta il comando sparisce.
+                await admin.page.goto(BASE + '/courses/' + A.corso);
+                const comandoDopo = await comando();
+                await admin.page.goto(BASE + verificaNuova);
+                const daIndirizzo = { dove: new URL(admin.page.url()).pathname, avviso: await avviso(admin.page) };
+                check('admin → con la verifica fatta il comando sparisce, e la pagina dall\'indirizzo torna al corso con il nome della verifica',
+                    !comandoDopo && daIndirizzo.dove === '/courses/' + A.corso
+                    && daIndirizzo.avviso.includes('Questo corso ha già una verifica finale: «Tappa senza questionario»'), [JSON.stringify(daIndirizzo), 'comando: ' + comandoDopo]);
+
+                // Il questionario della verifica non si elimina da solo.
+                const viaQuiz = await rifiutoDi(admin.page, '/quizzes/' + q.id + '/delete', [], qScheda, qScheda);
+                const ultimaVerifica = await rifiutoDi(admin.page, '/questions/' + primaDomanda() + '/delete', [], qScheda, qScheda);
+                check('admin → il questionario della verifica non si elimina da solo, né la sua sola domanda: gli avvisi dicono le strade',
+                    viaQuiz === 'Il questionario della verifica finale non si elimina da solo: spegni prima «Verifica finale» in «Modulo», oppure elimina il modulo.'
+                    && ultimaVerifica === 'Un questionario non resta senza domande: aggiungine un’altra prima di eliminare questa, oppure elimina il modulo della verifica finale.'
+                    && !!quizDi(tappa.id) && Number(quizDi(tappa.id).domande) === 1, [viaQuiz, ultimaVerifica]);
+                await esitoPost(admin.page, '/modules/' + tappa.id, [['title', 'Tappa senza questionario']], tappaScheda);
+                await esitoPost(admin.page, '/quizzes/' + q.id + '/delete', [], qScheda);
+                check('admin → controprova: spenta la verifica, il questionario si elimina',
+                    Number(finaleDi().is_final) === 0 && quizDi(tappa.id) === false, [JSON.stringify(finaleDi())]);
+                php('App\\Core\\Database::connection()->exec("DELETE FROM modules WHERE id = " . (int) $argv[1]);', tappa.id);
+
+                // La pagina della verifica: titoli gia' scritti, niente H5P, e
+                // una pagina rifiutata torna come era stata scritta.
+                await admin.page.goto(BASE + verificaNuova);
+                const vuota = await admin.page.evaluate(() => [(document.getElementById('title') || {}).value, (document.getElementById('quiz_title') || {}).value,
+                    !!document.querySelector('input[name="kind"]'), !!document.querySelector('[name="objective"]')]);
+                const senzaGiusta = await rifiutoDi(admin.page, verificaCrea, [['title', 'Verifica di prova'], ['quiz_title', 'Questionario di prova'],
+                    ['passing_score_pct', '60'], ['question_text', 'Domanda senza risposta giusta?'], ['question_type', 'single_choice'],
+                    ['options[]', 'Uno'], ['options[]', 'Due']], verificaNuova, verificaNuova);
+                const pagina = await admin.page.evaluate(() => {
+                    const v = (s) => (document.querySelector(s) || {}).value;
+                    return { titolo: v('#title'), questionario: v('#quiz_title'), soglia: v('#passing_score_pct'), testo: v('[data-prima-domanda] textarea') };
+                });
+                check('admin → «Nuova verifica finale»: «Verifica finale» e «Questionario» già scritti, senza H5P né obiettivo; senza la risposta corretta rifiutata, e la pagina torna come era stata scritta',
+                    vuota[0] === 'Verifica finale' && vuota[1] === 'Questionario' && !vuota[2] && !vuota[3]
+                    && senzaGiusta.includes('Seleziona quale opzione è la risposta corretta.') && !leggi().some((x) => Number(x.is_final) === 1)
+                    && pagina.titolo === 'Verifica di prova' && pagina.questionario === 'Questionario di prova' && pagina.soglia === '60'
+                    && pagina.testo === 'Domanda senza risposta giusta?', [JSON.stringify(vuota), senzaGiusta, JSON.stringify(pagina)]);
+
+                await esitoPost(admin.page, verificaCrea, [['title', 'Verifica di prova'], ['quiz_title', 'Questionario di prova'], ['passing_score_pct', '60'],
+                    ['kind', 'h5p'], ['quiz_required', '1'], ...domanda()], verificaNuova);
                 let m = leggi();
                 verifica = m.find((x) => x.title === 'Verifica di prova');
-                check('admin → crea la verifica finale: in fondo al corso, e senza «questionario obbligatorio»',
-                    !!verifica && m[m.length - 1].id === verifica.id && Number(verifica.is_final) === 1 && Number(verifica.quiz_required) === 0, [JSON.stringify(m)]);
+                const qv = verifica ? quizDi(verifica.id) : null;
+                check('admin → crea la verifica finale: in fondo al corso, senza «questionario obbligatorio», con il questionario a domande e la prima domanda',
+                    !!verifica && m[m.length - 1].id === verifica.id && Number(verifica.is_final) === 1 && Number(verifica.quiz_required) === 0
+                    && !!qv && qv.title === 'Questionario di prova' && qv.kind === 'domande' && Number(qv.passing_score_pct) === 60 && Number(qv.domande) === 1,
+                    [JSON.stringify(m), JSON.stringify(qv)]);
 
                 await esitoPost(admin.page, crea, [['title', 'Tappa dopo la verifica']], nuovo);
                 m = leggi();
@@ -1168,7 +1318,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 check('admin → un modulo creato dopo va prima della verifica, che resta in fondo',
                     !!altro && m[m.length - 1].id === verifica.id && m[m.length - 2].id === altro.id, [JSON.stringify(m.map((x) => x.title))]);
 
-                const rifiuto = await rifiutoDi(admin.page, crea, [['title', 'Seconda verifica'], ['is_final', '1']], nuovo, nuovo);
+                const rifiuto = await rifiutoDi(admin.page, verificaCrea, [['title', 'Seconda verifica'], ['quiz_title', 'Questionario'], ...domanda()],
+                    '/courses/' + A.corso, '/courses/' + A.corso);
                 m = leggi();
                 check('admin → una seconda verifica nello stesso corso: rifiutata, con la frase',
                     !m.some((x) => x.title === 'Seconda verifica') && rifiuto.includes('Questo corso ha già una verifica finale: «Verifica di prova». Ce ne può essere una sola per corso.'), [rifiuto]);
@@ -1252,8 +1403,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 // completata. Non gliele chiede lo stesso.
                 php(`
                     $pdo = App\\Core\\Database::connection();
-                    $pdo->prepare("INSERT INTO quizzes (module_id, title, passing_score_pct) VALUES (?, 'Verifica di prova', 60)")->execute([(int) $argv[1]]);
-                    $q = (int) $pdo->lastInsertId();
+                    $q = (int) $pdo->query("SELECT id FROM quizzes WHERE module_id = " . (int) $argv[1])->fetchColumn();
                     $pdo->prepare("INSERT INTO quiz_attempts (user_id, quiz_id, score_pct, passed) VALUES (?, ?, 100, 1)")->execute([(int) $argv[2], $q]);
                     $pdo->prepare("UPDATE courses SET three_words_since = '2000-01-01 00:00:00' WHERE id = ?")->execute([(int) $argv[3]]);`,
                     verifica.id, d.utenti.studenteA, A.corso);
@@ -1269,7 +1419,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 await admin.ctx.close();
                 php(`
                     $pdo = App\\Core\\Database::connection();
-                    $pdo->exec("DELETE FROM modules WHERE course_id = " . (int) $argv[1] . " AND title IN ('Verifica di prova', 'Tappa dopo la verifica', 'Seconda verifica')");
+                    $pdo->exec("DELETE FROM modules WHERE course_id = " . (int) $argv[1] . " AND title IN ('Verifica di prova', 'Tappa dopo la verifica', 'Seconda verifica', 'Tappa senza questionario')");
                     $pdo->exec("DELETE FROM module_words WHERE course_id = " . (int) $argv[1]);
                     $pdo->exec("UPDATE courses SET three_words_since = NULL WHERE id = " . (int) $argv[1]);`, A.corso);
             }
@@ -1362,7 +1512,6 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 // nella verifica finale. Senza file il rifiuto sarebbe del
                 // file; la frase dice che e' quello giusto.
                 await esitoPost(admin.page, crea, [['title', PREFISSO + 'Obbligatorio'], ['quiz_required', '1']], nuovo);
-                await esitoPost(admin.page, crea, [['title', PREFISSO + 'Verifica'], ['is_final', '1']], nuovo);
                 await esitoPost(admin.page, crea, [['title', PREFISSO + 'Libero']], nuovo);
                 const quizNuovo = (m) => '/modules/' + modulo(m).id + '/quiz/create';
                 const radio = () => admin.page.evaluate(() => {
@@ -1371,7 +1520,6 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 });
                 for (const [nome, frase] of [
                     ['Obbligatorio', 'Non disponibile in questo modulo: il questionario è obbligatorio, e deve essere a domande, corrette da Pistacchio.'],
-                    ['Verifica', 'Non disponibile in questo modulo: la verifica finale deve essere a domande, corrette da Pistacchio.'],
                 ]) {
                     await admin.page.goto(BASE + quizNuovo(nome));
                     const r = await radio();
@@ -1381,12 +1529,28 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 }
 
                 await admin.page.goto(BASE + quizNuovo('Libero'));
+                // La prima domanda (30/10) serve solo a un questionario a
+                // domande: scegliendo H5P il riquadro sparisce e si spegne,
+                // cosi' il testo obbligatorio non ferma il file.
+                const riquadro = () => admin.page.evaluate(() => {
+                    const f = document.querySelector('[data-prima-domanda]');
+                    return !!f && { visibile: getComputedStyle(f).display !== 'none', spento: f.disabled };
+                });
+                const conDomande = await riquadro();
+                await admin.page.check('input[name="kind"][value="h5p"]');
+                const sceltoH5P = await riquadro();
+                await admin.page.check('input[name="kind"][value="domande"]');
+                const dinuovo = await riquadro();
+                check('admin → nuovo questionario: «Prima domanda» c\'è con «Domande», sparisce e si spegne con «Contenuto H5P», e torna',
+                    conDomande && conDomande.visibile && !conDomande.spento && !sceltoH5P.visibile && sceltoH5P.spento && dinuovo.visibile && !dinuovo.spento,
+                    [JSON.stringify([conDomande, sceltoH5P, dinuovo])]);
                 const libero = await radio();
                 const nelLibero = await rifiutoDi(admin.page, quizNuovo('Libero').replace(/\/create$/, ''), [['title', 'Esercizio'], ['kind', 'h5p']], quizNuovo('Libero'), quizNuovo('Libero'));
                 check('admin → controprova: in un modulo libero «Contenuto H5P» è attivo, e senza file il rifiuto è del file',
                     !libero.spento && !libero.frase.includes('Non disponibile') && !nelLibero.includes(FRASE) && nelLibero !== '', [JSON.stringify(libero), nelLibero]);
 
-                await esitoPost(admin.page, quizNuovo('Obbligatorio').replace(/\/create$/, ''), [['title', 'Domande'], ['kind', 'domande']], quizNuovo('Obbligatorio'));
+                await esitoPost(admin.page, quizNuovo('Obbligatorio').replace(/\/create$/, ''), [['title', 'Domande'], ['kind', 'domande'],
+                    ['question_text', 'Una domanda?'], ['question_type', 'open']], quizNuovo('Obbligatorio'));
                 check('admin → controprova: nel modulo obbligatorio un questionario a domande si crea', modulo('Obbligatorio').kind === 'domande', [JSON.stringify(modulo('Obbligatorio'))]);
             } finally {
                 await admin.ctx.close();
@@ -3358,11 +3522,13 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/admin/groups/' + B.gruppo + '/delete', [], 'negato', 'cancellare il gruppo di un collega'],
                 ['/admin/users/' + d.utenti.studenteB + '/delete', [], 'negato', 'cancellare un utente'],
                 ['/questions/' + B.domanda + '/move', [['direction', 'up']], 'negato', 'riordinare le domande di un collega'],
+                ['/courses/' + A.corso + '/verifica-finale', [['title', 'Verifica del tutor'], ['quiz_title', 'Questionario'], ['question_text', 'Domanda?'], ['question_type', 'open']], 'negato', 'creare la verifica finale del suo corso'],
             ]],
             ['assist@test.it', 'assistente', [
                 ['/lessons/' + A.lezione + '/delete', [], 'negato', 'cancellare una lezione'],
                 ['/questions/' + A.domanda + '/delete', [], 'negato', 'togliere una domanda'],
                 ['/admin/users/' + d.utenti.studenteA + '/delete', [], 'negato', 'cancellare un utente'],
+                ['/courses/' + A.corso + '/verifica-finale', [['title', 'Verifica dell\'assistente'], ['quiz_title', 'Questionario'], ['question_text', 'Domanda?'], ['question_type', 'open']], 'negato', 'creare la verifica finale'],
             ]],
             // Il benvenuto lo carica il tutor, il proprio; l'admin quello di
             // tutti (07/10). Il tutor di A non tocca quello del tutor di B, lo
@@ -3995,6 +4161,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             for (const [url, tabella, chi, attesa] of [
                 ['/courses/' + A.corso + '/modules/create', 'modules', 'nuovo modulo', '/courses/' + A.corso],
+                ['/courses/' + A.corso + '/verifica-finale/create', 'modules', 'nuova verifica finale', '/courses/' + A.corso],
                 ['/modules/' + A.modulo + '/lessons/create', 'lessons', 'nuova lezione', '/courses/' + A.corso + '#modulo-' + A.modulo],
             ]) {
                 const titolo = '[prova-annulla] ' + chi;

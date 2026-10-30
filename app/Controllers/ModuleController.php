@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\CourseRights;
+use App\Core\Database;
+use App\Core\PrimaDomanda;
 use App\Core\TestoBreve;
 use App\Core\View;
 use App\Models\CourseModel;
@@ -26,6 +28,123 @@ class ModuleController
 
     /** La chiave di sessione del modulo da riproporre dopo un rifiuto. */
     private const RIPRENDI = 'modulo_da_riprendere';
+
+    /** La casella della verifica finale su un modulo senza questionario (30/10). */
+    public const VERIFICA_SENZA_QUESTIONARIO = 'La verifica finale ha bisogno del suo questionario a domande: '
+        . 'aggiungilo prima da «Questionario», poi accendi la casella.';
+
+    /** I titoli gia' scritti nella pagina della verifica finale (30/10, Alessandro). */
+    private const TITOLO_VERIFICA = 'Verifica finale';
+    private const TITOLO_QUESTIONARIO = 'Questionario';
+
+    /**
+     * «Nuova verifica finale» (30/10, Alessandro): il modulo nasce insieme al
+     * suo questionario e alla prima domanda, in un salvataggio solo. Il
+     * comando c'e' nella pagina del corso finche' il corso non ne ha una.
+     * Obiettivo no (la verifica non ne ha), data si' ma dopo, da «Modulo».
+     */
+    public function verificaForm(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEdit((int) $params['courseId']);
+
+        $course = CourseModel::find((int) $params['courseId']);
+
+        if (!$course) {
+            http_response_code(404);
+            echo 'Corso non trovato.';
+            return;
+        }
+
+        $this->rifiutaSeCeGia((int) $course['id']);
+
+        View::render('modules/verifica', [
+            'pageTitle' => 'Nuova verifica finale',
+            'course' => $course,
+            'maxOptions' => QuizController::MAX_OPTIONS,
+            'riprendi' => PrimaDomanda::riprendi('verifica', (int) $course['id']),
+            'titoloVerifica' => self::TITOLO_VERIFICA,
+            'titoloQuestionario' => self::TITOLO_QUESTIONARIO,
+        ]);
+    }
+
+    public function verificaStore(array $params): void
+    {
+        Auth::requireRole('admin', 'tutor');
+        CourseRights::requireEdit((int) $params['courseId']);
+
+        $courseId = (int) $params['courseId'];
+
+        if (CourseModel::find($courseId) === null) {
+            http_response_code(404);
+            echo 'Corso non trovato.';
+            return;
+        }
+
+        $this->rifiutaSeCeGia($courseId);
+
+        $indietro = '/courses/' . $courseId . '/verifica-finale/create';
+        $titolo = trim((string) ($_POST['title'] ?? ''));
+        $titoloQuestionario = trim((string) ($_POST['quiz_title'] ?? ''));
+        $rifiuta = static function (string $messaggio) use ($courseId, $indietro, $titolo, $titoloQuestionario): never {
+            PrimaDomanda::ricorda('verifica', $courseId, [
+                'title' => $titolo,
+                'quiz_title' => $titoloQuestionario,
+                'passing_score_pct' => QuizController::sogliaDalPost(),
+            ]);
+            $_SESSION['flash_error'] = $messaggio;
+            header('Location: ' . $indietro);
+            exit;
+        };
+
+        if ($titolo === '') {
+            $rifiuta('Il titolo della verifica è obbligatorio.');
+        }
+
+        if ($titoloQuestionario === '') {
+            $rifiuta('Il titolo del questionario è obbligatorio.');
+        }
+
+        try {
+            $domanda = QuizController::domandaDalPost();
+        } catch (\RuntimeException $e) {
+            $rifiuta($e->getMessage());
+        }
+
+        $db = Database::connection();
+        $db->beginTransaction();
+
+        try {
+            $moduleId = ModuleModel::create($courseId, mb_substr($titolo, 0, 200), false, null, null, true);
+            $quizId = QuizModel::create($moduleId, mb_substr($titoloQuestionario, 0, 200), QuizController::sogliaDalPost());
+            PrimaDomanda::salva($quizId, $domanda);
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+
+        header('Location: /quizzes/' . $quizId . '/edit');
+        exit;
+    }
+
+    /**
+     * Una sola verifica finale per corso (28/10): con una gia' fatta, la
+     * pagina e il salvataggio tornano al corso con il suo nome.
+     */
+    private function rifiutaSeCeGia(int $courseId): void
+    {
+        $gia = ModuleModel::verificaFinale($courseId);
+
+        if ($gia === null) {
+            return;
+        }
+
+        $_SESSION['flash_error'] = 'Questo corso ha già una verifica finale: «' . $gia['title']
+            . '». Ce ne può essere una sola per corso.';
+        header('Location: /courses/' . $courseId);
+        exit;
+    }
 
     public function createForm(array $params): void
     {
@@ -71,15 +190,17 @@ class ModuleController
         }
 
         $this->rifiutaOltreIlLimite('corso', $courseId, '/courses/' . $courseId . '/modules/create');
-        $this->rifiutaSecondaVerifica($courseId, null, 'corso', $courseId, '/courses/' . $courseId . '/modules/create');
 
+        // La verifica finale nasce solo dalla sua pagina, con il questionario
+        // (30/10): da qui un modulo nasce sempre normale, anche se qualcuno
+        // manda `is_final` a mano.
         ModuleModel::create(
             $courseId,
             $title,
             isset($_POST['quiz_required']),
             $this->availableFromPost(),
             $this->objectivePost(),
-            isset($_POST['is_final'])
+            false
         );
 
         header('Location: /courses/' . $courseId);
@@ -107,6 +228,7 @@ class ModuleController
             'module' => $module,
             'riprendi' => self::riprendi('modulo', (int) $module['id']),
             'quizH5P' => (QuizModel::forModule((int) $module['id'])['kind'] ?? '') === 'h5p',
+            'senzaQuestionario' => QuizModel::forModule((int) $module['id']) === null,
         ]);
     }
 
@@ -146,6 +268,13 @@ class ModuleController
                 'Una verifica finale non ha lezioni: toglile prima di farne una verifica.');
         }
 
+        // La verifica finale ha sempre il suo questionario (30/10,
+        // Alessandro): la casella si accende solo su un modulo che ne ha gia'
+        // uno.
+        if (isset($_POST['is_final']) && empty($module['is_final']) && QuizModel::forModule((int) $module['id']) === null) {
+            $this->rifiuta('modulo', (int) $module['id'], $indietro, self::VERIFICA_SENZA_QUESTIONARIO);
+        }
+
         // Un questionario H5P non puo' essere obbligatorio ne' la verifica
         // finale (29/10): il suo punteggio lo manda il browser.
         if ((isset($_POST['quiz_required']) || isset($_POST['is_final']))
@@ -154,12 +283,14 @@ class ModuleController
                 . ' Per farlo, sostituisci il questionario di questo modulo con uno a domande.');
         }
 
+        // La verifica finale non ha obiettivo (30/10, Alessandro): accesa,
+        // l'obiettivo si cancella al salvataggio.
         ModuleModel::update(
             (int) $module['id'],
             $title,
             isset($_POST['quiz_required']),
             $this->availableFromPost(),
-            $this->objectivePost(),
+            isset($_POST['is_final']) ? null : $this->objectivePost(),
             isset($_POST['is_final'])
         );
 

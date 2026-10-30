@@ -11,6 +11,8 @@ use App\Auth\StudentScope;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
 use App\Core\Percorso;
+use App\Core\Database;
+use App\Core\PrimaDomanda;
 use App\Core\H5PArchivio;
 use App\Core\OrphanFiles;
 use App\Core\QuizScoring;
@@ -30,7 +32,7 @@ use App\Models\QuizQuestionModel;
 class QuizController
 {
     private const MIN_OPTIONS = 2;
-    private const MAX_OPTIONS = 6;
+    public const MAX_OPTIONS = 6;
 
     /**
      * Quanto puo' essere lunga una risposta aperta. Scelto da Elena.
@@ -49,6 +51,10 @@ class QuizController
 
     /** Il testo di una domanda del questionario: 500 caratteri (10/10, Alessandro). */
     public const MAX_QUESTION_CHARS = 500;
+
+    /** Il questionario della verifica finale non si elimina da solo (30/10). */
+    public const VERIFICA_SENZA_QUESTIONARIO = 'Il questionario della verifica finale non si elimina da solo: '
+        . 'spegni prima «Verifica finale» in «Modulo», oppure elimina il modulo.';
 
     // ---------------------------------------------------------------
     // Gestione quiz — admin/tutor
@@ -72,12 +78,14 @@ class QuizController
         }
 
         View::render('quizzes/form', [
-            'pageTitle' => 'Nuovo quiz',
+            'pageTitle' => 'Nuovo questionario',
             'module' => $module,
             'course' => CourseModel::find((int) $module['course_id']),
             'quiz' => null,
             'h5pDisponibile' => H5PArchivio::disponibile(),
             'h5pAmmesso' => QuizModel::h5pAmmesso($module),
+            'maxOptions' => self::MAX_OPTIONS,
+            'riprendi' => PrimaDomanda::riprendi('modulo', (int) $module['id']),
         ]);
     }
 
@@ -99,10 +107,10 @@ class QuizController
         }
 
         $title = trim($_POST['title'] ?? '');
+        $indietro = '/modules/' . $module['id'] . '/quiz/create';
 
         if ($title === '') {
-            $_SESSION['flash_error'] = 'Il titolo del questionario è obbligatorio.';
-            $this->redirect('/modules/' . $module['id'] . '/quiz/create');
+            $this->rifiutaNuovo((int) $module['id'], $indietro, 'Il titolo del questionario è obbligatorio.');
         }
 
         // Il questionario H5P (22/10): si crea con il suo contenuto, o non si
@@ -117,7 +125,7 @@ class QuizController
             }
 
             $file = $this->fileH5P('/modules/' . $module['id'] . '/quiz/create', true);
-            $quizId = QuizModel::create((int) $module['id'], $title, $this->passingScoreFromPost());
+            $quizId = QuizModel::create((int) $module['id'], $title, self::sogliaDalPost());
 
             try {
                 $aperto = H5PArchivio::apri($file['tmp_name'], $quizId);
@@ -132,9 +140,42 @@ class QuizController
             $this->redirect('/quizzes/' . $quizId . '/edit');
         }
 
-        $quizId = QuizModel::create((int) $module['id'], $title, $this->passingScoreFromPost());
+        // Un questionario a domande nasce con la sua prima domanda (30/10,
+        // Alessandro): senza, non si crea. La domanda si controlla prima di
+        // scrivere qualcosa, e questionario e domanda si salvano insieme.
+        try {
+            $domanda = self::domandaDalPost();
+        } catch (\RuntimeException $e) {
+            $this->rifiutaNuovo((int) $module['id'], $indietro, $e->getMessage());
+        }
+
+        $db = Database::connection();
+        $db->beginTransaction();
+
+        try {
+            $quizId = QuizModel::create((int) $module['id'], $title, self::sogliaDalPost());
+            PrimaDomanda::salva($quizId, $domanda);
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
 
         $this->redirect('/quizzes/' . $quizId . '/edit');
+    }
+
+    /**
+     * «Nuovo questionario» rifiutato: si torna alla pagina con l'avviso e
+     * con tutto quello che era stato scritto, prima domanda compresa.
+     */
+    private function rifiutaNuovo(int $moduleId, string $indietro, string $messaggio): never
+    {
+        PrimaDomanda::ricorda('modulo', $moduleId, [
+            'title' => trim((string) ($_POST['title'] ?? '')),
+            'passing_score_pct' => self::sogliaDalPost(),
+        ]);
+        $_SESSION['flash_error'] = $messaggio;
+        $this->redirect($indietro);
     }
 
     public function editForm(array $params): void
@@ -158,7 +199,7 @@ class QuizController
 
         if (($quiz['kind'] ?? '') === 'h5p') {
             View::render('quizzes/edit_h5p', [
-                'pageTitle' => 'Modifica quiz',
+                'pageTitle' => 'Modifica questionario',
                 'quiz' => $quiz,
                 'module' => $module,
                 'course' => CourseModel::find((int) $module['course_id']),
@@ -177,7 +218,7 @@ class QuizController
         }
 
         View::render('quizzes/edit', [
-            'pageTitle' => 'Modifica quiz',
+            'pageTitle' => 'Modifica questionario',
             'quiz' => $quiz,
             'module' => $module,
             'course' => CourseModel::find((int) $module['course_id']),
@@ -208,7 +249,7 @@ class QuizController
             $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
         }
 
-        QuizModel::update((int) $quiz['id'], $title, $this->passingScoreFromPost());
+        QuizModel::update((int) $quiz['id'], $title, self::sogliaDalPost());
 
         // Un contenuto H5P nuovo al posto del vecchio (22/10): la cartella
         // nuova prima, la vecchia si toglie solo quando la nuova e' a posto.
@@ -249,6 +290,14 @@ class QuizController
         }
 
         $module = ModuleModel::find((int) $quiz['module_id']);
+
+        // La verifica finale ha sempre il suo questionario (30/10,
+        // Alessandro): da solo non si elimina, e le due strade si dicono.
+        if (!empty($module['is_final'])) {
+            $_SESSION['flash_error'] = self::VERIFICA_SENZA_QUESTIONARIO;
+            $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
+        }
+
         // Il contenuto H5P resta sul server (29/10), come i file di una
         // lezione eliminata, e chi elimina lo sa.
         $resta = OrphanFiles::cartellaH5P($quiz['h5p_dir'] ?? null);
@@ -286,7 +335,7 @@ class QuizController
         }
 
         try {
-            [$text, $type, $options] = $this->questionFromPost();
+            [$text, $type, $options] = self::domandaDalPost();
         } catch (\RuntimeException $e) {
             $_SESSION['flash_error'] = $e->getMessage();
             $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
@@ -332,7 +381,7 @@ class QuizController
         }
 
         try {
-            [$text, $type, $options] = $this->questionFromPost();
+            [$text, $type, $options] = self::domandaDalPost();
         } catch (\RuntimeException $e) {
             $_SESSION['flash_error'] = $e->getMessage();
             $this->redirect('/questions/' . $question['id'] . '/edit');
@@ -377,6 +426,19 @@ class QuizController
         if (!$question) {
             $this->notFound('Domanda non trovata.');
             return;
+        }
+
+        // Un questionario non resta senza domande (30/10, Alessandro): la
+        // sola domanda non si elimina, e l'avviso dice le due strade. Il
+        // questionario della verifica finale non si elimina da solo, quindi
+        // li' la seconda strada e' il modulo.
+        if (QuizModel::countQuestions((int) $question['quiz_id']) <= 1) {
+            $modulo = ModuleModel::find((int) (QuizModel::find((int) $question['quiz_id'])['module_id'] ?? 0));
+            $_SESSION['flash_error'] = 'Un questionario non resta senza domande: aggiungine un’altra prima di eliminare questa, '
+                . (!empty($modulo['is_final'])
+                    ? 'oppure elimina il modulo della verifica finale.'
+                    : 'oppure elimina il questionario.');
+            $this->redirect('/quizzes/' . $question['quiz_id'] . '/edit');
         }
 
         QuizQuestionModel::delete((int) $question['id']);
@@ -506,7 +568,7 @@ class QuizController
         }
 
         if ($questions === []) {
-            $_SESSION['flash_error'] = 'Questo quiz non ha ancora domande.';
+            $_SESSION['flash_error'] = 'Questo questionario non ha ancora domande.';
             $this->redirect('/quizzes/' . $quiz['id']);
         }
 
@@ -529,7 +591,7 @@ class QuizController
                 $testo = CampoContato::taglia((string) ($testi[$questionId] ?? ''), self::MAX_OPEN_CHARS);
 
                 if ($testo === '') {
-                    $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il quiz.';
+                    $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il questionario.';
                     $this->redirect('/quizzes/' . $quiz['id']);
                 }
 
@@ -560,7 +622,7 @@ class QuizController
             $scelte = array_values(array_unique(array_filter($scelte, static fn (int $v): bool => $v > 0)));
 
             if ($scelte === []) {
-                $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il quiz.';
+                $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il questionario.';
                 $this->redirect('/quizzes/' . $quiz['id']);
             }
 
@@ -578,7 +640,7 @@ class QuizController
                 $option = QuizOptionModel::find($optionId);
 
                 if ($option === null || (int) $option['question_id'] !== $questionId) {
-                    $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il quiz.';
+                    $_SESSION['flash_error'] = 'Rispondi a tutte le domande prima di inviare il questionario.';
                     $this->redirect('/quizzes/' . $quiz['id']);
                 }
             }
@@ -679,7 +741,7 @@ class QuizController
         $domande = QuizQuestionModel::forQuiz((int) $quiz['id']);
 
         View::render('quizzes/result', [
-            'pageTitle' => 'Esito quiz',
+            'pageTitle' => 'Esito del questionario',
             'attempt' => $attempt,
             'quiz' => $quiz,
             'module' => $module,
@@ -713,7 +775,7 @@ class QuizController
 
             if (CourseAccess::isModuleLocked((int) Auth::id(), (int) $module['id'])) {
                 http_response_code(403);
-                echo 'Questo modulo è bloccato: supera prima il quiz del modulo precedente.';
+                echo 'Questo modulo è bloccato: supera prima il questionario del modulo precedente.';
 
                 return false;
             }
@@ -768,7 +830,7 @@ class QuizController
         return ['name' => basename((string) $f['name']), 'tmp_name' => (string) $f['tmp_name']];
     }
 
-    private function passingScoreFromPost(): int
+    public static function sogliaDalPost(): int
     {
         return max(1, min(100, (int) ($_POST['passing_score_pct'] ?? 70)));
     }
@@ -783,7 +845,7 @@ class QuizController
      * @return array{0: string, 1: string, 2: array<int, array{text: string, is_correct: bool}>}
      * @throws \RuntimeException se i dati non sono validi
      */
-    private function questionFromPost(): array
+    public static function domandaDalPost(): array
     {
         $text = CampoContato::taglia((string) ($_POST['question_text'] ?? ''), self::MAX_QUESTION_CHARS);
 

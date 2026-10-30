@@ -11,6 +11,11 @@ use App\Core\Csrf;
 $h5pDisponibile ??= false;
 /** @var bool $h5pAmmesso il modulo non e' ne' obbligatorio ne' la verifica finale (29/10) */
 $h5pAmmesso ??= true;
+/** @var int $maxOptions */
+$maxOptions ??= 6;
+/** @var array|null $riprendi la pagina rifiutata, con la prima domanda (`PrimaDomanda::riprendi`) */
+$riprendi ??= null;
+$campi = $riprendi['campi'] ?? [];
 
 $action = $quiz === null
     ? '/modules/' . (int) $module['id'] . '/quiz'
@@ -18,7 +23,7 @@ $action = $quiz === null
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
-    <h1><?= $quiz === null ? 'Nuovo quiz' : 'Impostazioni quiz' ?></h1>
+    <h1><?= $quiz === null ? 'Nuovo questionario' : 'Impostazioni del questionario' ?></h1>
     <p class="page-subtitle">Modulo: <?= htmlspecialchars($module['title']) ?></p>
 </div>
 
@@ -27,7 +32,7 @@ $action = $quiz === null
     <?php unset($_SESSION['flash_error']); ?>
 <?php endif; ?>
 
-<form action="<?= $action ?>" method="post" class="form" enctype="multipart/form-data">
+<form action="<?= $action ?>" method="post" class="form" enctype="multipart/form-data"<?= $quiz === null ? ' data-question-form' : '' ?>>
     <?= Csrf::field() ?>
     <?php /* Che questionario (22/10): le domande scritte qui, come finora, o un
              contenuto interattivo H5P creato con Lumi. Il campo del file si
@@ -38,7 +43,7 @@ $action = $quiz === null
             <legend>Tipo di questionario</legend>
             <label class="quiz-tipo-scelta">
                 <input type="radio" name="kind" value="domande" checked>
-                <span><strong>Domande</strong> <span class="form-hint">Le scrivi qui, una per una.</span></span>
+                <span><strong>Domande</strong> <span class="form-hint">La prima la scrivi qui, le altre dopo, nella pagina del questionario.</span></span>
             </label>
             <label class="quiz-tipo-scelta">
                 <input type="radio" name="kind" value="h5p" <?= $h5pDisponibile && $h5pAmmesso ? '' : 'disabled' ?>>
@@ -59,18 +64,26 @@ $action = $quiz === null
 
     <label for="title">Titolo del questionario</label>
     <input type="text" id="title" name="title" maxlength="200" required
-           value="<?= htmlspecialchars($quiz['title'] ?? '') ?>">
+           value="<?= htmlspecialchars((string) ($campi['title'] ?? $quiz['title'] ?? '')) ?>">
 
     <label for="passing_score_pct">Punteggio minimo per superarlo (%)</label>
     <input type="number" id="passing_score_pct" name="passing_score_pct" min="1" max="100"
-           value="<?= (int) ($quiz['passing_score_pct'] ?? 70) ?>">
+           value="<?= (int) ($campi['passing_score_pct'] ?? $quiz['passing_score_pct'] ?? 70) ?>">
 
     <p class="form-hint">
         I tentativi sono illimitati: allo studente viene conteggiato il punteggio migliore.
     </p>
 
+    <?php /* La prima domanda (30/10, Alessandro): un questionario a domande
+             nasce con almeno una, o non nasce. Il riquadro e' quello di
+             «Video» nella lezione; scegliendo «Contenuto H5P» sparisce e non
+             si invia (prima-domanda.js). */ ?>
+    <?php if ($quiz === null): ?>
+        <?php require __DIR__ . '/_prima_domanda.php'; ?>
+    <?php endif; ?>
+
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary"><?= $quiz === null ? 'Crea quiz' : 'Salva' ?></button>
+        <button type="submit" class="btn btn-primary"><?= $quiz === null ? 'Crea questionario' : 'Salva' ?></button>
         <a href="/courses/<?= (int) $module['course_id'] ?>" class="btn btn-secondary">Annulla</a>
     </div>
 </form>
