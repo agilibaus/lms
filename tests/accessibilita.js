@@ -309,7 +309,34 @@ function raccogli(minimoBersaglio) {
         }
     }
 
+    // --- il bordo dei pulsanti bianchi (30/10) ----------------------
+    // «Annulla», «Verifica finale»…: un pulsante bianco su una pagina quasi
+    // bianca si riconosce dal bordo, che deve stare ad almeno 3:1 dallo
+    // sfondo dietro il pulsante, la soglia degli elementi grafici. Con il
+    // grigio chiaro di prima era 1,2:1.
+    const bordiDeboli = [];
+
+    for (const el of document.querySelectorAll('.btn-secondary')) {
+        if (el.getClientRects().length === 0) {
+            continue;
+        }
+
+        const bordo = leggiColore(getComputedStyle(el).borderTopColor);
+
+        if (!bordo) {
+            continue;
+        }
+
+        const dietro = sfondoDi(el.parentElement);
+        const misura = rapporto(sovrapponi(bordo, dietro), dietro);
+
+        if (misura < 3) {
+            bordiDeboli.push({ firma: firma(el), riga: descrivi(el) + ' — ' + misura.toFixed(2) + ':1' });
+        }
+    }
+
     return {
+        bordiDeboli: raggruppa(bordiDeboli),
         lang: document.documentElement.getAttribute('lang') || '',
         titolo: (document.title || '').trim(),
         h1: document.querySelectorAll('h1').length,
@@ -941,6 +968,7 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     check(nome + ': identificativi non ripetuti', r.idRipetuti.length === 0, r.idRipetuti);
     check(nome + ': titoli senza salti di livello', r.salti.length === 0, r.salti);
     check(nome + ': bersagli almeno ' + minimoBersaglio + 'px', r.bersagli.length === 0, r.bersagli);
+    check(nome + ': il bordo dei pulsanti bianchi si vede (almeno 3:1)', r.bordiDeboli.length === 0, r.bordiDeboli);
 
     // Ogni contatore di caratteri e' collegato al suo campo (17/10): il
     // riquadro della bacheca in Modifica corso veniva dopo lo script, e il

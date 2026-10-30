@@ -2650,14 +2650,15 @@ body.has-focus-video {
     margin: 0.35rem 0 0;
 }
 
+/* Il pulsante bianco («Annulla», «Verifica finale»…): bordo, testo e icona
+   nel colore principale della tavolozza (30/10, Alessandro, variante B).
+   Il bordo grigio chiaro di prima contrastava 1,2:1 con lo sfondo della
+   pagina e il pulsante si perdeva; il colore principale sta fra 5,2 e 7:1
+   in tutte e quattro le tavolozze. Era l'aspetto del passaggio del mouse,
+   che ora non cambia piu' niente: scelto sapendolo. */
 .btn-secondary {
     background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text);
-}
-
-.btn-secondary:hover {
-    border-color: var(--color-primary);
+    border: 1px solid var(--color-primary);
     color: var(--color-primary);
 }
 
