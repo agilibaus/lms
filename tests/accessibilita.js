@@ -2025,6 +2025,46 @@ async function giroBenvenuto(browser) {
             appena !== null && /^Che bello rivederti, \S.*! 🌸$/u.test(appena.testo) && appena.ruolo === 'status'
                 && appena.fioreDecorativo && appena.dentro,
             [JSON.stringify(appena)]);
+        // Dove sta (30/10, Alessandro, A1): al telefono nella barra in alto,
+        // dopo il pulsante del menu, senza riquadro e sopra il titolo; sul
+        // computer in alto al centro, nel suo riquadro. Si misura a meta'
+        // dell'animazione (3,5 s, pienamente visibile), poi la si rimette
+        // dov'era.
+        const posto = await page.evaluate(() => {
+            const s = document.querySelector('.saluto');
+            if (!s) return null;
+            const a = s.getAnimations()[0];
+            const dove = a ? a.currentTime : null;
+            if (a) { a.pause(); a.currentTime = 3500; }
+            const r = s.getBoundingClientRect();
+            const bar = document.querySelector('.nav-bar');
+            const barra = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect() : null;
+            const menu = document.querySelector('.nav-toggle-btn').getBoundingClientRect();
+            const titolo = document.querySelector('.main-content h1');
+            const stile = getComputedStyle(s);
+            const esito = {
+                alto: Math.round(r.top), basso: Math.round(r.bottom), sinistra: Math.round(r.left), destra: Math.round(r.right),
+                barra: barra ? [Math.round(barra.top), Math.round(barra.bottom)] : null, menu: Math.round(menu.right),
+                titolo: titolo ? Math.round(titolo.getBoundingClientRect().top) : null,
+                schermo: document.documentElement.clientWidth,
+                sfondo: stile.backgroundColor, bordo: stile.borderTopWidth, opacita: stile.opacity,
+            };
+            if (a) { a.currentTime = dove; a.play(); }
+            return esito;
+        });
+        if (larghezza <= 768) {
+            check('al telefono il saluto sta nella barra in alto, dopo il menu, senza riquadro, e non copre il titolo',
+                posto !== null && posto.barra !== null && posto.alto >= posto.barra[0] && posto.basso <= posto.barra[1]
+                    && posto.sinistra >= posto.menu && posto.destra <= posto.schermo && posto.titolo !== null && posto.basso <= posto.titolo
+                    && posto.sfondo === 'rgba(0, 0, 0, 0)' && posto.bordo === '0px' && posto.opacita === '1',
+                [JSON.stringify(posto)]);
+        } else {
+            check('sul computer il saluto resta in alto al centro, nel suo riquadro',
+                posto !== null && Math.abs((posto.sinistra + posto.destra) / 2 - posto.schermo / 2) <= 2
+                    && posto.sfondo !== 'rgba(0, 0, 0, 0)' && posto.bordo !== '0px' && posto.opacita === '1',
+                [JSON.stringify(posto)]);
+        }
+
         // La durata si chiede all'animazione, e si aspetta fino a dopo la sua
         // fine contando dal punto in cui e' davvero: misurare a occhio da fuori
         // sbagliava di qualche decimo, e non distingueva 3 secondi da 4.

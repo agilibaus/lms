@@ -247,12 +247,16 @@ use App\Core\Csrf;
      * interrompere; non si clicca e non copre niente che si debba toccare.
      * Il fiore e' decorativo, `aria-hidden`: letto, sarebbe «fiore di
      * ciliegio» in coda al saluto.
+     * Al telefono (30/10, Alessandro, A1) sta nella barra in alto, accanto
+     * al menu, senza riquadro: sospeso sopra la pagina copriva il titolo e
+     * il primo corso. `saluto-testo` lo tiene centrato nella barra anche su
+     * due righe.
      */
     $saluto = $_SESSION['saluto'] ?? null;
     unset($_SESSION['saluto']);
     ?>
     <?php if (is_string($saluto) && $saluto !== ''): ?>
-        <div class="saluto" role="status">Che bello rivederti, <?= htmlspecialchars($saluto) ?>! <span aria-hidden="true">🌸</span></div>
+        <div class="saluto" role="status"><span class="saluto-testo">Che bello rivederti, <?= htmlspecialchars($saluto) ?>! <span aria-hidden="true">🌸</span></span></div>
     <?php endif; ?>
 
     <main class="main-content">

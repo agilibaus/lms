@@ -7195,9 +7195,65 @@ details[open] > summary .obiettivo-se-aperto {
     }
 }
 
+/* Al telefono (30/10, Alessandro, A1): nella barra in alto, accanto al
+   menu, senza riquadro. Sospeso sopra la pagina copriva il titolo e il
+   primo corso, impilati in colonna. Comincia 14 px dopo il pulsante del
+   menu (1rem dal bordo, largo 38 px) e arriva a 1rem dal bordo destro;
+   e' alto quanto la barra e centra la frase, anche su due righe. Stessi
+   tempi di prima; il movimento e' solo verticale, perche' qui non c'e' il
+   `translateX(-50%)` che lo centra sul computer. Con il menu aperto la
+   barra sparisce, e il saluto con lei. */
 @media (max-width: 768px) {
     .saluto {
-        top: calc(env(safe-area-inset-top, 0px) + 4.6rem);
+        top: 0;
+        left: calc(1rem + 38px + 14px);
+        right: 1rem;
+        height: 3.9rem;
+        width: auto;
+        max-width: none;
+        display: flex;
+        align-items: center;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        font-size: 1rem;
+        text-align: left;
+        transform: none;
+        animation-name: saluto-barra;
+    }
+
+    .nav-toggle-checkbox:checked ~ .saluto {
+        display: none;
+    }
+
+    @keyframes saluto-barra {
+        0% {
+            opacity: 0;
+            transform: translateY(-1rem) scale(0.97);
+            visibility: visible;
+            animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+        }
+
+        18% {
+            opacity: 1;
+            transform: none;
+            visibility: visible;
+        }
+
+        88% {
+            opacity: 1;
+            transform: none;
+            visibility: visible;
+            animation-timing-function: ease-in;
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateY(-0.6rem);
+            visibility: hidden;
+        }
     }
 }
 
