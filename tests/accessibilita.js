@@ -525,6 +525,9 @@ const PAGINE_INTERNE = [
     ['/admin/users/importa', 'Importa utenti'],
     ['/admin/settings', 'Impostazioni'],
     ['/admin/settings/posta', 'Server di posta elettronica'],
+    // Con le due email di prova messe in coda qui sotto (codaDiProva): una
+    // «non partita» e una «in coda», cosi' si controllano le due tabelle.
+    ['/admin/settings/posta/coda', 'Email in coda e non partite'],
     ['/admin/settings/aspetto', 'Aspetto'],
     ['/admin/permissions', 'Permessi'],
     // Pagina di una lezione, quindi dipende dai dati: se la lezione 1 non
@@ -606,6 +609,26 @@ function semina() {
 
 const SEMINA = semina();
 const SEMINATI = SEMINA.A;
+
+/**
+ * La coda delle email (30/10): senza email la pagina «Email in coda e non
+ * partite» mostra solo una frase. Qui se ne mettono due di prova, una «non
+ * partita» e una «in coda», con indirizzi @prova-accessibilita.invalid, e
+ * alla fine si tolgono (si tolgono anche all'inizio, se un giro interrotto
+ * le ha lasciate). Non si manda niente: il giro della posta qui non gira.
+ */
+function codaDiProva(metti) {
+    const codice = 'require "vendor/autoload.php"; require "config/config.php";'
+        + ' $pdo = App\\Core\\Database::connection();'
+        + ' $pdo->exec("DELETE FROM email_queue WHERE to_email LIKE \'%@prova-accessibilita.invalid\'");'
+        + ' if ($argv[1] === "metti") {'
+        + ' App\\Core\\Mail\\CodaEmail::aggiungi(new App\\Core\\Mail\\Message("giulia.rossi@prova-accessibilita.invalid", "", "Incontro dal vivo: «Tappa 2»", "Corpo."), null, "Il server di posta non risponde (attesa di 15 secondi scaduta).");'
+        + ' App\\Core\\Mail\\CodaEmail::aggiungi(new App\\Core\\Mail\\Message("luca.neri@prova-accessibilita.invalid", "", "Nuova proposta per la bacheca", "Corpo."));'
+        + ' $pdo->exec("UPDATE email_queue SET retry_until = NOW() - INTERVAL 1 MINUTE WHERE to_email = \'giulia.rossi@prova-accessibilita.invalid\'"); }';
+    execFileSync('php', ['-r', codice, '--', metti ? 'metti' : 'togli'], { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
+}
+
+codaDiProva(true);
 
 PAGINE_INTERNE.push(
     ['/lessons/' + SEMINATI.lezione, 'Lezione con materiale (semina)'],
@@ -3043,6 +3066,7 @@ async function giroBenvenuto(browser) {
         await giroBenvenuto(browser);
     } finally {
         await browser.close();
+        codaDiProva(false);
     }
 
     console.log('\nTotale: ' + ok + ' superati, ' + fail + ' falliti');
