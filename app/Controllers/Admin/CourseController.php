@@ -448,7 +448,7 @@ class CourseController extends AdminController
         if ($approve) {
             EnrollmentModel::enroll($userId, $courseId);
 
-            Mailer::sendQuietly(Mailer::enrollmentConfirmed(
+            Mailer::subitoOInCoda(Mailer::enrollmentConfirmed(
                 (string) $request['email'],
                 (string) $request['full_name'],
                 (string) $request['course_title'],
@@ -458,7 +458,7 @@ class CourseController extends AdminController
             $this->success('Richiesta approvata: lo studente è iscritto ed è stato avvisato.', $redirect);
         }
 
-        Mailer::sendQuietly(Mailer::enrollmentRejected(
+        Mailer::subitoOInCoda(Mailer::enrollmentRejected(
             (string) $request['email'],
             (string) $request['full_name'],
             (string) $request['course_title']

@@ -115,3 +115,8 @@ use App\Core\Icona;
         <button type="submit" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Invia messaggio di prova</button>
     </form>
 </section>
+
+<?php /* La coda in una pagina a se' (30/10, Alessandro, forma 2): qui solo
+         il collegamento, verde e sottolineato come i collegamenti nelle
+         frasi, del testo della pagina e allineato ai riquadri. */ ?>
+<p class="posta-coda"><a href="/admin/settings/posta/coda">Email in coda e non partite</a></p>

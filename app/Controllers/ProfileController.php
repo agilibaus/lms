@@ -309,7 +309,7 @@ class ProfileController
 
         // L'avviso non deve poter impedire il cambio: se la posta non parte,
         // la password è cambiata lo stesso e l'errore finisce nel log.
-        Mailer::sendQuietly(Mailer::passwordChanged(
+        Mailer::subitoOInCoda(Mailer::passwordChanged(
             (string) $user['email'],
             (string) $user['full_name'],
             Url::to('/login')

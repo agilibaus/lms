@@ -127,7 +127,7 @@ class PasswordResetController
             // d'uscita, e chi riceve il link controlla la casella.
             TentativiAccesso::azzera((string) $utente['email']);
 
-            Mailer::sendQuietly(Mailer::passwordChanged(
+            Mailer::subitoOInCoda(Mailer::passwordChanged(
                 (string) $utente['email'],
                 (string) $utente['full_name'],
                 Url::to('/login')

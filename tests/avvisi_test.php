@@ -66,6 +66,26 @@ $pulisci = static function () use ($pdo): void {
     $pdo->prepare('DELETE FROM `groups` WHERE name LIKE :m')->execute(['m' => MARCHIO . '%']);
     $pdo->prepare('DELETE FROM courses WHERE title LIKE :m')->execute(['m' => MARCHIO . '%']);
     $pdo->prepare('DELETE FROM users WHERE email LIKE :m')->execute(['m' => '%' . DOMINIO]);
+    $pdo->prepare('DELETE FROM email_queue WHERE to_email LIKE :m')->execute(['m' => '%' . DOMINIO]);
+};
+
+// Dal 30/10 conferme e promemoria passano dalla coda, che `bin/avvisi`
+// svuota subito dopo: il giro qui fa lo stesso, ma solo con le email di
+// questa prova (le altre della coda di sviluppo restano dove sono).
+$giro = static function () use ($pdo): void {
+    $altre = $pdo->prepare('SELECT id, locked_until FROM email_queue WHERE to_email NOT LIKE :m');
+    $altre->execute(['m' => '%' . DOMINIO]);
+    $altre = $altre->fetchAll(PDO::FETCH_ASSOC);
+    $pdo->prepare('UPDATE email_queue SET locked_until = NOW() + INTERVAL 1 DAY WHERE to_email NOT LIKE :m')->execute(['m' => '%' . DOMINIO]);
+
+    try {
+        App\Core\Mail\CodaEmail::svuota();
+    } finally {
+        $rimetti = $pdo->prepare('UPDATE email_queue SET locked_until = :l WHERE id = :id');
+        foreach ($altre as $a) {
+            $rimetti->execute(['l' => $a['locked_until'], 'id' => $a['id']]);
+        }
+    }
 };
 
 $pulisci();
@@ -76,8 +96,15 @@ final class Raccolta implements Transport
     /** @var list<Message> */
     public array $messaggi = [];
 
+    /** Con il guasto, ogni invio fallisce (30/10: la coda deve tenere l'email). */
+    public bool $guasto = false;
+
     public function send(Message $message): void
     {
+        if ($this->guasto) {
+            throw new App\Core\Mail\MailException('Il server di posta non risponde (prova).');
+        }
+
         $this->messaggi[] = $message;
     }
 }
@@ -148,7 +175,23 @@ try {
     check('in prova le elenca', (bool) array_filter($prova['prova'], static fn ($r) => str_starts_with($r, 'anna' . DOMINIO)));
     check('e non manda niente, e la coda resta', $raccolta->messaggi === [] && $pendente($anna, $pubblicato) === 1);
 
+    // Dal 30/10 la conferma e' segnata partita solo a invio riuscito: con il
+    // server di posta guasto resta in coda, con il tentativo, e riparte al
+    // giro dopo.
+    $raccolta->guasto = true;
     Avvisi::conferme(500);
+    $giro();
+    $raccolta->guasto = false;
+    $inCodaAnna = static function () use ($pdo): array {
+        $s = $pdo->prepare("SELECT attempts FROM email_queue WHERE to_email = :e AND subject LIKE '%pubblicato%'");
+        $s->execute(['e' => 'anna' . DOMINIO]);
+
+        return array_map('intval', $s->fetchAll(PDO::FETCH_COLUMN));
+    };
+    check('con la posta guasta la conferma non si perde: resta in coda, con il tentativo',
+        $raccolta->messaggi === [] && $inCodaAnna() === [1], json_encode($inCodaAnna()));
+
+    $giro();
     $adAnna = array_values(array_filter($raccolta->messaggi, static fn (Message $m) => $m->toEmail === 'anna' . DOMINIO));
     check('ad Anna parte una conferma', count($adAnna) === 1);
     check('del corso giusto, con il solo nome', isset($adAnna[0])
@@ -158,6 +201,7 @@ try {
 
     $raccolta->messaggi = [];
     Avvisi::conferme(500);
+    $giro();
     check('al giro dopo non riparte', !array_filter($raccolta->messaggi, static fn (Message $m) => $m->toEmail === 'anna' . DOMINIO));
 
     EnrollmentModel::enroll($anna, $pubblicato, true);
@@ -244,6 +288,7 @@ try {
             && $raccolta->messaggi === []);
 
         Avvisi::promemoria();
+        $giro();
         $promemoria = array_values(array_filter(
             $raccolta->messaggi,
             static fn (Message $m) => $m->toEmail === 'anna' . DOMINIO && str_contains($m->subject, 'fra poco')
@@ -255,6 +300,7 @@ try {
 
         $raccolta->messaggi = [];
         Avvisi::promemoria();
+        $giro();
         check('al giro dopo non riparte', !array_filter($raccolta->messaggi, static fn (Message $m) => str_contains($m->subject, 'fra poco')));
     }
 

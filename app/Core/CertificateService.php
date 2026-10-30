@@ -139,7 +139,7 @@ class CertificateService
         // Non deve poter fermare l'emissione: se la posta non parte, il
         // certificato c'e' lo stesso e l'errore finisce nel log.
         if ((int) $user['is_active'] === 1) {
-            Mailer::sendQuietly(Mailer::courseCompleted(
+            Mailer::subitoOInCoda(Mailer::courseCompleted(
                 (string) $user['email'],
                 (string) $user['full_name'],
                 (string) $course['title'],

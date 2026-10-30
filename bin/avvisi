@@ -34,6 +34,7 @@ require __DIR__ . '/../config/config.php';
 
 use App\Core\Avvisi;
 use App\Core\Env;
+use App\Core\Mail\CodaEmail;
 use App\Core\Settings;
 
 // Senza APP_URL le email uscirebbero con un collegamento a localhost: la
@@ -63,10 +64,15 @@ if ($prova) {
 
 Settings::recordSystem(Avvisi::ULTIMO_GIRO, date('Y-m-d H:i:s'));
 
-echo date('Y-m-d H:i:s') . ' — conferme di iscrizione mandate: ' . $conferme['mandate']
-    . ', promemoria degli incontri mandati: ' . $promemoria['mandate'] . PHP_EOL;
+// La coda delle email (30/10): le conferme e i promemoria appena messi, e
+// tutte le altre email in coda, compresi i tentativi delle non partite.
+$giro = CodaEmail::svuota();
 
-$fallite = array_merge($conferme['fallite'], $promemoria['fallite']);
+echo date('Y-m-d H:i:s') . ' — conferme di iscrizione messe in coda: ' . $conferme['mandate']
+    . ', promemoria degli incontri messi in coda: ' . $promemoria['mandate']
+    . '; dalla coda partite: ' . $giro['mandate'] . PHP_EOL;
+
+$fallite = array_merge($conferme['fallite'], $promemoria['fallite'], $giro['fallite']);
 
 if ($fallite !== []) {
     echo 'non partite: ' . implode(', ', $fallite) . PHP_EOL;

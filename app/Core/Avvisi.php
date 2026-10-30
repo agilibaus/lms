@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Core\Mail\CodaEmail;
 use App\Core\Mail\LiveSessionMail;
 use App\Core\Mail\Mailer;
 use App\Models\EnrollmentModel;
@@ -67,7 +68,9 @@ final class Avvisi
                 Url::to('/courses/' . (int) $riga['course_id'])
             );
 
-            if (Mailer::sendQuietly($messaggio)) {
+            // Dal 30/10 in coda: la coda la segna partita a invio riuscito,
+            // e la ritenta per 24 ore (`bin/avvisi` la svuota subito dopo).
+            if (CodaEmail::aggiungi($messaggio) === CodaEmail::IN_CODA) {
                 $mandate++;
             } else {
                 $fallite[] = (string) $riga['email'];
@@ -115,7 +118,7 @@ final class Avvisi
                     continue;
                 }
 
-                if (Mailer::sendQuietly(LiveSessionMail::reminder($sessione, $persona))) {
+                if (CodaEmail::aggiungi(LiveSessionMail::reminder($sessione, $persona)) === CodaEmail::IN_CODA) {
                     $mandate++;
                 } else {
                     $fallite[] = $email;

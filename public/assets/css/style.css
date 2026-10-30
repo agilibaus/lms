@@ -8178,6 +8178,52 @@ details[open] > summary .obiettivo-se-aperto {
     gap: 0.45rem;
 }
 
+/* La coda delle email (30/10). Il collegamento in fondo a «Posta» e' un
+   collegamento nelle frasi (verde e sottolineato, dalla regola qui sopra),
+   del testo della pagina, allineato ai riquadri e alla loro stessa distanza:
+   il margine sotto l'ultimo riquadro fa gia' da spazio. */
+.posta-coda {
+    margin: 0;
+}
+
+.coda-email-quando,
+.coda-email-tentativi {
+    white-space: nowrap;
+}
+
+.coda-email-comandi {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+}
+
+.coda-email-comandi form {
+    margin: 0;
+}
+
+/* I due gruppi sono h2 (sotto il titolo della pagina, senza salti di
+   livello) con la misura di un h3, com'erano nel mockup; i margini sono
+   quelli di tutti i titoli (`h1, h2, h3`), che `.card h2` cambierebbe. */
+.card .coda-email-titolo {
+    font-size: 1.05rem;
+    margin: 0 0 0.4em;
+}
+
+.card .coda-email-gruppo {
+    margin-top: 1.4rem;
+}
+
+/* `tabella-larga` tiene dentro il riquadro anche i testi per i lettori di
+   schermo; qui senza il suo margine sotto, come nel mockup. */
+.coda-email-tabella {
+    margin-bottom: 0;
+}
+
+/* Sotto, lo spazio di un paragrafo, come nel mockup. */
+.coda-email-tutte {
+    margin: 1rem 0;
+}
+
 /* «Nuovo modulo» e «Verifica finale» nella pagina del corso (30/10). */
 .comandi-corso {
     display: flex;

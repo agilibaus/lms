@@ -8,6 +8,7 @@ use App\Auth\Auth;
 use App\Auth\BachecaScope;
 use App\Core\Bacheca;
 use App\Core\CampoContato;
+use App\Core\Mail\CodaEmail;
 use App\Core\Mail\Mailer;
 use App\Core\PersonName;
 use App\Core\Upload;
@@ -245,7 +246,7 @@ class BoardController
         $link = Url::to('/bacheca/proposte?corso=' . $courseId);
 
         foreach (BoardModel::destinatari($userId, $courseId) as $d) {
-            Mailer::sendQuietly(Mailer::boardProposal($d['email'], $d['full_name'], $studente, (string) $corso['title'], $dati['title'], $link));
+            CodaEmail::aggiungi(Mailer::boardProposal($d['email'], $d['full_name'], $studente, (string) $corso['title'], $dati['title'], $link));
         }
 
         $this->torna($dietro, 'Proposta inviata: la trovi qui sotto, in «Le tue proposte». Il tutor la leggerà e la pubblicherà.', true);

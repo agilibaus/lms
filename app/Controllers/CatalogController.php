@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Auth\Auth;
+use App\Core\Mail\CodaEmail;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
 use App\Core\View;
@@ -56,7 +57,7 @@ class CatalogController
         if ($course['enrollment_mode'] === 'open') {
             EnrollmentModel::enroll($userId, $courseId);
 
-            Mailer::sendQuietly(Mailer::enrollmentConfirmed(
+            Mailer::subitoOInCoda(Mailer::enrollmentConfirmed(
                 (string) Auth::email(),
                 (string) Auth::name(),
                 (string) $course['title'],
@@ -101,7 +102,7 @@ class CatalogController
         $link = Url::to('/admin/courses/' . $courseId . '/edit');
 
         foreach (UserModel::decisoriRichiesta($courseId) as $staff) {
-            Mailer::sendQuietly(Mailer::enrollmentRequested(
+            CodaEmail::aggiungi(Mailer::enrollmentRequested(
                 (string) $staff['email'],
                 (string) $staff['full_name'],
                 (string) Auth::name(),

@@ -40,6 +40,7 @@ require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config/config.php';
 
 use App\Core\CourseAccess;
+use App\Core\Mail\CodaEmail;
 use App\Core\Mail\Mailer;
 use App\Core\Settings;
 use App\Core\Url;
@@ -107,14 +108,14 @@ foreach ($inSospeso as $avviso) {
         $link
     );
 
-    if (Mailer::sendQuietly($messaggio)) {
+    // Dal 30/10 l'email passa dalla coda: la riga presa qui dice solo che
+    // e' stata messa in coda, e la coda la segna partita a invio riuscito,
+    // ritentandola per 24 ore. Se non parte si vede nel pannello.
+    if (CodaEmail::aggiungi($messaggio) === CodaEmail::IN_CODA) {
         $mandate++;
     } else {
-        // L'avviso resta segnato come mandato e non ripartira'. E' la
-        // conseguenza voluta della regola «prima la riga»: lo studente
-        // trovera' comunque il modulo aperto rientrando.
         $fallite++;
-        error_log('[Rilascio moduli] invio fallito: ' . $avviso['email'] . ' / modulo ' . $moduleId);
+        error_log('[Rilascio moduli] non messo in coda: ' . $avviso['email'] . ' / modulo ' . $moduleId);
     }
 }
 
@@ -125,7 +126,11 @@ if ($prova) {
 
 Settings::recordSystem('DRIP_LAST_RUN_AT', date('Y-m-d H:i:s'));
 
-echo date('c') . " mandate {$mandate}, fallite {$fallite}, gia' prese da altri {$saltate}, "
-    . "chiuse da un questionario {$chiusi}.\n";
+// Le email appena messe in coda partono subito, senza aspettare il giro di
+// `bin/avvisi`; quelle che non partono si ritentano da li'.
+$giro = CodaEmail::svuota();
 
-exit($fallite > 0 ? 1 : 0);
+echo date('c') . " messe in coda {$mandate}, non messe {$fallite}, gia' prese da altri {$saltate}, "
+    . "chiuse da un questionario {$chiusi}; dalla coda partite {$giro['mandate']}, non partite " . count($giro['fallite']) . ".\n";
+
+exit($fallite > 0 || $giro['fallite'] !== [] ? 1 : 0);

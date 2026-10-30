@@ -8,6 +8,7 @@ use App\Auth\BachecaScope;
 use App\Core\CourseAccess;
 use App\Core\PersonName;
 use App\Auth\Auth;
+use App\Core\Mail\CodaEmail;
 use App\Core\Mail\Mailer;
 use App\Core\Url;
 use App\Core\View;
@@ -295,7 +296,7 @@ class QuestionController
             return;
         }
 
-        Mailer::sendQuietly(Mailer::questionAnswered(
+        Mailer::subitoOInCoda(Mailer::questionAnswered(
             (string) $studente['email'],
             (string) $studente['full_name'],
             (string) $corso['title'],
@@ -405,7 +406,7 @@ class QuestionController
         $link = Url::to('/domande');
 
         foreach (QuestionModel::adminRecipients() as $d) {
-            Mailer::sendQuietly(Mailer::newQuestion($d['email'], $d['full_name'], $studente, $corso, $modulo, $testo, $link));
+            CodaEmail::aggiungi(Mailer::newQuestion($d['email'], $d['full_name'], $studente, $corso, $modulo, $testo, $link));
         }
     }
 

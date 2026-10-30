@@ -290,6 +290,11 @@ $router->get('/admin/settings/informazioni', [SettingsController::class, 'inform
 $router->get('/admin/settings/posta', [SettingsController::class, 'mail']);
 $router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']);
 $router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);
+// La coda delle email (30/10).
+$router->get('/admin/settings/posta/coda', [SettingsController::class, 'coda']);
+$router->post('/admin/settings/posta/coda/riprova-tutte', [SettingsController::class, 'codaRiprovaTutte']);
+$router->post('/admin/settings/posta/coda/{id}/riprova', [SettingsController::class, 'codaRiprova']);
+$router->post('/admin/settings/posta/coda/{id}/rimuovi', [SettingsController::class, 'codaRimuovi']);
 $router->get('/admin/settings/email', [SettingsController::class, 'email']);
 $router->post('/admin/settings/email', [SettingsController::class, 'updateEmail']);
 $router->post('/admin/settings/email/testo', [SettingsController::class, 'updateModello']);

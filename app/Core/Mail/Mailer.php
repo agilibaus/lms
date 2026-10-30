@@ -18,18 +18,36 @@ class Mailer
 {
     private static ?Transport $transport = null;
 
+    /**
+     * Quanto aspetta un invio «subito» (30/10, Alessandro): oltre, l'email
+     * va in coda e la pagina prosegue. Il cron e la prova di invio
+     * aspettano i 15 secondi di sempre.
+     */
+    public const ATTESA_SUBITO = 5;
+
     public static function transport(): Transport
     {
         if (self::$transport !== null) {
             return self::$transport;
         }
 
+        self::$transport = self::nuovoTrasporto(15);
+
+        return self::$transport;
+    }
+
+    /**
+     * Il trasporto scelto in `MAIL_TRANSPORT`, con l'attesa data per il
+     * server SMTP.
+     */
+    private static function nuovoTrasporto(int $attesa): Transport
+    {
         $from = (string) Settings::get('MAIL_FROM_ADDRESS', 'no-reply@localhost');
         // Senza un nome impostato, le email partono con quello
         // dell'organizzazione (12/10).
         $fromName = Modelli::nomeMittente();
 
-        self::$transport = match (strtolower((string) Settings::get('MAIL_TRANSPORT', 'log'))) {
+        return match (strtolower((string) Settings::get('MAIL_TRANSPORT', 'log'))) {
             'smtp' => new SmtpTransport(
                 (string) Settings::get('MAIL_HOST', 'localhost'),
                 (int) Settings::get('MAIL_PORT', '587'),
@@ -37,13 +55,32 @@ class Mailer
                 (string) Settings::get('MAIL_PASSWORD', ''),
                 strtolower((string) Settings::get('MAIL_ENCRYPTION', 'tls')),
                 $from,
-                $fromName
+                $fromName,
+                $attesa
             ),
             'mail' => new NativeMailTransport($from, $fromName),
             default => new LogTransport(__DIR__ . '/../../../storage/mail', $from, $fromName),
         };
+    }
 
-        return self::$transport;
+    /**
+     * Un'email a una persona sola (30/10, strada C): parte subito, con
+     * l'attesa breve; se non parte va in coda, e si ritenta dal giro della
+     * posta. Non fa mai fallire l'operazione che l'ha generata. Torna true
+     * se e' partita subito.
+     */
+    public static function subitoOInCoda(Message $message): bool
+    {
+        try {
+            (self::$transport ?? self::nuovoTrasporto(self::ATTESA_SUBITO))->send($message);
+
+            return true;
+        } catch (MailException $e) {
+            error_log('[Mail] in coda dopo un invio non riuscito: ' . $e->getMessage());
+            CodaEmail::aggiungi($message, null, $e->getMessage());
+
+            return false;
+        }
     }
 
     /**

@@ -299,8 +299,11 @@ class LiveSessionController
 
         $esito = LiveSessionNotifier::invite($session);
 
-        // Da qui parte il promemoria del giorno (bin/avvisi, 12/10).
-        if ($esito['sent'] > 0) {
+        // Da qui parte il promemoria del giorno (bin/avvisi, 12/10). Dal 30/10
+        // gli inviti vanno in coda: contano quelli messi ora e quelli che
+        // c'erano gia'. Il promemoria entra in coda dopo di loro, quindi
+        // parte dopo.
+        if ($esito['queued'] > 0 || $esito['already'] > 0) {
             LiveSessionModel::segnaInvitiMandati($id);
         }
 

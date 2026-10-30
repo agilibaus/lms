@@ -56,6 +56,41 @@ function check(etichetta, condizione, dettagli = []) {
     dettagli.forEach((d) => console.log('         · ' + d));
 }
 
+/**
+ * Il giro della posta (30/10, la coda delle email), solo sulle email messe in
+ * coda da questo giro di prove e, con `testo`, solo su quelle che lo
+ * contengono: le altre restano dove sono, e sul database di sviluppo non
+ * parte niente che la prova non abbia messo. Torna l'esito di
+ * `CodaEmail::svuota()`.
+ */
+function giroDellaPosta(testo = '') {
+    const fuori = 'created_at < :da OR body NOT LIKE :t';
+    const codice = 'require "vendor/autoload.php"; require "config/config.php";'
+        + ' $pdo = App\\Core\\Database::connection(); $p = ["da" => date("Y-m-d H:i:s", (int) $argv[1]), "t" => "%" . $argv[2] . "%"];'
+        + ' $altre = $pdo->prepare("SELECT id, locked_until FROM email_queue WHERE ' + fuori + '"); $altre->execute($p);'
+        + ' $altre = $altre->fetchAll(PDO::FETCH_ASSOC);'
+        + ' $pdo->prepare("UPDATE email_queue SET locked_until = NOW() + INTERVAL 1 DAY WHERE ' + fuori + '")->execute($p);'
+        + ' try { echo json_encode(App\\Core\\Mail\\CodaEmail::svuota()); } finally {'
+        + ' $r = $pdo->prepare("UPDATE email_queue SET locked_until = :l WHERE id = :id");'
+        + ' foreach ($altre as $a) { $r->execute(["l" => $a["locked_until"], "id" => $a["id"]]); } }';
+
+    return JSON.parse(execFileSync('php', ['-r', codice, '--', String(Math.floor(INIZIO_GIRO / 1000)), testo],
+        { cwd: path.join(__dirname, '..'), encoding: 'utf8' }));
+}
+
+/**
+ * Quante email di questo giro di prove sono in coda, con l'oggetto che
+ * comincia così, all'indirizzo che comincia così e con quel testo.
+ */
+function inCodaDiQuestoGiro(oggetto, a, testo) {
+    const codice = 'require "vendor/autoload.php"; require "config/config.php";'
+        + ' $s = App\\Core\\Database::connection()->prepare("SELECT COUNT(*) FROM email_queue WHERE created_at >= :da AND subject LIKE :o AND to_email LIKE :a AND body LIKE :t");'
+        + ' $s->execute(["da" => date("Y-m-d H:i:s", (int) $argv[1]), "o" => $argv[2] . "%", "a" => $argv[3] . "%", "t" => "%" . $argv[4] . "%"]); echo (int) $s->fetchColumn();';
+
+    return Number(execFileSync('php', ['-r', codice, '--', String(Math.floor(INIZIO_GIRO / 1000)), oggetto, a, testo],
+        { cwd: path.join(__dirname, '..'), encoding: 'utf8' }).trim());
+}
+
 /** Semina i due mondi e restituisce gli identificativi. */
 function semina() {
     const radice = path.join(__dirname, '..');
@@ -335,6 +370,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/permissions', 'negato', 'i permessi sono dell\'admin'],
             ['/admin/settings', 'negato', 'le impostazioni sono dell\'admin'],
             ['/admin/settings/informazioni', 'negato', 'nemmeno la versione installata (18/10)'],
+            ['/admin/settings/posta/coda', 'negato', 'nemmeno la coda delle email (30/10)'],
 
             // Lo staff non è mai soggetto al rilascio: il tutor legge il
             // modulo chiuso prima che si apra (dal 26/10 non lo modifica).
@@ -423,6 +459,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['/admin/users/importa', 'consentito', 'l\'importazione è sua'],
             ['/admin/settings/bunny', 'consentito', 'è sua'],
             ['/admin/settings/informazioni', 'consentito', 'la versione installata e il codice sorgente (18/10)'],
+            ['/admin/settings/posta/coda', 'consentito', 'la coda delle email (30/10)'],
             ['/lessons/' + A.lezione_chiusa, 'consentito', 'il rilascio non vale per l\'admin'],
             ['/materials/' + A.materiale_chiuso + '/download', 'consentito',
                 'il rilascio non vale per l\'admin, e il file di prova esiste'],
@@ -3523,12 +3560,14 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/admin/users/' + d.utenti.studenteB + '/delete', [], 'negato', 'cancellare un utente'],
                 ['/questions/' + B.domanda + '/move', [['direction', 'up']], 'negato', 'riordinare le domande di un collega'],
                 ['/courses/' + A.corso + '/verifica-finale', [['title', 'Verifica del tutor'], ['quiz_title', 'Questionario'], ['question_text', 'Domanda?'], ['question_type', 'open']], 'negato', 'creare la verifica finale del suo corso'],
+                ['/admin/settings/posta/coda/riprova-tutte', [], 'negato', 'rimettere in coda le email (30/10)'],
             ]],
             ['assist@test.it', 'assistente', [
                 ['/lessons/' + A.lezione + '/delete', [], 'negato', 'cancellare una lezione'],
                 ['/questions/' + A.domanda + '/delete', [], 'negato', 'togliere una domanda'],
                 ['/admin/users/' + d.utenti.studenteA + '/delete', [], 'negato', 'cancellare un utente'],
                 ['/courses/' + A.corso + '/verifica-finale', [['title', 'Verifica dell\'assistente'], ['quiz_title', 'Questionario'], ['question_text', 'Domanda?'], ['question_type', 'open']], 'negato', 'creare la verifica finale'],
+                ['/admin/settings/posta/coda/1/rimuovi', [], 'negato', 'rimuovere un\'email dalla coda (30/10)'],
             ]],
             // Il benvenuto lo carica il tutor, il proprio; l'admin quello di
             // tutti (07/10). Il tutor di A non tocca quello del tutor di B, lo
@@ -3724,6 +3763,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     const testo = fs.readFileSync(path.join(cartella, f), 'utf8');
                     return testo.includes('Subject: Nuova domanda') && testo.includes('Domanda di permessi.js sul corso?');
                 });
+            // Dal 30/10 va in coda, e parte al giro della posta.
+            const primaDelGiro = diQuestoGiro('admin');
+            const inCoda = inCodaDiQuestoGiro('Nuova domanda', 'admin@', 'Domanda di permessi.js sul corso?');
+            check('la domanda nuova va in coda, non parte dalla pagina', !primaDelGiro && inCoda === 1,
+                ['già nella posta: ' + primaDelGiro, 'in coda: ' + inCoda]);
+            giroDellaPosta('Domanda di permessi.js sul corso?');
             check('la domanda nuova arriva per email all\'esperto, l\'admin', diQuestoGiro('admin'),
                 ['nessuna email «Nuova domanda» all\'admin in storage/mail']);
             check('e non al tutor del gruppo', !diQuestoGiro('tutor1'), ['il tutor l\'ha ricevuta']);
@@ -3741,6 +3786,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     const testo = fs.readFileSync(path.join(cartella, f), 'utf8');
                     return testo.includes('Subject: Nuova proposta per la bacheca') && testo.includes('Proposta di permessi.js');
                 });
+            const inCoda = inCodaDiQuestoGiro('Nuova proposta per la bacheca', 'tutor1@', 'Proposta di permessi.js');
+            check('la proposta per la bacheca va in coda, non parte dalla pagina', !arrivata('tutor1') && inCoda === 1,
+                ['in coda: ' + inCoda]);
+            giroDellaPosta('Proposta di permessi.js');
             check('la proposta per la bacheca arriva per email al tutor del gruppo', arrivata('tutor1'),
                 ['nessuna email «Nuova proposta per la bacheca» al tutor in storage/mail']);
             check('e non all\'admin, quando il tutor c\'è', !arrivata('admin'), ['l\'admin l\'ha ricevuta']);
@@ -3770,6 +3819,103 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 html.includes('Un racconto che il tutor ha nascosto.') && !html.includes('Rendi di nuovo visibile')
                 && html.includes('Proposta di permessi.js'));
             await ctx.close();
+        }
+
+        // --- la coda delle email (30/10, strada C) -------------------------
+        // Gli inviti degli incontri vanno in coda, uno per partecipante, e
+        // ripremendo non si rimettono; la coda si vede in «Posta → Email in
+        // coda e non partite», con «Rimuovi» (che chiede conferma) e
+        // «Riprova».
+        {
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const conta = (dove) => Number(php('$s = App\\Core\\Database::connection()->prepare("SELECT COUNT(*) FROM email_queue WHERE " . $argv[1]); $s->execute(); echo (int) $s->fetchColumn();', dove).trim());
+            const inviti = () => conta('dedupe_key LIKE \'incontro-invito:' + A.incontro + ':%\' AND retry_until > NOW()');
+            const PROVA = 'coda@prova-permessi.invalid';
+            const { ctx, page } = await entra(browser, 'admin@test.it');
+            const avvisoOk = async () => (await page.evaluate(() => [...document.querySelectorAll('.alert')].map((a) => a.textContent).join(' | '))).replace(/\s+/g, ' ').trim();
+            const live = '/live/' + A.incontro;
+
+            try {
+                await esitoPost(page, live + '/inviti', [], live);
+                await page.goto(BASE + live);
+                const primo = await avvisoOk();
+                const dopoPrimo = inviti();
+                await esitoPost(page, live + '/inviti', [], live);
+                await page.goto(BASE + live);
+                const secondo = await avvisoOk();
+                check('«Invia inviti»: vanno in coda, uno per partecipante, e la pagina lo dice',
+                    dopoPrimo > 0 && primo.includes('Inviti in coda per ' + dopoPrimo + ' ') && primo.includes('entro 15 minuti'), [primo, 'in coda: ' + dopoPrimo]);
+                check('ripremuto con gli inviti in coda: non si rimettono, e la pagina lo dice',
+                    inviti() === dopoPrimo && secondo.includes('Gli inviti per questo incontro sono già in coda') && secondo.includes('Non li ho rimessi'),
+                    [secondo, 'in coda: ' + inviti()]);
+                const giro = giroDellaPosta();
+                check('al giro della posta partono, e la coda si svuota', inviti() === 0 && giro.mandate >= dopoPrimo, [JSON.stringify(giro), 'in coda: ' + inviti()]);
+                await esitoPost(page, live + '/inviti', [], live);
+                check('controprova: partiti, ripremendo tornano in coda', inviti() === dopoPrimo, ['in coda: ' + inviti()]);
+                giroDellaPosta();
+
+                // La pagina della coda, dal collegamento in fondo a «Posta».
+                php('App\\Core\\Mail\\CodaEmail::aggiungi(new App\\Core\\Mail\\Message($argv[1], "Prova", "Email di permessi.js", "Corpo."), null, "Il server di posta non risponde (permessi.js).");', PROVA);
+                await page.goto(BASE + '/admin/settings/posta');
+                const collegamento = await page.evaluate(() => {
+                    const a = document.querySelector('.posta-coda a');
+                    const campione = document.createElement('span');
+                    campione.style.color = 'var(--color-primary)';
+                    document.body.appendChild(campione);
+                    const principale = getComputedStyle(campione).color;
+                    campione.remove();
+                    return a ? { testo: a.textContent.trim(), href: a.getAttribute('href'), verde: getComputedStyle(a).color === principale,
+                        sotto: getComputedStyle(a).textDecorationLine } : null;
+                });
+                await page.goto(BASE + '/admin/settings/posta/coda');
+                const riga = () => page.evaluate((chi) => [...document.querySelectorAll('.coda-email tbody tr')]
+                    .map((tr) => ({ testo: tr.innerText.replace(/\s+/g, ' '), gruppo: tr.closest('.tabella-larga').previousElementSibling.textContent.trim() }))
+                    .find((r) => r.testo.includes(chi)) || null, PROVA);
+                const vista = await riga();
+                check('«Posta» → «Email in coda e non partite», verde e sottolineato, apre la pagina con l\'email in coda e il suo errore',
+                    !!collegamento && collegamento.testo === 'Email in coda e non partite' && collegamento.href === '/admin/settings/posta/coda'
+                    && collegamento.sotto === 'underline' && collegamento.verde
+                    && !!vista && vista.gruppo.startsWith('In coda') && vista.testo.includes('Email di permessi.js')
+                    && vista.testo.includes('1 tentativo') && vista.testo.includes('Il server di posta non risponde (permessi.js).'),
+                    [JSON.stringify(collegamento), JSON.stringify(vista)]);
+
+                // Passate le 24 ore: «Non partite»; «Riprova» la rimette in coda.
+                php('App\\Core\\Database::connection()->prepare("UPDATE email_queue SET retry_until = NOW() - INTERVAL 1 MINUTE WHERE to_email = ?")->execute([$argv[1]]);', PROVA);
+                await page.goto(BASE + '/admin/settings/posta/coda');
+                const finita = await riga();
+                await Promise.all([page.waitForNavigation(), page.locator('.coda-email tbody tr', { hasText: PROVA }).locator('button:not(.link-btn-danger)').click()]);
+                const dopoRiprova = await riga();
+                const msgRiprova = await avvisoOk();
+                check('passate le 24 ore sta fra le «Non partite»; «Riprova» la rimette in coda',
+                    !!finita && finita.gruppo.startsWith('Non partite') && finita.testo.includes('24 ore di tentativi')
+                    && !!dopoRiprova && dopoRiprova.gruppo.startsWith('In coda') && msgRiprova.includes('Email rimessa in coda'),
+                    [JSON.stringify(finita), JSON.stringify(dopoRiprova), msgRiprova]);
+
+                // «Rimuovi» chiede conferma: rifiutata resta, accettata se ne va.
+                let chiesto = '';
+                page.once('dialog', (d) => { chiesto = d.message(); d.dismiss(); });
+                await page.locator('.coda-email tbody tr', { hasText: PROVA }).locator('button.link-btn-danger').click();
+                await page.waitForTimeout(500);
+                const restaDopoNo = conta('to_email = \'' + PROVA + '\'');
+                // Senza conferma la prima pressione l'ha gia' tolta: niente
+                // seconda pressione, il controllo qui sotto diventa rosso.
+                let restaDopoSi = restaDopoNo;
+                if (restaDopoNo === 1) {
+                    page.once('dialog', (d) => d.accept());
+                    await Promise.all([page.waitForNavigation(), page.locator('.coda-email tbody tr', { hasText: PROVA }).locator('button.link-btn-danger').click({ timeout: 5000 })]);
+                    restaDopoSi = conta('to_email = \'' + PROVA + '\'');
+                }
+                check('«Rimuovi» chiede conferma: rifiutata l\'email resta, accettata se ne va',
+                    chiesto === 'Rimuovere questa email? Non partirà più.' && restaDopoNo === 1 && restaDopoSi === 0,
+                    [chiesto, 'dopo «Annulla»: ' + restaDopoNo, 'dopo «OK»: ' + restaDopoSi]);
+            } finally {
+                php('App\\Core\\Database::connection()->prepare("DELETE FROM email_queue WHERE to_email = ? OR dedupe_key LIKE ?")->execute([$argv[1], $argv[2]]);',
+                    PROVA, 'incontro-invito:' + A.incontro + ':%');
+                await ctx.close();
+            }
         }
 
         // --- gli a capo nei campi con il limite (10/10) --------------------

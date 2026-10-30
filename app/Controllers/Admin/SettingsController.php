@@ -14,6 +14,7 @@ use App\Core\FontLibrary;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Google\ServiceAccountClient;
+use App\Core\Mail\CodaEmail;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\Mail\Message;
@@ -36,6 +37,9 @@ use App\Core\View;
 class SettingsController extends AdminController
 {
     private const MAIL_PAGE = '/admin/settings/posta';
+
+    /** «Email in coda e non partite» (30/10). */
+    private const CODA_PAGE = '/admin/settings/posta/coda';
     private const MEET_PAGE = '/admin/settings/meet';
     private const EMAIL_PAGE = '/admin/settings/email';
     private const APPEARANCE_PAGE = '/admin/settings/aspetto';
@@ -183,6 +187,67 @@ class SettingsController extends AdminController
      * Invia un messaggio di prova a chi sta configurando: l'unico indirizzo
      * che si può usare senza chiedere il permesso a nessuno.
      */
+    /**
+     * «Email in coda e non partite» (30/10, Alessandro): la pagina a se', a
+     * cui porta il collegamento in fondo a «Posta». Prima le non partite,
+     * poi quelle in coda, con «Riprova» e «Rimuovi».
+     */
+    public function coda(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        View::render('admin/settings/coda', [
+            'pageTitle' => 'Email in coda e non partite',
+            'elenco' => CodaEmail::elenco(),
+            'ultimoGiro' => CodaEmail::ultimoGiro(),
+        ]);
+    }
+
+    /** «Riprova»: altre 24 ore di tentativi, dal prossimo giro. */
+    public function codaRiprova(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        if (!CodaEmail::riprova((int) ($params['id'] ?? 0))) {
+            $this->fail('Questa email non è più in coda.', self::CODA_PAGE);
+        }
+
+        $this->success(
+            'Email rimessa in coda: parte al prossimo giro della posta, entro ' . CodaEmail::MINUTI_DEL_GIRO . ' minuti.',
+            self::CODA_PAGE
+        );
+    }
+
+    /** «Riprova tutte». */
+    public function codaRiprovaTutte(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $quante = CodaEmail::riprovaTutte();
+
+        if ($quante === 0) {
+            $this->fail('Nessuna email da riprovare.', self::CODA_PAGE);
+        }
+
+        $this->success(
+            ($quante === 1 ? 'Email rimessa in coda: parte' : $quante . ' email rimesse in coda: partono')
+                . ' al prossimo giro della posta, entro ' . CodaEmail::MINUTI_DEL_GIRO . ' minuti.',
+            self::CODA_PAGE
+        );
+    }
+
+    /** «Rimuovi»: l'email non parte piu' (la pagina chiede conferma prima). */
+    public function codaRimuovi(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        if (!CodaEmail::rimuovi((int) ($params['id'] ?? 0))) {
+            $this->fail('Questa email non è più in coda.', self::CODA_PAGE);
+        }
+
+        $this->success('Email rimossa: non partirà più.', self::CODA_PAGE);
+    }
+
     public function sendTestMail(array $params = []): void
     {
         Auth::requirePermission('settings.manage');

@@ -104,7 +104,7 @@ class FirstAccessController
             Auth::refreshPasswordStamp();
 
             $user = UserModel::find($userId);
-            Mailer::sendQuietly(Mailer::passwordChanged(
+            Mailer::subitoOInCoda(Mailer::passwordChanged(
                 (string) ($user['email'] ?? ''),
                 (string) ($user['full_name'] ?? ''),
                 Url::to('/login')

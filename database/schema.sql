@@ -759,4 +759,28 @@ CREATE TABLE module_words (
     FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ---------------------------------------------------
+-- La coda delle email (30/10): vedi 2026_10_30_coda_email.sql.
+-- Una riga si cancella appena l'email parte; dopo `retry_until` resta
+-- «non partita» e si vede nel pannello.
+-- ---------------------------------------------------
+CREATE TABLE email_queue (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    to_email        VARCHAR(255) NOT NULL,
+    to_name         VARCHAR(255) NOT NULL DEFAULT '',
+    subject         VARCHAR(500) NOT NULL,
+    body            MEDIUMTEXT NOT NULL,
+    reply_to        VARCHAR(255) NULL DEFAULT NULL,
+    attachments     MEDIUMTEXT NULL DEFAULT NULL,
+    dedupe_key      VARCHAR(190) NULL DEFAULT NULL,
+    attempts        INT UNSIGNED NOT NULL DEFAULT 0,
+    last_error      VARCHAR(500) NULL DEFAULT NULL,
+    last_attempt_at DATETIME NULL DEFAULT NULL,
+    retry_until     DATETIME NOT NULL,
+    locked_until    DATETIME NULL DEFAULT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_email_queue_retry (retry_until),
+    KEY idx_email_queue_dedupe (dedupe_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;
