@@ -171,21 +171,24 @@ $titoliGruppi = [
     $precedente = $mese->modify('-1 month');
     $successivo = $mese->modify('+1 month');
     ?>
+    <?php /* `agenda-mese` e' un contenitore: sotto i 36 rem di spazio
+             (il telefono) al posto della griglia ci sono un calendario
+             piccolo e, sotto, il giorno scelto (30/10, Alessandro, C).
+             Sette colonne in 320 px darebbero caselle di 40 px, dove un
+             titolo non ci sta. Anche il cambio di mese sta qui dentro, per
+             seguire la stessa soglia: al telefono le frecce ai lati e il
+             mese al centro, su una riga; i nomi dei mesi accanto restano
+             per i lettori di schermo. */ ?>
+    <div class="agenda-mese">
     <nav class="agenda-mesi" aria-label="Cambia mese">
-        <a class="btn btn-secondary" href="<?= $esc($link('mese', $precedente)) ?>" rel="prev">
-            &larr; <?= $esc(Agenda::nomeMese($precedente)) ?>
+        <a class="btn btn-secondary agenda-freccia" href="<?= $esc($link('mese', $precedente)) ?>" rel="prev">
+            <span aria-hidden="true">&larr;</span><span class="agenda-mesi-nome"> <?= $esc(Agenda::nomeMese($precedente)) ?></span>
         </a>
         <h2><?= $esc(Agenda::nomeMese($mese)) ?></h2>
-        <a class="btn btn-secondary" href="<?= $esc($link('mese', $successivo)) ?>" rel="next">
-            <?= $esc(Agenda::nomeMese($successivo)) ?> &rarr;
+        <a class="btn btn-secondary agenda-freccia" href="<?= $esc($link('mese', $successivo)) ?>" rel="next">
+            <span class="agenda-mesi-nome"><?= $esc(Agenda::nomeMese($successivo)) ?> </span><span aria-hidden="true">&rarr;</span>
         </a>
     </nav>
-
-    <?php /* `agenda-mese` e' un contenitore: sotto i 36 rem di spazio la
-             griglia diventa un elenco dei soli giorni che hanno qualcosa.
-             Sette colonne in 320 px darebbero caselle di 40 px, dove un
-             titolo non ci sta e un bersaglio da toccare nemmeno. */ ?>
-    <div class="agenda-mese">
         <table class="agenda-griglia" role="table">
             <caption class="sr-only">
                 <?= $esc(Agenda::nomeMese($mese)) ?>: i giorni con un incontro o l'apertura di un modulo.
@@ -238,7 +241,87 @@ $titoliGruppi = [
                 <?php endforeach; ?>
             </tbody>
         </table>
+
+        <?php
+        // Il telefono (30/10, Alessandro, C): un calendario piccolo, con un
+        // puntino per impegno del colore del suo tipo e oggi nel cerchio, e
+        // sotto il giorno scelto. Senza JavaScript si vedono tutti i giorni
+        // con impegni, uno sotto l'altro; con, solo quello scelto (all'avvio
+        // oggi, o il primo con impegni), e toccando un giorno si passa al
+        // suo (`agenda-mese.js`). Sul computer non si vede: c'e' la griglia.
+        $giorni = [];
+        foreach ($settimane as $settimana) {
+            foreach ($settimana as $casella) {
+                $chiave = $casella['giorno']->format('Y-m-d');
+                if (!$casella['fuori'] && ($casella['eventi'] !== [] || $chiave === $adesso->format('Y-m-d'))) {
+                    $giorni[$chiave] = $casella;
+                }
+            }
+        }
+        ?>
+        <table class="agenda-mini">
+            <caption class="sr-only"><?= $esc(Agenda::nomeMese($mese)) ?>: tocca un giorno con impegni per vederli.</caption>
+            <thead>
+                <tr>
+                    <?php foreach (Agenda::nomiGiorni() as $g): ?>
+                        <th scope="col"><span aria-hidden="true"><?= $esc(mb_strtoupper(mb_substr($g, 0, 1))) ?></span><span class="sr-only"><?= $esc($g) ?></span></th>
+                    <?php endforeach; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($settimane as $settimana): ?>
+                    <tr>
+                        <?php foreach ($settimana as $casella): ?>
+                            <?php
+                            $g = $casella['giorno'];
+                            $chiave = $g->format('Y-m-d');
+                            $oggi = $chiave === $adesso->format('Y-m-d');
+                            $numero = (int) $g->format('j');
+                            $quanti = count($casella['eventi']);
+                            ?>
+                            <td class="<?= $casella['fuori'] ? 'fuori-mese' : '' ?><?= $oggi ? ' oggi' : '' ?><?= $quanti > 0 ? ' con-impegni' : '' ?>">
+                                <?php if (!$casella['fuori'] && isset($giorni[$chiave])): ?>
+                                    <a class="agenda-mini-giorno" href="#giorno-<?= $esc($chiave) ?>">
+                                        <span class="agenda-mini-numero" aria-hidden="true"><?= $numero ?></span>
+                                        <span class="agenda-punti" aria-hidden="true">
+                                            <?php foreach (array_slice($casella['eventi'], 0, 3) as $e): ?><span class="agenda-punto agenda-<?= $esc((string) $e['tipo']) ?>"></span><?php endforeach; ?>
+                                        </span>
+                                        <span class="sr-only"><?= $esc(Agenda::dataEstesa($g)) ?><?= $oggi ? ', oggi' : '' ?>: <?= $quanti === 0 ? 'nessun impegno' : ($quanti === 1 ? '1 impegno' : $quanti . ' impegni') ?></span>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="agenda-mini-numero"><?= $numero ?></span>
+                                <?php endif; ?>
+                            </td>
+                        <?php endforeach; ?>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <div class="agenda-giorni">
+            <?php if ($giorni === []): ?>
+                <p class="empty-state-small">Nessun impegno in questo mese.</p>
+            <?php endif; ?>
+            <?php foreach ($giorni as $chiave => $casella): ?>
+                <?php $oggi = $chiave === $adesso->format('Y-m-d'); ?>
+                <section class="agenda-giorno<?= $oggi ? ' oggi' : '' ?>" id="giorno-<?= $esc($chiave) ?>">
+                    <h3><?= $esc(Agenda::dataEstesa($casella['giorno'])) ?><?php if ($oggi): ?> <span class="badge agenda-badge-oggi">Oggi</span><?php endif; ?></h3>
+                    <?php if ($casella['eventi'] === []): ?>
+                        <p class="empty-state-small">Nessun impegno.</p>
+                    <?php endif; ?>
+                    <?php foreach ($casella['eventi'] as $e): ?>
+                        <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?>" href="<?= $esc((string) $e['url']) ?>">
+                            <span class="agenda-pillola-ora"><?= $esc($e['inizio']->format('H:i')) ?></span>
+                            <?= $esc((string) $e['titolo']) ?>
+                            <span class="sr-only">— <?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </section>
+            <?php endforeach; ?>
+            <p class="card-meta agenda-giorni-aiuto">Tocca un altro giorno con i puntini per vederne gli impegni.</p>
+        </div>
     </div>
+    <script src="/assets/js/agenda-mese.js"></script>
 
     <?php /* La legenda sta **sotto** alla griglia e non sopra: si guarda
              la prima volta, o quando un colore non torna, non a ogni

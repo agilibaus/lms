@@ -283,6 +283,22 @@ class Agenda
     }
 
     /** Lunedi'…domenica, nell'ordine della griglia. */
+    /**
+     * «Venerdì 16 ottobre»: il titolo di un giorno nell'agenda del mese al
+     * telefono (30/10, Alessandro: la data intera sopra ogni giorno).
+     */
+    public static function dataEstesa(\DateTimeImmutable $giorno): string
+    {
+        $mesi = [
+            1 => 'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+            'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+        ];
+        $nome = self::nomiGiorni()[(int) $giorno->format('N') - 1];
+
+        return mb_convert_case(mb_substr($nome, 0, 1), MB_CASE_UPPER) . mb_substr($nome, 1)
+            . ' ' . $giorno->format('j') . ' ' . $mesi[(int) $giorno->format('n')];
+    }
+
     public static function nomiGiorni(): array
     {
         return ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];

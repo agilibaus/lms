@@ -1564,11 +1564,14 @@ form.form + form {
         z-index: 30;
         transform: translateX(-100%);
         transition: transform 0.2s ease;
-        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
     }
 
+    /* L'ombra solo con il menu aperto (30/10): da chiuso il menu sta appena
+       fuori dallo schermo, e la sua ombra entrava di 14 px lungo il bordo
+       sinistro, una striscia grigia su ogni pagina. */
     .nav-toggle-checkbox:checked ~ .sidebar {
         transform: translateX(0);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
     }
 
     /* La striscia dietro al pulsante del menu.
@@ -5246,45 +5249,193 @@ fieldset.checkbox-group legend {
     color: #5A4420;
 }
 
-/* Sotto i 36 rem di spazio la griglia diventa un elenco dei soli giorni
-   che hanno qualcosa.
+/* Il calendario piccolo e i giorni (30/10, Alessandro, C) servono solo
+   al telefono: sul computer c'e' la griglia. */
+.agenda-mini,
+.agenda-giorni {
+    display: none;
+}
+
+/* Sotto i 36 rem di spazio (il telefono) al posto della griglia ci sono un
+   calendario piccolo e, sotto, il giorno scelto.
 
    Non e' una preferenza: sette colonne in 320 px fanno caselle da 40 px,
-   dove un titolo non ci sta e un bersaglio da toccare nemmeno. Come per le
-   tabelle, la soglia e' sullo **spazio che la griglia ha davvero** e non
-   sulla larghezza della finestra, perche' la barra laterale cambia la
-   seconda senza cambiare la prima. */
+   dove un titolo non ci sta. Come per le tabelle, la soglia e' sullo
+   **spazio che la griglia ha davvero** e non sulla larghezza della
+   finestra, perche' la barra laterale cambia la seconda senza cambiare la
+   prima. Dove `@container` non e' supportato resta la griglia. */
 @container agenda (max-width: 36rem) {
-    .agenda-griglia,
-    .agenda-griglia tbody,
-    .agenda-griglia tr,
-    .agenda-griglia td {
-        display: block;
-        width: auto;
-        height: auto;
+    .agenda-griglia {
+        display: none;
     }
 
-    /* I nomi dei giorni restano per chi legge con un lettore di schermo:
-       senza, le caselle perderebbero il proprio nome di colonna. */
-    .agenda-griglia thead {
+    /* Il cambio di mese su una riga: le frecce ai lati, il mese al centro.
+       I nomi dei mesi accanto alle frecce restano per i lettori di
+       schermo. */
+    .agenda-mesi {
+        flex-wrap: nowrap;
+    }
+
+    .agenda-freccia {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 0.9rem;
+        justify-content: center;
+    }
+
+    .agenda-mesi-nome {
         position: absolute;
         width: 1px;
         height: 1px;
         overflow: hidden;
         clip-path: inset(50%);
+        white-space: nowrap;
     }
 
-    /* I giorni vuoti e quelli di orlo spariscono: in un elenco una riga
-       «17» senza niente sotto e' solo una riga da scorrere. */
-    .agenda-griglia td.fuori-mese,
-    .agenda-griglia td:not(:has(.agenda-pillola)) {
+    .agenda-mini {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 1rem;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+    }
+
+    .agenda-mini th {
+        padding: 0.3rem 0 0.1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        text-align: center;
+    }
+
+    .agenda-mini td {
+        height: 44px;
+        padding: 0;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .agenda-mini-giorno {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .agenda-mini-numero {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+    }
+
+    .agenda-mini td.con-impegni .agenda-mini-numero {
+        font-weight: 700;
+    }
+
+    .agenda-mini td.fuori-mese .agenda-mini-numero {
+        color: var(--color-text-muted);
+        opacity: 0.55;
+    }
+
+    /* Oggi nel cerchio verde; il giorno scelto, se non e' oggi, cerchiato. */
+    .agenda-mini td.oggi .agenda-mini-numero {
+        background: var(--color-primary);
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .agenda-mini-giorno.scelto .agenda-mini-numero {
+        outline: 2px solid var(--color-primary);
+        outline-offset: -2px;
+    }
+
+    .agenda-mini td.oggi .agenda-mini-giorno.scelto .agenda-mini-numero {
+        outline: 0;
+    }
+
+    /* Un puntino per impegno (al massimo tre), del colore del suo tipo:
+       quello della legenda, piu' scuro perche' su un puntino piccolo un
+       colore tenue non si vedrebbe. Lo spazio c'e' anche senza puntini,
+       perche' i numeri restino allineati. */
+    .agenda-punti {
+        display: flex;
+        gap: 2px;
+        justify-content: center;
+        height: 6px;
+        margin-top: 1px;
+    }
+
+    .agenda-punto {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
+    .agenda-punto.agenda-incontro {
+        background: var(--color-primary);
+    }
+
+    .agenda-punto.agenda-apertura {
+        background: #9A6B1F;
+    }
+
+    .agenda-giorni {
+        display: block;
+        margin-bottom: 0.4rem;
+    }
+
+    .agenda-giorno {
+        display: grid;
+        gap: 0.35rem;
+        margin-bottom: 0.6rem;
+        padding: 0.7rem 0.8rem;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+    }
+
+    .agenda-giorno[hidden] {
         display: none;
     }
 
-    .agenda-griglia td {
-        margin-bottom: 0.4rem;
-        border-left-width: 4px;
-        border-left-color: var(--color-primary);
+    .agenda-giorno.oggi {
+        border-color: var(--color-primary);
+        box-shadow: inset 3px 0 0 var(--color-primary);
+    }
+
+    .agenda-giorno h3 {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 0 0.05rem;
+        font-size: 1rem;
+    }
+
+    .agenda-badge-oggi {
+        background: var(--color-primary);
+        color: #fff;
+    }
+
+    /* L'invito a toccare un altro giorno ha senso solo quando si vede un
+       giorno solo, cioe' con JavaScript (`agenda-mese.js` mette
+       `data-scelta`). */
+    .agenda-mese:not([data-scelta]) .agenda-giorni-aiuto {
+        display: none;
+    }
+
+    .agenda-giorni-aiuto {
+        margin: 0.2rem 0 0.6rem;
     }
 }
 

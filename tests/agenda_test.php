@@ -332,6 +332,11 @@ check(
     'il limite di riga e in ottetti: tagliando a meta di una «à» escono byte non validi'
 );
 
+// La data intera sopra ogni giorno, al telefono (30/10): giorno della
+// settimana con la maiuscola, numero senza zero, mese minuscolo.
+check('la data estesa: «Venerdì 16 ottobre»', Agenda::dataEstesa(new DateTimeImmutable('2026-10-16')) === 'Venerdì 16 ottobre');
+check('anche di domenica e del primo del mese: «Domenica 1 novembre»', Agenda::dataEstesa(new DateTimeImmutable('2026-11-01')) === 'Domenica 1 novembre');
+
 echo PHP_EOL . "Totale: {$ok} superati, {$fail} falliti" . PHP_EOL;
 
 exit($fail > 0 ? 1 : 0);

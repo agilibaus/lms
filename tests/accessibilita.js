@@ -1982,6 +1982,66 @@ async function giroSenzaMouse(browser) {
 }
 
 /*
+ * L'AGENDA DEL MESE AL TELEFONO (30/10, Alessandro, C). Al telefono, al posto
+ * della griglia, un calendario piccolo e sotto un giorno solo: all'avvio
+ * oggi o il primo con impegni, e toccando un giorno con i puntini il suo. Il
+ * cambio di mese sta su una riga, con il mese al centro. Sul computer resta
+ * la griglia. In tutte e due il menu laterale chiuso non lascia la sua ombra
+ * sul bordo sinistro.
+ */
+async function giroAgendaMese(browser) {
+    console.log('\n=== agenda del mese, telefono e computer ===');
+    for (const [larghezza, altezza, telefono] of [[390, 844, true], [1280, 900, false]]) {
+        const ctx = await browser.newContext({ viewport: { width: larghezza, height: altezza }, isMobile: telefono, hasTouch: telefono });
+        const page = await ctx.newPage();
+        await page.goto(BASE + '/login');
+        await page.fill('input[name="email"]', ADMIN);
+        await page.fill('input[name="password"]', PASS);
+        await page.click('form.auth-form button[type="submit"]');
+        await page.waitForLoadState('load');
+        await page.goto(BASE + '/agenda?vista=mese');
+        const stato = () => page.evaluate(() => {
+            const visibile = (e) => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+            const frecce = [...document.querySelectorAll('.agenda-mesi a')].map((a) => a.getBoundingClientRect());
+            const titolo = document.querySelector('.agenda-mesi h2').getBoundingClientRect();
+            return {
+                griglia: visibile(document.querySelector('.agenda-griglia')),
+                mini: visibile(document.querySelector('.agenda-mini')),
+                giorni: [...document.querySelectorAll('.agenda-giorno')].filter(visibile).map((g) => g.id),
+                oggi: (document.querySelector('.agenda-giorno.oggi') || {}).id || null,
+                primo: (document.querySelector('.agenda-giorno') || {}).id || null,
+                unaRiga: frecce.length === 2 && Math.abs(frecce[0].top - frecce[1].top) < 2
+                    && frecce[0].right <= titolo.left && titolo.right <= frecce[1].left,
+                // Le frecce sole, senza i nomi dei mesi accanto: piu' strette di 64 px.
+                larghezzeFrecce: frecce.map((r) => Math.round(r.width)),
+                ombra: getComputedStyle(document.querySelector('.sidebar')).boxShadow,
+            };
+        });
+        const prima = await stato();
+        check(larghezza + ': il menu laterale chiuso non lascia la sua ombra sul bordo sinistro', prima.ombra === 'none', [prima.ombra]);
+        if (!telefono) {
+            check(larghezza + ': sul computer l\'agenda del mese resta la griglia', prima.griglia && !prima.mini && prima.giorni.length === 0,
+                [JSON.stringify(prima)]);
+            await ctx.close();
+            continue;
+        }
+        check(larghezza + ': al telefono il calendario piccolo al posto della griglia, il cambio di mese su una riga con il mese al centro',
+            !prima.griglia && prima.mini && prima.unaRiga && prima.larghezzeFrecce.every((l) => l < 64), [JSON.stringify(prima)]);
+        check(larghezza + ': sotto, un giorno solo: oggi, o il primo con impegni',
+            prima.giorni.length === 1 && prima.giorni[0] === (prima.oggi || prima.primo), [JSON.stringify(prima)]);
+        const altro = page.locator('.agenda-mini-giorno:not(.scelto)').first();
+        const scelto = (await altro.count()) > 0 ? (await altro.getAttribute('href')).slice(1) : null;
+        if (scelto !== null) {
+            await altro.click();
+        }
+        const dopo = await stato();
+        check(larghezza + ': toccando un altro giorno del calendario si vede il suo, e solo quello',
+            scelto !== null && dopo.giorni.length === 1 && dopo.giorni[0] === scelto, ['scelto: ' + scelto, JSON.stringify(dopo)]);
+        await ctx.close();
+    }
+}
+
+/*
  * IL BENVENUTO DEL TUTOR VISTO DALLO STUDENTE (07/10). Tutti gli altri giri
  * entrano come admin, e l'admin il benvenuto in cima al corso non lo vede:
  * e' per lo studente del gruppo del tutor. Qui entra lo studente del mondo
@@ -3104,6 +3164,7 @@ async function giroBenvenuto(browser) {
         await giroLarghezzeEstreme(browser);
         await giroSenzaMouse(browser);
         await giroBenvenuto(browser);
+        await giroAgendaMese(browser);
     } finally {
         await browser.close();
         codaDiProva(false);
