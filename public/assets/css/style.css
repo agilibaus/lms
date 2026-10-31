@@ -4690,6 +4690,28 @@ fieldset.checkbox-group legend {
     font: inherit;
 }
 
+/* Al telefono (30/10, Alessandro, A): i tre campi uno sotto l'altro, a
+   tutta larghezza, e «Invia» sotto, largo quanto loro e alto 44 px. In fila
+   non ci stavano: due sulla prima riga, il terzo con «Invia» sulla seconda.
+   La soglia e' dove la riga intera (tre campi da 9 rem e il pulsante) non
+   entra piu' nel riquadro. */
+@media (max-width: 40rem) {
+    .tre-parole-campi {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+
+    .tre-parole-campi input[type="text"] {
+        width: 100%;
+    }
+
+    .tre-parole-campi .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
 .tre-parole .tre-parole-nota {
     margin: 0.7rem 0 0;
     font-size: 0.88rem;
