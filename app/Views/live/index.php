@@ -49,9 +49,13 @@ $sessions = $ordine->applica($sessions);
              e' per chi organizza. */ ?>
     <?php require __DIR__ . '/_elenco.php'; ?>
 <?php else: ?>
-    <?php /* Sei colonne: sotto i 50 rem di spazio diventa un elenco di
-             schede (vedi `.tabella-schede`). */ ?>
-    <div class="tabella-schede">
+    <?php /* Sei colonne. Sopra i 50 rem di spazio la tabella, ordinabile.
+             Sotto (il telefono, 30/10, Alessandro, disposizione B) un
+             elenco a parte, `live-schede`, piu' sotto: prima le prossime,
+             poi le concluse chiuse, con la scheda corretta. Lo spazio di
+             `live-elenco` decide quale dei due si vede. */ ?>
+    <div class="live-elenco">
+    <div class="tabella-schede live-tabella">
     <table class="data-table" role="table">
         <thead role="rowgroup">
         <tr role="row">
@@ -135,5 +139,97 @@ $sessions = $ordine->applica($sessions);
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
+
+    <?php
+    // Il telefono: le prossime dalla piu' vicina, le concluse dalla piu'
+    // recente. L'ordine fisso fa il lavoro di «Quando» e «Sessione», che qui
+    // non ci sono (proposta 1).
+    $prossime = [];
+    $concluse = [];
+    foreach ($sessions as $session) {
+        if (new DateTimeImmutable((string) $session['ends_at']) < $now) {
+            $concluse[] = $session;
+        } else {
+            $prossime[] = $session;
+        }
+    }
+    usort($prossime, static fn (array $a, array $b): int => strcmp((string) $a['starts_at'], (string) $b['starts_at']));
+    usort($concluse, static fn (array $a, array $b): int => strcmp((string) $b['starts_at'], (string) $a['starts_at']));
+
+    // Una scheda: «Stato» sotto «Quando», «Link Meet» per intero, e
+    // «Accesso» solo finche' la sessione non e' conclusa.
+    $scheda = static function (array $session) use ($now, $canManage): string {
+        $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
+        $startsAt = new DateTimeImmutable((string) $session['starts_at']);
+        $endsAt = new DateTimeImmutable((string) $session['ends_at']);
+        $isLive = (bool) ($session['started'] ?? false);
+        $apribile = (bool) ($session['joinable'] ?? false);
+        $isPast = $endsAt < $now;
+        $conLink = !empty($session['meet_link']);
+        $id = (int) $session['id'];
+
+        $stato = $isLive ? '<strong class="live-in-corso">In corso</strong>' : ($isPast ? 'Conclusa' : 'In programma');
+        $link = !$conLink ? '<span class="live-assente">Assente</span>'
+            : (!empty($session['google_event_id']) ? 'Creato da Google Calendar' : 'Inserito a mano');
+        $destinatari = '';
+        if (!empty($session['course_title'])) {
+            $destinatari .= '<span class="cell-line">' . $e((string) $session['course_title']) . ' · ' . $e((string) $session['module_title']) . '</span>';
+        }
+        if (!empty($session['group_name'])) {
+            $destinatari .= '<span class="cell-line">Gruppo: ' . $e((string) $session['group_name']) . '</span>';
+        }
+
+        $html = '<tr role="row" class="' . ($isPast ? 'row-past' : '') . '">'
+            . '<td role="cell" data-label="Quando">' . $e($startsAt->format('d/m/Y H:i')) . '–' . $e($endsAt->format('H:i')) . '</td>'
+            . '<td role="cell" data-label="Stato">' . $stato . '</td>'
+            . '<td role="cell" data-label="Sessione"><a href="/live/' . $id . '">' . $e((string) $session['title']) . '</a></td>'
+            . '<td role="cell" data-label="Destinatari">' . $destinatari . '</td>'
+            . '<td role="cell" data-label="Link Meet">' . $link . '</td>';
+
+        if (!$isPast) {
+            $accesso = !$conLink ? 'Impossibile senza link'
+                : ($apribile
+                    ? '<a href="/live/' . $id . '/join" class="btn btn-primary btn-con-icona live-entra" target="_blank" rel="noopener">'
+                        . Icona::svg('camera-video') . 'Entra</a>'
+                    : 'Da 15 minuti prima');
+            $html .= '<td role="cell" data-label="Accesso">' . $accesso . '</td>';
+        }
+
+        $html .= '<td role="cell" class="row-actions">';
+        if ($canManage && \App\Core\LiveScope::gestibile($session)) {
+            $html .= '<a href="/live/' . $id . '/edit" class="comando-con-icona">' . Icona::svg('pencil') . 'Modifica</a>';
+        }
+
+        return $html . '</td></tr>';
+    };
+
+    // Le intestazioni ci sono per chi legge con un lettore di schermo, ma
+    // non ordinano: in modalita' schede restano fuori dalla vista.
+    $tabellaSchede = static function (array $elenco) use ($scheda): string {
+        return '<div class="tabella-schede"><table class="data-table" role="table"><thead role="rowgroup"><tr role="row">'
+            . '<th scope="col" role="columnheader">Quando</th><th scope="col" role="columnheader">Stato</th>'
+            . '<th scope="col" role="columnheader">Sessione</th><th scope="col" role="columnheader">Destinatari</th>'
+            . '<th scope="col" role="columnheader">Link Meet</th><th scope="col" role="columnheader">Accesso</th>'
+            . '<th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th></tr></thead>'
+            . '<tbody role="rowgroup">' . implode('', array_map($scheda, $elenco)) . '</tbody></table></div>';
+    };
+    ?>
+    <div class="live-schede">
+        <h2 class="live-gruppo">Prossime <span class="badge badge-muted"><?= count($prossime) ?></span></h2>
+        <?php if ($prossime === []): ?>
+            <p class="empty-state-small">Nessuna sessione in programma.</p>
+        <?php else: ?>
+            <?= $tabellaSchede($prossime) ?>
+        <?php endif; ?>
+
+        <?php if ($concluse !== []): ?>
+            <details class="live-concluse">
+                <summary class="live-gruppo">Concluse <span class="badge badge-muted"><?= count($concluse) ?></span>
+                    <span class="card-meta">— le più recenti per prime</span></summary>
+                <?= $tabellaSchede($concluse) ?>
+            </details>
+        <?php endif; ?>
+    </div>
     </div>
 <?php endif; ?>

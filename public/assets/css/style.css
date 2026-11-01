@@ -3891,6 +3891,71 @@ fieldset.checkbox-group legend {
     container-name: tabella;
 }
 
+/* «Sessioni live» (30/10, Alessandro, disposizione B): sopra i 50 rem di
+   spazio la tabella ordinabile, sotto le schede del telefono, divise in
+   prossime e concluse. La soglia e' quella delle schede di
+   `.tabella-schede`; dove `@container` non c'e', resta la tabella. */
+.live-elenco {
+    container-type: inline-size;
+    container-name: live;
+}
+
+.live-schede {
+    display: none;
+}
+
+@container live (max-width: 50rem) {
+    .live-tabella {
+        display: none;
+    }
+
+    .live-schede {
+        display: block;
+    }
+}
+
+.live-gruppo {
+    font-size: 1.15rem;
+    margin: 0.4rem 0 0.2rem;
+}
+
+.live-concluse {
+    margin-top: 1.2rem;
+}
+
+.live-concluse > summary {
+    cursor: pointer;
+    font-weight: 700;
+    padding: 0.4rem 0;
+}
+
+.live-concluse > summary .card-meta {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+/* «In corso» nel verde del bollino che c'era prima; «Assente» in rosso. */
+.live-in-corso {
+    color: var(--color-primary-hover);
+}
+
+.live-assente {
+    color: var(--color-danger);
+}
+
+/* «Entra» e' un pulsante verde, ma della misura del testo della scheda:
+   alto 28 px, largo quanto la parola e l'icona. */
+.tabella-schede .live-entra {
+    font-size: inherit;
+    min-height: 0;
+    padding: 0.25rem 0.75rem;
+    gap: 0.4rem;
+    line-height: 1.4;
+    justify-self: start;
+    width: max-content;
+}
+
 .tabella-schede .data-table td {
     overflow-wrap: anywhere;
 }
