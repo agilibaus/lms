@@ -60,9 +60,13 @@ $sessions = $ordine->applica($sessions);
         <thead role="rowgroup">
         <tr role="row">
             <?= $ordine->th('Quando', 'quando') ?>
+            <?php /* Le parole delle schede del telefono anche qui (30/10,
+                     Alessandro, forma 1): «Stato» in una colonna sua, che
+                     non va mai a capo, e «Link Meet» per intero. */ ?>
+            <th scope="col" role="columnheader">Stato</th>
             <?= $ordine->th('Sessione', 'sessione') ?>
             <th scope="col" role="columnheader">Destinatari</th>
-            <th scope="col" role="columnheader">Meet</th>
+            <th scope="col" role="columnheader">Link Meet</th>
             <th scope="col" role="columnheader">Accesso</th>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
         </tr>
@@ -82,11 +86,9 @@ $sessions = $ordine->applica($sessions);
             <tr role="row" class="<?= $isPast ? 'row-past' : '' ?>">
                 <td role="cell" data-label="Quando">
                     <?= htmlspecialchars($startsAt->format('d/m/Y H:i')) ?>–<?= htmlspecialchars($endsAt->format('H:i')) ?>
-                    <?php if ($isLive): ?>
-                        <span class="badge badge-success">in corso</span>
-                    <?php elseif ($isPast): ?>
-                        <span class="badge">conclusa</span>
-                    <?php endif; ?>
+                </td>
+                <td role="cell" data-label="Stato" class="live-stato">
+                    <?= $isLive ? '<strong class="live-in-corso">In corso</strong>' : ($isPast ? 'Conclusa' : 'In programma') ?>
                 </td>
                 <td role="cell" data-label="Sessione"><a href="/live/<?= (int) $session['id'] ?>"><?= htmlspecialchars((string) $session['title']) ?></a></td>
                 <td role="cell" data-label="Destinatari">
@@ -97,15 +99,11 @@ $sessions = $ordine->applica($sessions);
                         <span class="cell-line">Gruppo: <?= htmlspecialchars((string) $session['group_name']) ?></span>
                     <?php endif; ?>
                 </td>
-                <td role="cell" data-label="Meet">
+                <td role="cell" data-label="Link Meet">
                     <?php if (!empty($session['meet_link'])): ?>
-                        <?php if (!empty($session['google_event_id'])): ?>
-                            <span class="badge badge-success">Google</span>
-                        <?php else: ?>
-                            <span class="badge">manuale</span>
-                        <?php endif; ?>
+                        <?= !empty($session['google_event_id']) ? 'Creato da Google Calendar' : 'Inserito a mano' ?>
                     <?php else: ?>
-                        <span class="badge badge-danger">assente</span>
+                        <span class="live-assente">Assente</span>
                     <?php endif; ?>
                 </td>
                 <?php /* La colonna dice sempre **come si entra**, e cambia
@@ -124,10 +122,12 @@ $sessions = $ordine->applica($sessions);
                          (vedi §5). */ ?>
                 <td role="cell" data-label="Accesso">
                     <?php if (!empty($session['meet_link']) && $apribile): ?>
-                        <a href="/live/<?= (int) $session['id'] ?>/join" class="comando-con-icona"
+                        <a href="/live/<?= (int) $session['id'] ?>/join" class="btn btn-primary btn-con-icona live-entra"
                            target="_blank" rel="noopener"><?= Icona::svg('camera-video') ?>Entra</a>
                     <?php elseif (!empty($session['meet_link']) && !$isPast): ?>
                         Da 15 minuti prima
+                    <?php elseif (!$isPast): ?>
+                        Impossibile senza link
                     <?php endif; ?>
                 </td>
                 <td role="cell" class="row-actions">

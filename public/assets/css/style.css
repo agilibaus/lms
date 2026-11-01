@@ -3935,6 +3935,13 @@ fieldset.checkbox-group legend {
     font-weight: 400;
 }
 
+/* La colonna «Stato» della tabella non va mai a capo: «In programma»
+   spezzato in «program-ma» non si leggeva. */
+.tabella-schede .live-stato {
+    white-space: nowrap;
+    overflow-wrap: normal;
+}
+
 /* «In corso» nel verde del bollino che c'era prima; «Assente» in rosso. */
 .live-in-corso {
     color: var(--color-primary-hover);
