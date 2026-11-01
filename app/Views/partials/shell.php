@@ -265,5 +265,9 @@ use App\Core\Csrf;
 </div>
 <?php /* «Annulla» che rimette i valori salvati (14/10): contatori, editor e pannelli. */ ?>
 <script src="/assets/js/annulla.js" defer></script>
+<?php /* Le tendine (Esc e un tocco fuori le chiudono) e «Ordina per» nelle
+         schede delle tabelle al telefono (30/10), su ogni pagina. */ ?>
+<script src="/assets/js/dropdown.js" defer></script>
+<script src="/assets/js/schede-ordina.js" defer></script>
 </body>
 </html>

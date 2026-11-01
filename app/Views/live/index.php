@@ -207,7 +207,7 @@ $sessions = $ordine->applica($sessions);
     // Le intestazioni ci sono per chi legge con un lettore di schermo, ma
     // non ordinano: in modalita' schede restano fuori dalla vista.
     $tabellaSchede = static function (array $elenco) use ($scheda): string {
-        return '<div class="tabella-schede"><table class="data-table" role="table"><thead role="rowgroup"><tr role="row">'
+        return '<div class="tabella-schede schede-senza-titolo"><table class="data-table" role="table"><thead role="rowgroup"><tr role="row">'
             . '<th scope="col" role="columnheader">Quando</th><th scope="col" role="columnheader">Stato</th>'
             . '<th scope="col" role="columnheader">Sessione</th><th scope="col" role="columnheader">Destinatari</th>'
             . '<th scope="col" role="columnheader">Link Meet</th><th scope="col" role="columnheader">Accesso</th>'

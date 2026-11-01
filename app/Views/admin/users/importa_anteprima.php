@@ -39,7 +39,8 @@ use App\Core\Csrf;
 <section class="card">
     <h2>Riga per riga</h2>
 
-    <div class="tabella-schede">
+    <?php /* La prima colonna e' il numero di riga: niente titolo dalla prima colonna. */ ?>
+    <div class="tabella-schede schede-senza-titolo">
         <table class="data-table" role="table">
             <thead role="rowgroup">
             <tr role="row">

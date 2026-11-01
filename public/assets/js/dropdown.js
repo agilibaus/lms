@@ -14,6 +14,13 @@
 (function () {
     'use strict';
 
+    // Dal 30/10 lo carica ogni pagina; le pagine che lo caricavano gia' da
+    // sole non lo devono attivare una seconda volta.
+    if (window.tendineAttive) {
+        return;
+    }
+    window.tendineAttive = true;
+
     function chiudiTutte(tranne) {
         var tendine = document.querySelectorAll('details.dropdown[open]');
 
