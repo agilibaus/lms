@@ -405,6 +405,25 @@ class UserModel
     }
 
     /**
+     * L'amministratore attivo diverso da `$exceptId`, o null (30/10,
+     * Alessandro: l'admin e' uno solo). Serve a rifiutare un secondo admin.
+     *
+     * @return array{id: int, full_name: string, email: string}|null
+     */
+    public static function altroAdminAttivo(?int $exceptId = null): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id, full_name, email FROM users
+             WHERE role = \'admin\' AND is_active = 1 AND (:except_id IS NULL OR id <> :except_id2)
+             ORDER BY id LIMIT 1'
+        );
+        $stmt->execute(['except_id' => $exceptId, 'except_id2' => $exceptId ?? 0]);
+        $riga = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $riga === false ? null : ['id' => (int) $riga['id'], 'full_name' => (string) $riga['full_name'], 'email' => (string) $riga['email']];
+    }
+
+    /**
      * Numero di amministratori attivi: serve a impedire di rimuovere l'ultimo admin.
      */
     public static function countActiveAdmins(?int $exceptId = null): int

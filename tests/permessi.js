@@ -3299,11 +3299,57 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     campo && nascosto, ['visibile da tutor: ' + campo + ', nascosto da studente: ' + nascosto]);
             }
 
+            // L'amministratore e' uno solo (30/10, Alessandro). Un secondo
+            // admin non nasce dal pannello, ne' per promozione; chi e' gia'
+            // admin salva come prima. Il cambio si fa nel database.
+            {
+                const opzioni = async (url) => {
+                    await page.goto(BASE + url);
+                    return page.evaluate(() => [...document.querySelectorAll('#role option')].map((o) => o.value));
+                };
+                const errore = async (url) => {
+                    await page.goto(BASE + url);
+                    return page.evaluate(() => ((document.querySelector('.alert-error') || {}).textContent || '').trim());
+                };
+                const io = leggi('admin@test.it');
+
+                const nuovo = await opzioni('/admin/users/create');
+                const mio = await opzioni('/admin/users/' + io.id + '/edit');
+                check('admin unico: «Nuovo utente» non offre «Admin»; la scheda dell\'admin attivo si', !nuovo.includes('admin') && nuovo.length > 0 && mio.includes('admin'),
+                    ['nuovo: ' + nuovo.join(','), 'admin: ' + mio.join(',')]);
+
+                await esitoPost(page, '/admin/users', persona('d', 'admin'), '/admin/users/create');
+                creati.push(chi('d'));
+                const rifiuto = await errore('/admin/users/create');
+                check('admin unico: un secondo admin mandato a mano non si crea, e l\'avviso dice chi c\'è già',
+                    chi('d') === null && rifiuto.startsWith('L\'amministratore è uno solo, e c\'è già:'), [rifiuto, JSON.stringify(chi('d'))]);
+
+                await esitoPost(page, '/admin/users', persona('e', 'studente'), '/admin/users/create');
+                const studente = chi('e');
+                creati.push(studente);
+                check('admin unico: controprova, uno studente si crea', !!studente && studente.role === 'studente', [JSON.stringify(studente)]);
+
+                if (studente) {
+                    await esitoPost(page, '/admin/users/' + studente.id, persona('e', 'admin'), '/admin/users/' + studente.id + '/edit');
+                    const promosso = chi('e');
+                    const rifiutoPromozione = await errore('/admin/users/' + studente.id + '/edit');
+                    check('admin unico: uno studente non diventa admin, e l\'avviso lo dice',
+                        !!promosso && promosso.role === 'studente' && rifiutoPromozione.startsWith('L\'amministratore è uno solo'), [rifiutoPromozione, JSON.stringify(promosso)]);
+                }
+
+                const datiAdmin = [['first_name', 'Admin'], ['last_name', 'Prova'], ['email', 'admin@test.it'], ['role', 'admin'], ['is_active', '1']];
+                const salvato = await esitoPost(page, '/admin/users/' + io.id, datiAdmin, '/admin/users/' + io.id + '/edit');
+                const dopo = leggi('admin@test.it');
+                const erroreAdmin = await errore('/admin/users/' + io.id + '/edit');
+                check('admin unico: controprova, l\'admin attivo salva la sua scheda come prima', !!dopo && dopo.role === 'admin' && erroreAdmin === '',
+                    [JSON.stringify(salvato), erroreAdmin]);
+            }
+
             // Pulizia: via chi e' stato creato, anche per sbaglio.
             for (const u of creati.filter((x) => x !== null)) {
                 await esitoPost(page, '/admin/users/' + u.id + '/delete', [], '/admin/users/' + u.id + '/edit');
             }
-            check('pulizia: gli utenti di prova si tolgono', ['a', 'b', 'c'].every((caso) => chi(caso) === null));
+            check('pulizia: gli utenti di prova si tolgono', ['a', 'b', 'c', 'd', 'e'].every((caso) => chi(caso) === null));
 
             await ctx.close();
         }

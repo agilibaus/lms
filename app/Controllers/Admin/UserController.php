@@ -95,7 +95,7 @@ class UserController extends AdminController
             'pageTitle' => 'Nuovo utente',
             'user' => null,
             'tutors' => UserModel::byRoles(['tutor']),
-            'roles' => $this->assignableRoles(),
+            'roles' => $this->ruoliPer(null),
         ]);
     }
 
@@ -116,6 +116,8 @@ class UserController extends AdminController
         if (UserModel::emailExists($data['email'])) {
             $this->fail('Esiste già un utente con questa email.', '/admin/users/create');
         }
+
+        $this->rifiutaSecondoAdmin($data, null, '/admin/users/create');
 
         $foto = $this->fotoNelModulo();
         $this->controllaFoto($data['role'], $foto, false, '/admin/users/create');
@@ -204,7 +206,9 @@ class UserController extends AdminController
             'user' => $user,
             'tutors' => UserModel::byRoles(['tutor']),
             'assistantTutorIds' => UserModel::tutorIdsForAssistant((int) $user['id']),
-            'roles' => $this->assignableRoles(),
+            'roles' => $user['role'] === 'admin' && (int) $user['is_active'] === 1
+                ? $this->assignableRoles()
+                : $this->ruoliPer((int) $user['id']),
             'groups' => $groups,
             'canManageGroups' => Auth::can('group.manage'),
             // I gruppi in cui chi guarda puo' mettere questo utente: tutti per
@@ -254,6 +258,12 @@ class UserController extends AdminController
             && UserModel::countActiveAdmins($id) === 0
         ) {
             $this->fail('Deve restare almeno un amministratore attivo.', $redirect);
+        }
+
+        // Diventare admin, o riattivare un admin disattivato, quando ce n'e'
+        // gia' un altro attivo. Chi e' gia' admin attivo salva come prima.
+        if (!($user['role'] === 'admin' && (int) $user['is_active'] === 1)) {
+            $this->rifiutaSecondoAdmin($data, $id, $redirect);
         }
 
         $foto = $this->fotoNelModulo();
@@ -663,6 +673,47 @@ class UserController extends AdminController
     private function assignableRoles(): array
     {
         return Auth::can('user.manage') ? Auth::ROLES : ['assistente'];
+    }
+
+    /**
+     * L'amministratore e' uno solo (30/10, Alessandro): «Admin» si offre
+     * solo a chi lo e' gia', o se non c'e' nessun altro admin attivo (cioe'
+     * mai, in pratica: deve sempre restarcene uno). Un'opzione che verrebbe
+     * sempre rifiutata sarebbe un comando che non fa quello che dice. Il
+     * cambio di admin si fa a mano nel database.
+     *
+     * @return list<string>
+     */
+    private function ruoliPer(?int $userId): array
+    {
+        $ruoli = $this->assignableRoles();
+
+        if (UserModel::altroAdminAttivo($userId) !== null) {
+            $ruoli = array_values(array_filter($ruoli, static fn (string $r): bool => $r !== 'admin'));
+        }
+
+        return $ruoli;
+    }
+
+    /**
+     * Rifiuta un secondo amministratore attivo (vedi `ruoliPer`), con il nome
+     * di quello che c'e' gia'. Il controllo del server vale anche per chi
+     * manda «admin» a mano.
+     *
+     * @param array{role: string, is_active: bool} $data
+     */
+    private function rifiutaSecondoAdmin(array $data, ?int $userId, string $redirect): void
+    {
+        if ($data['role'] !== 'admin' || !$data['is_active']) {
+            return;
+        }
+
+        $altro = UserModel::altroAdminAttivo($userId);
+
+        if ($altro !== null) {
+            $this->fail('L\'amministratore è uno solo, e c\'è già: ' . $altro['full_name']
+                . '. Il cambio di amministratore si fa nel database.', $redirect);
+        }
     }
 
     /**
