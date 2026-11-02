@@ -25,7 +25,7 @@ use App\Core\TreParole;
  * @var string $vista
  * @var list<array<string, mixed>> $righe
  * @var list<array{user_id: int, full_name: string, completato_il: string}> $aCuiChiedere
- * @var array<int, int> $risposte quante risposte ha ogni modulo nel gruppo (id => numero)
+ * @var int $membri i membri del gruppo, per «1 studente su 7»
  */
 
 $esc = static fn (?string $v): string => htmlspecialchars((string) $v);
@@ -94,8 +94,7 @@ $attivo = !empty($corso['three_words_since']);
                 <label for="tp-modulo">Modulo</label>
                 <select id="tp-modulo" name="modulo">
                     <?php foreach ($moduli as $i => $m): ?>
-                        <?php $r = $risposte[(int) $m['id']] ?? 0; ?>
-                        <option value="<?= $i + 1 ?>" <?= $numero === $i + 1 ? 'selected' : '' ?>><?= $i + 1 ?> · <?= $esc((string) $m['title']) ?> — <?= $r === 0 ? 'nessuna risposta' : ($r === 1 ? '1 risposta' : $r . ' risposte') ?></option>
+                        <option value="<?= $i + 1 ?>" <?= $numero === $i + 1 ? 'selected' : '' ?>><?= $esc((string) $m['title']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </span>
@@ -130,10 +129,10 @@ $attivo = !empty($corso['three_words_since']);
                 </p>
             <?php endif; ?>
         <?php else: ?>
-            <?php /* «1 studente su 7 ha risposto» (30/10): il 7 sono quelli che
-                     hanno completato il modulo, a cui le parole sono chieste. */ ?>
+            <?php /* «1 studente su 7 ha risposto» (30/10, Alessandro): il 7 sono i
+                     membri del gruppo. */ ?>
             <p class="tp-quanti">
-                <?= count($righe) ?> <?= count($righe) === 1 ? 'studente' : 'studenti' ?> su <?= $quanti ?>
+                <?= count($righe) ?> <?= count($righe) === 1 ? 'studente' : 'studenti' ?> su <?= $membri ?>
                 <?= count($righe) === 1 ? 'ha risposto' : 'hanno risposto' ?>
             </p>
 

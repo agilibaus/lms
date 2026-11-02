@@ -705,6 +705,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             sql('UPDATE courses SET three_words_since = NOW() - INTERVAL 1 DAY WHERE id = ?', A.corso);
             parola(d.utenti.studenteA, A.gruppo, 'paroladia');
             parola(d.utenti.studenteB, B.gruppo, 'paroladib');
+            // Un secondo membro del gruppo A, che il modulo non l'ha
+            // completato: «su N» deve contare i membri (2), non chi ha
+            // completato il modulo (1).
+            sql('INSERT IGNORE INTO group_members (group_id, user_id) VALUES (?, ?)', A.gruppo, d.utenti.studenteNuovo);
 
             try {
                 const { ctx, page } = await entra(browser, 'tutor1@test.it');
@@ -747,9 +751,14 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     frase: ((document.querySelector('.tp-quanti') || {}).textContent || '').replace(/\s+/g, ' ').trim(),
                     volte: [...document.querySelectorAll('.tp-nuvola li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()),
                 }));
-                check('admin → «1 studente su N ha risposto», e nella nuvola il numero accanto a ogni parola, anche ×1',
-                    /^1 studente su \d+ ha risposto$/.test(conti.frase) && conti.volte.length === 3 && conti.volte.every((v) => /×1 volta$/.test(v)),
-                    [JSON.stringify(conti)]);
+                // N e' il numero dei membri del gruppo (30/10).
+                const membri = Number(execFileSync('php', ['-r', 'require "vendor/autoload.php"; require "config/config.php";'
+                    + ' echo count(App\\Models\\GroupModel::members((int) $argv[1]));', '--', String(A.gruppo)], { cwd: radice, encoding: 'utf8' }).trim());
+                check('admin → «1 studente su N ha risposto» con N i membri del gruppo, e nella nuvola il numero accanto a ogni parola, anche ×1',
+                    membri === 2 && conti.frase === '1 studente su 2 ha risposto' && conti.volte.length === 3 && conti.volte.every((v) => /×1 volta$/.test(v)),
+                    [JSON.stringify(conti), 'membri: ' + membri]);
+                const voci = await admin.page.evaluate(() => [...document.querySelectorAll('#tp-modulo option')].map((o) => o.textContent.trim()));
+                check('admin → nel menu «Modulo» solo i titoli dei moduli', voci.length > 0 && voci.every((v) => !/risposta|risposte|·/.test(v)), [JSON.stringify(voci)]);
                 await admin.ctx.close();
 
                 // Lo studente A non ha completato il modulo (il suo tentativo
@@ -767,6 +776,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 check('studente del mondo A → POST tre parole per un modulo non completato: negato', m.esito === 'negato', m.esito === 'negato' ? [] : ['ottenuto ' + m.esito]);
                 await stud.ctx.close();
             } finally {
+                sql('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', A.gruppo, d.utenti.studenteNuovo);
                 sql('DELETE FROM module_words WHERE course_id = ?', A.corso);
                 sql('UPDATE courses SET three_words_since = NULL WHERE id = ?', A.corso);
             }

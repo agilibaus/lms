@@ -152,8 +152,9 @@ class TreParoleController
             'vista' => TreParole::vista($_GET['vista'] ?? null),
             'righe' => $righe,
             'aCuiChiedere' => $aCuiChiedere,
-            // Quante risposte ha ogni modulo nel gruppo, per il menu dei moduli.
-            'risposte' => $gruppo === null ? [] : TreParoleModel::contaPerModulo(array_map(static fn (array $m): int => (int) $m['id'], $moduli), $gruppo),
+            // «1 studente su 7»: 7 e' il numero dei membri del gruppo, lo stesso
+            // della pagina «Gruppi» (30/10, Alessandro).
+            'membri' => $gruppo === null ? 0 : count(GroupModel::members($gruppo)),
         ]);
     }
 
