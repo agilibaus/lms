@@ -25,6 +25,7 @@ use App\Core\TreParole;
  * @var string $vista
  * @var list<array<string, mixed>> $righe
  * @var list<array{user_id: int, full_name: string, completato_il: string}> $aCuiChiedere
+ * @var array<int, int> $risposte quante risposte ha ogni modulo nel gruppo (id => numero)
  */
 
 $esc = static fn (?string $v): string => htmlspecialchars((string) $v);
@@ -67,9 +68,39 @@ $attivo = !empty($corso['three_words_since']);
 
 <?php if ($moduli === []): ?>
     <p class="empty-state">Il corso non ha ancora moduli.</p>
+<?php elseif ($gruppo === null): ?>
+    <p class="empty-state">Il corso non è assegnato a nessun gruppo: le tre parole si leggono per gruppo.</p>
 <?php else: ?>
-    <?php /* Collegamenti, non tendine: l'indirizzo dice che cosa si sta
-             guardando, come nella griglia del corso. */ ?>
+    <?php /* Gruppo e modulo in due menu (30/10, Alessandro, proposta A),
+             dentro un modulo che li manda con GET: l'indirizzo dice ancora
+             che cosa si sta guardando, come quando erano collegamenti. Con
+             JavaScript la scelta ricarica da sola (tre-parole.js), senza c'e'
+             «Mostra». Si guarda sempre un gruppo: niente «Tutti». */ ?>
+    <div class="tp-filtri">
+        <form method="get" action="/tre-parole" class="tp-scelte" data-tp-scelte>
+            <input type="hidden" name="corso" value="<?= $corsoId ?>">
+            <?php if ($vista === TreParole::NOMI): ?>
+                <input type="hidden" name="vista" value="<?= $esc(TreParole::NOMI) ?>">
+            <?php endif; ?>
+            <span class="tp-scelta">
+                <label for="tp-gruppo">Gruppo</label>
+                <select id="tp-gruppo" name="gruppo">
+                    <?php foreach ($gruppi as $id => $nome): ?>
+                        <option value="<?= (int) $id ?>" <?= $gruppo === $id ? 'selected' : '' ?>><?= $esc($nome) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </span>
+            <span class="tp-scelta">
+                <label for="tp-modulo">Modulo</label>
+                <select id="tp-modulo" name="modulo">
+                    <?php foreach ($moduli as $i => $m): ?>
+                        <?php $r = $risposte[(int) $m['id']] ?? 0; ?>
+                        <option value="<?= $i + 1 ?>" <?= $numero === $i + 1 ? 'selected' : '' ?>><?= $i + 1 ?> · <?= $esc((string) $m['title']) ?> — <?= $r === 0 ? 'nessuna risposta' : ($r === 1 ? '1 risposta' : $r . ' risposte') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </span>
+            <button type="submit" class="btn btn-secondary tp-mostra">Mostra</button>
+        </form>
     <div class="griglia-filtri">
         <span class="griglia-filtri-etichetta" id="tp-vista">Vista</span>
         <nav class="agenda-viste" aria-labelledby="tp-vista">
@@ -78,27 +109,9 @@ $attivo = !empty($corso['three_words_since']);
                    <?= $vista === $v ? 'aria-current="page"' : '' ?>><?= $etichetta ?></a>
             <?php endforeach; ?>
         </nav>
-        <span class="griglia-filtri-etichetta" id="tp-modulo">Modulo</span>
-        <nav class="agenda-viste" aria-labelledby="tp-modulo">
-            <?php foreach ($moduli as $i => $m): ?>
-                <a href="<?= $esc($indirizzo(['modulo' => $i + 1])) ?>" title="<?= $esc((string) $m['title']) ?>"
-                   class="<?= $numero === $i + 1 ? 'attiva' : '' ?>" <?= $numero === $i + 1 ? 'aria-current="page"' : '' ?>>
-                    <span class="sr-only">Modulo </span><?= $i + 1 ?><span class="sr-only">: <?= $esc((string) $m['title']) ?></span>
-                </a>
-            <?php endforeach; ?>
-        </nav>
-        <?php if (count($gruppi) > 1): ?>
-            <span class="griglia-filtri-etichetta" id="tp-gruppo">Gruppo</span>
-            <nav class="agenda-viste" aria-labelledby="tp-gruppo">
-                <a href="<?= $esc($indirizzo(['gruppo' => null])) ?>" class="<?= $gruppo === null ? 'attiva' : '' ?>"
-                   <?= $gruppo === null ? 'aria-current="page"' : '' ?>>Tutti</a>
-                <?php foreach ($gruppi as $id => $nome): ?>
-                    <a href="<?= $esc($indirizzo(['gruppo' => $id])) ?>" class="<?= $gruppo === $id ? 'attiva' : '' ?>"
-                       <?= $gruppo === $id ? 'aria-current="page"' : '' ?>><?= $esc($nome) ?></a>
-                <?php endforeach; ?>
-            </nav>
-        <?php endif; ?>
     </div>
+    </div>
+    <script src="/assets/js/tre-parole.js"></script>
 
     <section class="card tre-parole-lettura" aria-labelledby="tp-titolo">
         <h2 id="tp-titolo">
@@ -117,20 +130,32 @@ $attivo = !empty($corso['three_words_since']);
                 </p>
             <?php endif; ?>
         <?php else: ?>
+            <?php /* «1 studente su 7 ha risposto» (30/10): il 7 sono quelli che
+                     hanno completato il modulo, a cui le parole sono chieste. */ ?>
             <p class="tp-quanti">
-                <strong><?= count($righe) ?></strong>
-                <?= $quanti === 1 ? 'studente ha risposto' : 'studenti su ' . $quanti . ' hanno risposto' ?>
+                <?= count($righe) ?> <?= count($righe) === 1 ? 'studente' : 'studenti' ?> su <?= $quanti ?>
+                <?= count($righe) === 1 ? 'ha risposto' : 'hanno risposto' ?>
             </p>
 
-            <h3 class="tp-sottotitolo">Le parole che tornano</h3>
-            <ul class="tp-ricorrenti" role="list">
-                <?php foreach ($ricorrenti as $r): ?>
-                    <li><?= $esc($r['parola']) ?><?php if ($r['volte'] > 1): ?> <span class="tp-volte">×<?= $r['volte'] ?><span class="sr-only"> volte</span></span><?php endif; ?></li>
-                <?php endforeach; ?>
-            </ul>
-
             <?php if ($vista === TreParole::ANONIME): ?>
-                <h3 class="tp-sottotitolo">Le terne</h3>
+                <?php
+                // La nuvola (30/10): le parole in ordine alfabetico, grandi
+                // quanto le persone che le hanno scritte, con il numero accanto
+                // (anche ×1). Erano «Le parole che tornano».
+                $nuvola = $ricorrenti;
+                usort($nuvola, static fn (array $a, array $b): int => strcmp(mb_strtolower($a['parola']), mb_strtolower($b['parola'])));
+                $massimo = max(array_column($ricorrenti, 'volte'));
+                ?>
+                <h3 class="tp-sottotitolo">Le parole del gruppo, più grandi le più scritte</h3>
+                <ul class="tp-nuvola" role="list">
+                    <?php foreach ($nuvola as $i => $r): ?>
+                        <?php $misura = $massimo > 1 ? 1.05 + ($r['volte'] - 1) / ($massimo - 1) * 1.15 : 1.05; ?>
+                        <li class="tp-nuvola-<?= $i % 3 ?><?= $r['volte'] === $massimo && $massimo > 1 ? ' tp-nuvola-massima' : '' ?>"
+                            style="font-size: <?= number_format($misura, 2, '.', '') ?>rem"><?= $esc($r['parola']) ?><span class="tp-volte">×<?= $r['volte'] ?><span class="sr-only"> <?= $r['volte'] === 1 ? 'volta' : 'volte' ?></span></span></li>
+                    <?php endforeach; ?>
+                </ul>
+
+                <h3 class="tp-sottotitolo">Le tre parole di ciascuno</h3>
                 <?php /* In un ordine che non dice chi ha risposto prima (ne' chi
                          e' iscritto prima): `TreParole::mescola`. Niente date. */ ?>
                 <ul class="tp-terne" role="list">

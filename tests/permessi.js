@@ -726,11 +726,30 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 check('tutor del mondo A → POST tre parole: negato', t.esito === 'negato', t.esito === 'negato' ? [] : ['ottenuto ' + t.esito]);
                 await ctx.close();
 
+                // Le tre parole servono al gruppo (30/10, Alessandro): anche
+                // l'admin guarda sempre un gruppo, all'apertura il primo in
+                // ordine alfabetico; «Tutti» non c'e' piu'.
                 const admin = await entra(browser, 'admin@test.it');
                 await admin.page.goto(BASE + '/tre-parole?corso=' + A.corso);
-                const tutte = await admin.page.content();
-                check('controprova: l\'amministratore le vede tutte e due',
-                    tutte.includes('paroladia') && tutte.includes('paroladib'), []);
+                const scelta = await admin.page.evaluate(() => {
+                    const s = document.querySelector('#tp-gruppo');
+                    return s ? { scelto: s.options[s.selectedIndex].text, tutti: [...s.options].map((o) => o.text) } : null;
+                });
+                const ordinati = scelta ? [...scelta.tutti].sort((x, y) => x.localeCompare(y, 'it', { sensitivity: 'base' })) : [];
+                check('admin → «Tre parole» si apre sul primo gruppo in ordine alfabetico, e «Tutti» non c\'e\'',
+                    !!scelta && scelta.scelto === ordinati[0] && !scelta.tutti.includes('Tutti'), [JSON.stringify(scelta)]);
+
+                await admin.page.goto(BASE + '/tre-parole?corso=' + A.corso + '&gruppo=' + A.gruppo);
+                const delGruppo = await admin.page.content();
+                check('admin → scelto un gruppo, le sue parole e non quelle di un altro',
+                    delGruppo.includes('paroladia') && !delGruppo.includes('paroladib'), []);
+                const conti = await admin.page.evaluate(() => ({
+                    frase: ((document.querySelector('.tp-quanti') || {}).textContent || '').replace(/\s+/g, ' ').trim(),
+                    volte: [...document.querySelectorAll('.tp-nuvola li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()),
+                }));
+                check('admin → «1 studente su N ha risposto», e nella nuvola il numero accanto a ogni parola, anche ×1',
+                    /^1 studente su \d+ ha risposto$/.test(conti.frase) && conti.volte.length === 3 && conti.volte.every((v) => /×1 volta$/.test(v)),
+                    [JSON.stringify(conti)]);
                 await admin.ctx.close();
 
                 // Lo studente A non ha completato il modulo (il suo tentativo

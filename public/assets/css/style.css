@@ -5003,9 +5003,116 @@ fieldset.checkbox-group legend {
     color: var(--color-text-muted);
 }
 
+/* Le etichette senza grassetto (30/10, Alessandro): sono indicazioni, non
+   titoli da leggere per primi. */
 .tp-sottotitolo {
     margin: 0 0 0.6rem;
     font-size: 0.95rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+/* Gruppo e modulo in due menu, sulla riga della «Vista» (30/10). */
+.tp-filtri {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.4rem;
+    margin-bottom: 1rem;
+}
+
+.tp-filtri .griglia-filtri {
+    margin: 0;
+}
+
+.tp-scelte {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.4rem;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Il menu si stringe dentro lo spazio che c'e' (a 320 px «1 · Prima Tappa
+   — 1 risposta» non ci sta intero), e sotto l'etichetta se serve. */
+.tp-scelta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tp-scelta label {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+/* Fuori da un `.form` il menu avrebbe l'aspetto del browser: qui quello
+   dei campi della piattaforma, come nel mockup. */
+.tp-scelta select {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 40px;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+}
+
+/* Con JavaScript la scelta ricarica da sola, e «Mostra» non serve. */
+.tp-scelte.tp-da-sola .tp-mostra {
+    display: none;
+}
+
+/* La nuvola (30/10): piu' grande la parola, piu' persone l'hanno scritta;
+   accanto il numero, anche ×1. Tre colori del tema, a turno. */
+.tp-nuvola {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.35rem 1.1rem;
+    margin: 0 0 1.4rem;
+    padding: 1.2rem 0.8rem;
+    list-style: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.tp-nuvola li {
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.tp-nuvola-0 {
+    color: var(--color-primary);
+}
+
+.tp-nuvola-1 {
+    color: var(--color-text);
+}
+
+.tp-nuvola-2 {
+    color: var(--color-primary-hover);
+}
+
+.tp-nuvola-massima {
+    font-weight: 600;
+}
+
+.tp-nuvola .tp-volte {
+    margin-left: 0.15rem;
+    font-size: 0.75rem;
 }
 
 .tp-ricorrenti {

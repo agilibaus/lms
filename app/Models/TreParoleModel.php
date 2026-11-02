@@ -110,6 +110,29 @@ final class TreParoleModel
      * @param int[]|null $groupIds  null: tutti, anche chi non ha un gruppo (l'admin)
      * @return list<array<string, mixed>>
      */
+    /**
+     * Quante risposte ha ogni modulo in un gruppo (30/10): il numero accanto
+     * al nome nel menu dei moduli di «Tre parole».
+     *
+     * @param int[] $moduleIds
+     * @return array<int, int> id del modulo => risposte (solo quelli che ne hanno)
+     */
+    public static function contaPerModulo(array $moduleIds, int $groupId): array
+    {
+        if ($moduleIds === []) {
+            return [];
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT module_id, COUNT(*) FROM module_words
+              WHERE group_id = ? AND module_id IN (' . implode(',', array_map('intval', $moduleIds)) . ')
+              GROUP BY module_id'
+        );
+        $stmt->execute([$groupId]);
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_KEY_PAIR));
+    }
+
     public static function delModulo(int $moduleId, ?array $groupIds): array
     {
         if ($groupIds === []) {

@@ -122,20 +122,22 @@ class TreParoleController
         $chiesto = filter_var($_GET['gruppo'] ?? null, FILTER_VALIDATE_INT);
         $gruppo = $chiesto !== false && isset($gruppi[$chiesto]) ? (int) $chiesto : null;
 
-        // Il tutor con un gruppo solo guarda quello, e la pagina lo nomina.
-        if (!$admin && count($gruppi) === 1) {
+        // Le tre parole servono al gruppo (30/10, Alessandro): si guarda
+        // sempre un gruppo, senza un indirizzo che lo dica il primo in ordine
+        // alfabetico (per il tutor con un gruppo solo, il suo). Niente piu'
+        // «Tutti»; le parole di chi non ha un gruppo non si leggono qui.
+        if ($gruppo === null && $gruppi !== []) {
             $gruppo = (int) array_key_first($gruppi);
         }
-        // «Tutti»: per l'admin anche chi non ha un gruppo (null), per il
-        // tutor tutti i suoi.
-        $groupIds = $gruppo !== null ? [$gruppo] : ($admin ? null : array_keys($gruppi));
+
+        $groupIds = $gruppo !== null ? [$gruppo] : [];
 
         $moduli = ModuleModel::contenuti($courseId);
         $n = GrigliaCorso::modulo($_GET['modulo'] ?? null, count($moduli)) ?? self::moduloDiPartenza($moduli, $groupIds);
         $modulo = $moduli[$n - 1] ?? null;
         $righe = $modulo === null ? [] : TreParoleModel::delModulo((int) $modulo['id'], $groupIds);
         $chiesteDal = $course['three_words_since'] ?? null;
-        $aCuiChiedere = $modulo === null || $chiesteDal === null
+        $aCuiChiedere = $modulo === null || $chiesteDal === null || $groupIds === []
             ? []
             : TreParoleModel::aCuiChiedere((int) $modulo['id'], $courseId, (string) $chiesteDal, $groupIds);
 
@@ -150,6 +152,8 @@ class TreParoleController
             'vista' => TreParole::vista($_GET['vista'] ?? null),
             'righe' => $righe,
             'aCuiChiedere' => $aCuiChiedere,
+            // Quante risposte ha ogni modulo nel gruppo, per il menu dei moduli.
+            'risposte' => $gruppo === null ? [] : TreParoleModel::contaPerModulo(array_map(static fn (array $m): int => (int) $m['id'], $moduli), $gruppo),
         ]);
     }
 
