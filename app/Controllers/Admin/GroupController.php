@@ -65,6 +65,8 @@ class GroupController extends AdminController
             $this->fail('Il nome del gruppo è obbligatorio.', '/admin/groups/create');
         }
 
+        $this->rifiutaNomeUsato($data['name'], null, '/admin/groups/create');
+
         try {
             $whatsapp = TutorWelcome::whatsappUrl((string) ($_POST['whatsapp_url'] ?? ''));
         } catch (\InvalidArgumentException $e) {
@@ -142,6 +144,8 @@ class GroupController extends AdminController
         if ($data['name'] === '') {
             $this->fail('Il nome del gruppo è obbligatorio.', $redirect);
         }
+
+        $this->rifiutaNomeUsato($data['name'], (int) $group['id'], $redirect);
 
         // Chi gestisce solo i propri gruppi non puo' cederne la titolarita'.
         $tutorId = Auth::can('group.manage') ? $data['tutor_id'] : (int) $group['tutor_id'];
@@ -539,5 +543,19 @@ class GroupController extends AdminController
             'description' => $description === '' ? null : $description,
             'tutor_id' => $tutorId > 0 ? $tutorId : null,
         ];
+    }
+
+    /**
+     * I nomi dei gruppi sono unici (30/10, Alessandro): un nome gia' usato da
+     * un altro gruppo si rifiuta, con un suggerimento.
+     */
+    private function rifiutaNomeUsato(string $nome, ?int $groupId, string $redirect): void
+    {
+        $usato = GroupModel::nomeUsato($nome, $groupId);
+
+        if ($usato !== null) {
+            $this->fail('Esiste già un gruppo che si chiama «' . $usato . '»: scegli un nome diverso, per esempio «'
+                . $usato . ' ' . ((int) date('Y') + 1) . '».', $redirect);
+        }
     }
 }

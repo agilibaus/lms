@@ -190,6 +190,23 @@ class GroupModel
     // Scrittura (pannello di amministrazione)
     // -----------------------------------------------------------------
 
+    /**
+     * Il nome di un altro gruppo uguale a `$name`, o null (30/10, Alessandro:
+     * i nomi dei gruppi sono unici, cosi' un «Giallo» nuovo non si confonde
+     * con quello di un anno prima). Il confronto ignora maiuscole e spazi ai
+     * lati (la collation del database ignora gia' le maiuscole).
+     */
+    public static function nomeUsato(string $name, ?int $exceptId = null): ?string
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT name FROM `groups` WHERE TRIM(name) = TRIM(:nome) AND id <> :escluso LIMIT 1'
+        );
+        $stmt->execute(['nome' => $name, 'escluso' => $exceptId ?? 0]);
+        $nome = $stmt->fetchColumn();
+
+        return $nome === false ? null : (string) $nome;
+    }
+
     public static function create(string $name, ?string $description, ?int $tutorId): int
     {
         $db = Database::connection();

@@ -3374,6 +3374,47 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     [JSON.stringify(salvato), erroreAdmin]);
             }
 
+            // I nomi dei gruppi sono unici (30/10, Alessandro): un «Giallo»
+            // nuovo non si confonde con quello di un anno prima.
+            {
+                const q = (sql, ...a) => execFileSync('php', ['-r', 'require "vendor/autoload.php"; require "config/config.php";'
+                    + ' $s = App\\Core\\Database::connection()->prepare($argv[1]); $s->execute(array_slice($argv, 2)); echo json_encode($s->fetchAll(PDO::FETCH_ASSOC));',
+                    '--', sql, ...a.map(String)], { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
+                const conta = (nome) => JSON.parse(q('SELECT id FROM `groups` WHERE name = ?', nome));
+                const errore = async (url) => {
+                    await page.goto(BASE + url);
+                    return page.evaluate(() => ((document.querySelector('.alert-error') || {}).textContent || '').trim());
+                };
+                const nomeA = JSON.parse(q('SELECT name FROM `groups` WHERE id = ?', A.gruppo))[0].name;
+                const nuovo = nomeA + ' 2027';
+                q('DELETE FROM `groups` WHERE name = ?', nuovo);
+
+                await esitoPost(page, '/admin/groups', [['name', '  ' + nomeA.toUpperCase() + ' ']], '/admin/groups/create');
+                const rifiuto = await errore('/admin/groups/create');
+                check('gruppi: un gruppo nuovo con un nome gia\' usato (maiuscole e spazi a parte) non si crea, e l\'avviso propone un altro nome',
+                    conta(nomeA).length === 1 && JSON.parse(q('SELECT COUNT(*) n FROM `groups` WHERE TRIM(name) = TRIM(?)', nomeA))[0].n == 1
+                    && rifiuto.startsWith('Esiste già un gruppo che si chiama «' + nomeA + '»'), [rifiuto]);
+
+                await esitoPost(page, '/admin/groups', [['name', nuovo]], '/admin/groups/create');
+                const creato = conta(nuovo);
+                check('gruppi: controprova, con un nome nuovo si crea', creato.length === 1, [JSON.stringify(creato)]);
+
+                if (creato.length === 1) {
+                    const id = creato[0].id;
+                    await esitoPost(page, '/admin/groups/' + id, [['name', nomeA]], '/admin/groups/' + id + '/edit');
+                    const rifiutoNome = await errore('/admin/groups/' + id + '/edit');
+                    check('gruppi: un gruppo non si rinomina con il nome di un altro',
+                        conta(nuovo).length === 1 && rifiutoNome.startsWith('Esiste già un gruppo che si chiama'), [rifiutoNome]);
+
+                    await esitoPost(page, '/admin/groups/' + id, [['name', nuovo]], '/admin/groups/' + id + '/edit');
+                    const nessuno = await errore('/admin/groups/' + id + '/edit');
+                    check('gruppi: controprova, un gruppo si salva con il suo stesso nome', nessuno === '', [nessuno]);
+
+                    await esitoPost(page, '/admin/groups/' + id + '/delete', [], '/admin/groups/' + id + '/edit');
+                }
+                q('DELETE FROM `groups` WHERE name = ?', nuovo);
+            }
+
             // Pulizia: via chi e' stato creato, anche per sbaglio.
             for (const u of creati.filter((x) => x !== null)) {
                 await esitoPost(page, '/admin/users/' + u.id + '/delete', [], '/admin/users/' + u.id + '/edit');
