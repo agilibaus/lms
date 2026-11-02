@@ -156,7 +156,11 @@ use App\Core\Csrf;
         }
         ?>
         <nav class="sidebar-nav">
-            <?php if (Auth::hasRole('admin', 'tutor', 'assistente')): ?>
+            <?php /* Il supervisore (30/10) ha «Corsi» (i corsi in bozza), «Gestione
+                     corsi», «Impostazioni» e «Profilo»: niente catalogo, agenda,
+                     incontri e certificati, che non sono suoi. */ ?>
+            <?php $supervisore = Auth::hasRole('supervisore'); ?>
+            <?php if (Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente')): ?>
                 <a href="/" class="nav-link<?= $voce('/') ?>">Corsi</a>
                 <?= $ramoHtml ?>
             <?php else: ?>
@@ -182,12 +186,16 @@ use App\Core\Csrf;
                      Restano due voci: «Sessioni live» e' il posto dove lo
                      staff le crea e le modifica, l'agenda e' il posto dove
                      si guardano. */ ?>
-            <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
+            <?php if (!$supervisore): ?>
+                <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
+            <?php endif; ?>
             <?php /* All'assistente solo con l'interruttore «Incontri» acceso (26/10). */ ?>
-            <?php if (!Auth::hasRole('assistente') || Auth::can('live.view_assigned')): ?>
+            <?php if (!$supervisore && (!Auth::hasRole('assistente') || Auth::can('live.view_assigned'))): ?>
                 <a href="/live" class="nav-link<?= $voce('/live') ?>">Sessioni live</a>
             <?php endif; ?>
-            <a href="/certificates" class="nav-link<?= $voce('/certificates') ?>">Certificati</a>
+            <?php if (!$supervisore): ?>
+                <a href="/certificates" class="nav-link<?= $voce('/certificates') ?>">Certificati</a>
+            <?php endif; ?>
             <a href="/profilo" class="nav-link<?= $voce('/profilo') ?>">Profilo</a>
 
             <?php if (Auth::canAny('user.manage', 'assistant.manage', 'group.manage', 'group.manage_own', 'course.create', 'course.edit', 'course.delete', 'settings.manage') || Auth::hasRole('admin')): ?>
@@ -211,7 +219,7 @@ use App\Core\Csrf;
                          L'evidenziazione e' per prefisso, quindi la voce resta
                          accesa dentro ogni /admin/settings/... ; la pagina dei
                          permessi vive altrove e va aggiunta a mano. */ ?>
-                <?php if (Auth::can('settings.manage') || Auth::hasRole('admin')): ?>
+                <?php if (Auth::can('settings.manage') || Auth::hasRole('admin') || $supervisore): ?>
                     <?php $inImpostazioni = $voce('/admin/settings') !== '' || $voce('/admin/permissions') !== ''; ?>
                     <a href="/admin/settings"
                        class="nav-link<?= $inImpostazioni ? ' nav-link-active" aria-current="page' : '' ?>">Impostazioni</a>

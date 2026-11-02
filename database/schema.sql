@@ -40,7 +40,7 @@ CREATE TABLE users (
     -- sole iniziali (migrazione 2026_10_08_primo_accesso.sql).
     name_display    ENUM('full','first','initials') NULL DEFAULT NULL,
     full_name       VARCHAR(201) AS (TRIM(CONCAT(first_name, ' ', last_name))) STORED,
-    role            ENUM('admin','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
+    role            ENUM('admin','supervisore','tutor','assistente','studente') NOT NULL DEFAULT 'studente',
     -- assistente e' assegnato "sotto" un tutor (aiuta il tutor, non l'admin)
     is_active       TINYINT(1) NOT NULL DEFAULT 1,
     -- NULL = indirizzo non ancora confermato: l'utente non puo' accedere

@@ -45,7 +45,7 @@ class ModuleController
      */
     public function verificaForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEdit((int) $params['courseId']);
 
         $course = CourseModel::find((int) $params['courseId']);
@@ -70,7 +70,7 @@ class ModuleController
 
     public function verificaStore(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEdit((int) $params['courseId']);
 
         $courseId = (int) $params['courseId'];
@@ -148,7 +148,7 @@ class ModuleController
 
     public function createForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEdit((int) $params['courseId']);
 
         $course = CourseModel::find((int) $params['courseId']);
@@ -169,7 +169,7 @@ class ModuleController
 
     public function store(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEdit((int) $params['courseId']);
 
         $courseId = (int) $params['courseId'];
@@ -209,7 +209,7 @@ class ModuleController
 
     public function editForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);
@@ -234,7 +234,7 @@ class ModuleController
 
     public function update(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);
@@ -418,7 +418,7 @@ class ModuleController
      */
     public function move(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);
@@ -442,7 +442,7 @@ class ModuleController
 
     public function destroy(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['id']);
 
         $module = ModuleModel::find((int) $params['id']);

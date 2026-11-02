@@ -71,7 +71,7 @@ class SettingsController extends AdminController
         // collegato riceverebbe un 403 invece di essere portato all'accesso.
         Auth::requireLogin();
 
-        if (!Auth::can('settings.manage') && !Auth::hasRole('admin')) {
+        if (!Auth::can('settings.manage') && !Auth::hasRole('admin') && !Auth::hasRole('supervisore')) {
             http_response_code(403);
             exit('Accesso negato: permessi insufficienti per questa pagina.');
         }
@@ -79,6 +79,8 @@ class SettingsController extends AdminController
         View::render('admin/settings/index', [
             'pageTitle' => 'Impostazioni',
             'canSettings' => Auth::can('settings.manage'),
+            // Il supervisore (30/10): «Video di benvenuto» e «Informazioni».
+            'canWelcome' => Auth::can('settings.manage') || Auth::can('settings.welcome'),
             'canPermissions' => Auth::hasRole('admin'),
         ]);
     }
@@ -93,7 +95,7 @@ class SettingsController extends AdminController
     {
         Auth::requireLogin();
 
-        if (!Auth::can('settings.manage') && !Auth::hasRole('admin')) {
+        if (!Auth::can('settings.manage') && !Auth::hasRole('admin') && !Auth::hasRole('supervisore')) {
             http_response_code(403);
             exit('Accesso negato: permessi insufficienti per questa pagina.');
         }
@@ -668,7 +670,7 @@ class SettingsController extends AdminController
 
     public function welcome(array $params = []): void
     {
-        Auth::requirePermission('settings.manage');
+        Auth::requirePermission('settings.manage', 'settings.welcome');
 
         View::render('admin/settings/benvenuto', [
             'pageTitle' => 'Video di benvenuto',
@@ -682,7 +684,7 @@ class SettingsController extends AdminController
 
     public function updateWelcome(array $params = []): void
     {
-        Auth::requirePermission('settings.manage');
+        Auth::requirePermission('settings.manage', 'settings.welcome');
 
         $userId = Auth::id();
         $provider = (string) ($_POST['WELCOME_VIDEO_PROVIDER'] ?? 'none');

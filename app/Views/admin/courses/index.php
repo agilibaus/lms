@@ -13,6 +13,8 @@ use App\Models\CourseModel;
 /** @var bool $canDelete */
 /** @var int $pendingRequests */
 /** @var bool $tutor il tutor (26/10): i corsi dei suoi gruppi, per il benvenuto e i suoi studenti */
+/** @var bool $supervisore il supervisore (30/10): i corsi in bozza, solo i contenuti */
+$supervisore ??= false;
 
 $ordine = Ordinamento::daRichiesta([
     'titolo' => ['title', Ordinamento::TESTO],
@@ -89,7 +91,9 @@ $courses = $ordine->applica($courses);
                 </td>
                 <td role="cell" class="row-actions">
                     <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
-                    <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
+                    <?php if (!$supervisore): ?>
+                        <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
+                    <?php endif; ?>
                     <?php if ($canDelete): ?>
                         <form action="/admin/courses/<?= (int) $course['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare il corso con moduli, lezioni, questionari, iscrizioni e certificati?');">
@@ -105,7 +109,7 @@ $courses = $ordine->applica($courses);
     </div>
 <?php endif; ?>
 
-<?php if (!$tutor): ?>
+<?php if (!$tutor && !$supervisore): ?>
 <?php
 // Riepilogo dei file caricati che nessuna lezione usa piu'. Sta qui, in un
 // punto solo del pannello, perche' il calcolo legge le cartelle di /storage

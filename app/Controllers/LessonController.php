@@ -57,7 +57,7 @@ class LessonController
 
     public function createForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['moduleId']);
 
         $module = ModuleModel::find((int) $params['moduleId']);
@@ -81,7 +81,7 @@ class LessonController
 
     public function store(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['moduleId']);
 
         $module = ModuleModel::find((int) $params['moduleId']);
@@ -234,7 +234,7 @@ class LessonController
 
     public function editForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $lesson = LessonModel::find((int) $params['id']);
@@ -258,7 +258,7 @@ class LessonController
 
     public function update(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $lesson = LessonModel::find((int) $params['id']);
@@ -321,7 +321,7 @@ class LessonController
      */
     public function move(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $lesson = LessonModel::find((int) $params['id']);
@@ -342,7 +342,7 @@ class LessonController
 
     public function destroy(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $lesson = LessonModel::find((int) $params['id']);
@@ -381,7 +381,7 @@ class LessonController
 
     public function uploadMaterial(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $lessonId = (int) $params['id'];
@@ -408,7 +408,7 @@ class LessonController
      */
     public function moveMaterial(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $material = LessonMaterialModel::find((int) $params['materialId']);
@@ -436,7 +436,7 @@ class LessonController
      */
     public function uploadImage(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         header('Content-Type: application/json; charset=utf-8');
@@ -549,7 +549,7 @@ class LessonController
 
     public function deleteMaterial(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $material = LessonMaterialModel::find((int) $params['materialId']);
@@ -578,7 +578,7 @@ class LessonController
      */
     public function deleteH5P(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson((int) $params['id']);
 
         $contenuto = LessonH5PModel::find((int) $params['contenuto']);
@@ -783,7 +783,8 @@ class LessonController
      */
     private function canAccessCourse(int $courseId): bool
     {
-        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+        // Il supervisore, solo sui corsi in bozza (30/10).
+        if (Auth::hasRole('admin', 'tutor', 'assistente') || CourseRights::bozzaDelSupervisore($courseId)) {
             return true;
         }
 
@@ -796,7 +797,7 @@ class LessonController
      */
     private function isModuleLocked(int $moduleId): bool
     {
-        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+        if (Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente')) {
             return false;
         }
 
@@ -890,7 +891,7 @@ class LessonController
 
     private function removeVideo(int $lessonId, bool $deleteFile): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditLesson($lessonId);
 
         $lesson = LessonModel::find($lessonId);

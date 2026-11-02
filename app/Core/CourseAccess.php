@@ -45,7 +45,7 @@ class CourseAccess
      */
     public static function locks(int $userId, int $courseId): array
     {
-        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+        if (Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente')) {
             return [];
         }
 
@@ -142,7 +142,7 @@ class CourseAccess
      */
     public static function questionarioChiuso(int $userId, array $module): ?string
     {
-        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+        if (Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente')) {
             return null;
         }
 

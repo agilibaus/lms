@@ -33,10 +33,17 @@ use App\Core\TestoBreve;
     (string) ($course['description'] ?? ''), 4) ?>
 <script src="/assets/js/quiz-open-count.js"></script>
 
+<?php /* Il supervisore non pubblica (30/10): la casella c'e', spenta, con la
+         frase; il server la ignora comunque. */ ?>
+<?php $nonPubblica = \App\Auth\Auth::hasRole('supervisore'); ?>
 <label class="checkbox-label">
-    <input type="checkbox" name="is_published" value="1" <?= !empty($course['is_published']) ? 'checked' : '' ?>>
+    <input type="checkbox" name="is_published" value="1" <?= !empty($course['is_published']) ? 'checked' : '' ?>
+           <?= $nonPubblica ? 'disabled aria-describedby="pubblica-admin-hint"' : '' ?>>
     Pubblicato (una bozza resta visibile solo allo staff)
 </label>
+<?php if ($nonPubblica): ?>
+    <p class="form-hint" id="pubblica-admin-hint">Il corso lo pubblica l’admin.</p>
+<?php endif; ?>
 
 <?php /* «Tre parole» (21/10): spenta di partenza. Accesa, si chiedono per
          i moduli completati da quel momento in poi (`App\Core\TreParole`). */ ?>

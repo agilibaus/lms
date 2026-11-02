@@ -11,6 +11,8 @@ use App\Core\Ordinamento;
 /** @var array $enrollments */
 /** @var array $availableStudents */
 /** @var bool $canDelete */
+/** @var bool $supervisore il supervisore (30/10): solo i contenuti, niente iscritti, richieste e report */
+$supervisore ??= false;
 /** @var list<array<string, mixed>>|null $welcomes null se chi guarda non puo' caricare benvenuti */
 /** @var list<array<string, mixed>>|null $bacheca le categorie della bacheca; null se chi guarda non le gestisce */
 /** @var bool $tutor il tutor del corso (26/10): il suo benvenuto e i suoi studenti, in sola lettura */
@@ -36,9 +38,13 @@ $enrollments = $ordineIscritti->applica($enrollments);
     <a href="/admin/courses" class="back-link"><span class="back-link-testo">Gestione corsi</span></a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
-        <?= count($enrollments) ?> <?= count($enrollments) === 1 ? 'iscritto' : 'iscritti' ?> ·
-        <a href="/courses/<?= $courseId ?>"><?= $tutor ? 'contenuti' : 'gestisci contenuti' ?></a> ·
-        <a href="/reports/courses/<?= $courseId ?>">report</a>
+        <?php if ($supervisore): ?>
+            In bozza · <a href="/courses/<?= $courseId ?>">gestisci contenuti</a>
+        <?php else: ?>
+            <?= count($enrollments) ?> <?= count($enrollments) === 1 ? 'iscritto' : 'iscritti' ?> ·
+            <a href="/courses/<?= $courseId ?>"><?= $tutor ? 'contenuti' : 'gestisci contenuti' ?></a> ·
+            <a href="/reports/courses/<?= $courseId ?>">report</a>
+        <?php endif; ?>
     </p>
 </div>
 
@@ -70,7 +76,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
     <?php require __DIR__ . '/_bacheca.php'; ?>
 <?php endif; ?>
 
-<?php if ($requests !== []): ?>
+<?php if ($requests !== [] && !$supervisore): ?>
     <section class="card">
         <h2>Richieste di iscrizione <span class="badge badge-danger"><?= count($requests) ?></span></h2>
         <p class="card-meta">
@@ -118,6 +124,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
     </section>
 <?php endif; ?>
 
+<?php if (!$supervisore): ?>
 <section class="card">
     <h2>Iscritti</h2>
     <p class="card-meta">
@@ -191,6 +198,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
         <p class="form-hint">Tutti gli studenti registrati sono già iscritti.</p>
     <?php endif; ?>
 </section>
+<?php endif; ?>
 
 <?php if ($canDelete): ?>
     <?php /* Solo il comando e una breve spiegazione, senza titolo (Elena,

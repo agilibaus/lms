@@ -27,6 +27,7 @@ class CatalogController
     public function index(array $params = []): void
     {
         Auth::requireLogin();
+        $this->chiusoAlSupervisore();
 
         View::render('catalog/index', [
             'pageTitle' => 'Esplora corsi',
@@ -40,6 +41,7 @@ class CatalogController
     public function enroll(array $params): void
     {
         Auth::requireLogin();
+        $this->chiusoAlSupervisore();
 
         $course = CourseModel::find((int) $params['id']);
         $userId = (int) Auth::id();
@@ -124,5 +126,17 @@ class CatalogController
     {
         header('Location: ' . $location);
         exit;
+    }
+
+    /**
+     * Il catalogo serve a iscriversi ai corsi pubblicati: il supervisore lavora
+     * solo sui corsi in bozza, e per lui i pubblicati non ci sono (30/10).
+     */
+    private function chiusoAlSupervisore(): void
+    {
+        if (Auth::hasRole('supervisore')) {
+            http_response_code(403);
+            exit('Il catalogo è per gli studenti: il supervisore lavora sui corsi in bozza, da «Gestione corsi».');
+        }
     }
 }

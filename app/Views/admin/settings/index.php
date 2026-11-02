@@ -5,6 +5,7 @@ declare(strict_types=1);
 /**
  * @var bool $canSettings
  * @var bool $canPermissions
+ * @var bool $canWelcome «Video di benvenuto»: anche il supervisore (30/10)
  */
 
 /*
@@ -29,7 +30,7 @@ $sezioni = [
         'titolo' => 'Video di benvenuto',
         'href' => '/admin/settings/benvenuto',
         'testo' => 'Il video che uno studente vede al primo accesso, una volta sola.',
-        'visibile' => $canSettings,
+        'visibile' => $canWelcome ?? $canSettings,
     ],
     [
         'titolo' => 'Bunny Stream',

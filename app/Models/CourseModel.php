@@ -40,6 +40,18 @@ class CourseModel
         return $stmt->fetchAll();
     }
 
+    /**
+     * Gli id dei corsi in bozza: quelli su cui lavora il supervisore (30/10).
+     *
+     * @return int[]
+     */
+    public static function idsInBozza(): array
+    {
+        return array_map('intval', Database::connection()
+            ->query('SELECT id FROM courses WHERE is_published = 0 ORDER BY id')
+            ->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM courses WHERE id = :id LIMIT 1');

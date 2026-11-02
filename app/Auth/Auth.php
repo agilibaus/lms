@@ -14,7 +14,8 @@ use App\Models\UserModel;
  */
 class Auth
 {
-    public const ROLES = ['admin', 'tutor', 'assistente', 'studente'];
+    /** Il supervisore (30/10) costruisce i corsi in bozza: vedi `Ruoli::NUCLEO`. */
+    public const ROLES = ['admin', 'supervisore', 'tutor', 'assistente', 'studente'];
 
     /** Chiave di sessione con la copia di `users.password_changed_at`. */
     private const SESSION_PASSWORD_STAMP = 'password_changed_at';
@@ -40,6 +41,7 @@ class Auth
     {
         return match ($role) {
             'admin' => 'Admin',
+            'supervisore' => 'Supervisore',
             'tutor' => 'Tutor',
             'assistente' => 'Assistente',
             'studente' => 'Studente',

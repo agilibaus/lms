@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\CourseRights;
 use App\Auth\Auth;
 use App\Core\CertificateService;
 use App\Core\CourseAccess;
@@ -317,7 +318,7 @@ CSS;
             return false;
         }
 
-        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+        if (Auth::hasRole('admin', 'tutor', 'assistente') || CourseRights::bozzaDelSupervisore((int) $module['course_id'])) {
             return true;
         }
 
@@ -333,7 +334,7 @@ CSS;
             return false;
         }
 
-        if (Auth::hasRole('admin', 'tutor', 'assistente')) {
+        if (Auth::hasRole('admin', 'tutor', 'assistente') || CourseRights::bozzaDelSupervisore((int) $module['course_id'])) {
             return true;
         }
 

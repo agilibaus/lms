@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Auth;
 
 use App\Core\Database;
+use App\Models\CourseModel;
 
 /**
  * Chi puo' modificare quale corso.
@@ -41,7 +42,23 @@ class CourseRights
             return false;
         }
 
-        return Auth::hasRole('admin');
+        return Auth::hasRole('admin') || self::bozzaDelSupervisore($courseId);
+    }
+
+    /**
+     * Il supervisore (30/10, Alessandro) lavora solo sui corsi in bozza: li
+     * vede e li modifica finche' non sono pubblicati. Un corso pubblicato,
+     * per lui, non c'e'.
+     */
+    public static function bozzaDelSupervisore(int $courseId): bool
+    {
+        if (!Auth::hasRole('supervisore')) {
+            return false;
+        }
+
+        $corso = CourseModel::find($courseId);
+
+        return $corso !== null && (int) $corso['is_published'] === 0;
     }
 
     /**
@@ -113,7 +130,11 @@ class CourseRights
      */
     public static function editableCourseIds(): ?array
     {
-        return Auth::hasRole('admin') ? null : [];
+        if (Auth::hasRole('admin')) {
+            return null;
+        }
+
+        return Auth::hasRole('supervisore') ? CourseModel::idsInBozza() : [];
     }
 
     /**

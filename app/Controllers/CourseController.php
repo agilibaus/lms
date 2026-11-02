@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\CourseRights;
 use App\Models\QuestionModel;
 use App\Core\TutorWelcome;
 use App\Models\TutorWelcomeModel;
@@ -36,9 +37,14 @@ class CourseController
     {
         Auth::requireLogin();
 
-        $isStaff = Auth::hasRole('admin', 'tutor', 'assistente');
+        // Il supervisore (30/10) vede l'elenco come lo staff, ma solo i corsi
+        // in bozza: quelli pubblicati, per lui, non ci sono.
+        $supervisore = Auth::hasRole('supervisore');
+        $isStaff = $supervisore || Auth::hasRole('admin', 'tutor', 'assistente');
 
-        if ($isStaff) {
+        if ($supervisore) {
+            $courses = array_values(array_filter(CourseModel::allForStaff(), static fn (array $c): bool => (int) $c['is_published'] === 0));
+        } elseif ($isStaff) {
             // Staff: vede tutti i corsi, pubblicati e in bozza.
             $courses = CourseModel::allForStaff();
         } else {
@@ -145,7 +151,8 @@ class CourseController
             return;
         }
 
-        if (!Auth::hasRole('admin', 'tutor', 'assistente')) {
+        // Il supervisore apre un corso solo se e' in bozza (30/10).
+        if (!Auth::hasRole('admin', 'tutor', 'assistente') && !CourseRights::bozzaDelSupervisore((int) $course['id'])) {
             if (EnrollmentModel::find((int) Auth::id(), (int) $course['id']) === null) {
                 http_response_code(403);
                 echo 'Non sei iscritto a questo corso.';

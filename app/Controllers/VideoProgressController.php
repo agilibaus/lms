@@ -107,8 +107,8 @@ class VideoProgressController
 
         // Chi non e' iscritto non genera fruizione. Lo staff puo' guardare i
         // video per lavoro, e quel tempo non e' didattica di nessuno: non va
-        // nel rendiconto.
-        if (!Auth::hasRole('admin', 'tutor', 'assistente')) {
+        // nel rendiconto. Anche il supervisore, sui corsi in bozza (30/10).
+        if (!Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente')) {
             if (EnrollmentModel::find($userId, $courseId) === null) {
                 http_response_code(403);
                 echo json_encode(['errore' => 'non iscritto']);
@@ -274,7 +274,9 @@ class VideoProgressController
      */
     public static function apribile(int $courseId): bool
     {
-        if (!CourseRights::canEdit($courseId) && !Auth::can('report.view') && !Auth::can('report.view_assigned')) {
+        // «Admin» e non «puo' modificare il corso» (30/10): il supervisore
+        // modifica i corsi in bozza, ma i report non sono suoi.
+        if (!Auth::hasRole('admin') && !Auth::can('report.view') && !Auth::can('report.view_assigned')) {
             return false;
         }
 

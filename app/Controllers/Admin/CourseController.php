@@ -57,21 +57,25 @@ class CourseController extends AdminController
 
         // Il tutor vede i corsi dei suoi gruppi (26/10): li' trova il suo
         // benvenuto e i suoi studenti; i contenuti li modifica l'admin.
-        $tutor = !Auth::hasRole('admin');
-        $suoi = CourseRights::courseIdsFor((int) Auth::id());
+        // Il supervisore (30/10) vede i corsi in bozza, come l'admin li vede
+        // tutti; i pubblicati, per lui, non ci sono.
+        $supervisore = Auth::hasRole('supervisore');
+        $tutor = !Auth::hasRole('admin') && !$supervisore;
+        $suoi = $supervisore ? CourseModel::idsInBozza() : CourseRights::courseIdsFor((int) Auth::id());
 
         View::render('admin/courses/index', [
             'pageTitle' => 'Gestione corsi',
-            'courses' => $tutor
+            'courses' => $tutor || $supervisore
                 ? array_values(array_filter(CourseModel::allForStaff(), static fn (array $c): bool => in_array((int) $c['id'], $suoi, true)))
                 : CourseModel::allForStaff(),
             'tutor' => $tutor,
+            'supervisore' => $supervisore,
             'canCreate' => Auth::can('course.create'),
             'canDelete' => Auth::can('course.delete'),
             // Solo le richieste dei corsi che chi guarda puo' gestire (13/10):
             // un tutor non deve leggere richieste che non puo' ne' vedere ne'
             // decidere. Per l'admin `editableCourseIds()` e' null, cioe' tutte.
-            'pendingRequests' => EnrollmentRequestModel::countPending(CourseRights::editableCourseIds()),
+            'pendingRequests' => $supervisore ? 0 : EnrollmentRequestModel::countPending(CourseRights::editableCourseIds()),
         ]);
     }
 
@@ -101,7 +105,8 @@ class CourseController extends AdminController
             $data['title'],
             CourseModel::uniqueSlug($data['slug'] !== '' ? $data['slug'] : $data['title']),
             $data['description'],
-            $data['is_published'],
+            // Il corso del supervisore nasce in bozza: pubblica l'admin (30/10).
+            Auth::hasRole('supervisore') ? false : $data['is_published'],
             (int) Auth::id(),
             $data['enrollment_mode'],
             $data['objective']
@@ -114,7 +119,7 @@ class CourseController extends AdminController
 
     public function editForm(array $params): void
     {
-        Auth::requirePermission('course.edit');
+        Auth::requirePermission('course.edit', 'course.build');
 
         // L'admin modifica il corso; il tutor apre la pagina dei corsi dei
         // suoi gruppi per il suo benvenuto e i suoi studenti, in sola lettura
@@ -143,6 +148,9 @@ class CourseController extends AdminController
         View::render('admin/courses/edit', [
             'pageTitle' => $course['title'],
             'tutor' => $tutor,
+            // Il supervisore costruisce i contenuti: niente iscritti, richieste
+            // e report (30/10).
+            'supervisore' => Auth::hasRole('supervisore'),
             'course' => array_merge($course, self::riprendi((int) $course['id']) ?? []),
             'requests' => $tutor ? [] : EnrollmentRequestModel::pendingForCourse((int) $course['id']),
             'enrollments' => $enrolled,
@@ -166,7 +174,7 @@ class CourseController extends AdminController
 
     public function update(array $params): void
     {
-        Auth::requirePermission('course.edit');
+        Auth::requirePermission('course.edit', 'course.build');
         CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
@@ -191,7 +199,9 @@ class CourseController extends AdminController
             $data['title'],
             CourseModel::uniqueSlug($data['slug'] !== '' ? $data['slug'] : $data['title'], $id),
             $data['description'],
-            $data['is_published'],
+            // Il supervisore non pubblica: il corso resta com'e' (in bozza,
+            // perche' su un pubblicato non arriva).
+            Auth::hasRole('supervisore') ? (bool) $course['is_published'] : $data['is_published'],
             $data['enrollment_mode'],
             $data['objective']
         );
@@ -308,7 +318,7 @@ class CourseController extends AdminController
      */
     public function updateCover(array $params): void
     {
-        Auth::requirePermission('course.edit');
+        Auth::requirePermission('course.edit', 'course.build');
         CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);
@@ -350,7 +360,7 @@ class CourseController extends AdminController
 
     public function deleteCover(array $params): void
     {
-        Auth::requirePermission('course.edit');
+        Auth::requirePermission('course.edit', 'course.build');
         CourseRights::requireEdit((int) $params['id']);
 
         $course = CourseModel::find((int) $params['id']);

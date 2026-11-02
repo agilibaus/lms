@@ -54,8 +54,10 @@ class LiveScope
             return self::gruppoMio((int) $session['group_id']);
         }
 
-        return !empty($session['module_id']) && isset($session['course_id'])
-            && CourseRights::canEdit((int) $session['course_id']);
+        // Uno di tutto il corso lo gestisce l'admin, gia' passato sopra (dal
+        // 30/10 scritto cosi': «puo' modificare il corso» vale anche per il
+        // supervisore sui corsi in bozza, e gli incontri non sono suoi).
+        return false;
     }
 
     /**

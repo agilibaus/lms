@@ -62,7 +62,7 @@ class QuizController
 
     public function createForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['moduleId']);
 
         $module = ModuleModel::find((int) $params['moduleId']);
@@ -91,7 +91,7 @@ class QuizController
 
     public function store(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditModule((int) $params['moduleId']);
 
         $module = ModuleModel::find((int) $params['moduleId']);
@@ -180,7 +180,7 @@ class QuizController
 
     public function editForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuiz((int) $params['id']);
 
         $quiz = QuizModel::find((int) $params['id']);
@@ -231,7 +231,7 @@ class QuizController
 
     public function update(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuiz((int) $params['id']);
 
         $quiz = QuizModel::find((int) $params['id']);
@@ -279,7 +279,7 @@ class QuizController
 
     public function destroy(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuiz((int) $params['id']);
 
         $quiz = QuizModel::find((int) $params['id']);
@@ -318,7 +318,7 @@ class QuizController
 
     public function storeQuestion(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuiz((int) $params['id']);
 
         $quiz = QuizModel::find((int) $params['id']);
@@ -349,7 +349,7 @@ class QuizController
 
     public function editQuestionForm(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuestion((int) $params['id']);
 
         $question = QuizQuestionModel::find((int) $params['id']);
@@ -370,7 +370,7 @@ class QuizController
 
     public function updateQuestion(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuestion((int) $params['id']);
 
         $question = QuizQuestionModel::find((int) $params['id']);
@@ -400,7 +400,7 @@ class QuizController
      */
     public function moveQuestion(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuestion((int) $params['id']);
 
         $question = QuizQuestionModel::find((int) $params['id']);
@@ -418,7 +418,7 @@ class QuizController
 
     public function destroyQuestion(array $params): void
     {
-        Auth::requireRole('admin', 'tutor');
+        Auth::requireRole('admin', 'supervisore', 'tutor');
         CourseRights::requireEditQuestion((int) $params['id']);
 
         $question = QuizQuestionModel::find((int) $params['id']);
@@ -765,7 +765,8 @@ class QuizController
     {
         $courseId = (int) $module['course_id'];
 
-        if (!Auth::hasRole('admin', 'tutor', 'assistente')) {
+        // Il supervisore apre i questionari dei corsi in bozza (30/10).
+        if (!Auth::hasRole('admin', 'tutor', 'assistente') && !CourseRights::bozzaDelSupervisore($courseId)) {
             if (EnrollmentModel::find((int) Auth::id(), $courseId) === null) {
                 http_response_code(403);
                 echo 'Non sei iscritto a questo corso.';

@@ -44,6 +44,14 @@ final class Ruoli
         // «Gestione corsi» con i corsi dei suoi gruppi e gli incontri dei suoi
         // gruppi. `group.manage_own` cura i suoi gruppi, senza crearne,
         // eliminarne o assegnare corsi.
+        // Il supervisore (30/10, Alessandro) costruisce i corsi: li crea, e
+        // con `course.build` apre la scheda del corso. Lavora solo sui corsi
+        // in bozza (`CourseRights::canEdit`), non pubblica, non elimina un
+        // corso. Non ha `course.edit`, che per il tutor apre anche gli
+        // incontri, ne' `course.welcome`, che vale per tutti i corsi.
+        // Delle impostazioni apre solo «Video di benvenuto»
+        // (`settings.welcome`) e «Informazioni».
+        'supervisore' => ['course.build', 'course.create', 'settings.welcome'],
         'tutor' => ['board.manage_own', 'course.edit', 'course.welcome_own', 'group.manage_own', 'report.view'],
         'assistente' => [],
         'studente' => [],
