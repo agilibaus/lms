@@ -38,7 +38,7 @@ $sessions = $ordine->applica($sessions);
 <?php if ($canManage && !$googleConfigured): ?>
     <div class="alert alert-warning">
         Google Calendar non è configurato: le sessioni si creano comunque, ma il link Meet va inserito a mano.
-        Vedi la sezione “Sessioni live (Google Meet)” del README.
+        Vedi la sezione “Sessioni live (Google Meet)” del manuale (manuale.md).
     </div>
 <?php endif; ?>
 

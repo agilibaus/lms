@@ -1,0 +1,2963 @@
+<p align="center"><img src="https://github.com/agilibaus/lms/blob/main/pistacchio_icon.png" title="Logo Pistacchio LMS" width="200" height="200"></p>
+
+# Pistacchio LMS — Manuale
+
+Il manuale completo dell'applicazione: come funziona ogni parte, le scelte fatte e perché.
+Per una presentazione breve e l'installazione basta il [README](README.md). Questo testo era il
+README fino alla versione 1.0.306, e riporta le funzioni descritte fino alla patch 0292.
+
+Learning Management System leggero e moderno in PHP puro + MySQL.
+
+## Stack
+- PHP 8.1+ (nessun framework), PDO con prepared statements
+- MySQL/MariaDB
+- Composer per l'autoload PSR-4 + Dompdf (generazione dei certificati PDF)
+- Frontend: CSS moderno (flexbox/grid, variabili CSS), nessuna dipendenza JS pesante
+- Design: asciutto, moderno, mobile-first (sidebar a drawer sotto i 768px, via checkbox CSS senza JS)
+
+## Funzionalità
+
+- **Corsi** strutturati in Moduli → Lezioni, con video (Bunny/Cloudflare Stream o self-hosted) e materiali scaricabili
+- **Editor di testo ricco** (TinyMCE incluso nel progetto) per il contenuto della lezione: formattazione, elenchi, tabelle, immagini caricate e video incorporati da YouTube/Vimeo
+- **Questionari** con quattro tipi di domanda — scelta singola, vero/falso, risposta multipla e
+  risposta aperta — riordinabili, con verifica automatica del punteggio
+- **Certificati** di completamento generati in PDF, con codice di verifica pubblico
+- **Report/dashboard** su progressi utente/corso, risultati dei questionari, presenze alle sessioni live e
+  tempi di fruizione dei video, tutti scaricabili in CSV e XLSX
+- **Rilascio progressivo**: ogni modulo puo' avere una data di apertura, con avviso via email
+  agli iscritti il giorno in cui si apre; ogni gruppo può avere le sue date
+- **Percorso**: il questionario di un modulo è il suo test d'uscita e si apre a lezioni fatte;
+  la **verifica finale**, un modulo dichiarato tale, si apre a moduli completati
+- **Quattro ruoli**, ciascuno con un **nucleo fisso** scritto nel codice e, per tre di loro,
+  **cinque interruttori** che l'admin accende e spegne da Impostazioni › Ruoli
+  (`App\Auth\Ruoli`, vedi **Ruoli**):
+  
+  | Ruolo | Ambito |
+  |---|---|
+  | `admin` | Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni; risponde come esperto |
+  | `tutor` | Legge i corsi e lavora sulla sua classe: cura i suoi gruppi, i loro incontri, la Bacheca e i report dei suoi studenti |
+  | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), in sola lettura: report, tentativi e incontri dei loro studenti, secondo gli interruttori |
+  | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge i questionari, scarica i propri certificati |
+- **Profilo personale**: ogni utente compila i propri dati e carica un'immagine, che compare tonda accanto al suo nome
+- **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
+- **Sessioni live** integrate con **Google Meet**, tramite Google Calendar API (`conferenceData`) — richiede un account di servizio Google con accesso al Calendar
+- **Esercizi interattivi H5P** creati con Lumi: come questionario del modulo, con il punteggio, o
+  dentro le lezioni, dove li mette chi scrive
+- **Bacheca** di ogni corso: risorse condivise per categorie, pubblicate da admin e tutor e
+  proposte dagli studenti
+- **Tre parole** alla fine di ogni modulo, da rileggere negli incontri su Meet
+- **Report** «Studenti fermi» e «Griglia del corso», oltre ai tagli per corso, gruppo, studente,
+  incontro e video
+
+## Stato del progetto
+
+In sviluppo iniziale.
+- ✅ Schema database (`database/schema.sql`)
+- ✅ Scaffold applicativo: router, autenticazione/sessioni, connessione PDO, layout responsive, lista/dettaglio corsi
+- ✅ Moduli/lezioni con upload materiali ed embed video (Bunny/Cloudflare Stream o self-hosted)
+- ✅ Questionari con quattro tipi di domanda, domande riordinabili, tentativi illimitati
+- ✅ Sblocco progressivo dei moduli: per questionario obbligatorio e per data di apertura
+- ✅ Certificati PDF con emissione automatica, revoca e verifica pubblica per codice
+- ✅ Report per corso, studente, gruppo, incontro dal vivo e fruizione dei video, scaricabili
+  in CSV e XLSX, con indice a riquadri, ricerca e paginazione
+- ✅ Video di benvenuto al primo accesso dello studente, una volta sola e rivedibile dal profilo
+- ✅ Importazione di utenti da file CSV, con anteprima e inviti mandati a scaglioni
+- ✅ Tabelle ordinabili dal nome della colonna, dal server e senza JavaScript
+- ✅ Agenda con vista a elenco e a mese, e calendario .ics da sottoscrivere
+- ✅ Pannello di amministrazione: utenti, gruppi, corsi/iscrizioni e ruoli
+- ✅ Protezione CSRF su tutte le richieste POST
+- ✅ Sessioni live su Google Meet, con presenze e fallback a link manuale
+- ✅ Procedura di installazione guidata dal browser
+- ✅ Registrazione autonoma con verifica email, recupero password, catalogo e auto-iscrizione
+- ✅ Editor ricco nella lezione, immagini caricate e materiali ordinabili
+- ✅ Profilo personale con immagine
+- ✅ Cambio password dal profilo e password temporanea dal pannello
+- ✅ Video protetti: indirizzi Bunny Stream firmati e a scadenza
+- ✅ Ripresa del video da dove si era rimasti e tracciatura dei tempi di fruizione
+- ✅ Email di avviso quando si apre un modulo a rilascio programmato (comando da cron)
+- ✅ Tutte le pagine responsive, verificate automaticamente a tre larghezze
+- ✅ Controlli automatici di accessibilità e dei permessi per ruolo
+- ✅ Bacheca delle risorse di ogni corso, con le proposte degli studenti
+- ✅ Il ramo del corso nella barra laterale (Bacheca, L'esperto risponde, Il mio gruppo, Tre parole)
+- ✅ Report «Studenti fermi» e «Griglia del corso»
+- ✅ Tre parole alla fine di ogni modulo
+- ✅ Esercizi H5P (Lumi) come questionario e nelle lezioni
+- ✅ Questionari conclusi al 100%: si vedono spenti e non si rifanno
+- ✅ Icone accanto ai comandi, secondo un vocabolario e dei principi scritti
+- ✅ Versione in un file (`VERSION`) e pagina «Informazioni su Pistacchio LMS»
+- ✅ Bacheca ed «L'esperto risponde» per modulo: la risorsa è di tutti, la persona è della classe
+- ✅ Incontri: chi è atteso lo dice una regola sola; date dei moduli per gruppo
+- ✅ Tutor e assistente: il corso è dell'admin, il tutor lavora sulla sua classe
+- ✅ Ruoli: un nucleo fisso e cinque interruttori che fanno quello che dicono
+- ✅ Il questionario come test d'uscita del modulo, e la verifica finale del corso
+- ✅ Revisione del codice prima della produzione (29/10): otto correzioni
+
+## Requisiti
+
+- PHP **8.1 o superiore**, con estensioni `pdo_mysql`, `mbstring`, `dom`, `gd` (le ultime due richieste da Dompdf per i certificati)
+- Estensione `zip` per il download dei report in XLSX e per gli **esercizi H5P** (un file `.h5p`
+  è un archivio zip). **Non è obbligatoria**: dove manca, il pulsante XLSX non compare e resta il
+  CSV, e un file `.h5p` caricato viene rifiutato con un messaggio che lo dice
+- MySQL 8+ o MariaDB 10.6+
+- Server web con supporto al rewrite degli URL (Apache + `mod_rewrite`, oppure Nginx configurato in modo equivalente)
+- Composer (autoload PSR-4 e installazione di Dompdf: senza `composer install` i certificati non possono essere generati)
+- Estensioni `openssl` e `curl` per l'integrazione Google (già presenti in quasi tutte le installazioni)
+- Per le sessioni live: un progetto Google Cloud con **Calendar API** abilitata e un account di servizio con delega a livello di dominio (vedi sotto). Senza, le sessioni restano utilizzabili con link Meet inseriti a mano
+- **Accesso al cron** (o all'Utilità di pianificazione su Windows) per tre comandi: le email di apertura dei moduli a rilascio programmato, gli inviti agli utenti importati e le conferme di iscrizione fatte dallo staff (`bin/avvisi`). Senza, il resto funziona: mancano quelle email
+
+## Installazione
+
+L'installazione si completa dal browser, con una procedura guidata: verifica dei requisiti,
+creazione del database, primo amministratore e impostazioni facoltative.
+
+1. **Metti i file sul server e installa le dipendenze**
+   ```bash
+   git clone https://github.com/agilibaus/lms.git
+   cd lms
+   composer update
+   chmod -R 775 storage/
+   ```
+   `composer update` (non `install`) installa l'autoload PSR-4 e **Dompdf**, usato per i
+   certificati PDF: rigenera `composer.lock` includendolo. Dagli aggiornamenti successivi
+   `composer install` è di nuovo sufficiente.
+
+   **In produzione usa `composer install --no-dev`.** Fra le dipendenze di sviluppo c'è
+   PHPStan: senza quell'opzione finisce nel `vendor/` del server con tutto il suo seguito,
+   senza servire a niente.
+
+2. **Imposta il document root sulla cartella `public/`**
+   L'applicazione va servita con `public/` come document root (non la root del repo), così i
+   file in `app/`, `config/`, `database/` restano fuori dall'accesso diretto via browser.
+
+   Esempio Apache (VirtualHost):
+   ```apache
+   <VirtualHost *:80>
+       ServerName lms.local
+       DocumentRoot /percorso/al/progetto/public
+       <Directory /percorso/al/progetto/public>
+           AllowOverride All
+           Require all granted
+       </Directory>
+   </VirtualHost>
+   ```
+   Servono `mod_rewrite` e `AllowOverride All`, altrimenti `.htaccess` viene ignorato e tutti
+   gli indirizzi diversi da `/` rispondono 404.
+
+   Per una prova rapida in locale, senza Apache:
+   ```bash
+   php -S localhost:8000 -t public
+   ```
+
+3. **Apri il sito nel browser**
+   Finché manca il file `.env` vieni portato automaticamente su `/install`. Ti servono a
+   portata di mano i dati del database: host, nome, utente e password. Se il database non
+   esiste ancora, la procedura prova a crearlo con le stesse credenziali; se esiste, deve
+   essere vuoto.
+
+   I quattro passi sono: **requisiti** (versione PHP, estensioni, permessi di scrittura),
+   **database** (connessione e importazione dello schema), **amministratore** (il tuo account,
+   al posto di qualsiasi `INSERT` manuale) e **impostazioni** facoltative — indirizzo pubblico,
+   fuso orario, Bunny/Cloudflare Stream e Google Meet, tutte compilabili anche in seguito.
+
+4. **Al termine, elimina la cartella `public/install`**
+   La procedura si disattiva da sola — scrive `storage/installed.lock`, e dal 16/10 è chiusa
+   anche quando c'è il `.env`, senza leggerlo (per reinstallare da zero vanno tolti tutti e
+   due) — ma rimuovere la cartella è la garanzia definitiva. Controlla anche che in `.env` ci sia `APP_DEBUG=0`: in produzione gli errori
+   non devono finire sotto gli occhi degli utenti.
+
+Se la cartella del progetto non è scrivibile, l'installer non può salvare `.env`: in quel caso
+ti mostra il contenuto da creare a mano, e non scrive il file di lock finché la configurazione
+non è a posto.
+
+### Aggiornare un'installazione esistente
+La procedura guidata serve solo alla prima installazione. Per aggiornare, tira le modifiche,
+esegui `composer install` e applica le eventuali migrazioni in `database/migrations/` (in
+ordine di data), ad esempio:
+```bash
+mysql -u utente -p lms < database/migrations/2026_09_15_quiz_certificates.sql
+```
+Le più recenti sono nella tabella qui sotto, in fondo.
+
+Le migrazioni vanno applicate **in ordine di data**, e ciascuna si puo' rieseguire senza
+danni. Le piu' recenti:
+
+| File | Cosa fa |
+|---|---|
+| `2026_09_17_logo_gruppo.sql` | colonna `logo_path` sui gruppi |
+| `2026_09_18_ordine_corsi.sql` | colonna `position` sui corsi |
+| `2026_09_29_tutor_assistenti.sql` | tabella `assistant_tutors`, un assistente puo' affiancare piu' tutor |
+| `2026_09_30_cambio_password.sql` | cambio password dal profilo |
+| `2026_09_30_fruizione_video.sql` | ripresa del video e tracciatura dei tempi |
+| `2026_09_30_rimozione_supervising_tutor_id.sql` | toglie la colonna, sostituita da `assistant_tutors` |
+| `2026_10_01_quiz_tipi_domanda.sql` | risposta multipla e domanda aperta |
+| `2026_10_01_rilascio_moduli.sql` | data di apertura dei moduli e avvisi gia' inviati |
+| `2026_10_04_agenda_calendario.sql` | indirizzo del calendario personale |
+| `2026_10_04_agenda_calendario_date.sql` | da quando esiste e quando e' stato letto |
+| `2026_10_05_benvenuto.sql` | video di benvenuto: chi l'ha gia' visto |
+| `2026_10_05_importazione_utenti.sql` | la coda degli inviti per gli utenti importati |
+| `2026_10_07_benvenuto_tutor.sql` | il benvenuto del tutor nei corsi, le visite che lo riducono, il permesso `course.welcome` |
+| `2026_10_07_benvenuto_contatti.sql` | il permesso `course.welcome_own` al tutor, l'email per gli studenti, il link WhatsApp del gruppo |
+| `2026_10_07_nome_cognome.sql` | nome e cognome separati, `full_name` calcolato, la scelta di come comparire agli altri studenti |
+| `2026_10_07_domande.sql` | le domande degli studenti al tutor e l'archivio delle risposte; i permessi `question.answer` e `question.answer_own` |
+| `2026_10_08_primo_accesso.sql` | `name_display` facoltativo: NULL vuol dire «non ancora scelto», e vale come «solo le iniziali» |
+| `2026_10_09_esperto.sql` | risponde l'esperto (l'admin): tolto `question.answer_own` ai tutor, le domande in attesa senza tutor |
+| `2026_10_09_foto_tutor.sql` | una foto sola per il tutor: la foto del suo benvenuto diventa quella del profilo, e la colonna `course_tutor_welcomes.photo_path` si toglie |
+| `2026_10_10_richiesta_iscrizione.sql` | il messaggio della richiesta di iscrizione fino a 1.000 caratteri |
+| `2026_10_11_obiettivi.sql` | l'obiettivo del corso e l'obiettivo del modulo (`courses.objective`, `modules.objective`), facoltativi, fino a 1.000 caratteri |
+| `2026_10_11_obiettivi_html.sql` | le due colonne dell'obiettivo diventano TEXT: con i tag HTML il testo salvato può superare i 1.000 caratteri |
+| `2026_10_11_obiettivo_visite.sql` | `course_objective_views`: le visite dello studente alla pagina di un corso con un obiettivo |
+| `2026_10_12_promemoria_incontri.sql` | `live_sessions.invites_sent_at` e `live_session_reminders`: il promemoria degli incontri, sette ore prima, solo dopo gli inviti |
+| `2026_10_12_giro_del_cerchio.sql` | `group_questions`, `group_answers` e `live_session_rsvps`: il giro del cerchio e «Ci sarò» nella pagina del gruppo |
+| `2026_10_12_iscrizione_confermata.sql` | `enrollments.confirmation_pending`: l'«Iscrizione confermata» delle iscrizioni fatte dallo staff, in coda per `bin/avvisi`. Va impostato anche il comando, ogni quarto d'ora |
+| `2026_10_13_tentativi_accesso.sql` | `login_failures`: le password sbagliate degli ultimi tentativi di accesso, per il limite ai tentativi |
+| `2026_10_17_bacheca.sql` | la Bacheca: categorie, risorse, proposte, «Questa me la tengo», «Come l'ho utilizzata»; i permessi `board.manage` e `board.manage_own`; l'email «Nuova proposta per la bacheca» |
+| `2026_10_17_bacheca_colori.sql` | il colore delle categorie diventa un `#RRGGBB` |
+| `2026_10_20_studenti_fermi.sql` | `users.last_seen_at` ed `enrollments.last_visit_at`, per il report «Studenti fermi» |
+| `2026_10_21_tre_parole.sql` | `courses.three_words_since` e la tabella `module_words`: le tre parole alla fine di ogni modulo |
+| `2026_10_22_h5p.sql` | `quizzes.kind`, `h5p_dir`, `h5p_library`, `h5p_file`; `quiz_attempts.h5p_raw` e `h5p_max`: i questionari H5P |
+| `2026_10_23_h5p_lezioni.sql` | la tabella `lesson_h5p`: gli esercizi H5P dentro le lezioni |
+| `2026_10_25_bacheca_moduli.sql` | `board_resources.module_id` obbligatorio: ogni risorsa della Bacheca appartiene a un modulo (le esistenti prendono il primo modulo del loro corso) |
+| `2026_10_26_date_moduli_gruppo.sql` | la tabella `group_module_dates`: le date dei moduli di un gruppo |
+| `2026_10_28_verifica_finale.sql` | `modules.is_final`: la verifica finale, spenta per tutti i moduli esistenti |
+
+**Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
+vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
+
+**`2026_10_05_benvenuto.sql` decide un comportamento, non solo una colonna**: nello stesso
+momento in cui la crea, segna come «già visto» tutti gli utenti che esistono in quel momento.
+È il modo in cui chi è già iscritto non viene interrotto dalla pagina di benvenuto — e non si
+torna indietro, se non svuotando la casella a mano.
+
+## Struttura del progetto
+
+```
+/public              → document root
+  /assets/css         → stylesheet
+  /assets/js          → course-order (riordino schede), lesson-video (copertina),
+                        lesson-focus (senza distrazioni), lesson-tracking (tempi di
+                        fruizione), dropdown
+  /assets/fonts       → Albert Sans per le pagine pubbliche (vedi LEGGIMI.md nella cartella)
+                        i caratteri scelti dal catalogo NON stanno qui ma in storage/fonts
+  /assets/vendor/tinymce → editor di testo ricco (vedi README-pistacchio.md nella cartella)
+  /assets/h5p         → riproduttore h5p-standalone 3.8.0 (MIT, vedi LEGGIMI.txt nella cartella)
+  /assets/img         → logo e icone della scheda del browser
+  /install            → procedura di installazione guidata (da eliminare dopo l'uso)
+  index.php           → front controller
+  .htaccess           → rewrite verso index.php
+/app
+  /Controllers        → logica delle route: Auth, Registration, PasswordReset, Profile,
+                        Course, Module, Lesson, Quiz, Certificate, Report, Catalog,
+                        LiveSession, VideoProgress
+    /Admin             → pannello di amministrazione: Admin, User, Group, Course,
+                        Permission, Settings
+  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
+  /Auth               → login, sessione, permessi per ruolo (Auth.php, Ruoli.php); chi vede chi
+                         (CourseRights, StudentScope, LiveScope, GroupPeers, BachecaScope)
+  /Core               → Router minimale, Database (PDO), Env, View, Settings, Url
+                         Upload, FileType, OrphanFiles          → file caricati
+                         VideoEmbed, VideoPoster, BunnyToken, WatchIntervals → video
+                         CourseAccess, Percorso, QuizScoring, CertificateService → regole didattiche
+                         CourseCover, GroupLogo, AvatarImage, AuthLayout → immagini e aspetto
+                         Csv, Xlsx, Ics                         → formati di scambio
+                         ReportSections                         → i cinque tagli dei report
+                         Csrf, HtmlSanitizer, PasswordPolicy, PasswordGenerator → sicurezza
+                         H5P, H5PArchivio, LezioneH5P           → esercizi interattivi
+                         Bacheca, TreParole, StudentiFermi, GrigliaCorso, Presenza
+                         Icona, CorsoCorrente, Versione, Ambiente → interfaccia e informazioni
+    /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
+    /Mail              → client SMTP scritto in casa, trasporti e testi dei messaggi
+  /Views
+    /partials          → layout condiviso (shell.php)
+  routes.php
+/bin
+  rilascio-moduli      → comando da cron: avvisa gli studenti dei moduli che si aprono
+  invita-utenti        → comando da cron: gli inviti agli utenti importati, a scaglioni
+  avvisi               → comando da cron: le email che non partono dalla pagina (conferme di iscrizione dello staff, promemoria degli incontri)
+/config
+  config.php           → bootstrap (env, error reporting, timezone)
+/storage
+  /videos
+  /materials
+  /lesson-images       → immagini inserite nel testo delle lezioni
+  /avatars             → immagini del profilo
+  /course-covers       → copertine dei corsi, in due misure
+  /group-logos         → logo dei gruppi
+  /certificates
+  /bacheca             → file delle risorse della Bacheca, una cartella per corso
+  /h5p                 → esercizi H5P aperti dai file .h5p, una cartella per contenuto
+  /google              → chiave dell'account di servizio (permessi 0600)
+  /mail                → messaggi .eml quando MAIL_TRANSPORT=log
+  /logs                → uscita dei comandi da cron
+  /fonts               → caratteri scaricati dal catalogo di Google Fonts
+/database
+  schema.sql
+  google-fonts.json    → elenco delle famiglie del catalogo (solo nomi, 50 KB)
+  /migrations         → migrazioni incrementali per installazioni gia' esistenti
+/tests                 → vedi la sezione «Test» più sotto per l'elenco completo
+VERSION                → la versione installata (vedi «Versione»)
+```
+
+## Questionari, certificati e report
+
+### Questionari
+Ogni modulo puo' avere **un questionario**. Il tutor imposta la soglia di superamento in percentuale;
+i **tentativi sono illimitati** e allo studente vale sempre il punteggio migliore. Le risposte
+corrette non vengono mai inviate al browser durante lo svolgimento, e la correzione avviene
+lato server verificando che l'opzione scelta appartenga davvero alla domanda. Le domande si
+riordinano con due frecce, come moduli e lezioni.
+
+**Dove si modifica e si elimina.** Da due posti: il collegamento «Questionario» nell'intestazione del
+riquadro del modulo, nella pagina del corso, e il pulsante «Modifica questionario» nella pagina del
+questionario — come «Modifica lezione» nella lezione. L'eliminazione sta in fondo alla pagina di
+modifica, con la conferma, perché cancella domande e tentativi già svolti e non si torna
+indietro. Fino alla 0106 il secondo posto non esisteva: la funzione c'era ma dalla pagina del
+questionario non ci si arrivava, che per chi la cerca è lo stesso. Da lì una regola e tre prove in
+`permessi.js`: un permesso che dall'interfaccia non si raggiunge non è un permesso, quindi si
+verifica anche la **via**, non solo il diritto.
+
+Quattro tipi di domanda:
+
+| Tipo | Come si corregge |
+|---|---|
+| Scelta singola | Una sola opzione giusta |
+| Vero / falso | Idem, con due opzioni fisse |
+| Risposta multipla | **Tutto o niente**: vale solo se lo studente segna esattamente le opzioni giuste. La domanda dice quante sono |
+| Risposta aperta | **Non fa punteggio**: la risposta si raccoglie e basta |
+
+Le domande aperte restano **fuori dal conteggio**, sia al numeratore sia al denominatore: un
+questionario di sole domande aperte risulta consegnato e superato, senza percentuale. Le risposte si
+leggono nel report del singolo studente. La logica sta tutta in `App\Core\QuizScoring`, con
+53 test.
+
+**Un questionario superato al 100% è concluso** (21/10, Alessandro): non c'è più niente da
+migliorare. La pagina lo mostra **visibile ma spento** — risposte e «Invia risposte»
+disattivati, e senza «Annulla»; in un questionario H5P l'esercizio non risponde né al mouse né
+alla tastiera (`inert`) — con «Superato al 100%: il questionario è concluso.» al posto del
+miglior risultato, e senza «tentativi illimitati» nel sottotitolo. I tentativi restano, con il
+loro dettaglio. **Il blocco è anche sul server**: un invio o un punteggio H5P che arrivano a
+questionario concluso non si salvano. Si ricava dai tentativi salvati (`QuizScoring::concluso()`):
+vale anche per chi era già al 100%, e resta se il questionario viene cambiato dopo. Un
+questionario di **sole domande aperte** vale 100 alla consegna, e dice «Consegnato: il
+questionario è concluso.». Lo staff lo vede sempre in anteprima.
+
+**Un questionario può essere un esercizio H5P** invece delle domande: vedi **Esercizi H5P**.
+Non però il questionario obbligatorio di un modulo né la verifica finale (vedi sotto).
+
+**Il questionario è il test d'uscita del modulo** (27/10, Alessandro): si apre quando lo
+studente ha completato tutte le lezioni del modulo. Prima è nella pagina del corso in grigio e
+senza collegamento, senza frase; chi lo apre dall'indirizzo torna al corso con «… si apre
+quando hai fatto le lezioni del modulo.». La regola è una sola, `Percorso::questionarioChiuso`,
+e la applicano la pagina del corso, la pagina del questionario, l'invio delle risposte e, per i
+questionari H5P, i file e il punteggio. Lo staff non è mai bloccato.
+
+**La verifica finale** (28/10, Alessandro) è un modulo che l'admin dichiara tale con la casella
+«Verifica finale» in «Nuovo modulo» e «Modifica modulo» (`modules.is_final`):
+
+- **solo il questionario**: niente «+ Lezione», una lezione mandata a mano si rifiuta, e la
+  casella non si accende su un modulo che ha lezioni;
+- **si apre quando lo studente ha completato tutti gli altri moduli** del corso («… si apre
+  quando hai completato i moduli precedenti.»);
+- **sempre in fondo**: un modulo nuovo va prima di lei, le frecce non la spostano e nessun
+  modulo scende sotto di lei;
+- **una sola per corso**: la seconda si rifiuta con il nome della prima;
+- accesa, «Questionario obbligatorio» sparisce (`modulo-verifica.js`) e si salva spento: dopo di
+  lei non c'è niente da bloccare. Spegnendola, un avviso dice che il suo questionario si
+  aprirebbe subito a tutti;
+- **non è un contenuto del corso**: non si sceglie per gli incontri, le risorse della Bacheca e
+  le domande all'esperto, e non chiede le Tre parole; anche gli invii costruiti a mano si
+  rifiutano (`ModuleModel::contenuti()`);
+- nella pagina del corso l'etichetta «verifica finale» la vede solo lo staff.
+
+**Un questionario H5P non può essere obbligatorio né la verifica finale** (29/10, Alessandro): il
+suo punteggio lo manda il browser e si può falsificare, mentre quei due decidono il percorso.
+Restano a domande, corrette da Pistacchio. In «Nuovo questionario» di un modulo obbligatorio o
+della verifica finale «Contenuto H5P» è spento, con la frase che dice perché; in «Modifica
+modulo» di un modulo con un questionario H5P le due caselle sono spente (se erano già accese
+restano attive, per poterle spegnere). Il server rifiuta in tutti e due i versi
+(`QuizModel::h5pAmmesso()`). Il certificato è un attestato di frequenza: un questionario H5P
+ordinario conta per il certificato come gli altri, ed è un rischio accettato.
+
+**Quanto si può scrivere in una risposta aperta**: 3.000 caratteri
+(`QuizController::MAX_OPEN_CHARS`), dichiarati in tre posti con tre mestieri diversi. Il
+`maxlength` del campo è quello che il browser fa rispettare, e funziona **senza JavaScript**.
+Il contatore sopra l'angolo in alto a destra del campo scala mentre si scrive, e sotto i 100
+caratteri rimasti il numero si fa scuro e grassetto — non solo di un altro colore, perché il
+colore da solo non è un'informazione. Senza JavaScript resta fermo su «3000 caratteri
+rimasti», che a campo vuoto è vero. **Il limite che conta è il taglio in PHP**: il corpo di
+una richiesta lo scrive chi vuole, e togliere `maxlength` dagli strumenti per sviluppatori è
+un attimo. Il contatore non è una regione viva (niente `aria-live`): annunciarsi a ogni tasto
+coprirebbe con la propria voce quello che la persona sta scrivendo; il collegamento è
+`aria-describedby`, che lo fa leggere entrando nel campo. Sono caratteri e non byte:
+`answer_text` è un TEXT da 65.535 byte e 3.000 caratteri accentati in utf8mb4 ne occupano al
+massimo 12.000, quindi non serve nessuna migrazione.
+
+**Ogni campo di testo libero ha un limite e questo contatore** (10/10). Con i limiti:
+
+| Campo | Caratteri |
+|---|---|
+| Risposta aperta di un questionario | 3.000 |
+| Presentazione del profilo | 1.000 |
+| Obiettivo del corso; obiettivo del modulo | 1.000, solo testo visibile |
+| Descrizione del corso | 3.000, solo testo visibile |
+| Messaggio della richiesta di iscrizione | 1.000 |
+| Domanda all'esperto; nella pagina «Domande», domanda e risposta | 1.000 e 5.000 |
+| Testo del benvenuto del tutor | 4.000 |
+| Descrizione del gruppo | 1.000 |
+| Descrizione della sessione dal vivo | 1.000 |
+| Testo della domanda di un questionario | 500 |
+| Impostazioni › Aspetto: titolo e testo della pagina di accesso affiancata | 300 e 500 |
+| Impostazioni › Messaggi email: testo di ciascuna email (con i segnaposto); chiusura comune | 1.000 e 500 |
+
+Fuori resta solo il testo delle lezioni, che è testo formattato nell'editor. **Obiettivo e
+descrizione del corso e obiettivo del modulo accettano qualche tag HTML** (11/10) e il loro
+limite conta solo il testo visibile: quei campi non hanno `maxlength`, e oltre il limite il
+server rifiuta invece di tagliare (vedi **Corsi e iscrizioni**). I campi più recenti
+passano da `App\Core\CampoContato`, che tiene insieme le due metà del limite: `html()` scrive il
+campo con il contatore e `taglia()` taglia sul server.
+
+**Gli a capo valgono un carattere, in tutti i campi.** Il campo li conta uno, ma il browser li
+invia come due (`\r\n`): ogni taglio sul server li converte prima di contare, o un testo pieno
+con degli a capo perderebbe la fine, un carattere per a capo. Fino al 10/10 succedeva nella
+presentazione del profilo e nelle risposte aperte; `permessi.js` ora salva in tutti e due un
+testo lungo esattamente il limite, con molti a capo, e controlla che arrivi intero. `accessibilita.js` lo controlla su ogni pagina: un'area di testo con
+`maxlength` senza contatore è un rilievo, e su ogni contatore verifica che stia sopra il campo a
+destra, che ne sia la descrizione e che dichiari lo stesso limite del campo. Lo script
+(`quiz-open-count.js`) si può caricare più volte nella stessa pagina: ogni campo si collega una
+volta sola.
+
+### Sblocco progressivo dei moduli
+Due regole indipendenti possono chiudere un modulo, e ne basta una. **Lo staff non e' mai
+soggetto al blocco**: un modulo chiuso va preparato prima che si apra.
+
+**Per questionario obbligatorio.** Se un modulo ha il flag "questionario obbligatorio", tutti i moduli
+successivi restano bloccati finche' lo studente non supera quel questionario. Un modulo marcato come
+obbligatorio ma privo di questionario — o con un questionario senza domande, o H5P senza il suo
+contenuto — non blocca nulla, per evitare vicoli ciechi. (Fino al 29/10 non bloccava nemmeno un
+questionario H5P con il contenuto; dal 29/10 un questionario obbligatorio è sempre a domande.)
+
+**Per data (rilascio progressivo).** Ogni modulo ha un campo **"Disponibile dal"**: vuoto vuol
+dire aperto, con una data il modulo si apre in quel momento, uguale per tutti gli studenti.
+Lo studente vede il titolo in grigio con la data e non puo' aprire **ne' le lezioni, ne' i
+questionari, ne' i materiali scaricabili, ne' gli incontri dal vivo** di quel modulo: sono quattro
+ingressi distinti nel codice, e il controllo e' in tutti e quattro, perche' nascondere un
+collegamento non e' bloccarlo.
+
+**Ogni gruppo può avere le sue date** (26/10, Alessandro). La data sul modulo resta quella di
+tutto il corso; dalla pagina del gruppo, «Date dei moduli» (`/admin/groups/{id}/courses/{corso}/date`,
+admin e tutor del gruppo, solo per i corsi assegnati al gruppo) dà una data per modulo a quella
+classe. Campo vuoto: il modulo segue la data del corso. Per lo studente vale la data del suo
+gruppo, se c'è (fra più gruppi dello stesso corso, la più vicina), altrimenti quella del corso
+(`ModuleModel::dataPer`): per il blocco di lezioni, questionari, materiali, incontri e Bacheca,
+per la pagina del corso, l'Agenda, il riepilogo dei corsi e l'email del giorno dell'apertura.
+Tabella `group_module_dates`, migrazione `2026_10_26_date_moduli_gruppo.sql`.
+
+Le due regole si incatenano nel verso giusto: un modulo chiuso per data che ha il questionario
+obbligatorio chiude anche quelli dopo, perche' il suo questionario non si puo' fare.
+
+Il confronto fra la data di apertura e l'ora corrente si fa **in SQL**, mai in PHP: il server
+web e il database possono trovarsi su fusi diversi, e qui un'ora di differenza vuol dire un
+modulo aperto quando non doveva.
+
+**La percentuale di avanzamento non cambia**: continua a contare tutte le lezioni del corso,
+aperte e chiuse, cosi' certificati e report restano confrontabili. Accanto, sulla scheda del
+corso, lo studente legge una frase che risponde all'altra domanda — «Sei in pari — prossimo
+modulo il 31/10/2026» — e che compare solo se c'e' davvero un modulo chiuso.
+
+#### L'email di apertura, e il cron che la manda
+Il giorno in cui un modulo si apre gli iscritti ricevono un'email: **gli studenti attivi,
+iscritti prima dell'apertura**, e non chi ha il modulo ancora chiuso da un questionario non
+superato (12/10). Chi si iscrive dopo trova il modulo già aperto e non riceve niente; per chi è
+fermo al questionario l'avviso si segna come preso e non parte nemmeno dopo: il modulo lo
+scopre superando il questionario. Non la manda una richiesta
+web — non c'e' nessuna richiesta, e' passata una data — ma un comando da eseguire una volta al
+giorno:
+
+```
+30 7 * * * cd /percorso/del/sito && php bin/rilascio-moduli >> storage/logs/rilascio.log 2>&1
+```
+
+`php bin/rilascio-moduli --prova` elenca che cosa manderebbe senza mandare niente.
+
+In sviluppo, su Windows con Laragon, questo comando si pianifica con l'Utilità di
+pianificazione: la ricetta sta più sotto, in «I lavori periodici su Windows».
+
+Tre cose da sapere prima di affidarglisi:
+
+- **Non manda due volte.** La riga in `module_unlock_notifications` si scrive **prima**
+  dell'invio, e a decidere e' la chiave unica del database: due esecuzioni sovrapposte non
+  mandano la stessa email due volte. Il rovescio e' voluto: se il server di posta rifiuta,
+  quell'avviso e' perduto e lo studente trovera' comunque il modulo aperto rientrando. Fra
+  perdere un avviso e mandarne dieci a tutti insieme, il primo e' il verso giusto in cui
+  sbagliare.
+- **Si rifiuta di partire senza `APP_URL`.** Da terminale non c'e' una richiesta da cui
+  ricavare l'indirizzo del sito, e le email uscirebbero con collegamenti a `localhost`.
+- **Lascia detto di aver girato**, in `settings.DRIP_LAST_RUN_AT`. Un cron fermo non si
+  lamenta: senza quella traccia, il primo segnale sarebbe uno studente che non ha saputo di un
+  modulo aperto da due settimane.
+
+**Se il cron non c'e', i moduli si aprono lo stesso** — il blocco si calcola quando lo studente
+apre la pagina — e a mancare sono solo le email.
+
+### Certificati
+Il certificato viene emesso **automaticamente** quando lo studente ha completato tutte le
+lezioni del corso **e** superato tutti i questionari presenti. Il PDF (A4 orizzontale, generato con
+Dompdf) viene salvato in `storage/certificates/` e non e' mai raggiungibile direttamente da
+`public/`: il download passa da un endpoint autenticato. Ogni certificato ha un codice di
+verifica pubblico consultabile su `/verify/{codice}`, pagina che non richiede login e mostra
+solo intestatario, corso e data. L'admin può emettere un certificato manualmente
+(anche in deroga ai requisiti) o revocarlo: un certificato revocato non e' piu' scaricabile,
+risulta "revocato" nella verifica pubblica e non viene rigenerato dall'emissione automatica.
+
+### Report
+`/reports` è un **indice che sceglie**, non una pagina che stampa tutto: cinque riquadri, uno
+per taglio, ciascuno con il proprio numero (quanti corsi, quanti studenti…). L'elenco completo
+di un taglio sta in una pagina sua, `/reports/elenco/{sezione}`, con **ricerca** e
+**paginazione a 50 righe**.
+
+Prima le cinque tabelle erano stampate per intero una sotto l'altra: con 605 studenti la
+pagina era alta **22.042 px** — ventidue schermi — e non c'era modo di cercare una riga se non
+scorrendo. Adesso l'indice sta in uno schermo.
+
+Nelle tabelle le colonne di conteggio sono **allineate a destra, in cifre a larghezza fissa e
+della stessa larghezza in tutte e cinque le pagine**: passando da un elenco all'altro i numeri
+cadono dove ci si aspetta. (Prima erano allineati a sinistra e cambiavano ascissa in ogni
+tabella.) Sotto i 50 rem di spazio disponibile ogni riga diventa una scheda e l'allineamento
+delle colonne decade da solo, perché lì colonne non ce ne sono più.
+
+I cinque tagli sono descritti una volta sola in `App\Core\ReportSections` e le loro colonne in
+`app/Views/reports/_colonne.php`: indice ed elenchi leggono di lì, così non possono divergere.
+La ricerca filtra in memoria sui campi che la sezione dichiara — con seicento righe è
+istantanea; è il punto da cambiare se un giorno le righe saranno decine di migliaia.
+
+**Il campo di ricerca dice che cosa si può cercare lì**: il suggerimento elenca le colonne in
+cui quel report cerca davvero (`studente, email…` fra gli studenti, `incontro, corso o
+gruppo…` fra gli incontri), perché i cinque report hanno dati diversi e un suggerimento
+uguale per tutti prometteva ricerche che non esistono. Le intestazioni citate sono quelle
+della tabella sotto, e `tests/report_test.php` verifica che lo restino. Ogni sezione dichiara
+anche il proprio articolo plurale, così la frase è «Cerca fra **gli** studenti» e non «fra i
+studenti»: in italiano dipende da come comincia la parola, non dal genere.
+
+**Ogni vista si scarica in XLSX e in CSV.** In cima a una pagina di dettaglio i due formati
+stanno dietro a un pulsante "Scarica" con la tendina; **nelle righe degli elenchi no**: lì
+sono due collegamenti scritti, `XLSX` e `CSV`, accanto a `Dettaglio`. Una tendina per riga
+costa un clic in più cinquanta volte per pagina, e soprattutto un pannello che si apre
+dentro a una tabella è un pannello che qualcosa può ritagliare — è successo, ed è il motivo
+per cui ora un controllo automatico apre ogni tendina della piattaforma e verifica che il
+suo pannello non esca da un contenitore che scorre.
+
+Dal 20/10 i riquadri dell'indice si chiamano **Corsi, Gruppi, Studenti, Sessioni live, Video**,
+con il numero accanto al nome («Corsi (4)»), e nelle pagine interne conteggio, tabella e pagine
+stanno in un riquadro bianco; nei dettagli la tabella ha il suo titolo («Iscritti (n)», «Membri
+(n)», «Studenti (n)»). Nel dettaglio dello studente, sotto il nome, c'è solo il ruolo (niente
+email), con l'ultimo accesso.
+
+| Report | Contenuto |
+|---|---|
+| **Studenti fermi** | Il primo riquadro. Vedi sotto |
+| Per corso | Iscritti con progresso, lezioni completate, questionari superati, stato certificato; da qui la **Griglia del corso** |
+| Per gruppo | Membri del gruppo incrociati con i corsi assegnati al gruppo (con il simbolo del gruppo accanto al nome, come nel pannello) |
+| Per studente | Tutti i corsi dello studente, con dettaglio tentativi, punteggi e risposte aperte |
+| Per incontro dal vivo | Presenze, con l'origine del dato (piattaforma o segnata a mano) |
+| Fruizione dei video | Tempo effettivamente guardato per studente e per lezione, in secondi |
+
+L'XLSX non richiede dipendenze: il file lo scrive `App\Core\Xlsx`, che ha bisogno
+dell'estensione `zip`. Dove manca, il pulsante XLSX non compare e resta il CSV.
+
+I permessi vengono da `App\Auth\Ruoli`: `report.view` (admin, tutor) e, per l'assistente,
+l'interruttore «Report» (`report.view_assigned`) e, solo con quello acceso, «Tentativi dei
+questionari». **Chi vede quali studenti** lo decide `App\Auth\StudentScope`: l'admin tutti, il
+tutor gli studenti dei suoi gruppi, l'assistente quelli dei gruppi dei tutor che affianca
+(tabella `assistant_tutors`). **Dal 25/10 ragiona per coppie studente-corso**: di uno studente il
+tutor (e il suo assistente) vede i corsi che lo studente fa in un gruppo di quel tutor, non gli
+altri. Vale fuori dai report — la pagina di un tentativo, l'elenco e il download dei certificati,
+la fruizione dei video, gli incontri, Studenti fermi, la Griglia — e gli elenchi dei report
+(Corsi, Studenti, Incontri) contano solo gli studenti del perimetro, come le pagine che si aprono
+da lì. In Report il tutor legge «Stai vedendo solo gli studenti dei gruppi che segui».
+
+#### Studenti fermi
+`/reports/fermi`: chi non ha attività in un corso da almeno **7, 14 o 30 giorni** (di base 14), o
+non l'ha mai iniziato. Colonne: Studente (senza email), Corso, Gruppo, Iscritto da, **Ultima
+attività** — l'ultima cosa fatta, senza verbo e senza «da N giorni» («18/09 · incontro «Tappa
+1»») —, Ultima visita al corso e Stato. Lo stato è un **pallino**: grigio «non ha mai iniziato»,
+ocra «entra ma non avanza», rosso «non entra più», con il testo per i lettori di schermo e la
+legenda sotto la tabella. Tutte le colonne si ordinano (lo stato per gravità), e la pagina si
+scarica in XLSX e CSV con la soglia, l'ordine e il perimetro di chi guarda. I dati vengono da
+`users.last_seen_at` ed `enrollments.last_visit_at`, che `App\Core\Presenza` scrive al più ogni
+cinque minuti; le regole stanno in `App\Core\StudentiFermi`.
+
+#### Griglia del corso
+`/reports/courses/{id}/griglia`, dal report del corso e dall'elenco dei corsi: una riga per
+studente, una colonna per modulo («2/3», con la spunta se completo) o, aprendo un modulo, una per
+ogni sua attività — lezioni e incontri fatti o no, «assente» agli incontri passati, **il
+punteggio migliore** del questionario. In fondo, quanti hanno completato ogni modulo o fatto ogni
+attività. Gli incontri futuri o di un altro gruppo non contano. Filtro per gruppo quando il corso
+ne ha più d'uno, ordine per studente e per avanzamento, scaricamento con tutte le attività. Il
+tutor vede solo i suoi studenti. Regole in `App\Core\GrigliaCorso`.
+
+## Pannello di amministrazione
+
+Raggiungibile dalla sezione **Amministrazione** della sidebar, che mostra solo le voci
+consentite dai permessi dell'utente.
+
+### Utenti (`/admin/users`)
+Creazione utenti con ruolo, stato attivo/disattivo e password iniziale, modifica e
+reimpostazione password. **La password iniziale la genera la piattaforma** e si consegna una
+volta sola: è temporanea, e al primo accesso l'utente deve sceglierne una propria. Chiunque
+può cambiarla in qualsiasi momento dal proprio **Profilo**; il cambio chiude tutte le altre
+sessioni aperte e manda un avviso per email. La regola è almeno 8 caratteri con lettere e
+cifre (`App\Core\PasswordPolicy`). Serve `user.manage`, cioè l'admin.
+
+Alcune protezioni sono deliberatamente rigide, per non restare chiusi fuori:
+un amministratore non può cambiare il proprio ruolo, disattivarsi o eliminarsi; deve sempre
+restare almeno un admin attivo; un utente che risulta autore di corsi non è eliminabile
+(`courses.created_by` è `ON DELETE RESTRICT`) e va semmai disattivato; lo stesso per chi ha creato
+degli incontri dal vivo (29/10: prima la pagina dava errore, ora lo dice). L'eliminazione di un
+utente rimuove a cascata iscrizioni, progressi, tentativi e certificati: per conservare lo
+storico è preferibile disattivarlo.
+
+**Un tutor ha sempre una foto del profilo** (09/10, `AvatarImage::obbligatoria()`): è la stessa
+nella pagina del gruppo, nel benvenuto in cima ai corsi e ovunque compaia, così i suoi studenti
+lo riconoscono. Nel modulo dell'utente c'è il campo «Foto del profilo (per i tutor)», solo con
+`user.manage`: non si crea un tutor, e non si fa diventare tutor un utente, senza una foto, che
+si può caricare nello stesso invio. Dal pannello la foto si carica **solo ai tutor**: per gli
+altri ruoli è facoltativa e la sceglie la persona dal proprio profilo. Il tutor, dal profilo, la
+sostituisce ma non la toglie. Il campo lo mostra uno script solo quando il ruolo scelto è
+«Tutor»; senza JavaScript resta visibile, e le regole le fa rispettare il server.
+
+La scheda dell'utente mostra anche **i gruppi a cui partecipa** (tutor e numero di corsi del
+gruppo), e permette di aggiungerlo o toglierlo da lì: le stesse azioni della scheda del gruppo,
+con gli stessi effetti sulle iscrizioni.
+
+### Gruppi (`/admin/groups`)
+Classi/coorti con tutor responsabile, membri e corsi assegnati. **Creare ed eliminare i gruppi e
+assegnare i corsi è dell'admin** (`group.manage`). Il tutor (`group.manage_own`) cura i gruppi di
+cui è tutor: nome, immagine, descrizione, link WhatsApp, **date dei moduli** (vedi **Sblocco
+progressivo dei moduli**); i membri solo con l'interruttore «Membri dei gruppi» acceso (vedi
+**Ruoli**).
+
+**Assegnare un corso al gruppo iscrive i membri al corso**, e chi entra nel gruppo per mano
+dell'admin viene iscritto ai corsi già assegnati. L'operazione è idempotente: riassegnare un corso
+non azzera il progresso di chi era già iscritto. Le operazioni inverse — togliere un membro dal
+gruppo o un corso dal gruppo — **non** cancellano le iscrizioni, perché con esse sparirebbero
+progresso, tentativi dei questionari e certificati; per rimuoverle davvero si usa la scheda del corso.
+
+**Il tutor aggiunge al suo gruppo solo chi è già iscritto** a un corso del gruppo e non fa già
+parte di un altro gruppo con un corso in comune, e **non iscrive** a nessun altro corso (29/10):
+iscrivere è dell'admin. Sotto «Aggiungi al gruppo» la frase lo dice: «Puoi aggiungere gli
+studenti già iscritti ai corsi del gruppo, purché non facciano già parte di un altro gruppo per lo
+stesso corso.» (`GroupModel::candidati()`).
+
+### Corsi e iscrizioni (`/admin/courses`)
+Creazione, modifica, iscrizioni ed eliminazione sono dell'admin. Lo slug è generato dal titolo e
+reso univoco in automatico. I contenuti (moduli, lezioni, questionari) restano nella scheda del
+corso. La rimozione di un'iscrizione cancella progresso e certificato di quel corso: viene chiesta
+conferma. **Il tutor** in Gestione corsi vede i corsi dei suoi gruppi; aprendone uno trova il suo
+benvenuto da registrare e i suoi studenti, in sola lettura (vedi **Chi modifica cosa**).
+
+**La descrizione è lunga al massimo 3.000 caratteri** (10/10), con il contatore sulla riga
+dell'etichetta, allineato al bordo destro del campo: lo stesso della presentazione nel profilo e
+della domanda all'esperto. `accessibilita.js` controlla il contatore in «Nuovo corso» e
+«Modifica corso».
+
+**L'obiettivo del corso e l'obiettivo del modulo** (11/10) sono due campi facoltativi, lunghi al
+massimo **1.000 caratteri**, con lo stesso contatore. «Obiettivo del corso» sta in «Nuovo corso» e
+«Modifica corso», subito prima della descrizione; «Obiettivo del modulo» in «Nuovo modulo» e
+«Modifica modulo», subito prima di «Disponibile dal». Vuoti, restano NULL: i corsi e i moduli
+creati prima restano senza finché qualcuno non lo scrive. Dove si vedono è più sotto, in
+**L'obiettivo nella pagina del corso**. I limiti stanno in
+`Admin\CourseController::MAX_OBJECTIVE_CHARS` e `ModuleController::MAX_OBJECTIVE_CHARS`; le
+colonne arrivano con `2026_10_11_obiettivi.sql` e diventano TEXT con
+`2026_10_11_obiettivi_html.sql`.
+
+**Obiettivo e descrizione accettano qualche tag HTML scritto a mano** (11/10): `<p>`, `<br>`,
+`<strong>`, `<b>`, `<em>`, `<i>`, `<u>`, `<ul>`, `<ol>`, `<li>` e `<a href="…">`. Gli altri
+si tolgono tenendo il testo, e script, stili e gestori di eventi spariscono, come nelle lezioni.
+Le regole stanno in `App\Core\TestoBreve`:
+
+- **si salva quello che si scrive** e si ripulisce quando si mostra: riaprendo il campo il
+  testo torna com'era, tag compresi;
+- **gli a capo valgono come prima**: Invio va a capo, una riga vuota apre un paragrafo, e
+  vicino a paragrafi ed elenchi non contano, così un elenco scritto su più righe non si riempie
+  di righe vuote. Le descrizioni scritte prima, senza tag, si vedono come si vedevano;
+- **il limite conta solo il testo visibile**, non i tag: i campi non hanno `maxlength`, che
+  conterebbe anche quelli, e il contatore (`data-conta="testo"` in `quiz-open-count.js`) conta
+  come il server. Oltre il limite dice «37 caratteri in più»;
+- **oltre il limite il server rifiuta**, con una frase che dice di quanto («L'obiettivo del
+  corso supera di 37 caratteri il limite di 1.000.»), e ripropone il modulo con quello che era
+  stato scritto. Non taglia: un taglio porterebbe via la fine del testo senza avvisi. Un
+  salvataggio rifiutato per un'altra ragione (il titolo mancante) il testo non lo ripropone,
+  come prima;
+- sotto ciascun campo c'è **«Tag HTML consentiti»**: un clic apre l'elenco dei tag sulla stessa
+  riga, subito dopo («Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">.»),
+  e un secondo clic lo richiude. È un `details`, senza JavaScript; è un comando, quindi neutro
+  come «Mostra». Dove il browser non conosce `::details-content` l'elenco si apre sulla riga sotto.
+  Sta attaccato al suo campo, a 5 px come un'etichetta (0182), ed è scritto a 0,85 rem, più
+  piccolo degli aiuti sotto i campi (13/10). `accessibilita.js` lo apre e lo
+  richiude con il clic vero su ogni pagina che lo ha, e controlla che stia più vicino al suo campo
+  che a quello dopo.
+
+La descrizione si vede con i suoi tag nella pagina del corso e, intera, nel catalogo; gli
+estratti di «I miei corsi» e del catalogo restano testo semplice (`CourseModel::estratto()`).
+Il capolettera sta sul primo paragrafo, e solo se la descrizione comincia con un paragrafo.
+`tests/testo_breve_test.php` prova tag, a capo, conto e frasi; `permessi.js` salva in tutti e
+tre i campi un testo pieno con un grassetto e uno oltre il limite, e guarda la descrizione nella
+pagina del corso; `accessibilita.js` controlla che il contatore conti il testo e non i tag.
+
+**Nelle schede dei corsi la descrizione è un estratto** con i tre puntini, lo stesso in «I miei
+corsi» e in «Esplora corsi» (`CourseModel::estratto()`). Nel catalogo lo studente non è ancora
+iscritto e la pagina del corso non la può aprire, quindi sotto l'estratto c'è **«Leggi tutto»**,
+che apre la descrizione intera dentro la scheda; «Chiudi», sotto il testo, la richiude (10/10).
+I due comandi stanno attaccati al testo, e il numero delle lezioni con il pulsante sta staccato,
+con lo spazio e senza linea.
+È un `details`, senza JavaScript. `accessibilita.js` controlla nel catalogo che una descrizione
+lunga non si veda intera da chiusa, che aperta si legga tutta, e che il comando stia più vicino al
+testo che alle lezioni.
+
+**Il messaggio della richiesta di iscrizione** — «Due righe su di te (facoltativo)», nel
+catalogo sotto un corso con l'iscrizione su richiesta, che lo staff legge nella tabella delle
+richieste in «Modifica corso» — è lungo al massimo **1.000 caratteri** (10/10, prima 500), con lo
+stesso contatore. Il limite sta in `EnrollmentRequestModel::MAX_MESSAGE_CHARS`; la colonna è
+larga altrettanto dalla migrazione `2026_10_10_richiesta_iscrizione.sql`. `accessibilita.js`
+controlla il contatore nel catalogo quando c'è un corso su richiesta, e altrimenti lo dice e salta.
+
+### Ruoli (`/admin/permissions`)
+**Impostazioni › Ruoli** (26/10, Alessandro) dice che cosa fa ogni ruolo: per ciascuno, in
+elenco, quello che fa sempre, e sotto i suoi interruttori con la casella. Ha preso il posto della
+matrice dei permessi, che diceva che i permessi si cambiavano da lì: non era vero per circa metà
+dei controlli, che guardavano il ruolo e ignoravano le caselle, e alcune caselle non le leggeva
+nessuno. **Un interruttore deve fare davvero quello che dice**: per questo sono pochi, e ciascuno
+è rispettato da tutte le pagine e le azioni che tocca.
+
+Il **nucleo fisso** sta in `App\Auth\Ruoli::NUCLEO`. Gli **interruttori**:
+
+| Ruolo | Interruttore | Acceso | Spento |
+|---|---|---|---|
+| Tutor | Membri dei gruppi | aggiunge al suo gruppo gli studenti già iscritti a un corso del gruppo che non sono in un altro gruppo con lo stesso corso, senza iscriverli ad altri corsi, e toglie i membri | i membri li gestisce solo l'admin, e il tutor li vede |
+| Assistente | Report | report di corso, studente e gruppo, Griglia, Studenti fermi, fruizione, report degli incontri e certificati degli studenti dei suoi tutor | nessuno di questi, e il menu «Report» sparisce |
+| Assistente | Tentativi dei questionari | apre i tentativi, con tutte le risposte; vale solo con «Report» acceso | nei report vede i punteggi, non il tentativo |
+| Assistente | Incontri | vede in Sessioni live, Agenda e calendario gli incontri dei gruppi dei suoi tutor, ci entra senza risultare presente, ne legge le presenze se «Report» è acceso | non li vede |
+| Studente | Proposte in Bacheca | propone risorse e racconta come le ha usate | legge e salva, non propone né racconta; quello che aveva proposto resta |
+
+Gli interruttori stanno in `settings` (`ROLE_*`): spento vale solo `'0'`, e senza riga sono
+accesi, com'era prima del 26/10. La pagina la apre solo il **ruolo** `admin`. La tabella
+`role_permissions` resta nel database ma non si legge più. `tests/ruoli_test.php` prova la
+regola, `permessi.js` ogni interruttore acceso, spento e nelle combinazioni.
+
+## Sicurezza dei form (CSRF)
+
+Ogni richiesta POST deve includere il token di sessione (`App\Core\Csrf`), verificato dal
+Router prima di invocare il controller; una richiesta senza token valido riceve **419** e non
+produce alcun effetto. Nelle view il campo si inserisce con `<?= Csrf::field() ?>`. Il token
+viene rigenerato a ogni login e logout, insieme all'id di sessione.
+
+## Sicurezza: sessioni e file
+
+Le correzioni della verifica di sicurezza del 13/10, ciascuna con la sua prova in `permessi.js`.
+
+**Lo stato dell'account si legge a ogni richiesta.** Ruolo e stato si leggevano solo
+all'accesso: un tutor passato a studente continuava a vedere i report, e un account disattivato
+restava collegato finché non usciva da solo. Ora la query che `Auth::guardSession()` faceva già
+(il controllo del cambio password) porta anche `is_active` e `role`: chi è stato disattivato
+esce alla richiesta dopo, con l'avviso «Questo account è stato disattivato» nella pagina
+d'accesso; chi ha cambiato ruolo resta dentro con i permessi nuovi.
+
+**I file consegnati hanno il tipo deciso dal server, mai dal contenuto.** Il video caricato
+sul server usciva con il tipo dedotto dal contenuto: un `.mp4` che dentro era una pagina HTML
+veniva consegnato come pagina, con l'indirizzo della piattaforma, e il suo codice girava con la
+sessione di chi lo apriva. Ora il tipo viene dall'estensione già controllata al caricamento
+(`video/mp4`, `video/webm`, `video/quicktime`), `App\Core\FileStream` lo pretende da chi
+chiama e manda sempre `X-Content-Type-Options: nosniff`. Allegati, immagini, foto, copertine,
+loghi e audio del benvenuto erano già così. E il video, come gli allegati, non si scarica più
+da un modulo ancora chiuso.
+
+**I tentativi di accesso hanno un limite** (`App\Core\TentativiAccesso`, tabella
+`login_failures`). Si potevano provare password a ripetizione sullo stesso account. Ora:
+
+- **5 password sbagliate per lo stesso indirizzo, nell'arco di un'ora, bloccano l'account per
+  un'ora** (13/10, Alessandro), da qualunque IP arrivino. L'avviso a schermo cambia con i
+  tentativi: le prime due volte «Email o password non corretti.»; la terza e la quarta aggiunge
+  «Ancora 2 tentativi, poi l'account si blocca per un'ora.» (poi «Ancora 1 tentativo»); alla
+  quinta «Per sicurezza l'account è bloccato per un'ora: la password è stata sbagliata 5 volte.
+  Riprova fra 60 minuti, oppure reimposta la password con «Password dimenticata?».». Durante il
+  blocco nemmeno la password giusta apre, e i tentativi non si contano: il blocco finisce
+  un'ora dopo la quinta, e si riparte da zero.
+- **Si sblocca prima** reimpostando la password dal link dell'email, o quando l'admin manda una
+  password temporanea dalla scheda dell'utente. Chi entra con la password giusta azzera i suoi
+  errori.
+- **50 password sbagliate dallo stesso IP in un quarto d'ora** fermano quell'IP, qualunque
+  indirizzo provi: è il limite contro chi prova tanti account, più alto perché dietro lo stesso
+  IP possono esserci più persone.
+
+Contano solo le password sbagliate, e gli indirizzi che non esistono ricevono gli stessi avvisi,
+per non dire quali sono registrati. Un rovescio da sapere: chi conosce l'indirizzo di qualcuno
+può bloccargli l'account per un'ora sbagliando apposta; resta aperta la reimpostazione della
+password. `tests/accesso_test.php` prova i conti e gli avvisi, `permessi.js` il giro vero dalla
+pagina d'accesso fino allo sblocco con la reimpostazione.
+
+**Il cookie di sessione è protetto** (`App\Core\Sessione`, anche nella procedura di
+installazione): **HttpOnly**, così JavaScript non lo legge; **SameSite=Lax**, così un altro sito
+non lo manda con le sue richieste nascoste (Lax e non Strict: con Strict chi apre un link da
+un'email arriverebbe senza sessione); **Secure** quando la piattaforma è in https, cioè la
+richiesta lo è o `APP_URL` comincia con `https://` — in locale, in http, resta spento. E la
+modalità rigida di PHP: un identificativo di sessione che non ha creato lui non viene accettato.
+
+**Nessun altro sito incornicia la piattaforma** (`App\Core\Intestazioni`, anche nella
+procedura di installazione). Prima un sito esterno poteva mostrare una pagina dell'admin dentro
+la sua, trasparente sotto un suo pulsante, e il clic finiva sul comando vero (clickjacking).
+Ogni pagina manda `Content-Security-Policy: frame-ancestors 'self'` e, per i browser vecchi,
+`X-Frame-Options: SAMEORIGIN`. Se un giorno la piattaforma dovesse comparire dentro un altro
+sito (per esempio il sito dell'organizzazione), quel sito va aggiunto qui. I video di YouTube,
+Vimeo e Bunny non c'entrano: la regola dice chi può incorniciare noi, non chi incorniciamo noi.
+
+**I CSV non contengono formule** (`Csv::cella()`). Un testo che comincia con `=`, `+`, `-` o `@`
+è una formula per Excel e LibreOffice, che la eseguono aprendo il file: un nome come
+`=HYPERLINK(...)` diventava un collegamento nel foglio dell'admin. Ora esce con un apostrofo
+davanti, che lo fa leggere come testo (e resta visibile). Numeri, percentuali e telefoni —
+cifre, spazi e punteggiatura, senza lettere — escono come prima. Il foglio di calcolo (.xlsx)
+non ne aveva bisogno: scrive i testi come testo. `tests/csv_test.php` prova le celle,
+`permessi.js` le intestazioni e il CSV vero degli utenti.
+
+**Robustezza** (16–17/10), ciascuna con il suo test:
+
+- **Il testo fisso di una rotta vale solo per se stesso** (`router_test.php`): il punto di
+  `/calendario/{token}.ics` valeva un carattere qualunque, e il calendario rispondeva anche a
+  indirizzi storpiati.
+- **I file consegnati a pezzi** (`filestream_test.php`): `Range: bytes=-N` dà gli ultimi N byte;
+  un file mancante risponde 404, uno illeggibile 500 con la causa nel log.
+- **Il `.env` si legge anche con il BOM** che il Blocco note di Windows aggiunge (si perdeva la
+  prima riga) e con una virgoletta sola nel valore (`env_test.php`).
+- **L'installer è chiuso anche se c'è il `.env`** (`installer_test.php`).
+- **Niente SVG**: nessun campo di caricamento accetta un SVG, nemmeno rinominato `.png`
+  (`svg_test.php`).
+
+**La revisione del codice del 29/10**, prima della produzione (quattro revisori separati, poi
+ogni rilievo verificato sul codice). Le correzioni, ciascuna con la sua prova:
+
+- **Gli indirizzi nelle email senza `APP_URL`** (`App\Core\Url::base`, `url_test.php`): usavano
+  l'host dichiarato da chi faceva la richiesta, quindi un link di reimpostazione della password
+  poteva puntare a un altro sito. Ora l'host della richiesta vale solo per uno di sviluppo sul
+  proprio computer (`localhost`, `127.0.0.1`, `[::1]`, `*.test`, `*.localhost`); altrimenti
+  `localhost` e una riga nel log. In produzione `APP_URL` va compilato.
+- **Allegati di un corso altrui**: un tutor che indicava una lezione inesistente arrivava agli
+  allegati di qualunque corso. Ora chi non è admin riceve 404 quando il corso non si trova, e il
+  materiale deve essere della lezione dell'indirizzo.
+- **La registrazione ripetuta** di un indirizzo mai confermato prende nome e password
+  dell'ultima, il link di prima non vale più, e ha il limite del rinvio.
+- **Recupero della password e rinvio della conferma** vanno all'indirizzo salvato, non a quello
+  scritto (il database ignora gli accenti nei confronti).
+- **Il fuso del database**: ogni connessione imposta `time_zone` sullo scarto orario di PHP
+  (`fuso_orario_test.php`). Su un MySQL in UTC le aperture dei moduli e «Entra» arrivavano in
+  ritardo.
+- **Gli inviti un giro alla volta** (`GET_LOCK`, vedi **Importazione di utenti**).
+- **Un utente che ha creato incontri** non si elimina, con la ragione.
+
+## Sessioni live (Google Meet)
+
+Una sessione live è un incontro collegato a un **modulo di corso** e/o a un **gruppo**. **Chi è
+atteso lo dice una regola sola** (25/10, `LiveSessionModel::atteso()`), usata da elenco, ingresso,
+pagina della lezione, inviti di Google, promemoria, report e Griglia del corso:
+
+- **con un gruppo**, con o senza modulo, i membri del gruppo. Il modulo è il tema, e decide da
+  quando lo studente vede l'incontro. Prima, con modulo e gruppo, si sommavano gli iscritti al
+  corso e il gruppo, e l'incontro di una classe arrivava a tutte le altre, link Meet compreso;
+- **con il solo modulo**, cioè tutto il corso, gli iscritti al corso che si sono iscritti prima
+  della fine dell'incontro e che, quando l'incontro è stato creato, non avevano ancora finito il
+  corso. Per gli altri l'incontro è «non previsto»: non lo vedono e nella Griglia non risultano
+  assenti.
+
+Le sessioni si
+gestiscono da `/live`; gli studenti vedono solo quelle che li riguardano. **L'admin** crea e
+gestisce tutti gli incontri, compresi quelli di tutto il corso. **Il tutor** (25/10) vede, crea e
+gestisce solo gli incontri dei suoi gruppi: il gruppo è obbligatorio, il modulo è il tema; il
+tutor di un'altra classe dello stesso corso non li trova nell'elenco, nella pagina né nei report.
+**L'assistente**, con l'interruttore «Incontri», vede quelli dei gruppi dei suoi tutor in sola
+lettura e ci entra senza risultare presente. **Un incontro si apre solo se è nel proprio
+elenco** (17/10, `LiveScope`): prima un tutor apriva l'incontro del gruppo di un collega
+scrivendo l'indirizzo, e riceveva il link Meet.
+
+**Chi partecipa vede i riquadri dell'Agenda** (20/10), non la tabella dello staff: «In programma»
+dal più vicino e «Concluse» chiuse come lo Storico, dal più recente. Nel riquadro data e orario,
+titolo, corso e modulo o gruppo, «Si entra da 15 minuti prima» sotto il titolo; a destra solo i
+comandi: «Aggiungi al calendario» finché l'incontro non è cominciato e, per ultimo, «Entra» nella
+finestra d'ingresso. Lo staff tiene la tabella.
+
+### Come nasce il link Meet
+Alla creazione della sessione l'applicazione crea un evento su Google Calendar chiedendo
+contestualmente una conferenza Meet (`conferenceData.createRequest`, con
+`conferenceDataVersion=1`) e salva `google_event_id` e `meet_link`. Modificando la sessione
+l'evento viene allineato; eliminandola, l'evento viene rimosso dal calendario.
+
+**La lista degli invitati è nascosta** (25/10): di base Google mostra a ogni invitato gli altri,
+con le email — in un incontro di gruppo quelle dei compagni, in uno di tutto il corso quelle
+degli studenti di ogni classe. Gli eventi si creano e si aggiornano con
+`guestsCanSeeOtherGuests` e `guestsCanInviteOthers` a `false`. Gli eventi creati prima si
+sistemano salvando l'incontro.
+
+**Se Google non è configurato o risponde con un errore, la sessione viene salvata lo stesso**:
+l'utente riceve un avviso e può incollare un link Meet creato a mano, oppure riprovare la
+sincronizzazione dalla scheda della sessione. Un link inserito manualmente ha la precedenza e
+scollega la sessione da Google.
+
+### Configurazione
+1. Nel progetto Google Cloud, abilita la **Google Calendar API** e crea un **account di
+   servizio**; scarica la chiave in formato JSON e mettila **fuori dal document root**.
+2. Nella Admin console di Google Workspace, sezione *Sicurezza → Controllo delle API →
+   Delega a livello di dominio*, autorizza il **Client ID** dell'account di servizio per lo
+   scope `https://www.googleapis.com/auth/calendar`.
+3. Compila le variabili in `.env`:
+   ```
+   GOOGLE_SERVICE_ACCOUNT_JSON=/percorso/protetto/credenziali.json
+   GOOGLE_IMPERSONATE_EMAIL=corsi@tuodominio.it
+   GOOGLE_CALENDAR_ID=primary
+   GOOGLE_CALENDAR_TIMEZONE=Europe/Rome
+   ```
+
+`GOOGLE_IMPERSONATE_EMAIL` è l'utente Workspace per conto del quale l'account di servizio
+crea gli eventi: **senza delega Google non genera il link Meet**, e l'evento verrebbe creato
+"nudo". Se lo scope non è autorizzato, Google risponde `403 Insufficient Permission`: il
+messaggio viene mostrato per intero nella scheda della sessione.
+
+Il client è scritto in casa (`app/Core/Google/`), senza dipendenze: firma una JWT RS256 con
+`openssl`, la scambia per un access token (flusso JWT bearer) e chiama le API REST con cURL.
+Il token viene riusato per tutta la durata della richiesta.
+
+### Presenze
+L'ingresso passa da un link interno (`/live/{id}/join`): la piattaforma registra `joined_at`
+e reindirizza al Meet. Il primo ingresso è quello che conta — riaprire il link non lo
+sovrascrive — e lo staff che entra non compare fra i presenti. Il tutor può correggere il
+registro dalla scheda della sessione, anche a sessione conclusa; l'origine del dato resta
+distinguibile (`platform` o `manual`). Il numero di sessioni seguite compare nel report del
+singolo studente.
+
+Nota: l'ingresso tracciato certifica l'apertura del link dalla piattaforma, non l'effettiva
+permanenza nella riunione. Per il dato reale di partecipazione servirebbe la Reports API di
+Google Workspace, che richiede scope aggiuntivi ed è disponibile solo a sessione conclusa.
+
+## Protezione dei video (Bunny Stream)
+
+Un video caricato su Bunny si guarda con un **indirizzo firmato e a scadenza**: l'embed porta
+un token calcolato dal server (`App\Core\BunnyToken`) a partire dalla chiave della libreria,
+e senza quel token Bunny risponde **403**. Vale anche per il flusso `.m3u8` chiesto da fuori.
+
+Gli interruttori da accendere su Bunny sono due e **non sono la stessa cosa**: la *Embed View
+Token Authentication* sta nelle impostazioni della Video Library ed è quella che serve qui;
+la *CDN Token Authentication* sta sulla Pull Zone ed è una cintura in più. La chiave non va
+mai nel repository: si incolla in **Amministrazione → Bunny Stream**, che la salva in tabella.
+
+## Ripresa del video e tempi di fruizione
+
+Lo studente che rientra in una lezione già cominciata trova sulla copertina due pulsanti
+della stessa larghezza — **Riprendi da hh:mm:ss** e **Guarda dall'inizio** — invece del solo
+play. La soglia è 30 secondi: sotto, "riprendere" non avrebbe senso.
+
+La piattaforma registra anche **quanto di ogni video è stato davvero guardato**, non solo il
+punto più avanzato: il player manda gli intervalli visti, che vengono fusi in scrittura, così
+rivedere due volte lo stesso minuto conta una volta sola. Il risultato sta nel report
+*Fruizione dei video*, per studente e per lezione.
+
+Due difese contro i tempi gonfiati: un **tetto di plausibilità** (nessuno può dichiarare più
+di 2,5 volte il tempo realmente trascorso, più 30 secondi di tolleranza), e il fatto che il
+tempo trascorso si calcola **in SQL** con `TIMESTAMPDIFF`, perché l'orologio di PHP e quello
+di MySQL possono stare su fusi diversi.
+
+**Resta un dato dichiarato dal client.** Nessun controllo lato server può renderlo
+infalsificabile: serve a rendicontare lo studio di chi studia, non a inchiodare chi bara.
+
+## Mobile
+
+**Ogni pagina deve essere utilizzabile da telefono**, e dove adattarla non è possibile deve
+avere un ripiego dichiarato. Non è un auspicio: è un requisito di accettazione, verificato
+automaticamente a ogni giro.
+
+Il modo normale per una tabella larga è `.tabella-schede`, che sotto i 50 rem di spazio
+disponibile la trasforma in un elenco di schede — con *container query*, quindi in base allo
+spazio che la tabella ha davvero, non alla larghezza della finestra. Dove le schede non hanno
+senso (fino al 26/10 la matrice dei permessi, che aveva una colonna per permesso) c'è il ripiego: scorrimento
+orizzontale **dentro il proprio riquadro**, senza trascinarsi dietro la pagina.
+
+## Comandi e collegamenti: come si riconoscono
+
+Tre regole, decise il 06/10, uguali in ogni pagina e senza elementi in più:
+
+| | Con il mouse | Senza mouse (telefono, tablet) |
+|---|---|---|
+| **Comandi** — nelle righe delle tabelle, fra i comandi di un modulo, nelle liste di assegnazione, nell'Agenda, e quelli isolati in una pagina | neutri, nel colore del testo; sottolineati al passaggio del mouse e con il fuoco della tastiera | sempre sottolineati |
+| **Collegamenti dentro una frase** | verdi e sempre sottolineati | verdi e sempre sottolineati |
+
+Fuori dalle tabelle i comandi stanno a **0,85 rem**, come stabilito con la 0107; dentro una
+cella prendono la misura della cella. Anche «Aggiungi al calendario» dell'Agenda, che fino al
+07/10 era alto quanto il testo e pesava quanto il titolo dell'incontro accanto.
+
+I comandi che **fanno perdere qualcosa** sono rossi (`.link-btn-danger`), con le stesse regole
+degli altri. Il criterio: **rosso se si perde qualcosa che ripetere il gesto contrario non
+restituisce**. «Rimuovi» uno studente da un corso è rosso (cancella progresso, tentativi e
+certificato); «Rimuovi» un membro da un gruppo no (le iscrizioni restano). Il pericolo non lo
+dice il solo colore: lo dicono anche la parola e la conferma che compare prima.
+
+Fino al 06/10 i comandi che inviano un modulo (`.link-btn`: «Elimina», «Revoca», «Rimuovi»…)
+erano gli unici sottolineati, e in grigio e di mezzo pixel più piccoli dei collegamenti nella
+stessa riga: una differenza tecnica, invisibile a chi usa la piattaforma, che si vedeva lo
+stesso. E i collegamenti dentro le frasi avevano il colore del testo e nessuna sottolineatura,
+cioè erano indistinguibili.
+
+«Senza mouse» è il dispositivo, non la larghezza (`@media (hover: none)`): un portatile stretto
+ha il mouse. **L'elenco dei comandi sta nel foglio di stile, sotto `.link-btn`, e uguale in
+`tests/accessibilita.js`**: un comando nuovo in un posto nuovo va aggiunto in tutti e due, o
+sul telefono resta senza segnale e i controlli non lo guardano.
+
+`.link-btn` ha `font-family: inherit`: un pulsante non eredita il carattere della pagina, e
+«Elimina» in Arial accanto a «Modifica» nel carattere di sistema, su Windows (Segoe UI),
+stava più in alto.
+
+`accessibilita.js` verifica su ogni pagina che i collegamenti nelle frasi siano sottolineati e
+di un altro colore, che con il mouse i comandi siano neutri a riposo e che i comandi di una
+stessa fila abbiano il testo sulla stessa riga e lo stesso carattere; poi rifà il giro con un telefono simulato
+**senza mouse** e verifica che ogni comando sia sottolineato. Il giro «telefono» normale non
+basta: cambia la larghezza, ma il browser ha ancora il mouse.
+
+### Il collegamento «indietro»
+
+In cima a molte pagine, sopra il titolo, il collegamento alla pagina da cui si arriva
+(`.back-link`): grigio come il testo secondario e verde con il mouse, a **0,90 rem su desktop** e
+0,85 sul telefono. Davanti al testo c'è un **triangolo pieno** (10/10, scelto su un mockup), al
+posto della freccia «←», che era quasi invisibile. Il triangolo è una forma, non un carattere, ed è
+**alto quanto le maiuscole** del carattere in uso (`1cap`, appoggiato sulla linea di base): così è
+uguale su Windows e altrove, e quando il collegamento va a capo resta sulla prima riga. Si scrive
+così, senza freccia:
+
+```php
+<a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
+```
+
+`accessibilita.js` controlla su ogni pagina che ci sia il triangolo, alto quanto le maiuscole, e
+che non sia rimasta una freccia scritta.
+
+## Tabelle ordinabili
+
+**Ogni tabella in cui l'ordine è un dato si ordina cliccando sul nome della colonna.** Il
+clic ricarica la pagina con `?ordina=colonna&verso=desc`: costa una ricarica, e in cambio dà
+tre cose che il riordino in JavaScript non può dare.
+
+1. **Ordina tutte le righe, non quelle a schermo.** Gli elenchi dei report sono paginati a
+   cinquanta righe: riordinando nel browser, «il punteggio più alto» sarebbe il più alto di
+   quella pagina, non del report — una risposta sbagliata che sembra giusta.
+2. **L'ordine sta nell'indirizzo**, quindi si salva nei preferiti e si manda a un collega.
+   Sopravvive alla paginazione e alla ricerca.
+3. **Funziona senza JavaScript**, come il resto della piattaforma.
+
+Il meccanismo è `App\Core\Ordinamento`, e una vista lo usa così:
+
+```php
+$ordine = Ordinamento::daRichiesta([
+    'nome'  => ['full_name', Ordinamento::TESTO, 'email'],
+    'stato' => ['is_active', Ordinamento::NUMERO],
+]);
+$utenti = $ordine->applica($utenti);
+// nella testata:  <?= $ordine->th('Nome', 'nome') ?>
+```
+
+Cinque cose da sapere prima di aggiungerne una:
+
+- **Le chiavi dell'indirizzo non sono i nomi dei campi** (`nome`, non `full_name`). Quello
+  che si scrive nell'indirizzo è un'interfaccia pubblica: legarla ai nomi delle colonne del
+  database vorrebbe dire raccontarli a chi guarda e non poterli più cambiare. Una chiave che
+  non è stata dichiarata viene ignorata, quindi **niente di quello che arriva dall'indirizzo
+  diventa mai un nome di campo**.
+- **Si ordina sul dato, non su come è scritto.** «Quando» mostra `04/10/2026 18:30` e ordina
+  su `starts_at`; «Presenti» mostra `3/12` e ordina sul numero dei presenti. Dove il valore
+  mostrato è un'etichetta calcolata (presente/assente, valido/revocato) la vista calcola un
+  campo apposta: ordinare su `revoked_at` manderebbe i validi sempre in fondo, perché non ce
+  l'hanno.
+- **I vuoti stanno in fondo in tutti e due i versi.** Un trattino che sale in cima
+  invertendo l'ordine non è un'informazione: sono le righe a cui quel dato manca.
+- **Senza parametri non si ordina niente.** Ogni elenco ha già il suo ordine naturale (gli
+  incontri per data, le lezioni per posizione) e sostituirlo al primo caricamento sarebbe un
+  peggioramento. L'ordinamento è stabile, così a parità di valore le righe non si rimescolano
+  a ogni caricamento.
+- **Le colonne delle persone dichiarano lo spareggio**: il terzo elemento, `'email'`, è il
+  campo che decide quando il nome è uguale, nello stesso verso. Due omonimi senza spareggio
+  restavano nell'ordine in cui li mandava il database, che nessuno aveva deciso, e con la
+  paginazione a cinquanta righe potevano scambiarsi fra una pagina e l'altra: uno compariva
+  due volte e l'altro mai. L'email è unica ed è scritta sotto il nome, quindi l'ordine è
+  sempre lo stesso e si vede. Per la stessa ragione **le query che ordinano persone per nome
+  finiscono con `, u.email`**: è l'ordine delle pagine aperte senza aver cliccato niente.
+- **Una colonna che mostra due dati si ordina su tutti e due.** «Stato» in Gestione corsi
+  dice se il corso è pubblicato e come ci si iscrive: si ordina per pubblicato e, a parità,
+  per modalità di iscrizione (10/10), cioè chiusa, libera, su richiesta. Prima a parità di stato
+  l'ordine sembrava casuale.
+
+Sul telefono, dove la tabella diventa un elenco di schede, l'intestazione non sparisce: torna
+come **una fila di comandi sopra alle schede**. Nasconderla del tutto avrebbe tolto
+l'ordinamento proprio dove la tabella è più scomoda, e avrebbe lasciato dei collegamenti
+raggiungibili con il tasto di tabulazione ma invisibili.
+
+Restano **non ordinabili**, e per scelta: il questionario da svolgere, gli elenchi di moduli e lezioni dentro un corso — lì
+l'ordine è deciso a mano dal tutor, cioè *è* il contenuto — e le singole colonne che mostrano
+un campo **oppure** un altro («Corso o gruppo»): ordinarle su uno dei due manderebbe in fondo
+tutte le righe dell'altro, con l'aria di un difetto.
+
+## Importazione di utenti da file
+
+Si carica un **CSV**, si guarda l'anteprima, si conferma. Finché non si preme «Importa» non
+viene scritta una riga: con duecento persone vere la differenza fra vedere prima cosa
+succederà e scoprirlo dopo è un pomeriggio di telefonate.
+
+Il file ha una riga di intestazione, in qualunque ordine: `email`, `nome` e `cognome`
+(obbligatorie) e `gruppo`, facoltativo. **Nome e cognome stanno sempre in due colonne
+separate** (deciso da Elena il 07/10): un file con il nome in una colonna sola si rifiuta per
+intero, e il messaggio dice di separarla. Una riga senza cognome si scarta. Gli utenti nascono
+come **studenti**. Massimo 1.000 righe per file.
+
+`App\Core\UserImport` legge e giudica, **non scrive**: è per questo che tutta la parte che
+sbaglia davvero si prova con delle stringhe (`php tests/importazione_test.php`). Le tre cose
+che vanno storte, in ordine di frequenza vera:
+
+- **La codifica.** Excel su Windows produce UTF-8 con il BOM oppure Windows-1252. Col BOM la
+  prima intestazione si chiama davvero `\xEF\xBB\xBFemail` e il file sembra non avere la
+  colonna email; col Windows-1252 «Nicolò» arriva rotto. Si riconoscono e si sistemano tutti
+  e due.
+- **Il separatore.** Excel in italiano scrive il punto e virgola, perché la virgola la usa
+  per i decimali. Si conta quale compare di più nell'intestazione, non si chiede all'utente.
+- **I duplicati dentro al file.** Due righe con la stessa email: la seconda si ferma qui,
+  dicendo quale riga ripete. Lasciata passare, la fermerebbe il database con «esiste già»,
+  che fa pensare a un utente vecchio invece che a un refuso.
+
+Una riga con un'email già presente su Pistacchio viene **saltata e dichiarata**: l'account
+esistente non si tocca e non riceve nessuna password nuova. I gruppi non si creano al volo —
+un gruppo nominato e inesistente ferma quella riga, invece di far nascere un gruppo da un
+refuso. Chi entra in un gruppo viene iscritto anche ai suoi corsi: è quello che i gruppi
+hanno sempre fatto, ma con un file si fa duecento volte in un colpo.
+
+### Le password, e perché a scaglioni
+
+L'importazione **non manda niente**. Gli account nascono con un'impronta di byte casuali —
+che non corrisponde a nessuna password scrivibile — e la password vera la genera
+`bin/invita-utenti` nel momento in cui compone l'email. Così nessuna password resta in attesa
+dentro al database, che sarebbe la cosa peggiore di tutta questa storia.
+
+```
+*/15 * * * *  cd /percorso/lms && php bin/invita-utenti >> storage/logs/inviti.log 2>&1
+```
+
+Venti per volta, ogni quarto d'ora: duecento persone in due ore e mezza, senza che duecento
+email identiche in trenta secondi incontrino il limite di invii dell'hosting e i filtri
+antispam. L'ordine delle operazioni è quello che conta: si genera la password, se ne scrive
+l'impronta, si manda l'email, e **solo se l'email è partita** l'utente esce dalla coda. Se la
+posta fallisce quell'utente resta in coda e al giro dopo riceve una password nuova: quella di
+adesso non l'ha saputa nessuno. Il verso opposto lascerebbe un account con una password che
+non conosce nemmeno il suo proprietario.
+
+**Chi conosce una password esce dalla coda** (dal 07/10). Il ragionamento qui sopra regge solo
+se chi è in coda non conosce nessuna password, e prima nessuno lo garantiva: una password
+temporanea data dal pannello, un recupero via email, o un'email consegnata nonostante un errore
+della posta lasciavano l'utente in coda con una password in mano, e il giro dopo gliela
+sostituiva — credenziali giuste respinte, e con una posta instabile ogni quarto d'ora. Ora:
+
+- **chi fa accesso esce dalla coda**: ha una password che funziona;
+- **chi ottiene una password per un'altra strada esce dalla coda** — cambio dal profilo, cambio
+  obbligato, recupero via email, password temporanea dal pannello (`UserModel::updatePassword()`);
+- **il comando non scrive la password a chi non è più in coda**: la condizione sta nella
+  scrittura stessa (`AND invite_pending = 1`), così un accesso avvenuto mentre il comando gira
+  non viene annullato, e a quell'utente non parte nessuna email.
+
+Resta un caso: un'email consegnata nonostante l'errore, a un utente che non ha ancora fatto
+accesso. Al giro dopo ne riceve un'altra, e vale la password della seconda; appena entra con
+quella, esce dalla coda.
+
+**Un giro alla volta** (29/10): il comando e il pulsante della pagina Utenti prendono un blocco
+del database (`GET_LOCK('pistacchio_inviti')`). Prima due giri insieme — il cron e un clic, o due
+cron sovrapposti — potevano dare due password diverse alla stessa persona. Se un giro è già in
+corso, il comando lo scrive nel log e il pulsante lo dice, e non parte niente.
+
+**Se il cron non gira, nessuno entra.** È più grave del rilascio dei moduli, dove un cron
+fermo fa mancare solo un avviso: qui chi è stato importato non ha una password finché
+l'invito non parte. Per questo la pagina Utenti mostra quanti inviti restano, quando è
+partito l'ultimo scaglione, e un pulsante per mandarne uno a mano. Se il numero non scende,
+si vede.
+
+L'email dell'invito è sua («Il tuo accesso») e non quella della password temporanea: quel
+testo dice «la password precedente non funziona più» e «le sessioni aperte sono state
+chiuse», due frasi vere per un account esistente e false per uno appena creato. Dal 12/10 la
+riceve anche chi viene creato a mano da Utenti › Nuovo utente, che fino ad allora riceveva
+quella della password temporanea.
+
+## I lavori periodici su Windows (Laragon)
+
+I tre comandi — `bin/rilascio-moduli`, `bin/invita-utenti` e `bin/avvisi` — in sviluppo
+girano sul computer di Elena, che è Windows con Laragon, tramite l'Utilità di pianificazione.
+La ricetta è la stessa per tutti e tre, cambia solo il nome e la frequenza.
+
+**Il percorso del PHP.** Dal terminale di Laragon, `where php`: esce qualcosa come
+`C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe`, con il numero di versione che è il
+proprio. Serve quello completo: l'Utilità di pianificazione non conosce il `php` del
+terminale di Laragon.
+
+**L'operazione**, da un prompt dei comandi *come amministratore*, in una riga sola (inviti,
+ogni quarto d'ora):
+
+```
+schtasks /create /tn "Pistacchio - inviti" /sc minute /mo 15 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\invita-utenti >> storage\logs\inviti.log 2>&1"
+```
+
+Per `bin/avvisi` è identica, ogni quarto d'ora anche lei, con il suo nome e il suo log:
+
+```
+schtasks /create /tn "Pistacchio - avvisi" /sc minute /mo 15 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\avvisi >> storage\logs\avvisi.log 2>&1"
+```
+
+Per il rilascio dei moduli è identica, con `/sc daily /st 07:30` al posto di `/sc minute /mo 15`.
+
+**`cd /d` non è decorativo**: i comandi cercano `vendor/autoload.php` e il `.env` relativi
+alla cartella corrente, e senza quello partono e non trovano niente. Se `storage\logs` non
+esiste va creata prima, altrimenti il log non si scrive e non lo si sa.
+
+**Provarla subito, senza aspettare:**
+
+```
+schtasks /run /tn "Pistacchio - inviti"
+type C:\laragon\www\lms\storage\logs\inviti.log
+```
+
+Nel log compare `inviti mandati: 0 / in coda ne restano: 0`. Se il file non esiste
+l'operazione non è partita: `schtasks /query /tn "Pistacchio - inviti" /v /fo list` mostra
+«Ultimo risultato», dove `0` vuol dire andata bene.
+
+Con l'interfaccia grafica: Crea attività di base, attivazione «Ogni giorno», poi proprietà →
+Attivatori → Modifica → «Ripeti attività ogni» 15 minuti, durata «Indefinitamente».
+
+**Finché il computer è spento gli inviti non partono**, ma non si perdono: restano in coda e
+partono al primo giro utile, oppure a mano dalla pagina Utenti.
+
+**Questa pianificazione vive dentro Windows e non si porta dietro niente**: non sta nel
+repository, nessun deploy la copia. Sull'hosting Linux vanno rifatte da zero tutte e tre come
+righe di cron, ed è nell'elenco delle cose da fare prima di aprire agli studenti.
+
+## Il benvenuto del tutor nel corso
+
+In cima alla pagina di un corso lo studente trova **il benvenuto del tutor del suo gruppo**: la
+foto del tutor con un breve audio subito sotto, e accanto il nome, **l'email del tutor**,
+**il link al gruppo WhatsApp** e il testo di quello che il tutor dice («Leggi il testo»). È diverso dal video di benvenuto qui sotto: quello è della
+piattaforma e si vede al primo accesso, questo è del tutor e sta in ogni corso.
+
+- **La foto è quella del profilo del tutor** (09/10), la stessa della pagina del gruppo e della
+  riga ridotta: un tutor ha un volto solo in tutta la piattaforma. Fino alla 0167 il benvenuto
+  aveva una foto sua, caricata apposta e una per corso, e lo stesso tutor poteva comparire con
+  due facce diverse. Qui la foto si vede e non si carica: si cambia dal profilo del tutor o, per
+  l'admin, da «Modifica utente». **Un tutor ha sempre una foto** (vedi Utenti).
+- **Uno per tutor e per corso.** Un corso seguito da più gruppi con tutor diversi ha più
+  benvenuti, e ogni studente sente quello del proprio tutor. **Chi non è in un gruppo con un
+  tutor** (iscritto dal catalogo) **non vede niente**. Uno studente in due gruppi dello stesso
+  corso, con due tutor che hanno entrambi un benvenuto, sente quello del tutor che viene prima
+  per nome: un ordine fisso invece di uno che cambia fra le visite.
+- **Completo, poi ridotto a una riga.** Completo nelle prime tre visite alla pagina del corso;
+  dalla quarta, **o appena l'audio è stato ascoltato fino in fondo** (la prima delle due cose),
+  diventa una riga con la miniatura, il nome e «Mostra», che riapre la scheda; da aperta il
+  comando dice «Nascondi» e la richiude. Le due parole le scambia lo stile. La riga è un
+  `details`, quindi si apre senza JavaScript; lo script (`benvenuto.js`) serve solo a dire al
+  server che l'audio è finito. Senza, vale il conto delle visite.
+- **Lo carica il tutor**, il proprio, dalla pagina di modifica dei corsi dei suoi gruppi
+  (sezione «Il tuo benvenuto», permesso `course.welcome_own`). L'admin lo carica per qualunque
+  tutor (sezione «Benvenuto dei tutor», un blocco per ogni tutor del corso, permesso
+  `course.welcome`). È lo schema di `group.manage` e `group.manage_own`. **Ogni corso deve
+  averne uno**: è una regola di chi organizza i corsi, e la sezione segnala quando manca.
+- **I contatti stanno solo dentro il benvenuto**, e nella riga ridotta non si vedono: si vedono
+  riaprendola con **«Mostra»**. Ciascuno compare solo se c'è:
+  - **l'email per gli studenti** è un campo del profilo del tutor, «Email per gli studenti»,
+    diverso dall'email con cui accede, che non viene mai mostrata;
+  - **il link WhatsApp** è un campo della pagina del gruppo, «Link di invito in WhatsApp», che
+    impostano l'admin e il tutor del gruppo. Si accettano solo inviti di WhatsApp
+    (`https://chat.whatsapp.com/…`). Lo studente vede il link del proprio gruppo, quello con
+    quel tutor in quel corso, e si apre in una scheda nuova. Il link è una chiave d'accesso al
+    gruppo WhatsApp: non compare in nessun'altra pagina.
+  Le icone sono disegni generici, una busta e un fumetto, non il logo di WhatsApp.
+- **Il testo è obbligatorio**: senza, l'audio non è accessibile a chi non sente o non può
+  ascoltare in quel momento (WCAG 1.2.1). Sotto il campo c'è un collegamento a **TurboScribe** (09/10, Elena),
+  per trascrivere l'audio a mano e incollare qui il testo da rileggere: con 7-8 tutor e un minuto
+  di audio ciascuno, costa meno di un collegamento automatico, e non chiede chiavi né codice. Si
+  apre in una scheda nuova, con `noreferrer`.
+- **L'audio sta in `storage/welcomes/`**, fuori dal repository, e si serve da
+  `/benvenuti/{id}/audio` solo all'admin, al tutor del benvenuto e ai suoi studenti in quel
+  corso; agli altri risponde 404, come un benvenuto che non c'è. La foto si serve da
+  `/utenti/{id}/immagine`, con la regola di tutte le foto del profilo (`GroupPeers`), che la
+  lascia vedere agli studenti dei gruppi del tutor. L'audio
+  si consegna anche a pezzi (`Range`, `App\Core\FileStream`), che Safari pretende.
+- **L'audio è breve**: MP3 o M4A fino a 5 MB. Servito da PHP occupa un processo mentre si
+  scarica, e per pochi secondi va bene; un audio di mezz'ora no (lo stesso ragionamento dei
+  video, che stanno su Bunny).
+- **Sostituire l'audio cancella quello vecchio**, come per la copertina del corso; «Rimuovi
+  benvenuto» toglie la riga e l'audio, e la foto del profilo resta.
+
+**La testa della pagina del corso** è una colonna sola (scelta su due mockup il 07/10): titolo,
+eventuali conferme, **copertina a fascia** (16:5, larga quanto i moduli: l'immagine caricata in
+16:9 mostra la fascia centrale), descrizione, benvenuto, poi certificato e moduli. **Copertina,
+benvenuto e moduli hanno gli stessi bordi**; prima erano 569, 900 e 1016 px allineati solo a
+sinistra. La descrizione resta a 62 caratteri di riga, perché è un testo da leggere e non un
+riquadro. `accessibilita.js` controlla che i tre blocchi abbiano gli stessi bordi.
+
+**I nomi delle classi della scheda cominciano con `tutor-benvenuto`.** Nella prima versione la
+scheda si chiamava `.benvenuto`, che era già la classe della pagina del video di benvenuto: le
+due si prendevano lo stile a vicenda, e la pagina del video, che deve essere un blocco centrato,
+diventava un riquadro con il bordo allineato a sinistra.
+
+## L'obiettivo nella pagina del corso
+
+Scelto da Alessandro l'11/10 su un mockup. Le regole stanno in `App\Core\Obiettivo`.
+
+- **L'obiettivo del corso** ha un riquadro suo, subito dopo la descrizione e prima del benvenuto
+  del tutor, largo quanto i moduli, bianco come i moduli e con l'icona `bullseye` nel colore
+  principale dentro un cerchio di 2,4 rem con il filo verde, la stessa misura e la stessa forma
+  della foto del tutor nella riga del benvenuto (23/10, Alessandro), perché non si legga come un
+  modulo. Fra il suo riquadro e quello del benvenuto c'è la distanza fra due moduli, 16 px. Per lo studente è **completo nelle prime tre
+  visite**, poi diventa una riga, «Obiettivo del corso … Mostra», come quella del benvenuto:
+  «Mostra» lo riapre, «Nascondi» lo richiude; le due parole stanno attaccate al bordo destro,
+  alla stessa distanza di quelle del benvenuto subito sotto (12/10). Le visite si contano in `course_objective_views`,
+  e solo quando il corso ha un obiettivo: uno scritto dopo si vede completo anche a chi il corso
+  l'aveva già aperto.
+- **L'obiettivo del modulo** sta sotto il titolo del modulo, con un filetto verde a sinistra e
+  «Obiettivo:» davanti. È **completo nel modulo in corso** e ridotto a una riga, «Obiettivo del
+  modulo · Mostra», in tutti gli altri. Il modulo in corso è il primo, nell'ordine del corso, in
+  cui resta una lezione da completare o un questionario da superare, **anche se è chiuso**: chi ha
+  finito tutto ciò che è aperto legge in anticipo dove andrà. Quando non resta niente, sono tutti
+  ridotti. Nei moduli chiusi l'obiettivo compare sopra la data di apertura.
+- **Lo staff li vede sempre completi**, e lo studente non li può richiudere da sé prima del tempo.
+- Un corso o un modulo senza obiettivo non mostra niente.
+
+`tests/obiettivo_test.php` prova le regole; `accessibilita.js`, nel giro da studente, l'obiettivo
+completo alla prima visita fra descrizione e benvenuto, il modulo in corso completo e quello chiuso
+ridotto, e alla quarta visita la riga che si riapre; da staff, che siano tutti completi. La semina
+dà un obiettivo al corso del mondo A e ai suoi due moduli.
+
+## La gerarchia dei moduli
+
+Scelta da Alessandro l'11/10 su un mockup. Per lo studente il modulo che sta seguendo conta più
+degli altri, e quando lo finisce conta il successivo. **Una regola sola**, che si adatta da sé al
+numero dei moduli (`App\Core\Percorso`):
+
+- **In corso**: il primo modulo in cui resta una lezione da completare o un questionario da
+  superare, anche se chiuso. Aperto, con il bordo verde e «In corso» accanto al titolo. Sopra
+  l'elenco delle lezioni, piccolo e grigio, «1 di 3 lezioni fatte»; nell'elenco la lezione da cui
+  riprendere ha il fondo verde chiaro e, a destra, **«Riprendi da qui»** («Inizia da qui» se nel
+  modulo non ha fatto ancora niente). Con le lezioni tutte fatte lo stesso segno passa alla riga
+  del questionario, con **«Fallo ora»** (13/10, Alessandro, variante C del mockup: prima c'era un
+  riquadro «Riprendi da: …» con un pulsante, e il modulo in corso era troppo denso). Il conto è
+  sulle lezioni, non sul questionario.
+- **Prossimo**: il primo modulo non completato dopo quello in corso. Aperto, con «Prossimo»,
+  anche se chiuso per data: si vede quando si apre.
+- **Completato**: lezioni completate e questionario superato. Una riga con la spunta, «… completato
+  · 3 lezioni», che si apre con «Mostra».
+- **Gli altri**: una riga con il numero delle lezioni («nessuna lezione» per un modulo vuoto), la
+  data di apertura («si apre il 15/11/2026») o «si sblocca con il questionario del modulo
+  precedente».
+
+Con due o tre moduli la pagina resta quasi com'era; con otto si vedono il presente, il passo
+dopo e poche righe. **Sopra i moduli c'è solo «Mostra tutti i moduli»**, a destra (22/10,
+Alessandro, variante B: il conto «8 moduli · 3 completati» e la riga del certificato, lì sopra,
+erano due conti diversi prima ancora di cominciare; l'avanzamento lo dicono i moduli). Il comando
+apre tutto per quella visita (`?moduli=tutti`, quindi anche senza JavaScript) e diventa
+«Mostra solo il modulo in corso»; alla visita dopo si riparte dalla regola, e la scelta non si
+ricorda. A corso finito non c'è un modulo in corso: sono tutte righe «completato». **Lo staff vede
+tutto aperto**, senza etichette né «Riprendi».
+
+**Niente riga del certificato** (23/10, Alessandro): quella in fondo ai moduli, «Per il
+certificato: completa tutte le lezioni…», è stata tolta; se e dove rimetterla si decide più
+avanti. A certificato ottenuto resta il riquadro verde con «scarica il PDF». **La tinta tenue del
+tema segna solo la prossima cosa da fare** («Riprendi da qui», «Inizia da qui», «Fallo ora»):
+obiettivo del corso ed esperto sono bianchi come i moduli, e a distinguerli è la loro icona.
+
+**Il questionario ancora chiuso** (le lezioni del modulo non sono tutte fatte, o, per la verifica
+finale, i moduli prima) è in grigio e senza collegamento, senza frase; la verifica finale nella
+sua riga dice «questionario» e, aperta, non mostra «Nessuna lezione». Vedi **Questionari**.
+
+`tests/percorso_test.php` prova gli stati e da quale lezione riprendere; `accessibilita.js`, nel giro da
+studente, il modulo in corso, il prossimo chiuso, la riga che si apre e «Mostra tutti i moduli»;
+da staff, che non ci sia niente di tutto questo. La semina aggiunge al corso del mondo A un terzo
+modulo, che per lo studente è una riga.
+
+## Il primo accesso
+
+Al primo accesso lo studente arriva sulla pagina **«Primo accesso»** (`/primo-accesso`, 08/10,
+chiesto da Elena): una pagina sola, nell'aspetto delle pagine di accesso e senza menu, con
+quello che serve davvero.
+
+- **«Ciao, Marta»**, senza genere, come il saluto dopo l'accesso.
+- **Chi ha ricevuto le credenziali per email** trova la password ricevuta, la nuova password e
+  la sua conferma, e **«Come ti vedono gli altri studenti»**: «Due cose prima di cominciare».
+  La password ricevuta si chiede, come in ogni cambio password, perché è ciò che impedisce a chi
+  trova una sessione aperta di prendersi l'account.
+- **Chi si è registrato da sé** trova solo la scelta: «Una cosa prima di cominciare».
+- La scelta parte da **«Solo il nome»** (`PersonName::PRESELEZIONATA`, anche nel profilo). È la
+  proposta di chi sceglie; finché non sceglie, gli altri lo vedono con le iniziali
+  (`PersonName::PREDEFINITO`). Sono due costanti diverse apposta.
+- **Il modulo è corto** (08/10): sotto la password «Minimo 8 caratteri: almeno una lettera e un
+  numero.» (`PasswordPolicy::HINT_BREVE`, accanto alla frase lunga e alla regola, che il resto
+  della piattaforma continua a usare), sotto la scelta «Tutor e admin vedono sempre nome e cognome.
+  Scelta modificabile dal profilo.», e le tre opzioni vicine: il pallino
+  non prende più l'altezza di un campo (2,5 rem), e il modulo passa da 634 a 547 px.
+- Un solo «Continua»: tutto si controlla prima di scrivere, e un errore sulla password non
+  salva la scelta a metà. Poi il video di benvenuto, se c'è, e i corsi. «Esci» resta sempre.
+
+**«Primo accesso» vuol dire «non ha ancora scelto»** (`name_display` NULL). È un cancello di
+`Auth::guardSession`, nell'ordine: sessione valida → **primo accesso** (che comprende il
+cambio password) → password temporanea da cambiare (per chi ha già scelto, per esempio dopo una
+password data dall'admin) → video di benvenuto. Il cancello della password e quello del video
+lasciano passare chi sta facendo il primo accesso: senza, si rimandavano a vicenda all'infinito
+(il secondo caso con il video configurato, trovato da `permessi.js`). Il saluto «Che bello
+rivederti» non compare al primo accesso.
+
+## Il saluto dopo l'accesso
+
+A ogni accesso lo studente trova in alto **«Che bello rivederti, Marta! 🌸»**, con il suo nome
+di battesimo, per 5 secondi (08/10, chiesto da Elena). Il fiore è decorativo (`aria-hidden`):
+un lettore di schermo legge solo la frase. **Una frase senza genere**, scelta di Elena:
+Pistacchio non sa se dire «bentornata» o «bentornato», e indovinarlo dal nome sbaglierebbe.
+
+- **Solo agli studenti**, e non quando stanno per vedere il video di benvenuto né quando c'è una
+  password temporanea da cambiare. «Stanno per vedere il video» si chiede come il cancello del
+  video: non visto **e** configurato. Senza video configurato il saluto lo ricevono tutti. Lo decide `AuthController::login`, che annota
+  il nome in sessione; lo mostra una volta sola la prima pagina (`partials/shell.php`).
+- **Arriva dopo 2 secondi** (12/10, Alessandro): chi entra prima esplora la pagina con lo
+  sguardo e poi si ferma sul saluto; comparendo subito, passava mentre guardava altrove. I 2
+  secondi contano da quando la pagina è disegnata, non dalla fine del caricamento di immagini e
+  video: è un'animazione di solo stile.
+- **Entra con calma** (08/10, Elena: «appare un po' bruscamente»): scende dall'alto in 0,9
+  secondi con un accenno di ingrandimento e una curva che rallenta all'arrivo.
+- **Compare e sparisce con un'animazione di solo stile**, senza JavaScript; alla fine resta
+  `visibility: hidden`, quindi sparisce anche per i lettori di schermo, che lo leggono una
+  volta (`role="status"`). Con «riduci movimento» non scivola.
+- **Si adatta al nome**: è largo quanto il testo, fino allo schermo meno i margini, e un nome
+  lunghissimo va a capo. Sul telefono sta sotto la fascia del menu. Non si clicca e non
+  impedisce di toccare quello che c'è sotto.
+
+## Il capolettera
+
+La **descrizione del corso** e il **testo di ogni lezione** cominciano con un capolettera alto tre
+righe, nel verde del progetto (09/10, Elena). Solo all'inizio del blocco intero, non di ogni
+paragrafo, e solo se il blocco comincia con un paragrafo: su un titolo, un'immagine o un elenco
+non va. È solo aspetto (`::first-letter`): il testo e quello che legge un lettore di schermo non
+cambiano. Dove il browser ha `initial-letter` (Chrome, Edge, Safari) la lettera si allinea da sola
+su tre righe; altrove (Firefox) scorre a sinistra con misure calcolate, e l'allineamento è
+approssimato. La descrizione del corso è larga quanto gli altri blocchi della pagina.
+**Il primo paragrafo contiene la sua lettera** (`display: flow-root`, 21/10): con un paragrafo
+corto la lettera alta tre righe finiva sopra il blocco dopo, per esempio un esercizio H5P.
+
+**Non nell'editor della lezione** (14/10, Alessandro). L'editor carica il foglio di stile della
+piattaforma e dà al testo la classe della lezione, così il capolettera compariva mentre si
+scriveva o si incollava, come se fosse stato aggiunto al testo. Non lo era — il testo salvato è
+pulito, verificato incollando — ma lo sembrava. Il corpo dell'editor ha la classe
+`mce-content-body`, e lì la regola non vale; nella pagina della lezione resta com'è.
+`accessibilita.js` scrive un testo nell'editor, senza salvarlo, e controlla che la prima lettera
+sia normale.
+
+Per la stessa ragione l'editor prendeva anche **la misura di riga della lezione**, 68 caratteri,
+e il testo si fermava a due terzi del riquadro, attaccato al bordo sinistro. Ora (14/10) nel
+corpo dell'editor la misura non vale e il testo occupa tutto il riquadro, con 16 px di margine
+ai lati: il margine lo scrive l'estensione che allunga l'editor, quindi si imposta con
+`autoresize_overflow_padding` in `lessons/form.php`, non nel foglio di stile. Nella pagina della
+lezione la riga resta di 68 caratteri. `accessibilita.js` controlla anche la larghezza.
+
+**«Annulla» accanto a «Crea lezione» e «Crea modulo»** (14/10, Alessandro), e dallo stesso
+giorno anche accanto a «Salva» nella loro modifica: non salva niente e riporta al corso — per la
+lezione, alla scheda del suo modulo. La regola generale sta in «I moduli da compilare».
+`permessi.js` scrive un titolo, preme «Annulla» e controlla che non sia stato salvato niente.
+
+## L'esperto risponde (domande e risposte)
+
+**Risponde l'esperto, cioè l'admin** (dal 09/10, Elena; prima il tutor del gruppo). Due posti:
+
+- **La pagina «L'esperto risponde»** (`/domande-e-risposte`), una voce del menu prima di
+  «Certificati», per gli studenti e per i tutor: l'archivio di **un corso alla volta**, con un
+  menu per scegliere il corso (lo studente fra quelli a cui è iscritto, il tutor fra quelli dei
+  suoi gruppi; con un corso solo il menu non c'è). Un corso non suo, scritto a mano
+  nell'indirizzo, non si apre: si mostra il primo dei suoi. Il tutor la legge come uno studente,
+  in sola lettura; l'assistente, nei corsi dei suoi tutor, senza i nomi di chi ha chiesto.
+  L'admin ha «Domande».
+- **In fondo a ogni corso, «Fai una domanda all'esperto»**, ripiegata in una riga con «Mostra»,
+  che la apre e diventa «Nascondi» (un `details`, senza JavaScript). Dentro il modulo per
+  chiedere («La legge l'esperto…»), il collegamento «Leggi le risposte dell'esperto per questo
+  corso» e «Le tue domande». La riga è bianca come i moduli, con l'icona `question-circle` nel
+  cerchio di 2,4 rem, ed è più alta di quella di un modulo e staccata di 24 px dall'ultimo
+  (contro i 16 fra due moduli): non è un modulo del corso, ma un'occasione in più per chiarire
+  i dubbi (23/10, Alessandro).
+  **Si apre da sola** dopo l'invio di una domanda e dopo un invio respinto; alla visita
+  successiva riparte chiusa. Il comando ha sempre lo spazio della parola più lunga, così la
+  riga non cambia forma aprendola.
+
+**Le misure sono quelle dei moduli** (0153): titoli 1,05 rem, domande, risposte e testi 0,9 rem
+come le lezioni, i dettagli 0,8 rem; una domanda aperta passa in grassetto. Nell'archivio la
+ricerca sta in fondo.
+
+- **Lo studente fa una domanda all'esperto** su un modulo del corso o sul corso in generale, e
+  vede le sue con lo stato: in attesa, pubblicata, non pubblicata. Se c'è un errore il testo
+  resta nel campo. **La domanda è lunga al massimo 1.000 caratteri**, con il contatore sopra
+  l'angolo in alto a destra del campo («1000 caratteri rimasti», a scalare): lo stesso della
+  presentazione del profilo e delle risposte aperte, con lo stesso script. Il limite vale anche
+  senza JavaScript (`maxlength`) e sul server.
+- **La riceve l'esperto**, con **un'email per ogni domanda nuova** agli amministratori (corso,
+  modulo, nome, testo intero). Non c'è più un tutor assegnato.
+  Lo studente non riceve avvisi: trova la risposta tornando al corso.
+- **L'esperto** risponde dalla pagina **«Domande»**, una voce della sua barra laterale con il
+  numero di quelle in attesa. Prima di pubblicare si possono correggere il testo,
+  per esempio per togliere dettagli personali, e il modulo. **Ogni risposta si pubblica**:
+  non ci sono risposte private. Una domanda doppia, fuori tema o troppo personale si
+  **scarta**, e lo studente la vede «Non pubblicata».
+- **L'archivio lo vedono tutti gli iscritti al corso, di ogni gruppo**, diviso per modulo
+  nell'ordine del corso con «Il corso in generale» in fondo, ciascuna domanda in un `details`.
+  **La risposta è di tutti, la persona è della classe** (25/10, la regola della Bacheca):
+  - una domanda su un modulo si legge quando quel modulo è aperto per chi guarda; lo staff le
+    legge tutte, e quelle sul corso in generale sono sempre visibili. Si chiede solo sui moduli
+    aperti: il menu non offre i chiusi, e il server li rifiuta;
+  - il nome di chi ha chiesto, **come l'ha scelto nel profilo** (`PersonName::shown()`), lo
+    vedono lui, i compagni dei suoi gruppi del corso e il tutor di quei gruppi, che lo vede per
+    intero; per tutti gli altri, tutor compresi, è «uno studente del corso». **La ricerca** cerca nelle domande e nelle risposte, senza JavaScript
+  (`?corso=…&cerca=…` sulla pagina «L'esperto risponde»); `%` e `_` si cercano come testo.
+- **Correggere e togliere** (08/10). Nella pagina «Domande», sotto quelle in attesa, la parte
+  **«Pubblicate»**, divisa per corso: ogni domanda si apre per correggere domanda, modulo e
+  risposta («Salva»), o per **toglierla dall'archivio**. Tolta, torna «Non pubblicata», con la
+  risposta e chi l'aveva data, e lo studente la vede ancora fra le sue con quello stato.
+  (Il collegamento «Modifica» che c'era nell'archivio del corso è sparito con lui, il 09/10:
+  `/domande?apri=` apre comunque una pubblicata.) La regola di chi può è una sola,
+  `QuestionController::puoGestire()`: chi ha `question.answer`, l'admin.
+- **Niente risposte fra studenti, commenti o voti**: è la decisione di non fare messaggistica
+  fra studenti, e in mezzo c'è sempre l'esperto.
+
+Le regole stanno in `App\Models\QuestionModel`, il permesso nel controller: `question.answer`,
+dell'admin. Il permesso `question.answer_own` del tutor è stato tolto il 09/10 (migrazione
+`2026_10_09_esperto.sql`). «Scarta» è un modulo a sé, nella riga di «Pubblica» con l'attributo
+`form`: dentro il modulo di pubblicazione diventerebbe il suo invio predefinito.
+`tests/domande_test.php` prova attesa, pubblicazione e archivio; `permessi.js` chi può fare che
+cosa, l'archivio e l'email all'esperto, e non al tutor.
+
+## Video di benvenuto
+
+Uno studente che accede per la **prima volta** vede una pagina con un video, un pulsante
+«Vai ai miei corsi», e nient'altro. Una volta sola: il pulsante registra la visione in
+`users.welcome_seen_at` e da lì in avanti si atterra su «I miei corsi» come sempre. Dal
+profilo c'è un collegamento «Rivedi video di benvenuto», perché una pagina che si vede una
+volta sola è una pagina che nessuno può rivedere, e chi la chiude per sbaglio avrebbe perso
+quello che c'era dentro.
+
+Il video lo imposta l'admin in **Impostazioni → Video di benvenuto**: provider (Bunny o
+Cloudflare) e identificativo, come nelle lezioni. Niente `self_hosted`, che viene servito
+passando dall'identificativo di una lezione e il benvenuto non è una lezione. **Senza video
+configurato la pagina non esiste e nessuno viene dirottato**: il benvenuto si accende
+mettendo il video, non con un interruttore a parte che si può dimenticare acceso a vuoto.
+
+Quattro decisioni che non sono evidenti dal codice:
+
+- **Chi era già iscritto non lo vede.** La migrazione riempie `welcome_seen_at` per tutti gli
+  utenti esistenti al momento in cui viene applicata: chi è dentro da prima non viene
+  interrotto da una schermata nuova. Lo vedranno solo gli account creati da lì in avanti. Per
+  farlo rivedere a una persona bisogna svuotargli la casella a mano.
+- **Dopo il cambio password, non prima.** Chi entra con una password temporanea deve prima
+  sceglierne una sua: il controllo sta in `Auth::guardSession()` subito **sotto** a quello del
+  cambio password, altrimenti due schermate obbligate si contendono la stessa persona.
+- **Solo gli studenti.** Lo staff entra per lavorare, e un video di benvenuto davanti
+  all'amministratore che deve sistemare un corso è un ostacolo, non un'accoglienza.
+- **Il pulsante non dipende dall'aver guardato.** Se Bunny non risponde o il player non parte,
+  si prosegue lo stesso: il peggio che può succedere dev'essere il comportamento di sempre.
+
+Non costa una query in più: `welcome_seen_at` viaggia nella stessa query che
+`guardSession()` fa già a ogni richiesta per lo stato della password.
+
+**Le pagine esenti dal rimando sono un prefisso, non un indirizzo.** Sotto `/benvenuto` c'è
+anche la POST che registra la visione: trattandola come «non esente» la si dirotta verso la
+pagina del benvenuto, e il giro non si chiude mai. Trovato provando, non leggendo.
+
+## Agenda
+
+`/agenda` risponde a una domanda sola: **che cosa mi aspetta**. Dentro ci sono due tipi di
+evento — gli incontri dal vivo dei propri corsi e gruppi, e le date in cui si aprono i moduli
+a rilascio programmato — distinti da un'etichetta scritta oltre che da un colore. Le due
+etichette («Incontro dal vivo», «Apertura di un modulo») stanno in `Agenda::etichettaTipo()`
+e non nella vista: compaiono in due punti — sotto al titolo nell'elenco e nel testo che un
+lettore di schermo annuncia nella griglia del mese — e scritte due volte divergono.
+
+**Due viste, un indirizzo** (`/agenda?vista=mese`), così il collegamento che si manda a
+qualcuno porta la vista che si stava guardando.
+
+- **Elenco** (la vista d'ingresso): «Oggi», «Nei prossimi sette giorni», «Pianificato», e in
+  fondo i passati, richiusi. Sette giorni e non «fino a domenica»: di domenica pomeriggio il
+  secondo criterio lascerebbe vuoto proprio il gruppo che interessa. Un incontro cominciato
+  ma non finito resta fra quelli di oggi — è il momento in cui serve di più — e lì compare il
+  pulsante «Entra», che appare solo da un quarto d'ora prima dell'inizio fino alla fine.
+- **Mese**: griglia che comincia di lunedì, con i giorni di orlo in grigio. **Il giorno
+  corrente si riconosce dalla forma, non dal colore**: cornice nel colore principale e numero
+  dentro una pastiglia tonda piena, senza riempire la cella. Prima la cella usava
+  `--color-primary-soft`, cioè lo stesso valore dello sfondo delle pastiglie degli incontri:
+  oggi si leggeva come un incontro largo quanto il giorno. Nessuna tinta tenue alternativa
+  regge — misurate, distano 6-11 dai `soft` delle quattro tavolozze, contro i 28-32 che
+  separano i `soft` dal bianco — e una quinta tinta andrebbe riverificata contro ogni
+  tavolozza più il colore principale libero. `accessibilita.js` ora verifica, sui colori
+  calcolati, che la cella di oggi non abbia lo sfondo di una pastiglia. Sotto alla
+  griglia c'è la **legenda** dei due colori, e passando il mouse su una pastiglia il tipo
+  compare come suggerimento del browser (`title`). La legenda non è decorazione: senza, il
+  colore sarebbe l'unico modo di distinguere i due tipi, che è quello che il criterio 1.4.1
+  delle WCAG chiede di non fare. Il suggerimento del mouse non si vede da tastiera né col
+  dito, e infatti non è lui a reggere la distinzione: ci sono la legenda e il testo nascosto
+  dentro a ogni pastiglia, che un lettore di schermo annuncia. Sotto i 36 rem di
+  spazio diventa l'elenco dei soli giorni che hanno qualcosa: sette colonne in 320 px fanno
+  caselle da 40 px, dove un titolo non ci sta e un bersaglio da toccare nemmeno.
+
+Settimana e giorno non ci sono, ed è una scelta: senza orari fitti mostrerebbero le stesse
+due righe dell'elenco occupando uno schermo intero. Si aggiungono il giorno che gli incontri
+saranno molti — la forma degli eventi in `App\Core\Agenda` è già quella giusta, e un terzo
+tipo di evento (una scadenza dei questionari, che oggi non esiste) si aggiunge in un posto solo e
+compare in tutte e due le viste e nel calendario esterno.
+
+**Chi vede cosa** non si decide qui: la regola è una sola, in `App\Core\LiveScope`, e la usano
+la pagina «Sessioni live», l'agenda e il calendario esterno. Prima stava dentro al controller
+delle sessioni come metodi privati, e andava bene finché gli incontri si guardavano da una
+pagina sola.
+
+**Dal titolo alla prima voce c'è la stessa distanza** nei gruppi (Oggi, Nei prossimi sette giorni,
+Pianificato) e nello Storico aperto: 0,8 rem sotto il titolo (10/10). Nello Storico il margine
+c'è solo da aperto, perché il titolo sta in un `summary`: da chiuso allungherebbe la riga.
+`accessibilita.js` confronta le due distanze, misurate dal fondo della riga di testo del titolo.
+
+### Il calendario nel proprio programma
+
+Due modi, dalla stessa pagina:
+
+- **un incontro alla volta**: `/agenda/evento/{id}.ics`, che chiede l'accesso come ogni altra
+  pagina e risponde 404 per un incontro che non è fra i propri. Il collegamento «Aggiungi
+  al calendario» compare **finché l'incontro non è finito**: nello Storico non c'è, perché
+  mettere in agenda un appuntamento già passato non serve a niente;
+- **tutta l'agenda, sempre aggiornata**: un indirizzo personale `/calendario/{token}.ics` da
+  incollare in Google Calendar, Calendario di Apple o Outlook.
+
+Accanto all'indirizzo la pagina mostra **da quando esiste e quando è stato letto l'ultima
+volta**: è quello su cui si decide se tenerlo. Un calendario che non risulta letto da mesi
+si disattiva, e una lettura che non si spiega è il motivo per cui il pulsante «Rigenera» sta
+lì sotto — rigenerare è una revoca, il link vecchio smette di funzionare subito. Non si
+registra **chi** ha letto (niente indirizzi IP, niente nomi di programmi): la data basta a
+decidere, il resto sarebbe un registro di abitudini che nessuno ha chiesto.
+
+Il secondo è **l'unico indirizzo interno che risponde senza accesso**, e lo fa perché deve: a
+rileggerlo è un programma, ogni tanto, senza nessuno davanti che possa scrivere una password.
+Al posto dell'accesso c'è il token, che quindi **è una credenziale**: 24 byte dal generatore
+crittografico, colonna `users.calendar_token` con un indice unico, NULL finché non lo si
+chiede — un segreto che non è mai stato creato non può essere rubato. Si rigenera e si
+disattiva dall'agenda, e la pagina dice in chiaro che chi ha quel link vede gli impegni di
+quella persona. Un utente disattivato non ha più calendario, anche se il link gli è rimasto
+nel telefono.
+
+Il file è un `METHOD:PUBLISH` con un `VEVENT` per evento, diverso dall'invito che parte per
+email (`METHOD:REQUEST`, con organizzatore e invitato): un calendario sottoscritto elenca,
+non invita, e mandare dei REQUEST in un feed vorrebbe dire chiedere a ogni rilettura di
+rispondere a un invito già accettato.
+
+## La barra laterale: il ramo del corso
+
+Dal 17/10 (Alessandro, variante C del mockup) le voci che riguardano un corso compaiono solo
+**dentro un corso**: un ramo subito sotto «I miei corsi» (per lo staff «Corsi») con il nome del
+corso e, rientrate, **Bacheca**, **L'esperto risponde**, **Il mio gruppo** (lo studente, il suo
+gruppo in quel corso) e **Tre parole** (il tutor del gruppo e l'admin, se il corso le chiede).
+Il ramo è sempre uno solo, quello del corso aperto; si cambia corso da «I miei corsi». Ogni voce
+la vede solo chi la può aprire; sulla Bacheca, per chi modera, il numero delle proposte da
+valutare. L'admin, che è l'esperto, ha «Domande» come prima.
+
+«Dentro un corso» vuol dire ogni pagina i cui dati lo dicono — la pagina del corso, lezioni,
+questionari, Modifica corso, report e fruizione del corso, Bacheca, «L'esperto risponde», Tre
+parole: lo legge `View::render()` dai dati `course`, `module` o `corso` (`App\Core\CorsoCorrente`),
+così una pagina nuova di un corso ha il ramo da sola.
+
+## Bacheca
+
+Una per corso (17/10, Alessandro): le risorse condivise, per **categorie**. La leggono gli iscritti
+di tutti i gruppi, i tutor dei gruppi del corso, l'assistente (in sola lettura) e l'admin. La
+prima pagina è una griglia di riquadri, uno per categoria, con la tinta chiara, il filo e il
+titolo nel colore della categoria, la descrizione e il numero delle risorse pubblicate.
+
+- **Le categorie** le crea l'admin nel riquadro «Bacheca» di Modifica corso: nome, colore,
+  descrizione fino a 200 caratteri, ordine. **Il colore è libero**, da una tavolozza continua
+  (tinte in orizzontale, dal chiaro allo scuro, in OKLCH, più l'intensità e il selettore del
+  browser, che senza JavaScript basta da solo): il filo e la tinta usano il colore scelto, il
+  titolo la stessa tinta scurita solo quanto serve a leggersi (almeno 4,5:1). Una categoria con
+  delle risorse non si elimina.
+- **Le risorse** hanno titolo, tipo («Scheda pratica», «Promemoria», video, podcast, articolo,
+  altro), categoria, link facoltativo (solo http/https) e descrizione. **Video e podcast sono
+  solo link**, mai incorporati. Pubblicano l'admin e i tutor del corso (permessi `board.manage` e
+  `board.manage_own`), e possono allegare un file: **solo documenti** (PDF, Word, PowerPoint,
+  Excel, testo), **al massimo 3 MB** o meno se il php.ini ne accetta meno. Il file si controlla
+  anche nel browser appena lo si sceglie, e il server ricontrolla. Nella categoria prima le
+  risorse in evidenza, poi dalla più recente.
+- **Gli studenti propongono** una risorsa, senza file. La proposta resta in attesa finché il tutor
+  del loro gruppo, o l'admin, non la pubblica (scegliendo la categoria) o la scarta, con
+  un'email al tutor per ogni proposta nuova. Lo studente vede lo stato in «Le tue proposte».
+  Proporre e raccontare dipendono dall'interruttore «Proposte in Bacheca» (vedi **Ruoli**).
+- **«Questa me la tengo»** è privato, con la scheda «Le mie risorse». **«Come l'ho utilizzata»**,
+  fino a 500 caratteri, uno per persona, si pubblica subito con l'avvertenza sui dettagli
+  privati; chi modera lo può nascondere, e resta visibile a chi l'ha scritto.
+- **Ogni risorsa appartiene a un modulo** del suo corso (25/10, Alessandro), obbligatorio, e lo
+  studente la vede solo quando quel modulo è aperto per lui: la stessa regola di lezioni,
+  materiali e incontri (data di apertura, anche quella del suo gruppo, e questionario
+  obbligatorio). Lo staff le vede tutte. Il campo «Modulo» sta prima della categoria: lo studente
+  che propone sceglie fra i moduli aperti per lui, chi pubblica fra tutti, e il tutor lo può
+  cambiare. Il modulo non si mostra sulla risorsa. Il blocco è anche sul server: una risorsa di
+  un modulo chiuso non si tiene, non si racconta, non si scarica, e una proposta in un modulo
+  chiuso non nasce. I conti dei riquadri contano solo le risorse che chi guarda vede. Eliminare
+  un modulo elimina anche le sue risorse (i file restano sul server), e la conferma lo dice.
+- **La risorsa è di tutti, le persone sono della classe**: i racconti «Come l'ho utilizzata» e
+  il nome di chi ha proposto una risorsa li vedono la persona stessa, i compagni dei suoi gruppi
+  del corso e chi la modera (il tutor del suo gruppo, l'admin). Per gli altri la risorsa proposta
+  da uno studente è «Condivisa in bacheca». L'assistente non li vede, come foto e presentazioni.
+
+Regole in `App\Auth\BachecaScope` (chi vede, pubblica e modera) e `App\Core\Bacheca` (campi,
+link, ordine, colori). I file stanno in `storage/bacheca/`. Migrazioni
+`2026_10_17_bacheca.sql`, `2026_10_17_bacheca_colori.sql` e `2026_10_25_bacheca_moduli.sql`.
+
+## Tre parole
+
+Idea di Alessandro (20/10) per gli incontri su Meet che seguono ogni modulo: lo studente,
+completato un modulo, scrive **le prime tre parole che gli vengono** — sensazioni, emozioni,
+stati d'animo, pensieri, immagini —, fino a 30 caratteri ciascuna. Il riquadro sta nella pagina
+del corso, sopra i moduli.
+
+- **Facoltative**: il riquadro resta finché non risponde, ma non blocca niente.
+- **Corso per corso**: si attivano in Modifica corso, spente di partenza, e **si chiedono solo
+  per i moduli completati da quel momento** (`courses.three_words_since`), non per quelli finiti
+  prima.
+- **Con il nome, e non si cambiano**: lo studente legge «Il tuo tutor e l'amministratore possono
+  leggerle. Una volta inviate non si cambiano.»
+- **Le leggono il tutor del gruppo e l'admin** in «Tre parole», nel ramo del corso: **anonime di
+  partenza** — le parole che tornano, dalla più frequente, e le terne in un ordine che non dice
+  chi le ha scritte (in un Meet con lo schermo condiviso i nomi non compaiono per sbaglio) — e
+  «Con i nomi» a richiesta, con chi ha completato il modulo ma non ha ancora risposto. Un modulo
+  alla volta; la pagina si apre sull'ultimo con delle parole.
+
+Regole in `App\Core\TreParole`. Migrazione `2026_10_21_tre_parole.sql`.
+
+## Esercizi H5P
+
+Esercizi interattivi creati con **Lumi** (l'editor H5P per computer) ed esportati come file
+`.h5p`, mostrati con il riproduttore **h5p-standalone 3.8.0** (MIT, in `public/assets/h5p/`)
+**dentro un iframe**: lo studente li vede come in Lumi e gli stili della piattaforma non entrano
+nell'esercizio. **Carattere e colori del tema** sì, da `/h5p/tema.css`: i pulsanti degli esercizi
+a domande nel colore principale, i riquadri e le parole di «Drag the Words» nella tinta del tema;
+il verde e il rosso di giusto e sbagliato restano quelli di H5P, perché hanno un significato.
+
+**Sicurezza, livello base** (21/10, Alessandro). Un `.h5p` è un archivio zip con dentro anche
+codice JavaScript: lo caricano solo admin e tutor del corso; si apre **voce per voce** in una
+cartella di `storage/h5p/` scelta da Pistacchio (niente «..», niente percorsi assoluti, niente
+php, html, `.htaccess`, solo le estensioni di H5P più js e css nelle librerie, al massimo 3.000
+file e 300 MB) e **deve contenere il codice della sua libreria principale**. I file li serve PHP
+a chi può aprire il questionario o la lezione, con il tipo deciso dal server e `nosniff`. Il
+livello rafforzato — i file da un sottodominio a parte — si potrà aggiungere cambiando solo
+l'indirizzo dei file.
+
+### Come questionario del modulo
+Creando un questionario si sceglie «Domande» o «Contenuto H5P» e si carica il file. **Solo tipi
+che danno un punteggio**: Accordion, Timeline, Dialog Cards, Image Hotspots e gli altri da
+guardare o esplorare si rifiutano con il loro nome, perché come questionario non verrebbero mai
+superati. **Ogni verifica è un tentativo**, vale il migliore, e griglia, report, completamento
+del modulo, sblocco e certificato funzionano come per i questionari a domande; accanto alla
+percentuale «5 su 5». Il punteggio arriva dagli eventi xAPI dell'esercizio principale (non delle
+singole domande di un Question Set) e il server controlla che abbia senso (numeri, fra zero e il
+massimo). Si sostituisce il file in Modifica questionario. Schermo intero spento: copriva il
+titolo sul telefono.
+
+**Il punteggio lo manda il browser**, e chi sa usare gli strumenti per sviluppatori lo può
+falsificare: il server controlla che abbia senso, non che sia vero. Per questo un questionario
+H5P **non può essere il questionario obbligatorio né la verifica finale** (29/10, vedi
+**Questionari**).
+
+### Dentro le lezioni
+In Modifica lezione, «Contenuti interattivi H5P»: **uno o più contenuti**, oltre al questionario
+del modulo, di **qualunque tipo**. Aggiungi e Sostituisci si fanno al «Salva», insieme al testo,
+così caricare un esercizio non fa perdere niente; «Rimuovi dalla lezione» ricarica la pagina, e
+se il testo ha modifiche non salvate lo dice prima.
+
+**Dove compare lo decide chi scrive**: il pulsante **«Esercizio H5P»** della barra dell'editor
+elenca i contenuti della lezione e mette quello scelto nel punto del cursore, come segnaposto
+tratteggiato («Esercizio interattivo: stop.h5p (Drag the Words)») che si sposta, si copia e si
+cancella intero. Nel testo salvato è `<div data-h5p="12">…</div>`: il sanificatore lascia
+l'attributo solo su un `div` e solo con un numero. Nella lezione, al suo posto, c'è l'esercizio,
+con sotto «Esercizio interattivo · non dà una valutazione». Un contenuto non messo nel testo
+compare dopo il testo; messo due volte, compare una volta; il segnaposto di un contenuto
+eliminato non mostra niente, e nell'editor diventa rosso. Sostituire un contenuto tiene il suo
+posto nel testo e cambia l'indirizzo dei file, così il browser non usa la copia vecchia.
+Le cartelle dei contenuti restano sul server come gli altri file caricati (vedi **File
+caricati**).
+
+**Nessun punteggio si salva**, ma **«Segna come completata» si sblocca quando lo studente ha
+usato tutti gli esercizi** della lezione — una risposta, un clic o un Invio dentro l'esercizio,
+una voce aperta: guardarlo non basta —, con il conto nella frase sotto il pulsante («Fai i due
+esercizi per poter segnare la lezione come completata (1 su 2).»; con un video da guardare,
+«Guarda il video e fai i due esercizi…», vedi **Copertina di avvio e completamento delle
+lezioni**). Gli esercizi usati si ricordano per la
+scheda, ricaricando la pagina non si ricomincia. Come per il video, la regola sta nel browser:
+senza JavaScript, o se un esercizio non si carica, il pulsante resta usabile. Gli esercizi si
+avviano uno dopo l'altro, perché il riproduttore li prepara in una variabile globale della pagina.
+
+Regole in `App\Core\H5P` (voci dell'archivio, `h5p.json`, punteggi, nomi dei tipi),
+`App\Core\H5PArchivio` (apertura e file) e `App\Core\LezioneH5P` (segnaposto); lo script
+`h5p-questionario.js` per i questionari, `h5p-lezione.js` e `h5p-editor.js` per le lezioni.
+Migrazioni `2026_10_22_h5p.sql` e `2026_10_23_h5p_lezioni.sql`.
+
+## Icone
+
+Dal 18/10 accanto ai comandi ci sono le icone di **Bootstrap Icons 1.11.3** (MIT), scritte come
+SVG nella pagina da `App\Core\Icona`, **sempre accanto alla parola** e nascoste ai lettori di
+schermo.
+
+- **Il vocabolario**: una parola ha sempre la stessa icona, e l'icona segue quello che il comando
+  fa — più per creare, matita per modificare, **cestino solo dove si perde qualcosa**, cerchio con
+  la X per «tolgo, ma non cancello», frecce per riordinare, spunta piena per «fatto» e
+  «completato».
+- **I principi** (Nielsen Group, scritti nella classe): un'icona solo se si riconosce a colpo
+  d'occhio; sì ad azioni standard, comandi ripetuti nelle righe, stati e tipi; **no alla
+  navigazione**, ai concetti astratti, alle metafore inventate e alla decorazione; poche icone
+  diverse per schermata.
+- **Niente segni scritti a mano** (✓, ↑, ↓) nelle viste.
+
+`tests/icona_test.php` controlla il vocabolario, le pagine che lo seguono, l'assenza di icone sui
+collegamenti di navigazione e di segni scritti a mano.
+
+## Versione e «Informazioni su Pistacchio LMS»
+
+La versione sta nel file **`VERSION`**, nella cartella principale, nel formato
+`maggiore.minore.patch`: le prime due cifre le decide chi guida il progetto, la terza è il numero
+della patch che l'ha portata, e ogni patch la aggiorna. La legge `App\Core\Versione` dal file e
+non da git, perché sul server la cartella `.git` di solito non c'è.
+
+In **Impostazioni**, in fondo, la tessera «Informazioni su Pistacchio LMS» porta a una pagina con
+il logo, il nome, la versione, il collegamento al repository (in una scheda nuova) e **i dati per
+l'assistenza**: la versione di PHP, il database («MySQL 8.0.30», «MariaDB 10.11.14») e la data
+d'installazione, presa da `storage/installed.lock` o, senza, dal `.env` (`App\Core\Ambiente`).
+La vede solo chi apre le impostazioni: la versione esatta, mostrata a tutti, aiuterebbe chi cerca
+un'installazione con un difetto noto.
+
+## Test
+
+Due famiglie. I test PHP girano da soli; i due file `.js` usano Playwright e hanno bisogno del
+server di sviluppo attivo.
+
+```bash
+# logica pura, nessun database
+php tests/google_meet_test.php      # client Google: JWT firmata, richieste, errori 403/404
+php tests/html_sanitizer_test.php   # l'HTML dell'editor non può contenere codice eseguibile
+php tests/testo_breve_test.php      # obiettivo e descrizione con i tag: quali restano, a capo, testo visibile, rifiuto
+php tests/obiettivo_test.php        # obiettivo nella pagina del corso: completo o ridotto, il modulo in corso, «Obiettivo:»
+php tests/percorso_test.php         # gerarchia dei moduli: in corso, prossimo, completati, «Riprendi da»
+php tests/course_cover_test.php     # ritaglio 16:9, due misure, testo alternativo (serve GD)
+php tests/bunny_token_test.php      # firma e scadenza degli indirizzi Bunny
+php tests/watch_intervals_test.php  # fusione degli intervalli guardati, tetto di plausibilità
+php tests/quiz_scoring_test.php     # punteggio dei quattro tipi di domanda
+php tests/importazione_test.php     # 27 prove: codifiche, separatori e righe del file utenti
+php tests/inviti_test.php          # coda degli inviti: chi conosce una password non viene sovrascritto
+php tests/benvenuto_tutor_test.php # benvenuto del tutor: chi sente quale, completo o ridotto, le visite
+php tests/nome_test.php            # nome e cognome: divisione, iniziali, chi vede cosa, importazione
+php tests/domande_test.php         # domande: a chi vanno, chi le vede, pubblicare e scartare, archivio e ricerca
+php tests/password_test.php         # regola della password e generatore
+php tests/lesson_video_test.php     # scelta del provider e dei riferimenti video
+php tests/live_session_mail_test.php   # testi delle email degli incontri
+php tests/email_modelli_test.php    # le email: elenco, segnaposto, chiusura, nome della piattaforma, Rispondi a
+php tests/xlsx_test.php             # il file XLSX scritto in casa
+php tests/router_test.php           # rotte: il testo fisso vale solo per se stesso, ogni rotta trova il suo indirizzo
+php tests/filestream_test.php       # file a pezzi: richieste a suffisso, file mancante o illeggibile
+php tests/env_test.php              # .env con il BOM e con le virgolette spaiate
+php tests/installer_test.php        # installer aperto o chiuso
+php tests/svg_test.php              # nessun campo di caricamento accetta un SVG
+php tests/bacheca_test.php          # bacheca: campi, link, tipi e limite dei file, colori e titolo leggibile
+php tests/corso_corrente_test.php   # di quale corso è una pagina (il ramo della barra laterale)
+php tests/versione_test.php         # il file VERSION
+php tests/ambiente_test.php         # i dati per l'assistenza: PHP, database, data d'installazione
+php tests/icona_test.php            # le icone: vocabolario, niente segni scritti a mano, niente icone sulla navigazione
+php tests/studenti_fermi_test.php   # studenti fermi: soglie, stati, ultima attività, ordine
+php tests/griglia_corso_test.php    # griglia del corso: stati delle attività, conteggi, punteggio migliore
+php tests/tre_parole_test.php       # tre parole: normalizzazione, a chi si chiedono, parole che tornano, ordine anonimo
+php tests/h5p_test.php              # H5P: voci ammesse dell'archivio, h5p.json, punteggi, apertura dei pacchetti
+php tests/lezione_h5p_test.php      # H5P nelle lezioni: segnaposto, sanificatore, composizione, apertura per lezione
+php tests/url_test.php              # l'indirizzo dei collegamenti senza APP_URL: solo un host di sviluppo
+
+# richiedono il database di sviluppo (ci scrivono, e puliscono da soli)
+php tests/settings_test.php         # impostazioni in tabella, con il .env come ripiego
+php tests/rilascio_test.php         # rilascio progressivo: catena, conti, niente email doppie, chi riceve l'avviso
+php tests/avvisi_test.php           # conferme dello staff in coda, richiesta a chi può decidere, promemoria degli incontri, corso completato
+php tests/tema_test.php             # tavolozze, arrotondamento, misure del testo, colore del testo
+php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale, i tre messaggi d'errore
+php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
+php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, spareggio, indirizzi
+php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
+php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
+php tests/giro_test.php             # pagina del gruppo: chi pone, risponde e modera; domanda aperta e archivio; «Ci sarò»
+php tests/accesso_test.php          # limite ai tentativi di accesso (5 per account, avvisi, blocco di un'ora; IP) e cookie di sessione protetto
+php tests/csv_test.php              # CSV: i testi-formula escono con l'apostrofo, numeri e telefoni come sono
+php tests/ruoli_test.php            # ruoli: nucleo fisso e cinque interruttori, «Tentativi» solo con «Report»
+php tests/fuso_orario_test.php      # la connessione al database usa lo scarto orario di PHP
+
+# richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
+#   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
+#    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
+node tests/accessibilita.js         # circa 5.000 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/permessi.js              # 656 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, gli interruttori dei ruoli, la bacheca, il ramo del corso, le tre parole, i file H5P, il percorso e la verifica finale e molto altro
+node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
+node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero (crea e toglie da sé 55 studenti per la seconda pagina)
+```
+
+Il 29/10, sul database di sviluppo: 49 file PHP con 1.761 controlli, `accessibilita.js` 5.025,
+`permessi.js` 656, `ordinamento_pagine.js` 307, `coerenza_moduli.js` 16, tutti superati, anche con
+MySQL in UTC. `permessi.js` e `accessibilita.js` rifanno la semina all'inizio (`permessi.js` con
+`--lezioni-fatte`, che segna come fatta la lezione del mondo A, così le prove possono svolgere
+il questionario, che si apre a lezioni fatte): vanno lanciati uno dopo l'altro, mai insieme.
+
+### I tre controlli automatici che vale la pena conoscere
+
+**Accessibilità** (`accessibilita.js`). Su **tutte** le pagine HTML della piattaforma verifica
+lingua e titolo, un solo titolo principale, contrasto del testo, campi con etichetta, immagini
+con testo alternativo, comandi con un nome, identificativi non ripetuti, titoli senza salti di
+livello, bersagli di almeno 24 px, fuoco visibile e **nessuno scorrimento orizzontale**.
+C'è anche **«i pannelli che si aprono non vengono ritagliati»**: apre ogni tendina della
+pagina e verifica che il pannello non esca dal primo antenato che scorre. Un contenitore con
+`overflow` ritaglia quello che esce, e il difetto compare solo dopo un clic — a pagina chiusa
+non lo vedeva nessun controllo.
+Il controllo sullo scorrimento orizzontale gira a 390 px, a **320** (il minimo che chiede la 1.4.10 delle WCAG) e a 844×390,
+cioè il telefono girato di lato; quando fallisce dice **quale elemento** sfora. È scritto in
+Node e non in PHP perché contrasto, fuoco e dimensioni esistono solo dopo che il browser ha
+applicato il CSS.
+
+**Sei pagine si aprono sui dati della semina**, non su un id fisso: una lezione con un
+materiale, la pagina di fruizione di un video senza durata, una domanda vero/falso, un gruppo
+con un corso assegnato e il suo report con un certificato, e la pagina di un gruppo da otto. Le pagine con l'id scritto nel
+test (`/lessons/1`, `/questions/1/edit`…) mostrano quello che l'id 1 è nel database su cui si
+gira, e con i dati di prova quei casi non c'erano: sette difetti veri sono rimasti invisibili
+finché il controllo non è stato fatto girare sul database di sviluppo vero. Per questo
+`accessibilita.js` **esegue da sé `semina_permessi.php`**, come `permessi.js`, e ne legge gli
+id — quindi anche lui scrive nel database: non va lanciato in produzione.
+
+**Non è un test di usabilità**, ed è scritto per non essere scambiato per tale: dice se una
+pagina rispetta delle regole misurabili, non se una persona capisce cosa deve fare.
+
+**Ordinamento** (`ordinamento_pagine.js`). Apre ogni pagina con una tabella ordinabile,
+segue **ogni** collegamento di intestazione e verifica quattro cose: che si apra, che sia
+quella colonna — e nessun'altra — a dichiararsi ordinata, che le righe restino le stesse
+(ordinare rimette in fila: non aggiunge, non toglie, non duplica) e che su una colonna di
+testo l'ordine alfabetico ci sia davvero. Quest'ultima è la sola che vede l'errore più
+insidioso: un'intestazione legata per sbaglio al campo di un'altra colonna ordina
+benissimo, e la pagina resta piena di valori plausibili nell'ordine sbagliato. Provato che
+sa diventare rosso legando «Email» al campo del nome.
+
+**Permessi** (`permessi.js`). `semina_permessi.php` crea **due mondi paralleli e simmetrici**,
+A e B, con proprietari diversi — un controllo sui permessi ha senso solo se c'è qualcosa che
+non si deve poter toccare. Poi, per ogni ruolo, si prova a raggiungere le cose dell'altro
+mondo **scrivendo l'indirizzo a mano**, dichiarando in anticipo che cosa ci si aspetta. Si
+provano anche le POST distruttive, perché metà del danno possibile sta lì.
+
+Guarda la porta, non che cosa c'è nella stanza: una pagina può rispondere 200
+legittimamente e mostrare dentro righe che non dovrebbe. Per l'elenco degli studenti —
+l'unica pagina dei report che si apre per tutti e tre i ruoli dello staff mostrando righe
+**diverse** a ciascuno — il controllo guarda anche dentro: l'assistente non deve trovarci lo
+studente di un altro tutor, nemmeno cercandolo per email, e l'amministratore invece sì
+(senza la controprova, "non lo trova" non dimostrerebbe niente).
+
+> **Un verde è sospetto finché non lo si è visto diventare rosso.** Rompendo di proposito
+> una regola, i controlli che la riguardano devono fallire. È così che è saltato fuori che
+> una prova sul download di un materiale passava per il motivo sbagliato — il file non
+> esisteva sul disco, e il 404 del file mancante veniva scambiato per un rifiuto del permesso.
+
+`tests/semina_permessi.php` **scrive nel database dell'installazione su cui gira**: è per lo
+sviluppo, non per la produzione. Lo eseguono da sé anche `permessi.js` e `accessibilita.js`.
+Oltre ai due mondi semina, nel mondo A, i casi che servono ai controlli di accessibilità:
+una domanda vero/falso, un materiale su una lezione aperta e un certificato emesso. Mette
+anche una foto vera sul disco allo studente di A, a quello di B e al tutor di A, e un gruppo
+«cerchio» con il tutor di A e otto partecipanti, sette dei quali sono utenti
+`compagno1@test.it`…`compagno7@test.it` che restano fra una semina e l'altra.
+
+## File caricati: la piattaforma non cancella mai da sola
+
+**Nessun file caricato viene eliminato automaticamente.** Né sostituendo un video, né cambiando
+provider, né eliminando una lezione: restano tutti sul server, e si tolgono solo con un comando
+esplicito. La scelta è voluta — un file cancellato non si recupera — e il prezzo è che i file
+scollegati vanno tenuti d'occhio.
+
+Sotto il pulsante Salva, quando la lezione ha un video caricato, ci sono due comandi:
+
+- **Rimuovi dalla lezione**: toglie il riferimento, il file resta sul server;
+- **Rimuovi dalla lezione e dal server**: toglie il riferimento e cancella il file, con conferma.
+
+Sono moduli a sé e non pulsanti dentro quello principale: lì sarebbero stati il primo pulsante
+di invio, e premere Invio in un campo di testo avrebbe tolto il video invece di salvare.
+
+Quando un video smette di essere collegato per altra via — sostituendone uno, o cambiando
+provider — compare un avviso che dice dov'è rimasto il file. Eliminando una lezione, la
+conferma avverte che i file restano, e il messaggio finale dice quanti sono e quanto occupano.
+
+Il file video viene preso in considerazione **solo** se la tendina del provider è su
+"Self-hosted": sceglierlo con la tendina su altro non caricava niente e non diceva niente, ora
+compare un avviso. I campi dei provider non scelti ora spariscono davvero: la regola CSS
+`display: flex` vinceva sull'attributo `hidden`, così il campo "carica file video" si vedeva
+anche con la tendina su "Nessuno".
+
+**Vale anche per gli esercizi H5P** (29/10, Alessandro; dal 21/10 c'era un'eccezione): le
+cartelle in `storage/h5p/` non si cancellano mai da sole, né togliendo il contenuto dalla lezione
+(«Rimuovi dalla lezione»), né sostituendolo, né eliminando lezione, questionario, modulo o corso.
+I messaggi dicono che restano e dove, e si contano fra i file scollegati, nella riga
+`storage/h5p`.
+
+### Dove si vedono i file scollegati
+
+- **In fondo a Gestione corsi**: riepilogo di tutta la piattaforma, per cartella, con numero di
+  file e spazio occupato (`App\Core\OrphanFiles::summary()`).
+- **Nella pagina di modifica della lezione**: una riga con i soli file di quella lezione, che
+  costa una lettura di tre cartelle invece di tutte.
+
+Si contano confrontando il disco con i riferimenti nel database: `lessons.video_ref`,
+`lesson_materials.file_path`, le cartelle H5P di questionari e lezioni e — per le immagini, che
+non hanno una tabella — i nomi citati dentro `content_html`. Vanno cancellati a mano: nessuna pagina può sapere se servono ancora.
+
+## Limiti di caricamento (video e materiali)
+
+La piattaforma accetta video fino a 500 MB, ma **il limite vero lo impone PHP**: valgono
+`upload_max_filesize` e `post_max_size` nel `php.ini`, e basta superarne uno. Su Laragon i
+valori predefiniti sono bassi, quindi per caricare video vanno alzati entrambi (più
+`max_execution_time` e `max_input_time`, se la connessione è lenta) e Apache va riavviato.
+
+Due modi diversi di fallire, ora distinti:
+
+- file oltre `upload_max_filesize` ma richiesta sotto `post_max_size`: PHP consegna la
+  richiesta con un codice d'errore, e il messaggio dice qual è il limite attuale;
+- richiesta oltre `post_max_size`: PHP **scarta l'intero corpo** prima che il codice parta,
+  quindi spariscono anche `$_POST` e il token CSRF. Senza un controllo apposta il router
+  risponderebbe «Sessione scaduta o richiesta non valida», mandando a cercare un problema di
+  login dove c'è solo un file troppo grande. Il Router riconosce il caso (corpo vuoto ma
+  `CONTENT_LENGTH` maggiore di zero) e risponde 413 dicendo il limite.
+
+Il modulo della lezione annuncia il limite effettivo, cioè il più basso fra quello della
+piattaforma e quello del `php.ini`.
+
+## Incontri dal vivo nella pagina della lezione
+
+Sotto il video, la lezione mostra gli incontri **del proprio modulo** ancora da fare o in
+corso; quelli passati non compaiono. Il pulsante "Entra nella riunione" si attiva da un quarto
+d'ora prima dell'inizio fino alla fine, e prima di allora resta la sola data. Chi non ha ancora
+il link Meet vede scritto che non è disponibile.
+
+**La finestra d'ingresso è una sola per tutta la piattaforma.** Le quattro pagine che mostrano
+«Entra» — la lezione, l'agenda, l'elenco degli incontri e il dettaglio della sessione — leggono
+`joinable` e `started` da `LiveSessionModel::FINESTRA_SELECT`, cioè dalla query. Prima erano
+tre regole diverse: la lezione la calcolava in SQL, l'agenda la rifaceva in PHP, e le altre due
+mostravano il comando per qualunque incontro non ancora concluso — anche fra tre settimane.
+Fuori dalla finestra non compare un comando spento ma la frase che spiega quando: un
+collegamento senza `href` non prende il fuoco col tabulatore e un lettore di schermo non lo
+annuncia, e il grigio da solo non dice perché. Il calcolo sta in SQL perché server e database
+possono trovarsi su fusi diversi.
+
+Nell'elenco «Sessioni live» questo sta in una colonna sua, **Accesso**, che dice sempre come
+si entra e cambia contenuto invece di apparire e sparire: «Da 15 minuti prima» finché è
+presto, poi il collegamento «Entra», niente a incontro concluso. Nella pagina della lezione e
+nel dettaglio della sessione, dove non c'è una tabella, resta la frase «Si entra da 15 minuti
+prima».
+
+Le finestre temporali sono calcolate in SQL (`LiveSessionModel::upcomingForModule`), non in
+PHP: server web e database possono trovarsi su fusi diversi.
+
+Il link è un `<a>` normale, senza `target`: la riunione si apre nella stessa scheda, su
+qualunque dispositivo, così il tasto Indietro riporta alla lezione. Da una scheda nuova si
+tornerebbe indietro solo dal selettore delle schede, scomodo su telefono. Se il telefono
+dirotta il link sull'app Meet, la lezione resta dov'era nel browser. Niente JavaScript: un solo
+comportamento da spiegare e da provare.
+
+Google Meet **non si può incorporare** in un iframe dentro la piattaforma: `meet.google.com`
+vieta di essere incorniciato da altri siti e il browser rifiuta di disegnarlo. Per avere la
+videoconferenza dentro la pagina servirebbe un provider nato per essere incorporato (Jitsi,
+Whereby, Daily), cioè lasciare Meet.
+
+## Colori: le tavolozze
+
+**Amministrazione → Aspetto → Colori.** Quattro tavolozze pronte — verde pistacchio
+(predefinita), blu ardesia, terracotta, prugna — più un campo facoltativo per il solo colore
+principale. **I colori valgono su tutta la piattaforma**, dentro e fuori; struttura e testi
+delle pagine pubbliche, nella stessa pagina, riguardano invece solo quelle cinque pagine.
+
+**`style.css` non viene mai riscritto.** I colori sono già variabili CSS, e la tavolozza
+scelta diventa un blocco `:root { … }` stampato **dopo** il foglio di stile: l'ultima
+dichiarazione vince. Così una patch futura non trova conflitti su `style.css` e `git am` non
+si blocca — era la condizione posta in §8.5 del promemoria. Con la tavolozza predefinita e
+nessun colore personalizzato non si stampa niente: sarebbe un blocco identico a quello che
+sovrascrive.
+
+**Perché tavolozze pronte e non un campo per colore.** Una tavolozza sono sette valori che
+devono reggersi fra loro: il colore principale deve staccare sul bianco *e* sul fondo delle
+pagine pubbliche, il bianco deve leggersi sopra di esso, la variante scura sopra la propria
+tinta chiara. Sette campi liberi vogliono dire combinazioni illeggibili. Ogni tavolozza è
+verificata su **dieci coppie** prima di essere offerta, e `tests/tema_test.php` rifà quel
+conto a ogni esecuzione.
+
+L'eccezione è il **colore principale**, che è quello che si vuole cambiare più spesso, di
+solito per avvicinarlo a un marchio. Lì il controllo è al salvataggio: un colore sotto 4,5:1
+viene rifiutato dicendo di quanto manca, invece di essere salvato e scoperto dopo. Le varianti
+(stato premuto, tinta chiara) si ricavano da quello scelto, e anche loro sono verificate.
+
+> **Un colore arriva dal database e finisce dentro un tag `<style>`.** Senza controllo, un
+> valore come `#fff; } body { display:none` sarebbe CSS eseguito. Per questo ogni valore passa
+> da `Theme::coloreValido()`, che accetta solo `#rgb` e `#rrggbb` e rifiuta tutto il resto —
+> nomi di colore, `rgb()`, `url()`. Stesso principio del sanificatore dell'HTML dell'editor.
+
+La pagina dell'installer è l'unica che non riceve il blocco: gira prima che esistano le
+impostazioni.
+
+### Colore del testo
+
+Campo facoltativo, accanto a quello del colore principale. **Il grigio dei testi secondari
+non si imposta**: viene ricavato dal primo, schiarito per gradi verso lo sfondo e fermato
+all'ultimo passo che resta leggibile. Due campi che devono stare in rapporto fra loro sono
+due modi di sbagliare invece di uno.
+
+Il controllo al salvataggio guarda tutti i fondi su cui il testo finisce: il bianco dei
+riquadri, lo sfondo delle pagine, e la tinta tenue di **tutte e quattro** le tavolozze —
+anche quelle non attive, perché l'admin può cambiare tavolozza dopo aver scelto il colore, e
+un colore valido solo con quella di oggi diventerebbe illeggibile domani senza che nessuno
+glielo dica.
+
+### Misura del titolo della presentazione
+
+Nel riquadro *Testi della presentazione*, perché riguarda quelle due righe e non altro:
+quattro livelli (piccola, normale, grande, molto grande) per il titolo e il testo della
+sezione di sinistra dell'aspetto affiancato. Titolo e testo crescono insieme, per non
+rompere il rapporto fra i due, e su schermo stretto si riducono **in proporzione alla misura
+scelta** invece che a un valore fisso — altrimenti da telefono la scelta non conterebbe
+niente.
+
+È separata dalla «Dimensione del testo» qui sotto: lì il titolo è un elemento grafico, e
+ingrandirlo è una scelta di presentazione, non di leggibilità. Senza questa misura, per avere
+un titolo più grande bisognava ingrandire anche i menu e i report.
+
+> Attenzione al verso opposto: i valori sono in `rem`, quindi alzando **anche** la dimensione
+> generale del testo la presentazione cresce insieme al resto. È voluto — un titolo rimasto
+> indietro dentro un'interfaccia cresciuta sarebbe sbagliato — ma vuol dire che le due scelte
+> si sommano.
+
+### Arrotondamento degli angoli
+
+Quattro livelli: squadrato (0/0), leggero (3/5), normale (6/10, quello di fabbrica), morbido
+(10/16). **Due valori per livello**, non uno: nel foglio di stile il raggio piccolo veste
+campi e pulsanti, quello grande i riquadri, e il rapporto fra i due è ciò che fa sembrare la
+pagina disegnata invece che assemblata. Un campo numerico libero lascerebbe scegliere 2 e 40.
+
+### Dimensione del testo
+
+Quattro misure: compatto 15 px, normale 16, comodo 17, grande 18. **Scala tutta
+l'interfaccia, non solo le lettere**: nel foglio di stile quasi ogni misura è in `rem`,
+quindi crescono insieme testo, riempimenti e spazi e le proporzioni restano quelle. È il
+motivo per cui non esiste un "ingrandisci solo il testo", che lascerebbe lettere grandi
+dentro riquadri rimasti piccoli. Sotto i 15 px non si scende.
+
+Resta indipendente dall'ingrandimento del browser: chi alza il testo dalle impostazioni del
+proprio browser continua a vederlo crescere, qualunque misura sia scelta qui.
+
+> Offrire le due misure più grandi ha fatto emergere un difetto vero: a 17 e 18 px la riga
+> dei comandi di un modulo non entrava più in 320 px e spingeva fuori la pagina di 30 px.
+> Ora va a capo — il che è la cosa giusta anche a 16 px, dove semplicemente non capitava.
+> È il genere di cosa che si vede solo misurando: l'accessibilità è stata eseguita una volta
+> per ogni misura e una per ogni livello di arrotondamento.
+
+## I moduli da compilare: una misura sola
+
+Nel progetto convivono **tre famiglie di moduli**, nate in momenti diversi: `.form` nel
+pannello, `.stacked-form` nei moduli brevi, `.auth-form` nelle pagine pubbliche. Ognuna si
+era portata dietro la propria misura, e al 04/10 la deriva era questa: etichette a 15,2 px in
+due sistemi e **13,1 nel terzo**, campi alti 40 px in due e **34 nel terzo**, e lo stesso
+pulsante alto **35 px da solo e 37 accanto a un altro comando**, perché `.form-actions` è una
+riga flessibile che lo stirava. Nessuna di queste era una decisione: erano copie invecchiate
+in modo diverso.
+
+Ora le dichiarazioni comuni — dimensione e peso delle etichette, aspetto e altezza dei campi
+— stanno **in un blocco solo** che elenca i tre sistemi, e nei blocchi dei singoli restano le
+differenze vere: la larghezza massima di `.form`, i margini, la disposizione. Chi aggiunge un
+quarto sistema lo aggiunge a quei selettori invece di ricopiare i valori: è ricopiandoli che
+sono diventati diversi.
+
+I pulsanti hanno un'altezza minima pari a quella dei campi, così uno stesso comando è alto
+uguale ovunque e non dipende da chi gli sta accanto. `.btn` è `inline-flex` e non
+`inline-block` proprio per questo: con un'altezza minima il testo va centrato nello spazio
+che avanza. `.btn-small` conserva la propria altezza, che è la misura minima di un bersaglio
+toccabile.
+
+`node tests/coerenza_moduli.js` misura le tre famiglie su sette pagine e fallisce quando una
+si discosta. Non è un doppione del controllo di accessibilità: **una pagina con le etichette
+piccole è accessibile lo stesso**, e infatti quella deriva è passata sotto i suoi 1225
+controlli per giorni. Questo guarda un'altra cosa — che la stessa cosa sia disegnata allo
+stesso modo — e non vede se le misure sono *giuste*: tre moduli sbagliati allo stesso modo
+passano.
+
+> La tolleranza è di 1,5 px, e non è indulgenza: le pagine pubbliche usano Albert Sans e
+> quelle interne il carattere di sistema, e due caratteri diversi alla stessa dimensione
+> danno righe alte 17 e 18 px. È una differenza del carattere, non del foglio di stile.
+
+### Larghezza dei campi: 520 e 780
+
+**Le aree di testo arrivano a 780 px, i campi di una riga e le scelte a 520** (13/10). A 520
+un obiettivo, una descrizione o il testo di un'email si scrivevano in una colonna stretta; a
+tutta larghezza su un computer sarebbero quasi 1000 px, e una riga così lunga si rilegge male.
+Vale in tutta la piattaforma: corso (obiettivo, descrizione, benvenuto), modulo (obiettivo),
+gruppo e incontro (descrizione), profilo (presentazione), Messaggi email (chiusura e testi),
+Aspetto, domande all'esperto, giro del cerchio, risposte aperte nei questionari. Sul telefono,
+e dove il riquadro è più stretto (la scheda del catalogo), l'area prende tutto lo spazio che
+c'è, come prima. Il contatore resta sul bordo destro del campo.
+
+Il form del modulo (`.stacked-form`) arriva a 780 per l'obiettivo, ma tutto il resto — titolo,
+casella del questionario, data, pulsanti — si ferma a 520 come prima. Il form della lezione ha
+la misura dell'editor e non cambia. `accessibilita.js` controlla su ogni pagina che ogni area
+di testo sia larga 780 px, o quanto il suo form se è più stretto, e che nessun campo di una riga
+superi 520.
+
+### «Annulla» accanto a ogni «Crea», «Salva», «Invia»...
+
+**Ovunque ci sia un pulsante «Crea», «Salva» o «Modifica» c'è accanto «Annulla»** (14/10,
+Alessandro), e lo stesso giorno anche accanto a **«Pubblica», «Condividi», «Poni la domanda» e
+«Invia»**. Che cosa fa dipende dalla pagina:
+
+- **una pagina con un modulo solo** (nuovo e modifica di modulo, lezione, utente, gruppo,
+  incontro e questionario; nuovo corso; le impostazioni del questionario; lo svolgimento del
+  questionario, che torna al corso senza inviare; le impostazioni di Aspetto, Video di benvenuto, Bunny, Google Meet,
+  Server di posta; la reimpostazione della password): **esce senza salvare** e torna
+  alla pagina da cui si arriva — la stessa del collegamento «indietro» in cima, per la password
+  la pagina d'accesso. È un collegamento con l'aspetto di un pulsante;
+- **una pagina con più moduli da salvare** (Messaggi email, il Profilo, Modifica corso con la
+  copertina e i benvenuti): **rimette i valori salvati in quel riquadro e lascia dove si è**, così
+  su una pagina lunga non si perde il punto né il lavoro negli altri riquadri. È un
+  `<button type="reset">`: funziona anche senza JavaScript;
+- **un pannello dentro una pagina** («Modifica la tua risposta», la risposta nuova e «Fai una
+  nuova domanda» nel giro del cerchio; una domanda pubblicata in «Domande»; «Fai una domanda
+  all'esperto» nella pagina del corso): **rimette i valori — o svuota il campo — e chiude il
+  pannello**. Una domanda in attesa in «Domande» sta in un riquadro sempre aperto: «Annulla»
+  accanto a «Pubblica» rimette la domanda com'era arrivata e svuota la risposta.
+
+Restano fuori le azioni senza campi da compilare — «Crea l'indirizzo del calendario» in Agenda,
+«Crea l'evento su Google Calendar» nella pagina dell'incontro, «Invia messaggio di prova» nel
+Server di posta, «Invia inviti» nella pagina dell'incontro (che chiede già conferma) —, perché
+non c'è niente da annullare. E «Invia il link» in «Password dimenticata» e «Rinvia il link di
+conferma»: sotto il modulo c'è già «Torna all'accesso», che fa la stessa cosa (14/10). `public/assets/js/annulla.js`, caricato in ogni pagina, fa le tre cose che il
+reset del browser da solo non fa: aggiorna i contatori dei caratteri, rimette il testo
+nell'editor della lezione e chiude il pannello. `accessibilita.js` controlla su ogni pagina che
+accanto a ogni «Crea», «Salva» e «Modifica» ci sia «Annulla»; `permessi.js` che in Messaggi email
+e in Domande rimetta testo e contatore, e che il pannello si chiuda.
+
+## Ritocchi ai singoli elementi
+
+**Amministrazione → Aspetto → Solo le pagine pubbliche → Ritocchi ai singoli elementi.** Sei
+elementi — titolo e testo della presentazione, nome della piattaforma, titolo del modulo,
+riga sotto al titolo, pulsante principale — ognuno con le stesse sette possibilità: peso,
+stile, lettere, spaziatura, allineamento, colore, e la misura dove già esisteva.
+
+**Perché un meccanismo e non altri comandi.** Fino alla 0084 ogni richiesta diventava un
+comando suo. Funziona per quattro, non per quaranta: la pagina cresce finché non si legge
+più. Qui c'è un elenco di elementi e un elenco di proprietà, e ogni elemento si regola con le
+stesse. **Aggiungere domani «il titolo della lezione» costa una riga in `ElementStyle::ELEMENTI`,
+non un riquadro nuovo.**
+
+Cosa lo rende diverso dal «CSS libero», che §8.5 ha escluso:
+
+- **i selettori li scriviamo noi** e stanno nel codice: dal pannello non si sceglie *dove*
+  applicare qualcosa, solo *che cosa* applicare a un elemento già nominato;
+- **i valori vengono da elenchi chiusi**: non si scrive `font-weight`, si sceglie «Normale».
+  Un valore fuori elenco viene ignorato, non stampato — e la pulizia si applica **sia in
+  scrittura sia in lettura**, perché il valore passa dal database;
+- **nessuna proprietà può nascondere niente.** Niente `display`, `visibility`, `position`: è
+  la trappola di §5 — ciò che si nasconde resta inviato — e non deve poter rientrare da una
+  tendina. Un test lo verifica sull'elenco delle proprietà, non sulle intenzioni.
+
+Il prezzo è quello che §8.5 chiamava **un impegno**: questi selettori diventano un contratto.
+Chi rinomina `.scene-claim h2` deve aggiornare anche quella tabella, o un ritocco salvato
+smetterà di avere effetto restando salvato — il difetto peggiore, perché non si vede.
+
+Nel pannello i sei elementi stanno in un riquadro solo, ciascuno in un `<details>`: sei righe
+chiuse invece di quarantadue comandi in fila. Si apre da sé quello che è già stato modificato,
+e porta l'etichetta «modificato», così chi torna sulla pagina vede dove ha messo le mani senza
+aprire sei cassetti. `<details>` è un elemento del browser: funziona senza JavaScript, con la
+tastiera e con un lettore di schermo senza che dobbiamo costruirne il comportamento.
+
+> **Una differenza voluta non è una deriva.** Da qui in avanti l'admin può dare di proposito
+> al pulsante delle pagine pubbliche un peso diverso da quello interno, e
+> `tests/coerenza_moduli.js` fallirebbe su una sua scelta. Il controllo legge ora le regole
+> che Pistacchio stampa nella pagina: se per quel selettore c'è una regola, il confronto si
+> salta dicendolo.
+
+## Caratteri dal catalogo
+
+**Amministrazione → Aspetto → Caratteri.** L'elenco completo di Google Fonts —
+**1941 famiglie** — con due scelte separate: una per l'applicazione (corsi, report, pannello:
+le pagine dove si legge per ore) e una per le pagine pubbliche (che si vedono per pochi
+secondi, e dove un carattere caratterizzato ha senso). Campo vuoto = carattere di partenza.
+
+**Nessun visitatore contatta mai Google.** L'elenco viaggia con il progetto
+(`database/google-fonts.json`, 50 KB) e serve solo a riempire il campo. Quando l'admin
+sceglie una famiglia, **il server** scarica quel singolo file una volta sola in
+`storage/fonts/` e da lì in poi lo serve Pistacchio, da `/assets/fonts/catalogo/{file}`. È la
+stessa ragione per cui Albert Sans sta nel repository: un `<link>` a `fonts.googleapis.com`
+farebbe arrivare a Google l'indirizzo IP di chi apre la pagina di accesso.
+
+Si passa dal foglio di stile `css2` di Google e non dal file grezzo su GitHub perché il primo
+restituisce un **woff2** già compresso e ridotto al latino — una trentina di KB — mentre il
+`.ttf` è lo stesso carattere a 130 KB, e convertirlo in PHP non si può. Lo `User-Agent` nella
+richiesta non è un vezzo: senza, Google risponde con indirizzi `.ttf`, credendo di parlare con
+un browser vecchio.
+
+### Se il server non può uscire su internet
+
+Su molti hosting condivisi le connessioni in uscita sono chiuse. In quel caso **lo
+scaricamento fallisce e l'impostazione non viene salvata** — di proposito: salvare il nome di
+un carattere il cui file non esiste vorrebbe dire pagine che chiedono un file inesistente a
+ogni caricamento.
+
+Il messaggio dice sempre qual è il server e **che cosa fare**, e distingue tre casi
+(`FontLibrary::messaggioErrore()`):
+
+- **nessuna connessione**: l'hosting chiude le uscite, si carica il file a mano;
+- **una risposta di rifiuto** — in pratica 401, 403 o 407, cioè un firewall o un proxy
+  dell'hosting che risponde al posto di Google: si chiede al fornitore di aprire le uscite,
+  oppure si carica il file a mano;
+- **Google che non risponde adesso** (429 o un errore 5xx): di solito passa da solo, si
+  riprova fra qualche minuto oppure si carica il file a mano.
+
+Fino al 06/10 il secondo caso diceva solo «ha risposto 403 invece di 200», senza una strada.
+
+**Il test non dipende dalla rete.** `caratteri_test.php` prova i tre messaggi senza
+collegarsi a niente. Poi tenta uno scaricamento vero, ma solo per informazione: dove Google
+risponde verifica che il file arrivato sia un woff2, dove non risponde stampa il messaggio che
+il pannello mostrerebbe. Prima verificava il messaggio ottenuto dalla rete, e quindi il suo
+esito dipendeva da dove lo si eseguiva.
+
+Il ripiego funziona ovunque: si mette il file woff2 in `storage/fonts/` col nome della
+famiglia in minuscolo e trattini — `playfair-display.woff2`. `FontLibrary::accettaCaricato()`
+riconosce un woff2 dalla **firma del file** (`wOF2` nei primi quattro byte), non
+dall'estensione, che la decide chi carica.
+
+### Due dettagli di sicurezza
+
+- **Il nome del file non arriva mai dall'indirizzo.** La rotta prende la famiglia dal
+  catalogo e ricalcola il nome: un indirizzo come
+  `/assets/fonts/catalogo/..%2f..%2fconfig.php` cerca una famiglia che non esiste e finisce in
+  404, invece di diventare un percorso.
+- **Dal CSS di Google si accetta solo un `fonts.gstatic.com/….woff2`.** Una risposta
+  intercettata che indicasse un altro host farebbe scaricare qualunque cosa.
+
+La rotta del carattere è **l'unica rotta di file che non chiede l'accesso**, e deve esserlo:
+il carattere serve anche alla pagina di accesso, cioè a chi l'accesso non l'ha ancora fatto.
+Un file di carattere non contiene dati di nessuno.
+
+## Carattere delle pagine pubbliche (Albert Sans)
+
+Accesso, registrazione, recupero e nuova password e cambio password obbligato usano
+**Albert Sans**, in entrambi gli aspetti (guscio e affiancato). Dentro l'applicazione il
+carattere resta quello di sistema: la scelta riguarda le pagine che si vedono **prima** di
+entrare.
+
+**Il file sta nel progetto e non si carica da Google.** Oltre alla coerenza con TinyMCE,
+copiato qui per la stessa ragione, c'è un motivo preciso: un `<link>` a
+`fonts.googleapis.com` farebbe contattare un server di Google al browser di chi apre la
+pagina di accesso, mandandogli il proprio indirizzo IP prima ancora che abbia fatto accesso.
+Nel 2022 il Landgericht di Monaco ha stabilito che farlo senza consenso viola il GDPR. Con il
+file in casa non parte **nessuna richiesta a terzi**, e lo si può verificare: aprendo la
+pagina di accesso, l'unico host contattato è il proprio.
+
+`public/assets/fonts/albert-sans-latin.woff2` — **31 KB, un file solo**. È il font
+**variabile**: contiene l'intero asse dei pesi da 100 a 900, quindi il grassetto non costa un
+secondo scaricamento. È ridotto all'alfabeto latino più la punteggiatura usata dalle pagine;
+l'originale completo pesa 129 KB. Il corsivo non è incluso, perché in quelle pagine non ce
+n'è. Licenza **SIL Open Font License 1.1**: il file `albert-sans-OFL.txt` va tenuto accanto al
+font, è la condizione che la licenza pone. Dettagli e procedura in
+`public/assets/fonts/LEGGIMI.md`.
+
+Due dettagli che è facile sbagliare, entrambi commentati nel codice:
+
+- **I controlli dei form non ereditano il carattere**: il browser impone a `button`, `input`,
+  `select` e `textarea` il proprio, quindi l'etichetta dentro il pulsante "Accedi" resterebbe
+  nel carattere di sistema accanto a un modulo tutto in Albert Sans. Serve un
+  `font-family: inherit` esplicito su quei quattro.
+- **`font-display: swap`**: il testo compare subito con il carattere di sistema e viene
+  sostituito appena il font è pronto. Il comportamento predefinito del browser è invece
+  lasciarlo **invisibile** fino a tre secondi — su una pagina di accesso, un modulo senza
+  etichette.
+
+Il `<link rel="preload">` nella `<head>` chiede il font in parallelo al foglio di stile invece
+che dopo. Porta `crossorigin` anche se il file è nostro: i font si scaricano sempre in
+modalità CORS, e senza quell'attributo il browser lo scaricherebbe due volte.
+
+## Icona nella scheda del browser
+
+`public/favicon.ico` contiene l'icona di Pistacchio in quattro misure (16, 32, 48 e 64 px), più
+`assets/img/pistacchio-32.png` per i browser moderni e `pistacchio-180.png` per la schermata
+iniziale su telefono. I tag stanno in tutte le pagine che hanno una `<head>` propria: il layout
+principale, le pagine di accesso, la verifica pubblica del certificato e l'installer.
+
+Le immagini sono ricavate da `pistacchio_icon.png` **ritagliando sul contenuto**: l'originale ha
+margini trasparenti che, ridotti a 16 px, lasciavano la forma minuscola in mezzo al nulla.
+
+**Il logo nuovo** (17/10): un fiore, un petalo arancio fra due foglie verdi. Sta in tutte le misure:
+`pistacchio_icon.png` (1200 px, in cima a questo file), `assets/img/pistacchio.png` (96 px: la
+barra laterale e la pagina di accesso affiancata), le due icone della scheda e del telefono e
+`favicon.ico`. Il disegno è più largo che alto: ogni file è un quadrato con il logo al centro,
+così tag e dimensioni nelle pagine restano quelli di prima.
+
+## Logo del gruppo
+
+Nel modulo di creazione e in quello di modifica di un gruppo si può caricare un logo o simbolo.
+Compare accanto al nome nell'elenco dei gruppi; senza immagine il gruppo mostra le proprie
+iniziali su una tinta derivata dall'identificativo.
+
+Il file viene ritagliato al centro in quadrato e ridotto a 256 px, e — a differenza delle
+copertine dei corsi, che diventano JPEG — **salvato in PNG**, per conservare la trasparenza: un
+logo appiattito su fondo bianco si vedrebbe come una toppa sopra lo sfondo caldo delle pagine.
+Compare anche in **I miei gruppi**, nel profilo dello studente. I file stanno in
+`storage/group-logos/`, fuori dal document root, serviti da `/gruppi/{id}/immagine` a chi ha
+fatto accesso: l'indirizzo non sta sotto `/admin` proprio perché lo carica anche lo studente.
+
+Creando un gruppo l'immagine viene salvata **dopo** la riga, perché il percorso contiene
+l'identificativo, che prima non esiste. Sostituendo o rimuovendo l'immagine il file precedente
+viene eliminato: qui la cancellazione automatica ha senso, perché un logo sostituito non serve
+più a nessuno, a differenza di un video di lezione.
+
+Migrazione `2026_09_17_logo_gruppo.sql` (colonna `logo_path`).
+
+## Righe collegate che mancano: 404, non una pagina rotta
+
+Quando una pagina si apre partendo da una riga — una lezione, un materiale, un questionario, un
+tentativo — e la riga a cui è collegata non esiste più, la risposta è un **404** con la stessa
+frase che il controller usa già per il proprio 404 ("Lezione non trovata.", "Questionario non
+trovato."...). Prima la pagina si apriva lo stesso, con gli avvisi di PHP stampati sopra e un 403
+fuorviante, o addirittura a 200 e sgangherata. Succede con dati importati male o cancellati a
+mano, perché le chiavi esterne del database lo impedirebbero.
+
+PHPStan è al **livello 8**, che è quello che segnala proprio le righe lette senza controllare
+che esistano. Tre famiglie di rilievi restano escluse in `phpstan.neon`, ciascuna con il motivo
+scritto accanto: i tipi del contenuto degli array, gli argomenti di tipo largo, e le chiamate a
+`query()` che "potrebbero" restituire `false` — non può succedere, perché la connessione è
+aperta con `PDO::ERRMODE_EXCEPTION`.
+
+## Chi modifica cosa: tutor e assistenti
+
+**Il corso è dell'admin, il tutor lavora sulla sua classe** (25/10, Alessandro; fino al 25/10 il
+tutor modificava i corsi assegnati ai suoi gruppi). In `App\Auth\CourseRights`:
+
+- l'**admin** crea, modifica, riordina ed elimina i corsi e i loro contenuti — moduli, lezioni,
+  questionari, materiali, date del corso, dati e copertina —, iscrive, toglie iscritti, decide le
+  richieste di iscrizione e assegna tutor e assistenti;
+- il **tutor** legge il corso. In Gestione corsi vede i corsi dei suoi gruppi; aprendone uno
+  trova il suo benvenuto da registrare e i suoi studenti, in sola lettura. Le date della sua
+  classe le dà da «Date dei moduli», nella pagina del gruppo; gli incontri sono quelli dei suoi
+  gruppi; report, tentativi e certificati quelli dei suoi studenti, nei corsi che fanno nei suoi
+  gruppi (`StudentScope`, a coppie studente-corso);
+- l'**assistente** affianca **più tutor** (tabella `assistant_tutors`) in sola lettura, secondo
+  gli interruttori di **Ruoli**.
+
+Ogni azione su moduli, lezioni e questionari passa da `CourseRights::requireEdit*()`, che ferma
+anche chi scrive a mano l'indirizzo; quando il corso non si trova, chi non è admin riceve 404
+(29/10). Il tutor non gestisce assistenti: `assistant.manage` non è nel suo nucleo.
+
+Due migrazioni, in quest'ordine. `2026_09_29_tutor_assistenti.sql` crea `assistant_tutors`,
+vi trasferisce i legami esistenti di `users.supervising_tutor_id` e toglie il permesso al
+tutor; `2026_09_30_rimozione_supervising_tutor_id.sql` **elimina la colonna**, che nel
+frattempo non la leggeva più nessuno. Entrambe si possono rieseguire senza danni.
+
+**La colonna Tutor dell'elenco utenti** — e la colonna «Tutor di riferimento» dello
+scaricamento CSV/XLSX — mostra il tutor di riferimento **secondo il ruolo**: per uno studente
+i tutor dei gruppi di cui fa parte, per un assistente i tutor che affianca, per tutor e admin
+nessuno («—»). Più tutor si elencano in ordine alfabetico, ciascuno una volta sola.
+L'espressione sta in `UserModel::TUTOR_DI_RIFERIMENTO` e la usano tutti e tre gli elenchi
+(admin, tutor, scaricamento). Fino al 06/10, dopo la rimozione del tutor supervisore, la
+colonna guardava solo gli assistenti e restava vuota sulle righe degli studenti.
+
+## Ordine dei corsi
+
+Nella pagina **Corsi**, chi può modificarli riordina le schede **trascinandole**, e l'ordine si
+salva da solo, in silenzio, senza ricaricare la pagina.
+
+Durante il trascinamento la scheda **segue il puntatore**: lo spostamento si ricava ogni volta
+da dove la scheda si trova adesso, meno lo spostamento che le è già stato dato, invece di
+tenere il conto di un'origine — tenendolo, dopo ogni scambio il conto si perdeva e la scheda
+rimbalzava avanti e indietro. Sta sopra le altre ed è trasparente al puntatore — altrimenti, seguendo il cursore, sarebbe lei stessa
+l'elemento puntato e non si saprebbe mai su quale scheda si sta passando. Finché una scheda sta scivolando non si scambia niente: a metà volo la sua posizione misurata è
+quella dell'animazione e non quella vera, e il confronto con il confine darebbe scambi
+incoerenti, annullati subito dopo — è il residuo di irregolarità che restava dopo la prima
+correzione. Le altre **scorrono** verso la nuova posizione in 160 ms invece di saltarci: si misura dove sono prima, si cambia
+l'ordine, si misura dove sono finite, e ognuna viene riportata otticamente indietro e lasciata
+scivolare. Chi ha chiesto meno animazioni nelle impostazioni del sistema non ne vede nessuna.
+
+Il trascinamento non usa quello nativo dell'HTML: le schede sono collegamenti, e il browser
+avvia il proprio trascinamento del link invece del nostro. `course-order.js` segue gli eventi
+del puntatore, con una soglia di 6 px perché un clic non perfettamente fermo non diventi un
+trascinamento, e la cattura del puntatore si prende **solo quando il trascinamento comincia
+davvero**: presa prima, il clic finisce alla griglia e un clic semplice non apre più il corso.
+Vale solo con il mouse: su un touch screen bloccare lo scorrimento della pagina per permettere
+il trascinamento renderebbe la pagina difficile da leggere.
+
+L'ordine vale ovunque: elenco dei corsi, Gestione corsi e **catalogo degli studenti**.
+
+Migrazione `2026_09_18_ordine_corsi.sql` (colonna `position`, inizializzata con l'ordine che le
+righe avevano finora, dal più recente: altrimenti sarebbero tutte a zero e il primo
+caricamento sembrerebbe casuale).
+
+`CourseModel::reorder()` ignora gli id sconosciuti e lascia in coda i corsi non nominati: la
+pagina di chi trascina potrebbe essere vecchia di qualche minuto, e un corso creato nel
+frattempo non deve sparire né bloccare il salvataggio.
+
+## Ordine di moduli e lezioni
+
+Nella pagina del corso, chi può modificarlo trova accanto a ogni modulo e a ogni lezione due
+frecce che le spostano di un posto su o giù. Le frecce agli estremi sono disabilitate, e dopo
+lo spostamento la pagina torna al modulo su cui si stava lavorando, invece che in cima: in un
+corso lungo, altrimenti, dopo ogni clic si perde il segno.
+
+Funziona senza JavaScript: sono moduli POST, come il riordino dei materiali della lezione, di
+cui `ModuleModel::move()` e `LessonModel::move()` ricalcano il meccanismo. Il vicino con cui si
+scambia la posizione è la riga **adiacente nell'ordine di visualizzazione**, non quella con
+`position ± 1`: dopo un'eliminazione le posizioni hanno dei buchi, e righe importate potrebbero
+condividere lo zero — in quel caso si rinumera prima di scambiare.
+
+## Copertina di avvio e completamento delle lezioni
+
+Sono due cose distinte, tenute separate di proposito: la copertina è **presentazione** e vale
+per ogni video; lo sblocco del pulsante è una **regola didattica**. Legarle significherebbe che
+cambiare idea sull'una tocca l'altra.
+
+### La copertina, per ogni video
+
+Davanti a ogni video, qualunque sia il provider, c'è una copertina con il pulsante "Guarda la
+lezione". Prima era solo sui video Bunny e Cloudflare, per una ragione tecnica, e due lezioni
+affiancate avevano un aspetto diverso senza che lo studente potesse capire perché.
+
+Finché la copertina è lì il player non viene caricato: l'iframe non ha indirizzo e il video
+sul nostro server ha `preload="none"`. La pagina quindi non contatta Bunny o Cloudflare, e non
+scarica nulla dal nostro server, finché nessuno guarda.
+
+La copertina è nascosta nell'HTML e la scopre `public/assets/js/lesson-video.js`: senza
+JavaScript resta invisibile e il player si comporta come ha sempre fatto. Per i soli provider
+esterni c'è in più un `<noscript>` con il player già caricato, altrimenti lì l'iframe
+resterebbe senza indirizzo.
+
+Il pulsante "Senza distrazioni" compare **solo dopo l'avvio del video**: finché c'è la
+copertina il player è nascosto, e allargarlo darebbe una pagina nera attorno a un riquadro
+vuoto. `lesson-video.js` annuncia l'avvio con un evento e `lesson-focus.js` lo ascolta, per cui
+il primo va caricato prima del secondo.
+
+### Lo sblocco, per ogni lezione con il video
+
+**Dal 27/10 (Alessandro) in ogni lezione con un video**, anche con testo o allegati, il pulsante
+"Segna come completata" resta disabilitato finché lo studente non avvia il video; prima valeva
+solo per le lezioni di solo video. Con gli esercizi H5P ci vogliono tutte e due le cose. Sotto il
+pulsante una frase sola dice quello che manca, composta da `lesson-completa.js`: «Guarda il video
+per poter segnare la lezione come completata.», «Fai l'esercizio…», o «Guarda il video e fai
+l'esercizio…». Il clic sulla copertina è il segnale, e per i video sul nostro server vale anche
+l'evento `play` del player.
+
+Il pulsante è **abilitato nell'HTML** e lo disabilita `public/assets/js/lesson-video.js`, lo
+stesso script della copertina: senza JavaScript, o se qualcosa va storto, lo studente può
+comunque concludere la lezione. Sempre per questo, un `<noscript>` contiene lo stesso player
+caricato subito, altrimenti senza JavaScript l'iframe resterebbe senza indirizzo e il video
+non si vedrebbe. Il riquadro dichiara con `data-attende-avvio` se la regola lo riguarda.
+
+Il ricordo dell'avvio sta in `sessionStorage`, quindi ricaricando la pagina il pulsante resta
+sbloccato. Non segue lo studente su un altro dispositivo, e non è un controllo: chi vuole può
+premere play e segnare subito. Serve a evitare la distrazione, non la furbizia.
+
+La copertina del riquadro di avvio è disegnata da `App\Core\VideoPoster`: un SVG in toni
+pastello con tinte e composizione derivate dall'identificativo della lezione, così ogni video ha
+la sua senza che nessuno debba preparare un'immagine.
+
+## Modalità senza distrazioni
+
+Nella lezione, sotto il video, un pulsante **Senza distrazioni** allarga il player a tutto lo
+schermo scurendo il resto della pagina. La sceglie lo studente: non si attiva mai da sola.
+
+Il pulsante **Torna alla lezione** resta fisso in alto a destra per tutto il tempo — niente
+comparsa al passaggio del mouse, che su uno schermo tattile non esiste — e anche Esc riporta
+indietro.
+
+Il riquadro del video non viene mai spostato nell'albero del documento: cambiano solo le
+classi (`public/assets/js/lesson-focus.js`). Un iframe spostato si ricarica e il video
+ripartirebbe da capo; così invece la riproduzione prosegue senza interruzione, sia con i
+player Bunny e Cloudflare sia con i video self-hosted.
+
+I due pulsanti stanno nell'HTML con l'attributo `hidden` e li scopre il JavaScript: senza
+JavaScript la pagina resta esattamente quella di prima.
+
+## Configurazione dal pannello
+
+**Impostazioni → Server di posta elettronica** e **Amministrazione → Google Meet** permettono di
+cambiare la configurazione senza aprire il `.env`. Le due pagine richiedono il permesso
+`settings.manage`, che fa parte del nucleo fisso dell'admin (vedi **Ruoli**).
+
+I valori finiscono nella tabella `settings`, con chiavi che hanno gli stessi nomi delle
+variabili d'ambiente, e **hanno la precedenza sul `.env`**. Svuotare un campo cancella la riga
+e restituisce il comando al file. Il `.env` non viene mai riscritto da una pagina web: contiene
+anche le credenziali del database.
+
+La password SMTP non torna mai al browser: la pagina dice solo se è impostata, e salvando con
+il campo vuoto resta quella di prima. La chiave dell'account di servizio Google non va in
+tabella ma in `storage/google/`, fuori dal document root e con permessi 0600; in tabella resta
+il percorso. Sostituendo o rimuovendo la chiave, il file precedente viene eliminato — ma solo
+se l'avevamo caricato noi, non se il percorso arriva dal `.env`.
+
+Ogni pagina ha una prova: l'invio di un messaggio al proprio indirizzo, e una lettura del
+calendario configurato che verifica in un colpo solo credenziali, delega a livello di dominio
+e visibilità del calendario, senza creare né modificare eventi.
+
+## Copertina del corso
+
+Ogni corso puo' avere una copertina, caricata da **Gestione corsi → il corso → Copertina**.
+Compare nell'elenco dei corsi, nel catalogo e in cima alla pagina del corso.
+
+L'immagine viene **ritagliata al centro in 16:9** e salvata in due misure (1280 px per la
+testata, 640 px per le card), convertita in JPEG. I file stanno in `storage/course-covers/`,
+fuori dal document root, e sono serviti da `/corsi/{id}/copertina` (misura grande) e
+`/corsi/{id}/copertina/piccola`: serve aver fatto accesso, ma **non** essere iscritti, perche'
+la copertina compare anche nel catalogo. Sostituendo o rimuovendo l'immagine i file precedenti
+vengono eliminati.
+
+Il **testo alternativo** e' un campo a parte: lo leggono i lettori di schermo e compare se
+l'immagine non si carica. Se resta vuoto, la vista usa il titolo del corso. Si puo' correggere
+senza ricaricare l'immagine.
+
+Un corso senza copertina non mostra un riquadro vuoto ma le sue iniziali, su una tinta
+derivata dall'identificativo.
+
+La colonna `cover_image` esisteva gia' nello schema, pensata per un URL esterno: un valore che
+comincia per `http://` o `https://` continua a essere usato come indirizzo, senza passare da
+`/storage`.
+
+## Contenuto delle lezioni
+
+Il campo **Contenuto della lezione** usa **TinyMCE**, incluso nel progetto sotto
+`public/assets/vendor/tinymce` (nessuna chiamata al cloud di TinyMCE, nessuna chiave API;
+licenza GPL, vedi il `README-pistacchio.md` in quella cartella).
+
+- **Immagini**: si caricano dalla finestra *Inserisci immagine → Carica*, oppure trascinandole
+  o incollandole nell'editor. Il file finisce in `storage/lesson-images/{lezione}/`, quindi
+  **fuori dal document root**: viene servito da `/lessons/{id}/images/{file}` solo a chi è
+  iscritto al corso, come già avviene per i video. Formati: jpg, png, gif, webp — max 8 MB.
+  Le immagini si caricano solo dopo aver creato la lezione (prima non esiste una cartella).
+- **Video incorporati**: *Inserisci → Media* con un link YouTube o Vimeo. Gli iframe di altri
+  host vengono scartati al salvataggio.
+- **PDF e altri documenti** non vanno dentro al testo: si caricano tra i **materiali
+  scaricabili**, in fondo alla pagina di modifica. Ogni materiale mostra icona del formato,
+  tipo e dimensione, e si può spostare su e giù: l'ordine dell'elenco è quello che vedono
+  gli studenti.
+
+L'HTML dell'editor viene stampato nella pagina della lezione **senza escape** — è l'unico modo
+di rendere la formattazione — quindi passa da `HtmlSanitizer` **in scrittura**: sopravvive solo
+ciò che è in lista consentita (testo formattato, titoli, elenchi, tabelle, link, immagini e
+iframe YouTube/Vimeo). Tutto il resto, gestori di eventi compresi, viene rimosso.
+
+## Profilo dell'utente
+
+Da **Profilo** (`/profilo`), voce sempre presente nella barra laterale, chiunque abbia fatto
+accesso compila i propri dati — nome, città, telefono, una breve presentazione — e carica
+un'immagine. L'email non si cambia da qui: è la credenziale di accesso e cambiarla richiederebbe
+una nuova verifica, quindi resta al pannello utenti.
+
+L'immagine viene **ritagliata quadrata al centro e ridotta a 512 pixel** (GD, qualità 85): chi
+carica la foto della fotocamera non deve prepararla, e il server non si ritrova a spedire 4 MB
+a ogni pagina. Senza l'estensione GD il file viene salvato così com'è. Come le altre immagini
+del progetto sta in `storage/avatars/`, fuori dal document root, e passa da
+`/utenti/{id}/immagine`. Il nome del file cambia a ogni caricamento,
+quindi la cache del browser non mostra mai quella vecchia, e il file precedente viene eliminato.
+
+La miniatura tonda compare accanto al nome in fondo alla barra laterale, in ogni pagina, e
+porta al profilo; chi non ha ancora caricato nulla vede l'iniziale del proprio nome.
+
+**Chi vede la foto** lo decide `App\Auth\GroupPeers`: la persona stessa, l'amministratore, i
+compagni di gruppo e il tutor del gruppo. L'assistente no. Per tutti gli altri l'indirizzo
+risponde 404 come per una foto che non c'è, così non si può scoprire chi l'ha caricata. Fino al
+06/10 bastava aver fatto accesso, e con un numero a caso nell'indirizzo si vedeva la foto di
+chiunque. Sotto il caricamento, nel profilo, un avviso dice che foto e presentazione sono
+facoltative e dove compariranno: la frase e la regola vanno cambiate insieme.
+
+### Nome e cognome, e come compaiono gli studenti agli altri
+
+Dal 07/10 **nome e cognome sono due campi** (`first_name`, `last_name`), obbligatori tutti e
+due in registrazione, nel profilo, nel pannello e nell'importazione. Nella registrazione stanno
+affiancati, e vanno uno sotto l'altro da soli quando lo spazio non basta (`.campi-affiancati`). **`full_name` resta**, ma è una colonna
+**calcolata dal database** (nome + cognome): le pagine e i report che lo leggono non sono
+cambiati, e nessuno lo scrive più. Una scrittura dimenticata su `full_name` dà errore subito.
+
+**Lo studente sceglie come lo vedono gli altri studenti**: nome e cognome, solo il nome, o solo
+le iniziali. In quest'ordine, da «Nome e cognome» in alto a «Solo le iniziali» in basso, in ogni
+pagina che le mostra: l'ordine è quello di `PersonName::SCELTE`, e le pagine lo leggono da lì
+(09/10). **Finché non sceglie, gli altri lo vedono con le sole iniziali** (protezione
+predefinita, dal 08/10): nessuno è esposto con nome e cognome senza averlo deciso, nemmeno chi
+non ha ancora fatto accesso. La prima scelta si fa nella pagina «Primo accesso» (qui sotto),
+le successive nel profilo («M. R.»: una per parola, il trattino separa,
+l'apostrofo no). La scelta ha un riquadro suo, «Come ti vedono gli altri studenti», separato
+dai dati anagrafici e con il suo salvataggio (`POST /profilo/come-ti-vedono`, solo per gli
+studenti); il titolo è quello di ogni riquadro, sopra le scelte per misura e per peso. Ogni
+scelta mostra l'anteprima del proprio nome. **Tutor e admin vedono
+sempre nome e cognome**, ognuno vede se stesso per intero, e il certificato e i report li
+riportano per intero. Oggi la pagina del gruppo è l'unico posto in cui uno studente vede gli
+altri studenti: lì il nome mostrato prende il posto di quello vero anche per le iniziali della
+foto e per la scheda della presentazione, e l'ordine segue il nome mostrato. **La foto è una
+scelta a parte**: chi non la carica compare con le iniziali di quello che ha scelto di mostrare.
+
+La regola sta in `App\Core\PersonName` (`shown()`), provata da `tests/nome_test.php`. La
+migrazione divide i nomi che c'erano già con la prima parola come nome, e alla fine **stampa
+chi ha più di due parole**, da controllare a mano.
+
+**Ognuno vede se stesso per intero**, in tutta la piattaforma (anche accanto a «Esci»). Per
+poter verificare la propria scelta, **nella pagina del gruppo, sotto il proprio nome e visibile
+solo a lui, lo studente legge «Gli altri ti vedono come «Franco»»** (08/10, Elena), in piccolo.
+Nel cerchio sta su una riga sola, e sporge verso l'esterno, mai sulla foto; nella griglia del
+telefono e del tablet, dove le colonne sono strette, va a capo. I nomi del gruppo sono a 16 px.
+La foto del tutor è di 104 px, quella degli studenti di 64 (09/10): una misura sola,
+`--foto-tutor`, per la griglia e per il cerchio.
+È testo e non un collegamento: il nome può stare dentro il pulsante della presentazione, e un
+collegamento dentro un pulsante non si raggiunge. Lo staff non la vede: compare sempre intero.
+
+**Una pagina nuova che mostri a uno studente il nome di un altro studente deve passare da
+`PersonName::shown()`.**
+
+### La presentazione
+
+Il campo **Presentazione** del profilo è facoltativo e lungo al massimo **1.000 caratteri**
+(`ProfileController::MAX_BIO_CHARS`; erano 2.000 fino al 06/10). Il limite è doppio, come per
+le risposte aperte dei questionari: `maxlength` nel campo e il taglio sul server. Sopra il
+campo, sulla stessa riga dell'etichetta e allineato a destra, c'è lo stesso contatore che
+scala delle risposte aperte, con lo stesso script
+(`quiz-open-count.js`): il numero di partenza lo scrive il server contando il testo già
+salvato, così senza JavaScript il contatore resta fermo ma dice il vero. La presentazione la
+vedono le stesse persone che vedono la foto: i compagni di gruppo, il tutor e l'admin.
+
+### La pagina del gruppo
+
+In **I miei gruppi**, nel profilo, il nome di ogni gruppo porta a `/gruppi/{id}`: chi ne fa
+parte, con la foto o le iniziali, **senza email**. Ci si arriva anche dal corso (12/10,
+Alessandro): nel benvenuto del tutor, in «Tutor del **tuo gruppo** in questo corso», le parole
+«tuo gruppo» portano alla pagina del gruppo da cui viene il benvenuto. Un collegamento in una
+frase, quindi verde e sottolineato; c'è solo dove c'è il benvenuto del tutor. E **sotto il
+titolo del corso** (14/10, Alessandro: il gruppo è parte della didattica e deve vedersi) c'è
+**«Vai al tuo gruppo»**: un collegamento solo, verde e sottolineato come «Riprendi da qui»,
+alto quanto un tocco comodo. Niente nome del gruppo né del tutor: il tutor sta già nel
+benvenuto, e «Gruppo Giallo» sotto il titolo di un corso non si capisce a prima vista. «Tuo» e
+non «del corso», perché un corso può avere più gruppi e ognuno vede solo il suo. Lo vede solo
+lo studente che nel corso ha un gruppo (`GroupModel::delloStudenteNelCorso()`, lo stesso del
+benvenuto quando c'è); `permessi.js` prova che porta al gruppo giusto e che lo staff non lo
+vede. **Il tutor e
+l'admin** non sono membri dei gruppi che guidano, e il profilo non glieli elenca: ci arrivano
+dall'elenco **Gruppi**, con «Vai al gruppo» in ogni riga, e da **Modifica gruppo**, con «vai al
+gruppo» sotto il titolo (12/10). Il titolo è «Gruppo» seguito dal nome
+(«Gruppo Verde»), perché un nome di una parola da solo non dice di che pagina si tratta; se il
+nome comincia già con «Gruppo», la parola non si ripete. A sinistra del nome, a 44 px,
+l'immagine del gruppo (o le sue iniziali, come nell'elenco dei gruppi). Dal 18/10 lo studente la
+trova anche nel **ramo del corso** della barra laterale, «Il mio gruppo» (vedi **La barra
+laterale**); aperta da lì, la pagina tiene il ramo anche dopo una risposta o un «Ci sarò».
+
+- **Su computer** i partecipanti stanno **in cerchio**, con il tutor al centro e i nomi verso
+  l'esterno: di fianco sui due lati, sopra in cima e sotto in fondo. Dal 16/10 foto e fumetto
+  sono più grandi del 10% (studenti 70 px, tutor 114, cerchio di 33 rem); la soglia a cui
+  compare il cerchio resta 52 rem.
+- **Tutte le foto hanno un bordo sottile**, tutor compreso: 1 px del colore principale
+  della tavolozza. È un'ombra (`box-shadow`) e non un bordo, così non cambia la
+  misura della foto né sposta il cerchio.
+- **Sul telefono**, e su computer **oltre 20 partecipanti**, una griglia di foto con il nome
+  sotto, con il tutor da solo nella prima riga.
+
+Il cerchio si accende con una query di contenitore (52 rem di spazio), come le schede delle
+tabelle: dove non è supportata resta la griglia. La geometria sta in `App\Core\GroupCircle`,
+senza database, ed è provata da `tests/cerchio_test.php`.
+
+La pagina la aprono i partecipanti, il tutor del gruppo e l'amministratore — la stessa regola
+delle foto, nella stessa classe. **I nomi interi li vedono solo l'admin e il tutor di quel
+gruppo** (17/10): un tutor che in un altro gruppo è solo membro vede i compagni come ciascuno ha
+scelto, nel cerchio, nel giro del cerchio, in «Ci sarò» e nelle domande passate.
+
+**La pagina del gruppo si scalda** (12/10, Alessandro, variante B del mockup: chiara e leggibile
+prima che calda, e regge gruppi di qualunque misura):
+
+- **In cima, il prossimo incontro del gruppo** (il primo non concluso fra quelli legati al
+  gruppo), con il titolo che porta alla sua pagina, il giorno e l'ora, i volti di chi ha detto
+  **«Ci sarò»** e quanti sono. I partecipanti lo dicono con un pulsante, e lo ritirano con
+  «Non posso più» (`live_session_rsvps`).
+- **Sotto il cerchio, «Il giro del cerchio»**: la domanda posta al gruppo, le risposte intere una
+  sotto l'altra, la propria per prima, con la foto e il nome come ciascuno ha scelto di comparire.
+  **Pongono la domanda il tutor del gruppo e l'admin** (300 caratteri); **rispondono i
+  partecipanti**, una volta per domanda (200 caratteri, con il contatore), e possono cambiare o
+  togliere la risposta. **La domanda resta aperta finché non ne arriva una nuova**: la precedente,
+  con le sue risposte, va fra le **domande passate** (`/gruppi/{id}/domande-passate`), che il gruppo
+  legge e basta.
+- **Il tutor e l'admin moderano**: «Nascondi» toglie una risposta alla vista del gruppo senza
+  cancellarla. Chi l'ha scritta la vede ancora, con la nota che è nascosta, e non la può più
+  cambiare; «Rimetti» la rende di nuovo visibile.
+- Nel cerchio resta un gesto solo, la presentazione: la conversazione sta sotto.
+- **I riquadri dell'incontro e del giro ci sono sempre** (17/10): senza un incontro in programma
+  «Nessun incontro in programma, per ora.»; senza una domanda, a chi non la può fare «Il tutor non
+  ha ancora fatto una domanda al gruppo. Quando la farà, la trovi qui.». **«Prossimo incontro del
+  gruppo» e «Il giro del cerchio» sono titoli** (h2, 16 px), e il titolo dell'incontro e la
+  domanda diventano h3.
+- **Tre riquadri bianchi uguali** (13/10, Alessandro, variante A del mockup): anche il cerchio
+  (o la griglia) sta in un riquadro come l'incontro e il giro del cerchio, senza un titolo suo —
+  «Gruppo Giallo» in cima dice già chi sono. Fra un riquadro e l'altro 20 px. Nel cerchio i nomi
+  sono posizionati e il riquadro non cresce per loro: sopra e sotto c'è lo spazio, misurato, per
+  un nome di tre righe con «Gli altri ti vedono come …», e i nomi in cima e in fondo sono larghi
+10 rem come quelli dei fianchi (prima 7), così un nome lungo va a capo meno volte. Il fumetto, bianco come il fondo, ha il
+  bordo del colore principale come le foto. Dentro il riquadro lo spazio per il cerchio è 42 px
+  più stretto: su computer il cerchio si accende con la finestra larga almeno 1.175 px circa
+  (prima circa 1.135), sotto resta la griglia. `accessibilita.js` controlla il riquadro, che
+  nessun nome ne esca e che il bordo del fumetto abbia almeno 3:1 sul fondo.
+
+Le regole stanno in `App\Core\GiroDelCerchio`, senza database (`tests/giro_test.php`);
+`permessi.js` prova che nessuno scrive nel gruppo di un altro, che lo studente non pone domande
+né modera, e che il tutor di un altro gruppo non modera. **Da aggiornare l'informativa privacy**:
+le risposte le leggono i compagni di gruppo e il tutor, come le presentazioni.
+
+**La presentazione si apre sopra la pagina.** Chi ne ha scritta una è un pulsante — foto e
+nome insieme — con un piccolo fumetto verde sull'angolo della foto, bianco con il bordo del
+colore principale (è la forma a dirlo; il colore principale la accompagna e cambia con la
+tavolozza).
+Toccandolo si apre una scheda con foto, nome e il testo **in corsivo** fra due **virgolette
+giganti** — un racconto detto a voce più che un testo da consultare —, che si chiude con la ✕,
+con Esc o toccando fuori; il cerchio non si sposta.
+
+Le virgolette sono **forme, non caratteri**: due maschere CSS ricavate dalle virgolette di
+Noto Serif (SIL Open Font License 1.1), del colore principale. La prima versione usava “ e ”
+in Georgia, e la loro posizione dipendeva dal carattere installato: ogni carattere disegna la
+virgoletta in un punto diverso della propria riga, e su Windows la chiusura finiva a metà del
+testo. Una forma ha la scatola uguale al segno: quella che apre sta accanto alla prima riga,
+quella che chiude accanto all'ultima, per quante righe abbia il testo, e non fanno scorrere la
+scheda. `accessibilita.js` controlla tutte e due le posizioni, che una scheda che non ha
+raggiunto la sua altezza massima non scorra in verticale e che il fumetto sia del colore
+principale. Su computer la scheda è centrata, sul telefono sale
+dal fondo e occupa tutta la larghezza; un testo lungo scorre dentro la scheda.
+
+- **Niente JavaScript**: la scheda è un `popover` aperto dall'attributo `popovertarget`, e il
+  browser gestisce da sé Esc, il clic fuori e il ritorno del fuoco.
+- **Il ripiego è naturale**: le schede stanno nell'HTML dopo il cerchio, non dentro. Un browser
+  che non conosce i popover le mostra come un elenco di presentazioni sotto i partecipanti.
+- **Nessun `display` sulla scheda chiusa**: batterebbe la regola con cui il browser la tiene
+  nascosta (la trappola di `hidden` e dei `details`), e le schede chiuse coprirebbero la
+  pagina. Il `display` si dà solo a `:popover-open`. `accessibilita.js` apre ogni scheda della
+  pagina seminata e controlla che da chiusa non occupi spazio, da aperta stia dentro lo
+  schermo senza scorrere in orizzontale, che la ✕ sia un bersaglio da 24 px e che Esc la chiuda
+  riportando il fuoco sulla persona.
+
+## Registrazione e iscrizione degli studenti
+
+### Registrazione
+Chiunque può creare un account dalla pagina `/register`: il ruolo assegnato è sempre
+`studente`, gli altri restano appannaggio del pannello. L'account nasce **non verificato** e il
+login viene rifiutato finché l'indirizzo non è confermato con il link ricevuto per email, valido
+24 ore e utilizzabile una sola volta.
+
+Se l'indirizzo è già registrato, la pagina di esito è identica a quella di una registrazione
+riuscita e non viene inviata alcuna email: la registrazione non deve diventare un modo per
+scoprire chi è iscritto alla piattaforma. Stesso criterio per il recupero password, che risponde
+sempre allo stesso modo. Entrambi i flussi accettano al massimo 5 richieste all'ora per account.
+
+**Un indirizzo registrato e mai confermato si può registrare di nuovo** (29/10): valgono nome e
+password dell'ultima registrazione, il link di prima non vale più, e la richiesta ha lo stesso
+limite del rinvio della conferma. Recupero della password e rinvio della conferma scrivono
+**all'indirizzo salvato**, non a quello scritto nel campo: il database confronta gli indirizzi
+senza badare agli accenti.
+
+Gli account creati dallo staff e quello dell'amministratore creato dall'installer nascono già
+verificati: l'indirizzo lo ha scelto chi li ha creati.
+
+### Modalità di iscrizione di un corso
+Ogni corso ha un campo `enrollment_mode`, impostabile dalla sua scheda in *Gestione corsi*:
+
+| Modalità | Cosa comporta |
+|---|---|
+| `closed` (predefinita) | Iscrive solo lo staff, oppure l'assegnazione del corso a un gruppo. Il corso non compare nel catalogo |
+| `request` | Lo studente chiede di iscriversi, con un messaggio facoltativo; gli admin ricevono un'email con il messaggio e decidono dalla scheda del corso (dal 26/10 solo loro) |
+| `open` | Lo studente si iscrive da solo dal catalogo, senza attese |
+
+Il catalogo (`/catalogo`, voce *Esplora corsi*) elenca solo corsi **pubblicati** in modalità
+`open` o `request`, escludendo quelli a cui lo studente è già iscritto. Una richiesta in attesa
+**non** dà accesso al corso: le richieste vivono in una tabella separata e l'iscrizione vera
+nasce solo con l'approvazione.
+
+### Email inviate
+Conferma dell'indirizzo, recupero password, conferma di iscrizione allo studente, avviso a
+chi può decidere per le richieste da valutare, esito negativo di una richiesta. Tutte in testo
+semplice, e tutte modificabili da **Impostazioni › Messaggi email** (vedi sotto).
+
+**L'«Iscrizione confermata»** parte subito per chi si iscrive dal catalogo o vede approvata la
+sua richiesta. Per le iscrizioni fatte dallo staff (a mano dalla scheda del corso, entrando in
+un gruppo, con un corso assegnato a un gruppo intero) resta in coda e la spedisce `bin/avvisi`,
+ogni quarto d'ora, venti per giro come gli inviti: un corso dato a un gruppo di cento persone
+non manda cento email da una pagina sola. Non la riceve chi aspetta ancora l'invito (gli
+arriva «Il tuo accesso»), né un account disattivato o dello staff; in un corso in bozza resta
+in coda e parte quando il corso si pubblica.
+
+```
+*/15 * * * * cd /percorso/del/sito && php bin/avvisi >> storage/logs/avvisi.log 2>&1
+```
+
+`php bin/avvisi --prova` elenca che cosa manderebbe senza mandare niente.
+
+Lo stesso comando manda **il promemoria degli incontri dal vivo**: il giorno dell'incontro,
+**sette ore prima dell'inizio** (girando ogni quarto d'ora, arriva fra sette ore e sei ore e
+tre quarti prima), a chi è atteso, **solo se gli inviti sono già partiti** dal pulsante «Invia
+inviti» (`live_sessions.invites_sent_at`) e se c'è il collegamento Meet. Un incontro prima
+delle 7 del mattino lo riceve dalla mezzanotte, perché arrivi lo stesso giorno. Senza
+allegato: il file per il calendario è arrivato con l'invito. Una volta sola per persona
+(`live_session_reminders`, la riga prima dell'invio). Gli incontri invitati prima della
+migrazione non hanno la data degli inviti: il promemoria parte se si rimandano.
+
+Due email nuove partono invece dalla pagina, subito:
+
+- **«Corso completato»**, a ogni emissione del certificato, automatica o a mano, con il
+  collegamento per scaricarlo;
+- **«La tua domanda ha una risposta»**, allo studente che l'ha fatta, quando l'esperto la
+  pubblica: con la domanda, la risposta e il collegamento alle domande e risposte del corso.
+  Una correzione successiva non manda niente;
+- **«Nuova proposta per la bacheca»** (17/10), al tutor del gruppo dello studente che propone una
+  risorsa, o agli amministratori se lo studente non ha un tutor.
+
+## Le email e la pagina Impostazioni › Messaggi email
+
+(12/10: in Impostazioni le due pagine si chiamano **Server di posta elettronica** — come partono
+le email — e **Messaggi email** — che cosa dicono —, per non confonderle.)
+
+Pistacchio LMS può essere usato da organizzazioni diverse, una per installazione: **nessun
+testo delle email è scritto nel codice delle pagine**, e il nome dell'organizzazione non
+compare in nessun file del progetto (`tests/email_modelli_test.php` lo controlla). Il nome
+della piattaforma invece è fisso: **«Pistacchio LMS»**, e non si cambia da nessuna parte.
+
+Tutte le email stanno in un elenco solo, `app/Core/Mail/Modelli.php`: per ognuna il gruppo, il
+titolo, quando parte, il testo predefinito, i segnaposto che può usare e quelli che non possono
+mancare. Da lì escono sia i messaggi sia la pagina **Impostazioni › Messaggi email**
+(`/admin/settings/email`, permesso `settings.manage`), che si costruisce da sola: un'email
+nuova è una voce in più nell'elenco.
+
+La pagina ha due parti:
+
+- **Organizzazione e mittente**, una volta per tutte le email: il nome dell'organizzazione
+  (`{organizzazione}`; finché è vuoto vale «Pistacchio LMS»), nome e indirizzo del mittente
+  (il nome, vuoto, vale quello dell'organizzazione), l'indirizzo **Rispondi a** (intestazione
+  `Reply-To` e segnaposto `{contatto}`; vuoto, vale il mittente) e la **chiusura**, aggiunta in
+  fondo a ogni email (500 caratteri). Il mittente si è spostato qui dalla pagina Server di
+  posta elettronica, che ora dice solo *come* partono le email;
+- **le email, per gruppo** (Account e accesso, Iscrizioni, Corso, Incontri dal vivo): per
+  ognuna oggetto e testo (1.000 caratteri), con il predefinito in grigio. **Un campo vuoto vale
+  il predefinito.** Ogni email si salva da sola, e **«Manda una prova a me»** la spedisce al
+  proprio indirizzo con quello che è scritto nei campi, anche non salvato, e valori di esempio
+  al posto dei segnaposto.
+
+I **segnaposto comuni** valgono in ogni email: `{nome}` (il solo nome di battesimo di chi
+riceve, letto dal suo account), `{organizzazione}`, `{piattaforma}` (sempre «Pistacchio LMS»)
+e `{contatto}`. Un testo senza un segnaposto **obbligatorio** (il `{link}` della conferma,
+la `{password}` dell'accesso…) non si salva e torna nei campi com'era; un segnaposto che non
+esiste si salva, con un avviso, e resta scritto com'è nell'email, così un errore di battitura
+si vede nella prova. I testi sono senza genere: la piattaforma non sa chi legge.
+
+Le tre email degli incontri dal vivo di prima (invito, cambio di orario, annullamento) sono
+nello stesso elenco e tengono le chiavi di prima (`LIVE_*`): i testi già salvati restano. Il
+promemoria, nuovo, ha le sue (`EMAIL_PROMEMORIA_*`). La vecchia pagina `/admin/settings/inviti` porta al
+gruppo «Incontri dal vivo».
+
+## Configurazione dell'invio email
+
+`MAIL_TRANSPORT` sceglie come vengono recapitate:
+
+- **`log`** (predefinito) — i messaggi vengono salvati come file `.eml` in `storage/mail` e non
+  spediti. È il modo di lavorare in locale: il link di verifica si legge aprendo il file.
+- **`smtp`** — server SMTP esterno, con `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
+  `MAIL_PASSWORD` e `MAIL_ENCRYPTION` (`tls` per la porta 587, `ssl` per la 465, `none`).
+- **`mail`** — la funzione `mail()` di PHP, che richiede un MTA configurato sul server.
+
+Il client SMTP è scritto in casa (`app/Core/Mail`), senza dipendenze: apre la connessione, fa
+EHLO, eventualmente STARTTLS, si autentica con AUTH LOGIN e invia il messaggio.
+
+Un invio che fallisce non blocca mai l'operazione che lo ha generato, con un'eccezione: se non
+parte l'email di verifica in fase di registrazione, l'utente resterebbe con un account
+inaccessibile, quindi il problema gli viene detto (e con `APP_DEBUG=1` viene mostrato anche il
+link, utile in sviluppo).

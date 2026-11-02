@@ -31,7 +31,7 @@ final class CodaEmail
     private const MINUTI_DI_PRESA = 10;
 
     /**
-     * Ogni quanti minuti gira `bin/avvisi` (il cron consigliato nel README):
+     * Ogni quanti minuti gira `bin/avvisi` (il cron consigliato nel README e nel manuale):
      * lo dicono le frasi delle pagine («entro 15 minuti»).
      */
     public const MINUTI_DEL_GIRO = 15;
