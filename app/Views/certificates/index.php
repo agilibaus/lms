@@ -96,7 +96,8 @@ $certificates = $ordine->applica($certificates);
                     <?php if (!$revoked): ?>
                         <a href="/certificates/<?= (int) $certificate['id'] ?>/download" class="comando-con-icona"><?= Icona::svg('file-earmark-pdf') ?>PDF</a>
                     <?php endif; ?>
-                    <a href="/verify/<?= urlencode((string) $certificate['certificate_code']) ?>">Verifica</a>
+                    <?php /* Con l'icona, come gli altri comandi della riga (30/10). */ ?>
+                    <a href="/verify/<?= urlencode((string) $certificate['certificate_code']) ?>" class="comando-con-icona"><?= Icona::svg('clipboard-check') ?>Verifica</a>
                     <?php if (!$revoked && Auth::can('certificate.issue')): ?>
                         <form action="/certificates/<?= (int) $certificate['id'] ?>/revoke" method="post"
                               onsubmit="return confirm('Revocare questo certificato?');">

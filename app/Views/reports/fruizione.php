@@ -53,8 +53,12 @@ $righe = $ordine->applica($righe);
              renderle illeggibili. */ ?>
     <section class="card">
         <h2>Studenti (<?= count($righe) ?>)</h2>
+    <?php /* Colonne con una larghezza minima (30/10, Alessandro): strette, i
+             titoli delle lezioni andavano su quattro righe e una parola lunga
+             usciva dalla sua colonna, sopra i valori di quella accanto. La
+             tabella si allarga e scorre di lato dentro `tabella-larga`. */ ?>
     <div class="tabella-larga">
-        <table class="data-table">
+        <table class="data-table tabella-fruizione">
             <caption class="sr-only">
                 Percentuale di ciascun video guardata da ogni studente iscritto a
                 <?= htmlspecialchars((string) $course['title']) ?>.

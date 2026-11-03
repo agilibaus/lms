@@ -3717,6 +3717,18 @@ fieldset.checkbox-group legend {
     margin-bottom: 1rem;
 }
 
+/* «Report → Video», la tabella di un corso: una colonna per lezione. */
+.tabella-fruizione th,
+.tabella-fruizione td {
+    min-width: 8.5rem;
+    overflow-wrap: normal;
+}
+
+.tabella-fruizione th:first-child,
+.tabella-fruizione td:first-child {
+    min-width: 12rem;
+}
+
 .tabella-larga .data-table {
     min-width: 100%;
     width: auto;
