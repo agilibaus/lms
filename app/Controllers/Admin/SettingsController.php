@@ -294,6 +294,16 @@ class SettingsController extends AdminController
     {
         Auth::requirePermission('settings.manage');
 
+        // `/admin/settings/email/voce/{voce}` mostra una sola parte: un'email,
+        // «mittente» o «segnaposto» (30/10, Alessandro: al telefono la pagina
+        // e' l'elenco, e ogni email si apre a parte).
+        $solo = isset($params['voce']) ? (string) $params['voce'] : null;
+
+        if ($solo !== null && !self::voceEmail($solo)) {
+            $this->notFound('Questa email non esiste.');
+            return;
+        }
+
         // Nei campi si mette quello che e' stato scritto qui, non il
         // predefinito: cosi' un campo vuoto si legge come «vale il testo in
         // grigio», che e' esattamente quello che significa.
@@ -318,6 +328,7 @@ class SettingsController extends AdminController
         }
 
         View::render('admin/settings/email', [
+            'solo' => $solo,
             'pageTitle' => 'Messaggi email',
             'comuni' => [
                 Modelli::ORGANIZZAZIONE => (string) (Settings::stored(Modelli::ORGANIZZAZIONE) ?? ''),
@@ -345,11 +356,11 @@ class SettingsController extends AdminController
         $rispondiA = trim((string) ($_POST[Modelli::RISPONDI_A] ?? ''));
 
         if ($mittente !== '' && filter_var($mittente, FILTER_VALIDATE_EMAIL) === false) {
-            $this->fail('L\'indirizzo del mittente non è valido.', self::EMAIL_PAGE);
+            $this->fail('L\'indirizzo del mittente non è valido.', $this->ritornoEmail(self::EMAIL_PAGE));
         }
 
         if ($rispondiA !== '' && filter_var($rispondiA, FILTER_VALIDATE_EMAIL) === false) {
-            $this->fail('L\'indirizzo «Rispondi a» non è valido.', self::EMAIL_PAGE);
+            $this->fail('L\'indirizzo «Rispondi a» non è valido.', $this->ritornoEmail(self::EMAIL_PAGE));
         }
 
         $chiusura = CampoContato::taglia((string) ($_POST[Modelli::CHIUSURA] ?? ''), Modelli::MAX_CHIUSURA);
@@ -364,7 +375,7 @@ class SettingsController extends AdminController
 
         $this->resetMailer();
 
-        $this->success('Mittente e chiusura salvati.' . ($problema !== null ? ' ' . $problema : ''), self::EMAIL_PAGE);
+        $this->success('Mittente e chiusura salvati.' . ($problema !== null ? ' ' . $problema : ''), $this->ritornoEmail(self::EMAIL_PAGE));
     }
 
     /** Oggetto e testo di un'email. */
@@ -373,7 +384,7 @@ class SettingsController extends AdminController
         Auth::requirePermission('settings.manage');
 
         [$chiave, $voce, $oggetto, $testo] = $this->modelloDalModulo();
-        $ancora = self::EMAIL_PAGE . '#email-' . $chiave;
+        $ancora = $this->ritornoEmail(self::EMAIL_PAGE . '#email-' . $chiave);
 
         $controllo = Modelli::controlla($oggetto . "\n" . $testo, Modelli::ammessi($chiave), []);
         $mancanti = Modelli::controlla($testo, Modelli::ammessi($chiave), $voce['obbligatori'])['mancanti'];
@@ -410,7 +421,7 @@ class SettingsController extends AdminController
         Auth::requirePermission('settings.manage');
 
         [$chiave, , $oggetto, $testo] = $this->modelloDalModulo();
-        $ancora = self::EMAIL_PAGE . '#email-' . $chiave;
+        $ancora = $this->ritornoEmail(self::EMAIL_PAGE . '#email-' . $chiave);
         $to = (string) Auth::email();
 
         // I campi tornano come erano, salvati o no.
@@ -958,5 +969,26 @@ class SettingsController extends AdminController
     {
         Settings::forget();
         Mailer::setTransport(null);
+    }
+
+    /** Le parti di «Messaggi email» che hanno una pagina loro (30/10). */
+    private static function voceEmail(string $voce): bool
+    {
+        return $voce === 'mittente' || $voce === 'segnaposto' || array_key_exists($voce, Modelli::elenco());
+    }
+
+    /**
+     * Dove tornare dopo «Salva» o «Manda una prova a me»: la pagina di
+     * quell'email se si e' salvato da li' (campo `pagina`), se no `$altrimenti`.
+     */
+    private function ritornoEmail(string $altrimenti): string
+    {
+        $pagina = (string) ($_POST['pagina'] ?? '');
+
+        if (preg_match('#^/admin/settings/email/voce/([a-z0-9_]+)$#', $pagina, $m) === 1 && self::voceEmail($m[1])) {
+            return $pagina;
+        }
+
+        return $altrimenti;
     }
 }

@@ -47,15 +47,19 @@ use App\Core\Icona;
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
-<form action="/admin/settings/aspetto" method="post" class="form">
+<?php /* Al telefono (30/10, Alessandro, A) ogni sezione si apre e si chiude,
+         e la pagina parte chiusa (aspetto.js); «Salva» resta in fondo allo
+         schermo. Al computer tutto aperto, come prima, e i titoli non
+         chiudono niente. */ ?>
+<form action="/admin/settings/aspetto" method="post" class="form aspetto-modulo">
     <?= Csrf::field() ?>
 
     <div class="gruppo-impostazioni">
         <h2 class="gruppo-titolo">Tutta la piattaforma</h2>
         <p class="gruppo-nota">Valgono ovunque: pagine pubbliche, corsi, report, pannello.</p>
 
-    <section class="card">
-        <h3>Colori</h3>
+    <details class="card aspetto-sezione" open>
+        <summary class="aspetto-sommario"><h3>Colori</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
             Valgono su <strong>tutte</strong> le pagine, non solo su quelle pubbliche.
             Le quattro tavolozze sono state verificate sui contrasti prima di essere offerte:
@@ -114,10 +118,10 @@ use App\Core\Icona;
             tinte tenui di tutte e quattro le tavolozze</em>: così il colore resta valido
             anche se un domani cambiate tavolozza.
         </p>
-    </section>
+    </details>
 
-    <section class="card">
-        <h3>Caratteri</h3>
+    <details class="card aspetto-sezione" open>
+        <summary class="aspetto-sommario"><h3>Caratteri</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
             Dal catalogo di Google Fonts, <strong><?= count($catalogoFont) ?> famiglie</strong>.
             I caratteri <strong>non si caricano dai server di Google</strong>: quando ne
@@ -163,10 +167,10 @@ use App\Core\Icona;
             <code>storage/fonts/</code>: il nome del file è quello della famiglia in
             minuscolo con i trattini, per esempio <code>playfair-display.woff2</code>.
         </p>
-    </section>
+    </details>
 
-    <section class="card">
-        <h3>Forma e misura</h3>
+    <details class="card aspetto-sezione" open>
+        <summary class="aspetto-sommario"><h3>Forma e misura</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
             Anche queste valgono su tutte le pagine.
         </p>
@@ -205,7 +209,7 @@ use App\Core\Icona;
             15&nbsp;px. Chi ha bisogno di testo più grande può comunque ingrandire dal proprio
             browser, e continuerà a funzionare qualunque misura scegliate qui.
         </p>
-    </section>
+    </details>
 
     </div>
 
@@ -217,8 +221,8 @@ use App\Core\Icona;
             di tre clic si leggerebbe come un difetto.
         </p>
 
-    <section class="card">
-        <h3>Struttura</h3>
+    <details class="card aspetto-sezione" open>
+        <summary class="aspetto-sommario"><h3>Struttura</h3></summary>
 
         <?php foreach ($choices as $valore => $etichetta): ?>
             <label class="checkbox-label">
@@ -227,10 +231,10 @@ use App\Core\Icona;
                 <span><?= htmlspecialchars($etichetta) ?></span>
             </label>
         <?php endforeach; ?>
-    </section>
+    </details>
 
-    <section class="card">
-        <h3>Ritocchi ai singoli elementi</h3>
+    <details class="card aspetto-sezione" open>
+        <summary class="aspetto-sommario"><h3>Ritocchi ai singoli elementi</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
             Per chi vuole scendere nel dettaglio: ogni elemento delle pagine pubbliche con
             le stesse sette possibilità. Tutto quello che si lascia su «Come adesso» non
@@ -284,10 +288,10 @@ use App\Core\Icona;
                 </div>
             </details>
         <?php endforeach; ?>
-    </section>
+    </details>
 
-    <section class="card">
-        <h3>Testi della presentazione</h3>
+    <details class="card aspetto-sezione" open>
+        <summary class="aspetto-sommario"><h3>Testi della presentazione</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
             Si vedono solo con l'aspetto affiancato, nella sezione di sinistra.
             Un campo lasciato vuoto usa il testo predefinito, quello che si legge in grigio.
@@ -321,7 +325,7 @@ use App\Core\Icona;
         <?= CampoContato::html('AUTH_SPLIT_TEXT', 'Testo sotto il titolo', 'AUTH_SPLIT_TEXT', AuthLayout::MAX_TESTO,
             (string) $values['AUTH_SPLIT_TEXT'], 3, false, (string) $defaults['AUTH_SPLIT_TEXT']) ?>
         <script src="/assets/js/quiz-open-count.js"></script>
-    </section>
+    </details>
 
     </div>
 
@@ -331,6 +335,7 @@ use App\Core\Icona;
         <a href="/login" class="btn btn-secondary btn-con-icona" target="_blank" rel="noopener"><?= Icona::svg('box-arrow-up-right') ?>Vedi la pagina di accesso</a>
     </div>
 </form>
+<script src="/assets/js/aspetto.js"></script>
 
 <?php if ($lastUpdate !== null): ?>
     <p class="form-hint">

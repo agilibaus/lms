@@ -296,6 +296,8 @@ $router->post('/admin/settings/posta/coda/riprova-tutte', [SettingsController::c
 $router->post('/admin/settings/posta/coda/{id}/riprova', [SettingsController::class, 'codaRiprova']);
 $router->post('/admin/settings/posta/coda/{id}/rimuovi', [SettingsController::class, 'codaRimuovi']);
 $router->get('/admin/settings/email', [SettingsController::class, 'email']);
+// Una sola email, o «mittente», o «segnaposto»: l'elenco al telefono porta qui (30/10).
+$router->get('/admin/settings/email/voce/{voce}', [SettingsController::class, 'email']);
 $router->post('/admin/settings/email', [SettingsController::class, 'updateEmail']);
 $router->post('/admin/settings/email/testo', [SettingsController::class, 'updateModello']);
 $router->post('/admin/settings/email/prova', [SettingsController::class, 'provaModello']);

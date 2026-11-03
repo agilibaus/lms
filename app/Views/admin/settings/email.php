@@ -26,7 +26,22 @@ $perGruppo = [];
 foreach ($elenco as $chiave => $voce) {
     $perGruppo[$voce['gruppo']][$chiave] = $voce;
 }
+
+// Una parte sola (30/10, Alessandro): `/admin/settings/email/voce/{voce}`,
+// dove porta l'elenco al telefono. Dopo «Salva» e «Manda una prova a me» si
+// torna qui (campo `pagina`).
+$solo ??= null;
+$campoPagina = $solo === null ? '' : '<input type="hidden" name="pagina" value="/admin/settings/email/voce/' . $e($solo) . '">';
+$titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte le email.'], 'segnaposto' => ['Segnaposto comuni', 'Si possono usare in ogni email.']];
 ?>
+<?php if ($solo !== null): ?>
+<?php [$titoloSolo, $quandoSolo] = $titoliComuni[$solo] ?? [$elenco[$solo]['titolo'], $elenco[$solo]['quando']]; ?>
+<div class="page-header">
+    <a href="/admin/settings/email" class="back-link"><span class="back-link-testo">Messaggi email</span></a>
+    <h1><?= $e($titoloSolo) ?></h1>
+    <p class="page-subtitle"><?= $e($quandoSolo) ?></p>
+</div>
+<?php else: ?>
 <div class="page-header">
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Messaggi email</h1>
@@ -36,6 +51,7 @@ foreach ($elenco as $chiave => $voce) {
         <a href="/admin/settings/posta">Server di posta elettronica</a>.
     </p>
 </div>
+<?php endif; ?>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
@@ -46,11 +62,44 @@ foreach ($elenco as $chiave => $voce) {
     </p>
 <?php endif; ?>
 
+<?php if ($solo === null): ?>
+    <?php /* Al telefono (30/10, Alessandro, B) la pagina e' questo elenco: ogni
+             voce apre la sua pagina. Al computer le parti, tutte aperte. */ ?>
+    <nav class="email-elenco" aria-label="Le email">
+        <h2>Per tutte le email</h2>
+        <ul class="card email-voci">
+            <?php foreach ($titoliComuni as $voceComune => [$titolo, $quando]): ?>
+                <li><a href="/admin/settings/email/voce/<?= $e($voceComune) ?>">
+                    <span class="email-voce-titolo"><?= $e($titolo) ?></span>
+                    <span class="card-meta"><?= $e($quando) ?></span>
+                </a></li>
+            <?php endforeach; ?>
+        </ul>
+        <?php foreach (Modelli::GRUPPI as $gruppo => $nomeGruppo): ?>
+            <?php if (empty($perGruppo[$gruppo])) {
+                continue;
+            } ?>
+            <h2><?= $e($nomeGruppo) ?></h2>
+            <ul class="card email-voci">
+                <?php foreach ($perGruppo[$gruppo] as $chiave => $voce): ?>
+                    <li><a href="/admin/settings/email/voce/<?= $e($chiave) ?>">
+                        <span class="email-voce-titolo"><?= $e($voce['titolo']) ?></span>
+                        <span class="card-meta"><?= $e($voce['quando']) ?></span>
+                    </a></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endforeach; ?>
+    </nav>
+<?php endif; ?>
+
+<div class="<?= $solo === null ? 'email-sezioni' : '' ?>">
+<?php if ($solo === null || $solo === 'mittente'): ?>
 <section class="card">
-    <h2>Organizzazione e mittente</h2>
+    <?php if ($solo === null): ?><h2>Organizzazione e mittente</h2><?php endif; ?>
     <p class="card-meta">Valgono per tutte le email.</p>
 
     <form action="/admin/settings/email" method="post" class="form">
+        <?= $campoPagina ?>
         <?= Csrf::field() ?>
 
         <label for="<?= Modelli::ORGANIZZAZIONE ?>">Nome dell’organizzazione</label>
@@ -95,9 +144,11 @@ foreach ($elenco as $chiave => $voce) {
         </div>
     </form>
 </section>
+<?php endif; ?>
 
+<?php if ($solo === null || $solo === 'segnaposto'): ?>
 <section class="card">
-    <h2>Segnaposto comuni</h2>
+    <?php if ($solo === null): ?><h2>Segnaposto comuni</h2><?php endif; ?>
     <p class="card-meta">
         Si possono usare in ogni email, nell’oggetto e nel testo. Quelli che non esistono restano scritti
         come sono, così un errore di battitura si vede nella prova invece di sparire.
@@ -116,17 +167,25 @@ foreach ($elenco as $chiave => $voce) {
         </tbody>
     </table>
 </section>
+<?php endif; ?>
 
 <?php foreach (Modelli::GRUPPI as $gruppo => $nomeGruppo): ?>
-    <?php if (empty($perGruppo[$gruppo])) {
+    <?php if (empty($perGruppo[$gruppo]) || ($solo !== null && !isset($perGruppo[$gruppo][$solo]))) {
         continue;
     } ?>
-    <h2 id="<?= $e($gruppo) ?>"><?= $e($nomeGruppo) ?></h2>
+    <?php if ($solo === null): ?>
+        <h2 id="<?= $e($gruppo) ?>"><?= $e($nomeGruppo) ?></h2>
+    <?php endif; ?>
 
     <?php foreach ($perGruppo[$gruppo] as $chiave => $voce): ?>
+        <?php if ($solo !== null && $solo !== $chiave) {
+            continue;
+        } ?>
         <section class="card" id="email-<?= $e($chiave) ?>">
-            <h3><?= $e($voce['titolo']) ?></h3>
-            <p class="card-meta"><?= $e($voce['quando']) ?></p>
+            <?php if ($solo === null): ?>
+                <h3><?= $e($voce['titolo']) ?></h3>
+                <p class="card-meta"><?= $e($voce['quando']) ?></p>
+            <?php endif; ?>
 
             <?php if ($voce['segnaposto'] !== []): ?>
                 <table class="data-table tabella-a-capo">
@@ -153,6 +212,7 @@ foreach ($elenco as $chiave => $voce) {
             <form action="/admin/settings/email/testo" method="post" class="form">
                 <?= Csrf::field() ?>
                 <input type="hidden" name="chiave" value="<?= $e($chiave) ?>">
+                <?= $campoPagina ?>
 
                 <label for="oggetto-<?= $e($chiave) ?>">Oggetto</label>
                 <input type="text" id="oggetto-<?= $e($chiave) ?>" name="oggetto" maxlength="200"
@@ -176,12 +236,15 @@ foreach ($elenco as $chiave => $voce) {
         </section>
     <?php endforeach; ?>
 <?php endforeach; ?>
+</div>
 
+<?php if ($solo === null || isset($elenco[$solo])): ?>
 <p class="card-meta">
     La prova parte<?= $myEmail !== null && $myEmail !== '' ? ' a ' . $e($myEmail) : ' al tuo indirizzo' ?>
     con quello che è scritto nei campi, anche se non l’hai ancora salvato, e con valori di esempio al posto
     dei segnaposto. Le prove degli incontri partono senza il file per il calendario.
 </p>
+<?php endif; ?>
 
 <script src="/assets/js/quiz-open-count.js"></script>
 
