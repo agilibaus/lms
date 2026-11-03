@@ -4,7 +4,7 @@
 
 Il manuale completo dell'applicazione: come funziona ogni parte, le scelte fatte e perché.
 Per una presentazione breve e l'installazione basta il [README](README.md). Questo testo era il
-README fino alla versione 1.0.306, e riporta le funzioni descritte fino alla patch 0292.
+README fino alla versione 1.0.306, ed è aggiornato alla versione 1.0.312.
 
 Learning Management System leggero e moderno in PHP puro + MySQL.
 
@@ -28,13 +28,14 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   agli iscritti il giorno in cui si apre; ogni gruppo può avere le sue date
 - **Percorso**: il questionario di un modulo è il suo test d'uscita e si apre a lezioni fatte;
   la **verifica finale**, un modulo dichiarato tale, si apre a moduli completati
-- **Quattro ruoli**, ciascuno con un **nucleo fisso** scritto nel codice e, per tre di loro,
+- **Cinque ruoli**, ciascuno con un **nucleo fisso** scritto nel codice e, per tre di loro,
   **cinque interruttori** che l'admin accende e spegne da Impostazioni › Ruoli
   (`App\Auth\Ruoli`, vedi **Ruoli**):
   
   | Ruolo | Ambito |
   |---|---|
-  | `admin` | Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni; risponde come esperto |
+  | `admin` | Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni; risponde come esperto. **Uno solo** |
+  | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale. Non pubblica e non vede i corsi pubblicati |
   | `tutor` | Legge i corsi e lavora sulla sua classe: cura i suoi gruppi, i loro incontri, la Bacheca e i report dei suoi studenti |
   | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), in sola lettura: report, tentativi e incontri dei loro studenti, secondo gli interruttori |
   | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge i questionari, scarica i propri certificati |
@@ -45,7 +46,10 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   dentro le lezioni, dove li mette chi scrive
 - **Bacheca** di ogni corso: risorse condivise per categorie, pubblicate da admin e tutor e
   proposte dagli studenti
-- **Tre parole** alla fine di ogni modulo, da rileggere negli incontri su Meet
+- **Tre parole** alla fine di ogni modulo, da rileggere negli incontri su Meet: il tutor le legge
+  per gruppo, in una nuvola di parole
+- **Coda delle email**: le email a più persone e quelle periodiche passano da una coda che le
+  ritenta per 24 ore; quelle non partite si vedono e si rimandano dal pannello
 - **Report** «Studenti fermi» e «Griglia del corso», oltre ai tagli per corso, gruppo, studente,
   incontro e video
 
@@ -425,6 +429,19 @@ destra, che ne sia la descrizione e che dichiari lo stesso limite del campo. Lo 
 (`quiz-open-count.js`) si può caricare più volte nella stessa pagina: ogni campo si collega una
 volta sola.
 
+#### La prima domanda, e «+ Verifica finale» (30/10)
+
+Un questionario nuovo **nasce con la sua prima domanda**: «Nuovo questionario» la chiede nella
+stessa pagina, e senza non salva (`App\Core\PrimaDomanda`). Per un esercizio H5P il riquadro
+della domanda sparisce. **La sola domanda di un questionario non si elimina**: l'avviso dice le
+due strade, aggiungerne un'altra prima o eliminare il questionario.
+
+La verifica finale si crea da **«+ Verifica finale»**, accanto a «Nuovo modulo», finché il corso
+non ne ha una: una pagina sola con i titoli già scritti («Verifica finale», «Questionario»), la
+soglia e la prima domanda. «Nuovo modulo» non ha più la casella «Verifica finale»; in «Modifica
+modulo» si accende solo se il modulo ha già un questionario, e allora l'obiettivo del modulo
+sparisce. Nel testo visibile «quiz» è diventato «questionario».
+
 ### Sblocco progressivo dei moduli
 Due regole indipendenti possono chiudere un modulo, e ne basta una. **Lo staff non e' mai
 soggetto al blocco**: un modulo chiuso va preparato prima che si apra.
@@ -628,6 +645,13 @@ La scheda dell'utente mostra anche **i gruppi a cui partecipa** (tutor e numero 
 gruppo), e permette di aggiungerlo o toglierlo da lì: le stesse azioni della scheda del gruppo,
 con gli stessi effetti sulle iscrizioni.
 
+**L'amministratore è uno solo** (30/10, Alessandro). «Nuovo utente» non crea un admin se ce n'è
+già uno attivo, e «Modifica utente» non ne promuove né ne riattiva un altro: l'avviso dice chi è
+quello che c'è. Nel menu «Ruolo» «Admin» si offre solo nella scheda dell'admin attivo, che salva
+come prima. Resta la regola di prima, che ce ne sia sempre almeno uno. **Il cambio di admin si fa
+a mano nel database.** La regola sta nella piattaforma, non nel database: la ricetta dei test
+crea l'admin di prova direttamente.
+
 ### Gruppi (`/admin/groups`)
 Classi/coorti con tutor responsabile, membri e corsi assegnati. **Creare ed eliminare i gruppi e
 assegnare i corsi è dell'admin** (`group.manage`). Il tutor (`group.manage_own`) cura i gruppi di
@@ -646,6 +670,15 @@ parte di un altro gruppo con un corso in comune, e **non iscrive** a nessun altr
 iscrivere è dell'admin. Sotto «Aggiungi al gruppo» la frase lo dice: «Puoi aggiungere gli
 studenti già iscritti ai corsi del gruppo, purché non facciano già parte di un altro gruppo per lo
 stesso corso.» (`GroupModel::candidati()`).
+
+**I nomi dei gruppi sono unici** (30/10): creando o rinominando un gruppo, un nome già usato da un
+altro gruppo si rifiuta, maiuscole e spazi ai lati a parte, e l'avviso propone l'anno («per
+esempio «Giallo 2027»»). Così un gruppo nuovo, un anno dopo, non si confonde con il vecchio nei
+menu e in «Tre parole» (`GroupModel::nomeUsato`).
+
+Al telefono l'elenco dei gruppi è **una rubrica**: una riga per gruppo, in ordine alfabetico, con
+il logo, il nome (porta ai dettagli) e «Tutor: … · N membri»; i comandi «Pagina del gruppo»,
+«Report» ed «Elimina» stanno nel menu «⋯».
 
 ### Corsi e iscrizioni (`/admin/courses`)
 Creazione, modifica, iscrizioni ed eliminazione sono dell'admin. Lo slug è generato dal titolo e
@@ -742,6 +775,26 @@ Gli interruttori stanno in `settings` (`ROLE_*`): spento vale solo `'0'`, e senz
 accesi, com'era prima del 26/10. La pagina la apre solo il **ruolo** `admin`. La tabella
 `role_permissions` resta nel database ma non si legge più. `tests/ruoli_test.php` prova la
 regola, `permessi.js` ogni interruttore acceso, spento e nelle combinazioni.
+
+#### Il supervisore (30/10)
+
+Un ruolo che **aiuta l'admin a costruire i corsi**, e lavora **solo sui corsi in bozza**
+(migrazione `2026_10_30_supervisore.sql`). Nel suo nucleo: `course.create`, `course.build` (apre
+la scheda del corso) e `settings.welcome` («Video di benvenuto»). Non ha `course.edit`, che per il
+tutor apre anche gli incontri, né `course.welcome`, che vale per tutti i corsi.
+
+- `CourseRights::canEdit` risponde sì all'admin, e al supervisore se il corso è in bozza
+  (`bozzaDelSupervisore`): tutte le pagine di moduli, lezioni, materiali, video, H5P,
+  questionari, domande e verifica finale passano da lì. Nei corsi in bozza può anche eliminare.
+- **I corsi pubblicati, per lui, non ci sono**: non li vede negli elenchi e non li apre. Anche il
+  catalogo gli è chiuso, perché da lì si iscriverebbe a un corso pubblicato.
+- **Non pubblica**: la casella «Pubblicato» è spenta, con «Il corso lo pubblica l'admin», e un
+  corso creato o salvato da lui resta in bozza. Non elimina un corso, non iscrive studenti; nella
+  scheda del corso non vede iscritti, richieste e report.
+- Il suo menu: «Corsi», «Gestione corsi», «Impostazioni» (solo «Video di benvenuto» e
+  «Informazioni»), «Profilo». I supervisori possono essere più d'uno.
+
+`tests/supervisore.js` lo prova (vedi **Test**).
 
 ## Sicurezza dei form (CSRF)
 
@@ -881,6 +934,18 @@ titolo, corso e modulo o gruppo, «Si entra da 15 minuti prima» sotto il titolo
 comandi: «Aggiungi al calendario» finché l'incontro non è cominciato e, per ultimo, «Entra» nella
 finestra d'ingresso. Lo staff tiene la tabella.
 
+### L'elenco delle sessioni (30/10)
+
+Al computer è una tabella ordinabile con le colonne **Quando**, **Stato** (In programma, In
+corso, Conclusa), **Sessione**, **Destinatari**, **Link Meet** e **Accesso**. «Link Meet» dice
+come è nato il collegamento, per intero: «Inserito a mano», «Creato da Google Calendar», o
+«Assente», in rosso; senza link l'accesso dice «Impossibile senza link». **«Entra»** è un
+pulsante verde della misura del testo.
+
+Al telefono (sotto i 50 rem di spazio) l'elenco è diviso: prima le **Prossime**, dalla più
+vicina, poi le **Concluse**, chiuse, dalle più recenti; nelle concluse «Accesso» non c'è. I
+comandi per ordinare al telefono non ci sono: l'ordine fisso fa il loro lavoro.
+
 ### Come nasce il link Meet
 Alla creazione della sessione l'applicazione crea un evento su Google Calendar chiedendo
 contestualmente una conferenza Meet (`conferenceData.createRequest`, con
@@ -974,6 +1039,31 @@ disponibile la trasforma in un elenco di schede — con *container query*, quind
 spazio che la tabella ha davvero, non alla larghezza della finestra. Dove le schede non hanno
 senso (fino al 26/10 la matrice dei permessi, che aveva una colonna per permesso) c'è il ripiego: scorrimento
 orizzontale **dentro il proprio riquadro**, senza trascinarsi dietro la pagina.
+
+### Le schede, corrette per tutte (30/10)
+
+Sotto i 50 rem ogni `.tabella-schede` segue le stesse regole: le intestazioni ordinabili
+diventano **una tendina «Ordina per»** (`schede-ordina.js`), che restano ai lettori di schermo
+fuori dalla vista; **la prima colonna è il titolo della scheda**, in grassetto e senza etichetta
+(tranne dove non lo è: `schede-senza-titolo`); le etichette sono più piccole; i bollini hanno la
+loro misura; i comandi di riga stanno su una riga, quello pericoloso a destra. `dropdown.js`, che
+chiude le tendine con Esc o un tocco fuori, lo carica ogni pagina.
+
+### Ogni elenco in un riquadro bianco (30/10)
+
+Ogni tabella o elenco sta in un riquadro bianco (`.card`), come i report; il titolo, la frase e
+i pulsanti della pagina restano sullo sfondo. Fa eccezione l'agenda del mese, che ha già le sue
+caselle bianche.
+
+### Altri adattamenti al telefono (30/10)
+
+- **Il saluto dopo l'accesso** compare nella barra in alto, accanto al menu, senza riquadro: sospeso
+  sopra la pagina copriva il titolo e il primo corso. Con il menu aperto sparisce.
+- **Le tre parole** dello studente: i tre campi uno sotto l'altro, «Invia» sotto, largo quanto loro.
+- **L'ombra del menu laterale** c'è solo a menu aperto: da chiuso lasciava una striscia grigia
+  lungo il bordo sinistro.
+- **I pulsanti bianchi** (`.btn-secondary`) hanno bordo e testo nel colore principale, almeno 3:1
+  sullo sfondo: il bordo grigio chiaro di prima non si vedeva.
 
 ## Comandi e collegamenti: come si riconoscono
 
@@ -1614,6 +1704,14 @@ Pianificato) e nello Storico aperto: 0,8 rem sotto il titolo (10/10). Nello Stor
 c'è solo da aperto, perché il titolo sta in un `summary`: da chiuso allungherebbe la riga.
 `accessibilita.js` confronta le due distanze, misurate dal fondo della riga di testo del titolo.
 
+### Il mese al telefono (30/10)
+
+Sotto i 36 rem di spazio la vista «Mese» è **un calendario piccolo**, con un puntino per impegno
+nel colore del suo tipo e oggi nel cerchio verde, e **sotto il giorno scelto**, con la data
+intera («Venerdì 16 ottobre») e «Oggi» in evidenza: all'apertura oggi, o il primo giorno con
+impegni; toccando un giorno si passa al suo (`agenda-mese.js`). Il cambio di mese sta su una
+riga, con le frecce ai lati. Senza JavaScript si vedono tutti i giorni con impegni.
+
 ### Il calendario nel proprio programma
 
 Due modi, dalla stessa pagina:
@@ -1719,11 +1817,17 @@ del corso, sopra i moduli.
   prima.
 - **Con il nome, e non si cambiano**: lo studente legge «Il tuo tutor e l'amministratore possono
   leggerle. Una volta inviate non si cambiano.»
-- **Le leggono il tutor del gruppo e l'admin** in «Tre parole», nel ramo del corso: **anonime di
-  partenza** — le parole che tornano, dalla più frequente, e le terne in un ordine che non dice
-  chi le ha scritte (in un Meet con lo schermo condiviso i nomi non compaiono per sbaglio) — e
-  «Con i nomi» a richiesta, con chi ha completato il modulo ma non ha ancora risposto. Un modulo
-  alla volta; la pagina si apre sull'ultimo con delle parole.
+- **Le leggono il tutor del gruppo e l'admin** in «Tre parole», nel ramo del corso, **sempre per
+  gruppo** (30/10): servono all'incontro di quel gruppo. Gruppo e modulo si scelgono da due menu
+  (il modulo per titolo); all'apertura il primo gruppo in ordine alfabetico, e il modulo più
+  recente con delle parole. Non c'è «Tutti»: le parole di chi non ha un gruppo non si leggono qui.
+- **«1 studente su 7 ha risposto»**: 7 sono i membri del gruppo.
+- **«Anonime»**, di partenza: **la nuvola delle parole**, la più scritta nel mezzo, le altre ai
+  lati ad altezze sfalsate, con il numero accanto a ognuna (anche ×1). Ogni quantità ha una
+  misura e un colore fissi (×1 … ×5, poi «da ×6»), spiegati dalla riga «Quante volte». Niente
+  nomi: in un Meet con lo schermo condiviso non compaiono per sbaglio.
+- **«Nominative»**, a richiesta: chi ha scritto che cosa, e chi ha completato il modulo ma non ha
+  ancora risposto.
 
 Regole in `App\Core\TreParole`. Migrazione `2026_10_21_tre_parole.sql`.
 
@@ -1878,7 +1982,8 @@ php tests/tema_test.php             # tavolozze, arrotondamento, misure del test
 php tests/caratteri_test.php        # catalogo dei caratteri, nome dei file, ripiego manuale, i tre messaggi d'errore
 php tests/report_test.php           # tagli dei report: suggerimenti, ricerca, paginazione
 php tests/ordinamento_test.php      # ordinamento: confronti, vuoti in fondo, spareggio, indirizzi
-php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, file .ics
+php tests/agenda_test.php           # agenda: raggruppamento, griglia del mese, data estesa, file .ics
+php tests/coda_email_test.php       # la coda delle email: tentativi, finestra di 24 ore, riprova, doppioni, allegati
 php tests/cerchio_test.php          # pagina del gruppo: posizioni nel cerchio, nomi verso l'esterno, soglia dei 20
 php tests/giro_test.php             # pagina del gruppo: chi pone, risponde e modera; domanda aperta e archivio; «Ci sarò»
 php tests/accesso_test.php          # limite ai tentativi di accesso (5 per account, avvisi, blocco di un'ora; IP) e cookie di sessione protetto
@@ -1889,8 +1994,9 @@ php tests/fuso_orario_test.php      # la connessione al database usa lo scarto o
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
-node tests/accessibilita.js         # circa 5.000 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/permessi.js              # 656 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, gli interruttori dei ruoli, la bacheca, il ramo del corso, le tre parole, i file H5P, il percorso e la verifica finale e molto altro
+node tests/accessibilita.js         # circa 5.300 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
+node tests/supervisore.js           # 50 prove: il supervisore costruisce i corsi in bozza e non tocca il resto (circa 15 secondi)
+node tests/permessi.js              # circa 700 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, gli interruttori dei ruoli, la bacheca, il ramo del corso, le tre parole, i file H5P, il percorso e la verifica finale e molto altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero (crea e toglie da sé 55 studenti per la seconda pagina)
 ```
@@ -2943,6 +3049,24 @@ Le tre email degli incontri dal vivo di prima (invito, cambio di orario, annulla
 nello stesso elenco e tengono le chiavi di prima (`LIVE_*`): i testi già salvati restano. Il
 promemoria, nuovo, ha le sue (`EMAIL_PROMEMORIA_*`). La vecchia pagina `/admin/settings/inviti` porta al
 gruppo «Incontri dal vivo».
+
+### La coda delle email (30/10)
+
+Le email **a più persone** (inviti, cambi di orario e annullamenti degli incontri, domanda
+nuova, proposta in Bacheca, richiesta d'iscrizione) vanno sempre in **coda**; quelle **a una
+persona** partono subito, con 5 secondi di attesa, e se non partono vanno in coda. Anche quelle
+dei comandi periodici passano dalla coda, e risultano mandate solo a invio riuscito. Restano
+fuori gli inviti agli utenti importati, che hanno il loro meccanismo.
+
+Una riga della coda (`email_queue`, migrazione `2026_10_30_coda_email.sql`) si cancella solo
+quando l'email parte; se no conta il tentativo, tiene l'errore e **si ritenta a ogni giro di
+`bin/avvisi` per 24 ore**, poi resta «non partita». Gli inviti a un incontro hanno una chiave per
+persona e incontro: ripremendo, non si raddoppiano.
+
+**Impostazioni › Posta › Email in coda e non partite** mostra le due tabelle, con «Riprova» (altre
+24 ore), «Riprova tutte» e «Rimuovi», con conferma (`App\Core\Mail\CodaEmail`). Per questo
+**`bin/avvisi` va pianificato**, ogni quarto d'ora o meglio ogni cinque minuti: senza, le email in
+coda non partono.
 
 ## Configurazione dell'invio email
 

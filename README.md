@@ -25,7 +25,7 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
   con un link Meet inserito a mano.
 - **Agenda** a elenco e a mese, e un calendario da aggiungere a Google, Apple o Outlook.
 - **Bacheca** delle risorse di ogni corso, **L'esperto risponde** per le domande degli studenti e
-  **Tre parole** alla fine di ogni modulo.
+  **Tre parole** alla fine di ogni modulo, che il tutor rilegge per gruppo in una nuvola di parole.
 - **Report** per corso, gruppo, studente, incontro e video, «Studenti fermi» e «Griglia del
   corso», scaricabili in CSV e XLSX.
 - **Cinque ruoli**: l'amministratore (uno solo), il supervisore che costruisce i corsi in bozza,
