@@ -5073,46 +5073,77 @@ fieldset.checkbox-group legend {
     display: none;
 }
 
-/* La nuvola (30/10): piu' grande la parola, piu' persone l'hanno scritta;
-   accanto il numero, anche ×1. Tre colori del tema, a turno. */
+/* La nuvola (30/10, Alessandro, forma B): la parola piu' scritta nel mezzo,
+   le altre ai lati, ad altezze sfalsate con spazio vero (padding), cosi' le
+   righe si allargano invece di sovrapporsi. Ogni quantita' ha una misura e
+   un colore fissi, almeno 5,4:1 sul bianco; al telefono la scala e' piu'
+   contenuta, con le quantita' sempre tutte diverse. */
 .tp-nuvola {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: baseline;
-    gap: 0.35rem 1.1rem;
-    margin: 0 0 1.4rem;
-    padding: 1.2rem 0.8rem;
+    align-items: center;
+    gap: 0.7rem 1.3rem;
+    margin: 0;
+    padding: 1.8rem 1rem;
     list-style: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
+    background: radial-gradient(ellipse at center, var(--color-primary-soft) 0%, transparent 70%);
 }
 
 .tp-nuvola li {
-    line-height: 1.2;
-    overflow-wrap: anywhere;
+    line-height: 1.05;
+    white-space: nowrap;
 }
 
-.tp-nuvola-0 {
-    color: var(--color-primary);
+.tp-n1 { font-size: 1rem; color: #6b655f; }
+.tp-n2 { font-size: 1.4rem; color: #4f7256; }
+.tp-n3 { font-size: 1.85rem; color: #2f6b8a; }
+.tp-n4 { font-size: 2.35rem; color: #7b4a93; font-weight: 600; }
+.tp-n5 { font-size: 2.9rem; color: #b0452b; font-weight: 600; }
+.tp-n6 { font-size: 3.4rem; color: #1c1c1a; font-weight: 600; }
+
+.tp-nuvola .tp-su { padding-bottom: 0.9rem; }
+.tp-nuvola .tp-giu { padding-top: 0.9rem; }
+.tp-nuvola .tp-poco-su { padding-bottom: 0.4rem; }
+.tp-nuvola .tp-poco-giu { padding-top: 0.4rem; }
+
+.tp-nuvola .tp-volte {
+    margin-left: 0.12rem;
+    font-size: 0.7rem;
+    font-weight: 400;
 }
 
-.tp-nuvola-1 {
-    color: var(--color-text);
+/* «Quante volte: ×1 ×2 …», nei colori della nuvola, alla misura del testo. */
+.tp-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.9rem;
+    margin: 0.8rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
 }
 
-.tp-nuvola-2 {
-    color: var(--color-primary-hover);
-}
-
-.tp-nuvola-massima {
+.tp-legenda span {
+    font-size: inherit;
     font-weight: 600;
 }
 
-.tp-nuvola .tp-volte {
-    margin-left: 0.15rem;
-    font-size: 0.75rem;
+@media (max-width: 40rem) {
+    .tp-nuvola {
+        gap: 0.55rem 0.9rem;
+        padding: 1.2rem 0.4rem;
+    }
+
+    .tp-nuvola .tp-n2 { font-size: 1.25rem; }
+    .tp-nuvola .tp-n3 { font-size: 1.55rem; }
+    .tp-nuvola .tp-n4 { font-size: 1.9rem; }
+    .tp-nuvola .tp-n5 { font-size: 2.3rem; }
+    .tp-nuvola .tp-n6 { font-size: 2.6rem; }
+    .tp-nuvola .tp-su { padding-bottom: 0.5rem; }
+    .tp-nuvola .tp-giu { padding-top: 0.5rem; }
+    .tp-nuvola .tp-poco-su { padding-bottom: 0.25rem; }
+    .tp-nuvola .tp-poco-giu { padding-top: 0.25rem; }
 }
 
 .tp-ricorrenti {

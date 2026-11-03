@@ -103,7 +103,7 @@ $attivo = !empty($corso['three_words_since']);
     <div class="griglia-filtri">
         <span class="griglia-filtri-etichetta" id="tp-vista">Vista</span>
         <nav class="agenda-viste" aria-labelledby="tp-vista">
-            <?php foreach ([TreParole::ANONIME => 'Anonime', TreParole::NOMI => 'Con i nomi'] as $v => $etichetta): ?>
+            <?php foreach ([TreParole::ANONIME => 'Anonime', TreParole::NOMI => 'Nominative'] as $v => $etichetta): ?>
                 <a href="<?= $esc($indirizzo(['vista' => $v === TreParole::NOMI ? $v : null])) ?>" class="<?= $vista === $v ? 'attiva' : '' ?>"
                    <?= $vista === $v ? 'aria-current="page"' : '' ?>><?= $etichetta ?></a>
             <?php endforeach; ?>
@@ -138,30 +138,35 @@ $attivo = !empty($corso['three_words_since']);
 
             <?php if ($vista === TreParole::ANONIME): ?>
                 <?php
-                // La nuvola (30/10): le parole in ordine alfabetico, grandi
-                // quanto le persone che le hanno scritte, con il numero accanto
-                // (anche ×1). Erano «Le parole che tornano».
-                $nuvola = $ricorrenti;
-                usort($nuvola, static fn (array $a, array $b): int => strcmp(mb_strtolower($a['parola']), mb_strtolower($b['parola'])));
-                $massimo = max(array_column($ricorrenti, 'volte'));
+                // La nuvola (30/10, Alessandro, forma B): la parola piu' scritta
+                // nel mezzo, le altre alternate ai due lati, ad altezze sfalsate.
+                // Ogni quantita' ha la sua misura e il suo colore, fissi (×1 …
+                // ×5, poi «da ×6»), spiegati dalla riga «Quante volte». Lo
+                // sfalsamento e' spazio vero sopra o sotto la parola, non uno
+                // spostamento a vista: le righe si allargano invece di
+                // sovrapporsi. Le tre parole di ciascuno non si elencano piu':
+                // la nuvola le conta, la vista «Nominative» le mostra per nome.
+                $ordinate = $ricorrenti;
+                usort($ordinate, static fn (array $a, array $b): int => $b['volte'] <=> $a['volte'] ?: strcmp(mb_strtolower($a['parola']), mb_strtolower($b['parola'])));
+                $nuvola = [];
+                foreach ($ordinate as $i => $r) {
+                    $i % 2 === 0 ? array_unshift($nuvola, $r) : $nuvola[] = $r;
+                }
+                $sfalsa = ['tp-su', 'tp-poco-giu', '', 'tp-giu', 'tp-poco-su', 'tp-giu'];
+                $quantita = array_values(array_unique(array_map(static fn (array $r): int => min($r['volte'], 6), $ricorrenti)));
+                sort($quantita);
                 ?>
                 <h3 class="tp-sottotitolo">Le parole del gruppo, più grandi le più scritte</h3>
                 <ul class="tp-nuvola" role="list">
                     <?php foreach ($nuvola as $i => $r): ?>
-                        <?php $misura = $massimo > 1 ? 1.05 + ($r['volte'] - 1) / ($massimo - 1) * 1.15 : 1.05; ?>
-                        <li class="tp-nuvola-<?= $i % 3 ?><?= $r['volte'] === $massimo && $massimo > 1 ? ' tp-nuvola-massima' : '' ?>"
-                            style="font-size: <?= number_format($misura, 2, '.', '') ?>rem"><?= $esc($r['parola']) ?><span class="tp-volte">×<?= $r['volte'] ?><span class="sr-only"> <?= $r['volte'] === 1 ? 'volta' : 'volte' ?></span></span></li>
+                        <li class="tp-n<?= min($r['volte'], 6) ?> <?= $sfalsa[$i % 6] ?>"><?= $esc($r['parola']) ?><span class="tp-volte">×<?= $r['volte'] ?><span class="sr-only"> <?= $r['volte'] === 1 ? 'volta' : 'volte' ?></span></span></li>
                     <?php endforeach; ?>
                 </ul>
-
-                <h3 class="tp-sottotitolo">Le tre parole di ciascuno</h3>
-                <?php /* In un ordine che non dice chi ha risposto prima (ne' chi
-                         e' iscritto prima): `TreParole::mescola`. Niente date. */ ?>
-                <ul class="tp-terne" role="list">
-                    <?php foreach (TreParole::mescola($righe, $modulo['id'] . '|' . ($gruppo ?? 'tutti')) as $r): ?>
-                        <li><?= $esc($r['word1']) ?> · <?= $esc($r['word2']) ?> · <?= $esc($r['word3']) ?></li>
+                <p class="tp-legenda">Quante volte:
+                    <?php foreach ($quantita as $q): ?>
+                        <span class="tp-n<?= $q ?>"><?= $q === 6 ? 'da ×6' : '×' . $q ?></span>
                     <?php endforeach; ?>
-                </ul>
+                </p>
             <?php else: ?>
                 <h3 class="tp-sottotitolo">Chi le ha scritte</h3>
                 <div class="tabella-schede">
