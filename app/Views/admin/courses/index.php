@@ -58,7 +58,8 @@ $courses = $ordine->applica($courses);
 <?php else: ?>
     <?php /* Sotto i 50 rem diventa un elenco di schede, come i gruppi: a 320 px
              titolo, due etichette e tre comandi non stanno in tre colonne. */ ?>
-    <div class="tabella-schede">
+    <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
+    <div class="tabella-schede card">
     <table class="data-table" role="table">
         <thead role="rowgroup">
         <tr role="row"><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th></tr>

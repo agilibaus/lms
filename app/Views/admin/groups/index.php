@@ -40,7 +40,8 @@ $groups = $ordine->applica($groups);
              Alessandro, variante C) un elenco a parte, `gruppi-righe`, piu'
              sotto: una riga per gruppo, come una rubrica, e i comandi nel
              menu «⋯». Lo spazio di `gruppi-elenco` decide quale si vede. */ ?>
-    <div class="gruppi-elenco">
+    <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
+    <div class="gruppi-elenco card">
     <div class="tabella-schede gruppi-tabella">
     <table class="data-table data-table-media" role="table">
         <thead role="rowgroup">

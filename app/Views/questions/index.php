@@ -107,7 +107,8 @@ foreach ($pubblicate as $q) {
 }
 ?>
 <?php if ($pubblicate !== []): ?>
-    <section class="qa-pubblicate" aria-labelledby="pubblicate-titolo">
+    <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
+    <section class="qa-pubblicate card" aria-labelledby="pubblicate-titolo">
         <h2 id="pubblicate-titolo">Pubblicate</h2>
         <p class="qa-intro">Apri una domanda per correggerla, o per toglierla dall'archivio del corso.</p>
 

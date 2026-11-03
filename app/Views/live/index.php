@@ -54,7 +54,8 @@ $sessions = $ordine->applica($sessions);
              elenco a parte, `live-schede`, piu' sotto: prima le prossime,
              poi le concluse chiuse, con la scheda corretta. Lo spazio di
              `live-elenco` decide quale dei due si vede. */ ?>
-    <div class="live-elenco">
+    <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
+    <div class="live-elenco card">
     <div class="tabella-schede live-tabella">
     <table class="data-table" role="table">
         <thead role="rowgroup">

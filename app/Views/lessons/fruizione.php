@@ -111,7 +111,8 @@ $quando = static function (?string $data): string {
 <?php if ($righe === []): ?>
     <p class="empty-state">Nessuno studente è iscritto a questo corso.</p>
 <?php else: ?>
-    <div class="tabella-schede">
+    <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
+    <div class="tabella-schede card">
     <table class="data-table" role="table">
         <caption class="sr-only">
             Fruizione del video della lezione <?= htmlspecialchars($lesson['title']) ?>,

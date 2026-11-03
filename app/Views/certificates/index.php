@@ -62,7 +62,8 @@ $certificates = $ordine->applica($certificates);
              50 rem di spazio la tabella diventa un elenco di schede, come i
              report. I `role` espliciti servono perche' cambiando il `display`
              la tabella perderebbe le proprie semantiche. */ ?>
-    <div class="tabella-schede">
+    <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
+    <div class="tabella-schede card">
     <table class="data-table" role="table">
         <thead role="rowgroup">
         <tr role="row">
