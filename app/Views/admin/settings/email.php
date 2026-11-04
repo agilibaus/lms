@@ -31,18 +31,26 @@ foreach ($elenco as $chiave => $voce) {
 // dove porta l'elenco al telefono. Dopo «Salva» e «Manda una prova a me» si
 // torna qui (campo `pagina`).
 $solo ??= null;
+// Al computer (30/10, Alessandro, B) la pagina ha due colonne: l'elenco a
+// sinistra e la voce scelta a destra; la pagina principale sceglie
+// «Organizzazione e mittente». Al telefono, come dalla 0315: la principale e'
+// l'elenco, la pagina di una voce e' solo quella voce.
+$corrente = $solo ?? 'mittente';
 $campoPagina = $solo === null ? '' : '<input type="hidden" name="pagina" value="/admin/settings/email/voce/' . $e($solo) . '">';
 $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte le email.'], 'segnaposto' => ['Segnaposto comuni', 'Si possono usare in ogni email.']];
+[$titoloScelta, $quandoScelta] = $titoliComuni[$corrente] ?? [$elenco[$corrente]['titolo'], $elenco[$corrente]['quando']];
+$attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-current="page"' : '';
 ?>
 <?php if ($solo !== null): ?>
 <?php [$titoloSolo, $quandoSolo] = $titoliComuni[$solo] ?? [$elenco[$solo]['titolo'], $elenco[$solo]['quando']]; ?>
-<div class="page-header">
+<?php /* Solo al telefono: la pagina di una voce ha il suo titolo. */ ?>
+<div class="page-header email-testa-voce">
     <a href="/admin/settings/email" class="back-link"><span class="back-link-testo">Messaggi email</span></a>
     <h1><?= $e($titoloSolo) ?></h1>
     <p class="page-subtitle"><?= $e($quandoSolo) ?></p>
 </div>
-<?php else: ?>
-<div class="page-header">
+<?php endif; ?>
+<div class="page-header email-testa<?= $solo !== null ? ' email-testa-sola' : '' ?>">
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Messaggi email</h1>
     <p class="page-subtitle">
@@ -51,7 +59,6 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
         <a href="/admin/settings/posta">Server di posta elettronica</a>.
     </p>
 </div>
-<?php endif; ?>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
@@ -62,14 +69,12 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
     </p>
 <?php endif; ?>
 
-<?php if ($solo === null): ?>
-    <?php /* Al telefono (30/10, Alessandro, B) la pagina e' questo elenco: ogni
-             voce apre la sua pagina. Al computer le parti, tutte aperte. */ ?>
+<div class="email-due-colonne <?= $solo === null ? 'email-indice' : 'email-voce' ?>">
     <nav class="email-elenco" aria-label="Le email">
         <h2>Per tutte le email</h2>
         <ul class="card email-voci">
             <?php foreach ($titoliComuni as $voceComune => [$titolo, $quando]): ?>
-                <li><a href="/admin/settings/email/voce/<?= $e($voceComune) ?>">
+                <li><a href="/admin/settings/email/voce/<?= $e($voceComune) ?>"<?= $attuale($voceComune) ?>>
                     <span class="email-voce-titolo"><?= $e($titolo) ?></span>
                     <span class="card-meta"><?= $e($quando) ?></span>
                 </a></li>
@@ -82,7 +87,7 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
             <h2><?= $e($nomeGruppo) ?></h2>
             <ul class="card email-voci">
                 <?php foreach ($perGruppo[$gruppo] as $chiave => $voce): ?>
-                    <li><a href="/admin/settings/email/voce/<?= $e($chiave) ?>">
+                    <li><a href="/admin/settings/email/voce/<?= $e($chiave) ?>"<?= $attuale($chiave) ?>>
                         <span class="email-voce-titolo"><?= $e($voce['titolo']) ?></span>
                         <span class="card-meta"><?= $e($voce['quando']) ?></span>
                     </a></li>
@@ -90,12 +95,16 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
             </ul>
         <?php endforeach; ?>
     </nav>
-<?php endif; ?>
 
-<div class="<?= $solo === null ? 'email-sezioni' : '' ?>">
-<?php if ($solo === null || $solo === 'mittente'): ?>
+<div class="email-scelta">
+<div class="email-scelta-testa">
+    <h2><?= $e($titoloScelta) ?></h2>
+    <?php if (isset($elenco[$corrente])): /* le due parti comuni la frase l'hanno nel riquadro */ ?>
+        <p class="card-meta"><?= $e($quandoScelta) ?></p>
+    <?php endif; ?>
+</div>
+<?php if ($corrente === 'mittente'): ?>
 <section class="card">
-    <?php if ($solo === null): ?><h2>Organizzazione e mittente</h2><?php endif; ?>
     <p class="card-meta">Valgono per tutte le email.</p>
 
     <form action="/admin/settings/email" method="post" class="form">
@@ -146,9 +155,8 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
 </section>
 <?php endif; ?>
 
-<?php if ($solo === null || $solo === 'segnaposto'): ?>
+<?php if ($corrente === 'segnaposto'): ?>
 <section class="card">
-    <?php if ($solo === null): ?><h2>Segnaposto comuni</h2><?php endif; ?>
     <p class="card-meta">
         Si possono usare in ogni email, nell’oggetto e nel testo. Quelli che non esistono restano scritti
         come sono, così un errore di battitura si vede nella prova invece di sparire.
@@ -170,22 +178,15 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
 <?php endif; ?>
 
 <?php foreach (Modelli::GRUPPI as $gruppo => $nomeGruppo): ?>
-    <?php if (empty($perGruppo[$gruppo]) || ($solo !== null && !isset($perGruppo[$gruppo][$solo]))) {
+    <?php if (empty($perGruppo[$gruppo]) || !isset($perGruppo[$gruppo][$corrente])) {
         continue;
     } ?>
-    <?php if ($solo === null): ?>
-        <h2 id="<?= $e($gruppo) ?>"><?= $e($nomeGruppo) ?></h2>
-    <?php endif; ?>
 
     <?php foreach ($perGruppo[$gruppo] as $chiave => $voce): ?>
-        <?php if ($solo !== null && $solo !== $chiave) {
+        <?php if ($corrente !== $chiave) {
             continue;
         } ?>
         <section class="card" id="email-<?= $e($chiave) ?>">
-            <?php if ($solo === null): ?>
-                <h3><?= $e($voce['titolo']) ?></h3>
-                <p class="card-meta"><?= $e($voce['quando']) ?></p>
-            <?php endif; ?>
 
             <?php if ($voce['segnaposto'] !== []): ?>
                 <table class="data-table tabella-a-capo">
@@ -236,9 +237,8 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
         </section>
     <?php endforeach; ?>
 <?php endforeach; ?>
-</div>
 
-<?php if ($solo === null || isset($elenco[$solo])): ?>
+<?php if (isset($elenco[$corrente])): ?>
 <p class="card-meta">
     La prova parte<?= $myEmail !== null && $myEmail !== '' ? ' a ' . $e($myEmail) : ' al tuo indirizzo' ?>
     con quello che è scritto nei campi, anche se non l’hai ancora salvato, e con valori di esempio al posto
@@ -256,3 +256,5 @@ $titoliComuni = ['mittente' => ['Organizzazione e mittente', 'Valgono per tutte 
             . '.' ?>
     </p>
 <?php endif; ?>
+</div>
+</div>

@@ -3729,10 +3729,67 @@ fieldset.checkbox-group legend {
     min-width: 12rem;
 }
 
-/* «Messaggi email» (30/10, Alessandro, B): al telefono la pagina e' un
-   elenco, e ogni email si apre nella sua pagina; al computer le parti, tutte
-   aperte, come prima. */
+/* «Messaggi email» (30/10, Alessandro, B). Al computer due colonne:
+   l'elenco a sinistra, che resta in vista scorrendo, con la voce aperta
+   evidenziata, e la voce scelta a destra. Al telefono la pagina principale e'
+   l'elenco, e ogni voce si apre nella sua pagina, con il suo titolo. */
+.email-due-colonne {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
 .email-elenco {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+}
+
+.email-elenco .card-meta {
+    display: none;
+}
+
+.email-elenco h2 {
+    margin: 0.9rem 0 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.email-elenco h2:first-child {
+    margin-top: 0;
+}
+
+.email-elenco .email-voci {
+    padding: 0.1rem 0.8rem;
+    margin-bottom: 0.4rem;
+}
+
+.email-elenco .email-voci a {
+    padding: 0.45rem 0;
+}
+
+.email-elenco a[aria-current="page"] {
+    margin: 0 -0.8rem;
+    padding-left: calc(0.8rem - 3px);
+    padding-right: 0.8rem;
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-primary-soft);
+}
+
+.email-elenco a[aria-current="page"] .email-voce-titolo {
+    color: var(--color-text);
+}
+
+.email-scelta-testa h2 {
+    margin: 0 0 0.2rem;
+}
+
+.email-testa-voce {
     display: none;
 }
 
@@ -3759,14 +3816,8 @@ fieldset.checkbox-group legend {
 }
 
 .email-voci .card-meta {
-    display: block;
     margin: 0.1rem 0 0;
     font-size: 0.85rem;
-}
-
-.email-elenco h2 {
-    font-size: 1.05rem;
-    margin: 1.1rem 0 0.4rem;
 }
 
 /* «Aspetto» (30/10, A): al computer i titoli delle sezioni sono titoli, e
@@ -3789,12 +3840,52 @@ fieldset.checkbox-group legend {
 }
 
 @media (max-width: 40rem) {
-    .email-elenco {
+    .email-due-colonne {
         display: block;
     }
 
-    .email-sezioni {
+    .email-elenco {
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .email-elenco .card-meta {
+        display: block;
+    }
+
+    .email-elenco h2 {
+        margin: 1.1rem 0 0.4rem;
+        font-size: 1.05rem;
+        letter-spacing: normal;
+        text-transform: none;
+        color: inherit;
+    }
+
+    .email-elenco .email-voci {
+        padding: 0.2rem 1rem;
+    }
+
+    .email-elenco .email-voci a {
+        padding: 0.7rem 0;
+    }
+
+    .email-elenco a[aria-current="page"] {
+        margin: 0;
+        padding: 0.7rem 0;
+        border-left: 0;
+        background: none;
+    }
+
+    .email-indice .email-scelta,
+    .email-voce .email-elenco,
+    .email-testa-sola,
+    .email-scelta-testa {
         display: none;
+    }
+
+    .email-testa-voce {
+        display: block;
     }
 
     /* Al telefono il titolo apre e chiude la sezione, con la freccia. */

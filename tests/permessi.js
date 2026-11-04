@@ -4483,10 +4483,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 };
             }, selettoreCampo);
 
-            await page.goto(BASE + '/admin/settings/email');
+            // Dal 30/10 ogni email ha la sua pagina (con l'elenco accanto, al computer).
+            await page.goto(BASE + '/admin/settings/email/voce/verifica');
             const email = await prova('#testo-verifica');
             check('Messaggi email: «Annulla» rimette il testo salvato e il contatore, e si resta nella pagina',
-                email.rimesso && email.conto && email.url === '/admin/settings/email', [JSON.stringify(email)]);
+                email.rimesso && email.conto && email.url === '/admin/settings/email/voce/verifica', [JSON.stringify(email)]);
 
             // La prima domanda pubblicata della pagina: quella seminata puo'
             // essere stata tolta dall'archivio da una prova piu' sopra.
