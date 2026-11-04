@@ -344,8 +344,8 @@ use App\Core\Icona;
         <?= CampoContato::html('AUTH_SPLIT_TITLE', 'Titolo', 'AUTH_SPLIT_TITLE', AuthLayout::MAX_TITOLO,
             (string) $values['AUTH_SPLIT_TITLE'], 2, false, (string) $defaults['AUTH_SPLIT_TITLE']) ?>
         <p class="form-hint">
-            Gli a capo che scrivi qui valgono anche nella pagina: servono a decidere tu dove
-            spezza il titolo, invece di lasciarlo alla larghezza della finestra.
+            Gli a capo scritti qui valgono anche nella pagina: decidono dove si spezza il
+            titolo, invece di lasciarlo alla larghezza della finestra.
         </p>
 
         <?= CampoContato::html('AUTH_SPLIT_TEXT', 'Testo sotto il titolo', 'AUTH_SPLIT_TEXT', AuthLayout::MAX_TESTO,
