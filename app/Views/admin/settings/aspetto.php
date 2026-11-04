@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\AuthLayout;
 use App\Core\CampoContato;
 use App\Core\Csrf;
+use App\Core\Settings;
 use App\Core\Theme;
 use App\Core\Icona;
 
@@ -66,6 +67,30 @@ use App\Core\Icona;
             qualunque si scelga, i testi restano leggibili.
         </p>
 
+        <?php
+        // Un colore scritto a mano copre la tavolozza (31/10, Alessandro): la
+        // tavolozza scelta si salva, ma quasi non si vede. Lo si dice qui, e
+        // si dice se il colore viene dal file `.env`, dove il campo non serve.
+        foreach ([
+            [Theme::KEY_PRIMARY, 'Colore principale', 'il colore di pulsanti, collegamenti e voci evidenziate'],
+            [Theme::KEY_TEXT_COLOR, 'Colore del testo', 'il colore dei testi'],
+        ] as [$chiave, $nomeCampo, $che]):
+            $valore = Theme::coloreValido((string) Settings::get($chiave, ''));
+            if ($valore === null) {
+                continue;
+            } ?>
+            <p class="alert alert-warning" role="note">
+                <?php if (Settings::source($chiave) === 'file'): ?>
+                    La riga <code><?= $chiave ?></code> del file <code>.env</code>
+                    (<code><?= htmlspecialchars($valore) ?></code>), decide <?= $che ?>, qualunque
+                    tavolozza tu scelga. Per usare il colore della tavolozza, togli quella riga.
+                <?php else: ?>
+                    Il campo «<?= $nomeCampo ?>» più sotto (<code><?= htmlspecialchars($valore) ?></code>),
+                    decide <?= $che ?>, qualunque tavolozza tu scelga. Per usare il colore della
+                    tavolozza, <a href="#<?= $chiave ?>">svuota il campo</a> e salva.
+                <?php endif; ?>
+            </p>
+        <?php endforeach; ?>
         <fieldset class="tavolozze">
             <legend class="sr-only">Tavolozza</legend>
             <?php foreach ($tavolozze as $chiave => $t): ?>
@@ -93,12 +118,13 @@ use App\Core\Icona;
                inputmode="text" spellcheck="false"
                aria-describedby="primario_aiuto">
         <p class="form-hint" id="primario_aiuto">
-            Scritto come <code>#rrggbb</code>, per avvicinare il colore a quello del vostro
-            marchio. Lascia vuoto per usare quello della tavolozza, che è
-            <code><?= htmlspecialchars($primarioInVigore) ?></code>.
-            Un colore troppo chiaro viene <strong>rifiutato al salvataggio</strong>, dicendo
-            di quanto manca: sotto 4,5:1 di contrasto la scritta bianca sui pulsanti non si
-            leggerebbe più.
+            <strong>Sostituisce il colore principale di qualunque tavolozza</strong>, e da lui
+            vengono anche le sue sfumature. Si scrive come <code>#rrggbb</code>, per esempio
+            per avvicinarlo al colore di un marchio. Con il campo vuoto vale quello della
+            tavolozza, che è <code><?= htmlspecialchars($primarioInVigore) ?></code>.
+            Un colore troppo chiaro viene <strong>rifiutato al salvataggio</strong>, con
+            l’indicazione di quanto manca: sotto 4,5:1 di contrasto la scritta bianca sui
+            pulsanti non si leggerebbe più.
         </p>
 
         <label for="<?= Theme::KEY_TEXT_COLOR ?>">Colore del testo (facoltativo)</label>
@@ -108,15 +134,15 @@ use App\Core\Icona;
                inputmode="text" spellcheck="false"
                aria-describedby="testo_aiuto">
         <p class="form-hint" id="testo_aiuto">
-            Il nero dei testi, se ne volete uno diverso — per esempio un grigio molto scuro
-            invece del quasi-nero di oggi, che è
+            <strong>Sostituisce il colore del testo di qualunque tavolozza</strong>: per
+            esempio un grigio molto scuro al posto del quasi-nero predefinito, che è
             <code><?= htmlspecialchars($coloreTestoInVigore) ?></code>.
             Il grigio dei testi secondari <strong>non si imposta</strong>: viene ricavato da
             questo, schiarito fin dove resta leggibile. Due campi che devono stare in
             rapporto fra loro sono due modi di sbagliare invece di uno.
             Il controllo è fatto su tutti i fondi su cui il testo finisce, <em>comprese le
             tinte tenui di tutte e quattro le tavolozze</em>: così il colore resta valido
-            anche se un domani cambiate tavolozza.
+            anche cambiando tavolozza.
         </p>
     </details>
 
@@ -124,9 +150,9 @@ use App\Core\Icona;
         <summary class="aspetto-sommario"><h3>Caratteri</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
             Dal catalogo di Google Fonts, <strong><?= count($catalogoFont) ?> famiglie</strong>.
-            I caratteri <strong>non si caricano dai server di Google</strong>: quando ne
-            scegli uno, è Pistacchio a scaricarlo una volta sola e poi a servirlo lui, così
-            chi apre la pagina di accesso non contatta nessuno. Lascia vuoto per il carattere
+            I caratteri <strong>non si caricano dai server di Google</strong>: quando se ne
+            sceglie uno, è Pistacchio a scaricarlo una volta sola e poi a servirlo lui, così
+            chi apre la pagina di accesso non contatta nessuno. Con il campo vuoto vale il carattere
             di partenza.
         </p>
 
