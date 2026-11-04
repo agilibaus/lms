@@ -3740,11 +3740,30 @@ fieldset.checkbox-group legend {
     align-items: start;
 }
 
+/* Caratteri dell'elenco come il menu laterale e le intestazioni delle
+   tabelle, e una barra di scorrimento sottile e chiara (30/10, Alessandro):
+   quella del browser, larga e scura, stonava. Quasi sempre non compare: a
+   1280×900 l'elenco sta tutto nello schermo. */
 .email-elenco {
     position: sticky;
     top: 1rem;
     max-height: calc(100vh - 2rem);
     overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+}
+
+.email-elenco::-webkit-scrollbar {
+    width: 6px;
+}
+
+.email-elenco::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+}
+
+.email-elenco::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .email-elenco .card-meta {
@@ -3753,7 +3772,7 @@ fieldset.checkbox-group legend {
 
 .email-elenco h2 {
     margin: 0.9rem 0 0.3rem;
-    font-size: 0.85rem;
+    font-size: 0.76rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -3770,7 +3789,12 @@ fieldset.checkbox-group legend {
 }
 
 .email-elenco .email-voci a {
-    padding: 0.45rem 0;
+    padding: 0.38rem 0;
+}
+
+.email-elenco .email-voce-titolo {
+    font-size: 0.92rem;
+    font-weight: 400;
 }
 
 .email-elenco a[aria-current="page"] {
@@ -3783,10 +3807,14 @@ fieldset.checkbox-group legend {
 
 .email-elenco a[aria-current="page"] .email-voce-titolo {
     color: var(--color-text);
+    font-weight: 600;
 }
 
+/* Il titolo della voce aperta come i titoli dei riquadri: il titolo della
+   pagina resta «Messaggi email». */
 .email-scelta-testa h2 {
     margin: 0 0 0.2rem;
+    font-size: 1.05rem;
 }
 
 .email-testa-voce {
@@ -3868,6 +3896,11 @@ fieldset.checkbox-group legend {
 
     .email-elenco .email-voci a {
         padding: 0.7rem 0;
+    }
+
+    .email-elenco .email-voce-titolo {
+        font-size: 1rem;
+        font-weight: 600;
     }
 
     .email-elenco a[aria-current="page"] {

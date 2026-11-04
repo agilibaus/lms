@@ -247,6 +247,7 @@ $attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-curr
 <?php endif; ?>
 
 <script src="/assets/js/quiz-open-count.js"></script>
+<script src="/assets/js/email-elenco.js"></script>
 
 <?php if ($lastUpdate !== null): ?>
     <p class="card-meta">
