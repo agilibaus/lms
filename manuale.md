@@ -4,7 +4,7 @@
 
 Il manuale completo dell'applicazione: come funziona ogni parte, le scelte fatte e perché.
 Per una presentazione breve e l'installazione basta il [README](README.md). Questo testo era il
-README fino alla versione 1.0.306, ed è aggiornato alla versione 1.0.312.
+README fino alla versione 1.0.306, ed è aggiornato alla versione 1.0.320.
 
 Learning Management System leggero e moderno in PHP puro + MySQL.
 
@@ -1064,6 +1064,13 @@ caselle bianche.
   lungo il bordo sinistro.
 - **I pulsanti bianchi** (`.btn-secondary`) hanno bordo e testo nel colore principale, almeno 3:1
   sullo sfondo: il bordo grigio chiaro di prima non si vedeva.
+
+### Altri ritocchi (31/10)
+
+- In «Certificati» anche «Verifica» ha la sua icona, come «PDF» e «Revoca».
+- In «Report › Video», la tabella di un corso ha colonne con una larghezza minima (12 rem lo
+  studente, 8,5 rem le lezioni) e parole che non si spezzano: con molte lezioni scorre di lato
+  dentro il suo riquadro, invece di stringere le colonne fino a far uscire i titoli.
 
 ## Comandi e collegamenti: come si riconoscono
 
@@ -2257,6 +2264,25 @@ proprio browser continua a vederlo crescere, qualunque misura sia scelta qui.
 > È il genere di cosa che si vede solo misurando: l'accessibilità è stata eseguita una volta
 > per ogni misura e una per ogni livello di arrotondamento.
 
+
+### Un colore scritto a mano copre la tavolozza (31/10)
+
+Sotto le quattro tavolozze ci sono due campi facoltativi, «Colore principale» e «Colore del
+testo». Compilati, **sostituiscono** il colore principale (e le sue sfumature) o quello del
+testo **di qualunque tavolozza**: la tavolozza scelta si salva, ma di lei si vede poco. Per
+questo, quando uno dei due campi è compilato, sopra le tavolozze compare un avviso: «Il campo
+«Colore principale» più sotto (`#…`), decide il colore di pulsanti, collegamenti e voci
+evidenziate, qualunque tavolozza tu scelga. Per usare il colore della tavolozza, svuota il campo
+e salva.» Se il colore viene dal file `.env` (riga `THEME_PRIMARY` o `THEME_TEXT_COLOR`), il
+campo nel pannello è vuoto ma il colore vale lo stesso: l'avviso indica la riga da togliere.
+
+I testi di «Aspetto» non si rivolgono a nessuno (31/10): niente «vostro», «Lascia vuoto»,
+«ne scegli uno».
+
+**Al telefono** le sezioni di «Aspetto» (Colori, Caratteri, Forma e misura, Struttura,
+Ritocchi, Testi) si aprono e si chiudono dal loro titolo, e la pagina parte chiusa
+(`aspetto.js`); «Salva» resta in fondo allo schermo. Al computer è tutto aperto, come prima.
+
 ## I moduli da compilare: una misura sola
 
 Nel progetto convivono **tre famiglie di moduli**, nate in momenti diversi: `.form` nel
@@ -3049,6 +3075,23 @@ Le tre email degli incontri dal vivo di prima (invito, cambio di orario, annulla
 nello stesso elenco e tengono le chiavi di prima (`LIVE_*`): i testi già salvati restano. Il
 promemoria, nuovo, ha le sue (`EMAIL_PROMEMORIA_*`). La vecchia pagina `/admin/settings/inviti` porta al
 gruppo «Incontri dal vivo».
+
+### Com'è fatta la pagina (31/10)
+
+**Al computer** la pagina ha due colonne: a sinistra l'elenco di tutte le voci (prima
+«Organizzazione e mittente» e «Segnaposto comuni», poi le email per gruppi), a destra la voce
+aperta, con il suo titolo e il suo modulo. La pagina principale apre «Organizzazione e mittente».
+L'elenco resta in vista mentre si scorre, alto al massimo lo spazio dello schermo, con la voce
+aperta evidenziata; aprendo una voce fuori vista l'elenco scorre fino a lei
+(`email-elenco.js`), senza muovere la pagina. La barra di scorrimento dell'elenco è sottile e
+chiara.
+
+**Al telefono** la pagina principale è l'elenco, e ogni voce si apre nella sua pagina, con il
+suo titolo e il ritorno a «Messaggi email».
+
+Ogni voce ha il suo indirizzo, `/admin/settings/email/voce/{voce}` (per esempio `verifica`,
+`incontro_invito`, `mittente`, `segnaposto`); una voce che non esiste dà 404. Dopo «Salva» e
+«Manda una prova a me» si torna sulla pagina di quella voce (campo `pagina`).
 
 ### La coda delle email (30/10)
 
