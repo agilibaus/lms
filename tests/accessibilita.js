@@ -1870,6 +1870,32 @@ EXTRA['Catalogo'] = async (page, nome) => {
     check(nome + ': le descrizioni lunghe sono tagliate, e «Leggi tutto» le apre, vicino al testo', esito.problemi.length === 0, esito.problemi);
     check(nome + ': c\'è almeno una descrizione lunga da provare', esito.lunghe > 0,
         ['nessuna scheda con «Leggi tutto»: la prova qui sopra non ha visto niente']);
+
+    // Il blocco finale in fondo (06/11, variante B): nelle schede della
+    // stessa riga, con descrizioni di lunghezza diversa, i pulsanti finiscono
+    // alla stessa altezza, e il blocco resta a 22 px almeno dal testo sopra.
+    const righe = await page.evaluate(() => {
+        const perRiga = {};
+        document.querySelectorAll('.catalog-card').forEach((c) => {
+            const b = c.querySelector('.catalogo-fondo .btn-primary');
+            const f = c.querySelector('.catalogo-fondo');
+            if (!b || !f) return;
+            const sopra = f.previousElementSibling.getBoundingClientRect().bottom;
+            const riga = Math.round(c.getBoundingClientRect().top);
+            (perRiga[riga] = perRiga[riga] || []).push({ fondo: Math.round(b.getBoundingClientRect().bottom), stacco: Math.round(f.querySelector(':scope > *').getBoundingClientRect().top - sopra) });
+        });
+        return Object.values(perRiga);
+    });
+    // Al telefono le schede stanno una per riga: li' non c'e' niente da
+    // allineare, e il controllo vale da due schede per riga in su.
+    const piene = righe.filter((r) => r.length > 1);
+    const largo = await page.evaluate(() => innerWidth >= 700);
+    if (largo) {
+        check(nome + ': nella stessa riga i pulsanti delle schede finiscono alla stessa altezza',
+            piene.length > 0 && piene.every((r) => r.every((x) => Math.abs(x.fondo - r[0].fondo) <= 1)), [JSON.stringify(righe)]);
+    }
+    check(nome + ': il blocco finale sta ad almeno 22 px dal testo sopra',
+        righe.flat().every((x) => x.stacco >= 21), [JSON.stringify(righe)]);
 };
 
 // E la pagina «Domande» dell'esperto: domanda e risposta, in attesa e

@@ -659,6 +659,34 @@ h3 { font-size: 1.05rem; }
     margin-bottom: 0;
 }
 
+/* Il blocco finale in fondo (06/11, variante B): la scheda e' una colonna, e
+   numero di lezioni o prezzo con il pulsante scendono insieme in fondo, alla
+   stessa altezza nelle schede della stessa riga. La distanza minima dal testo
+   sopra e' quella di prima, 1,4 rem: ora la tiene il blocco, non la riga
+   delle lezioni. Al telefono, una scheda per riga, non cambia niente. */
+.catalog-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.catalog-card > .catalogo-fondo {
+    margin-top: auto;
+    padding-top: 1.4rem;
+}
+
+/* In una colonna flessibile i margini non si fondono piu': la descrizione
+   perderebbe i suoi 0,2 rem sopra e 0,9 rem sotto in aggiunta agli spazi
+   della testata e del blocco finale. Azzerati, le distanze restano quelle di
+   prima, al pixel (8 px dalla testata, 22 px dal blocco finale). */
+.catalog-card > .card-meta,
+.catalog-card .catalogo-estratto {
+    margin-top: 0;
+}
+
+.catalog-card > .card-meta {
+    margin-bottom: 0;
+}
+
 /* Copertina nelle schede del catalogo: stesso rapporto delle card dei corsi,
    cosi' le due pagine si somigliano. */
 .catalog-card-cover {
@@ -701,7 +729,7 @@ h3 { font-size: 1.05rem; }
 }
 
 .catalog-card .catalogo-lezioni {
-    margin-top: 1.4rem;
+    margin-top: 0;
 }
 
 /* Il prezzo di un corso a pagamento (06/11, variante B ridotta): al posto del
@@ -713,7 +741,7 @@ h3 { font-size: 1.05rem; }
 }
 
 .catalog-card .catalogo-prezzo {
-    margin: 1.4rem 0 0;
+    margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--color-text);

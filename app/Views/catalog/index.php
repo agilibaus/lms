@@ -76,6 +76,11 @@ use App\Models\EnrollmentRequestModel;
                     </div>
                 <?php endif; ?>
 
+                <?php /* Il blocco finale (06/11, variante B): numero di lezioni o
+                         prezzo, e il pulsante, in fondo alla scheda. Cosi' nella
+                         stessa riga si allineano anche con descrizioni ed
+                         etichette di lunghezza diversa. */ ?>
+                <div class="catalogo-fondo">
                 <?php if ($pagato): ?>
                     <?php /* Corso a pagamento (06/11, variante B ridotta): il prezzo
                              in evidenza al posto delle lezioni, e il pulsante che
@@ -127,6 +132,7 @@ use App\Models\EnrollmentRequestModel;
                     </form>
                 <?php endif; ?>
                 <?php endif; ?>
+                </div>
             </section>
         <?php endforeach; ?>
     </div>
