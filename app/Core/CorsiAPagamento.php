@@ -31,12 +31,42 @@ final class CorsiAPagamento
     /** '1' acceso; assente o qualunque altro valore, spento. */
     public const KEY = 'PAYMENTS_ENABLED';
 
+    /**
+     * La modalita' di prova (06/11): accesa, si accettano solo i pagamenti di
+     * prova di Stripe; spenta, solo quelli veri. '0' spenta; assente o
+     * qualunque altro valore, accesa: si comincia provando.
+     */
+    public const KEY_PROVA = 'PAYMENTS_TEST_MODE';
+
+    /** La chiave degli avvisi di Stripe (whsec_...): non torna mai al browser. */
+    public const KEY_SEGRETO = 'STRIPE_WEBHOOK_SECRET';
+
+    /** L'indirizzo a cui Stripe manda gli avvisi. */
+    public const INDIRIZZO_AVVISI = '/stripe/avvisi';
+
     /** Il prezzo piu' alto accettato, in centesimi: 99.999,99 €. */
     public const PREZZO_MASSIMO = 9_999_999;
 
     public static function attivi(): bool
     {
         return Settings::get(self::KEY, '0') === '1';
+    }
+
+    public static function inProva(): bool
+    {
+        return Settings::get(self::KEY_PROVA, '1') !== '0';
+    }
+
+    /**
+     * L'indirizzo del pulsante «Paga e iscriviti»: il link di pagamento del
+     * corso con il numero dello studente, da cui l'avviso di Stripe lo
+     * riconosce, e la sua email gia' scritta (06/11).
+     */
+    public static function linkPerStudente(string $link, int $userId, string $email): string
+    {
+        $parametri = http_build_query(['client_reference_id' => (string) $userId, 'prefilled_email' => $email]);
+
+        return $link . (str_contains($link, '?') ? '&' : '?') . $parametri;
     }
 
     /**

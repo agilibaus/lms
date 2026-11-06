@@ -231,6 +231,25 @@ class Mailer
      * Una domanda nuova di uno studente (07/10). Con il testo intero, cosi'
      * si capisce dall'email se e' urgente.
      */
+    /** Un pagamento di Stripe che non ha iscritto nessuno, all'Amministratore (06/11). */
+    public static function pagamentoNonRiuscito(
+        string $email,
+        string $name,
+        string $courseTitle,
+        string $chi,
+        string $importo,
+        string $motivo,
+        string $link
+    ): Message {
+        return Modelli::messaggio('pagamento_non_riuscito', $email, $name, [
+            '{corso}' => $courseTitle,
+            '{studente}' => $chi,
+            '{importo}' => $importo,
+            '{motivo}' => $motivo,
+            '{link}' => $link,
+        ]);
+    }
+
     public static function newQuestion(
         string $email,
         string $name,

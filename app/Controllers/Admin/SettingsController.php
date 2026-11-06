@@ -24,7 +24,9 @@ use App\Core\Settings;
 use App\Core\Welcome;
 use App\Core\Theme;
 use App\Core\Versione;
+use App\Core\Url;
 use App\Core\View;
+use App\Models\PaymentModel;
 
 /**
  * Configurazione di posta elettronica e Google Meet dal pannello.
@@ -790,10 +792,21 @@ class SettingsController extends AdminController
     {
         Auth::requirePermission('settings.manage');
 
+        // I pagamenti ricevuti (06/11, variante A): sotto le impostazioni,
+        // filtrabili per corso.
+        $corso = (int) ($_GET['corso'] ?? 0);
+
         View::render('admin/settings/pagamenti', [
             'pageTitle' => 'Pagamenti',
             'attivi' => CorsiAPagamento::attivi(),
+            'prova' => CorsiAPagamento::inProva(),
+            // La chiave non torna mai al browser: si dice solo se c'e'.
+            'haChiave' => (string) Settings::get(CorsiAPagamento::KEY_SEGRETO, '') !== '',
+            'indirizzoAvvisi' => Url::to(CorsiAPagamento::INDIRIZZO_AVVISI),
             'lastUpdate' => Settings::lastUpdate(Settings::PAYMENT_KEYS),
+            'pagamenti' => PaymentModel::elenco($corso > 0 ? $corso : null),
+            'corsiPagati' => PaymentModel::corsi(),
+            'corsoScelto' => $corso,
         ]);
     }
 
@@ -801,7 +814,22 @@ class SettingsController extends AdminController
     {
         Auth::requirePermission('settings.manage');
 
-        Settings::set(CorsiAPagamento::KEY, ($_POST[CorsiAPagamento::KEY] ?? '0') === '1' ? '1' : '0', Auth::id());
+        $userId = Auth::id();
+        Settings::set(CorsiAPagamento::KEY, ($_POST[CorsiAPagamento::KEY] ?? '0') === '1' ? '1' : '0', $userId);
+        Settings::set(CorsiAPagamento::KEY_PROVA, ($_POST[CorsiAPagamento::KEY_PROVA] ?? '0') === '1' ? '1' : '0', $userId);
+
+        // La chiave si tocca solo se e' stato scritto qualcosa, come per Bunny.
+        $chiave = trim((string) ($_POST[CorsiAPagamento::KEY_SEGRETO] ?? ''));
+
+        if (($_POST['cancella_chiave'] ?? '') === '1') {
+            Settings::set(CorsiAPagamento::KEY_SEGRETO, null, $userId);
+        } elseif ($chiave !== '') {
+            if (!str_starts_with($chiave, 'whsec_')) {
+                $this->fail('La chiave degli avvisi comincia con «whsec_»: si copia da Stripe, nella pagina dell’endpoint degli avvisi.', self::PAGAMENTI_PAGE);
+            }
+
+            Settings::set(CorsiAPagamento::KEY_SEGRETO, $chiave, $userId);
+        }
 
         $this->success('Impostazioni dei pagamenti salvate.', self::PAGAMENTI_PAGE);
     }

@@ -6,7 +6,7 @@ namespace App\Core;
 
 class Router
 {
-    /** @var array<int, array{method: string, regex: string, handler: array}> */
+    /** @var array<int, array{method: string, regex: string, handler: array, esterna: bool}> */
     private array $routes = [];
 
     public function get(string $pattern, array $handler): void
@@ -19,12 +19,24 @@ class Router
         $this->add('POST', $pattern, $handler);
     }
 
-    private function add(string $method, string $pattern, array $handler): void
+    /**
+     * Una POST che arriva da un servizio esterno, non da un modulo della
+     * piattaforma (06/11, gli avvisi di Stripe): niente token CSRF, che il
+     * servizio non ha, e il corpo non e' un modulo (JSON). Chi la riceve
+     * deve verificarne da se' la provenienza: per Stripe, la firma.
+     */
+    public function postEsterna(string $pattern, array $handler): void
+    {
+        $this->add('POST', $pattern, $handler, true);
+    }
+
+    private function add(string $method, string $pattern, array $handler, bool $esterna = false): void
     {
         $this->routes[] = [
             'method' => $method,
             'regex' => $this->toRegex($pattern),
             'handler' => $handler,
+            'esterna' => $esterna,
         ];
     }
 
@@ -67,7 +79,7 @@ class Router
                 // quindi manca anche il token e il controllo qui sotto
                 // direbbe "sessione scaduta" a chi ha solo caricato un file
                 // troppo grande. Va riconosciuto prima.
-                if ($method === 'POST' && $_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+                if ($method === 'POST' && !$route['esterna'] && $_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
                     http_response_code(413);
                     echo 'Il file inviato supera il limite del server, attualmente '
                         . htmlspecialchars(Upload::humanIniLimit())
@@ -77,7 +89,7 @@ class Router
                     return;
                 }
 
-                if ($method === 'POST' && !Csrf::isValid($_POST[Csrf::FIELD] ?? null)) {
+                if ($method === 'POST' && !$route['esterna'] && !Csrf::isValid($_POST[Csrf::FIELD] ?? null)) {
                     // Token assente o non valido: la richiesta non proviene da un
                     // form dell'applicazione (o la sessione e' scaduta).
                     http_response_code(419);

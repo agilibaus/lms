@@ -704,6 +704,21 @@ h3 { font-size: 1.05rem; }
     margin-top: 1.4rem;
 }
 
+/* Il prezzo di un corso a pagamento (06/11, variante B ridotta): al posto del
+   numero delle lezioni, con la stessa distanza dal testo, e in evidenza. */
+/* I nomi degli eventi di Stripe sono parole lunghe senza spazi: a 320 px
+   «checkout.session.async_payment_succeeded» allargava la pagina di 58 px. */
+.stripe-eventi {
+    overflow-wrap: anywhere;
+}
+
+.catalog-card .catalogo-prezzo {
+    margin: 1.4rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
 .catalogo-leggi > summary {
     display: inline-flex;
     align-items: center;

@@ -32,6 +32,7 @@ use App\Controllers\QuizController;
 use App\Controllers\RegistrationController;
 use App\Controllers\ReportController;
 use App\Controllers\VideoProgressController;
+use App\Controllers\StripeController;
 
 /** @var App\Core\Router $router */
 
@@ -311,6 +312,10 @@ $router->get('/admin/settings/bunny', [SettingsController::class, 'bunny']);
 $router->post('/admin/settings/bunny', [SettingsController::class, 'updateBunny']);
 $router->get('/admin/settings/pagamenti', [SettingsController::class, 'pagamenti']);
 $router->post('/admin/settings/pagamenti', [SettingsController::class, 'updatePagamenti']);
+
+// Gli avvisi di Stripe (06/11): da Stripe, senza token CSRF; la provenienza
+// la garantisce la firma (`AvvisoStripe`).
+$router->postEsterna('/stripe/avvisi', [StripeController::class, 'avvisi']);
 $router->get('/admin/settings/meet', [SettingsController::class, 'meet']);
 $router->post('/admin/settings/meet', [SettingsController::class, 'updateMeet']);
 $router->post('/admin/settings/meet/chiave/elimina', [SettingsController::class, 'deleteMeetKey']);

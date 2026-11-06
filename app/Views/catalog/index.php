@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
+use App\Core\CorsiAPagamento;
 use App\Core\CourseCover;
 use App\Core\Csrf;
 use App\Core\TestoBreve;
@@ -44,11 +46,14 @@ use App\Models\EnrollmentRequestModel;
                     <?php endif; ?>
                 </div>
 
+                <?php $pagato = $course['enrollment_mode'] === CorsiAPagamento::MODALITA; ?>
                 <div class="card-head">
                     <h2><?= htmlspecialchars((string) $course['title']) ?></h2>
-                    <span class="badge <?= $course['enrollment_mode'] === 'open' ? 'badge-success' : '' ?>">
-                        <?= htmlspecialchars(CourseModel::enrollmentLabel($course['enrollment_mode'])) ?>
-                    </span>
+                    <?php if (!$pagato): ?>
+                        <span class="badge <?= $course['enrollment_mode'] === 'open' ? 'badge-success' : '' ?>">
+                            <?= htmlspecialchars(CourseModel::enrollmentLabel($course['enrollment_mode'])) ?>
+                        </span>
+                    <?php endif; ?>
                 </div>
 
                 <?php $descrizione = (string) ($course['description'] ?? ''); ?>
@@ -70,6 +75,18 @@ use App\Models\EnrollmentRequestModel;
                         </details>
                     </div>
                 <?php endif; ?>
+
+                <?php if ($pagato): ?>
+                    <?php /* Corso a pagamento (06/11, variante B ridotta): il prezzo
+                             in evidenza al posto delle lezioni, e il pulsante che
+                             porta a Stripe con il numero dello studente e la sua
+                             email. Niente etichetta, niente frase sotto. */ ?>
+                    <p class="catalogo-prezzo"><?= htmlspecialchars(CorsiAPagamento::prezzo((int) $course['price_cents'])) ?></p>
+                    <div class="form-actions">
+                        <a class="btn btn-primary"
+                           href="<?= htmlspecialchars(CorsiAPagamento::linkPerStudente((string) $course['payment_link_url'], (int) Auth::id(), (string) Auth::email())) ?>">Paga e iscriviti</a>
+                    </div>
+                <?php else: ?>
 
                 <p class="card-meta catalogo-lezioni"><?= (int) $course['lesson_count'] ?> lezioni</p>
 
@@ -108,6 +125,7 @@ use App\Models\EnrollmentRequestModel;
                             </button>
                         </div>
                     </form>
+                <?php endif; ?>
                 <?php endif; ?>
             </section>
         <?php endforeach; ?>

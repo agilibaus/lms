@@ -118,12 +118,15 @@ class Settings
      */
     public const PAYMENT_KEYS = [
         'PAYMENTS_ENABLED',
+        'PAYMENTS_TEST_MODE',
+        'STRIPE_WEBHOOK_SECRET',
     ];
 
     /** Chiavi da non rimandare mai al browser. */
     public const SECRET_KEYS = [
         'MAIL_PASSWORD',
         'BUNNY_TOKEN_KEY',
+        'STRIPE_WEBHOOK_SECRET',
     ];
 
     public static function isWritable(string $key): bool

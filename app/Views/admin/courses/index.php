@@ -95,7 +95,9 @@ $courses = $ordine->applica($courses);
                     <span class="badge"
                           title="<?= match ($mode) {
                               'closed' => 'Non compare nel catalogo: iscrive solo lo staff, o l\'assegnazione a un gruppo',
-                              'paid' => 'Non compare nel catalogo: lo iscrive solo l\'Amministratore, a mano',
+                              'paid' => \App\Core\CorsiAPagamento::attivi()
+                                  ? 'Compare nel catalogo degli studenti, con il prezzo, se è pubblicato'
+                                  : 'Non compare nel catalogo: i corsi a pagamento sono spenti in Impostazioni › Pagamenti',
                               default => 'Compare nel catalogo degli studenti',
                           } ?>">
                         <?= htmlspecialchars(CourseModel::enrollmentLabel($mode)) ?>

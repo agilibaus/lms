@@ -392,6 +392,37 @@ final class Modelli
                     '{titolo}' => 'Un’app per dividere le faccende di casa', $link => $esempioLink,
                 ],
             ],
+            'pagamento_non_riuscito' => [
+                'gruppo' => 'iscrizioni',
+                'titolo' => 'Pagamento da controllare',
+                'quando' => 'All’Amministratore, quando arriva da Stripe un pagamento che non iscrive nessuno '
+                    . '(studente o corso non riconosciuti, importo diverso, iscrizione che c’era già).',
+                'oggetto' => 'EMAIL_PAGAMENTO_OGGETTO',
+                'testo' => 'EMAIL_PAGAMENTO_TESTO',
+                'predefinito' => [
+                    'Pagamento da controllare: {corso}',
+                    "Ciao {nome},\n\n"
+                    . "è arrivato da Stripe un pagamento che non ha iscritto nessuno.\n\n"
+                    . "Corso: {corso}\n"
+                    . "Chi ha pagato: {studente}\n"
+                    . "Importo: {importo}\n"
+                    . "Motivo: {motivo}\n\n"
+                    . "Lo studente va iscritto a mano, o il pagamento rimborsato su Stripe. I pagamenti ricevuti sono qui:\n"
+                    . "{link}",
+                ],
+                'segnaposto' => [
+                    '{corso}' => 'il titolo del corso, o «non riconosciuto»',
+                    '{studente}' => 'nome e cognome, o l’email scritta su Stripe',
+                    '{importo}' => 'quanto è stato pagato',
+                    '{motivo}' => 'perché il pagamento non ha iscritto nessuno',
+                    $link => 'la pagina Pagamenti',
+                ],
+                'obbligatori' => [$link],
+                'esempio' => [
+                    '{corso}' => 'Il corso di esempio', '{studente}' => 'anna.rossi@esempio.invalid', '{importo}' => '49,00 €',
+                    '{motivo}' => 'Studente non riconosciuto: il pagamento non è partito da Pistacchio LMS.', $link => $esempioLink,
+                ],
+            ],
             'incontro_invito' => [
                 'gruppo' => 'incontri',
                 'titolo' => 'Invito all’incontro',

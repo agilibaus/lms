@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Core\CorsiAPagamento;
 use App\Core\Database;
 use App\Core\TestoBreve;
 
@@ -140,6 +141,27 @@ class CourseModel
         return $titolo === false ? null : (string) $titolo;
     }
 
+    /**
+     * Il corso a pagamento con questo identificativo di link (06/11): da qui
+     * l'avviso di Stripe riconosce il corso pagato.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function perIdentificativo(string $identificativo): ?array
+    {
+        if ($identificativo === '') {
+            return null;
+        }
+
+        $stmt = Database::connection()->prepare(
+            "SELECT * FROM courses WHERE payment_link_id = :plink AND enrollment_mode = 'paid' ORDER BY id LIMIT 1"
+        );
+        $stmt->execute(['plink' => $identificativo]);
+        $corso = $stmt->fetch();
+
+        return $corso ?: null;
+    }
+
     /** Se c'e' almeno un corso a pagamento (la riga sotto «Assegna corso»). */
     public static function esisteUnoAPagamento(): bool
     {
@@ -219,6 +241,7 @@ class CourseModel
     {
         $stmt = Database::connection()->prepare(
             "SELECT c.id, c.title, c.description, c.cover_image, c.cover_alt, c.enrollment_mode,
+                    c.price_cents, c.payment_link_url,
                     r.status AS request_status,
                     (SELECT COUNT(*) FROM lessons l
                        INNER JOIN modules m ON m.id = l.module_id
@@ -226,7 +249,10 @@ class CourseModel
              FROM courses c
              LEFT JOIN enrollment_requests r ON r.course_id = c.id AND r.user_id = :user_id_request
              WHERE c.is_published = 1
-               AND c.enrollment_mode IN ('open','request')
+               AND (c.enrollment_mode IN ('open','request')"
+            // I corsi a pagamento (06/11) solo a pagamenti accesi, e con il
+            // link: senza, non c'e' niente da comprare.
+            . (CorsiAPagamento::attivi() ? " OR (c.enrollment_mode = 'paid' AND c.payment_link_url IS NOT NULL AND c.price_cents IS NOT NULL)" : '') . ")
                AND NOT EXISTS (
                    SELECT 1 FROM enrollments e
                    WHERE e.course_id = c.id AND e.user_id = :user_id_enrolled

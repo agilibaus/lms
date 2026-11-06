@@ -81,6 +81,12 @@ $router = new class {
     {
         $this->rotte[] = ['POST', $modello];
     }
+
+    /** Le POST da un servizio esterno (06/11, gli avvisi di Stripe). */
+    public function postEsterna(string $modello, array $gestore): void
+    {
+        $this->rotte[] = ['POST', $modello];
+    }
 };
 
 require __DIR__ . '/../app/routes.php';
