@@ -10,6 +10,7 @@ use App\Core\Ordinamento;
 /** @var array $requests */
 /** @var array $enrollments */
 /** @var array $availableStudents */
+/** @var bool $bozza il corso e' in bozza: nessuno vi e' iscritto (06/11) */
 /** @var bool $canDelete */
 /** @var bool $supervisore il supervisore (30/10): solo i contenuti, niente iscritti, richieste e report */
 $supervisore ??= false;
@@ -131,6 +132,9 @@ $enrollments = $ordineIscritti->applica($enrollments);
         <?php if ($tutor): ?>
             I tuoi studenti in questo corso: si iscrivono dai tuoi gruppi. Le altre iscrizioni e le richieste dal
             catalogo le gestisce l’Amministratore.
+        <?php elseif ($bozza ?? false): ?>
+            Il corso è in bozza: gli studenti si iscrivono quando viene pubblicato. In quel momento vengono iscritti
+            i membri dei gruppi a cui è assegnato.
         <?php else: ?>
             Le iscrizioni possono arrivare anche dai gruppi: assegnando il corso a un gruppo, i membri vengono iscritti qui.
         <?php endif; ?>
@@ -182,7 +186,9 @@ $enrollments = $ordineIscritti->applica($enrollments);
         </div>
     <?php endif; ?>
 
-    <?php if ($availableStudents !== []): ?>
+    <?php if ($bozza ?? false): ?>
+        <?php /* A una bozza non si iscrive nessuno: niente «Iscrivi» (06/11). */ ?>
+    <?php elseif ($availableStudents !== []): ?>
         <form action="/admin/courses/<?= $courseId ?>/enrollments" method="post" class="form form-inline">
             <?= Csrf::field() ?>
             <select name="user_id" aria-label="Studente da iscrivere">

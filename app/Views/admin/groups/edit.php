@@ -67,6 +67,7 @@ $members = $ordineMembri->applica($members);
     <p class="card-meta">
         <?php if ($gestisceTutto): ?>
             Assegnare un corso iscrive tutti i membri del gruppo; chi entra dopo viene iscritto automaticamente.
+            Un corso in bozza li iscrive quando viene pubblicato.
             Rimuovendo il corso le iscrizioni già create restano attive. Ogni corso ha le date di apertura dei
             moduli; con «Date dei moduli» questo gruppo può avere le sue.
         <?php else: ?>

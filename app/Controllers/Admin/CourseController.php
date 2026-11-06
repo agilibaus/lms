@@ -170,6 +170,9 @@ class CourseController extends AdminController
                 static fn (array $u): bool => !in_array((int) $u['id'], $enrolledIds, true)
             )),
             'canDelete' => Auth::can('course.delete'),
+            // Dal database, non dal modulo riproposto: a una bozza non si
+            // iscrive nessuno (06/11).
+            'bozza' => (int) $course['is_published'] === 0,
             // L'admin vede il blocco di ogni tutor del corso, il tutor solo il
             // proprio; chi non ne puo' gestire nessuno, la sezione non la vede.
             'welcomes' => Auth::can('course.welcome') || Auth::can('course.welcome_own')
@@ -210,6 +213,23 @@ class CourseController extends AdminController
 
         $pagamento = $this->pagamentoDaSalvare($data, $modalita, $course, $redirect);
 
+        // Pubblicato o bozza (06/11): il supervisore non lo cambia. Un corso
+        // con iscritti non torna in bozza, perche' una bozza non ha iscritti;
+        // un corso che si pubblica iscrive i membri dei gruppi a cui e'
+        // assegnato.
+        $eraPubblicato = (int) $course['is_published'] === 1;
+        $pubblicato = Auth::hasRole('supervisore') ? $eraPubblicato : $data['is_published'];
+
+        if ($eraPubblicato && !$pubblicato) {
+            $iscritti = EnrollmentModel::quantiNelCorso($id);
+
+            if ($iscritti > 0) {
+                $this->riproponi($data, $id, $redirect, $iscritti === 1
+                    ? 'Il corso ha 1 iscritto: non può tornare in bozza.'
+                    : 'Il corso ha ' . $iscritti . ' iscritti: non può tornare in bozza.');
+            }
+        }
+
         CourseModel::update(
             $id,
             $data['title'],
@@ -217,7 +237,7 @@ class CourseController extends AdminController
             $data['description'],
             // Il supervisore non pubblica: il corso resta com'e' (in bozza,
             // perche' su un pubblicato non arriva).
-            Auth::hasRole('supervisore') ? (bool) $course['is_published'] : $data['is_published'],
+            $pubblicato,
             $modalita,
             $data['objective']
         );
@@ -227,6 +247,17 @@ class CourseController extends AdminController
         }
 
         TreParoleModel::imposta($id, $data['three_words']);
+
+        if (!$eraPubblicato && $pubblicato) {
+            // Le «Iscrizione confermata» le manda bin/avvisi, a scaglioni.
+            $nuovi = EnrollmentModel::iscriviAllaPubblicazione($id);
+
+            if ($nuovi > 0) {
+                $this->success('Corso pubblicato: ' . ($nuovi === 1
+                    ? 'iscritto 1 membro dei gruppi a cui è assegnato.'
+                    : 'iscritti ' . $nuovi . ' membri dei gruppi a cui è assegnato.'), $redirect);
+            }
+        }
 
         $this->success('Corso aggiornato.', $redirect);
     }
@@ -422,6 +453,12 @@ class CourseController extends AdminController
             $this->fail('Utente non trovato.', $redirect);
         }
 
+        // A una bozza non si iscrive nessuno (06/11): e' un corso non ancora
+        // finito. I membri dei gruppi li iscrive la pubblicazione.
+        if ((int) $course['is_published'] === 0) {
+            $this->fail('Il corso è in bozza: gli studenti si iscrivono quando viene pubblicato.', $redirect);
+        }
+
         // L'«Iscrizione confermata» la manda bin/avvisi (12/10).
         EnrollmentModel::enroll($userId, (int) $course['id'], true);
 
@@ -471,6 +508,14 @@ class CourseController extends AdminController
 
         if ($request['status'] !== 'pending') {
             $this->fail('Questa richiesta è già stata valutata.', $redirect);
+        }
+
+        // Una richiesta fatta a corso pubblicato, che nel frattempo e' tornato
+        // in bozza (06/11): si approva quando il corso e' di nuovo pubblicato.
+        $corsoRichiesta = CourseModel::find($courseId);
+
+        if ($approve && $corsoRichiesta !== null && (int) $corsoRichiesta['is_published'] === 0) {
+            $this->fail('Il corso è in bozza: la richiesta si approva quando viene pubblicato.', $redirect);
         }
 
         EnrollmentRequestModel::decide((int) $request['id'], $approve ? 'approved' : 'rejected', (int) Auth::id());

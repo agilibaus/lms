@@ -162,10 +162,13 @@ try {
 
     $inCoda = array_map(static fn ($r) => (string) $r['email'], EnrollmentModel::conferme(500));
     check('fra le conferme da mandare c\'e\' la sua', in_array('anna' . DOMINIO, $inCoda, true));
-    check('non quelle di un corso in bozza: partono quando si pubblica', !array_filter(
-        EnrollmentModel::conferme(500),
-        static fn ($r) => (int) $r['course_id'] === $bozza
-    ));
+    // Dal 06/11 a una bozza non si iscrive nessuno: i membri dei gruppi li
+    // iscrive la pubblicazione, e la conferma parte da li'.
+    $iscrittiBozza = $pdo->prepare('SELECT COUNT(*) FROM enrollments WHERE course_id = :c');
+    $iscrittiBozza->execute(['c' => $bozza]);
+    check('a un corso in bozza non si iscrive nessuno, e non c\'e\' conferma da mandare',
+        (int) $iscrittiBozza->fetchColumn() === 0
+        && !array_filter(EnrollmentModel::conferme(500), static fn ($r) => (int) $r['course_id'] === $bozza));
     check('non quelle di un account disattivato', !in_array('dario' . DOMINIO, $inCoda, true));
 
     // ---------------------------------------------------------------
@@ -209,6 +212,8 @@ try {
 
     check('presa una volta, non si prende la seconda', (static function () use ($pdo, $anna, $bozza): bool {
         $pdo->prepare('UPDATE courses SET is_published = 1 WHERE id = :c')->execute(['c' => $bozza]);
+        // Pubblicato, ci si iscrive (dal 06/11 non prima).
+        EnrollmentModel::enroll($anna, $bozza, true);
         $riga = array_values(array_filter(EnrollmentModel::conferme(500), static fn ($r) => (int) $r['course_id'] === $bozza));
 
         return isset($riga[0]) && EnrollmentModel::prendiConferma((int) $riga[0]['id'])

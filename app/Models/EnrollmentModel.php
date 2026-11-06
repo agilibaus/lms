@@ -61,6 +61,12 @@ class EnrollmentModel
      * Iscrive piu' utenti a piu' corsi (usata quando un corso viene assegnato
      * a un gruppo o quando un utente entra in un gruppo).
      *
+     * Solo ai corsi pubblicati (06/11, Alessandro): una bozza e' un corso non
+     * ancora finito, e nessuno vi e' iscritto. I corsi in bozza fra quelli
+     * passati si saltano, qualunque sia la strada (a mano, gruppo, ingresso
+     * in un gruppo, importazione): i membri dei gruppi a cui la bozza e'
+     * assegnata li iscrive la pubblicazione (`iscriviAllaPubblicazione()`).
+     *
      * @param int[] $userIds
      * @param int[] $courseIds
      * @param bool $conferma come in `enroll()`
@@ -76,8 +82,9 @@ class EnrollmentModel
         // iscritto non riceve una seconda conferma.
         $stmt = Database::connection()->prepare(
             'INSERT IGNORE INTO enrollments (user_id, course_id, confirmation_pending)
-             SELECT u.id, :course_id, IF(:conferma = 1 AND u.invite_pending = 0, 1, 0)
+             SELECT u.id, c.id, IF(:conferma = 1 AND u.invite_pending = 0, 1, 0)
              FROM users u
+             INNER JOIN courses c ON c.id = :course_id AND c.is_published = 1
              WHERE u.id = :user_id'
         );
 
@@ -94,9 +101,36 @@ class EnrollmentModel
     }
 
     /**
+     * Alla pubblicazione di un corso (06/11): iscrive i membri dei gruppi a
+     * cui e' assegnato, con l'«Iscrizione confermata» in coda per
+     * `bin/avvisi`. Torna quanti sono stati iscritti.
+     */
+    public static function iscriviAllaPubblicazione(int $courseId): int
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT DISTINCT gm.user_id
+             FROM group_course_access gca
+             INNER JOIN group_members gm ON gm.group_id = gca.group_id
+             WHERE gca.course_id = :c'
+        );
+        $stmt->execute(['c' => $courseId]);
+
+        return self::enrollMany(array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN)), [$courseId], true);
+    }
+
+    /** Quanti iscritti ha un corso (06/11: un corso con iscritti non torna in bozza). */
+    public static function quantiNelCorso(int $courseId): int
+    {
+        $stmt = Database::connection()->prepare('SELECT COUNT(*) FROM enrollments WHERE course_id = :c');
+        $stmt->execute(['c' => $courseId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * Le «Iscrizione confermata» da mandare: chi e' attivo, studente, non in
-     * coda inviti, in un corso pubblicato. Le altre restano in coda: un
-     * corso in bozza la manda quando si pubblica.
+     * coda inviti, in un corso pubblicato. (Dal 06/11 una bozza non ha
+     * iscritti: il filtro sul corso pubblicato resta come difesa.)
      *
      * @return list<array{id: int, email: string, full_name: string, first_name: ?string, course_id: int, course_title: string}>
      */

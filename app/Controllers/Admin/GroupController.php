@@ -391,10 +391,12 @@ class GroupController extends AdminController
         // gruppo grande non le spedisce tutte insieme da questa pagina (12/10).
         $created = EnrollmentModel::enrollMany(GroupModel::memberIds($groupId), [$courseId], true);
 
+        // Una bozza non iscrive nessuno: i membri li iscrive la pubblicazione
+        // (06/11).
         $this->success(
-            $created > 0
-                ? 'Corso assegnato: iscritti ' . $created . ' membri.'
-                : 'Corso assegnato.',
+            (int) $course['is_published'] === 0
+                ? 'Corso assegnato. È in bozza: i membri saranno iscritti quando viene pubblicato.'
+                : ($created > 0 ? 'Corso assegnato: iscritti ' . $created . ' membri.' : 'Corso assegnato.'),
             $redirect
         );
     }
