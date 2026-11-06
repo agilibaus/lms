@@ -82,7 +82,7 @@ $conPagamento = CorsiAPagamento::nelModulo($admin, $mode);
             Chiusa — iscrive solo lo staff, o l'assegnazione a un gruppo
         </option>
         <option value="request" <?= $mode === 'request' ? 'selected' : '' ?>>
-            Su richiesta — lo studente chiede, un tutor approva
+            Su richiesta — lo studente chiede, l'Amministratore approva
         </option>
         <option value="open" <?= $mode === 'open' ? 'selected' : '' ?>>
             Aperta — lo studente si iscrive da solo dal catalogo
