@@ -1708,6 +1708,23 @@ EXTRA['Corso con obiettivi, da staff (semina)'] = async (page, nome) => {
         // Quattro moduli nel corso A della semina, dal 26/10.
         && stato.moduli.length === 4 && stato.moduli.every(Boolean), [JSON.stringify(stato)]);
     check(nome + ': tutti i moduli aperti, senza etichette né «Riprendi»', stato.gerarchia === 0, [JSON.stringify(stato)]);
+
+    // Il capolettera della descrizione (06/11): la descrizione del corso A e'
+    // di una riga, e la lettera, alta tre, finiva sopra il riquadro
+    // dell'obiettivo. Il primo paragrafo deve contenerla: alto almeno tre
+    // righe, e il riquadro dopo comincia sotto.
+    const cap = await page.evaluate(() => {
+        const p = document.querySelector('.course-description > p:first-child');
+        const ob = document.querySelector('section.obiettivo-corso');
+        if (!p || !ob) {
+            return null;
+        }
+        const riga = parseFloat(getComputedStyle(p).lineHeight);
+        const r = p.getBoundingClientRect();
+        return { alto: Math.round(r.height), riga: Math.round(riga), fondo: Math.round(r.bottom), obiettivo: Math.round(ob.getBoundingClientRect().top) };
+    });
+    check(nome + ': il capolettera della descrizione sta nel suo paragrafo, sopra l\'obiettivo',
+        cap !== null && cap.alto >= 2.5 * cap.riga && cap.fondo <= cap.obiettivo, [JSON.stringify(cap)]);
 };
 
 // E la descrizione del corso (10/10), nella creazione e nella modifica, e

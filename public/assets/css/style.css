@@ -5064,7 +5064,10 @@ fieldset.checkbox-group legend {
 
 /* Il primo paragrafo contiene il suo capolettera, qualunque cosa venga
    dopo (dove c'e' `initial-letter` la lettera non e' un float, e `clear`
-   da solo non basta). */
+   da solo non basta). Anche nella descrizione del corso (06/11): con una
+   descrizione di una riga la lettera, alta tre, finiva sopra il riquadro
+   dell'obiettivo. */
+.course-description > p:first-child,
 .lesson-content:not(.mce-content-body) > p:first-child {
     display: flow-root;
 }
