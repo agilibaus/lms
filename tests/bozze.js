@@ -196,7 +196,7 @@ async function vedeIlCorso(page, corso, titolo) {
         check('… ne\' la lezione', r.status() >= 400, [String(r.status())]);
 
         // --- gli incontri del gruppo su un modulo della bozza ---------------------
-        const incontro = Number(php('$pdo->prepare("INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, created_by) VALUES (?, ?, \'[prova-bozze] incontro\', NOW() - INTERVAL 3 DAY, NOW() + INTERVAL 1 DAY, ?)")'
+        const incontro = Number(php('$pdo->prepare("INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, meet_link, created_by) VALUES (?, ?, \'[prova-bozze] incontro\', NOW() - INTERVAL 3 DAY, NOW() + INTERVAL 1 DAY, \'https://meet.google.com/abc-defg-hij\', ?)")'
             + '->execute([(int) $argv[1], (int) $argv[2], (int) $argv[3]]); echo (int) $pdo->lastInsertId();', C.modulo, A.gruppo, A.tutor).trim());
         const attesiIncontro = () => php('echo count(App\\Models\\LiveSessionModel::participants((int) $argv[1]));', incontro).trim();
         // Cominciato tre giorni fa e non ancora finito: e' il «prossimo» del
@@ -219,6 +219,24 @@ async function vedeIlCorso(page, corso, titolo) {
         inc = await vedeIncontro(tutor);
         check('il tutor del gruppo lo vede: Sessioni live, pagina del gruppo, e lo apre', inc.live && inc.gruppo && inc.pagina === 200, [JSON.stringify(inc)]);
 
+        // «Invia inviti» con il corso in bozza (06/11, variante A).
+        const pulsanteInviti = async () => {
+            await tutor.goto(BASE + '/live/' + incontro);
+            return tutor.evaluate(() => {
+                const b = document.querySelector('form[action$="/inviti"] button');
+                const h = document.getElementById('inviti-bozza');
+                return b ? { spento: b.disabled, descritto: b.getAttribute('aria-describedby'), frase: h ? h.textContent.trim() : null } : null;
+            });
+        };
+        let pul = await pulsanteInviti();
+        check('corso in bozza: «Invia inviti» spento, con la frase che lo dice',
+            pul !== null && pul.spento && pul.descritto === 'inviti-bozza' && pul.frase === 'Il corso è in bozza: gli inviti si mandano quando viene pubblicato.', [JSON.stringify(pul)]);
+        await posta(tutor, '/live/' + incontro + '/inviti', [], '/live/' + incontro);
+        testo = await avviso(tutor, '/live/' + incontro);
+        check('… e il server rifiuta: niente segnato come mandato',
+            testo === 'Il corso è in bozza: gli inviti si mandano quando viene pubblicato.'
+            && conta('SELECT COUNT(*) FROM live_sessions WHERE id = ? AND invites_sent_at IS NOT NULL', incontro) === 0, [testo]);
+
         // --- 3. la pubblicazione iscrive i membri ----------------------------------
         testo = await pubblica(admin, C.bozza, true);
         const attesi = new Set([...membri, C.studenteNuovo]).size;
@@ -235,6 +253,11 @@ async function vedeIlCorso(page, corso, titolo) {
         check('controprova: pubblicato, lo studente vede l\'incontro del gruppo ovunque e lo apre',
             inc.live && inc.agenda && inc.gruppo && inc.pagina === 200, [JSON.stringify(inc)]);
         check('… ed e\' fra gli attesi', Number(attesiIncontro()) === membri.length + 1, [attesiIncontro(), String(membri.length + 1)]);
+        pul = await pulsanteInviti();
+        check('controprova: pubblicato, «Invia inviti» e\' acceso, senza la frase', pul !== null && !pul.spento && pul.frase === null, [JSON.stringify(pul)]);
+        await posta(tutor, '/live/' + incontro + '/inviti', [], '/live/' + incontro);
+        check('… e gli inviti partono', conta('SELECT COUNT(*) FROM live_sessions WHERE id = ? AND invites_sent_at IS NOT NULL', incontro) === 1);
+        sql('DELETE FROM email_queue WHERE subject LIKE ?', '%[prova-bozze]%');
 
         // --- 4. con iscritti non torna in bozza ---------------------------------------
         testo = await pubblica(admin, C.bozza, false);

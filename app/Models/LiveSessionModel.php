@@ -87,6 +87,7 @@ class LiveSessionModel
         'SELECT ls.*,
                 m.title AS module_title, m.course_id,
                 c.title AS course_title,
+                c.is_published AS course_published,
                 g.name AS group_name,
                 u.full_name AS created_by_name,
                 ' . self::FINESTRA_SELECT . '
@@ -95,6 +96,18 @@ class LiveSessionModel
          LEFT JOIN courses c ON c.id = m.course_id
          LEFT JOIN `groups` g ON g.id = ls.group_id
          LEFT JOIN users u ON u.id = ls.created_by';
+
+    /**
+     * Se l'incontro e' su un modulo di un corso in bozza (06/11): non e'
+     * ancora di nessuno studente, e gli inviti non si mandano. Senza modulo
+     * non c'e' un corso, quindi no. Vuole una riga di `BASE_SELECT`.
+     *
+     * @param array<string, mixed> $session
+     */
+    public static function inBozza(array $session): bool
+    {
+        return isset($session['course_published']) && (int) $session['course_published'] === 0;
+    }
 
     public static function find(int $id): ?array
     {

@@ -12,6 +12,7 @@ use App\Core\Icona;
 /** @var array $participants */
 /** @var array<int, array{joined_at: string|null, source: string}> $attendance */
 /** @var bool $hasJoined */
+/** @var bool $inBozza il corso dell'incontro e' in bozza: niente inviti (06/11) */
 
 $id = (int) $session['id'];
 $startsAt = new DateTimeImmutable((string) $session['starts_at']);
@@ -120,8 +121,18 @@ $apribile = (bool) ($session['joinable'] ?? false);
         <form action="/live/<?= $id ?>/inviti" method="post"
               onsubmit="return confirm('Inviare l’invito a tutti i partecipanti attesi?');">
             <?= Csrf::field() ?>
-            <button type="submit" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Invia inviti</button>
+            <?php if ($inBozza ?? false): ?>
+                <?php /* Corso in bozza (06/11, variante A): il pulsante spento e
+                         la ragione sotto; il server rifiuta comunque. */ ?>
+                <button type="submit" class="btn btn-secondary btn-con-icona" disabled
+                        aria-describedby="inviti-bozza"><?= Icona::svg('send') ?>Invia inviti</button>
+            <?php else: ?>
+                <button type="submit" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Invia inviti</button>
+            <?php endif; ?>
         </form>
+        <?php if ($inBozza ?? false): ?>
+            <p class="form-hint" id="inviti-bozza">Il corso è in bozza: gli inviti si mandano quando viene pubblicato.</p>
+        <?php endif; ?>
     </section>
 <?php endif; ?>
 

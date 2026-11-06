@@ -84,6 +84,8 @@ class LiveSessionController
             'participants' => $vedePresenze ? LiveSessionModel::participants((int) $session['id']) : [],
             'attendance' => $vedePresenze ? LiveSessionAttendanceModel::forSession((int) $session['id']) : [],
             'hasJoined' => LiveSessionAttendanceModel::hasJoined((int) $session['id'], (int) Auth::id()),
+            // Il corso dell'incontro e' in bozza: «Invia inviti» spento (06/11).
+            'inBozza' => LiveSessionModel::inBozza($session),
         ]);
     }
 
@@ -295,6 +297,12 @@ class LiveSessionController
 
         if ($this->isOver($session)) {
             $this->fail('La sessione è già conclusa.', '/live/' . $id);
+        }
+
+        // Su un modulo di un corso in bozza l'incontro non e' ancora di
+        // nessuno studente (06/11): si invita quando il corso e' pubblicato.
+        if (LiveSessionModel::inBozza($session)) {
+            $this->fail('Il corso è in bozza: gli inviti si mandano quando viene pubblicato.', '/live/' . $id);
         }
 
         $esito = LiveSessionNotifier::invite($session);
