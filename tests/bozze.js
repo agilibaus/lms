@@ -10,6 +10,9 @@
  *      assegnata, con la conferma in coda;
  *   4. un corso con iscritti non torna in bozza.
  *
+ * Gli incontri (06/11): un incontro del gruppo su un modulo di una bozza non
+ * e' dei membri finche' il corso non e' pubblicato. Il tutor lo vede.
+ *
  * E lo studente del gruppo, finche' il corso e' in bozza, non lo vede. Ogni
  * rifiuto ha la sua controprova.
  *
@@ -192,6 +195,30 @@ async function vedeIlCorso(page, corso, titolo) {
         let r = await studente.goto(BASE + '/lessons/' + C.lezione);
         check('… ne\' la lezione', r.status() >= 400, [String(r.status())]);
 
+        // --- gli incontri del gruppo su un modulo della bozza ---------------------
+        const incontro = Number(php('$pdo->prepare("INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, created_by) VALUES (?, ?, \'[prova-bozze] incontro\', NOW() - INTERVAL 3 DAY, NOW() + INTERVAL 1 DAY, ?)")'
+            + '->execute([(int) $argv[1], (int) $argv[2], (int) $argv[3]]); echo (int) $pdo->lastInsertId();', C.modulo, A.gruppo, A.tutor).trim());
+        const attesiIncontro = () => php('echo count(App\\Models\\LiveSessionModel::participants((int) $argv[1]));', incontro).trim();
+        // Cominciato tre giorni fa e non ancora finito: e' il «prossimo» del
+        // gruppo, prima degli incontri della semina.
+        const vedeIncontro = async (page) => {
+            const out = {};
+            for (const [n, u] of [['live', '/live'], ['agenda', '/agenda'], ['gruppo', '/gruppi/' + A.gruppo]]) {
+                await page.goto(BASE + u);
+                out[n] = (await page.content()).includes('[prova-bozze] incontro');
+            }
+            const r = await page.goto(BASE + '/live/' + incontro);
+            out.pagina = r ? r.status() : 0;
+            return out;
+        };
+        let inc = await vedeIncontro(studente);
+        check('l\'incontro del gruppo su un modulo della bozza: lo studente del gruppo non lo vede (Sessioni live, Agenda, gruppo) e non lo apre',
+            !inc.live && !inc.agenda && !inc.gruppo && inc.pagina >= 400, [JSON.stringify(inc)]);
+        check('… e non e\' fra gli attesi (inviti, promemoria, presenze)', attesiIncontro() === '0', [attesiIncontro()]);
+        const tutor = await entra(browser, 'tutor1@test.it');
+        inc = await vedeIncontro(tutor);
+        check('il tutor del gruppo lo vede: Sessioni live, pagina del gruppo, e lo apre', inc.live && inc.gruppo && inc.pagina === 200, [JSON.stringify(inc)]);
+
         // --- 3. la pubblicazione iscrive i membri ----------------------------------
         testo = await pubblica(admin, C.bozza, true);
         const attesi = new Set([...membri, C.studenteNuovo]).size;
@@ -204,6 +231,10 @@ async function vedeIlCorso(page, corso, titolo) {
         check('controprova: pubblicato, lo studente lo vede e lo apre', vista.elenco && vista.pagina === 200, [JSON.stringify(vista)]);
         r = await studente.goto(BASE + '/lessons/' + C.lezione);
         check('… e apre la lezione', r.status() === 200, [String(r.status())]);
+        inc = await vedeIncontro(studente);
+        check('controprova: pubblicato, lo studente vede l\'incontro del gruppo ovunque e lo apre',
+            inc.live && inc.agenda && inc.gruppo && inc.pagina === 200, [JSON.stringify(inc)]);
+        check('… ed e\' fra gli attesi', Number(attesiIncontro()) === membri.length + 1, [attesiIncontro(), String(membri.length + 1)]);
 
         // --- 4. con iscritti non torna in bozza ---------------------------------------
         testo = await pubblica(admin, C.bozza, false);

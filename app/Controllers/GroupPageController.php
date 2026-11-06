@@ -94,8 +94,10 @@ class GroupPageController
             $risposte = self::conNomi(GiroDelCerchio::visibili($tutte, $chiGuarda, $modera), $chiGuarda, $vedeTutto);
         }
 
-        // Il prossimo incontro del gruppo, con chi ha detto «Ci sarò».
-        $incontro = LiveSessionModel::prossimoDelGruppo($groupId);
+        // Il prossimo incontro del gruppo, con chi ha detto «Ci sarò». Chi
+        // modera (il tutor del gruppo, l'admin) vede anche quello di un corso
+        // in bozza, che prepara; i partecipanti no (06/11).
+        $incontro = LiveSessionModel::prossimoDelGruppo($groupId, $modera);
         $ciSaranno = [];
 
         if ($incontro !== null) {

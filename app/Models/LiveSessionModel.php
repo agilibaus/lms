@@ -34,12 +34,22 @@ class LiveSessionModel
      *     l'invito; chi arriva dopo non lo trova fra i suoi incontri passati
      *     e non risulta assente.
      *
+     *   - nessuno, finche' il modulo dell'incontro e' di un corso in bozza
+     *     (06/11): una bozza non ha iscritti, e i membri del gruppo
+     *     dell'incontro non lo vedono, non lo ricevono e non sono attesi
+     *     prima che il corso sia pubblicato. Il tutor lo prepara e lo vede
+     *     lo stesso (`LiveScope`, che per lui non passa di qui).
+     *
      * E' un'espressione SQL su `ls` (un incontro, anche non ancora salvato:
      * `attesiPer()`) e sull'utente dato, un id numerico o una colonna.
      */
     public static function atteso(string $utente): string
     {
-        return "((ls.group_id IS NOT NULL AND EXISTS (
+        return "(NOT EXISTS (
+                      SELECT 1 FROM modules m_b
+                      INNER JOIN courses c_b ON c_b.id = m_b.course_id
+                      WHERE m_b.id = ls.module_id AND c_b.is_published = 0)
+                 AND ((ls.group_id IS NOT NULL AND EXISTS (
                       SELECT 1 FROM group_members gm_a
                       WHERE gm_a.group_id = ls.group_id AND gm_a.user_id = {$utente}))
                  OR (ls.group_id IS NULL AND EXISTS (
@@ -47,7 +57,7 @@ class LiveSessionModel
                       INNER JOIN enrollments e_a ON e_a.course_id = m_a.course_id
                       WHERE m_a.id = ls.module_id AND e_a.user_id = {$utente}
                         AND e_a.enrolled_at <= ls.ends_at
-                        AND (e_a.completed_at IS NULL OR e_a.completed_at > ls.created_at))))";
+                        AND (e_a.completed_at IS NULL OR e_a.completed_at > ls.created_at)))))";
     }
 
     /**
@@ -287,12 +297,17 @@ class LiveSessionModel
      * Il prossimo incontro del gruppo, per la pagina del gruppo (12/10): il
      * primo non ancora concluso fra quelli legati al gruppo.
      */
-    public static function prossimoDelGruppo(int $groupId): ?array
+    public static function prossimoDelGruppo(int $groupId, bool $ancheBozze = false): ?array
     {
+        // Per i partecipanti, non un incontro su un modulo di un corso in bozza
+        // (06/11): per loro non c'e' ancora. Il tutor e l'admin lo vedono.
         $stmt = Database::connection()->prepare(
-            'SELECT id, title, starts_at, ends_at FROM live_sessions
-             WHERE group_id = :g AND ends_at > NOW()
-             ORDER BY starts_at, id LIMIT 1'
+            'SELECT ls.id, ls.title, ls.starts_at, ls.ends_at FROM live_sessions ls
+             WHERE ls.group_id = :g AND ls.ends_at > NOW()'
+            . ($ancheBozze ? '' : '
+               AND NOT EXISTS (SELECT 1 FROM modules m INNER JOIN courses c ON c.id = m.course_id
+                               WHERE m.id = ls.module_id AND c.is_published = 0)') . '
+             ORDER BY ls.starts_at, ls.id LIMIT 1'
         );
         $stmt->execute(['g' => $groupId]);
         $row = $stmt->fetch();
