@@ -332,7 +332,7 @@ class GroupController extends AdminController
         $this->success(
             Auth::can('group.manage')
                 ? 'Membro rimosso dal gruppo. Le iscrizioni ai corsi restano attive: rimuovile dalla scheda del corso se necessario.'
-                : 'Membro rimosso dal gruppo. Le iscrizioni ai corsi restano attive: le gestisce l’amministrazione.',
+                : 'Membro rimosso dal gruppo. Le iscrizioni ai corsi restano attive: le gestisce l’Amministratore.',
             '/admin/groups/' . (int) $group['id'] . '/edit'
         );
     }
@@ -349,7 +349,7 @@ class GroupController extends AdminController
         $this->requireGroupAccess();
 
         if (!Auth::can('group.manage') && !Auth::can('group.members_own')) {
-            $this->forbidden('I membri del gruppo li gestisce l\'amministrazione.');
+            $this->forbidden('I membri del gruppo li gestisce l\'Amministratore.');
 
             return null;
         }

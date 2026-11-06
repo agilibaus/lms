@@ -37,7 +37,7 @@ use App\Core\Csrf;
                    aria-describedby="pagamenti-attivi-cosa" <?= $attivi ? 'checked' : '' ?>>
             <span>
                 <span class="ruoli-interruttore-nome">Corsi a pagamento</span>
-                <span class="ruoli-interruttore-cosa" id="pagamenti-attivi-cosa">Accesa, fra i modi di iscrizione di un corso compare «A pagamento». Spenta, i corsi a pagamento non compaiono nel catalogo e li iscrive solo l’admin, a mano.</span>
+                <span class="ruoli-interruttore-cosa" id="pagamenti-attivi-cosa">Accesa, fra i modi di iscrizione di un corso compare «A pagamento». Spenta, i corsi a pagamento non compaiono nel catalogo e li iscrive solo l’Amministratore, a mano.</span>
             </span>
         </label>
     </section>

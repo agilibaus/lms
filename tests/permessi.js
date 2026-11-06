@@ -3351,7 +3351,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 creati.push(chi('d'));
                 const rifiuto = await errore('/admin/users/create');
                 check('admin unico: un secondo admin mandato a mano non si crea, e l\'avviso dice chi c\'è già',
-                    chi('d') === null && rifiuto.startsWith('L\'amministratore è uno solo, e c\'è già:'), [rifiuto, JSON.stringify(chi('d'))]);
+                    chi('d') === null && rifiuto.startsWith('L\'Amministratore è uno solo, e c\'è già:'), [rifiuto, JSON.stringify(chi('d'))]);
 
                 await esitoPost(page, '/admin/users', persona('e', 'studente'), '/admin/users/create');
                 const studente = chi('e');
@@ -3363,7 +3363,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     const promosso = chi('e');
                     const rifiutoPromozione = await errore('/admin/users/' + studente.id + '/edit');
                     check('admin unico: uno studente non diventa admin, e l\'avviso lo dice',
-                        !!promosso && promosso.role === 'studente' && rifiutoPromozione.startsWith('L\'amministratore è uno solo'), [rifiutoPromozione, JSON.stringify(promosso)]);
+                        !!promosso && promosso.role === 'studente' && rifiutoPromozione.startsWith('L\'Amministratore è uno solo'), [rifiutoPromozione, JSON.stringify(promosso)]);
                 }
 
                 const datiAdmin = [['first_name', 'Admin'], ['last_name', 'Prova'], ['email', 'admin@test.it'], ['role', 'admin'], ['is_active', '1']];
@@ -4638,7 +4638,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 const scheda = await page.content();
                 check('spento «Membri dei gruppi» → nella scheda né aggiungi né rimuovi, e la frase lo dice',
                     !scheda.includes('action="' + G + '/members"') && !scheda.includes('/members/' + d.utenti.studenteA + '/delete')
-                        && scheda.includes('I membri del gruppo li gestisce l’amministrazione'), []);
+                        && scheda.includes('I membri del gruppo li gestisce l’Amministratore'), []);
                 const ag = await esitoPost(page, G + '/members', [['user_id', String(d.utenti.finito)]], G + '/edit');
                 const rm = await esitoPost(page, G + '/members/' + d.utenti.studenteA + '/delete', [], G + '/edit');
                 check('spento «Membri dei gruppi» → POST aggiungi e togli: negati', ag.esito === 'negato' && rm.esito === 'negato', [ag.come, rm.come]);

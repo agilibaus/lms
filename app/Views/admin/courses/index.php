@@ -36,7 +36,7 @@ $courses = $ordine->applica($courses);
 <div class="page-header">
     <h1>Gestione corsi</h1>
     <?php if ($tutor): ?>
-        <p class="page-subtitle">I corsi dei tuoi gruppi: il tuo benvenuto e i tuoi studenti. I contenuti li modifica l’amministrazione.</p>
+        <p class="page-subtitle">I corsi dei tuoi gruppi: il tuo benvenuto e i tuoi studenti. I contenuti li modifica l’Amministratore.</p>
     <?php else: ?>
         <p class="page-subtitle">Creazione, pubblicazione e iscrizioni. I contenuti (moduli, lezioni, questionari) si gestiscono dalla scheda del corso.</p>
     <?php endif; ?>
@@ -95,7 +95,7 @@ $courses = $ordine->applica($courses);
                     <span class="badge"
                           title="<?= match ($mode) {
                               'closed' => 'Non compare nel catalogo: iscrive solo lo staff, o l\'assegnazione a un gruppo',
-                              'paid' => 'Non compare nel catalogo: lo iscrive solo l\'admin, a mano',
+                              'paid' => 'Non compare nel catalogo: lo iscrive solo l\'Amministratore, a mano',
                               default => 'Compare nel catalogo degli studenti',
                           } ?>">
                         <?= htmlspecialchars(CourseModel::enrollmentLabel($mode)) ?>

@@ -257,7 +257,7 @@ class UserController extends AdminController
             && ($data['role'] !== 'admin' || !$data['is_active'])
             && UserModel::countActiveAdmins($id) === 0
         ) {
-            $this->fail('Deve restare almeno un amministratore attivo.', $redirect);
+            $this->fail('Deve restare un Amministratore attivo.', $redirect);
         }
 
         // Diventare admin, o riattivare un admin disattivato, quando ce n'e'
@@ -374,7 +374,7 @@ class UserController extends AdminController
         }
 
         if ($user['role'] === 'admin' && UserModel::countActiveAdmins($id) === 0) {
-            $this->fail('Deve restare almeno un amministratore attivo.', '/admin/users');
+            $this->fail('Deve restare un Amministratore attivo.', '/admin/users');
         }
 
         if (UserModel::countCoursesCreated($id) > 0) {
@@ -711,8 +711,8 @@ class UserController extends AdminController
         $altro = UserModel::altroAdminAttivo($userId);
 
         if ($altro !== null) {
-            $this->fail('L\'amministratore è uno solo, e c\'è già: ' . $altro['full_name']
-                . '. Il cambio di amministratore si fa nel database.', $redirect);
+            $this->fail('L\'Amministratore è uno solo, e c\'è già: ' . $altro['full_name']
+                . '. Il cambio di Amministratore si fa nel database.', $redirect);
         }
     }
 

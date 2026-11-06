@@ -541,7 +541,7 @@ class LiveSessionController
         // dalla tendina.
         if (!Auth::hasRole('admin')) {
             if ($data['group_id'] === null) {
-                return 'Scegli il gruppo: gli incontri per tutto il corso li crea l\'amministrazione.';
+                return 'Scegli il gruppo: gli incontri per tutto il corso li crea l\'Amministratore.';
             }
 
             if (!$this->isMyGroup($data['group_id'])) {

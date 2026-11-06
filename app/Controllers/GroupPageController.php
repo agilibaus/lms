@@ -177,7 +177,7 @@ class GroupPageController
         $qui = '/gruppi/' . (int) $group['id'];
 
         if (!$modera) {
-            $this->vietato('Solo il tutor del gruppo e l\'amministrazione pongono le domande al gruppo.');
+            $this->vietato('Solo il tutor del gruppo e l\'Amministratore pongono le domande al gruppo.');
         }
 
         $testo = CampoContato::taglia((string) ($_POST['question'] ?? ''), GroupQuestionModel::MAX_DOMANDA);
@@ -248,7 +248,7 @@ class GroupPageController
         [$group, $chiGuarda, $modera] = $this->gruppoVisibile((int) $risposta['group_id']);
 
         if (!$modera) {
-            $this->vietato('Solo il tutor del gruppo e l\'amministrazione nascondono le risposte.');
+            $this->vietato('Solo il tutor del gruppo e l\'Amministratore nascondono le risposte.');
         }
 
         $nascondi = ($_POST['azione'] ?? '') === 'nascondi';

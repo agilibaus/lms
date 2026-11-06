@@ -130,7 +130,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
     <p class="card-meta">
         <?php if ($tutor): ?>
             I tuoi studenti in questo corso: si iscrivono dai tuoi gruppi. Le altre iscrizioni e le richieste dal
-            catalogo le gestisce l’amministrazione.
+            catalogo le gestisce l’Amministratore.
         <?php else: ?>
             Le iscrizioni possono arrivare anche dai gruppi: assegnando il corso a un gruppo, i membri vengono iscritti qui.
         <?php endif; ?>

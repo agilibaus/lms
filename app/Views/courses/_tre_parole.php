@@ -51,6 +51,6 @@ $modulo = $treParole['chiedi'];
             <?php endforeach; ?>
             <button type="submit" class="btn btn-primary">Invia</button>
         </form>
-        <p class="tre-parole-nota" id="tre-parole-nota">Il tuo tutor e l’amministratore possono leggerle. Una volta inviate non si cambiano.</p>
+        <p class="tre-parole-nota" id="tre-parole-nota">Il tuo tutor e l’Amministratore possono leggerle. Una volta inviate non si cambiano.</p>
     </section>
 <?php endif; ?>

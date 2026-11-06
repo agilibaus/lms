@@ -182,7 +182,7 @@ class BoardController
         // Il tutor che pubblica nel corso apre la pagina anche se in quel
         // corso non ha studenti: la trova vuota, non chiusa.
         if ($corso === null || ($moderati === [] && !BachecaScope::puoPubblicare((int) $corso['id']))) {
-            $this->ferma(403, 'Le proposte le valutano il tutor del gruppo e l\'admin.');
+            $this->ferma(403, 'Le proposte le valutano il tutor del gruppo e l\'Amministratore.');
         }
 
         $courseId = (int) $corso['id'];

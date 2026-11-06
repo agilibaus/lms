@@ -70,7 +70,7 @@ $members = $ordineMembri->applica($members);
             Rimuovendo il corso le iscrizioni già create restano attive. Ogni corso ha le date di apertura dei
             moduli; con «Date dei moduli» questo gruppo può avere le sue.
         <?php else: ?>
-            I corsi del gruppo li assegna l’amministrazione. Con «Date dei moduli» questo gruppo può avere le sue
+            I corsi del gruppo li assegna l’Amministratore. Con «Date dei moduli» questo gruppo può avere le sue
             date di apertura.
         <?php endif; ?>
     </p>
@@ -118,7 +118,7 @@ $members = $ordineMembri->applica($members);
 <section class="card">
     <h2>Membri</h2>
     <?php if (!$gestisceMembri): ?>
-        <p class="card-meta">I membri del gruppo li gestisce l’amministrazione.</p>
+        <p class="card-meta">I membri del gruppo li gestisce l’Amministratore.</p>
     <?php endif; ?>
 
     <?php if ($members === []): ?>

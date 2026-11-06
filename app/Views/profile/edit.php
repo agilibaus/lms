@@ -66,12 +66,12 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
                 <p class="form-hint">
                     Per un tutor la foto è obbligatoria, e si può sostituire ma non togliere: è la
                     stessa nella pagina dei tuoi gruppi e nel tuo benvenuto in cima ai corsi, dove la
-                    vedono i tuoi studenti e l'amministratore. La presentazione è facoltativa.
+                    vedono i tuoi studenti e l'Amministratore. La presentazione è facoltativa.
                 </p>
             <?php else: ?>
                 <p class="form-hint">
                     La foto e la presentazione sono facoltative. Se le inserisci, compariranno nella pagina
-                    dei tuoi gruppi, dove le vedono i compagni di gruppo, il tutor e l'amministratore.
+                    dei tuoi gruppi, dove le vedono i compagni di gruppo, il tutor e l'Amministratore.
                 </p>
             <?php endif; ?>
 
@@ -206,7 +206,7 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
             </fieldset>
             <p class="form-hint">
                 Vale per gli altri studenti, per esempio nella pagina del gruppo. Il tutor e
-                l'amministrazione vedono sempre nome e cognome, e il certificato li riporta per intero.
+                l'Amministratore vedono sempre nome e cognome, e il certificato li riporta per intero.
                 La foto è una scelta a parte: se non la carichi, al suo posto compaiono le iniziali.
             </p>
             <div class="form-actions">

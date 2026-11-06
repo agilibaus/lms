@@ -10,7 +10,7 @@ defined('LMS_INSTALLER') || exit('Accesso diretto non consentito.');
 ?>
 <div class="alert alert-success">Schema importato: il database è pronto.</div>
 
-<p>Crea il primo amministratore. Da qui in poi tutti gli altri utenti si gestiscono dal pannello,
+<p>Crea l'Amministratore. Da qui in poi tutti gli altri utenti si gestiscono dal pannello,
    senza toccare il database.</p>
 
 <?php if ($error !== null): ?>

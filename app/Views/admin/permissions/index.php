@@ -28,7 +28,7 @@ $ruoli = [
     'Supervisore' => [
         'sempre' => [
             'Costruisce i corsi in bozza: li crea, ne modifica i dati e la copertina, e crea, modifica ed elimina moduli, lezioni, materiali, video, contenuti H5P, questionari e la verifica finale.',
-            'Non pubblica i corsi (lo fa l’admin) e non elimina un corso. I corsi pubblicati, per lui, non ci sono: non li vede e non li tocca.',
+            'Non pubblica i corsi (lo fa l’Amministratore) e non elimina un corso. I corsi pubblicati, per lui, non ci sono: non li vede e non li tocca.',
             'Non gestisce utenti, gruppi, iscrizioni, incontri, report, certificati, domande degli studenti e Bacheca. Delle impostazioni apre solo «Video di benvenuto» e «Informazioni».',
         ],
         'interruttori' => [],
@@ -43,12 +43,12 @@ $ruoli = [
         ],
         'interruttori' => [
             'ROLE_TUTOR_MEMBRI' => ['Membri dei gruppi',
-                'Aggiunge al suo gruppo gli studenti già iscritti a un corso del gruppo che non sono in un altro gruppo con lo stesso corso, senza iscriverli ad altri corsi, e ne toglie i membri. Spento: i membri li gestisce solo l’admin, e il tutor li vede.'],
+                'Aggiunge al suo gruppo gli studenti già iscritti a un corso del gruppo che non sono in un altro gruppo con lo stesso corso, senza iscriverli ad altri corsi, e ne toglie i membri. Spento: i membri li gestisce solo l’Amministratore, e il tutor li vede.'],
         ],
     ],
     'Assistente' => [
         'sempre' => [
-            'Affianca i tutor che l’admin gli assegna, in sola lettura.',
+            'Affianca i tutor che l’Amministratore gli assegna, in sola lettura.',
             'Legge tutti i corsi; legge la Bacheca e «L’esperto risponde» dei corsi dei suoi tutor, senza i nomi degli studenti.',
             'Non vede foto, pagine dei gruppi e Tre parole.',
         ],
@@ -78,7 +78,7 @@ $ruoli = [
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Ruoli</h1>
     <p class="page-subtitle">
-        Che cosa fa ogni ruolo. Le opzioni con la casella le decide l’admin e valgono in tutte le pagine. Il resto
+        Che cosa fa ogni ruolo. Le opzioni con la casella le decide l’Amministratore e valgono in tutte le pagine. Il resto
         è fisso.
     </p>
 </div>

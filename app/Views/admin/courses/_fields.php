@@ -44,7 +44,7 @@ use App\Core\TestoBreve;
     Pubblicato (una bozza resta visibile solo allo staff)
 </label>
 <?php if ($nonPubblica): ?>
-    <p class="form-hint" id="pubblica-admin-hint">Il corso lo pubblica l’admin.</p>
+    <p class="form-hint" id="pubblica-admin-hint">Il corso lo pubblica l’Amministratore.</p>
 <?php endif; ?>
 
 <?php /* «Tre parole» (21/10): spenta di partenza. Accesa, si chiedono per
@@ -54,7 +54,7 @@ use App\Core\TestoBreve;
     Chiedi tre parole alla fine di ogni modulo
 </label>
 <p class="form-hint" id="three-words-hint">
-    Lo studente scrive le prime tre parole che gli vengono; le leggono il tutor del gruppo e l'amministrazione,
+    Lo studente scrive le prime tre parole che gli vengono; le leggono il tutor del gruppo e l'Amministratore,
     in «Tre parole». Si chiedono per i moduli completati da quando è attiva.
 </p>
 
@@ -74,7 +74,7 @@ $conPagamento = CorsiAPagamento::nelModulo($admin, $mode);
         <option selected>A pagamento — lo studente paga su Stripe ed è iscritto</option>
     </select>
     <p class="form-hint" id="enrollment-mode-hint">
-        La modalità «A pagamento», con prezzo e link, la cambia solo l’admin.
+        La modalità «A pagamento», con prezzo e link, la cambia solo l’Amministratore.
     </p>
 <?php else: ?>
     <select id="enrollment_mode" name="enrollment_mode">

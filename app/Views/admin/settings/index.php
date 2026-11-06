@@ -53,7 +53,7 @@ $sezioni = [
     [
         'titolo' => 'Ruoli',
         'href' => '/admin/permissions',
-        'testo' => 'Che cosa fa ogni ruolo, e i cinque interruttori che decide l’admin. Un interruttore spento cambia il lavoro di qualcuno.',
+        'testo' => 'Che cosa fa ogni ruolo, e i cinque interruttori che decide l’Amministratore. Un interruttore spento cambia il lavoro di qualcuno.',
         'visibile' => $canPermissions,
     ],
     [

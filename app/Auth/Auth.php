@@ -40,7 +40,7 @@ class Auth
     public static function roleLabel(?string $role): string
     {
         return match ($role) {
-            'admin' => 'Admin',
+            'admin' => 'Amministratore',
             'supervisore' => 'Supervisore',
             'tutor' => 'Tutor',
             'assistente' => 'Assistente',

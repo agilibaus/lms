@@ -54,7 +54,7 @@ $stati = [
 </div>
 
 <?php if ($categorie === []): ?>
-    <p class="empty-state">La bacheca di questo corso non ha ancora categorie: le crea l'admin da «Modifica corso».</p>
+    <p class="empty-state">La bacheca di questo corso non ha ancora categorie: le crea l'Amministratore da «Modifica corso».</p>
 <?php elseif ($moduli === []): ?>
     <p class="empty-state">Il corso non ha ancora moduli: ogni risorsa della bacheca appartiene a un modulo.</p>
 <?php else: ?>

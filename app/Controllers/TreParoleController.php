@@ -88,7 +88,7 @@ class TreParoleController
         $admin = Auth::hasRole('admin');
 
         if (!$admin && !Auth::hasRole('tutor')) {
-            $this->vietato('Le tre parole le leggono il tutor del gruppo e l\'amministrazione.');
+            $this->vietato('Le tre parole le leggono il tutor del gruppo e l\'Amministratore.');
         }
 
         $course = CourseModel::find((int) ($_GET['corso'] ?? 0));

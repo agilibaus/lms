@@ -344,7 +344,7 @@ const VALIDI = { price: '49,00', payment_link_url: LINK, payment_link_id: 'plink
             frase: ((document.getElementById('enrollment-mode-hint') || {}).textContent || '').trim(),
         }));
         check('supervisore, bozza a pagamento: la modalita\' si vede spenta, senza prezzo e link, con la frase',
-            vista.spenta && !vista.campi && vista.frase === 'La modalità «A pagamento», con prezzo e link, la cambia solo l’admin.', [JSON.stringify(vista)]);
+            vista.spenta && !vista.campi && vista.frase === 'La modalità «A pagamento», con prezzo e link, la cambia solo l’Amministratore.', [JSON.stringify(vista)]);
         await posta(sup, '/admin/courses/' + C.bozzaPagata, [['title', '[prova-pagamenti] bozza a pagamento'], ['enrollment_mode', 'open'],
             ['price', '1'], ['payment_link_url', 'https://esempio.it/x'], ['payment_link_id', 'plink_sup2']], '/admin/courses/' + C.bozzaPagata + '/edit');
         c = corso(C.bozzaPagata);

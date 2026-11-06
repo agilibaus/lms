@@ -246,7 +246,7 @@ function finish(Installer $installer, array $data): ?string
             $installer->createAdmin($pdo, $data['admin_email'], $data['admin_password'], $data['admin_first_name'], $data['admin_last_name']);
         }
     } catch (\PDOException $e) {
-        return 'Creazione dell\'amministratore non riuscita: ' . friendlyPdoMessage($e);
+        return 'Creazione dell\'Amministratore non riuscita: ' . friendlyPdoMessage($e);
     }
 
     $contents = $installer->buildEnv($data);

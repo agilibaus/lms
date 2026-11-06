@@ -86,7 +86,7 @@ class CourseRights
 
         if (!self::canEdit($courseId)) {
             http_response_code(403);
-            exit('Accesso negato: i contenuti del corso li modifica l\'amministrazione, puoi solo consultarlo.');
+            exit('Accesso negato: i contenuti del corso li modifica l\'Amministratore, puoi solo consultarlo.');
         }
     }
 

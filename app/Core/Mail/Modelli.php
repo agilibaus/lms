@@ -231,8 +231,8 @@ final class Modelli
             'richiesta_iscrizione' => [
                 'gruppo' => 'iscrizioni',
                 'titolo' => 'Richiesta di iscrizione',
-                'quando' => 'Quando uno studente chiede di iscriversi a un corso «su richiesta»: agli amministratori e ai tutor '
-                    . 'dei gruppi a cui il corso è assegnato, cioè a chi può approvare.',
+                'quando' => 'Quando uno studente chiede di iscriversi a un corso «su richiesta»: all’Amministratore, '
+                    . 'che è chi può approvare.',
                 'oggetto' => 'EMAIL_RICHIESTA_OGGETTO',
                 'testo' => 'EMAIL_RICHIESTA_TESTO',
                 'predefinito' => [
@@ -341,7 +341,7 @@ final class Modelli
             'nuova_domanda' => [
                 'gruppo' => 'corso',
                 'titolo' => 'Nuova domanda all’esperto',
-                'quando' => 'Agli amministratori, quando uno studente fa una domanda all’esperto.',
+                'quando' => 'All’Amministratore, quando uno studente fa una domanda all’esperto.',
                 'oggetto' => 'EMAIL_DOMANDA_OGGETTO',
                 'testo' => 'EMAIL_DOMANDA_TESTO',
                 'predefinito' => [
@@ -369,7 +369,7 @@ final class Modelli
                 'gruppo' => 'corso',
                 'titolo' => 'Nuova proposta per la bacheca',
                 'quando' => 'Al tutor del gruppo, quando uno studente propone una risorsa per la bacheca del corso; '
-                    . 'se lo studente non ha un tutor nel corso, agli amministratori.',
+                    . 'se lo studente non ha un tutor nel corso, all’Amministratore.',
                 'oggetto' => 'EMAIL_BACHECA_OGGETTO',
                 'testo' => 'EMAIL_BACHECA_TESTO',
                 'predefinito' => [

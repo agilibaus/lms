@@ -82,7 +82,7 @@ $toInput = static function (?string $value): string {
         </select>
         <p class="form-hint" id="live-destinatari">
             L’incontro è per il gruppo. Il modulo, se lo indichi, ne è il tema: lo studente lo vede da quando il
-            modulo è aperto. Gli incontri per tutto il corso li crea l’amministrazione.
+            modulo è aperto. Gli incontri per tutto il corso li crea l’Amministratore.
         </p>
     <?php else: ?>
         <label for="module_id">Modulo di corso</label>

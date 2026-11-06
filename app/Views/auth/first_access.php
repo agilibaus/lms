@@ -71,7 +71,7 @@ ob_start();
         <?php endforeach; ?>
     </fieldset>
     <?php /* Corta, per un modulo meno alto (Elena, 08/10). */ ?>
-    <p class="form-hint">Tutor e admin vedono sempre nome e cognome. Scelta modificabile dal profilo.</p>
+    <p class="form-hint">Tutor e Amministratore vedono sempre nome e cognome. Scelta modificabile dal profilo.</p>
 
     <button type="submit" class="btn btn-primary btn-block">Continua</button>
 </form>

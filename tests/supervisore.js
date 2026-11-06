@@ -200,8 +200,8 @@ async function posta(page, url, campi, paginaToken) {
             iscritti: [...document.querySelectorAll('h2')].some((h) => /Iscritti|Richieste/.test(h.textContent)),
             report: !!document.querySelector('a[href^="/reports/"]'),
         }));
-        check('scheda del corso: «Pubblicato» spenta con «Il corso lo pubblica l’admin», niente iscritti, richieste e report',
-            scheda.pubblica === true && scheda.frase === 'Il corso lo pubblica l’admin.' && !scheda.iscritti && !scheda.report, [JSON.stringify(scheda)]);
+        check('scheda del corso: «Pubblicato» spenta con «Il corso lo pubblica l’Amministratore», niente iscritti, richieste e report',
+            scheda.pubblica === true && scheda.frase === 'Il corso lo pubblica l’Amministratore.' && !scheda.iscritti && !scheda.report, [JSON.stringify(scheda)]);
 
         // --- le azioni sul corso in bozza: si fanno -------------------------
         const campiCorso = (titolo) => [['title', titolo], ['slug', ''], ['description', ''], ['objective', ''], ['enrollment_mode', 'closed'], ['is_published', '1']];
