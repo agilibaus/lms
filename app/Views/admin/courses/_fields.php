@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Auth\Auth;
 use App\Controllers\Admin\CourseController;
+use App\Core\CorsiAPagamento;
 use App\Core\TestoBreve;
 
 /**
@@ -57,18 +59,73 @@ use App\Core\TestoBreve;
 </p>
 
 <label for="enrollment_mode">Come ci si iscrive</label>
-<?php $mode = $course['enrollment_mode'] ?? 'closed'; ?>
-<select id="enrollment_mode" name="enrollment_mode">
-    <option value="closed" <?= $mode === 'closed' ? 'selected' : '' ?>>
-        Chiusa — iscrive solo lo staff, o l'assegnazione a un gruppo
-    </option>
-    <option value="request" <?= $mode === 'request' ? 'selected' : '' ?>>
-        Su richiesta — lo studente chiede, un tutor approva
-    </option>
-    <option value="open" <?= $mode === 'open' ? 'selected' : '' ?>>
-        Aperta — lo studente si iscrive da solo dal catalogo
-    </option>
-</select>
-<p class="form-hint">
-    Le ultime due modalità mostrano il corso nel catalogo, ma solo se è pubblicato.
-</p>
+<?php
+$mode = $course['enrollment_mode'] ?? 'closed';
+$admin = Auth::hasRole('admin');
+// «A pagamento» (06/11, `CorsiAPagamento`): la sceglie l'admin a interruttore
+// acceso; un corso gia' a pagamento la mostra sempre, o salvare la
+// cambierebbe senza che nessuno l'abbia scelta. Chi non e' admin la vede
+// spenta e non tocca prezzo e link.
+$pagato = $mode === CorsiAPagamento::MODALITA;
+$conPagamento = CorsiAPagamento::nelModulo($admin, $mode);
+?>
+<?php if ($pagato && !$admin): ?>
+    <select id="enrollment_mode" disabled aria-describedby="enrollment-mode-hint">
+        <option selected>A pagamento — lo studente paga su Stripe ed è iscritto</option>
+    </select>
+    <p class="form-hint" id="enrollment-mode-hint">
+        La modalità «A pagamento», con prezzo e link, la cambia solo l’admin.
+    </p>
+<?php else: ?>
+    <select id="enrollment_mode" name="enrollment_mode">
+        <option value="closed" <?= $mode === 'closed' ? 'selected' : '' ?>>
+            Chiusa — iscrive solo lo staff, o l'assegnazione a un gruppo
+        </option>
+        <option value="request" <?= $mode === 'request' ? 'selected' : '' ?>>
+            Su richiesta — lo studente chiede, un tutor approva
+        </option>
+        <option value="open" <?= $mode === 'open' ? 'selected' : '' ?>>
+            Aperta — lo studente si iscrive da solo dal catalogo
+        </option>
+        <?php if ($conPagamento): ?>
+            <option value="<?= CorsiAPagamento::MODALITA ?>" <?= $pagato ? 'selected' : '' ?>>
+                A pagamento — lo studente paga su Stripe ed è iscritto
+            </option>
+        <?php endif; ?>
+    </select>
+    <p class="form-hint">
+        <?php if ($conPagamento): ?>
+            «Su richiesta», «Aperta» e «A pagamento» mostrano il corso nel catalogo, ma solo se è pubblicato.
+        <?php else: ?>
+            Le ultime due modalità mostrano il corso nel catalogo, ma solo se è pubblicato.
+        <?php endif; ?>
+    </p>
+
+    <?php if ($conPagamento): ?>
+        <?php /* I tre campi del pagamento (variante A del mockup, 06/11). Li mostra
+                 lo script solo con «A pagamento» scelto; senza JavaScript restano
+                 visibili, e con un'altra modalita' il server non li legge. */ ?>
+        <?php
+        $prezzoNelCampo = isset($course['prezzo_testo'])
+            ? (string) $course['prezzo_testo']
+            : CorsiAPagamento::prezzoNelCampo(isset($course['price_cents']) ? (int) $course['price_cents'] : null);
+        ?>
+        <div class="campi-pagamento" id="campi-pagamento">
+            <label for="price">Prezzo, in euro</label>
+            <input type="text" id="price" name="price" inputmode="decimal" autocomplete="off"
+                   value="<?= htmlspecialchars($prezzoNelCampo) ?>" aria-describedby="price-hint">
+            <p class="form-hint" id="price-hint">Lo stesso importo del link di pagamento su Stripe, prima di eventuali sconti.</p>
+
+            <label for="payment_link_url">Link di pagamento</label>
+            <input type="url" id="payment_link_url" name="payment_link_url" autocomplete="off" maxlength="255"
+                   value="<?= htmlspecialchars((string) ($course['payment_link_url'] ?? '')) ?>" aria-describedby="payment-link-url-hint">
+            <p class="form-hint" id="payment-link-url-hint">Su Stripe, «Link di pagamento», poi «Copia link».</p>
+
+            <label for="payment_link_id">Identificativo del link</label>
+            <input type="text" id="payment_link_id" name="payment_link_id" autocomplete="off" maxlength="64"
+                   value="<?= htmlspecialchars((string) ($course['payment_link_id'] ?? '')) ?>" aria-describedby="payment-link-id-hint">
+            <p class="form-hint" id="payment-link-id-hint">Comincia con «plink_»: si legge nella pagina del link su Stripe. Serve a riconoscere il corso quando arriva il pagamento.</p>
+        </div>
+        <script src="/assets/js/modalita-iscrizione.js"></script>
+    <?php endif; ?>
+<?php endif; ?>

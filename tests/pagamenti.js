@@ -1,0 +1,380 @@
+/**
+ * I corsi a pagamento (06/11, Alessandro; disegno del 31/10), prima patch:
+ * «A pagamento» come quarta modalita' d'iscrizione, con tutte le vie
+ * gratuite chiuse. L'avviso di Stripe che iscrive arriva con la patch dopo,
+ * e con lui le prove del pagamento.
+ *
+ *   - l'interruttore generale (Impostazioni › Pagamenti), spento all'inizio:
+ *     spento, «A pagamento» non si sceglie; un corso gia' a pagamento la
+ *     tiene;
+ *   - la sceglie solo l'admin, con prezzo, link e identificativo controllati;
+ *     il supervisore non la vede e non la cambia;
+ *   - un corso assegnato a un gruppo, o con richieste in attesa, non diventa
+ *     a pagamento; un corso a pagamento non si assegna a un gruppo;
+ *   - nel catalogo non c'e', e dal catalogo non si entra;
+ *   - l'admin lo iscrive a mano.
+ *
+ * Ogni rifiuto ha la sua controprova: la stessa azione dove e' permessa.
+ *
+ * Esecuzione:  node tests/pagamenti.js   (server di sviluppo acceso)
+ *
+ * Crea i corsi «[prova-pagamenti] …» e il supervisore supervisore-pagamenti@test.it,
+ * e alla fine li toglie e rimette PAYMENTS_ENABLED com'era, anche se un
+ * controllo fallisce. Usa la semina dei due mondi (`semina_permessi.php`).
+ */
+'use strict';
+
+const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
+const { execFileSync } = require('node:child_process');
+const path = require('node:path');
+
+const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
+const PASSWORD = process.env.LMS_PASS || 'Password1!';
+const RADICE = path.join(__dirname, '..');
+const SUPERVISORE = 'supervisore-pagamenti@test.it';
+const LINK = 'https://buy.stripe.com/test_cNicN46Yfg8m6s1cVd6J200';
+
+let ok = 0;
+let fail = 0;
+
+function check(etichetta, condizione, dettagli = []) {
+    condizione ? ok++ : fail++;
+    console.log((condizione ? '  OK   ' : '  FAIL ') + etichetta);
+    if (!condizione) {
+        dettagli.forEach((d) => console.log('         · ' + d));
+    }
+}
+
+/** Codice PHP con l'applicazione caricata; `$argv[1..]` sono gli argomenti. */
+function php(codice, ...argomenti) {
+    return execFileSync('php', ['-r', 'require "vendor/autoload.php"; require "config/config.php";'
+        + ' $pdo = App\\Core\\Database::connection();' + codice, '--', ...argomenti.map(String)], { cwd: RADICE, encoding: 'utf8' });
+}
+
+const json = (codice, ...argomenti) => JSON.parse(php(codice, ...argomenti));
+const sql = (query, ...a) => php('$pdo->prepare($argv[1])->execute(array_slice($argv, 2));', query, ...a);
+const riga = (query, ...a) => json('$s = $pdo->prepare($argv[1]); $s->execute(array_slice($argv, 2)); echo json_encode($s->fetch() ?: null);', query, ...a);
+const conta = (query, ...a) => Number(php('$s = $pdo->prepare($argv[1]); $s->execute(array_slice($argv, 2)); echo (int) $s->fetchColumn();', query, ...a).trim());
+const corso = (id) => riga('SELECT enrollment_mode, price_cents, payment_link_url, payment_link_id FROM courses WHERE id = ?', id);
+const interruttore = (v) => php('App\\Core\\Settings::set("PAYMENTS_ENABLED", $argv[1] === "" ? null : $argv[1]);', v);
+
+function semina() {
+    return JSON.parse(execFileSync('php', [path.join(RADICE, 'tests', 'semina_permessi.php')], { encoding: 'utf8', cwd: RADICE }));
+}
+
+function pulisci() {
+    php('$pdo->exec("DELETE FROM courses WHERE title LIKE \'[prova-pagamenti]%\'");'
+        + ' $pdo->prepare("DELETE FROM users WHERE email = ?")->execute([$argv[1]]);', SUPERVISORE);
+}
+
+/** I corsi della suite: uno aperto senza gruppi, uno su richiesta con una richiesta, una bozza, e il supervisore. */
+function prepara(A) {
+    pulisci();
+    return json('$admin = (int) $pdo->query("SELECT id FROM users WHERE email = \'admin@test.it\'")->fetchColumn();'
+        + ' $nuovo = function (string $titolo, int $pub, string $modo) use ($pdo, $admin): int {'
+        + '   $pdo->prepare("INSERT INTO courses (title, slug, description, is_published, enrollment_mode, created_by) VALUES (?, ?, \'\', ?, ?, ?)")'
+        + '       ->execute([$titolo, "prova-pagamenti-" . bin2hex(random_bytes(4)), $pub, $modo, $admin]);'
+        + '   return (int) $pdo->lastInsertId(); };'
+        + ' $libero = $nuovo("[prova-pagamenti] corso libero", 1, "open");'
+        + ' $altro = $nuovo("[prova-pagamenti] altro corso", 1, "open");'
+        + ' $richiesta = $nuovo("[prova-pagamenti] corso su richiesta", 1, "request");'
+        + ' $bozza = $nuovo("[prova-pagamenti] bozza", 0, "closed");'
+        + ' $bozzaPagata = $nuovo("[prova-pagamenti] bozza a pagamento", 0, "paid");'
+        + ' $pdo->prepare("UPDATE courses SET price_cents = 3000, payment_link_url = ?, payment_link_id = \'plink_bozza1\' WHERE id = ?")->execute([$argv[3], $bozzaPagata]);'
+        + ' $pdo->prepare("INSERT INTO enrollment_requests (user_id, course_id, status, requested_at) VALUES (?, ?, \'pending\', NOW())")->execute([(int) $argv[1], $richiesta]);'
+        + ' $h = password_hash($argv[4], PASSWORD_DEFAULT);'
+        + ' $pdo->prepare("INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at) VALUES (?, ?, \'Supervisore\', \'Pagamenti\', \'supervisore\', 1, NOW(), NOW())")->execute([$argv[2], $h]);'
+        + ' echo json_encode(compact("libero", "altro", "richiesta", "bozza", "bozzaPagata", "admin"));',
+    A.studente, SUPERVISORE, LINK, PASSWORD);
+}
+
+async function entra(browser, email) {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await page.goto(BASE + '/login');
+    await page.fill('input[name="email"]', email);
+    await page.fill('input[name="password"]', PASSWORD);
+    await page.click('form.auth-form button[type="submit"]');
+    await page.waitForLoadState('networkidle');
+    if (page.url().includes('/login')) {
+        throw new Error('accesso non riuscito per ' + email);
+    }
+    return { ctx, page };
+}
+
+async function esitoGet(page, url) {
+    const risposta = await page.goto(BASE + url);
+    const stato = risposta ? risposta.status() : 0;
+    if (page.url().includes('/login')) {
+        return 'negato';
+    }
+    return stato >= 400 ? 'negato' : 'consentito';
+}
+
+/** Una POST con il token di una pagina che l'utente apre; torna lo stato. */
+async function posta(page, url, campi, paginaToken) {
+    await page.goto(BASE + paginaToken);
+    return page.evaluate(async ([url, campi]) => {
+        const dati = new URLSearchParams();
+        dati.append('_token', document.querySelector('input[name="_token"]').value);
+        for (const [k, v] of campi) dati.append(k, v);
+        const res = await fetch(url, { method: 'POST', body: dati, credentials: 'same-origin', redirect: 'manual' });
+        return res.status;
+    }, [url, campi]);
+}
+
+/** L'avviso rosso della pagina, dopo un rimando. */
+async function errore(page) {
+    return page.evaluate(() => ((document.querySelector('.alert-error') || {}).textContent || '').trim());
+}
+
+/**
+ * Salva il modulo vero del corso: sceglie la modalita', scrive i tre campi
+ * se ci sono, preme «Salva» del riquadro «Dati del corso».
+ */
+async function salvaCorso(page, id, modo, campi = {}) {
+    await page.goto(BASE + '/admin/courses/' + id + '/edit');
+    await page.selectOption('#enrollment_mode', modo);
+    for (const [nome, valore] of Object.entries(campi)) {
+        await page.fill('[name="' + nome + '"]', valore);
+    }
+    await Promise.all([
+        page.waitForNavigation(),
+        page.locator('#enrollment_mode').locator('xpath=ancestor::form').locator('button[type="submit"]').first().click(),
+    ]);
+    return errore(page);
+}
+
+const VALIDI = { price: '49,00', payment_link_url: LINK, payment_link_id: 'plink_prova1' };
+
+(async () => {
+    console.log('Semina dei due mondi e dei corsi della suite…');
+    const { A } = semina();
+    const C = prepara(A);
+    const prima = php('echo App\\Core\\Settings::stored("PAYMENTS_ENABLED") ?? "";').trim();
+    const browser = await chromium.launch();
+
+    try {
+        const admin = (await entra(browser, 'admin@test.it')).page;
+        const nomeGruppoA = riga('SELECT name FROM `groups` WHERE id = ?', A.gruppo).name;
+
+        // --- senza corsi a pagamento, nei gruppi niente riga ------------------
+        sql('UPDATE courses SET enrollment_mode = \'closed\' WHERE id = ?', C.bozzaPagata);
+        const giaPagati = conta('SELECT COUNT(*) FROM courses WHERE enrollment_mode = \'paid\'');
+        await admin.goto(BASE + '/admin/groups/' + A.gruppo + '/edit');
+        if (giaPagati === 0) {
+            check('senza corsi a pagamento, sotto «Assegna corso» la riga non c\'e\'',
+                !(await admin.content()).includes('I corsi a pagamento non si assegnano ai gruppi'));
+        } else {
+            console.log('  --   nel database ci sono gia\' ' + giaPagati + ' corsi a pagamento: la prova senza riga si salta');
+        }
+        sql('UPDATE courses SET enrollment_mode = \'paid\' WHERE id = ?', C.bozzaPagata);
+
+        // --- l'interruttore spento ------------------------------------------
+        interruttore('');
+        await admin.goto(BASE + '/admin/courses/' + C.libero + '/edit');
+        let opzioni = await admin.$$eval('#enrollment_mode option', (o) => o.map((x) => x.value));
+        check('spento: nel modulo del corso «A pagamento» non c\'e\'', !opzioni.includes('paid') && opzioni.length === 3, [opzioni.join(',')]);
+        check('spento: i campi del pagamento non ci sono', (await admin.$('#campi-pagamento')) === null);
+        await posta(admin, '/admin/courses/' + C.libero, [['title', '[prova-pagamenti] corso libero'], ['is_published', '1'],
+            ['enrollment_mode', 'paid'], ['price', '49,00'], ['payment_link_url', LINK], ['payment_link_id', 'plink_prova1']], '/admin/courses/' + C.libero + '/edit');
+        check('spento: una POST con «paid» lascia il corso com\'era', corso(C.libero).enrollment_mode === 'open', [JSON.stringify(corso(C.libero))]);
+
+        // --- Impostazioni › Pagamenti -----------------------------------------
+        await admin.goto(BASE + '/admin/settings');
+        check('l\'indice delle impostazioni ha «Pagamenti»', await admin.$('a.settings-card[href="/admin/settings/pagamenti"]') !== null);
+        await admin.goto(BASE + '/admin/settings/pagamenti');
+        check('spento: la casella e\' spenta', !(await admin.isChecked('#pagamenti-attivi')));
+        await admin.check('#pagamenti-attivi');
+        await Promise.all([admin.waitForNavigation(), admin.click('form.form button[type="submit"]')]);
+        check('accendendo la casella e salvando, PAYMENTS_ENABLED = 1', php('echo App\\Core\\Settings::stored("PAYMENTS_ENABLED");').trim() === '1');
+        check('accesa: la casella e\' accesa', await admin.isChecked('#pagamenti-attivi'));
+        await admin.uncheck('#pagamenti-attivi');
+        await Promise.all([admin.waitForNavigation(), admin.click('form.form button[type="submit"]')]);
+        check('spegnendola e salvando, PAYMENTS_ENABLED = 0', php('echo App\\Core\\Settings::stored("PAYMENTS_ENABLED");').trim() === '0');
+        interruttore('1');
+
+        // --- accesi: il modulo del corso --------------------------------------
+        await admin.goto(BASE + '/admin/courses/' + C.libero + '/edit');
+        opzioni = await admin.$$eval('#enrollment_mode option', (o) => o.map((x) => x.value));
+        check('accesi: nel modulo c\'e\' «A pagamento»', opzioni.includes('paid'), [opzioni.join(',')]);
+        check('su «Aperta» i campi del pagamento sono nascosti', await admin.$eval('#campi-pagamento', (e) => e.hidden));
+        await admin.selectOption('#enrollment_mode', 'paid');
+        check('scegliendo «A pagamento» compaiono', !(await admin.$eval('#campi-pagamento', (e) => e.hidden)));
+
+        // --- i rifiuti dei tre campi -----------------------------------------
+        const casi = [
+            ['senza prezzo', { ...VALIDI, price: '' }, 'servono il prezzo, il link di pagamento e il suo identificativo'],
+            ['senza identificativo', { ...VALIDI, payment_link_id: '' }, 'servono il prezzo, il link di pagamento e il suo identificativo'],
+            ['un prezzo che non si legge', { ...VALIDI, price: 'quaranta' }, 'Il prezzo va scritto in euro'],
+            ['un prezzo di zero', { ...VALIDI, price: '0' }, 'Il prezzo va scritto in euro'],
+            ['un link in http://', { ...VALIDI, payment_link_url: 'http://buy.stripe.com/x' }, 'deve cominciare con https://'],
+            ['un identificativo senza «plink_»', { ...VALIDI, payment_link_id: 'price_123' }, 'comincia con «plink_»'],
+            ['l\'identificativo di un altro corso a pagamento', { ...VALIDI, payment_link_id: 'plink_bozza1' }, 'è già usato dal corso «[prova-pagamenti] bozza a pagamento»'],
+        ];
+        for (const [cosa, campi, frase] of casi) {
+            const avviso = await salvaCorso(admin, C.libero, 'paid', campi);
+            check('rifiutato con ' + cosa + ', e il corso resta «Aperta»',
+                avviso.includes(frase) && corso(C.libero).enrollment_mode === 'open', [avviso, JSON.stringify(corso(C.libero))]);
+        }
+        const riproposto = await admin.evaluate(() => ({
+            modo: document.querySelector('#enrollment_mode').value,
+            link: document.querySelector('[name="payment_link_url"]').value,
+            plink: document.querySelector('[name="payment_link_id"]').value,
+        }));
+        check('dopo un rifiuto il modulo torna con quello che era stato scritto',
+            riproposto.modo === 'paid' && riproposto.link === LINK && riproposto.plink === 'plink_bozza1', [JSON.stringify(riproposto)]);
+
+        // --- controprova: tutto in regola ------------------------------------
+        let avviso = await salvaCorso(admin, C.libero, 'paid', VALIDI);
+        let c = corso(C.libero);
+        check('controprova: con i tre campi in regola il corso diventa a pagamento, 49,00 € = 4900 centesimi',
+            avviso === '' && c.enrollment_mode === 'paid' && Number(c.price_cents) === 4900 && c.payment_link_url === LINK && c.payment_link_id === 'plink_prova1',
+            [avviso, JSON.stringify(c)]);
+        await admin.goto(BASE + '/admin/courses/' + C.libero + '/edit');
+        check('riaperto, il modulo mostra «A pagamento» e «49,00»',
+            (await admin.$eval('#enrollment_mode', (s) => s.value)) === 'paid' && (await admin.$eval('#price', (i) => i.value)) === '49,00');
+        // A 320 px, con i tre campi aperti, la pagina non scorre di lato.
+        await admin.setViewportSize({ width: 320, height: 800 });
+        await admin.goto(BASE + '/admin/courses/' + C.libero + '/edit');
+        const larghezza = await admin.evaluate(() => document.documentElement.scrollWidth);
+        check('a 320 px il modulo con i campi del pagamento non allarga la pagina', larghezza <= 320, [larghezza + ' px']);
+        await admin.setViewportSize({ width: 1280, height: 900 });
+
+        // --- gli impedimenti: gruppo e richieste ------------------------------
+        avviso = await salvaCorso(admin, A.corso, 'paid', { ...VALIDI, payment_link_id: 'plink_prova2' });
+        check('un corso assegnato a un gruppo non diventa a pagamento, con il nome del gruppo',
+            avviso === 'Il corso è assegnato al gruppo ' + nomeGruppoA + ': va rimosso dal gruppo prima di renderlo a pagamento.'
+            || (avviso.startsWith('Il corso è assegnato ai gruppi ') && avviso.includes(nomeGruppoA) && avviso.endsWith('va rimosso dai gruppi prima di renderlo a pagamento.')),
+            [avviso]);
+        check('… e resta com\'era', corso(A.corso).enrollment_mode !== 'paid', [JSON.stringify(corso(A.corso))]);
+
+        avviso = await salvaCorso(admin, C.richiesta, 'paid', { ...VALIDI, payment_link_id: 'plink_prova3' });
+        check('un corso con una richiesta in attesa non diventa a pagamento',
+            avviso === 'C’è 1 richiesta di iscrizione in attesa: va decisa prima di rendere il corso a pagamento.'
+            && corso(C.richiesta).enrollment_mode === 'request', [avviso]);
+        sql('UPDATE enrollment_requests SET status = \'rejected\', decided_at = NOW() WHERE course_id = ?', C.richiesta);
+        avviso = await salvaCorso(admin, C.richiesta, 'paid', { ...VALIDI, payment_link_id: 'plink_prova3' });
+        check('controprova: decisa la richiesta, diventa a pagamento', avviso === '' && corso(C.richiesta).enrollment_mode === 'paid', [avviso]);
+
+        // --- i gruppi -----------------------------------------------------------
+        await admin.goto(BASE + '/admin/groups/' + A.gruppo + '/edit');
+        const assegnabili = await admin.$$eval('select[name="course_id"] option', (o) => o.map((x) => Number(x.value)));
+        check('fra i corsi da assegnare a un gruppo quello a pagamento non c\'e\', l\'altro si',
+            !assegnabili.includes(C.libero) && assegnabili.includes(C.altro), [assegnabili.join(',')]);
+        check('sotto «Assegna corso» la riga sui corsi a pagamento',
+            (await admin.content()).includes('I corsi a pagamento non si assegnano ai gruppi: non compaiono qui.'));
+        await posta(admin, '/admin/groups/' + A.gruppo + '/courses', [['course_id', String(C.libero)]], '/admin/groups/' + A.gruppo + '/edit');
+        check('una POST che assegna il corso a pagamento al gruppo non lo assegna e non iscrive nessuno',
+            conta('SELECT COUNT(*) FROM group_course_access WHERE course_id = ?', C.libero) === 0
+            && conta('SELECT COUNT(*) FROM enrollments WHERE course_id = ?', C.libero) === 0);
+        // L'avviso si legge dove porta il rimando (la `fetch` non lo segue).
+        await admin.goto(BASE + '/admin/groups/' + A.gruppo + '/edit');
+        const avvisoGruppo = await errore(admin);
+        check('… e lo dice', avvisoGruppo === 'Un corso a pagamento non si assegna a un gruppo.', [avvisoGruppo]);
+        await posta(admin, '/admin/groups/' + A.gruppo + '/courses', [['course_id', String(C.altro)]], '/admin/groups/' + A.gruppo + '/edit');
+        check('controprova: il corso aperto si assegna, e iscrive i membri',
+            conta('SELECT COUNT(*) FROM group_course_access WHERE course_id = ?', C.altro) === 1
+            && conta('SELECT COUNT(*) FROM enrollments WHERE course_id = ?', C.altro) > 0);
+
+        // --- Gestione corsi -------------------------------------------------------
+        await admin.goto(BASE + '/admin/courses');
+        const etichetta = await admin.evaluate((t) => {
+            const r = [...document.querySelectorAll('tr')].find((x) => x.textContent.includes(t));
+            return r ? [...r.querySelectorAll('.badge')].map((b) => b.textContent.trim()) : [];
+        }, '[prova-pagamenti] corso libero');
+        check('Gestione corsi: «a pagamento»', etichetta.includes('a pagamento'), [etichetta.join(' | ')]);
+
+        // --- il catalogo e lo studente ----------------------------------------------
+        const studente = (await entra(browser, 'stud@test.it')).page;
+        await studente.goto(BASE + '/catalogo');
+        let catalogo = await studente.content();
+        check('il corso a pagamento non e\' nel catalogo', !catalogo.includes('[prova-pagamenti] corso libero'));
+        check('controprova: il corso aperto della suite si', catalogo.includes('[prova-pagamenti] altro corso') || conta('SELECT COUNT(*) FROM enrollments WHERE course_id = ? AND user_id = ?', C.altro, A.studente) === 1);
+        await posta(studente, '/catalogo/' + C.libero + '/iscrizione', [], '/catalogo');
+        check('dal catalogo una POST non iscrive al corso a pagamento',
+            conta('SELECT COUNT(*) FROM enrollments WHERE course_id = ? AND user_id = ?', C.libero, A.studente) === 0);
+        check('… ne\' crea una richiesta',
+            conta('SELECT COUNT(*) FROM enrollment_requests WHERE course_id = ? AND user_id = ?', C.libero, A.studente) === 0);
+        sql('UPDATE courses SET enrollment_mode = \'open\' WHERE id = ?', C.libero);
+        await posta(studente, '/catalogo/' + C.libero + '/iscrizione', [], '/catalogo');
+        check('controprova: tornato «Aperta», la stessa POST iscrive',
+            conta('SELECT COUNT(*) FROM enrollments WHERE course_id = ? AND user_id = ?', C.libero, A.studente) === 1);
+        sql('DELETE FROM enrollments WHERE course_id = ?', C.libero);
+        sql('UPDATE courses SET enrollment_mode = \'paid\' WHERE id = ?', C.libero);
+
+        // --- l'iscrizione a mano dell'admin -------------------------------------------
+        await posta(admin, '/admin/courses/' + C.libero + '/enrollments', [['user_id', String(A.studente)]], '/admin/courses/' + C.libero + '/edit');
+        check('l\'admin iscrive a mano a un corso a pagamento',
+            conta('SELECT COUNT(*) FROM enrollments WHERE course_id = ? AND user_id = ?', C.libero, A.studente) === 1);
+
+        // --- spento, il corso gia' a pagamento resta tale --------------------------------
+        interruttore('0');
+        await admin.goto(BASE + '/admin/courses/' + C.libero + '/edit');
+        opzioni = await admin.$$eval('#enrollment_mode option', (o) => o.map((x) => x.value));
+        check('spento: un corso gia\' a pagamento ha ancora «A pagamento», scelta',
+            opzioni.includes('paid') && (await admin.$eval('#enrollment_mode', (s) => s.value)) === 'paid', [opzioni.join(',')]);
+        avviso = await salvaCorso(admin, C.libero, 'paid', {});
+        check('spento: salvandolo resta a pagamento, con il suo prezzo', avviso === '' && corso(C.libero).enrollment_mode === 'paid'
+            && Number(corso(C.libero).price_cents) === 4900, [avviso, JSON.stringify(corso(C.libero))]);
+        await admin.goto(BASE + '/admin/courses/' + C.altro + '/edit');
+        opzioni = await admin.$$eval('#enrollment_mode option', (o) => o.map((x) => x.value));
+        check('spento: un altro corso non ha «A pagamento»', !opzioni.includes('paid'), [opzioni.join(',')]);
+        await admin.goto(BASE + '/admin/groups/' + A.gruppo + '/edit');
+        check('spento: la riga dei gruppi c\'e\' ancora, perche\' il corso a pagamento c\'e\'',
+            (await admin.content()).includes('I corsi a pagamento non si assegnano ai gruppi'));
+        interruttore('1');
+
+        // --- il supervisore -------------------------------------------------------------
+        const sup = (await entra(browser, SUPERVISORE)).page;
+        await sup.goto(BASE + '/admin/courses/' + C.bozza + '/edit');
+        opzioni = await sup.$$eval('#enrollment_mode option', (o) => o.map((x) => x.value));
+        check('supervisore, interruttore acceso: nel modulo non c\'e\' «A pagamento»', !opzioni.includes('paid') && opzioni.length === 3, [opzioni.join(',')]);
+        await posta(sup, '/admin/courses/' + C.bozza, [['title', '[prova-pagamenti] bozza'], ['enrollment_mode', 'paid'],
+            ['price', '10'], ['payment_link_url', LINK], ['payment_link_id', 'plink_sup1']], '/admin/courses/' + C.bozza + '/edit');
+        c = corso(C.bozza);
+        check('supervisore: una POST con «paid» lascia la bozza «Chiusa», senza prezzo', c.enrollment_mode === 'closed' && c.price_cents === null, [JSON.stringify(c)]);
+        await posta(sup, '/admin/courses/' + C.bozza, [['title', '[prova-pagamenti] bozza'], ['enrollment_mode', 'open']], '/admin/courses/' + C.bozza + '/edit');
+        check('controprova: il supervisore cambia le altre modalita\'', corso(C.bozza).enrollment_mode === 'open');
+
+        await sup.goto(BASE + '/admin/courses/' + C.bozzaPagata + '/edit');
+        const vista = await sup.evaluate(() => ({
+            spenta: document.querySelector('#enrollment_mode').disabled,
+            campi: document.querySelector('#campi-pagamento') !== null,
+            frase: ((document.getElementById('enrollment-mode-hint') || {}).textContent || '').trim(),
+        }));
+        check('supervisore, bozza a pagamento: la modalita\' si vede spenta, senza prezzo e link, con la frase',
+            vista.spenta && !vista.campi && vista.frase === 'La modalità «A pagamento», con prezzo e link, la cambia solo l’admin.', [JSON.stringify(vista)]);
+        await posta(sup, '/admin/courses/' + C.bozzaPagata, [['title', '[prova-pagamenti] bozza a pagamento'], ['enrollment_mode', 'open'],
+            ['price', '1'], ['payment_link_url', 'https://esempio.it/x'], ['payment_link_id', 'plink_sup2']], '/admin/courses/' + C.bozzaPagata + '/edit');
+        c = corso(C.bozzaPagata);
+        check('supervisore: salvando la bozza a pagamento, modalita\', prezzo e link restano',
+            c.enrollment_mode === 'paid' && Number(c.price_cents) === 3000 && c.payment_link_url === LINK && c.payment_link_id === 'plink_bozza1', [JSON.stringify(c)]);
+        await posta(sup, '/admin/courses', [['title', '[prova-pagamenti] nuovo del supervisore'], ['enrollment_mode', 'paid'],
+            ['price', '10'], ['payment_link_url', LINK], ['payment_link_id', 'plink_sup3']], '/admin/courses/create');
+        const nuovo = riga('SELECT enrollment_mode, price_cents FROM courses WHERE title = ?', '[prova-pagamenti] nuovo del supervisore');
+        check('supervisore: un corso nuovo con «paid» nasce «Chiuso», senza prezzo',
+            nuovo !== null && nuovo.enrollment_mode === 'closed' && nuovo.price_cents === null, [JSON.stringify(nuovo)]);
+        check('supervisore: Impostazioni › Pagamenti negata', (await esitoGet(sup, '/admin/settings/pagamenti')) === 'negato');
+
+        // --- chi apre Impostazioni › Pagamenti -----------------------------------------------
+        for (const email of ['tutor1@test.it', 'assist@test.it', 'stud@test.it']) {
+            const p = (await entra(browser, email)).page;
+            check(email + ' → Impostazioni › Pagamenti: negato', (await esitoGet(p, '/admin/settings/pagamenti')) === 'negato');
+            const prima2 = php('echo App\\Core\\Settings::stored("PAYMENTS_ENABLED");').trim();
+            await posta(p, '/admin/settings/pagamenti', [['PAYMENTS_ENABLED', '0']], '/profilo');
+            check(email + ' → una POST non spegne i pagamenti', php('echo App\\Core\\Settings::stored("PAYMENTS_ENABLED");').trim() === prima2);
+        }
+        check('controprova: l\'admin apre Impostazioni › Pagamenti', (await esitoGet(admin, '/admin/settings/pagamenti')) === 'consentito');
+    } catch (e) {
+        check('la suite e\' arrivata in fondo', false, [String(e && e.stack || e)]);
+    } finally {
+        await browser.close();
+        sql('DELETE FROM group_course_access WHERE course_id IN (SELECT id FROM courses WHERE title LIKE \'[prova-pagamenti]%\')');
+        pulisci();
+        interruttore(prima);
+    }
+
+    console.log('\nTotale: ' + ok + ' superati, ' + fail + ' falliti');
+    process.exit(fail === 0 ? 0 : 1);
+})();

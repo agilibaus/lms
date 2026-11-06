@@ -309,6 +309,8 @@ $router->get('/admin/settings/benvenuto', [SettingsController::class, 'welcome']
 $router->post('/admin/settings/benvenuto', [SettingsController::class, 'updateWelcome']);
 $router->get('/admin/settings/bunny', [SettingsController::class, 'bunny']);
 $router->post('/admin/settings/bunny', [SettingsController::class, 'updateBunny']);
+$router->get('/admin/settings/pagamenti', [SettingsController::class, 'pagamenti']);
+$router->post('/admin/settings/pagamenti', [SettingsController::class, 'updatePagamenti']);
 $router->get('/admin/settings/meet', [SettingsController::class, 'meet']);
 $router->post('/admin/settings/meet', [SettingsController::class, 'updateMeet']);
 $router->post('/admin/settings/meet/chiave/elimina', [SettingsController::class, 'deleteMeetKey']);

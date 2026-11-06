@@ -273,6 +273,26 @@ class GroupModel
         $stmt->execute(['group_id' => $groupId, 'user_id' => $userId]);
     }
 
+    /**
+     * I nomi dei gruppi a cui un corso e' assegnato, in ordine alfabetico
+     * (06/11: un corso assegnato a un gruppo non diventa a pagamento).
+     *
+     * @return list<string>
+     */
+    public static function nomiPerCorso(int $courseId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT g.name
+             FROM group_course_access gca
+             INNER JOIN `groups` g ON g.id = gca.group_id
+             WHERE gca.course_id = :c
+             ORDER BY g.name, g.id'
+        );
+        $stmt->execute(['c' => $courseId]);
+
+        return array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
     public static function addCourse(int $groupId, int $courseId): void
     {
         $stmt = Database::connection()->prepare(

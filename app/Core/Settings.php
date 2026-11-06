@@ -112,6 +112,14 @@ class Settings
         'ROLE_STUDENTE_PROPOSTE',
     ];
 
+    /**
+     * I corsi a pagamento (06/11, `App\Core\CorsiAPagamento`): l'interruttore
+     * generale, '1' acceso; assente, spento.
+     */
+    public const PAYMENT_KEYS = [
+        'PAYMENTS_ENABLED',
+    ];
+
     /** Chiavi da non rimandare mai al browser. */
     public const SECRET_KEYS = [
         'MAIL_PASSWORD',
@@ -127,6 +135,7 @@ class Settings
             || in_array($key, self::BUNNY_KEYS, true)
             || in_array($key, self::WELCOME_KEYS, true)
             || in_array($key, self::ROLE_KEYS, true)
+            || in_array($key, self::PAYMENT_KEYS, true)
             || in_array($key, Mail\Modelli::chiaviSettings(), true);
     }
 

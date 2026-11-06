@@ -14,6 +14,7 @@ use App\Core\Icona;
 /** @var array $courses */
 /** @var array $availableStudents */
 /** @var array $availableCourses */
+/** @var bool $ciSonoCorsiAPagamento la riga sotto «Assegna corso» (06/11) */
 /** @var bool $gestisceTutto l'admin: crea, elimina, assegna corsi (26/10) */
 /** @var bool $gestisceMembri l'admin, o il tutor con «Membri dei gruppi» acceso */
 
@@ -107,6 +108,10 @@ $members = $ordineMembri->applica($members);
             </select>
             <button type="submit" class="btn btn-secondary">Assegna corso</button>
         </form>
+    <?php endif; ?>
+
+    <?php if ($ciSonoCorsiAPagamento ?? false): ?>
+        <p class="form-hint">I corsi a pagamento non si assegnano ai gruppi: non compaiono qui.</p>
     <?php endif; ?>
 </section>
 

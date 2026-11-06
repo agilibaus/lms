@@ -208,8 +208,14 @@ CREATE TABLE courses (
     cover_alt       VARCHAR(255),
     is_published    TINYINT(1) NOT NULL DEFAULT 0,
     -- come ci si iscrive: 'open' iscrizione immediata dal catalogo,
-    -- 'request' richiesta da approvare, 'closed' solo admin/tutor o gruppi
-    enrollment_mode ENUM('open','request','closed') NOT NULL DEFAULT 'closed',
+    -- 'request' richiesta da approvare, 'closed' solo admin/tutor o gruppi,
+    -- 'paid' a pagamento su Stripe (2026_11_06_corsi_a_pagamento.sql)
+    enrollment_mode ENUM('open','request','closed','paid') NOT NULL DEFAULT 'closed',
+    -- Solo per i corsi a pagamento: il prezzo in centesimi di euro, prima degli
+    -- sconti; il link di pagamento di Stripe e il suo identificativo (plink_...).
+    price_cents     INT UNSIGNED NULL DEFAULT NULL,
+    payment_link_url VARCHAR(255) NULL DEFAULT NULL,
+    payment_link_id VARCHAR(64) NULL DEFAULT NULL,
     -- Ordine deciso da chi amministra: vale nell'elenco dei corsi, in Gestione
     -- corsi e nel catalogo degli studenti.
     position        SMALLINT UNSIGNED NOT NULL DEFAULT 0,

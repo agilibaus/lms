@@ -577,6 +577,7 @@ const PAGINE_INTERNE = [
     // «Inviti sessioni live» il 12/10.
     ['/admin/settings/email', 'Messaggi email'],
     ['/admin/settings/bunny', 'Bunny Stream'],
+    ['/admin/settings/pagamenti', 'Pagamenti'],
     ['/admin/settings/meet', 'Google Meet'],
     ['/admin/settings/informazioni', 'Informazioni su Pistacchio LMS'],
 

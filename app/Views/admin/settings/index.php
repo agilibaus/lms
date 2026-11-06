@@ -57,6 +57,12 @@ $sezioni = [
         'visibile' => $canPermissions,
     ],
     [
+        'titolo' => 'Pagamenti',
+        'href' => '/admin/settings/pagamenti',
+        'testo' => 'I corsi a pagamento con Stripe: se si possono creare.',
+        'visibile' => $canSettings,
+    ],
+    [
         'titolo' => 'Informazioni su Pistacchio LMS',
         'href' => '/admin/settings/informazioni',
         'testo' => 'La versione installata e il collegamento al codice sorgente su GitHub.',

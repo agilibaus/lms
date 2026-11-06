@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Core\TutorWelcome;
 use App\Auth\Auth;
 use App\Core\CampoContato;
+use App\Core\CorsiAPagamento;
 use App\Core\GroupLogo;
 use App\Core\Upload;
 use App\Core\View;
@@ -121,10 +122,14 @@ class GroupController extends AdminController
                     static fn (array $u): bool => !in_array((int) $u['id'], $memberIds, true)
                 ))
                 : (Auth::can('group.members_own') ? GroupModel::candidati((int) $group['id']) : []),
+            // Un corso a pagamento non si assegna a un gruppo (06/11): chi entra
+            // nel gruppo verrebbe iscritto senza pagare.
             'availableCourses' => !Auth::can('group.manage') ? [] : array_values(array_filter(
                 CourseModel::allForStaff(),
                 static fn (array $c): bool => !in_array((int) $c['id'], $courseIds, true)
+                    && $c['enrollment_mode'] !== CorsiAPagamento::MODALITA
             )),
+            'ciSonoCorsiAPagamento' => Auth::can('group.manage') && CourseModel::esisteUnoAPagamento(),
         ]);
     }
 
@@ -370,8 +375,14 @@ class GroupController extends AdminController
         $redirect = '/admin/groups/' . $groupId . '/edit';
         $courseId = (int) ($_POST['course_id'] ?? 0);
 
-        if (CourseModel::find($courseId) === null) {
+        $course = CourseModel::find($courseId);
+
+        if ($course === null) {
             $this->fail('Corso non trovato.', $redirect);
+        }
+
+        if ($course['enrollment_mode'] === CorsiAPagamento::MODALITA) {
+            $this->fail('Un corso a pagamento non si assegna a un gruppo.', $redirect);
         }
 
         GroupModel::addCourse($groupId, $courseId);

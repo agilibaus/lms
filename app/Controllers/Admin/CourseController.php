@@ -8,6 +8,7 @@ use App\Controllers\Admin\TutorWelcomeController;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Auth\StudentScope;
+use App\Core\CorsiAPagamento;
 use App\Core\CourseCover;
 use App\Core\Mail\Mailer;
 use App\Core\TestoBreve;
@@ -18,6 +19,7 @@ use App\Models\CourseModel;
 use App\Models\TreParoleModel;
 use App\Models\EnrollmentModel;
 use App\Models\EnrollmentRequestModel;
+use App\Models\GroupModel;
 use App\Models\TutorWelcomeModel;
 use App\Models\UserModel;
 
@@ -99,7 +101,12 @@ class CourseController extends AdminController
             $this->fail('Il titolo del corso è obbligatorio.', '/admin/courses/create');
         }
 
+        $modalita = self::modalitaDaSalvare($data['enrollment_mode'], null);
+        $data['enrollment_mode'] = $modalita;
+
         $this->rifiutaOltreIlLimite($data, 0, '/admin/courses/create');
+
+        $pagamento = $this->pagamentoDaSalvare($data, $modalita, null, '/admin/courses/create');
 
         $courseId = CourseModel::create(
             $data['title'],
@@ -108,9 +115,13 @@ class CourseController extends AdminController
             // Il corso del supervisore nasce in bozza: pubblica l'admin (30/10).
             Auth::hasRole('supervisore') ? false : $data['is_published'],
             (int) Auth::id(),
-            $data['enrollment_mode'],
+            $modalita,
             $data['objective']
         );
+
+        if ($pagamento !== null) {
+            CourseModel::impostaPagamento($courseId, $pagamento['prezzo'], $pagamento['link'], $pagamento['plink']);
+        }
 
         TreParoleModel::imposta($courseId, $data['three_words']);
 
@@ -192,7 +203,12 @@ class CourseController extends AdminController
             $this->fail('Il titolo del corso è obbligatorio.', $redirect);
         }
 
+        $modalita = self::modalitaDaSalvare($data['enrollment_mode'], $course);
+        $data['enrollment_mode'] = $modalita;
+
         $this->rifiutaOltreIlLimite($data, $id, $redirect);
+
+        $pagamento = $this->pagamentoDaSalvare($data, $modalita, $course, $redirect);
 
         CourseModel::update(
             $id,
@@ -202,9 +218,13 @@ class CourseController extends AdminController
             // Il supervisore non pubblica: il corso resta com'e' (in bozza,
             // perche' su un pubblicato non arriva).
             Auth::hasRole('supervisore') ? (bool) $course['is_published'] : $data['is_published'],
-            $data['enrollment_mode'],
+            $modalita,
             $data['objective']
         );
+
+        if ($pagamento !== null) {
+            CourseModel::impostaPagamento($id, $pagamento['prezzo'], $pagamento['link'], $pagamento['plink']);
+        }
 
         TreParoleModel::imposta($id, $data['three_words']);
 
@@ -480,7 +500,7 @@ class CourseController extends AdminController
     // ---------------------------------------------------------------
 
     /**
-     * @return array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string}
+     * @return array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string, three_words: bool, prezzo: string, link: string, plink: string}
      */
     private function dataFromPost(): array
     {
@@ -498,9 +518,93 @@ class CourseController extends AdminController
             'objective' => $objective === '' ? null : $objective,
             'description' => $description === '' ? null : $description,
             'is_published' => isset($_POST['is_published']),
-            'enrollment_mode' => in_array($mode, ['open', 'request', 'closed'], true) ? $mode : 'closed',
+            'enrollment_mode' => in_array($mode, ['open', 'request', 'closed', CorsiAPagamento::MODALITA], true) ? $mode : 'closed',
             'three_words' => isset($_POST['three_words']),
+            // I tre campi del pagamento, come sono stati scritti: contano solo
+            // con «A pagamento» (`pagamentoDaSalvare()`).
+            'prezzo' => trim((string) ($_POST['price'] ?? '')),
+            'link' => trim((string) ($_POST['payment_link_url'] ?? '')),
+            'plink' => trim((string) ($_POST['payment_link_id'] ?? '')),
         ];
+    }
+
+    /**
+     * La modalita' d'iscrizione da salvare (06/11, `CorsiAPagamento`).
+     * «A pagamento» la sceglie solo l'admin, e solo a interruttore acceso; un
+     * corso gia' a pagamento resta tale per chi non e' admin (il supervisore),
+     * e anche per l'admin a interruttore spento, finche' non ne sceglie
+     * un'altra. Una scelta non ammessa lascia la modalita' com'era.
+     *
+     * @param array<string, mixed>|null $corso null per un corso nuovo
+     */
+    private static function modalitaDaSalvare(string $richiesta, ?array $corso): string
+    {
+        $attuale = $corso === null ? null : (string) $corso['enrollment_mode'];
+        $admin = Auth::hasRole('admin');
+
+        if ($attuale === CorsiAPagamento::MODALITA && !$admin) {
+            return $attuale;
+        }
+
+        if ($richiesta === CorsiAPagamento::MODALITA && !CorsiAPagamento::nelModulo($admin, $attuale)) {
+            return $attuale ?? 'closed';
+        }
+
+        return $richiesta;
+    }
+
+    /**
+     * Prezzo, link e identificativo da salvare con «A pagamento», controllati;
+     * null quando non c'e' niente da scrivere (un'altra modalita', o un corso
+     * a pagamento salvato da chi non e' admin, che i tre campi non li ha).
+     * Se qualcosa non va, o il corso non puo' diventare a pagamento perche' e'
+     * assegnato a un gruppo o ha richieste in attesa, il salvataggio si
+     * rifiuta e il modulo torna con quello che era stato scritto.
+     *
+     * @param array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string, three_words: bool, prezzo: string, link: string, plink: string} $data
+     * @param array<string, mixed>|null $corso
+     * @return array{prezzo: int, link: string, plink: string}|null
+     */
+    private function pagamentoDaSalvare(array $data, string $modalita, ?array $corso, string $redirect): ?array
+    {
+        if ($modalita !== CorsiAPagamento::MODALITA || !Auth::hasRole('admin')) {
+            return null;
+        }
+
+        $id = $corso === null ? 0 : (int) $corso['id'];
+        $prezzo = CorsiAPagamento::prezzoDaTesto($data['prezzo']);
+        $problema = null;
+
+        if ($id > 0) {
+            $problema = CorsiAPagamento::impedimento(
+                GroupModel::nomiPerCorso($id),
+                count(EnrollmentRequestModel::pendingForCourse($id))
+            );
+        }
+
+        if ($problema === null && ($data['prezzo'] === '' || $data['link'] === '' || $data['plink'] === '')) {
+            $problema = 'Per un corso a pagamento servono il prezzo, il link di pagamento e il suo identificativo.';
+        } elseif ($problema === null && $prezzo === null) {
+            $problema = 'Il prezzo va scritto in euro, per esempio 49,00.';
+        } elseif ($problema === null && !CorsiAPagamento::linkValido($data['link'])) {
+            $problema = 'Il link di pagamento deve cominciare con https://, come quello copiato da Stripe.';
+        } elseif ($problema === null && !CorsiAPagamento::identificativoValido($data['plink'])) {
+            $problema = 'L’identificativo del link comincia con «plink_»: si legge nella pagina del link su Stripe.';
+        }
+
+        if ($problema === null) {
+            $altro = CourseModel::altroConIdentificativo($data['plink'], $id);
+
+            if ($altro !== null) {
+                $problema = 'L’identificativo del link è già usato dal corso «' . $altro . '».';
+            }
+        }
+
+        if ($problema !== null || $prezzo === null) {
+            $this->riproponi($data, $id, $redirect, (string) $problema);
+        }
+
+        return ['prezzo' => $prezzo, 'link' => $data['link'], 'plink' => $data['plink']];
     }
 
     /**
@@ -510,7 +614,7 @@ class CourseController extends AdminController
      * Un salvataggio rifiutato per un'altra ragione, come il titolo
      * mancante, il testo non lo tiene: e' il comportamento di prima.
      *
-     * @param array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string} $data
+     * @param array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string, three_words: bool, prezzo: string, link: string, plink: string} $data
      */
     private function rifiutaOltreIlLimite(array $data, int $courseId, string $redirect): void
     {
@@ -523,6 +627,17 @@ class CourseController extends AdminController
             return;
         }
 
+        $this->riproponi($data, $courseId, $redirect, implode(' ', $problemi));
+    }
+
+    /**
+     * Rifiuta il salvataggio e ripropone il modulo con quello che era stato
+     * scritto, una volta sola (`riprendi()`).
+     *
+     * @param array{title: string, slug: string, objective: string|null, description: string|null, is_published: bool, enrollment_mode: string, three_words: bool, prezzo: string, link: string, plink: string} $data
+     */
+    private function riproponi(array $data, int $courseId, string $redirect, string $messaggio): never
+    {
         $_SESSION[self::RIPRENDI] = [
             'id' => $courseId,
             'campi' => [
@@ -532,10 +647,15 @@ class CourseController extends AdminController
                 'description' => $data['description'],
                 'is_published' => $data['is_published'] ? 1 : 0,
                 'enrollment_mode' => $data['enrollment_mode'],
+                // I campi del pagamento tornano come testo, anche se non si
+                // leggono: il prezzo sbagliato si corregge, non si riscrive.
+                'prezzo_testo' => $data['prezzo'],
+                'payment_link_url' => $data['link'],
+                'payment_link_id' => $data['plink'],
             ],
         ];
 
-        $this->fail(implode(' ', $problemi), $redirect);
+        $this->fail($messaggio, $redirect);
     }
 
     /**

@@ -102,6 +102,52 @@ class CourseModel
         return (int) $db->lastInsertId();
     }
 
+    /**
+     * Prezzo, link di pagamento e suo identificativo di un corso a pagamento
+     * (06/11, `CorsiAPagamento`). Si scrivono solo con «A pagamento» scelto:
+     * cambiando modalita' restano dove sono, e tornano se il corso torna a
+     * pagamento.
+     */
+    public static function impostaPagamento(int $id, int $prezzoCentesimi, string $link, string $identificativo): void
+    {
+        Database::connection()->prepare(
+            'UPDATE courses
+             SET price_cents = :prezzo, payment_link_url = :link, payment_link_id = :plink
+             WHERE id = :id'
+        )->execute([
+            'prezzo' => $prezzoCentesimi,
+            'link' => $link,
+            'plink' => $identificativo,
+            'id' => $id,
+        ]);
+    }
+
+    /**
+     * Il titolo dell'altro corso a pagamento che usa gia' questo
+     * identificativo di link, o null: dall'identificativo l'avviso di Stripe
+     * riconosce il corso, e due corsi con lo stesso sarebbero indistinguibili.
+     */
+    public static function altroConIdentificativo(string $identificativo, int $tranne): ?string
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT title FROM courses
+             WHERE payment_link_id = :plink AND enrollment_mode = 'paid' AND id <> :id
+             ORDER BY id LIMIT 1"
+        );
+        $stmt->execute(['plink' => $identificativo, 'id' => $tranne]);
+        $titolo = $stmt->fetchColumn();
+
+        return $titolo === false ? null : (string) $titolo;
+    }
+
+    /** Se c'e' almeno un corso a pagamento (la riga sotto «Assegna corso»). */
+    public static function esisteUnoAPagamento(): bool
+    {
+        return (bool) Database::connection()->query(
+            "SELECT EXISTS (SELECT 1 FROM courses WHERE enrollment_mode = 'paid')"
+        )->fetchColumn();
+    }
+
     public static function update(
         int $id,
         string $title,
@@ -367,6 +413,7 @@ class CourseModel
         return match ($mode) {
             'open' => 'iscrizione libera',
             'request' => 'iscrizione su richiesta',
+            'paid' => 'a pagamento',
             default => 'iscrizione chiusa',
         };
     }

@@ -9,6 +9,7 @@ use App\Core\CampoContato;
 use App\Core\Ambiente;
 use App\Core\AuthLayout;
 use App\Core\BunnyToken;
+use App\Core\CorsiAPagamento;
 use App\Core\ElementStyle;
 use App\Core\FontLibrary;
 use App\Core\Google\GoogleException;
@@ -44,6 +45,7 @@ class SettingsController extends AdminController
     private const EMAIL_PAGE = '/admin/settings/email';
     private const APPEARANCE_PAGE = '/admin/settings/aspetto';
     private const BUNNY_PAGE = '/admin/settings/bunny';
+    private const PAGAMENTI_PAGE = '/admin/settings/pagamenti';
 
     /** Dove finisce la chiave dell'account di servizio, fuori dal document root. */
     private const KEY_DIR = __DIR__ . '/../../../storage/google';
@@ -774,6 +776,34 @@ class SettingsController extends AdminController
         }
 
         $this->success('Impostazioni di Bunny Stream salvate.', self::BUNNY_PAGE);
+    }
+
+    // ---------------------------------------------------------------
+    // Pagamenti (06/11)
+    // ---------------------------------------------------------------
+
+    /**
+     * L'interruttore generale dei corsi a pagamento (`CorsiAPagamento`),
+     * spento all'inizio: spento, la piattaforma resta com'e'.
+     */
+    public function pagamenti(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        View::render('admin/settings/pagamenti', [
+            'pageTitle' => 'Pagamenti',
+            'attivi' => CorsiAPagamento::attivi(),
+            'lastUpdate' => Settings::lastUpdate(Settings::PAYMENT_KEYS),
+        ]);
+    }
+
+    public function updatePagamenti(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        Settings::set(CorsiAPagamento::KEY, ($_POST[CorsiAPagamento::KEY] ?? '0') === '1' ? '1' : '0', Auth::id());
+
+        $this->success('Impostazioni dei pagamenti salvate.', self::PAGAMENTI_PAGE);
     }
 
     // ---------------------------------------------------------------

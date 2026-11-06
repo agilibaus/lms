@@ -21,11 +21,16 @@ $ordine = Ordinamento::daRichiesta([
     // Pubblicato o bozza: un clic raggruppa le bozze da una parte. A parita',
     // la modalita' di iscrizione (10/10, Alessandro): la colonna le mostra
     // tutte e due, e ordinata sulla sola prima l'ordine dentro «pubblicato»
-    // sembrava casuale. Si ordina sul dato, `enrollment_mode`: closed, open,
-    // request cade nello stesso ordine delle etichette (chiusa, libera, su
-    // richiesta), e `ordinamento_pagine.js` lo verifica sul testo mostrato.
-    'stato' => ['is_published', Ordinamento::NUMERO, 'enrollment_mode'],
+    // sembrava casuale. Fino al 05/11 lo spareggio era il dato,
+    // `enrollment_mode`, che cadeva nello stesso ordine delle etichette;
+    // con «a pagamento» (06/11, `paid`) non piu': lo spareggio e' l'etichetta
+    // mostrata, e `ordinamento_pagine.js` lo verifica sul testo.
+    'stato' => ['is_published', Ordinamento::NUMERO, 'modalita_etichetta'],
 ]);
+$courses = array_map(
+    static fn (array $c): array => $c + ['modalita_etichetta' => CourseModel::enrollmentLabel($c['enrollment_mode'] ?? 'closed')],
+    $courses
+);
 $courses = $ordine->applica($courses);
 ?>
 <div class="page-header">
@@ -85,8 +90,14 @@ $courses = $ordine->applica($courses);
                              disponibile agli studenti mentre nel catalogo non
                              compare affatto. */ ?>
                     <?php $mode = $course['enrollment_mode'] ?? 'closed'; ?>
+                    <?php /* «a pagamento» (06/11): finche' il pagamento con Stripe non c'e',
+                             il corso non compare nel catalogo e lo iscrive l'admin. */ ?>
                     <span class="badge"
-                          title="<?= $mode === 'closed' ? 'Non compare nel catalogo: iscrive solo lo staff, o l\'assegnazione a un gruppo' : 'Compare nel catalogo degli studenti' ?>">
+                          title="<?= match ($mode) {
+                              'closed' => 'Non compare nel catalogo: iscrive solo lo staff, o l\'assegnazione a un gruppo',
+                              'paid' => 'Non compare nel catalogo: lo iscrive solo l\'admin, a mano',
+                              default => 'Compare nel catalogo degli studenti',
+                          } ?>">
                         <?= htmlspecialchars(CourseModel::enrollmentLabel($mode)) ?>
                     </span>
                 </td>
