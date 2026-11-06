@@ -74,7 +74,7 @@ use App\Models\EnrollmentRequestModel;
                 <p class="card-meta catalogo-lezioni"><?= (int) $course['lesson_count'] ?> lezioni</p>
 
                 <?php if ($pending): ?>
-                    <p class="form-hint">Richiesta inviata: sarà valutata da un tutor.</p>
+                    <p class="form-hint">Richiesta inviata: sarà valutata dall'Amministratore.</p>
                 <?php else: ?>
                     <?php if ($rejected): ?>
                         <p class="form-hint">Una tua richiesta precedente non è stata accolta. Puoi riprovare.</p>
