@@ -82,17 +82,19 @@ use App\Models\EnrollmentRequestModel;
                          etichette di lunghezza diversa. */ ?>
                 <div class="catalogo-fondo">
                 <?php if ($pagato): ?>
-                    <?php /* Corso a pagamento (06/11, variante B ridotta): il prezzo
-                             in evidenza al posto delle lezioni, e il pulsante che
-                             porta a Stripe con il numero dello studente e la sua
-                             email. Niente etichetta, niente frase sotto. Il
-                             pulsante dice «Iscriviti» come per i corsi gratuiti
-                             (06/11, Alessandro): il prezzo sopra dice gia' che si
-                             paga. */ ?>
-                    <p class="catalogo-prezzo"><?= htmlspecialchars(CorsiAPagamento::prezzo((int) $course['price_cents'])) ?></p>
+                    <?php /* Corso a pagamento (06/11, variante B del mockup del
+                             prezzo): un pulsante diviso, il prezzo su verde chiaro a
+                             sinistra e «Iscriviti» a destra, che porta a Stripe con
+                             il numero dello studente e la sua email. Il prezzo e'
+                             testo, non parte del collegamento, e il collegamento lo
+                             ha come descrizione per i lettori di schermo. */ ?>
+                    <?php $prezzoId = 'prezzo-' . (int) $course['id']; ?>
                     <div class="form-actions">
-                        <a class="btn btn-primary"
-                           href="<?= htmlspecialchars(CorsiAPagamento::linkPerStudente((string) $course['payment_link_url'], (int) Auth::id(), (string) Auth::email())) ?>">Iscriviti</a>
+                        <span class="catalogo-paga">
+                            <span class="catalogo-paga-prezzo" id="<?= $prezzoId ?>"><?= htmlspecialchars(CorsiAPagamento::prezzoBreve((int) $course['price_cents'])) ?></span>
+                            <a class="btn btn-primary" aria-describedby="<?= $prezzoId ?>"
+                               href="<?= htmlspecialchars(CorsiAPagamento::linkPerStudente((string) $course['payment_link_url'], (int) Auth::id(), (string) Auth::email())) ?>">Iscriviti</a>
+                        </span>
                     </div>
                 <?php else: ?>
 

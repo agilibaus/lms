@@ -58,6 +58,10 @@ foreach (['', '0', '0,00', '-5', 'quarantanove', '49,999', '49,0,0', '1e3', '100
 check('il prezzo massimo si legge, 99.999,99 €', CorsiAPagamento::prezzoDaTesto('99.999,99') === CorsiAPagamento::PREZZO_MASSIMO);
 check('il prezzo si scrive «49,00 €»', CorsiAPagamento::prezzo(4900) === '49,00 €');
 check('il prezzo si scrive «1.250,50 €»', CorsiAPagamento::prezzo(125050) === '1.250,50 €');
+check('sul pulsante del catalogo, senza centesimi se non ci sono: «100 €», «1.250 €»',
+    CorsiAPagamento::prezzoBreve(10000) === '100 €' && CorsiAPagamento::prezzoBreve(125000) === '1.250 €');
+check('… e con i centesimi se ci sono: «49,50 €», «0,99 €»',
+    CorsiAPagamento::prezzoBreve(4950) === '49,50 €' && CorsiAPagamento::prezzoBreve(99) === '0,99 €');
 check('nel campo torna «49,00», e vuoto senza prezzo',
     CorsiAPagamento::prezzoNelCampo(4900) === '49,00' && CorsiAPagamento::prezzoNelCampo(null) === '');
 check('quello che si rimette nel campo si rilegge uguale',

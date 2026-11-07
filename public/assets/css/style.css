@@ -732,8 +732,6 @@ h3 { font-size: 1.05rem; }
     margin-top: 0;
 }
 
-/* Il prezzo di un corso a pagamento (06/11, variante B ridotta): al posto del
-   numero delle lezioni, con la stessa distanza dal testo, e in evidenza. */
 /* I nomi degli eventi di Stripe sono parole lunghe senza spazi: a 320 px
    «checkout.session.async_payment_succeeded» allargava la pagina di 58 px. */
 .stripe-eventi {
@@ -783,11 +781,35 @@ h3 { font-size: 1.05rem; }
     .pagamento-attesa-punti span:nth-child(2) { opacity: 0.6; }
 }
 
-.catalog-card .catalogo-prezzo {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--color-text);
+/* Il prezzo di un corso a pagamento (06/11, variante B del mockup del
+   prezzo): un pulsante diviso, con il prezzo su verde chiaro a sinistra e
+   «Iscriviti» a destra, dentro un solo bordo. Il blocco finale comincia con
+   lui: niente margine sopra, la distanza dal testo la tiene `.catalogo-fondo`. */
+.catalogo-fondo > .form-actions:first-child {
+    margin-top: 0;
+}
+
+.catalogo-paga {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1.5px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.catalogo-paga-prezzo {
+    display: flex;
+    align-items: center;
+    padding: 0 0.9rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.catalogo-paga .btn {
+    border-radius: 0;
 }
 
 .catalogo-leggi > summary {

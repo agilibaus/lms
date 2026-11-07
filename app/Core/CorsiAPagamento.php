@@ -131,6 +131,17 @@ final class CorsiAPagamento
         return number_format($centesimi / 100, 2, ',', '.') . ' €';
     }
 
+    /**
+     * Il prezzo breve, sul pulsante del catalogo (06/11, variante B): «100 €»,
+     * con i centesimi solo se ci sono («49,50 €»).
+     */
+    public static function prezzoBreve(int $centesimi): string
+    {
+        return $centesimi % 100 === 0
+            ? number_format(intdiv($centesimi, 100), 0, ',', '.') . ' €'
+            : self::prezzo($centesimi);
+    }
+
     /** Il prezzo come si rimette nel campo: «49,00». */
     public static function prezzoNelCampo(?int $centesimi): string
     {
