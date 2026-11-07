@@ -73,7 +73,7 @@ final class CorsiAPagamento
     }
 
     /**
-     * L'indirizzo del pulsante «Paga e iscriviti»: il link di pagamento del
+     * L'indirizzo del pulsante «Iscriviti» di un corso a pagamento: il link di pagamento del
      * corso con il numero dello studente, da cui l'avviso di Stripe lo
      * riconosce, e la sua email gia' scritta (06/11).
      */

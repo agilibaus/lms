@@ -85,11 +85,14 @@ use App\Models\EnrollmentRequestModel;
                     <?php /* Corso a pagamento (06/11, variante B ridotta): il prezzo
                              in evidenza al posto delle lezioni, e il pulsante che
                              porta a Stripe con il numero dello studente e la sua
-                             email. Niente etichetta, niente frase sotto. */ ?>
+                             email. Niente etichetta, niente frase sotto. Il
+                             pulsante dice «Iscriviti» come per i corsi gratuiti
+                             (06/11, Alessandro): il prezzo sopra dice gia' che si
+                             paga. */ ?>
                     <p class="catalogo-prezzo"><?= htmlspecialchars(CorsiAPagamento::prezzo((int) $course['price_cents'])) ?></p>
                     <div class="form-actions">
                         <a class="btn btn-primary"
-                           href="<?= htmlspecialchars(CorsiAPagamento::linkPerStudente((string) $course['payment_link_url'], (int) Auth::id(), (string) Auth::email())) ?>">Paga e iscriviti</a>
+                           href="<?= htmlspecialchars(CorsiAPagamento::linkPerStudente((string) $course['payment_link_url'], (int) Auth::id(), (string) Auth::email())) ?>">Iscriviti</a>
                     </div>
                 <?php else: ?>
 

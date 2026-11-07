@@ -437,7 +437,9 @@ class CourseModel
     public static function enrollmentLabel(?string $mode): string
     {
         return match ($mode) {
-            'open' => 'iscrizione libera',
+            // «gratuita» e non piu' «libera» (06/11, Alessandro): accanto ai corsi
+            // a pagamento, la differenza che conta e' il prezzo.
+            'open' => 'iscrizione gratuita',
             'request' => 'iscrizione su richiesta',
             'paid' => 'a pagamento',
             default => 'iscrizione chiusa',

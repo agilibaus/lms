@@ -472,8 +472,8 @@ const VALIDI = { price: '49,00', payment_link_url: LINK, payment_link_id: 'plink
                 prezzo: (c.querySelector('.catalogo-prezzo') || {}).textContent, testo: a && a.textContent.trim(), href: a && a.getAttribute('href') };
         }, '[prova-pagamenti] corso libero');
         const attesoP = new URL(LINK); attesoP.searchParams.set('client_reference_id', String(A.studente)); attesoP.searchParams.set('prefilled_email', 'stud@test.it');
-        check('accesi: nel catalogo la schedaP con il prezzo e «Paga e iscriviti», senza etichetta e senza lezioni',
-            schedaP !== null && !schedaP.badge && !schedaP.lezioni && schedaP.prezzo === '49,00 €' && schedaP.testo === 'Paga e iscriviti', [JSON.stringify(schedaP)]);
+        check('accesi: nel catalogo la scheda con il prezzo e «Iscriviti», senza etichetta e senza lezioni',
+            schedaP !== null && !schedaP.badge && !schedaP.lezioni && schedaP.prezzo === '49,00 €' && schedaP.testo === 'Iscriviti', [JSON.stringify(schedaP)]);
         check('… e il pulsante porta al link di Stripe con il numero e l\'email dello studente',
             schedaP !== null && schedaP.href === attesoP.toString(), [schedaP && schedaP.href, attesoP.toString()]);
         interruttore('0');
