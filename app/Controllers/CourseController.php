@@ -27,6 +27,7 @@ use App\Models\GroupModel;
 use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
 use App\Models\ModuleModel;
+use App\Models\PaymentModel;
 use App\Models\QuizAttemptModel;
 use App\Models\QuizModel;
 use App\Models\TreParoleModel;
@@ -62,6 +63,11 @@ class CourseController
             'heading' => $title,
             'isStaff' => $isStaff,
             'courses' => $courses,
+            // Tornando da Stripe dopo la pagina d'attesa (06/11): l'avviso solo
+            // finche' il pagamento non risulta registrato, cosi' ricaricando
+            // sparisce da solo.
+            'pagamentoInAttesa' => !$isStaff && isset($_GET['pagamento'])
+                && !PaymentModel::registratoPer((string) $_GET['pagamento'], (int) Auth::id()),
             // La percentuale dice quanto manca alla fine del corso; questa
             // dice se lo studente e' in pari con quello che puo' fare oggi.
             // Sono due domande diverse e vanno mostrate come due cose diverse.

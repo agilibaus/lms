@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\Auth;
 use App\Core\AvvisoStripe;
 use App\Core\CorsiAPagamento;
 use App\Core\Mail\CodaEmail;
 use App\Core\Mail\Mailer;
 use App\Core\Settings;
 use App\Core\Url;
+use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\PaymentModel;
@@ -110,6 +112,38 @@ class StripeController
         }
 
         $this->rispondi(200, $motivo === null ? 'Iscrizione completata.' : 'Pagamento registrato, iscrizione non riuscita.');
+    }
+
+    /**
+     * La pagina d'attesa dopo il pagamento (06/11, variante 1A): Stripe ci
+     * rimanda lo studente con il codice del pagamento. La pagina si ricarica
+     * ogni secondo, al massimo per `ATTESA_SECONDI`: appena il pagamento
+     * risulta registrato porta a «I miei corsi»; a tempo scaduto ci porta lo
+     * stesso, con il codice, e li' un avviso dice che la conferma non e'
+     * ancora arrivata. La ricarica e' un'intestazione `Refresh`: funziona
+     * anche senza JavaScript. Un pagamento registrato in rosso porta a «I miei
+     * corsi» senza avviso: lo gestisce l'Amministratore, con l'email.
+     */
+    public function ricevuto(array $params = []): void
+    {
+        Auth::requireLogin();
+
+        $sessione = (string) ($_GET['sessione'] ?? '');
+        $giro = max(0, (int) ($_GET['giro'] ?? 0));
+
+        if ($sessione === '' || PaymentModel::registratoPer($sessione, (int) Auth::id())) {
+            header('Location: /');
+            exit;
+        }
+
+        if ($giro >= CorsiAPagamento::ATTESA_SECONDI) {
+            header('Location: /?pagamento=' . rawurlencode($sessione));
+            exit;
+        }
+
+        header('Refresh: 1; url=' . CorsiAPagamento::INDIRIZZO_RITORNO . '?' . http_build_query(['sessione' => $sessione, 'giro' => $giro + 1]));
+
+        View::render('pagamento/ricevuto', ['pageTitle' => 'Pagamento ricevuto']);
     }
 
     /**

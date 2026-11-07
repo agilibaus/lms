@@ -84,6 +84,25 @@ class PaymentModel
         )->fetchAll();
     }
 
+    /**
+     * Se il pagamento con questo codice di Stripe e' gia' registrato per
+     * questo studente (06/11, la pagina d'attesa). Di un altro utente, o
+     * sconosciuto, risponde no: non dice niente di nessuno.
+     */
+    public static function registratoPer(string $sessionId, int $userId): bool
+    {
+        if ($sessionId === '') {
+            return false;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT 1 FROM payments WHERE stripe_session_id = :s AND user_id = :u LIMIT 1'
+        );
+        $stmt->execute(['s' => $sessionId, 'u' => $userId]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
     public static function quanti(): int
     {
         return (int) Database::connection()->query('SELECT COUNT(*) FROM payments')->fetchColumn();

@@ -15,6 +15,7 @@ use App\Core\Csrf;
  * @var bool $prova
  * @var bool $haChiave
  * @var string $indirizzoAvvisi
+ * @var string $indirizzoRitorno
  * @var array|null $lastUpdate
  * @var list<array<string, mixed>> $pagamenti
  * @var list<array{id: int, title: string}> $corsiPagati
@@ -72,6 +73,14 @@ use App\Core\Csrf;
         <p class="form-hint stripe-eventi" id="stripe-indirizzo-aiuto">
             Da incollare su Stripe come indirizzo dell’endpoint, con gli eventi «checkout.session.completed» e
             «checkout.session.async_payment_succeeded».
+        </p>
+
+        <label for="stripe-ritorno">Indirizzo dopo il pagamento</label>
+        <input type="text" id="stripe-ritorno" value="<?= htmlspecialchars($indirizzoRitorno) ?>" readonly
+               aria-describedby="stripe-ritorno-aiuto">
+        <p class="form-hint stripe-eventi" id="stripe-ritorno-aiuto">
+            Da incollare su Stripe in ogni link di pagamento: «Dopo il pagamento» › reindirizza i clienti al tuo
+            sito. È lo stesso per tutti i corsi.
         </p>
 
         <input type="hidden" name="<?= CorsiAPagamento::KEY_PROVA ?>" value="0">

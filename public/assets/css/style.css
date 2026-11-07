@@ -740,6 +740,49 @@ h3 { font-size: 1.05rem; }
     overflow-wrap: anywhere;
 }
 
+/* La pagina d'attesa dopo il pagamento (06/11, variante 1A): al centro della
+   pagina, con tre punti che si accendono a turno. */
+.pagamento-attesa {
+    max-width: 34rem;
+    margin: 3rem auto;
+    text-align: center;
+}
+
+.pagamento-attesa h1 {
+    font-size: 1.4rem;
+    margin: 0 0 0.6rem;
+}
+
+.pagamento-attesa-punti {
+    display: flex;
+    justify-content: center;
+    gap: 0.45rem;
+    margin: 1.4rem 0;
+}
+
+.pagamento-attesa-punti span {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--color-primary);
+    opacity: 0.3;
+    animation: pagamento-attesa 1.2s infinite;
+}
+
+.pagamento-attesa-punti span:nth-child(2) { animation-delay: 0.4s; }
+.pagamento-attesa-punti span:nth-child(3) { animation-delay: 0.8s; }
+
+@keyframes pagamento-attesa {
+    0%, 100% { opacity: 0.3; }
+    33% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pagamento-attesa-punti span { animation: none; }
+    .pagamento-attesa-punti span:nth-child(1) { opacity: 1; }
+    .pagamento-attesa-punti span:nth-child(2) { opacity: 0.6; }
+}
+
 .catalog-card .catalogo-prezzo {
     margin: 0;
     font-size: 1.25rem;

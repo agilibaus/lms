@@ -316,6 +316,8 @@ $router->post('/admin/settings/pagamenti', [SettingsController::class, 'updatePa
 // Gli avvisi di Stripe (06/11): da Stripe, senza token CSRF; la provenienza
 // la garantisce la firma (`AvvisoStripe`).
 $router->postEsterna('/stripe/avvisi', [StripeController::class, 'avvisi']);
+// Dove Stripe rimanda lo studente dopo il pagamento (06/11): la pagina d'attesa.
+$router->get('/pagamento-ricevuto', [StripeController::class, 'ricevuto']);
 $router->get('/admin/settings/meet', [SettingsController::class, 'meet']);
 $router->post('/admin/settings/meet', [SettingsController::class, 'updateMeet']);
 $router->post('/admin/settings/meet/chiave/elimina', [SettingsController::class, 'deleteMeetKey']);

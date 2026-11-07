@@ -44,6 +44,21 @@ final class CorsiAPagamento
     /** L'indirizzo a cui Stripe manda gli avvisi. */
     public const INDIRIZZO_AVVISI = '/stripe/avvisi';
 
+    /**
+     * Dove Stripe rimanda lo studente dopo il pagamento (06/11): la pagina
+     * d'attesa. `{CHECKOUT_SESSION_ID}` lo sostituisce Stripe con il codice
+     * del pagamento; l'indirizzo e' lo stesso per tutti i link.
+     */
+    public const INDIRIZZO_RITORNO = '/pagamento-ricevuto';
+
+    /** Quanti secondi, al massimo, aspetta la pagina d'attesa (06/11). */
+    public const ATTESA_SECONDI = 5;
+
+    public static function indirizzoRitorno(): string
+    {
+        return Url::to(self::INDIRIZZO_RITORNO) . '?sessione={CHECKOUT_SESSION_ID}';
+    }
+
     /** Il prezzo piu' alto accettato, in centesimi: 99.999,99 €. */
     public const PREZZO_MASSIMO = 9_999_999;
 

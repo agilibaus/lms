@@ -803,6 +803,7 @@ class SettingsController extends AdminController
             // La chiave non torna mai al browser: si dice solo se c'e'.
             'haChiave' => (string) Settings::get(CorsiAPagamento::KEY_SEGRETO, '') !== '',
             'indirizzoAvvisi' => Url::to(CorsiAPagamento::INDIRIZZO_AVVISI),
+            'indirizzoRitorno' => CorsiAPagamento::indirizzoRitorno(),
             'lastUpdate' => Settings::lastUpdate(Settings::PAYMENT_KEYS),
             'pagamenti' => PaymentModel::elenco($corso > 0 ? $corso : null),
             'corsiPagati' => PaymentModel::corsi(),

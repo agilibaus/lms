@@ -10,11 +10,20 @@ use App\Models\CourseModel;
 /** @var array $courses */
 /** @var string $heading */
 /** @var bool $isStaff */
+/** @var bool $pagamentoInAttesa tornando da Stripe, il pagamento non ancora confermato (06/11) */
 /** @var array<int, array{disponibili: int, fatte: int, prossima: ?string}> $availability */
 ?>
 <div class="page-header">
     <h1><?= htmlspecialchars($heading) ?></h1>
 </div>
+
+<?php if ($pagamentoInAttesa ?? false): ?>
+    <?php /* Variante 2A (06/11): il riquadro informativo sotto il titolo. */ ?>
+    <div class="alert alert-info" role="status">
+        Il pagamento non è ancora confermato da Stripe: il corso comparirà qui appena arriva la conferma.
+        Se non lo vedi, ricarica la pagina tra poco.
+    </div>
+<?php endif; ?>
 
 <?php if (empty($courses)): ?>
     <?php if ($isStaff): ?>
