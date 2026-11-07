@@ -51,7 +51,7 @@ final class CorsiAPagamento
      */
     public const INDIRIZZO_RITORNO = '/pagamento-ricevuto';
 
-    /** Quanti secondi, al massimo, aspetta la pagina d'attesa (06/11). */
+    /** Quanti secondi resta la pagina d'attesa, sempre (06/11). */
     public const ATTESA_SECONDI = 5;
 
     public static function indirizzoRitorno(): string

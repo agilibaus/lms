@@ -504,34 +504,40 @@ const VALIDI = { price: '49,00', payment_link_url: LINK, payment_link_id: 'plink
         check('filtrati per il corso: solo i suoi', (await admin.$$eval('.pagamenti-ricevuti tbody tr td[data-label="Corso"]', (t) => t.map((x) => x.textContent.trim()))).every((x) => x === '[prova-pagamenti] corso libero'));
 
         // --- il ritorno da Stripe: la pagina d'attesa e l'avviso (06/11) ------------------------
+        // La pagina compare sempre, per 5 secondi, poi porta a «I miei corsi»
+        // con il codice; la sola differenza e' l'avviso, finche' il pagamento
+        // non risulta registrato per quello studente.
         const sessRitorno = 'cs_test_ritorno_' + Date.now();
         const vai = (u) => studente.request.get(BASE + u, { maxRedirects: 0 });
-        let rr = await vai('/pagamento-ricevuto?sessione=' + sessRitorno);
-        let corpoR = await rr.text();
-        check('pagamento non ancora registrato: la pagina d\'attesa, con i suoi testi',
-            rr.status() === 200 && corpoR.includes('Pagamento ricevuto') && corpoR.includes('Un momento: stiamo preparando il tuo corso.')
-            && corpoR.includes('Tra pochi secondi tornerai a «I miei corsi».'), [String(rr.status())]);
-        check('… che si ricarica dopo un secondo, contando i giri',
-            rr.headers()['refresh'] === '1; url=/pagamento-ricevuto?sessione=' + sessRitorno + '&giro=1', [String(rr.headers()['refresh'])]);
-        rr = await vai('/pagamento-ricevuto?sessione=' + sessRitorno + '&giro=4');
-        check('al quarto giro aspetta ancora', rr.status() === 200 && rr.headers()['refresh'].endsWith('&giro=5'), [String(rr.headers()['refresh'])]);
-        rr = await vai('/pagamento-ricevuto?sessione=' + sessRitorno + '&giro=5');
-        check('dopo 5 secondi porta a «I miei corsi» con il codice', rr.status() === 302 && rr.headers()['location'] === '/?pagamento=' + sessRitorno, [String(rr.headers()['location'])]);
-        await studente.goto(BASE + '/?pagamento=' + sessRitorno);
-        let avvisoR = await studente.evaluate(() => ((document.querySelector('.alert-info') || {}).textContent || '').replace(/\s+/g, ' ').trim());
-        check('in «I miei corsi» l\'avviso: pagamento non ancora confermato',
-            avvisoR === 'Il pagamento non è ancora confermato da Stripe: il corso comparirà qui appena arriva la conferma. Se non lo vedi, ricarica la pagina tra poco.', [avvisoR]);
+        const paginaAttesa = async () => {
+            const r = await vai('/pagamento-ricevuto?sessione=' + sessRitorno);
+            const t = await r.text();
+            return { stato: r.status(), refresh: r.headers()['refresh'],
+                testi: t.includes('Pagamento ricevuto') && t.includes('Un momento: stiamo preparando il tuo corso.') && t.includes('Tra pochi secondi tornerai a «I miei corsi».') };
+        };
+        const avvisoIMieiCorsi = async () => {
+            await studente.goto(BASE + '/?pagamento=' + sessRitorno);
+            return studente.evaluate(() => ((document.querySelector('.alert-info') || {}).textContent || '').replace(/\s+/g, ' ').trim());
+        };
+        const AVVISO = 'Il pagamento non è ancora confermato da Stripe: il corso comparirà qui appena arriva la conferma. Se non lo vedi, ricarica la pagina tra poco.';
+        let pa = await paginaAttesa();
+        check('pagamento non ancora registrato: la pagina d\'attesa, con i suoi testi, e dopo 5 secondi «I miei corsi» con il codice',
+            pa.stato === 200 && pa.testi && pa.refresh === '5; url=/?pagamento=' + sessRitorno, [JSON.stringify(pa)]);
+        let avvisoR = await avvisoIMieiCorsi();
+        check('… e in «I miei corsi» l\'avviso: pagamento non ancora confermato', avvisoR === AVVISO, [avvisoR]);
         // Il pagamento di un altro studente con quel codice non conta per lui.
         sql('INSERT INTO payments (stripe_event_id, stripe_session_id, livemode, course_id, user_id, amount_total, amount_subtotal, currency, esito) VALUES (?, ?, 0, ?, ?, 4900, 4900, \'eur\', \'iscritto\')',
             'evt_ritorno_' + sessRitorno, sessRitorno, C.libero, altroS.id);
-        rr = await vai('/pagamento-ricevuto?sessione=' + sessRitorno);
-        check('il pagamento di un altro studente con lo stesso codice non conta: aspetta ancora', rr.status() === 200);
+        avvisoR = await avvisoIMieiCorsi();
+        check('il pagamento di un altro studente con lo stesso codice non conta: l\'avviso resta', avvisoR === AVVISO, [avvisoR]);
         sql('UPDATE payments SET user_id = ? WHERE stripe_session_id = ?', A.studente, sessRitorno);
-        rr = await vai('/pagamento-ricevuto?sessione=' + sessRitorno);
-        check('controprova: registrato per lui, porta subito a «I miei corsi», senza codice', rr.status() === 302 && rr.headers()['location'] === '/', [String(rr.headers()['location'])]);
-        await studente.goto(BASE + '/?pagamento=' + sessRitorno);
-        check('… e ricaricando «I miei corsi» con il codice l\'avviso non c\'e\' piu\'', (await studente.$('.alert-info')) === null);
+        pa = await paginaAttesa();
+        check('pagamento gia\' registrato: la pagina d\'attesa compare lo stesso, per 5 secondi',
+            pa.stato === 200 && pa.testi && pa.refresh === '5; url=/?pagamento=' + sessRitorno, [JSON.stringify(pa)]);
+        check('… e in «I miei corsi» l\'avviso non c\'e\'', (await avvisoIMieiCorsi()) === '');
         sql('DELETE FROM payments WHERE stripe_session_id = ?', sessRitorno);
+        const senza = await vai('/pagamento-ricevuto');
+        check('senza codice porta subito a «I miei corsi»', senza.status() === 302 && senza.headers()['location'] === '/', [String(senza.headers()['location'])]);
         const ospite = await browser.newContext();
         const ro = await ospite.request.get(BASE + '/pagamento-ricevuto?sessione=' + sessRitorno, { maxRedirects: 0 });
         check('senza accesso, la pagina d\'attesa manda al login', ro.status() === 302 && String(ro.headers()['location']).includes('/login'), [String(ro.status()), String(ro.headers()['location'])]);

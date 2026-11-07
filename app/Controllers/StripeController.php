@@ -116,32 +116,27 @@ class StripeController
 
     /**
      * La pagina d'attesa dopo il pagamento (06/11, variante 1A): Stripe ci
-     * rimanda lo studente con il codice del pagamento. La pagina si ricarica
-     * ogni secondo, al massimo per `ATTESA_SECONDI`: appena il pagamento
-     * risulta registrato porta a «I miei corsi»; a tempo scaduto ci porta lo
-     * stesso, con il codice, e li' un avviso dice che la conferma non e'
-     * ancora arrivata. La ricarica e' un'intestazione `Refresh`: funziona
-     * anche senza JavaScript. Un pagamento registrato in rosso porta a «I miei
-     * corsi» senza avviso: lo gestisce l'Amministratore, con l'email.
+     * rimanda lo studente con il codice del pagamento. La pagina compare
+     * sempre, anche a pagamento gia' confermato, e dopo `ATTESA_SECONDI`
+     * porta a «I miei corsi» con il codice (06/11, Alessandro): la sola
+     * differenza fra confermato e non confermato e' l'avviso che li' compare
+     * finche' il pagamento non risulta registrato (`CourseController::index`).
+     * Il passaggio e' un'intestazione `Refresh`: funziona anche senza
+     * JavaScript. Un pagamento registrato in rosso non mostra l'avviso: lo
+     * gestisce l'Amministratore, con l'email.
      */
     public function ricevuto(array $params = []): void
     {
         Auth::requireLogin();
 
         $sessione = (string) ($_GET['sessione'] ?? '');
-        $giro = max(0, (int) ($_GET['giro'] ?? 0));
 
-        if ($sessione === '' || PaymentModel::registratoPer($sessione, (int) Auth::id())) {
+        if ($sessione === '') {
             header('Location: /');
             exit;
         }
 
-        if ($giro >= CorsiAPagamento::ATTESA_SECONDI) {
-            header('Location: /?pagamento=' . rawurlencode($sessione));
-            exit;
-        }
-
-        header('Refresh: 1; url=' . CorsiAPagamento::INDIRIZZO_RITORNO . '?' . http_build_query(['sessione' => $sessione, 'giro' => $giro + 1]));
+        header('Refresh: ' . CorsiAPagamento::ATTESA_SECONDI . '; url=/?' . http_build_query(['pagamento' => $sessione]));
 
         View::render('pagamento/ricevuto', ['pageTitle' => 'Pagamento ricevuto']);
     }
