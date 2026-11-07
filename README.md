@@ -28,8 +28,12 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
   **Tre parole** alla fine di ogni modulo, che il tutor rilegge per gruppo in una nuvola di parole.
 - **Report** per corso, gruppo, studente, incontro e video, «Studenti fermi» e «Griglia del
   corso», scaricabili in CSV e XLSX.
-- **Cinque ruoli**: l'amministratore (uno solo), il supervisore che costruisce i corsi in bozza,
+- **Cinque ruoli**: l'Amministratore (uno solo), il supervisore che costruisce i corsi in bozza,
   il tutor, l'assistente e lo studente. Alcuni permessi si accendono e spengono dal pannello.
+- **Corsi a pagamento** con Stripe: lo studente paga con il link di pagamento del corso e viene
+  iscritto quando arriva l'avviso firmato di Stripe; i pagamenti ricevuti si vedono dal pannello.
+- **Bozze senza iscritti**: un corso in costruzione non lo vede nessuno studente; pubblicandolo,
+  vengono iscritti i membri dei gruppi a cui è assegnato.
 - **Email** con testi modificabili dal pannello, e una coda che ritenta quelle non partite.
 - **Accessibile e responsive**: ogni pagina è controllata automaticamente a tre larghezze, per
   contrasto, etichette, uso da tastiera e permessi di ogni ruolo.
@@ -42,8 +46,8 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
 - Un server web con la riscrittura degli indirizzi (Apache con `mod_rewrite`, o Nginx)
 - Composer
 - L'accesso al cron (o all'Utilità di pianificazione di Windows) per le email periodiche
-- Facoltativi: un progetto Google Cloud con Calendar API per creare gli incontri su Meet, e un
-  account Bunny Stream per i video protetti
+- Facoltativi: un progetto Google Cloud con Calendar API per creare gli incontri su Meet, un
+  account Bunny Stream per i video protetti, e un account Stripe per i corsi a pagamento
 
 ## Installazione
 
@@ -66,7 +70,7 @@ L'installazione si completa dal browser, con una procedura guidata.
 
 3. **Apri il sito nel browser.** Finché manca il file `.env` si apre la procedura guidata, in
    quattro passi: requisiti, database (tieni pronti host, nome, utente e password), il tuo
-   account di amministratore, e le impostazioni facoltative, che si possono completare anche
+   account di Amministratore, e le impostazioni facoltative, che si possono completare anche
    dopo.
 
 4. **Al termine elimina la cartella `public/install`**, e controlla che in `.env` ci sia
@@ -81,8 +85,10 @@ L'installazione si completa dal browser, con una procedura guidata.
    `bin/avvisi` manda anche le email in coda: senza, molte email non partono. Su Windows con
    Laragon vedi [I lavori periodici su Windows](manuale.md#i-lavori-periodici-su-windows-laragon).
 
-Le impostazioni di Google Meet, Bunny Stream e della posta si completano poi dal pannello, in
-«Impostazioni». I dettagli sono nel [manuale](manuale.md#sessioni-live-google-meet).
+Le impostazioni di Google Meet, Bunny Stream, della posta e dei pagamenti con Stripe si completano
+poi dal pannello, in «Impostazioni». I dettagli sono nel manuale, per esempio in
+[Sessioni live](manuale.md#sessioni-live-google-meet) e in
+[Corsi a pagamento](manuale.md#corsi-a-pagamento-stripe).
 
 ## Aggiornare un'installazione
 
@@ -98,5 +104,5 @@ mysql -u utente -p lms < database/migrations/AAAA_MM_GG_nome.sql
 ## Per saperne di più
 
 Il [manuale](manuale.md) descrive ogni parte della piattaforma: la struttura del progetto, i
-ruoli e i permessi, la sicurezza, i report, l'agenda, la Bacheca, gli esercizi H5P, i colori e i
-caratteri, i test automatici e molto altro.
+ruoli e i permessi, la sicurezza, i report, l'agenda, la Bacheca, gli esercizi H5P, i corsi a
+pagamento, i colori e i caratteri, i test automatici e molto altro.

@@ -38,7 +38,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale. Non pubblica e non vede i corsi pubblicati |
   | `tutor` | Legge i corsi e lavora sulla sua classe: cura i suoi gruppi, i loro incontri, la Bacheca e i report dei suoi studenti |
   | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), in sola lettura: report, tentativi e incontri dei loro studenti, secondo gli interruttori |
-  | `studente` | Si registra da solo, si iscrive ai corsi aperti, svolge i questionari, scarica i propri certificati |
+  | `studente` | Si registra da solo, si iscrive ai corsi aperti o paga quelli a pagamento, svolge i questionari, scarica i propri certificati |
 - **Profilo personale**: ogni utente compila i propri dati e carica un'immagine, che compare tonda accanto al suo nome
 - **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
 - **Sessioni live** integrate con **Google Meet**, tramite Google Calendar API (`conferenceData`) — richiede un account di servizio Google con accesso al Calendar
@@ -52,6 +52,9 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   ritenta per 24 ore; quelle non partite si vedono e si rimandano dal pannello
 - **Report** «Studenti fermi» e «Griglia del corso», oltre ai tagli per corso, gruppo, studente,
   incontro e video
+- **Corsi a pagamento** con Stripe (06/11): lo studente paga con il link di pagamento del corso e
+  Pistacchio lo iscrive quando arriva l'avviso firmato di Stripe; i pagamenti ricevuti si vedono
+  in Impostazioni › Pagamenti (vedi **Corsi a pagamento (Stripe)**)
 
 ## Stato del progetto
 
@@ -95,6 +98,13 @@ In sviluppo iniziale.
 - ✅ Ruoli: un nucleo fisso e cinque interruttori che fanno quello che dicono
 - ✅ Il questionario come test d'uscita del modulo, e la verifica finale del corso
 - ✅ Revisione del codice prima della produzione (29/10): otto correzioni
+- ✅ Corsi a pagamento con Stripe: link di pagamento, avvisi firmati, pagamenti ricevuti (0323, 0330)
+- ✅ Le bozze non hanno iscritti: gli studenti dei gruppi si iscrivono alla pubblicazione (0327),
+  e gli incontri di un corso in bozza non sono ancora loro (0328, 0329)
+- ✅ «Amministratore» in tutti i testi che si leggono (0325)
+- ✅ Le schede di «Esplora corsi» con il blocco finale in fondo, alla stessa altezza (0331)
+
+Ultimo aggiornamento del manuale: 06/11, versione 1.0.331.
 
 ## Requisiti
 
@@ -112,7 +122,7 @@ In sviluppo iniziale.
 ## Installazione
 
 L'installazione si completa dal browser, con una procedura guidata: verifica dei requisiti,
-creazione del database, primo amministratore e impostazioni facoltative.
+creazione del database, l'Amministratore («Crea l'Amministratore.») e impostazioni facoltative.
 
 1. **Metti i file sul server e installa le dipendenze**
    ```bash
@@ -223,6 +233,10 @@ danni. Le piu' recenti:
 | `2026_10_25_bacheca_moduli.sql` | `board_resources.module_id` obbligatorio: ogni risorsa della Bacheca appartiene a un modulo (le esistenti prendono il primo modulo del loro corso) |
 | `2026_10_26_date_moduli_gruppo.sql` | la tabella `group_module_dates`: le date dei moduli di un gruppo |
 | `2026_10_28_verifica_finale.sql` | `modules.is_final`: la verifica finale, spenta per tutti i moduli esistenti |
+| `2026_10_30_coda_email.sql` | la tabella `email_queue`: la coda delle email, ritentate per 24 ore |
+| `2026_10_30_supervisore.sql` | il ruolo `supervisore` |
+| `2026_11_06_corsi_a_pagamento.sql` | `courses.enrollment_mode` con `paid`, e `price_cents`, `payment_link_url`, `payment_link_id`: i corsi a pagamento |
+| `2026_11_06_pagamenti_stripe.sql` | la tabella `payments`: i pagamenti ricevuti da Stripe, con l'esito |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -251,10 +265,10 @@ torna indietro, se non svuotando la casella a mano.
 /app
   /Controllers        → logica delle route: Auth, Registration, PasswordReset, Profile,
                         Course, Module, Lesson, Quiz, Certificate, Report, Catalog,
-                        LiveSession, VideoProgress
+                        LiveSession, VideoProgress, Stripe (gli avvisi di Stripe)
     /Admin             → pannello di amministrazione: Admin, User, Group, Course,
                         Permission, Settings
-  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel...)
+  /Models             → accesso dati via PDO/query preparate (UserModel, CourseModel, ModuleModel, LessonModel, Quiz*, CertificateModel, GroupModel, ReportModel, PaymentModel...)
   /Auth               → login, sessione, permessi per ruolo (Auth.php, Ruoli.php); chi vede chi
                          (CourseRights, StudentScope, LiveScope, GroupPeers, BachecaScope)
   /Core               → Router minimale, Database (PDO), Env, View, Settings, Url
@@ -268,6 +282,7 @@ torna indietro, se non svuotando la casella a mano.
                          H5P, H5PArchivio, LezioneH5P           → esercizi interattivi
                          Bacheca, TreParole, StudentiFermi, GrigliaCorso, Presenza
                          Icona, CorsoCorrente, Versione, Ambiente → interfaccia e informazioni
+                         CorsiAPagamento, AvvisoStripe          → corsi a pagamento e avvisi di Stripe
     /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
     /Mail              → client SMTP scritto in casa, trasporti e testi dei messaggi
   /Views
@@ -647,7 +662,7 @@ con gli stessi effetti sulle iscrizioni.
 
 **L'amministratore è uno solo** (30/10, Alessandro). «Nuovo utente» non crea un admin se ce n'è
 già uno attivo, e «Modifica utente» non ne promuove né ne riattiva un altro: l'avviso dice chi è
-quello che c'è. Nel menu «Ruolo» «Admin» si offre solo nella scheda dell'admin attivo, che salva
+quello che c'è. Nel menu «Ruolo» «Amministratore» (fino al 05/11 «Admin») si offre solo nella scheda dell'admin attivo, che salva
 come prima. Resta la regola di prima, che ce ne sia sempre almeno uno. **Il cambio di admin si fa
 a mano nel database.** La regola sta nella piattaforma, non nel database: la ricetta dei test
 crea l'admin di prova direttamente.
@@ -664,6 +679,18 @@ dell'admin viene iscritto ai corsi già assegnati. L'operazione è idempotente: 
 non azzera il progresso di chi era già iscritto. Le operazioni inverse — togliere un membro dal
 gruppo o un corso dal gruppo — **non** cancellano le iscrizioni, perché con esse sparirebbero
 progresso, tentativi dei questionari e certificati; per rimuoverle davvero si usa la scheda del corso.
+
+**Un corso in bozza si assegna al gruppo senza iscrivere nessuno** (06/11, 0327): una bozza è un
+corso non ancora finito, e nessuno vi è iscritto. Il tutor prepara intanto benvenuto, date dei
+moduli e incontri del gruppo; **alla pubblicazione** vengono iscritti i membri dei gruppi a cui il
+corso è assegnato, con l'«Iscrizione confermata» in coda. L'avviso dopo l'assegnazione lo dice
+(«Corso assegnato. È in bozza: i membri saranno iscritti quando viene pubblicato.»), e anche la
+scheda del gruppo («Un corso in bozza li iscrive quando viene pubblicato.»).
+
+**Un corso a pagamento non si assegna a un gruppo** (06/11, 0323): chi entra nel gruppo verrebbe
+iscritto senza pagare. Non compare fra i corsi da assegnare, con la riga «I corsi a pagamento non
+si assegnano ai gruppi: non compaiono qui.» (solo se ne esiste almeno uno), e il server rifiuta
+(«Un corso a pagamento non si assegna a un gruppo.»).
 
 **Il tutor aggiunge al suo gruppo solo chi è già iscritto** a un corso del gruppo e non fa già
 parte di un altro gruppo con un corso in comune, e **non iscrive** a nessun altro corso (29/10):
@@ -686,6 +713,31 @@ reso univoco in automatico. I contenuti (moduli, lezioni, questionari) restano n
 corso. La rimozione di un'iscrizione cancella progresso e certificato di quel corso: viene chiesta
 conferma. **Il tutor** in Gestione corsi vede i corsi dei suoi gruppi; aprendone uno trova il suo
 benvenuto da registrare e i suoi studenti, in sola lettura (vedi **Chi modifica cosa**).
+
+**Le bozze non hanno iscritti** (06/11, 0327, Alessandro: «una bozza è il cantiere»; il corso «non
+ancora aperto» lo fanno le date dei moduli). Prima uno studente iscritto a una bozza la vedeva in
+«I miei corsi» e ne apriva pagina, lezioni, Bacheca ed «L'esperto risponde»: l'accesso guardava
+solo l'iscrizione. Le regole:
+
+1. **nessuna iscrizione a una bozza**: la regola sta nella funzione che iscrive
+   (`EnrollmentModel::enrollMany`), quindi vale per ogni strada (a mano, gruppo, ingresso in un
+   gruppo, importazione). L'iscrizione a mano si rifiuta («Il corso è in bozza: gli studenti si
+   iscrivono quando viene pubblicato.»), e nella pagina della bozza, sotto «Iscritti», la stessa
+   frase sta al posto di «Iscrivi». Una richiesta su un corso tornato in bozza non si approva
+   («Il corso è in bozza: la richiesta si approva quando viene pubblicato.»);
+2. **la bozza si assegna ai gruppi senza iscrivere nessuno** (vedi **Gruppi**);
+3. **alla pubblicazione** vengono iscritti i membri dei gruppi assegnati, con la conferma in coda
+   («Corso pubblicato: iscritti N membri dei gruppi a cui è assegnato.»,
+   `EnrollmentModel::iscriviAllaPubblicazione`);
+4. **un corso con iscritti non torna in bozza** («Il corso ha N iscritti: non può tornare in
+   bozza.»).
+
+Gli incontri di un corso in bozza seguono la stessa idea: vedi **Gli incontri di un corso in
+bozza**. `tests/bozze.js` prova tutto, con la controprova del corso pubblicato.
+
+**«A pagamento»** è la quarta modalità d'iscrizione (06/11): vedi **Corsi a pagamento (Stripe)**.
+In «Gestione corsi» la colonna «Stato» dice «a pagamento»; a parità di stato si ordina
+sull'etichetta mostrata, perché con `paid` il dato non cade più nell'ordine delle etichette.
 
 **La descrizione è lunga al massimo 3.000 caratteri** (10/10), con il contatore sulla riga
 dell'etichetta, allineato al bordo destro del campo: lo stesso della presentazione nel profilo e
@@ -742,6 +794,15 @@ iscritto e la pagina del corso non la può aprire, quindi sotto l'estratto c'è 
 che apre la descrizione intera dentro la scheda; «Chiudi», sotto il testo, la richiude (10/10).
 I due comandi stanno attaccati al testo, e il numero delle lezioni con il pulsante sta staccato,
 con lo spazio e senza linea.
+
+**Il blocco finale sta in fondo alla scheda** (06/11, 0331, variante B): il numero di lezioni, o il
+prezzo di un corso a pagamento, con il pulsante. Nelle schede della stessa riga i pulsanti
+finiscono alla stessa altezza, qualunque sia la lunghezza di descrizioni ed etichette; lo spazio
+libero va fra la descrizione e il blocco (`.catalogo-fondo`, con `margin-top: auto` in una scheda
+a colonna). In una colonna flessibile i margini non si fondono, quindi quelli della descrizione
+sono azzerati: le distanze dentro la scheda sono quelle di prima, al pixel (8 px dalla testata,
+almeno 22 px fino al blocco, 18 px fra la riga e il pulsante). Al telefono non cambia niente.
+`accessibilita.js` controlla i pulsanti allineati e la distanza minima.
 È un `details`, senza JavaScript. `accessibilita.js` controlla nel catalogo che una descrizione
 lunga non si veda intera da chiusa, che aperta si legga tutta, e che il comando stia più vicino al
 testo che alle lezioni.
@@ -776,6 +837,16 @@ accesi, com'era prima del 26/10. La pagina la apre solo il **ruolo** `admin`. La
 `role_permissions` resta nel database ma non si legge più. `tests/ruoli_test.php` prova la
 regola, `permessi.js` ogni interruttore acceso, spento e nelle combinazioni.
 
+#### «Amministratore» (06/11, 0325)
+
+In tutti i testi che si leggono — pagine, avvisi, testi del pannello, descrizioni delle email,
+installazione — «admin», «amministratore», «amministratori» e «amministrazione» sono diventati
+**«Amministratore»**, con il singolare e l'articolo adattati: l'Amministratore è uno solo. Anche
+l'etichetta del ruolo («Admin» → «Amministratore») in Utenti, elenchi, file scaricati e report.
+Restano com'erano il titolo «Amministrazione» nella barra laterale (è la zona del menu, non la
+persona) e tutto ciò che non si legge: il ruolo `admin`, gli indirizzi `/admin/…`, i nomi delle
+classi, i commenti. Questo manuale usa ancora spesso «admin» per brevità.
+
 #### Il supervisore (30/10)
 
 Un ruolo che **aiuta l'admin a costruire i corsi**, e lavora **solo sui corsi in bozza**
@@ -788,7 +859,7 @@ tutor apre anche gli incontri, né `course.welcome`, che vale per tutti i corsi.
   questionari, domande e verifica finale passano da lì. Nei corsi in bozza può anche eliminare.
 - **I corsi pubblicati, per lui, non ci sono**: non li vede negli elenchi e non li apre. Anche il
   catalogo gli è chiuso, perché da lì si iscriverebbe a un corso pubblicato.
-- **Non pubblica**: la casella «Pubblicato» è spenta, con «Il corso lo pubblica l'admin», e un
+- **Non pubblica**: la casella «Pubblicato» è spenta, con «Il corso lo pubblica l’Amministratore», e un
   corso creato o salvato da lui resta in bozza. Non elimina un corso, non iscrive studenti; nella
   scheda del corso non vede iscritti, richieste e report.
 - Il suo menu: «Corsi», «Gestione corsi», «Impostazioni» (solo «Video di benvenuto» e
@@ -802,6 +873,12 @@ Ogni richiesta POST deve includere il token di sessione (`App\Core\Csrf`), verif
 Router prima di invocare il controller; una richiesta senza token valido riceve **419** e non
 produce alcun effetto. Nelle view il campo si inserisce con `<?= Csrf::field() ?>`. Il token
 viene rigenerato a ogni login e logout, insieme all'id di sessione.
+
+**L'eccezione: le POST da un servizio esterno** (06/11). Gli avvisi di Stripe arrivano da Stripe,
+non da un modulo della piattaforma, e il token non lo hanno: la rotta si registra con
+`Router::postEsterna()`, che salta il controllo del token e quello del corpo «non modulo» (gli
+avvisi sono JSON). Chi la riceve ne verifica da sé la provenienza: per Stripe, la firma (vedi
+**Corsi a pagamento (Stripe)**). È l'unica rotta così.
 
 ## Sicurezza: sessioni e file
 
@@ -945,6 +1022,19 @@ pulsante verde della misura del testo.
 Al telefono (sotto i 50 rem di spazio) l'elenco è diviso: prima le **Prossime**, dalla più
 vicina, poi le **Concluse**, chiuse, dalle più recenti; nelle concluse «Accesso» non c'è. I
 comandi per ordinare al telefono non ci sono: l'ordine fisso fa il loro lavoro.
+
+### Gli incontri di un corso in bozza (06/11)
+
+Un incontro su un modulo di un corso in bozza **non è ancora di nessuno studente** (0328): la
+regola sola di chi è atteso (`LiveSessionModel::atteso()`) lo esclude finché il corso non è
+pubblicato. Valgono elenco, ingresso e link Meet, Agenda e calendario, inviti, promemoria,
+presenze e Griglia. Nella pagina del gruppo «Prossimo incontro del gruppo» e «Ci sarò» lo saltano
+per i partecipanti; il tutor del gruppo e l'Amministratore lo vedono, perché lo preparano.
+
+**«Invia inviti» è spento** finché il corso è in bozza (0329, variante A): il riquadro «Inviti»
+resta com'è, il pulsante è spento e sotto si legge «Il corso è in bozza: gli inviti si mandano
+quando viene pubblicato.», collegata al pulsante per i lettori di schermo. Anche il server rifiuta
+l'invio. Pubblicato il corso, gli inviti si mandano a mano come per ogni incontro.
 
 ### Come nasce il link Meet
 Alla creazione della sessione l'applicazione crea un evento su Google Calendar chiedendo
@@ -1487,7 +1577,7 @@ quello che serve davvero.
   (`PersonName::PREDEFINITO`). Sono due costanti diverse apposta.
 - **Il modulo è corto** (08/10): sotto la password «Minimo 8 caratteri: almeno una lettera e un
   numero.» (`PasswordPolicy::HINT_BREVE`, accanto alla frase lunga e alla regola, che il resto
-  della piattaforma continua a usare), sotto la scelta «Tutor e admin vedono sempre nome e cognome.
+  della piattaforma continua a usare), sotto la scelta «Tutor e Amministratore vedono sempre nome e cognome.
   Scelta modificabile dal profilo.», e le tre opzioni vicine: il pallino
   non prende più l'altezza di un campo (2,5 rem), e il modulo passa da 634 a 547 px.
 - Un solo «Continua»: tutto si controlla prima di scrivere, e un errore sulla password non
@@ -1535,7 +1625,10 @@ cambiano. Dove il browser ha `initial-letter` (Chrome, Edge, Safari) la lettera 
 su tre righe; altrove (Firefox) scorre a sinistra con misure calcolate, e l'allineamento è
 approssimato. La descrizione del corso è larga quanto gli altri blocchi della pagina.
 **Il primo paragrafo contiene la sua lettera** (`display: flow-root`, 21/10): con un paragrafo
-corto la lettera alta tre righe finiva sopra il blocco dopo, per esempio un esercizio H5P.
+corto la lettera alta tre righe finiva sopra il blocco dopo, per esempio un esercizio H5P. Dal
+06/11 (0326) vale anche per la descrizione del corso: con una descrizione di una riga la lettera
+copriva il riquadro «Obiettivo del corso». `accessibilita.js` lo controlla sulla pagina del corso
+A della semina, che ha proprio una descrizione di una riga e l'obiettivo.
 
 **Non nell'editor della lezione** (14/10, Alessandro). L'editor carica il foglio di stile della
 piattaforma e dà al testo la classe della lezione, così il capolettera compariva mentre si
@@ -1589,7 +1682,7 @@ ricerca sta in fondo.
   l'angolo in alto a destra del campo («1000 caratteri rimasti», a scalare): lo stesso della
   presentazione del profilo e delle risposte aperte, con lo stesso script. Il limite vale anche
   senza JavaScript (`maxlength`) e sul server.
-- **La riceve l'esperto**, con **un'email per ogni domanda nuova** agli amministratori (corso,
+- **La riceve l'esperto**, con **un'email per ogni domanda nuova** all'Amministratore (corso,
   modulo, nome, testo intero). Non c'è più un tutor assegnato.
   Lo studente non riceve avvisi: trova la risposta tornando al corso.
 - **L'esperto** risponde dalla pagina **«Domande»**, una voce della sua barra laterale con il
@@ -1940,7 +2033,7 @@ un'installazione con un difetto noto.
 
 ## Test
 
-Due famiglie. I test PHP girano da soli; i due file `.js` usano Playwright e hanno bisogno del
+Due famiglie. I test PHP girano da soli; i file `.js` usano Playwright e hanno bisogno del
 server di sviluppo attivo.
 
 ```bash
@@ -1997,6 +2090,7 @@ php tests/accesso_test.php          # limite ai tentativi di accesso (5 per acco
 php tests/csv_test.php              # CSV: i testi-formula escono con l'apostrofo, numeri e telefoni come sono
 php tests/ruoli_test.php            # ruoli: nucleo fisso e cinque interruttori, «Tentativi» solo con «Report»
 php tests/fuso_orario_test.php      # la connessione al database usa lo scarto orario di PHP
+php tests/corsi_a_pagamento_test.php # corsi a pagamento: prezzo scritto, link, identificativo, impedimenti, interruttore
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
@@ -2006,11 +2100,19 @@ node tests/supervisore.js           # 50 prove: il supervisore costruisce i cors
 node tests/permessi.js              # circa 700 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, gli interruttori dei ruoli, la bacheca, il ramo del corso, le tre parole, i file H5P, il percorso e la verifica finale e molto altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero (crea e toglie da sé 55 studenti per la seconda pagina)
+node tests/pagamenti.js             # 86 prove: «A pagamento», vie gratuite chiuse, avvisi di Stripe firmati, catalogo, Impostazioni › Pagamenti (circa 20 secondi)
+node tests/bozze.js                 # 35 prove: le bozze non hanno iscritti, la pubblicazione iscrive i gruppi, incontri e inviti di una bozza (circa 10 secondi)
 ```
 
-Il 29/10, sul database di sviluppo: 49 file PHP con 1.761 controlli, `accessibilita.js` 5.025,
-`permessi.js` 656, `ordinamento_pagine.js` 307, `coerenza_moduli.js` 16, tutti superati, anche con
-MySQL in UTC. `permessi.js` e `accessibilita.js` rifanno la semina all'inizio (`permessi.js` con
+Il 06/11, sul database di sviluppo, alla 1.0.331: 51 file PHP con 1.845 controlli,
+`accessibilita.js` 5.340, `permessi.js` 698, `ordinamento_pagine.js` 286, `coerenza_moduli.js` 16,
+`supervisore.js` 50, `pagamenti.js` 86, `bozze.js` 35. Due controlli rossi dipendono dai dati di
+quel database e non dal codice: `tema_test.php` («con la tavolozza predefinita non si stampa
+niente»: il raggio «morbido» scelto il 04/11 stampa il suo blocco) e, in `ordinamento_pagine.js`,
+«Esito» nel report per studente (la colonna si ordina sul solo `passed`, e «non svolto» resta in
+fondo: un difetto vecchio, emerso con questi dati, da correggere). Il 29/10, con i dati di allora:
+49 file PHP con 1.761 controlli, `accessibilita.js` 5.025, `permessi.js` 656,
+`ordinamento_pagine.js` 307, `coerenza_moduli.js` 16, tutti superati, anche con MySQL in UTC. `permessi.js` e `accessibilita.js` rifanno la semina all'inizio (`permessi.js` con
 `--lezioni-fatte`, che segna come fatta la lezione del mondo A, così le prove possono svolgere
 il questionario, che si apre a lezioni fatte): vanno lanciati uno dopo l'altro, mai insieme.
 
@@ -2721,6 +2823,10 @@ tabella ma in `storage/google/`, fuori dal document root e con permessi 0600; in
 il percorso. Sostituendo o rimuovendo la chiave, il file precedente viene eliminato — ma solo
 se l'avevamo caricato noi, non se il percorso arriva dal `.env`.
 
+**Impostazioni › Pagamenti** (06/11) tiene l'interruttore dei corsi a pagamento, la chiave degli
+avvisi di Stripe, che come la password SMTP non torna mai al browser, e la modalità di prova; vedi
+**Corsi a pagamento (Stripe)**.
+
 Ogni pagina ha una prova: l'invio di un messaggio al proprio indirizzo, e una lettura del
 calendario configurato che verifica in un colpo solo credenziali, delega a livello di dominio
 e visibilità del calendario, senza creare né modificare eventi.
@@ -2813,7 +2919,7 @@ le successive nel profilo («M. R.»: una per parola, il trattino separa,
 l'apostrofo no). La scelta ha un riquadro suo, «Come ti vedono gli altri studenti», separato
 dai dati anagrafici e con il suo salvataggio (`POST /profilo/come-ti-vedono`, solo per gli
 studenti); il titolo è quello di ogni riquadro, sopra le scelte per misura e per peso. Ogni
-scelta mostra l'anteprima del proprio nome. **Tutor e admin vedono
+scelta mostra l'anteprima del proprio nome. **Tutor e Amministratore vedono
 sempre nome e cognome**, ognuno vede se stesso per intero, e il certificato e i report li
 riportano per intero. Oggi la pagina del gruppo è l'unico posto in cui uno studente vede gli
 altri studenti: lì il nome mostrato prende il posto di quello vero anche per le iniziali della
@@ -2988,11 +3094,13 @@ Ogni corso ha un campo `enrollment_mode`, impostabile dalla sua scheda in *Gesti
 | Modalità | Cosa comporta |
 |---|---|
 | `closed` (predefinita) | Iscrive solo lo staff, oppure l'assegnazione del corso a un gruppo. Il corso non compare nel catalogo |
-| `request` | Lo studente chiede di iscriversi, con un messaggio facoltativo; gli admin ricevono un'email con il messaggio e decidono dalla scheda del corso (dal 26/10 solo loro) |
+| `request` | Lo studente chiede di iscriversi, con un messaggio facoltativo; l'Amministratore riceve un'email con il messaggio e decide dalla scheda del corso (dal 26/10 solo lui). Nel modulo del corso: «Su richiesta — lo studente chiede, l'Amministratore approva»; nel catalogo, a richiesta inviata: «Richiesta inviata: sarà valutata dall'Amministratore.» (0322, 0324) |
 | `open` | Lo studente si iscrive da solo dal catalogo, senza attese |
+| `paid` | Lo studente paga su Stripe ed è iscritto quando arriva l'avviso del pagamento. La sceglie solo l'Amministratore, a pagamenti accesi (vedi **Corsi a pagamento (Stripe)**) |
 
 Il catalogo (`/catalogo`, voce *Esplora corsi*) elenca solo corsi **pubblicati** in modalità
-`open` o `request`, escludendo quelli a cui lo studente è già iscritto. Una richiesta in attesa
+`open` o `request`, e `paid` a pagamenti accesi e con il link, escludendo quelli a cui lo studente
+è già iscritto. Una richiesta in attesa
 **non** dà accesso al corso: le richieste vivono in una tabella separata e l'iscrizione vera
 nasce solo con l'approvazione.
 
@@ -3006,8 +3114,9 @@ sua richiesta. Per le iscrizioni fatte dallo staff (a mano dalla scheda del cors
 un gruppo, con un corso assegnato a un gruppo intero) resta in coda e la spedisce `bin/avvisi`,
 ogni quarto d'ora, venti per giro come gli inviti: un corso dato a un gruppo di cento persone
 non manda cento email da una pagina sola. Non la riceve chi aspetta ancora l'invito (gli
-arriva «Il tuo accesso»), né un account disattivato o dello staff; in un corso in bozza resta
-in coda e parte quando il corso si pubblica.
+arriva «Il tuo accesso»), né un account disattivato o dello staff. Dal 06/11 una bozza non ha
+iscritti: la conferma dei membri dei gruppi parte dalla pubblicazione. Anche l'iscrizione da un
+pagamento di Stripe la mette in coda (la ricevuta del pagamento la manda Stripe).
 
 ```
 */15 * * * * cd /percorso/del/sito && php bin/avvisi >> storage/logs/avvisi.log 2>&1
@@ -3032,7 +3141,135 @@ Due email nuove partono invece dalla pagina, subito:
   pubblica: con la domanda, la risposta e il collegamento alle domande e risposte del corso.
   Una correzione successiva non manda niente;
 - **«Nuova proposta per la bacheca»** (17/10), al tutor del gruppo dello studente che propone una
-  risorsa, o agli amministratori se lo studente non ha un tutor.
+  risorsa, o all'Amministratore se lo studente non ha un tutor.
+
+E una dalla coda, al giro di `bin/avvisi`:
+
+- **«Pagamento da controllare»** (06/11), all'Amministratore, quando arriva da Stripe un pagamento
+  che non iscrive nessuno: corso, chi ha pagato, importo, motivo e il collegamento a Impostazioni ›
+  Pagamenti. Parte dalla coda per non rallentare la risposta a Stripe, che aspetta pochi secondi.
+
+## Corsi a pagamento (Stripe)
+
+Il disegno del 31/10 e le decisioni del 06/11 (Alessandro), in due patch: la 0323 («A pagamento»
+con tutte le vie gratuite chiuse) e la 0330 (Stripe, gli avvisi e i pagamenti ricevuti). Le
+regole stanno in `App\Core\CorsiAPagamento` e `App\Core\AvvisoStripe`; gli avvisi li riceve
+`StripeController`.
+
+### Come funziona
+
+Lo studente apre «Esplora corsi», vede la scheda del corso con il prezzo e **«Paga e iscriviti»**
+(variante B ridotta: senza etichetta, senza il numero di lezioni, senza frase sotto). Il pulsante
+porta al **link di pagamento di Stripe** del corso con due parametri: il numero dello studente
+(`client_reference_id`), da cui Pistacchio lo riconoscerà, e la sua email già scritta
+(`prefilled_email`). Paga su Stripe; dopo il pagamento resta la pagina di conferma di Stripe, e la
+ricevuta la manda Stripe.
+
+Stripe manda allora un **avviso firmato** a `POST /stripe/avvisi`. Pistacchio:
+
+1. **controlla la firma** (`Stripe-Signature`, HMAC-SHA256 con la chiave degli avvisi `whsec_…`) e
+   rifiuta con 400 un avviso senza firma giusta o più vecchio di cinque minuti;
+2. **conta** solo il pagamento completato (`checkout.session.completed` con il pagamento arrivato)
+   e, per i metodi che si confermano dopo come il bonifico SEPA,
+   `checkout.session.async_payment_succeeded`; gli altri avvisi li ignora con 200;
+3. **conta ogni pagamento una volta**: lo stesso avviso ripetuto, o due avvisi dello stesso
+   pagamento, non fanno una seconda riga (una lettura prima, e le chiavi uniche della tabella
+   `payments`, che bastano da sole);
+4. **riconosce il corso** dall'identificativo del link di pagamento (`payment_link`, `plink_…`),
+   fra i corsi a pagamento, e **lo studente** dal numero;
+5. **controlla l'importo prima degli sconti** (`amount_subtotal`) contro il prezzo del corso, in
+   euro;
+6. se tutto torna, **iscrive** con la stessa funzione dell'iscrizione a mano, con l'«Iscrizione
+   confermata» in coda per `bin/avvisi`. Anche a pagamenti spenti: chi ha pagato, magari da un
+   link copiato prima, viene iscritto.
+
+Se qualcosa non torna, **il pagamento resta in rosso** con il motivo e l'Amministratore riceve
+**«Pagamento da controllare»**. I motivi, nell'ordine in cui si controllano: pagamento vero con
+la modalità di prova accesa, o di prova con la modalità di prova spenta; corso non riconosciuto;
+studente non riconosciuto («il pagamento non è partito da Pistacchio LMS», per esempio il link
+aperto a mano); importo diverso dal prezzo; corso in bozza; iscrizione che c'era già (da
+rimborsare su Stripe). La risposta a Stripe è 200 anche in questi casi: ripetere l'avviso non
+cambierebbe niente. Un errore vero risponde 500, e Stripe ritenta.
+
+Se l'avviso tarda, lo studente vede ancora «Paga e iscriviti» e potrebbe pagare due volte: il
+secondo pagamento compare in rosso, «L'iscrizione c'era già», e va rimborsato su Stripe.
+
+### Le vie gratuite chiuse (0323)
+
+- **La modalità «A pagamento» la sceglie solo l'Amministratore**, a pagamenti accesi. Il
+  supervisore non la vede, e su una bozza già a pagamento la vede spenta («La modalità «A
+  pagamento», con prezzo e link, la cambia solo l'Amministratore.»), senza prezzo e link. A
+  pagamenti spenti un corso già a pagamento la tiene, perché salvarlo non la cambi senza che
+  nessuno l'abbia scelta.
+- **Prezzo, link e identificativo sono obbligatori**. Il prezzo si scrive in euro: «49», «49,00»,
+  «49.00» e «1.250,50» si leggono, e si salva in centesimi; il link deve cominciare con `https://`;
+  l'identificativo con `plink_`, e non può essere quello di un altro corso a pagamento. Dopo un
+  rifiuto il modulo torna con quello che era stato scritto.
+- **Un corso assegnato a un gruppo, o con richieste in attesa, non diventa a pagamento**: «Il
+  corso è assegnato al gruppo Giallo: va rimosso dal gruppo prima di renderlo a pagamento.», «C'è
+  1 richiesta di iscrizione in attesa: va decisa prima di rendere il corso a pagamento.».
+- **Un corso a pagamento non si assegna a un gruppo** (vedi **Gruppi**).
+- **Dal catalogo non ci si iscrive senza pagare**: la scheda non ha il modulo «Iscriviti», e una
+  POST all'iscrizione si rifiuta.
+- **L'Amministratore iscrive a mano** a un corso a pagamento, per chi paga per altre vie o per un
+  omaggio: chi è iscritto così non vede pulsanti di acquisto.
+
+### Impostazioni › Pagamenti
+
+Variante A: tutto in una pagina.
+
+- **«Corsi a pagamento»**, l'interruttore generale, spento all'inizio (`PAYMENTS_ENABLED`). Acceso,
+  fra le modalità compare «A pagamento» e i corsi a pagamento pubblicati compaiono nel catalogo con
+  il prezzo; spento, non compaiono e non si comprano da Pistacchio, ma un pagamento che arriva lo
+  stesso iscrive comunque chi ha pagato.
+- **Il riquadro «Stripe»**: la **chiave degli avvisi** (`STRIPE_WEBHOOK_SECRET`, comincia con
+  `whsec_`; non torna mai al browser, e a campo vuoto resta quella di prima), l'**indirizzo degli
+  avvisi** da copiare su Stripe, e la **modalità di prova** (`PAYMENTS_TEST_MODE`, accesa di
+  partenza): accesa, si accettano solo i pagamenti di prova; spenta, solo quelli veri.
+- **«Pagamenti ricevuti»**, dal più recente, filtrabili per corso: data, studente (o l'email
+  scritta su Stripe), corso, importo («con sconto, su 49,00 €», «di prova») ed esito,
+  «iscrizione completata» o «iscrizione non riuscita» con il motivo.
+
+### Configurazione di Stripe
+
+**Prova in locale.** Stripe non raggiunge un PC con Laragon, quindi gli avvisi li inoltra la
+Stripe CLI:
+
+1. su Stripe, **in modalità di prova**, si crea il link di pagamento del corso (l'indirizzo
+   comincia con `https://buy.stripe.com/test_`) e se ne legge l'identificativo `plink_…`, che con
+   il link e lo stesso prezzo va nel modulo del corso;
+2. nel terminale, se `stripe login` resta fermo su «Waiting for confirmation», si usa la chiave
+   segreta di prova (`sk_test_…`, solo nel terminale, mai altrove), con `stripe login
+   --interactive` o con `--api-key` nel comando;
+3. si lancia
+   `stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded --forward-to http://INDIRIZZO-LOCALE/stripe/avvisi`
+   (le versioni recenti della CLI vogliono l'elenco degli eventi), e la chiave `whsec_…` che
+   stampa va in Impostazioni › Pagamenti;
+4. si paga con la carta di prova `4242 4242 4242 4242`. Nel terminale l'avviso deve avere
+   `[200]`; se ha `[400]`, la chiave nella pagina non è quella della CLI. `stripe events resend
+   evt_…` rimanda lo stesso avviso: la riga in tabella resta una. Se la CLI scrive «websocket:
+   close sent», il collegamento si è interrotto: si ferma e si rilancia.
+
+Una carta di prova su un link vero dà «La tua carta è stata rifiutata. La richiesta era in
+modalità live…»: il link nel corso non è quello di prova.
+
+**Online.** Su Stripe si crea un endpoint con l'indirizzo che la pagina mostra in «Indirizzo
+degli avvisi» e gli eventi `checkout.session.completed` e
+`checkout.session.async_payment_succeeded`; la sua chiave `whsec_…` va nella pagina. Per i
+pagamenti veri servono i link veri di ogni corso con i loro `plink_…`, l'endpoint e la chiave
+veri, e la modalità di prova spenta: prova e pagamenti veri hanno chiavi diverse.
+
+### La tabella e le prove
+
+`payments` (`2026_11_06_pagamenti_stripe.sql`): un pagamento per riga, con l'avviso e il
+pagamento di Stripe (unici), modalità, corso e studente riconosciuti (NULL se no), email, importo
+pagato e prima degli sconti, valuta, esito e motivo. Le colonne del corso arrivano con
+`2026_11_06_corsi_a_pagamento.sql`.
+
+`tests/corsi_a_pagamento_test.php` prova le regole senza pagine; `tests/pagamenti.js` le pagine e
+gli avvisi, firmati nella prova con una chiave di prova: firme sbagliate e vecchie, ripetizioni,
+ogni motivo in rosso con l'email all'Amministratore, il bonifico che si conferma dopo,
+l'interruttore, la scheda del catalogo e la pagina con il filtro.
 
 ## Le email e la pagina Impostazioni › Messaggi email
 
