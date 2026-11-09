@@ -70,5 +70,13 @@ unlink($lock);
 unlink($env);
 rmdir($cartella);
 
+// --- OPcache (06/11) ----------------------------------------------------------
+check('OPcache non caricato: «non installato»', Ambiente::opcacheDa(false, false, '1') === 'non installato');
+check('lo stato di OPcache dice attivo: «attivo»', Ambiente::opcacheDa(true, ['opcache_enabled' => true], '0') === 'attivo');
+check('lo stato di OPcache dice spento: «non attivo»', Ambiente::opcacheDa(true, ['opcache_enabled' => false], '1') === 'non attivo');
+check('stato non leggibile, impostazione accesa: «attivo»', Ambiente::opcacheDa(true, false, '1') === 'attivo');
+check('stato non leggibile, impostazione spenta: «non attivo»', Ambiente::opcacheDa(true, false, '0') === 'non attivo');
+check('la funzione vera risponde con una delle tre', in_array(Ambiente::opcache(), ['attivo', 'non attivo', 'non installato'], true));
+
 echo PHP_EOL . "Totale: {$ok} superati, {$fail} falliti" . PHP_EOL;
 exit($fail > 0 ? 1 : 0);

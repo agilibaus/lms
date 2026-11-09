@@ -2974,7 +2974,7 @@ async function giroBenvenuto(browser) {
                 const cs = d.map((x) => getComputedStyle(x));
                 const riquadro = getComputedStyle(document.querySelector('.informazioni-dati'));
                 return {
-                    inRiga: d.length === 3 && new Set(d.map((x) => Math.round(x.getBoundingClientRect().top))).size === 1,
+                    inRiga: d.length === 4 && new Set(d.map((x) => Math.round(x.getBoundingClientRect().top))).size === 1,
                     affiancati: e.every(([a, b]) => Math.abs(a.top + a.height / 2 - (b.top + b.height / 2)) <= 3 && b.left > a.right),
                     sopra: e.every(([a, b]) => b.top >= a.bottom - 1),
                     separatori: [cs[1].borderLeftWidth, cs[1].borderLeftColor, cs[1].borderTopWidth, cs[1].borderTopColor],
@@ -2986,7 +2986,7 @@ async function giroBenvenuto(browser) {
             await ap.setViewportSize({ width: 1366, height: 760 });
             await ap.goto(BASE + '/admin/settings/informazioni');
             const pc = await disposizione();
-            check('Informazioni su computer: i tre dati in una riga, etichetta e valore affiancati, separatori verticali grigio chiaro, fondo bianco',
+            check('Informazioni su computer: i quattro dati in una riga (con OPcache, 06/11), etichetta e valore affiancati, separatori verticali grigio chiaro, fondo bianco',
                 pc.inRiga && pc.affiancati && pc.separatori[0] === '1px' && pc.separatori[2] === '0px' && pc.fondo === 'rgb(255, 255, 255)', [JSON.stringify(pc)]);
             await ap.setViewportSize({ width: 390, height: 844 });
             await ap.goto(BASE + '/admin/settings/informazioni');

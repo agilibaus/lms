@@ -112,6 +112,8 @@ class SettingsController extends AdminController
                 'PHP' => Ambiente::php(),
                 'Database' => Ambiente::database(),
                 'Installata il' => Ambiente::installazione() ?? 'non nota',
+                // In produzione deve essere attivo (06/11).
+                'OPcache' => Ambiente::opcache(),
             ],
         ]);
     }

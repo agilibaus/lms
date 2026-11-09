@@ -73,4 +73,37 @@ final class Ambiente
 
         return is_file($env) ? date('d/m/Y', (int) filemtime($env)) : null;
     }
+
+    /**
+     * Se OPcache e' attivo per le pagine (06/11, Alessandro): in produzione
+     * deve esserlo, ed e' la condizione del test di carico. Si chiede a
+     * OPcache stesso; se il server non lo permette (`opcache.restrict_api`),
+     * si guarda l'impostazione.
+     */
+    public static function opcache(): string
+    {
+        return self::opcacheDa(
+            extension_loaded('Zend OPcache'),
+            function_exists('opcache_get_status') ? @opcache_get_status(false) : false,
+            (string) ini_get('opcache.enable')
+        );
+    }
+
+    /**
+     * La stessa risposta, dai tre dati: per le prove.
+     *
+     * @param array<string, mixed>|false $stato quello di `opcache_get_status()`
+     */
+    public static function opcacheDa(bool $caricato, array|false $stato, string $abilitato): string
+    {
+        if (!$caricato) {
+            return 'non installato';
+        }
+
+        if (is_array($stato)) {
+            return !empty($stato['opcache_enabled']) ? 'attivo' : 'non attivo';
+        }
+
+        return in_array(strtolower($abilitato), ['1', 'on', 'true'], true) ? 'attivo' : 'non attivo';
+    }
 }
