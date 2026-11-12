@@ -20,7 +20,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $quando = static function (string $data): string {
     $t = strtotime($data);
 
-    return $t === false ? $data : date('d/m H:i', $t);
+    return $t === false ? $data : date('d/m/Y H:i', $t);
 };
 $giro = static function (?string $data): string {
     $t = $data === null ? false : strtotime($data);
@@ -33,10 +33,12 @@ $giro = static function (?string $data): string {
     $come = match ($giorno) {
         date('Y-m-d') => 'oggi',
         date('Y-m-d', strtotime('-1 day')) => 'ieri',
-        default => 'il ' . date('d/m', $t),
+        default => null,
     };
 
-    return 'Ultimo giro: ' . $come . ' alle ' . date('H:i', $t) . '.';
+    // «oggi alle 10:15», «ieri alle 10:15»; piu' indietro la data come in
+    // tutta la piattaforma, «16/09/2026 10:15» (06/11).
+    return 'Ultimo giro: ' . ($come === null ? date('d/m/Y H:i', $t) : $come . ' alle ' . date('H:i', $t)) . '.';
 };
 $tentativi = static fn (int $n): string => $n === 0 ? '—' : ($n === 1 ? '1 tentativo' : $n . ' tentativi');
 

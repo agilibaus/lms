@@ -120,7 +120,7 @@ $legenda = [
                                 <?php if ($r['ultima_at'] === null): ?>
                                     <span class="valore-assente">—</span>
                                 <?php else: ?>
-                                    <?= $esc(date('d/m', (int) strtotime((string) $r['ultima_at']))) ?> · <?= $esc((string) $r['ultima_cosa']) ?>
+                                    <?= $esc(date('d/m/Y', (int) strtotime((string) $r['ultima_at']))) ?> · <?= $esc((string) $r['ultima_cosa']) ?>
                                 <?php endif; ?>
                             </td>
                             <td role="cell" data-label="Ultima visita">

@@ -184,7 +184,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                 if ($stato === Percorso::COMPLETATO) {
                     $statoRiga = 'completato · ' . Percorso::contenuto($nLezioni, $quiz !== null);
                 } elseif ($lockedByDate) {
-                    $statoRiga = 'si apre il ' . date('j/n/Y', strtotime((string) $lock['available_from']));
+                    $statoRiga = 'si apre il ' . date('d/m/Y', strtotime((string) $lock['available_from']));
                 } elseif ($isLocked) {
                     $statoRiga = 'si sblocca con il questionario del modulo precedente';
                 } else {
@@ -215,7 +215,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         <?php endif; ?>
                         <?php if ($lockedByDate): ?>
                             <span class="badge badge-muted">
-                                dal <?= htmlspecialchars(date('j/n/Y', strtotime((string) $lock['available_from']))) ?>
+                                dal <?= htmlspecialchars(date('d/m/Y', strtotime((string) $lock['available_from']))) ?>
                             </span>
                         <?php elseif ($isLocked): ?>
                             <span class="badge badge-danger">bloccato</span>
@@ -329,7 +329,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                     <p class="empty-state-small">
                         Disponibile dal
                         <?= htmlspecialchars(
-                            date('j/n/Y \a\l\l\e H:i', strtotime((string) $lock['available_from']))
+                            date('d/m/Y H:i', strtotime((string) $lock['available_from']))
                         ) ?>.
                         Riceverai un’email quando si apre.
                     </p>

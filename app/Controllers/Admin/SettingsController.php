@@ -273,7 +273,7 @@ class SettingsController extends AdminController
             (string) (Auth::name() ?? ''),
             'Prova di invio — ' . Modelli::PIATTAFORMA,
             "Questo messaggio conferma che l'invio della posta è configurato correttamente.\n\n"
-                . 'Inviato il ' . date('d/m/Y \a\l\l\e H:i') . '.'
+                . 'Inviato il ' . date('d/m/Y H:i') . '.'
         );
 
         try {

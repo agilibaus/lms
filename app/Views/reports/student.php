@@ -132,6 +132,17 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
             <div class="report-studente-barra" aria-hidden="true">
                 <span style="width: <?= max(0, min(100, (int) round((float) $course['progress_pct']))) ?>%"></span>
             </div>
+            <?php /* Completato con il contenuto di allora (06/11, Alessandro,
+                     strada b): se dopo il completamento il corso ha avuto
+                     lezioni o questionari nuovi, percentuale e certificato
+                     restano, e una nota dice perche' i conti non tornano. */ ?>
+            <?php if ($course['completed_at'] !== null
+                && ((int) $course['lessons_completed'] < (int) $course['lessons_total']
+                    || (int) $course['quizzes_passed'] < (int) $course['quizzes_total'])): ?>
+                <p class="card-meta">
+                    Completato il <?= htmlspecialchars($quando((string) $course['completed_at'])) ?>, prima che il corso cambiasse.
+                </p>
+            <?php endif; ?>
             <p class="card-meta">
                 Lezioni <?= (int) $course['lessons_completed'] ?>/<?= (int) $course['lessons_total'] ?> ·
                 Questionari superati <?= (int) $course['quizzes_passed'] ?>/<?= (int) $course['quizzes_total'] ?> ·

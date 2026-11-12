@@ -54,7 +54,7 @@ $campo = static fn (?string $d): string => $d === null ? '' : str_replace(' ', '
                     $moduleId = (int) $m['id'];
                     $delCorso = $m['available_from'] === null
                         ? 'aperto da subito'
-                        : date('j/n/Y \a\l\l\e G:i', strtotime((string) $m['available_from']));
+                        : date('d/m/Y H:i', strtotime((string) $m['available_from']));
                     ?>
                     <tr role="row">
                         <td role="cell" data-label="Modulo"><?= htmlspecialchars((string) $m['title']) ?></td>

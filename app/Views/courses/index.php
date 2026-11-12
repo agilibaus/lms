@@ -82,7 +82,7 @@ use App\Models\CourseModel;
                                     lezioni disponibili
                                 <?php endif; ?>
                                 — prossimo modulo il
-                                <?= htmlspecialchars(date('j/n/Y', strtotime((string) $stato['prossima']))) ?>
+                                <?= htmlspecialchars(date('d/m/Y', strtotime((string) $stato['prossima']))) ?>
                             </p>
                         <?php endif; ?>
                     <?php elseif (!$course['is_published']): ?>

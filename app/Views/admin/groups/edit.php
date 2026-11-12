@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Quando;
 use App\Core\Csrf;
 use App\Core\Ordinamento;
 use App\Core\GroupLogo;
@@ -148,7 +149,7 @@ $members = $ordineMembri->applica($members);
                 <tr role="row">
                     <td role="cell" data-label="Nome"><a href="/reports/students/<?= (int) $member['id'] ?>"><?= htmlspecialchars((string) $member['full_name']) ?></a></td>
                     <td role="cell" data-label="Email"><?= htmlspecialchars((string) $member['email']) ?></td>
-                    <td role="cell" data-label="Nel gruppo dal"><?= htmlspecialchars((string) $member['joined_at']) ?></td>
+                    <td role="cell" data-label="Nel gruppo dal"><?= htmlspecialchars(Quando::dataOra((string) $member['joined_at'])) ?></td>
                     <?php if ($gestisceMembri): ?>
                     <td role="cell" class="row-actions">
                         <form action="/admin/groups/<?= $groupId ?>/members/<?= (int) $member['id'] ?>/delete" method="post"

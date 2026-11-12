@@ -51,7 +51,7 @@ $quante = count($domande);
         <p class="card-meta">
             Da <?= htmlspecialchars((string) ($q['student_name'] ?? 'uno studente non più iscritto')) ?><?php
             if (!empty($q['group_names'])): ?>, gruppo <?= htmlspecialchars((string) $q['group_names']) ?><?php endif; ?>
-            · <?= date('j/n/Y H:i', strtotime((string) $q['created_at'])) ?>
+            · <?= date('d/m/Y H:i', strtotime((string) $q['created_at'])) ?>
         </p>
 
         <form action="/domande/<?= $qid ?>/pubblica" method="post" class="form">

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Quando;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
 use App\Controllers\QuizController;
@@ -180,7 +181,7 @@ use App\Core\QuizScoring;
             <tbody>
             <?php foreach ($attempts as $attempt): ?>
                 <tr>
-                    <td><?= htmlspecialchars((string) $attempt['attempted_at']) ?></td>
+                    <td><?= htmlspecialchars(Quando::dataOra((string) $attempt['attempted_at'])) ?></td>
                     <td><?= number_format((float) $attempt['score_pct'], 0) ?>%</td>
                     <td><?= (int) $attempt['passed'] === 1 ? 'Superato' : 'Non superato' ?></td>
                     <td><a href="/attempts/<?= (int) $attempt['id'] ?>">Dettaglio</a></td>

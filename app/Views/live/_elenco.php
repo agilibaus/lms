@@ -55,7 +55,7 @@ $riquadro = static function (array $s) use ($adesso): string {
     }
 
     $html = '<li class="agenda-voce agenda-incontro' . ($inCorso && !$passata ? ' agenda-in-corso' : '') . '">'
-        . '<span class="agenda-quando"><span class="agenda-giorno">' . htmlspecialchars($inizio->format('d/m')) . '</span> '
+        . '<span class="agenda-quando"><span class="agenda-giorno">' . htmlspecialchars($inizio->format('d/m/Y')) . '</span> '
         . '<span class="agenda-ora">' . htmlspecialchars($inizio->format('H:i') . '–' . $fine->format('H:i')) . '</span></span>'
         . '<span class="agenda-cosa"><a href="/live/' . $id . '">' . htmlspecialchars((string) $s['title']) . '</a>';
 

@@ -50,7 +50,7 @@ $voce = static function (array $e) use ($esc, $adesso): string {
 
     $html = '<li class="agenda-voce agenda-' . $esc($e['tipo']) . ($inCorso ? ' agenda-in-corso' : '') . '">'
         . '<span class="agenda-quando"><span class="agenda-giorno">'
-        . $esc($e['inizio']->format('d/m')) . '</span> <span class="agenda-ora">' . $esc($ora) . '</span></span>'
+        . $esc($e['inizio']->format('d/m/Y')) . '</span> <span class="agenda-ora">' . $esc($ora) . '</span></span>'
         . '<span class="agenda-cosa">'
         . '<a href="' . $esc((string) $e['url']) . '">' . $esc((string) $e['titolo']) . '</a>'
         . '<span class="agenda-tipo">' . $esc(Agenda::etichettaTipo((string) $e['tipo'])) . '</span>'
@@ -387,7 +387,7 @@ $titoliGruppi = [
 
             $t = strtotime($valore);
 
-            return $t === false ? 'data non registrata' : $esc(date('d/m/Y \a\l\l\e H:i', $t));
+            return $t === false ? 'data non registrata' : $esc(date('d/m/Y H:i', $t));
         };
         ?>
         <dl class="agenda-dati">

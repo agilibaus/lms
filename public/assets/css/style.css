@@ -5039,8 +5039,11 @@ fieldset.checkbox-group legend {
    «16/11 10:13–11:13» andava a capo, nell'Elenco dell'Agenda come in
    «Sessioni live». La colonna resta larga uguale per tutte le voci, cosi'
    gli orari si incolonnano; al telefono la data sta sulla sua riga. */
+/* Con l'anno (06/11, le date come in tutta la piattaforma) la colonna e'
+   larga 13 rem: «16/09/2026 10:13–11:13» ne occupa circa 12,5, e cosi' tutte
+   le voci hanno la stessa larghezza. */
 .agenda-quando {
-    flex: 0 0 9.5rem;
+    flex: 0 0 13rem;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }

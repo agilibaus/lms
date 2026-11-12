@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Quando;
 use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\Ordinamento;
@@ -84,7 +85,7 @@ $certificates = $ordine->applica($certificates);
                 <?php endif; ?>
                 <td role="cell" data-label="Corso"><?= htmlspecialchars((string) $certificate['course_title']) ?></td>
                 <td role="cell" data-label="Codice"><code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code></td>
-                <td role="cell" data-label="Emesso il"><?= htmlspecialchars((string) $certificate['issued_at']) ?></td>
+                <td role="cell" data-label="Emesso il"><?= htmlspecialchars(Quando::dataOra((string) $certificate['issued_at'])) ?></td>
                 <td role="cell" data-label="Stato">
                     <?php if ($revoked): ?>
                         <span class="badge badge-danger">revocato</span>

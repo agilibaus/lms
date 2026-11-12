@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Quando;
 use App\Auth\CourseRights;
 use App\Core\Csrf;
 use App\Core\H5P;
@@ -77,7 +78,7 @@ $id = (int) $quiz['id'];
             <tbody>
             <?php foreach ($attempts as $attempt): ?>
                 <tr>
-                    <td><?= htmlspecialchars((string) $attempt['attempted_at']) ?></td>
+                    <td><?= htmlspecialchars(Quando::dataOra((string) $attempt['attempted_at'])) ?></td>
                     <td>
                         <?= number_format((float) $attempt['score_pct'], 0) ?>%
                         <?php if (($attempt['h5p_raw'] ?? null) !== null && ($attempt['h5p_max'] ?? null) !== null): ?>

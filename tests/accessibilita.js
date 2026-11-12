@@ -1960,6 +1960,16 @@ async function controllaSforamento(page, nome) {
         largo.scroll === 0,
         largo.scroll === 0 ? [] : ['sfora di ' + largo.scroll + 'px'].concat(largo.colpevoli)
     );
+
+    // Le date come in tutta la piattaforma (06/11): «16/09/2026 18:00», mai
+    // come stanno nel database («2026-09-16 18:00:42»). Il testo visibile,
+    // compresi i blocchi chiusi; non i campi dei moduli, che hanno il loro
+    // formato.
+    const dateDb = await page.evaluate(() => {
+        const t = [...document.querySelectorAll('main, .main-content')].map((m) => m.textContent).join(' ') || document.body.textContent;
+        return [...new Set(t.match(/\b20\d\d-\d\d-\d\d(?:[ T]\d\d:\d\d(?::\d\d)?)?/g) || [])].slice(0, 3);
+    });
+    check(nome + ': nessuna data nel formato del database', dateDb.length === 0, dateDb);
 }
 
 /**

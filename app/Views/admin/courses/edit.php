@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Quando;
 use App\Core\Csrf;
 use App\Core\Icona;
 use App\Core\Ordinamento;
@@ -103,7 +104,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                         <span class="cell-sub"><?= htmlspecialchars((string) $request['email']) ?></span>
                     </td>
                     <td role="cell" data-label="Messaggio"><?= $request['message'] !== null ? nl2br(htmlspecialchars((string) $request['message'])) : '—' ?></td>
-                    <td role="cell" data-label="Richiesta del"><?= htmlspecialchars((string) $request['requested_at']) ?></td>
+                    <td role="cell" data-label="Richiesta del"><?= htmlspecialchars(Quando::dataOra((string) $request['requested_at'])) ?></td>
                     <td role="cell" class="row-actions">
                         <form action="/admin/requests/<?= (int) $request['id'] ?>" method="post">
                             <?= Csrf::field() ?>
@@ -163,7 +164,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                         <a href="/reports/students/<?= (int) $row['user_id'] ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
                         <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                     </td>
-                    <td role="cell" data-label="Iscritto il"><?= htmlspecialchars((string) $row['enrolled_at']) ?></td>
+                    <td role="cell" data-label="Iscritto il"><?= htmlspecialchars(Quando::dataOra((string) $row['enrolled_at'])) ?></td>
                     <td role="cell" data-label="Progresso">
                         <?= number_format((float) $row['progress_pct'], 0) ?>%
                         <?php if ($row['completed_at'] !== null): ?>

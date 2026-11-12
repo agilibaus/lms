@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\Quando;
+
 /**
  * Pagina pubblica di verifica: nessun login richiesto, nessun dato di contatto.
  *
@@ -47,10 +49,10 @@ $valid = $certificate !== null && $certificate['revoked_at'] === null;
             <dt>Corso</dt>
             <dd><?= htmlspecialchars((string) $certificate['course_title']) ?></dd>
             <dt>Data di rilascio</dt>
-            <dd><?= htmlspecialchars((string) $certificate['issued_at']) ?></dd>
+            <dd><?= htmlspecialchars(Quando::dataOra((string) $certificate['issued_at'])) ?></dd>
             <?php if (!$valid): ?>
                 <dt>Revocato il</dt>
-                <dd><?= htmlspecialchars((string) $certificate['revoked_at']) ?></dd>
+                <dd><?= htmlspecialchars(Quando::dataOra((string) $certificate['revoked_at'])) ?></dd>
             <?php endif; ?>
             <dt>Codice</dt>
             <dd><code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code></dd>

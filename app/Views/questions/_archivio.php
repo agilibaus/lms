@@ -37,7 +37,7 @@ foreach ($archivio as $q) {
     $perModulo[$chiave]['titolo'] ??= $q['module_id'] === null ? 'Il corso in generale' : (string) $q['module_title'];
     $perModulo[$chiave]['voci'][] = $q;
 }
-$data = static fn (?string $d): string => $d === null ? '' : date('j/n/Y', strtotime($d));
+$data = static fn (?string $d): string => $d === null ? '' : date('d/m/Y', strtotime($d));
 $tutte = $indirizzo . ($campiNascosti !== [] ? '?' . http_build_query($campiNascosti) : '');
 ?>
 <p class="qa-intro">Le domande degli studenti di questo corso, con la risposta dell'esperto.</p>

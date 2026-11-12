@@ -2776,10 +2776,12 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const php = execFileSync('php', ['-r', 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION . "." . PHP_RELEASE_VERSION;'], { encoding: 'utf8' }).trim();
             const dati = await page.$$eval('.informazioni-dato', (d) => d.map((x) => [
                 x.querySelector('.informazioni-etichetta').textContent.trim(), x.querySelector('.informazioni-valore').textContent.trim()]));
-            check('admin → sotto, PHP ' + php + ', il database con la sua versione e la data di installazione',
-                dati.length === 3 && dati[0][0] === 'PHP' && dati[0][1] === php
+            // Dal 06/11 (0337) anche OPcache, quarto dato.
+            check('admin → sotto, PHP ' + php + ', il database con la sua versione, la data di installazione e OPcache',
+                dati.length === 4 && dati[0][0] === 'PHP' && dati[0][1] === php
                     && dati[1][0] === 'Database' && /^(MySQL|MariaDB) \d+\.\d+\.\d+$/.test(dati[1][1])
-                    && dati[2][0] === 'Installata il' && /^\d{2}\/\d{2}\/\d{4}$/.test(dati[2][1]), [JSON.stringify(dati)]);
+                    && dati[2][0] === 'Installata il' && /^\d{2}\/\d{2}\/\d{4}$/.test(dati[2][1])
+                    && dati[3][0] === 'OPcache' && ['attivo', 'non attivo', 'non installato'].includes(dati[3][1]), [JSON.stringify(dati)]);
             await ctx.close();
         }
 
