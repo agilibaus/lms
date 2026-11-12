@@ -543,6 +543,7 @@ const PAGINE_INTERNE = [
     ['/tre-parole?corso=1&vista=nomi', 'Tre parole con i nomi'],
     ['/reports/courses/1/griglia?modulo=1', 'Griglia del corso, modulo aperto'],
     ['/reports/students/2', 'Report per studente'],
+    ['/reports/students/2?scheda=incontri', 'Report per studente, incontri'],
     ['/reports/groups/1', 'Report per gruppo'],
     ['/lessons/1/edit', 'Modifica lezione'],
     ['/courses/1', 'Corso'],

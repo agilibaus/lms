@@ -102,6 +102,9 @@ const PAGINE = [
     ['/reports/courses/1', 'Report per corso'],
     ['/reports/courses/1/griglia', 'Griglia del corso'],
     ['/reports/students/2', 'Report per studente'],
+    // La scheda degli incontri (06/11): con le schede, la tabella degli
+    // incontri sta solo li'.
+    ['/reports/students/2?scheda=incontri', 'Report per studente, incontri'],
     ['/reports/groups/1', 'Report per gruppo'],
     ['/reports/fruizione/1', 'Fruizione per corso'],
     ['/lessons/1/fruizione', 'Fruizione della lezione'],

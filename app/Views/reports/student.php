@@ -47,6 +47,20 @@ $liveSessions = $ordineIncontri->applica(array_map(
     static fn (array $r): array => $r + ['presenza' => $r['joined_at'] !== null ? 1 : 0],
     $liveSessions
 ));
+
+// Corsi e incontri in due schede (06/11, Alessandro, variante C): prima
+// erano riquadri bianchi uguali uno sotto l'altro, e non si distinguevano.
+// Le schede ci sono solo se ci sono tutte e due le cose; la scheda e' un
+// parametro dell'indirizzo, cosi' funziona senza JavaScript e l'ordinamento
+// delle colonne la conserva.
+$conSchede = $courses !== [] && $liveSessions !== [];
+$scheda = ($_GET['scheda'] ?? '') === 'incontri' && $liveSessions !== [] ? 'incontri' : 'corsi';
+if ($courses === [] && $liveSessions !== []) {
+    $scheda = 'incontri';
+}
+
+/** Le date come in tutta la piattaforma: «16/09/2026 18:00» (06/11). */
+$quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
@@ -88,11 +102,22 @@ $liveSessions = $ordineIncontri->applica(array_map(
     </p>
 </div>
 
-<?php if ($courses === []): ?>
+<?php if ($conSchede): ?>
+    <nav class="schede-pagina" aria-label="Sezioni della pagina">
+        <a href="?scheda=corsi" class="<?= $scheda === 'corsi' ? 'attiva' : '' ?>"
+           <?= $scheda === 'corsi' ? 'aria-current="page"' : '' ?>>Corsi (<?= count($courses) ?>)</a>
+        <a href="?scheda=incontri" class="<?= $scheda === 'incontri' ? 'attiva' : '' ?>"
+           <?= $scheda === 'incontri' ? 'aria-current="page"' : '' ?>>Incontri dal vivo (<?= count($liveSessions) ?>)</a>
+    </nav>
+<?php endif; ?>
+
+<?php if ($scheda !== 'corsi'): ?>
+    <?php /* La scheda «Incontri dal vivo»: i corsi non si stampano. */ ?>
+<?php elseif ($courses === []): ?>
     <p class="empty-state">Questo utente non è iscritto ad alcun corso.</p>
 <?php else: ?>
     <?php foreach ($courses as $course): ?>
-        <section class="card">
+        <section class="card report-studente-corso">
             <div class="card-head">
                 <h2><a href="/reports/courses/<?= (int) $course['course_id'] ?>"><?= htmlspecialchars((string) $course['course_title']) ?></a></h2>
                 <span>
@@ -103,10 +128,14 @@ $liveSessions = $ordineIncontri->applica(array_map(
                 </span>
             </div>
 
+            <?php /* La barra dell'avanzamento (variante C), come in «I miei corsi». */ ?>
+            <div class="report-studente-barra" aria-hidden="true">
+                <span style="width: <?= max(0, min(100, (int) round((float) $course['progress_pct']))) ?>%"></span>
+            </div>
             <p class="card-meta">
                 Lezioni <?= (int) $course['lessons_completed'] ?>/<?= (int) $course['lessons_total'] ?> ·
                 Questionari superati <?= (int) $course['quizzes_passed'] ?>/<?= (int) $course['quizzes_total'] ?> ·
-                Iscritto il <?= htmlspecialchars((string) $course['enrolled_at']) ?>
+                Iscritto il <?= htmlspecialchars($quando((string) $course['enrolled_at'])) ?>
                 <?php if (!empty($course['certificate_code'])): ?>
                     · Certificato
                     <?php if ($course['certificate_revoked_at'] !== null): ?>
@@ -163,10 +192,10 @@ $liveSessions = $ordineIncontri->applica(array_map(
                                          la data, non il collegamento. */ ?>
                                 <?php if (!empty($quiz['last_attempt_id']) && \App\Auth\StudentScope::puoAprireTentativo((int) $student['id'], (int) $course['course_id'])): ?>
                                     <a href="/attempts/<?= (int) $quiz['last_attempt_id'] ?>">
-                                        <?= htmlspecialchars((string) ($quiz['last_attempt_at'] ?? '—')) ?>
+                                        <?= htmlspecialchars($quiz['last_attempt_at'] !== null ? $quando((string) $quiz['last_attempt_at']) : '—') ?>
                                     </a>
                                 <?php elseif (!empty($quiz['last_attempt_id'])): ?>
-                                    <?= htmlspecialchars((string) ($quiz['last_attempt_at'] ?? '—')) ?>
+                                    <?= htmlspecialchars($quiz['last_attempt_at'] !== null ? $quando((string) $quiz['last_attempt_at']) : '—') ?>
                                 <?php else: ?>
                                     —
                                 <?php endif; ?>
@@ -181,9 +210,11 @@ $liveSessions = $ordineIncontri->applica(array_map(
     <?php endforeach; ?>
 <?php endif; ?>
 
-<?php if ($liveSessions !== []): ?>
-    <section class="card">
-        <h2>Incontri dal vivo</h2>
+<?php if ($liveSessions !== [] && $scheda === 'incontri'): ?>
+    <section class="card report-studente-incontri">
+        <?php /* Il titolo lo dice la scheda; senza schede resta, per un lettore
+                 di schermo, come titolo di sezione nascosto. */ ?>
+        <h2 class="sr-only">Incontri dal vivo</h2>
         <p class="card-meta">
             Gli incontri a cui questo studente era atteso. L’ingresso è quello registrato quando
             ha aperto la riunione da Pistacchio; quanto sia rimasto in riunione non lo sappiamo,

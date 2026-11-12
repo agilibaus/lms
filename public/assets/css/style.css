@@ -4950,6 +4950,64 @@ fieldset.checkbox-group legend {
 /* Tre zone: quando, cosa, comandi. A schermo largo stanno in fila con la
    data a larghezza fissa, cosi' le ore si incolonnano come i numeri nelle
    tabelle dei report; stretto, vanno a capo. */
+/* Le schede di una pagina (06/11, report per studente, variante C): «Corsi»
+   e «Incontri dal vivo». Collegamenti, non pulsanti: ognuna ha il suo
+   indirizzo, e quella aperta ha `aria-current` oltre alla linea sotto. */
+.schede-pagina {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--color-border);
+    margin: 1.4rem 0 1rem;
+}
+
+.schede-pagina a {
+    padding: 0.6rem 1rem;
+    min-height: var(--tap-target);
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+}
+
+.schede-pagina a:hover {
+    color: var(--color-text);
+}
+
+.schede-pagina a.attiva {
+    color: var(--color-text);
+    border-bottom-color: var(--color-primary);
+}
+
+/* I riquadri del report per studente: il filo verde per i corsi, color terra
+   per gli incontri, come gli incontri in Agenda; e la barra dell'avanzamento
+   del corso. */
+.report-studente-corso {
+    border-left: 4px solid var(--color-primary);
+}
+
+.report-studente-incontri {
+    border-left: 4px solid #8A6D3B;
+}
+
+.report-studente-barra {
+    height: 0.45rem;
+    max-width: 22rem;
+    margin: 0.35rem 0 0.7rem;
+    background: var(--color-border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.report-studente-barra span {
+    display: block;
+    height: 100%;
+    background: var(--color-primary);
+}
+
 .agenda-voce {
     display: flex;
     flex-wrap: wrap;
