@@ -43,7 +43,10 @@ final class StudentScope
      */
     public static function tutorIds(): ?array
     {
-        if (Auth::hasRole('admin')) {
+        // Il supervisore vede i report di tutti, come l'admin (06/11,
+        // Alessandro): nessun perimetro. Da qui passano report, fruizione
+        // dei video, presenze agli incontri e file scaricati.
+        if (Auth::hasRole('admin', 'supervisore')) {
             return null;
         }
 

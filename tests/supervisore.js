@@ -5,7 +5,10 @@
  *     i contenuti, ne elimina moduli, lezioni e questionari;
  *   - non pubblica (lo fa l'admin) e non elimina un corso;
  *   - i corsi pubblicati, per lui, non ci sono: non li vede e non li tocca;
- *   - non gestisce utenti, gruppi, iscrizioni, incontri, report, catalogo;
+ *   - non gestisce utenti, gruppi, iscrizioni, incontri, catalogo;
+ *   - dal 06/11 vede i report di tutti, come l'admin, anche dei corsi
+ *     pubblicati, con i tentativi, e scarica i file (ma i contenuti dei
+ *     corsi pubblicati restano chiusi);
  *   - delle impostazioni apre solo «Video di benvenuto» e «Informazioni».
  *
  * Una suite a se', accanto a `permessi.js` (che gia' sfiora il limite di
@@ -126,9 +129,9 @@ async function posta(page, url, campi, paginaToken) {
         // --- il menu -------------------------------------------------------
         await page.goto(BASE + '/admin/courses');
         const menu = await page.evaluate(() => [...document.querySelectorAll('.sidebar-nav a')].map((a) => a.textContent.trim()));
-        const devono = ['Corsi', 'Gestione corsi', 'Impostazioni', 'Profilo'];
-        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Report', 'Gruppi', 'Utenti', 'Domande'];
-        check('menu: «Corsi», «Gestione corsi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
+        const devono = ['Corsi', 'Report', 'Gestione corsi', 'Impostazioni', 'Profilo'];
+        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Gruppi', 'Utenti', 'Domande'];
+        check('menu: «Corsi», «Report», «Gestione corsi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
             devono.every((v) => menu.includes(v)) && nonDevono.every((v) => !menu.includes(v)), [menu.join(' | ')]);
 
         // --- le pagine -----------------------------------------------------
@@ -148,10 +151,42 @@ async function posta(page, url, campi, paginaToken) {
             ['/admin/settings', 'Impostazioni'],
             ['/admin/settings/benvenuto', 'Video di benvenuto'],
             ['/admin/settings/informazioni', 'Informazioni'],
+            // I report di tutti, come l'admin (06/11), anche dei corsi pubblicati.
+            ['/reports', 'i report'],
+            ['/reports/fermi', 'gli studenti fermi'],
+            ['/reports/courses/' + A.corso, 'il report di un corso pubblicato'],
+            ['/reports/courses/' + A.corso + '/griglia', 'la griglia di un corso pubblicato'],
+            ['/reports/courses/' + bozza.corso, 'il report del corso in bozza'],
+            ['/reports/students/' + A.studente, 'il report di uno studente'],
+            ['/reports/groups/' + A.gruppo, 'il report di un gruppo'],
+            ['/reports/live/' + A.incontro_concluso, 'il report di un incontro'],
+            ['/reports/fruizione/' + A.corso, 'la fruizione dei video di un corso pubblicato'],
+            ['/lessons/' + A.lezione + '/fruizione', 'la fruizione di una lezione di un corso pubblicato'],
+            ['/lessons/' + bozza.lezione + '/fruizione', 'la fruizione di una lezione del corso in bozza'],
+            ['/attempts/' + A.tentativo, 'il tentativo di uno studente, dal suo report'],
         ];
         for (const [url, cosa] of consentite) {
             const e = await esitoGet(page, url);
             check('supervisore → ' + url + ' (' + cosa + '): consentito', e === 'consentito', [e]);
+        }
+
+        // E vede davvero tutti, non pagine vuote: gli studenti del corso
+        // pubblicato, come l'admin.
+        await page.goto(BASE + '/reports/courses/' + A.corso);
+        const righeReport = await page.$$eval('table tbody tr', (r) => r.length);
+        const iscrittiA = conta('SELECT COUNT(*) FROM enrollments e JOIN users u ON u.id = e.user_id WHERE e.course_id = ? AND u.role = \'studente\'', A.corso);
+        check('il report del corso pubblicato mostra tutti i suoi studenti (' + iscrittiA + ')', iscrittiA > 0 && righeReport === iscrittiA, [righeReport + ' righe']);
+
+        // I file scaricati: si chiedono come file, non come pagine (06/11).
+        for (const [url, cosa] of [
+            ['/reports/courses/' + A.corso + '/csv', 'il CSV del report di un corso'],
+            ['/reports/courses/' + A.corso + '/xlsx', 'l\'XLSX del report di un corso'],
+            ['/reports/students/' + A.studente + '/xlsx', 'l\'XLSX del report di uno studente'],
+            ['/lessons/' + A.lezione + '/fruizione/csv', 'il CSV della fruizione di una lezione'],
+        ]) {
+            const r = await ctx.request.get(BASE + url, { maxRedirects: 0 });
+            const tipo = String(r.headers()['content-type'] || '');
+            check('supervisore → ' + url + ' (' + cosa + '): scaricato', r.status() === 200 && !tipo.includes('text/html'), [r.status() + ' ' + tipo]);
         }
 
         const negate = [
@@ -165,9 +200,6 @@ async function posta(page, url, campi, paginaToken) {
             ['/catalogo', 'il catalogo, che iscrive ai corsi pubblicati'],
             ['/admin/users', 'gli utenti'],
             ['/admin/groups', 'i gruppi'],
-            ['/reports', 'i report'],
-            ['/reports/courses/' + bozza.corso, 'il report anche del corso in bozza'],
-            ['/lessons/' + bozza.lezione + '/fruizione', 'la fruizione del video, che e\' un report'],
             ['/admin/settings/posta', 'il server di posta'],
             ['/admin/settings/email', 'i messaggi email'],
             ['/admin/settings/aspetto', 'l\'aspetto'],

@@ -29,7 +29,8 @@ $ruoli = [
         'sempre' => [
             'Costruisce i corsi in bozza: li crea, ne modifica i dati e la copertina, e crea, modifica ed elimina moduli, lezioni, materiali, video, contenuti H5P, questionari e la verifica finale.',
             'Non pubblica i corsi (lo fa l’Amministratore) e non elimina un corso. I corsi pubblicati, per lui, non ci sono: non li vede e non li tocca.',
-            'Non gestisce utenti, gruppi, iscrizioni, incontri, report, certificati, domande degli studenti e Bacheca. Delle impostazioni apre solo «Video di benvenuto» e «Informazioni».',
+            'Vede i report di tutti, come l’Amministratore, con i tentativi dei questionari, e li scarica.',
+            'Non gestisce utenti, gruppi, iscrizioni, incontri, certificati, domande degli studenti e Bacheca. Delle impostazioni apre solo «Video di benvenuto» e «Informazioni».',
         ],
         'interruttori' => [],
     ],

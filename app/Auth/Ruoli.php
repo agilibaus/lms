@@ -51,7 +51,8 @@ final class Ruoli
         // incontri, ne' `course.welcome`, che vale per tutti i corsi.
         // Delle impostazioni apre solo «Video di benvenuto»
         // (`settings.welcome`) e «Informazioni».
-        'supervisore' => ['course.build', 'course.create', 'settings.welcome'],
+        // Dal 06/11 (Alessandro) anche i report di tutti, come l'admin.
+        'supervisore' => ['course.build', 'course.create', 'report.view', 'settings.welcome'],
         'tutor' => ['board.manage_own', 'course.edit', 'course.welcome_own', 'group.manage_own', 'report.view'],
         'assistente' => [],
         'studente' => [],

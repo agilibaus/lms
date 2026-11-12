@@ -274,8 +274,9 @@ class VideoProgressController
      */
     public static function apribile(int $courseId): bool
     {
-        // «Admin» e non «puo' modificare il corso» (30/10): il supervisore
-        // modifica i corsi in bozza, ma i report non sono suoi.
+        // «Admin» e non «puo' modificare il corso» (30/10). Dal 06/11 il
+        // supervisore ha i report: passa da `report.view`, con il perimetro
+        // di tutti (`StudentScope`).
         if (!Auth::hasRole('admin') && !Auth::can('report.view') && !Auth::can('report.view_assigned')) {
             return false;
         }
@@ -305,7 +306,8 @@ class VideoProgressController
      */
     private function reportData(int $lessonId): array
     {
-        Auth::requireRole('admin', 'tutor', 'assistente');
+        // Anche il supervisore, che dal 06/11 ha i report (`apribile`).
+        Auth::requireRole('admin', 'supervisore', 'tutor', 'assistente');
 
         $lesson = LessonModel::find($lessonId);
 
