@@ -1646,7 +1646,26 @@ const EXTRA = {
 
 // Il campo della presentazione nel profilo ha lo stesso contatore delle
 // risposte aperte (06/10), e si guarda con lo stesso controllo.
-EXTRA['Profilo'] = EXTRA['Quiz da svolgere'];
+EXTRA['Profilo'] = async (page, nome) => {
+    await EXTRA['Quiz da svolgere'](page, nome);
+
+    // La gerarchia (06/11, variante B): il titolo del riquadro si distingue
+    // dall'etichetta del campo, per grandezza e per peso. E al telefono la
+    // scelta del file e «Sostituisci» stanno a destra della foto.
+    const g = await page.evaluate(() => {
+        const h = getComputedStyle(document.querySelector('.card h2'));
+        const l = getComputedStyle(document.querySelector('.form label'));
+        const foto = document.querySelector('.avatar-editor .avatar');
+        const bottone = document.querySelector('.avatar-editor form button');
+        const a = foto && foto.getBoundingClientRect();
+        const b = bottone && bottone.getBoundingClientRect();
+        return { titolo: parseFloat(h.fontSize), pesoTitolo: parseInt(h.fontWeight, 10), etichetta: parseFloat(l.fontSize), pesoEtichetta: parseInt(l.fontWeight, 10),
+            aDestra: !!(a && b && b.left >= a.right - 1 && b.top < a.bottom), largo: innerWidth };
+    });
+    check(nome + ': il titolo del riquadro si distingue dall\'etichetta (piu\' grande di un quarto e piu\' pesante)',
+        g.titolo >= g.etichetta * 1.25 && g.pesoTitolo > g.pesoEtichetta, [JSON.stringify(g)]);
+    check(nome + ': «Sostituisci» o «Carica» a destra della foto', g.aDestra, [JSON.stringify(g)]);
+};
 
 /*
  * L'Agenda (10/10, Alessandro): dal titolo di un gruppo alla sua prima voce,

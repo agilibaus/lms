@@ -263,6 +263,41 @@ h3 { font-size: 1.05rem; }
     margin-top: 0.3rem;
 }
 
+/* Al telefono (06/11, Alessandro): la scelta del file e «Sostituisci»
+   accanto alla foto, a destra, invece che sotto; le note sotto, a tutta
+   larghezza. Il contenitore delle azioni sparisce dalla griglia
+   (`display: contents`) cosi' i suoi pezzi si dispongono da soli. */
+@media (max-width: 40rem) {
+    .avatar-editor {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 1rem;
+        row-gap: 0.3rem;
+        align-items: center;
+    }
+
+    .avatar-editor-actions {
+        display: contents;
+    }
+
+    .avatar-editor-actions > :not(:first-child) {
+        grid-column: 1 / -1;
+    }
+
+    .avatar-editor-actions > form.form-inline:first-child {
+        grid-column: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    .avatar-editor-actions > form.form-inline:first-child input[type="file"] {
+        max-width: 100%;
+    }
+}
+
 .link-btn {
     /* `inline-flex` con `min-height`: il pulsante cresce fino al bersaglio
        minimo senza che il testo si sposti, cosa che il riempimento verticale
@@ -1149,8 +1184,8 @@ h3 { font-size: 1.05rem; }
 .form legend,
 .stacked-form label,
 .auth-form label {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.92rem;
+    font-weight: 500;
 }
 
 .form input[type="text"],
@@ -2913,9 +2948,15 @@ body.has-focus-video {
     margin-top: 1.5rem;
 }
 
+/* Tre livelli che si distinguono a colpo d'occhio (06/11, Alessandro,
+   variante B): il titolo della pagina, quello del riquadro (20 px, grassetto,
+   con spazio sotto) e l'etichetta del campo (14,7 px, peso 500). Prima titolo
+   del riquadro ed etichetta erano 16 e 15,2 px, tutti e due a 600: si
+   leggevano come la stessa cosa. */
 .card h2 {
-    margin: 0 0 0.9rem;
-    font-size: 1rem;
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
 }
 
 .card-head {
@@ -3122,8 +3163,8 @@ body.has-focus-video {
     display: block;
     margin-top: 0.9rem;
     margin-bottom: 0.3rem;
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.92rem;
+    font-weight: 500;
 }
 
 /* `password` ed `email` mancavano dall'elenco, e i campi di quei due tipi
