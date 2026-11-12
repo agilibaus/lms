@@ -29,7 +29,10 @@ $ordineQuiz = Ordinamento::daRichiesta([
     'modulo' => ['module_title', Ordinamento::TESTO],
     'tentativi' => ['attempts', Ordinamento::NUMERO],
     'punteggio' => ['best_score_pct', Ordinamento::NUMERO],
-    'esito' => ['passed', Ordinamento::NUMERO],
+    // L'esito si ordina sull'etichetta mostrata, in ordine alfabetico (06/11,
+    // Alessandro): sul dato `passed` i «non svolto», che non ce l'hanno,
+    // finivano in fondo in tutti e due i versi.
+    'esito' => ['esito_etichetta', Ordinamento::TESTO],
     'ultimo' => ['last_attempt_at', Ordinamento::DATA],
 ]);
 
@@ -114,7 +117,14 @@ $liveSessions = $ordineIncontri->applica(array_map(
                 <?php endif; ?>
             </p>
 
-            <?php $quizzes = $ordineQuiz->applica($quizzesByCourse[$course['course_id']] ?? []); ?>
+            <?php
+            $quizzes = $ordineQuiz->applica(array_map(
+                static fn (array $q): array => $q + ['esito_etichetta' => (int) $q['attempts'] === 0
+                    ? 'non svolto'
+                    : ((int) $q['passed'] === 1 ? 'superato' : 'non superato')],
+                $quizzesByCourse[$course['course_id']] ?? []
+            ));
+            ?>
 
             <?php if ($quizzes !== []): ?>
                 <?php /* Sei colonne: sotto i 50 rem di spazio diventa un
@@ -139,13 +149,8 @@ $liveSessions = $ordineIncontri->applica(array_map(
                             <td role="cell" data-label="Tentativi"><?= (int) $quiz['attempts'] ?></td>
                             <td role="cell" data-label="Miglior punteggio"><?= $quiz['best_score_pct'] === null ? '—' : number_format((float) $quiz['best_score_pct'], 0) . '%' ?></td>
                             <td role="cell" data-label="Esito">
-                                <?php if ((int) $quiz['attempts'] === 0): ?>
-                                    <span class="badge">non svolto</span>
-                                <?php elseif ((int) $quiz['passed'] === 1): ?>
-                                    <span class="badge badge-success">superato</span>
-                                <?php else: ?>
-                                    <span class="badge badge-danger">non superato</span>
-                                <?php endif; ?>
+                                <?php $esito = (string) $quiz['esito_etichetta']; ?>
+                                <span class="badge<?= $esito === 'superato' ? ' badge-success' : ($esito === 'non superato' ? ' badge-danger' : '') ?>"><?= htmlspecialchars($esito) ?></span>
                             </td>
                             <td role="cell" data-label="Ultimo tentativo">
                                 <?php /* Il collegamento all'ultimo tentativo e'
