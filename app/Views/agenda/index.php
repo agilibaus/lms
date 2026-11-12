@@ -182,11 +182,11 @@ $titoliGruppi = [
     <div class="agenda-mese">
     <nav class="agenda-mesi" aria-label="Cambia mese">
         <a class="btn btn-secondary agenda-freccia" href="<?= $esc($link('mese', $precedente)) ?>" rel="prev">
-            <span aria-hidden="true">&larr;</span><span class="agenda-mesi-nome"> <?= $esc(Agenda::nomeMese($precedente)) ?></span>
+            <span class="freccia-triangolo" aria-hidden="true"></span><span class="agenda-mesi-nome"> <?= $esc(Agenda::nomeMese($precedente)) ?></span>
         </a>
         <h2><?= $esc(Agenda::nomeMese($mese)) ?></h2>
         <a class="btn btn-secondary agenda-freccia" href="<?= $esc($link('mese', $successivo)) ?>" rel="next">
-            <span class="agenda-mesi-nome"><?= $esc(Agenda::nomeMese($successivo)) ?> </span><span aria-hidden="true">&rarr;</span>
+            <span class="agenda-mesi-nome"><?= $esc(Agenda::nomeMese($successivo)) ?> </span><span class="freccia-triangolo freccia-avanti" aria-hidden="true"></span>
         </a>
     </nav>
         <table class="agenda-griglia" role="table">
