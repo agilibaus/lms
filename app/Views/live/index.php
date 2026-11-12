@@ -47,7 +47,10 @@ $sessions = $ordine->applica($sessions);
 <?php elseif (!$tabella): ?>
     <?php /* Chi partecipa vede i riquadri dell'Agenda (20/10); la tabella
              e' per chi organizza. */ ?>
-    <?php require __DIR__ . '/_elenco.php'; ?>
+    <?php /* `live-riquadri`: qui data e ora stanno su una riga (06/11). */ ?>
+    <div class="live-riquadri">
+        <?php require __DIR__ . '/_elenco.php'; ?>
+    </div>
 <?php else: ?>
     <?php /* Sei colonne. Sopra i 50 rem di spazio la tabella, ordinabile.
              Sotto (il telefono, 30/10, Alessandro, disposizione B) un

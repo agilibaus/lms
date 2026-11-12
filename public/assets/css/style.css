@@ -4986,6 +4986,15 @@ fieldset.checkbox-group legend {
     font-weight: 700;
 }
 
+/* In «Sessioni live», lato studente (06/11, Alessandro): data e ora su una
+   riga sola. Nell'Agenda il giorno e' gia' nel titolo del gruppo, qui no, e
+   «16/11 10:13–11:13» non ci stava nei 6,5 rem: andava a capo. La colonna
+   resta larga uguale per tutte, cosi' le ore si incolonnano ancora. */
+.live-riquadri .agenda-quando {
+    flex-basis: 9.5rem;
+    white-space: nowrap;
+}
+
 .agenda-ora {
     color: #5A554F;
 }
