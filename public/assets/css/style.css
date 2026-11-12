@@ -3565,10 +3565,12 @@ body.has-focus-video {
    Pannello di amministrazione
    ===================================================== */
 
+/* Il titolo «Amministrazione» della barra laterale: 0,8 rem e 0,6 rem a
+   sinistra (06/11, Alessandro). */
 .nav-section {
     display: block;
-    margin: 1.1rem 0.75rem 0.3rem;
-    font-size: 0.68rem;
+    margin: 1.1rem 0.75rem 0.3rem 0.6rem;
+    font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
