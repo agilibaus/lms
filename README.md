@@ -28,8 +28,8 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
   **Tre parole** alla fine di ogni modulo, che il tutor rilegge per gruppo in una nuvola di parole.
 - **Report** per corso, gruppo, studente, incontro e video, «Studenti fermi» e «Griglia del
   corso», scaricabili in CSV e XLSX.
-- **Cinque ruoli**: l'Amministratore (uno solo), il supervisore che costruisce i corsi in bozza e
-  gestisce report, gruppi e Bacheca di tutti i corsi,
+- **Cinque ruoli**: l'Amministratore (uno solo), il supervisore che costruisce i corsi in bozza,
+  legge i pubblicati e gestisce report, gruppi e Bacheca di tutti i corsi,
   il tutor, l'assistente e lo studente. Alcuni permessi si accendono e spengono dal pannello.
 - **Corsi a pagamento** con Stripe: lo studente paga con il link di pagamento del corso, torna a
   Pistacchio con la pagina «Pagamento ricevuto» e viene

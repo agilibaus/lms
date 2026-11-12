@@ -35,7 +35,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   | Ruolo | Ambito |
   |---|---|
   | `admin` | Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni; risponde come esperto. **Uno solo** |
-  | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale; non pubblica e non apre i contenuti dei corsi pubblicati. Dal 06/11 anche, per tutti i corsi: report, gruppi (senza eliminarli) e Bacheca |
+  | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale; non pubblica. Dal 06/11, per tutti i corsi: legge i contenuti dei pubblicati senza modificarli, report, gruppi (senza eliminarli) e Bacheca |
   | `tutor` | Legge i corsi e lavora sulla sua classe: cura i suoi gruppi, i loro incontri, la Bacheca e i report dei suoi studenti |
   | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), in sola lettura: report, tentativi e incontri dei loro studenti, secondo gli interruttori |
   | `studente` | Si registra da solo, si iscrive ai corsi aperti o paga quelli a pagamento, svolge i questionari, scarica i propri certificati |
@@ -97,7 +97,7 @@ In sviluppo iniziale.
 - ✅ Dopo il pagamento su Stripe si torna a Pistacchio, con la pagina «Pagamento ricevuto» (0333, 0335)
 - ✅ Date uguali in tutta la piattaforma, «16/09/2026 18:00»; nei file scaricati date per Excel (0346, 0347)
 - ✅ Dopo l'accesso si torna alla pagina chiesta, per esempio dal collegamento di un'email (0353)
-- ✅ Supervisore «subito sotto l'admin»: report, gruppi e Bacheca di tutti i corsi (0354–0356)
+- ✅ Supervisore «subito sotto l'admin»: report, gruppi e Bacheca di tutti i corsi (0354–0356), e i corsi pubblicati in sola lettura (0358)
 - ✅ Strumenti per il test di carico: `bin/carico` e lo script k6 (0339)
 - ✅ Tutor e assistente: il corso è dell'admin, il tutor lavora sulla sua classe
 - ✅ Ruoli: un nucleo fisso e cinque interruttori che fanno quello che dicono
@@ -109,7 +109,7 @@ In sviluppo iniziale.
 - ✅ «Amministratore» in tutti i testi che si leggono (0325)
 - ✅ Le schede di «Esplora corsi» con il blocco finale in fondo, alla stessa altezza (0331)
 
-Ultimo aggiornamento del manuale: 06/11, versione 1.0.357.
+Ultimo aggiornamento del manuale: 06/11, versione 1.0.359.
 
 ## Requisiti
 
@@ -885,9 +885,9 @@ tutor apre anche gli incontri, né `course.welcome`, che vale per tutti i corsi.
 - `CourseRights::canEdit` risponde sì all'admin, e al supervisore se il corso è in bozza
   (`bozzaDelSupervisore`): tutte le pagine di moduli, lezioni, materiali, video, H5P,
   questionari, domande e verifica finale passano da lì. Nei corsi in bozza può anche eliminare.
-- **Nei corsi pubblicati non entra**: non li vede fra i corsi da costruire («Corsi», «Gestione
-  corsi») e non ne apre i contenuti. Anche il catalogo gli è chiuso, perché da lì si iscriverebbe
-  a un corso pubblicato. Dal 06/11 li vede però nei report, nei gruppi e nella Bacheca (sotto).
+- **I corsi pubblicati li legge, non li modifica** (dal 06/11, 0358; prima per lui non
+  c'erano). «Corsi» gli mostra tutti i corsi; «Gestione corsi» solo le bozze, che modifica. Il
+  catalogo gli è chiuso, perché da lì si iscriverebbe a un corso pubblicato.
 - **Non pubblica**: la casella «Pubblicato» è spenta, con «Il corso lo pubblica l’Amministratore», e un
   corso creato o salvato da lui resta in bozza. Non elimina un corso, non iscrive studenti; nella
   scheda del corso non vede iscritti, richieste e report.
@@ -910,11 +910,23 @@ all'admin, e ha tre capacità in più, sempre accese e per tutti i corsi, anche 
   (`/bacheca/corsi`: tutti i corsi con stato, categorie, risorse e proposte da valutare); le
   categorie di un corso hanno una pagina loro, **«Categorie della bacheca»**
   (`/bacheca/corsi/{id}/categorie`), raggiungibile da «Gestione categorie» nella bacheca, dove
-  le azioni tornano (campo `torna`). Dove il corso non lo apre, il ritorno porta a «Bacheca dei
-  corsi» e nella barra laterale il nome del corso è testo (`BachecaScope::apreIlCorso`).
+  le azioni tornano (campo `torna`). Con la 0356 il ritorno al corso e il nome del corso nella
+  barra laterale erano nascosti dove non apriva il corso (`BachecaScope::apreIlCorso`); dalla
+  0358 li apre tutti, e i collegamenti ci sono.
 
-I contenuti dei corsi pubblicati restano chiusi: non li apre, non li modifica, non pubblica,
-non gestisce utenti, iscrizioni dalla scheda del corso, incontri, certificati e domande.
+**Legge i corsi pubblicati (06/11, 0358).** Una regola sola decide chi apre i contenuti di un
+corso senza esserne iscritto, `CourseRights::leggeIlCorso`: staff e supervisore, in tutti i
+corsi (prima sei punti dicevano «staff, e il supervisore solo nelle bozze»: pagina del corso,
+lezioni, materiali, video, file H5P, questionari). Modificare resta legato alla bozza
+(`canEdit`). Le due azioni che scriverebbero a suo nome gli sono chiuse lato server, **in tutti i
+corsi, anche nelle bozze**: l'**invio di un questionario** (le domande si vedono con le risposte
+spente e «Sola lettura: le risposte non si inviano.» al posto di «Invia») e **«Segna come
+fatta»**. Le altre non scrivono già per chi non è iscritto: fruizione dei video, benvenuto del
+tutor, domande, tre parole, visita dell'obiettivo, «tieni da parte» della Bacheca, punteggi H5P
+(gli esercizi H5P si provano, in anteprima).
+
+Non pubblica, non elimina corsi né gruppi, non gestisce utenti, iscrizioni dalla scheda del
+corso, incontri, certificati e domande.
 
 `tests/supervisore.js` lo prova (vedi **Test**).
 
@@ -1986,7 +1998,8 @@ Per chi gestisce la Bacheca di tutti i corsi (`board.manage`: l'admin e il super
 
 - **«Bacheca»** (`/bacheca/corsi`): una riga per corso, con stato, categorie, risorse
   pubblicate, proposte da valutare e «Apri la bacheca». Ci porta la voce «Bacheca» del menu del
-  supervisore; l'admin apre la bacheca dal ramo del corso, come prima.
+  supervisore (che dalla 0358 la apre anche dal ramo del corso); l'admin dal ramo del corso,
+  come prima.
 - **«Categorie della bacheca»** (`/bacheca/corsi/{id}/categorie`): lo stesso riquadro della
   scheda del corso, in una pagina sua. «Gestione categorie» nella bacheca porta qui, per tutti;
   le azioni sulle categorie tornano qui (campo `torna`), mentre dalla scheda del corso tornano
@@ -2243,7 +2256,7 @@ php tests/dopo_accesso_test.php     # dopo l'accesso: quali pagine chieste si ac
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 5.300 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/supervisore.js           # 94 prove: il supervisore costruisce i corsi in bozza; report, gruppi (senza eliminarli) e Bacheca di tutti; non tocca il resto (circa 30 secondi)
+node tests/supervisore.js           # 99 prove: il supervisore costruisce i corsi in bozza e legge i pubblicati senza scrivere niente; report, gruppi (senza eliminarli) e Bacheca di tutti; non tocca il resto (circa 35 secondi)
 node tests/permessi.js              # circa 700 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, gli interruttori dei ruoli, la bacheca, il ramo del corso, le tre parole, i file H5P, il percorso e la verifica finale e molto altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero (crea e toglie da sé 55 studenti per la seconda pagina)
@@ -2252,9 +2265,9 @@ node tests/scaricati.js             # i file scaricati: nel CSV date «AAAA-MM-G
 node tests/bozze.js                 # 35 prove: le bozze non hanno iscritti, la pubblicazione iscrive i gruppi, incontri e inviti di una bozza (circa 10 secondi)
 ```
 
-Il 06/11, sul database di sviluppo, alla 1.0.356: 52 file PHP con 1.870 controlli,
+Il 06/11, sul database di sviluppo, alla 1.0.358: 52 file PHP con 1.870 controlli,
 `accessibilita.js` 5.763, `permessi.js` 698, `ordinamento_pagine.js` 287, `coerenza_moduli.js` 16,
-`supervisore.js` 94, `pagamenti.js` 97, `bozze.js` 35, `scaricati.js` 18. Un controllo rosso
+`supervisore.js` 99, `pagamenti.js` 97, `bozze.js` 35, `scaricati.js` 18. Un controllo rosso
 dipende dai dati di quel database e non dal codice: `tema_test.php` («con la tavolozza
 predefinita non si stampa niente»: il raggio «morbido» scelto il 04/11 stampa il suo blocco).
 Il rosso di «Esito» nel report per studente è corretto dalla 0344. Alla 1.0.331: 51 file PHP con
