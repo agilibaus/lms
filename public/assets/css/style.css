@@ -4977,22 +4977,18 @@ fieldset.checkbox-group legend {
     background: var(--color-primary-soft);
 }
 
+/* Data e ora su una riga sola (06/11, Alessandro): in 6,5 rem
+   «16/11 10:13–11:13» andava a capo, nell'Elenco dell'Agenda come in
+   «Sessioni live». La colonna resta larga uguale per tutte le voci, cosi'
+   gli orari si incolonnano; al telefono la data sta sulla sua riga. */
 .agenda-quando {
-    flex: 0 0 6.5rem;
+    flex: 0 0 9.5rem;
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
 
 .agenda-giorno {
     font-weight: 700;
-}
-
-/* In «Sessioni live», lato studente (06/11, Alessandro): data e ora su una
-   riga sola. Nell'Agenda il giorno e' gia' nel titolo del gruppo, qui no, e
-   «16/11 10:13–11:13» non ci stava nei 6,5 rem: andava a capo. La colonna
-   resta larga uguale per tutte, cosi' le ore si incolonnano ancora. */
-.live-riquadri .agenda-quando {
-    flex-basis: 9.5rem;
-    white-space: nowrap;
 }
 
 .agenda-ora {

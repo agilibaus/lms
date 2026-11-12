@@ -1692,6 +1692,20 @@ EXTRA['Agenda'] = async (page, nome) => {
     check(nome + ': dal titolo alla prima voce, la stessa distanza nei gruppi e nello Storico',
         esito.gruppi.every((d) => Math.abs(d - esito.daStorico) <= 1), [JSON.stringify(esito)]);
     check(nome + ': «Storico» chiuso resta una riga sola', esito.chiusa <= 26, ['alta ' + esito.chiusa + ' px']);
+
+    // Data e ora su una riga sola (06/11): «16/11 10:13–11:13» andava a capo.
+    const aCapo = await page.evaluate(() => {
+        document.querySelectorAll('details.agenda-passati').forEach((d) => { d.open = true; });
+        const q = [...document.querySelectorAll('.agenda-quando')];
+        const due = q.filter((x) => {
+            const g = x.querySelector('.agenda-giorno');
+            const o = x.querySelector('.agenda-ora');
+            return g && o && Math.abs(g.getBoundingClientRect().top - o.getBoundingClientRect().top) > 2;
+        });
+        return { voci: q.length, aCapo: due.map((x) => x.textContent.trim()) };
+    });
+    check(nome + ': data e ora di ogni voce su una riga sola',
+        aCapo.voci > 0 && aCapo.aCapo.length === 0, [JSON.stringify(aCapo)]);
 };
 
 // Gli obiettivi da staff (11/10): quello del corso nel suo riquadro, quelli
