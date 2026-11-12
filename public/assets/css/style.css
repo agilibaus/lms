@@ -2949,15 +2949,16 @@ body.has-focus-video {
 }
 
 /* Tre livelli che si distinguono a colpo d'occhio (06/11, Alessandro,
-   variante B): il titolo della pagina, quello del riquadro (19,2 px, grassetto,
+   variante B): il titolo della pagina, quello del riquadro (19,2 px, peso 600,
    con spazio sotto) e l'etichetta del campo (14,7 px, peso 500). Prima titolo
    del riquadro ed etichetta erano 16 e 15,2 px, tutti e due a 600: si
    leggevano come la stessa cosa. */
 .card h2 {
     margin: 0 0 1rem;
-    /* 1,2 rem, non 1,25: a 20 px erano invadenti (06/11, Alessandro). */
+    /* 1,2 rem, non 1,25, e peso 600, non 700: erano invadenti (06/11,
+       Alessandro). L'etichetta resta a 500, quindi la gerarchia tiene. */
     font-size: 1.2rem;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .card-head {
