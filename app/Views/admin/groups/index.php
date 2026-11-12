@@ -9,6 +9,8 @@ use App\Core\Icona;
 
 /** @var array $groups */
 /** @var bool $canManageAll */
+/** @var bool $canDelete solo l'admin elimina i gruppi (06/11) */
+/** @var list<int> $pagineApribili i gruppi di cui si apre la pagina dei partecipanti (06/11) */
 
 $ordine = Ordinamento::daRichiesta([
     'gruppo' => ['name', Ordinamento::TESTO],
@@ -24,7 +26,8 @@ $groups = $ordine->applica($groups);
             ? 'Classi e coorti: membri e corsi assegnati all’intero gruppo. Clicca sul nome del gruppo per visualizzare i dettagli.'
             : 'I gruppi di cui sei tutor. Clicca sul nome del gruppo per visualizzare i dettagli.' ?>
     </p>
-    <?php /* Crea ed elimina i gruppi solo l'admin (26/10). */ ?>
+    <?php /* Crea i gruppi chi li gestisce tutti: l'admin e, dal 06/11, il
+             supervisore. Elimina solo l'admin. */ ?>
     <?php if ($canManageAll): ?>
         <p><a href="/admin/groups/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo gruppo</a></p>
     <?php endif; ?>
@@ -75,9 +78,11 @@ $groups = $ordine->applica($groups);
                     <?php /* La pagina del gruppo, quella che vedono i partecipanti
                              (12/10): il tutor e l'admin non ne sono membri, e
                              da qui e' l'unica strada per arrivarci. */ ?>
-                    <a href="/gruppi/<?= (int) $group['id'] ?>">Vai al gruppo</a>
+                    <?php if (in_array((int) $group['id'], $pagineApribili ?? [], true)): ?>
+                        <a href="/gruppi/<?= (int) $group['id'] ?>">Vai al gruppo</a>
+                    <?php endif; ?>
                     <a href="/reports/groups/<?= (int) $group['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
-                    <?php if ($canManageAll): ?>
+                    <?php if ($canDelete ?? false): ?>
                         <form action="/admin/groups/<?= (int) $group['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
                             <?= Csrf::field() ?>
@@ -101,7 +106,17 @@ $groups = $ordine->applica($groups);
     ?>
     <div class="gruppi-righe">
         <p class="card-meta gruppi-aiuto">
-            Tocca un gruppo per i dettagli; «⋯» per la pagina del gruppo<?= $canManageAll ? ', il report e l’eliminazione' : ' e il report' ?>.
+            <?php
+            // Quello che c'e' davvero nel menu «⋯» (06/11): la pagina del
+            // gruppo solo per chi la apre, l'eliminazione solo per l'admin.
+            $voci = array_merge(
+                ($pagineApribili ?? []) !== [] ? ['la pagina del gruppo'] : [],
+                ['il report'],
+                ($canDelete ?? false) ? ['l’eliminazione'] : []
+            );
+            $ultima = array_pop($voci);
+            ?>
+            Tocca un gruppo per i dettagli; «⋯» per <?= htmlspecialchars(($voci === [] ? '' : implode(', ', $voci) . ' e ') . $ultima) ?>.
         </p>
         <ul class="gruppi-lista">
             <?php foreach ($alfabetico as $group): ?>
@@ -133,9 +148,11 @@ $groups = $ordine->applica($groups);
                     <details class="dropdown gruppi-azioni">
                         <summary class="btn btn-secondary" aria-label="Altre azioni per <?= htmlspecialchars($nome) ?>"><span aria-hidden="true">⋯</span></summary>
                         <div class="dropdown-menu dropdown-menu-destra">
-                            <a href="/gruppi/<?= $id ?>" class="comando-con-icona"><?= Icona::svg('box-arrow-up-right') ?>Pagina del gruppo</a>
+                            <?php if (in_array((int) $id, $pagineApribili ?? [], true)): ?>
+                                <a href="/gruppi/<?= $id ?>" class="comando-con-icona"><?= Icona::svg('box-arrow-up-right') ?>Pagina del gruppo</a>
+                            <?php endif; ?>
                             <a href="/reports/groups/<?= $id ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
-                            <?php if ($canManageAll): ?>
+                            <?php if ($canDelete ?? false): ?>
                                 <form action="/admin/groups/<?= $id ?>/delete" method="post"
                                       onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
                                     <?= Csrf::field() ?>

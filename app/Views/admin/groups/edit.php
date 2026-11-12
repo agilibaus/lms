@@ -16,7 +16,9 @@ use App\Core\Icona;
 /** @var array $availableStudents */
 /** @var array $availableCourses */
 /** @var bool $ciSonoCorsiAPagamento la riga sotto «Assegna corso» (06/11) */
-/** @var bool $gestisceTutto l'admin: crea, elimina, assegna corsi (26/10) */
+/** @var bool $gestisceTutto l'admin e, dal 06/11, il supervisore: crea, assegna corsi, gestisce membri */
+/** @var bool $puoEliminare solo l'admin elimina il gruppo (06/11) */
+/** @var bool $paginaApribile chi guarda apre la pagina del gruppo dei partecipanti (06/11) */
 /** @var bool $gestisceMembri l'admin, o il tutor con «Membri dei gruppi» acceso */
 
 $groupId = (int) $group['id'];
@@ -33,7 +35,9 @@ $members = $ordineMembri->applica($members);
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         <?= count($members) ?> membri · <?= count($courses) ?> corsi assegnati ·
-        <a href="/gruppi/<?= $groupId ?>">vai al gruppo</a> ·
+        <?php if ($paginaApribile ?? true): ?>
+            <a href="/gruppi/<?= $groupId ?>">vai al gruppo</a> ·
+        <?php endif; ?>
         <a href="/reports/groups/<?= $groupId ?>">vedi report</a>
     </p>
 </div>
@@ -195,7 +199,8 @@ $members = $ordineMembri->applica($members);
          cosa due volte, e sembrava una sezione con qualcosa dentro. La
          conferma prima di eliminare resta. Un `div` e non una `section`:
          senza titolo non e' una sezione della pagina. */ ?>
-<?php if ($gestisceTutto): ?>
+<?php /* Solo l'admin elimina un gruppo (06/11): il supervisore lo gestisce. */ ?>
+<?php if ($puoEliminare ?? false): ?>
 <div class="card">
     <form action="/admin/groups/<?= $groupId ?>/delete" method="post"
           onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">

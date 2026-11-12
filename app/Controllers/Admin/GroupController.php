@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Core\TutorWelcome;
 use App\Auth\Auth;
+use App\Auth\GroupPeers;
 use App\Core\CampoContato;
 use App\Core\CorsiAPagamento;
 use App\Core\GroupLogo;
@@ -34,10 +35,22 @@ class GroupController extends AdminController
     {
         $this->requireGroupAccess();
 
+        $groups = $this->visibleGroups();
+
         View::render('admin/groups/index', [
             'pageTitle' => 'Gruppi',
-            'groups' => $this->visibleGroups(),
+            'groups' => $groups,
             'canManageAll' => Auth::can('group.manage'),
+            // Eliminare un gruppo e' solo dell'admin (06/11): il supervisore
+            // gestisce i gruppi ma non li elimina.
+            'canDelete' => Auth::can('group.delete'),
+            // La pagina del gruppo dei partecipanti, solo per chi la puo'
+            // aprire (06/11): il supervisore no, e senza questo vedrebbe un
+            // collegamento che porta a «Non fai parte di questo gruppo».
+            'pagineApribili' => array_values(array_map('intval', array_column(array_filter(
+                $groups,
+                static fn (array $g): bool => GroupPeers::canViewGroup((int) Auth::id(), (int) $g['id'])
+            ), 'id'))),
         ]);
     }
 
@@ -112,6 +125,8 @@ class GroupController extends AdminController
             // Dal 26/10: crea, elimina e assegna corsi solo l'admin; i membri
             // l'admin e, con «Membri dei gruppi» acceso, il tutor.
             'gestisceTutto' => Auth::can('group.manage'),
+            'puoEliminare' => Auth::can('group.delete'),
+            'paginaApribile' => GroupPeers::canViewGroup((int) Auth::id(), (int) $group['id']),
             'gestisceMembri' => Auth::can('group.manage') || Auth::can('group.members_own'),
             // Candidati: per l'admin chi non e' gia' dentro; per il tutor solo
             // gli iscritti a un corso del gruppo che non sono in un altro gruppo con
@@ -254,7 +269,9 @@ class GroupController extends AdminController
 
     public function destroy(array $params): void
     {
-        Auth::requirePermission('group.manage');
+        // Solo l'admin (06/11): il supervisore gestisce i gruppi, non li
+        // elimina.
+        Auth::requirePermission('group.delete');
 
         $group = $this->findManageableGroup((int) $params['id']);
 

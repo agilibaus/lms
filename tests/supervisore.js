@@ -5,7 +5,10 @@
  *     i contenuti, ne elimina moduli, lezioni e questionari;
  *   - non pubblica (lo fa l'admin) e non elimina un corso;
  *   - i corsi pubblicati, per lui, non ci sono: non li vede e non li tocca;
- *   - non gestisce utenti, gruppi, iscrizioni, incontri, catalogo;
+ *   - non gestisce utenti, iscrizioni dalla scheda del corso, incontri, catalogo;
+ *   - dal 06/11 crea e gestisce tutti i gruppi (dati, tutor, membri, corsi
+ *     anche pubblicati, date dei moduli), ma non li elimina e non apre la
+ *     pagina del gruppo dei partecipanti;
  *   - dal 06/11 vede i report di tutti, come l'admin, anche dei corsi
  *     pubblicati, con i tentativi, e scarica i file (ma i contenuti dei
  *     corsi pubblicati restano chiusi);
@@ -32,6 +35,7 @@ const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const PASSWORD = process.env.LMS_PASS || 'Password1!';
 const RADICE = path.join(__dirname, '..');
 const EMAIL = 'supervisore@test.it';
+const STUDENTE_GRUPPO = 'studente-gruppo-supervisore@test.it';
 
 let ok = 0;
 let fail = 0;
@@ -55,7 +59,8 @@ const json = (codice, ...argomenti) => JSON.parse(php(codice, ...argomenti));
 /** Toglie quello che la suite crea: il corso in bozza, quelli creati dal supervisore, lui. */
 function pulisci() {
     php('$pdo->exec("DELETE FROM courses WHERE title LIKE \'[prova-supervisore]%\'");'
-        + ' $pdo->prepare("DELETE FROM users WHERE email = ?")->execute([$argv[1]]);', EMAIL);
+        + ' $pdo->exec("DELETE FROM `groups` WHERE name LIKE \'[prova-supervisore]%\'");'
+        + ' $pdo->prepare("DELETE FROM users WHERE email IN (?, ?)")->execute([$argv[1], $argv[2]]);', EMAIL, STUDENTE_GRUPPO);
 }
 
 /** Il supervisore di prova e un corso in bozza con un modulo, una lezione e un questionario. */
@@ -129,9 +134,9 @@ async function posta(page, url, campi, paginaToken) {
         // --- il menu -------------------------------------------------------
         await page.goto(BASE + '/admin/courses');
         const menu = await page.evaluate(() => [...document.querySelectorAll('.sidebar-nav a')].map((a) => a.textContent.trim()));
-        const devono = ['Corsi', 'Report', 'Gestione corsi', 'Impostazioni', 'Profilo'];
-        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Gruppi', 'Utenti', 'Domande'];
-        check('menu: «Corsi», «Report», «Gestione corsi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
+        const devono = ['Corsi', 'Report', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
+        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Utenti', 'Domande'];
+        check('menu: «Corsi», «Report», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
             devono.every((v) => menu.includes(v)) && nonDevono.every((v) => !menu.includes(v)), [menu.join(' | ')]);
 
         // --- le pagine -----------------------------------------------------
@@ -164,6 +169,11 @@ async function posta(page, url, campi, paginaToken) {
             ['/lessons/' + A.lezione + '/fruizione', 'la fruizione di una lezione di un corso pubblicato'],
             ['/lessons/' + bozza.lezione + '/fruizione', 'la fruizione di una lezione del corso in bozza'],
             ['/attempts/' + A.tentativo, 'il tentativo di uno studente, dal suo report'],
+            // I gruppi (06/11): tutti, come l'admin.
+            ['/admin/groups', 'i gruppi'],
+            ['/admin/groups/create', 'nuovo gruppo'],
+            ['/admin/groups/' + A.gruppo + '/edit', 'la scheda di un gruppo'],
+            ['/admin/groups/' + A.gruppo + '/courses/' + A.corso + '/date', 'le date dei moduli di un gruppo'],
         ];
         for (const [url, cosa] of consentite) {
             const e = await esitoGet(page, url);
@@ -199,7 +209,7 @@ async function posta(page, url, campi, paginaToken) {
             ['/quizzes/' + A.quiz + '/edit', 'modifica di un questionario di un corso pubblicato'],
             ['/catalogo', 'il catalogo, che iscrive ai corsi pubblicati'],
             ['/admin/users', 'gli utenti'],
-            ['/admin/groups', 'i gruppi'],
+            ['/gruppi/' + A.gruppo, 'la pagina del gruppo dei partecipanti'],
             ['/admin/settings/posta', 'il server di posta'],
             ['/admin/settings/email', 'i messaggi email'],
             ['/admin/settings/aspetto', 'l\'aspetto'],
@@ -276,6 +286,46 @@ async function posta(page, url, campi, paginaToken) {
         check('controprova: pubblicato dall\'admin, il corso per lui non c\'e\' piu\': non lo apre e non lo modifica',
             pubblicato === 'negato' && conta('SELECT COUNT(*) FROM modules WHERE course_id = ? AND title = ?', bozza.corso, 'Modulo dopo la pubblicazione') === 0, [pubblicato]);
 
+
+        // --- i gruppi: le azioni, giudicate dal database (06/11) -----------------
+        const studenteGruppo = Number(php('$h = password_hash($argv[1], PASSWORD_DEFAULT);'
+            + ' $pdo->prepare("INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at) VALUES (?, ?, \'Studente\', \'Gruppo\', \'studente\', 1, NOW(), NOW())")->execute([$argv[2], $h]);'
+            + ' echo (int) $pdo->lastInsertId();', PASSWORD, STUDENTE_GRUPPO).trim());
+        await posta(page, '/admin/groups', [['name', '[prova-supervisore] gruppo'], ['description', 'Creato dal supervisore.'], ['tutor_id', String(A.tutor)]], '/admin/groups/create');
+        const gruppoNuovo = conta('SELECT id FROM `groups` WHERE name = ?', '[prova-supervisore] gruppo');
+        check('crea un gruppo, con il tutor responsabile', gruppoNuovo > 0 && conta('SELECT tutor_id FROM `groups` WHERE id = ?', gruppoNuovo) === Number(A.tutor), [String(gruppoNuovo)]);
+        await posta(page, '/admin/groups/' + gruppoNuovo, [['name', '[prova-supervisore] gruppo'], ['description', 'Modificato dal supervisore.'], ['tutor_id', String(A.tutor)]], '/admin/groups/' + gruppoNuovo + '/edit');
+        check('modifica il gruppo', conta('SELECT COUNT(*) FROM `groups` WHERE id = ? AND description = ?', gruppoNuovo, 'Modificato dal supervisore.') === 1);
+        await posta(page, '/admin/groups/' + gruppoNuovo + '/courses', [['course_id', String(A.corso)]], '/admin/groups/' + gruppoNuovo + '/edit');
+        check('assegna al gruppo un corso pubblicato', conta('SELECT COUNT(*) FROM group_course_access WHERE group_id = ? AND course_id = ?', gruppoNuovo, A.corso) === 1);
+        await posta(page, '/admin/groups/' + gruppoNuovo + '/members', [['user_id', String(studenteGruppo)]], '/admin/groups/' + gruppoNuovo + '/edit');
+        check('aggiunge un membro, che viene iscritto al corso del gruppo',
+            conta('SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?', gruppoNuovo, studenteGruppo) === 1
+            && conta('SELECT COUNT(*) FROM enrollments WHERE user_id = ? AND course_id = ?', studenteGruppo, A.corso) === 1);
+        await posta(page, '/admin/groups/' + gruppoNuovo + '/members/' + studenteGruppo + '/delete', [], '/admin/groups/' + gruppoNuovo + '/edit');
+        check('toglie il membro', conta('SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?', gruppoNuovo, studenteGruppo) === 0);
+        await posta(page, '/admin/groups/' + gruppoNuovo + '/courses/' + A.corso + '/delete', [], '/admin/groups/' + gruppoNuovo + '/edit');
+        check('toglie il corso dal gruppo', conta('SELECT COUNT(*) FROM group_course_access WHERE group_id = ? AND course_id = ?', gruppoNuovo, A.corso) === 0);
+
+        // Non elimina: niente pulsanti, e una POST non elimina.
+        await page.goto(BASE + '/admin/groups/' + gruppoNuovo + '/edit');
+        const scheda2 = await page.evaluate(() => ({
+            elimina: !!document.querySelector('form[action$="/delete"] button.link-btn-danger:not([formaction])')
+                && [...document.querySelectorAll('form[action$="/delete"]')].some((f) => /\/admin\/groups\/\d+\/delete$/.test(f.getAttribute('action'))),
+            vaiAlGruppo: !!document.querySelector('a[href^="/gruppi/"]'),
+        }));
+        check('nella scheda del gruppo niente «Elimina gruppo» e niente «vai al gruppo»', !scheda2.elimina && !scheda2.vaiAlGruppo, [JSON.stringify(scheda2)]);
+        await page.goto(BASE + '/admin/groups');
+        const elenco = await page.evaluate(() => ({
+            elimina: [...document.querySelectorAll('form')].some((f) => /\/admin\/groups\/\d+\/delete$/.test(f.getAttribute('action') || '')),
+            pagina: !!document.querySelector('a[href^="/gruppi/"]'),
+            nuovo: !!document.querySelector('a[href="/admin/groups/create"]'),
+            aiuto: ((document.querySelector('.gruppi-aiuto') || {}).textContent || '').replace(/\s+/g, ' ').trim(),
+        }));
+        check('nell\'elenco dei gruppi «Nuovo gruppo», ma niente «Elimina» e niente pagina del gruppo; l\'aiuto dice solo il report',
+            elenco.nuovo && !elenco.elimina && !elenco.pagina && elenco.aiuto === 'Tocca un gruppo per i dettagli; «⋯» per il report.', [JSON.stringify(elenco)]);
+        await posta(page, '/admin/groups/' + gruppoNuovo + '/delete', [], '/admin/groups/' + gruppoNuovo + '/edit');
+        check('una POST non elimina il gruppo', conta('SELECT COUNT(*) FROM `groups` WHERE id = ?', gruppoNuovo) === 1);
         await ctx.close();
 
         // --- l'admin vede il ruolo nuovo -------------------------------------
@@ -286,6 +336,9 @@ async function posta(page, url, campi, paginaToken) {
         const pagRuoli = await admin.page.content();
         check('admin: «Supervisore» fra i ruoli di «Nuovo utente», e descritto nella pagina «Ruoli»',
             ruoli.includes('Supervisore') && pagRuoli.includes('Supervisore') && pagRuoli.includes('Costruisce i corsi in bozza'), [ruoli.join(',')]);
+        // Controprova dell'eliminazione: l'admin il gruppo lo elimina.
+        await posta(admin.page, '/admin/groups/' + gruppoNuovo + '/delete', [], '/admin/groups/' + gruppoNuovo + '/edit');
+        check('controprova: l\'admin elimina il gruppo', conta('SELECT COUNT(*) FROM `groups` WHERE id = ?', gruppoNuovo) === 0);
         await admin.ctx.close();
     } finally {
         await browser.close();
