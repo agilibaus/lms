@@ -46,9 +46,20 @@ class CourseRights
     }
 
     /**
-     * Il supervisore (30/10, Alessandro) lavora solo sui corsi in bozza: li
-     * vede e li modifica finche' non sono pubblicati. Un corso pubblicato,
-     * per lui, non c'e'.
+     * Chi apre i contenuti di un corso senza esserne iscritto: lo staff
+     * (admin, tutor, assistente) e, dal 06/11 (Alessandro), il supervisore,
+     * in tutti i corsi. Il supervisore li legge e basta: modificare resta
+     * legato alla bozza (`canEdit`), e le azioni che scriverebbero a suo nome
+     * (inviare un questionario, «Segna come fatta») gli sono chiuse.
+     */
+    public static function leggeIlCorso(int $courseId): bool
+    {
+        return Auth::hasRole('admin', 'tutor', 'assistente', 'supervisore');
+    }
+
+    /**
+     * Il supervisore (30/10, Alessandro) modifica solo i corsi in bozza. Dal
+     * 06/11 legge anche quelli pubblicati (`leggeIlCorso`).
      */
     public static function bozzaDelSupervisore(int $courseId): bool
     {

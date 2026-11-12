@@ -736,6 +736,13 @@ class LessonController
             return;
         }
 
+        // Il supervisore legge e basta (06/11): non lascia avanzamenti suoi.
+        if (Auth::hasRole('supervisore')) {
+            http_response_code(403);
+            echo 'Sola lettura: il supervisore non segna le lezioni come fatte.';
+            return;
+        }
+
         LessonProgressModel::markCompleted($userId, (int) $lesson['id']);
 
         $total = LessonModel::countForCourse($courseId);
@@ -783,8 +790,8 @@ class LessonController
      */
     private function canAccessCourse(int $courseId): bool
     {
-        // Il supervisore, solo sui corsi in bozza (30/10).
-        if (Auth::hasRole('admin', 'tutor', 'assistente') || CourseRights::bozzaDelSupervisore($courseId)) {
+        // Lo staff e il supervisore (in lettura, dal 06/11).
+        if (CourseRights::leggeIlCorso($courseId)) {
             return true;
         }
 

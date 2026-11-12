@@ -227,11 +227,13 @@ final class BachecaScope
      */
     public static function apreIlCorso(int $courseId): bool
     {
+        // Dal 06/11 il supervisore legge tutti i corsi: il ritorno al corso e
+        // il nome nella barra laterale sono di nuovo collegamenti per lui.
         if (!Auth::hasRole('supervisore')) {
             return true;
         }
 
-        return in_array($courseId, CourseModel::idsInBozza(), true);
+        return CourseRights::leggeIlCorso($courseId);
     }
 
     public static function partecipa(int $courseId): bool

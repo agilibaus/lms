@@ -552,6 +552,14 @@ class QuizController
             return;
         }
 
+        // Il supervisore vede le domande ma non invia risposte, in nessun
+        // corso, nemmeno nelle bozze (06/11, Alessandro): non lascia tentativi
+        // suoi.
+        if (Auth::hasRole('supervisore')) {
+            $_SESSION['flash_error'] = 'Sola lettura: le risposte non si inviano.';
+            $this->redirect('/quizzes/' . $quiz['id']);
+        }
+
         // Un questionario H5P salva i tentativi da solo, a fine esercizio.
         if (($quiz['kind'] ?? '') === 'h5p') {
             $this->redirect('/quizzes/' . $quiz['id']);
@@ -765,8 +773,9 @@ class QuizController
     {
         $courseId = (int) $module['course_id'];
 
-        // Il supervisore apre i questionari dei corsi in bozza (30/10).
-        if (!Auth::hasRole('admin', 'tutor', 'assistente') && !CourseRights::bozzaDelSupervisore($courseId)) {
+        // Lo staff e il supervisore aprono i questionari di ogni corso (il
+        // supervisore in lettura, dal 06/11).
+        if (!CourseRights::leggeIlCorso($courseId)) {
             if (EnrollmentModel::find((int) Auth::id(), $courseId) === null) {
                 http_response_code(403);
                 echo 'Non sei iscritto a questo corso.';

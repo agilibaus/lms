@@ -4,7 +4,9 @@
  *   - lavora solo sui corsi in bozza: li vede, li crea, ne modifica i dati e
  *     i contenuti, ne elimina moduli, lezioni e questionari;
  *   - non pubblica (lo fa l'admin) e non elimina un corso;
- *   - i corsi pubblicati, per lui, non ci sono: non li vede e non li tocca;
+ *   - dal 06/11 legge i corsi pubblicati (in «Corsi», pagina, lezioni,
+ *     questionari) senza modificarli; non invia questionari e non segna
+ *     lezioni come fatte, in nessun corso;
  *   - non gestisce utenti, iscrizioni dalla scheda del corso, incontri, catalogo;
  *   - dal 06/11 crea e gestisce tutti i gruppi (dati, tutor, membri, corsi
  *     anche pubblicati, date dei moduli), ma non li elimina e non apre la
@@ -12,8 +14,7 @@
  *   - dal 06/11 gestisce la Bacheca di tutti i corsi, anche pubblicati
  *     (risorse, proposte, categorie), dalla voce «Bacheca» del menu;
  *   - dal 06/11 vede i report di tutti, come l'admin, anche dei corsi
- *     pubblicati, con i tentativi, e scarica i file (ma i contenuti dei
- *     corsi pubblicati restano chiusi);
+ *     pubblicati, con i tentativi, e scarica i file;
  *   - delle impostazioni apre solo «Video di benvenuto» e «Informazioni».
  *
  * Una suite a se', accanto a `permessi.js` (che gia' sfiora il limite di
@@ -171,6 +172,10 @@ async function posta(page, url, campi, paginaToken) {
             ['/lessons/' + A.lezione + '/fruizione', 'la fruizione di una lezione di un corso pubblicato'],
             ['/lessons/' + bozza.lezione + '/fruizione', 'la fruizione di una lezione del corso in bozza'],
             ['/attempts/' + A.tentativo, 'il tentativo di uno studente, dal suo report'],
+            // I contenuti dei corsi pubblicati, in lettura (06/11).
+            ['/courses/' + A.corso, 'la pagina di un corso pubblicato'],
+            ['/lessons/' + A.lezione, 'una lezione di un corso pubblicato'],
+            ['/quizzes/' + A.quiz, 'un questionario di un corso pubblicato'],
             // I gruppi (06/11): tutti, come l'admin.
             ['/admin/groups', 'i gruppi'],
             ['/admin/groups/create', 'nuovo gruppo'],
@@ -210,11 +215,8 @@ async function posta(page, url, campi, paginaToken) {
 
         const negate = [
             ['/admin/courses/' + A.corso + '/edit', 'la scheda di un corso pubblicato'],
-            ['/courses/' + A.corso, 'i contenuti di un corso pubblicato'],
-            ['/lessons/' + A.lezione, 'una lezione di un corso pubblicato'],
             ['/lessons/' + A.lezione + '/edit', 'modifica di una lezione di un corso pubblicato'],
             ['/modules/' + A.modulo + '/edit', 'un modulo di un corso pubblicato'],
-            ['/quizzes/' + A.quiz, 'un questionario di un corso pubblicato'],
             ['/quizzes/' + A.quiz + '/edit', 'modifica di un questionario di un corso pubblicato'],
             ['/catalogo', 'il catalogo, che iscrive ai corsi pubblicati'],
             ['/admin/users', 'gli utenti'],
@@ -241,7 +243,46 @@ async function posta(page, url, campi, paginaToken) {
             && !html.includes('/reports/courses/') && !html.includes('orphan-summary'));
         await page.goto(BASE + '/');
         html = await page.content();
-        check('«Corsi»: il corso in bozza si', html.includes('[prova-supervisore] corso in bozza') && !html.includes('href="/courses/' + A.corso + '"'));
+        check('«Corsi»: il corso in bozza e, dal 06/11, anche quello pubblicato', html.includes('[prova-supervisore] corso in bozza') && html.includes('href="/courses/' + A.corso + '"'));
+
+        // --- i corsi pubblicati, in sola lettura (06/11) ----------------------
+        const idSup = conta('SELECT id FROM users WHERE email = ?', EMAIL);
+        await page.goto(BASE + '/courses/' + A.corso);
+        const comandiCorso = await page.evaluate(() => ({
+            modifica: [...document.querySelectorAll('main a[href], .main-content a[href]')].map((a) => a.getAttribute('href'))
+                .filter((h) => /\/(edit|new|create)(\b|$)|\/admin\/courses\//.test(h)),
+        }));
+        check('nella pagina del corso pubblicato nessun comando di modifica', comandiCorso.modifica.length === 0, [JSON.stringify(comandiCorso)]);
+        await page.goto(BASE + '/quizzes/' + A.quiz);
+        const quizVista = await page.evaluate(() => ({
+            domande: document.querySelectorAll('.quiz-question-list > li').length,
+            spento: !!document.querySelector('fieldset.quiz-concluso-campi[disabled]'),
+            invia: !!document.querySelector('.quiz-form button[type="submit"]'),
+            frase: [...document.querySelectorAll('.quiz-form .form-hint')].map((p) => p.textContent.trim()).join(' | '),
+        }));
+        check('il questionario: le domande si vedono, spente, senza «Invia», con «Sola lettura: le risposte non si inviano.»',
+            quizVista.domande > 0 && quizVista.spento && !quizVista.invia && quizVista.frase.includes('Sola lettura: le risposte non si inviano.'), [JSON.stringify(quizVista)]);
+        const mieiTentativi = () => conta('SELECT COUNT(*) FROM quiz_attempts WHERE user_id = ?', idSup);
+        const mieFatte = () => conta('SELECT COUNT(*) FROM lesson_progress WHERE user_id = ?', idSup);
+        const t0 = mieiTentativi();
+        // Le risposte a tutte le domande, come le manderebbe il modulo: senza,
+        // l'invio si ferma prima («Rispondi a tutte le domande»).
+        const risposte = (quiz) => JSON.parse(php('$c = []; $q = $pdo->prepare("SELECT id, question_type FROM quiz_questions WHERE quiz_id = ? ORDER BY position, id"); $q->execute([(int) $argv[1]]);'
+            + ' foreach ($q->fetchAll() as $d) { $o = $pdo->prepare("SELECT id FROM quiz_options WHERE question_id = ? ORDER BY id LIMIT 1"); $o->execute([$d["id"]]); $op = $o->fetchColumn();'
+            + ' if ($d["question_type"] === "open") { $c[] = ["answers[" . $d["id"] . "]", "Una risposta"]; }'
+            + ' elseif ($d["question_type"] === "multiple_choice") { $c[] = ["answers[" . $d["id"] . "][]", (string) $op]; }'
+            + ' else { $c[] = ["answers[" . $d["id"] . "]", (string) $op]; } } echo json_encode($c);', quiz));
+        for (const quiz of [A.quiz, bozza.quiz]) {
+            await posta(page, '/quizzes/' + quiz + '/attempts', risposte(quiz), '/quizzes/' + quiz);
+        }
+        check('un invio del questionario non salva tentativi, ne\' nel pubblicato ne\' nella bozza', mieiTentativi() === t0 && t0 === 0, [String(mieiTentativi())]);
+        await posta(page, '/lessons/' + A.lezione + '/complete', [], '/lessons/' + A.lezione);
+        await posta(page, '/lessons/' + bozza.lezione + '/complete', [], '/lessons/' + bozza.lezione);
+        check('«Segna come fatta» non scrive niente, ne\' nel pubblicato ne\' nella bozza', mieFatte() === 0, [String(mieFatte())]);
+        await page.goto(BASE + '/lessons/' + A.lezione);
+        await page.waitForTimeout(500);
+        check('aprire una lezione del corso pubblicato non scrive niente a suo nome',
+            mieFatte() === 0 && conta('SELECT COUNT(*) FROM lesson_video_progress WHERE user_id = ?', idSup) === 0 && conta('SELECT COUNT(*) FROM enrollments WHERE user_id = ?', idSup) === 0);
 
         // --- la scheda del corso: «Pubblicato» spenta, niente iscritti -----
         await page.goto(BASE + '/admin/courses/' + bozza.corso + '/edit');
@@ -288,12 +329,13 @@ async function posta(page, url, campi, paginaToken) {
         check('sul corso pubblicato non aggiunge moduli e non elimina lezioni',
             conta('SELECT COUNT(*) FROM modules WHERE course_id = ?', A.corso) === moduliA && conta('SELECT COUNT(*) FROM lessons WHERE id = ?', A.lezione) === 1);
 
-        // --- controprova: pubblicato dall'admin, il corso sparisce ------------
+        // --- controprova: pubblicato dall'admin, il corso non e' piu' suo -----
         php('$pdo->prepare("UPDATE courses SET is_published = 1 WHERE id = ?")->execute([$argv[1]]);', bozza.corso);
         const pubblicato = await esitoGet(page, '/admin/courses/' + bozza.corso + '/edit');
+        const letto = await esitoGet(page, '/courses/' + bozza.corso);
         await posta(page, '/courses/' + bozza.corso + '/modules', [['title', 'Modulo dopo la pubblicazione'], ['objective', '']], '/admin/courses');
-        check('controprova: pubblicato dall\'admin, il corso per lui non c\'e\' piu\': non lo apre e non lo modifica',
-            pubblicato === 'negato' && conta('SELECT COUNT(*) FROM modules WHERE course_id = ? AND title = ?', bozza.corso, 'Modulo dopo la pubblicazione') === 0, [pubblicato]);
+        check('controprova: pubblicato dall\'admin, il corso lo legge ma non lo modifica piu\'',
+            pubblicato === 'negato' && letto === 'consentito' && conta('SELECT COUNT(*) FROM modules WHERE course_id = ? AND title = ?', bozza.corso, 'Modulo dopo la pubblicazione') === 0, [pubblicato, letto]);
 
 
         // --- i gruppi: le azioni, giudicate dal database (06/11) -----------------
@@ -345,8 +387,8 @@ async function posta(page, url, campi, paginaToken) {
             alCorso: [...document.querySelectorAll('a[href]')].some((a) => /^\/courses\/(\d+)/.test(a.getAttribute('href')) && a.getAttribute('href').match(/^\/courses\/(\d+)/)[1] === String(corso)),
             categorie: (document.querySelector('a.bacheca-comando[href$="/categorie"]') || {}).getAttribute ? document.querySelector('a.bacheca-comando[href$="/categorie"]').getAttribute('href') : null,
         }), A.corso);
-        check('nella bacheca di un corso pubblicato: il ritorno all\'elenco, nessun collegamento al corso, «Gestione categorie» alla pagina nuova',
-            testaB.ritorno === '/bacheca/corsi' && !testaB.alCorso && testaB.categorie === '/bacheca/corsi/' + A.corso + '/categorie', [JSON.stringify(testaB)]);
+        check('nella bacheca di un corso pubblicato: il ritorno al corso, che dal 06/11 legge, e «Gestione categorie» alla pagina nuova',
+            testaB.ritorno === '/courses/' + A.corso && testaB.alCorso && testaB.categorie === '/bacheca/corsi/' + A.corso + '/categorie', [JSON.stringify(testaB)]);
         await page.goto(BASE + '/bacheca/corsi');
         const righeB = await page.$$eval('table tbody tr td[data-label="Corso"]', (t) => t.map((x) => x.textContent.trim()));
         const tuttiCorsi = conta('SELECT COUNT(*) FROM courses');

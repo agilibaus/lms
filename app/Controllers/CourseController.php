@@ -38,14 +38,12 @@ class CourseController
     {
         Auth::requireLogin();
 
-        // Il supervisore (30/10) vede l'elenco come lo staff, ma solo i corsi
-        // in bozza: quelli pubblicati, per lui, non ci sono.
-        $supervisore = Auth::hasRole('supervisore');
-        $isStaff = $supervisore || Auth::hasRole('admin', 'tutor', 'assistente');
+        // Il supervisore vede l'elenco come lo staff: dal 06/11 anche i corsi
+        // pubblicati, che apre in lettura. «Gestione corsi» gli mostra solo
+        // le bozze, che modifica.
+        $isStaff = Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente');
 
-        if ($supervisore) {
-            $courses = array_values(array_filter(CourseModel::allForStaff(), static fn (array $c): bool => (int) $c['is_published'] === 0));
-        } elseif ($isStaff) {
+        if ($isStaff) {
             // Staff: vede tutti i corsi, pubblicati e in bozza.
             $courses = CourseModel::allForStaff();
         } else {
@@ -157,8 +155,9 @@ class CourseController
             return;
         }
 
-        // Il supervisore apre un corso solo se e' in bozza (30/10).
-        if (!Auth::hasRole('admin', 'tutor', 'assistente') && !CourseRights::bozzaDelSupervisore((int) $course['id'])) {
+        // Lo staff, e dal 06/11 il supervisore, apre ogni corso (in lettura,
+        // per il supervisore, nei corsi pubblicati).
+        if (!CourseRights::leggeIlCorso((int) $course['id'])) {
             if (EnrollmentModel::find((int) Auth::id(), (int) $course['id']) === null) {
                 http_response_code(403);
                 echo 'Non sei iscritto a questo corso.';

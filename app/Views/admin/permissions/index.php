@@ -28,7 +28,8 @@ $ruoli = [
     'Supervisore' => [
         'sempre' => [
             'Costruisce i corsi in bozza: li crea, ne modifica i dati e la copertina, e crea, modifica ed elimina moduli, lezioni, materiali, video, contenuti H5P, questionari e la verifica finale.',
-            'Non pubblica i corsi (lo fa l’Amministratore) e non elimina un corso. I corsi pubblicati, per lui, non ci sono: non li vede e non li tocca.',
+            'Non pubblica i corsi (lo fa l’Amministratore) e non elimina un corso. I corsi pubblicati li legge — pagina, lezioni, materiali, video e questionari — senza modificarli.',
+            'Non invia questionari e non segna lezioni come fatte, in nessun corso: delle domande vede il testo in sola lettura.',
             'Vede i report di tutti, come l’Amministratore, con i tentativi dei questionari, e li scarica.',
             'Crea e gestisce tutti i gruppi: dati, tutor responsabile, membri (che vengono iscritti ai corsi del gruppo), corsi assegnati, anche pubblicati, e date dei moduli. Non elimina un gruppo e non apre la pagina del gruppo dei partecipanti.',
             'Gestisce la Bacheca di tutti i corsi, anche pubblicati: pubblica, modifica ed elimina risorse, valuta le proposte degli studenti e gestisce le categorie.',

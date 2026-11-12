@@ -318,7 +318,7 @@ CSS;
             return false;
         }
 
-        if (Auth::hasRole('admin', 'tutor', 'assistente') || CourseRights::bozzaDelSupervisore((int) $module['course_id'])) {
+        if (CourseRights::leggeIlCorso((int) $module['course_id'])) {
             return true;
         }
 
@@ -334,7 +334,7 @@ CSS;
             return false;
         }
 
-        if (Auth::hasRole('admin', 'tutor', 'assistente') || CourseRights::bozzaDelSupervisore((int) $module['course_id'])) {
+        if (CourseRights::leggeIlCorso((int) $module['course_id'])) {
             return true;
         }
 
