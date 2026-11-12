@@ -534,6 +534,47 @@ class BoardController
      * @param list<array<string, mixed>> $corsi
      * @return array<string, mixed>|null
      */
+    /**
+     * La pagina «Bacheca» di chi gestisce le bacheche di tutti i corsi
+     * (06/11, variante 1A): il supervisore la raggiunge dal menu, perche' la
+     * bacheca di un corso si apre dal ramo del corso, e lui i corsi
+     * pubblicati non li apre.
+     */
+    public function courses(array $params = []): void
+    {
+        Auth::requirePermission('board.manage');
+
+        View::render('bacheca/corsi', [
+            'pageTitle' => 'Bacheca',
+            'corsi' => BachecaScope::corsi(),
+            'numeri' => BoardModel::riepilogoPerCorso(),
+        ]);
+    }
+
+    /**
+     * Le categorie della bacheca di un corso, in una pagina sua (06/11,
+     * variante 2A): lo stesso riquadro della scheda del corso, che il
+     * supervisore non apre per i corsi pubblicati. Le azioni tornano qui.
+     */
+    public function categories(array $params): void
+    {
+        Auth::requirePermission('board.manage');
+
+        $course = CourseModel::find((int) $params['id']);
+
+        if ($course === null) {
+            http_response_code(404);
+            echo 'Corso non trovato.';
+            return;
+        }
+
+        View::render('bacheca/categorie', [
+            'pageTitle' => 'Categorie della bacheca',
+            'course' => $course,
+            'bacheca' => BoardModel::categorie((int) $course['id']),
+        ]);
+    }
+
     private static function corsoScelto(array $corsi): ?array
     {
         $chiesto = (int) ($_GET['corso'] ?? 0);

@@ -9,6 +9,8 @@
  *   - dal 06/11 crea e gestisce tutti i gruppi (dati, tutor, membri, corsi
  *     anche pubblicati, date dei moduli), ma non li elimina e non apre la
  *     pagina del gruppo dei partecipanti;
+ *   - dal 06/11 gestisce la Bacheca di tutti i corsi, anche pubblicati
+ *     (risorse, proposte, categorie), dalla voce «Bacheca» del menu;
  *   - dal 06/11 vede i report di tutti, come l'admin, anche dei corsi
  *     pubblicati, con i tentativi, e scarica i file (ma i contenuti dei
  *     corsi pubblicati restano chiusi);
@@ -134,9 +136,9 @@ async function posta(page, url, campi, paginaToken) {
         // --- il menu -------------------------------------------------------
         await page.goto(BASE + '/admin/courses');
         const menu = await page.evaluate(() => [...document.querySelectorAll('.sidebar-nav a')].map((a) => a.textContent.trim()));
-        const devono = ['Corsi', 'Report', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
+        const devono = ['Corsi', 'Report', 'Bacheca', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
         const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Utenti', 'Domande'];
-        check('menu: «Corsi», «Report», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
+        check('menu: «Corsi», «Report», «Bacheca», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
             devono.every((v) => menu.includes(v)) && nonDevono.every((v) => !menu.includes(v)), [menu.join(' | ')]);
 
         // --- le pagine -----------------------------------------------------
@@ -174,6 +176,13 @@ async function posta(page, url, campi, paginaToken) {
             ['/admin/groups/create', 'nuovo gruppo'],
             ['/admin/groups/' + A.gruppo + '/edit', 'la scheda di un gruppo'],
             ['/admin/groups/' + A.gruppo + '/courses/' + A.corso + '/date', 'le date dei moduli di un gruppo'],
+            // La Bacheca di tutti i corsi (06/11).
+            ['/bacheca/corsi', 'l\'elenco delle bacheche'],
+            ['/bacheca?corso=' + A.corso, 'la bacheca di un corso pubblicato'],
+            ['/bacheca/corsi/' + A.corso + '/categorie', 'le categorie della bacheca di un corso pubblicato'],
+            ['/bacheca/proposte?corso=' + A.corso, 'le proposte da valutare di un corso pubblicato'],
+            ['/bacheca/nuova?corso=' + A.corso, 'nuova risorsa in un corso pubblicato'],
+            ['/bacheca/risorse/' + A.bacheca_risorsa + '/modifica', 'modifica di una risorsa di un corso pubblicato'],
         ];
         for (const [url, cosa] of consentite) {
             const e = await esitoGet(page, url);
@@ -326,6 +335,46 @@ async function posta(page, url, campi, paginaToken) {
             elenco.nuovo && !elenco.elimina && !elenco.pagina && elenco.aiuto === 'Tocca un gruppo per i dettagli; «⋯» per il report.', [JSON.stringify(elenco)]);
         await posta(page, '/admin/groups/' + gruppoNuovo + '/delete', [], '/admin/groups/' + gruppoNuovo + '/edit');
         check('una POST non elimina il gruppo', conta('SELECT COUNT(*) FROM `groups` WHERE id = ?', gruppoNuovo) === 1);
+
+        // --- la Bacheca: le azioni, giudicate dal database (06/11) ---------------
+        await page.goto(BASE + '/bacheca?corso=' + A.corso);
+        const testaB = await page.evaluate((corso) => ({
+            ritorno: (document.querySelector('.page-header .back-link') || {}).getAttribute ? document.querySelector('.page-header .back-link').getAttribute('href') : null,
+            // Nessun collegamento ai contenuti di questo corso (la barra
+            // laterale ha i suoi corsi in bozza, che apre).
+            alCorso: [...document.querySelectorAll('a[href]')].some((a) => /^\/courses\/(\d+)/.test(a.getAttribute('href')) && a.getAttribute('href').match(/^\/courses\/(\d+)/)[1] === String(corso)),
+            categorie: (document.querySelector('a.bacheca-comando[href$="/categorie"]') || {}).getAttribute ? document.querySelector('a.bacheca-comando[href$="/categorie"]').getAttribute('href') : null,
+        }), A.corso);
+        check('nella bacheca di un corso pubblicato: il ritorno all\'elenco, nessun collegamento al corso, «Gestione categorie» alla pagina nuova',
+            testaB.ritorno === '/bacheca/corsi' && !testaB.alCorso && testaB.categorie === '/bacheca/corsi/' + A.corso + '/categorie', [JSON.stringify(testaB)]);
+        await page.goto(BASE + '/bacheca/corsi');
+        const righeB = await page.$$eval('table tbody tr td[data-label="Corso"]', (t) => t.map((x) => x.textContent.trim()));
+        const tuttiCorsi = conta('SELECT COUNT(*) FROM courses');
+        check('l\'elenco «Bacheca» ha tutti i corsi, anche pubblicati e in bozza (' + tuttiCorsi + ')', righeB.length === tuttiCorsi, [righeB.length + ' righe']);
+
+        await posta(page, '/admin/courses/' + A.corso + '/bacheca/categorie', [['name', '[prova-supervisore] categoria'], ['color', '#4f7256'], ['torna', 'bacheca']], '/bacheca/corsi/' + A.corso + '/categorie');
+        const catNuova = conta('SELECT id FROM board_categories WHERE course_id = ? AND name = ?', A.corso, '[prova-supervisore] categoria');
+        check('crea una categoria nella bacheca di un corso pubblicato', catNuova > 0, [String(catNuova)]);
+        await page.goto(BASE + '/bacheca/corsi/' + A.corso + '/categorie');
+        const tornaVisto = await page.$$eval('form input[name="torna"][value="bacheca"]', (x) => x.length);
+        check('nella pagina delle categorie ogni modulo torna li\' («torna» = bacheca)', tornaVisto >= 2, [String(tornaVisto)]);
+        await posta(page, '/admin/bacheca/categorie/' + catNuova, [['name', '[prova-supervisore] categoria rinominata'], ['color', '#4f7256'], ['torna', 'bacheca']], '/bacheca/corsi/' + A.corso + '/categorie');
+        check('la rinomina', conta('SELECT COUNT(*) FROM board_categories WHERE id = ? AND name = ?', catNuova, '[prova-supervisore] categoria rinominata') === 1);
+        await posta(page, '/admin/bacheca/categorie/' + catNuova + '/elimina', [['torna', 'bacheca']], '/bacheca/corsi/' + A.corso + '/categorie');
+        check('la elimina (e\' vuota)', conta('SELECT COUNT(*) FROM board_categories WHERE id = ?', catNuova) === 0);
+        // E dopo l'azione si torna alla pagina delle categorie della bacheca.
+        await page.goto(BASE + '/bacheca/corsi/' + A.corso + '/categorie');
+        const tokenB = await page.$eval('input[name="_token"]', (i) => i.value);
+        const rB = await ctx.request.post(BASE + '/admin/courses/' + A.corso + '/bacheca/categorie',
+            { form: { _token: tokenB, name: '[prova-supervisore] ritorno', color: '#4f7256', torna: 'bacheca' }, maxRedirects: 0 });
+        check('dopo l\'azione si torna alla pagina delle categorie della bacheca', String(rB.headers()['location'] || '').endsWith('/bacheca/corsi/' + A.corso + '/categorie'), [String(rB.status()), String(rB.headers()['location'])]);
+        php('$pdo->prepare("DELETE FROM board_categories WHERE name = ?")->execute([$argv[1]]);', '[prova-supervisore] ritorno');
+
+        const statoProposta = () => php('$s = $pdo->prepare("SELECT status FROM board_resources WHERE id = ?"); $s->execute([(int) $argv[1]]); echo $s->fetchColumn();', A.bacheca_proposta).trim();
+        await posta(page, '/bacheca/risorse/' + A.bacheca_proposta + '/pubblica', [['category_id', String(A.bacheca_categoria)], ['module_id', String(A.modulo)]], '/bacheca/proposte?corso=' + A.corso);
+        check('pubblica la proposta di uno studente', statoProposta() === 'published', [statoProposta()]);
+        await posta(page, '/bacheca/risorse/' + A.bacheca_risorsa + '/togli', [], '/bacheca?corso=' + A.corso);
+        check('toglie dalla bacheca una risorsa pubblicata', php('$s = $pdo->prepare("SELECT status FROM board_resources WHERE id = ?"); $s->execute([(int) $argv[1]]); echo $s->fetchColumn();', A.bacheca_risorsa).trim() === 'discarded');
         await ctx.close();
 
         // --- l'admin vede il ruolo nuovo -------------------------------------
@@ -336,6 +385,10 @@ async function posta(page, url, campi, paginaToken) {
         const pagRuoli = await admin.page.content();
         check('admin: «Supervisore» fra i ruoli di «Nuovo utente», e descritto nella pagina «Ruoli»',
             ruoli.includes('Supervisore') && pagRuoli.includes('Supervisore') && pagRuoli.includes('Costruisce i corsi in bozza'), [ruoli.join(',')]);
+        // Controprova della Bacheca: per l'admin il ritorno porta al corso, come prima.
+        await admin.page.goto(BASE + '/bacheca?corso=' + A.corso);
+        const ritornoAdmin = await admin.page.evaluate(() => document.querySelector('.page-header .back-link').getAttribute('href'));
+        check('controprova: nella bacheca l\'admin torna al corso, come prima', ritornoAdmin === '/courses/' + A.corso, [ritornoAdmin]);
         // Controprova dell'eliminazione: l'admin il gruppo lo elimina.
         await posta(admin.page, '/admin/groups/' + gruppoNuovo + '/delete', [], '/admin/groups/' + gruppoNuovo + '/edit');
         check('controprova: l\'admin elimina il gruppo', conta('SELECT COUNT(*) FROM `groups` WHERE id = ?', gruppoNuovo) === 0);

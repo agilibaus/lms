@@ -100,8 +100,14 @@ class BoardCategoryController extends AdminController
         return [$nome, $colore, $descrizione === '' ? null : $descrizione];
     }
 
+    /**
+     * Dove tornare: la pagina delle categorie della bacheca, se si veniva
+     * da li' (06/11), altrimenti la scheda del corso.
+     */
     private static function qui(int $courseId): string
     {
-        return '/admin/courses/' . $courseId . '/edit#bacheca';
+        return ($_POST['torna'] ?? '') === 'bacheca'
+            ? '/bacheca/corsi/' . $courseId . '/categorie'
+            : '/admin/courses/' . $courseId . '/edit#bacheca';
     }
 }

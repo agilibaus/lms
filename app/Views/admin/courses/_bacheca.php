@@ -18,6 +18,8 @@ use App\Core\Icona;
  *
  * @var array $course
  * @var list<array<string, mixed>> $bacheca
+ * @var bool|null $tornaBacheca dalla pagina delle categorie della bacheca: le azioni tornano li' (06/11)
+ * @var string|null $titoloRiquadro il titolo del riquadro, «Bacheca» nella scheda del corso
  */
 
 $courseId = (int) $course['id'];
@@ -68,7 +70,7 @@ $campiCategoria = static function (string $p, array $c) use ($temi): string {
 };
 ?>
 <section class="card" id="bacheca">
-    <h2>Bacheca</h2>
+    <h2><?= htmlspecialchars($titoloRiquadro ?? 'Bacheca') ?></h2>
     <p class="card-meta">
         Le categorie della <a href="/bacheca?corso=<?= $courseId ?>">bacheca del corso</a>: gli iscritti le vedono come
         riquadri colorati, in quest'ordine. Il tutor sceglie fra queste quando pubblica una risorsa. Una categoria
@@ -93,7 +95,7 @@ $campiCategoria = static function (string $p, array $c) use ($temi): string {
                         </summary>
                         <div class="qa-corpo">
                             <form action="/admin/bacheca/categorie/<?= $id ?>" method="post" class="form">
-                                <?= Csrf::field() ?>
+                                <?= Csrf::field() ?><?= ($tornaBacheca ?? false) ? '<input type="hidden" name="torna" value="bacheca">' : '' ?>
                                 <?= $campiCategoria('cat-' . $id, $c) ?>
                                 <div class="form-actions">
                                     <button type="submit" class="btn btn-primary">Salva</button>
@@ -103,14 +105,14 @@ $campiCategoria = static function (string $p, array $c) use ($temi): string {
                             <div class="bacheca-cat-admin-azioni">
                                 <?php if ($i > 0): ?>
                                     <form action="/admin/bacheca/categorie/<?= $id ?>/sposta" method="post">
-                                        <?= Csrf::field() ?>
+                                        <?= Csrf::field() ?><?= ($tornaBacheca ?? false) ? '<input type="hidden" name="torna" value="bacheca">' : '' ?>
                                         <input type="hidden" name="direction" value="up">
                                         <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('arrow-up') ?>Sposta su</button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if ($i < $ultima): ?>
                                     <form action="/admin/bacheca/categorie/<?= $id ?>/sposta" method="post">
-                                        <?= Csrf::field() ?>
+                                        <?= Csrf::field() ?><?= ($tornaBacheca ?? false) ? '<input type="hidden" name="torna" value="bacheca">' : '' ?>
                                         <input type="hidden" name="direction" value="down">
                                         <button type="submit" class="link-btn comando-con-icona"><?= Icona::svg('arrow-down') ?>Sposta giù</button>
                                     </form>
@@ -118,7 +120,7 @@ $campiCategoria = static function (string $p, array $c) use ($temi): string {
                                 <?php if ((int) $c['tutte'] === 0): ?>
                                     <form action="/admin/bacheca/categorie/<?= $id ?>/elimina" method="post"
                                           onsubmit="return confirm('Eliminare la categoria?');">
-                                        <?= Csrf::field() ?>
+                                        <?= Csrf::field() ?><?= ($tornaBacheca ?? false) ? '<input type="hidden" name="torna" value="bacheca">' : '' ?>
                                         <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
                                     </form>
                                 <?php else: ?>
@@ -134,7 +136,7 @@ $campiCategoria = static function (string $p, array $c) use ($temi): string {
 
     <h3 class="bacheca-cat-admin-nuova">Nuova categoria</h3>
     <form action="/admin/courses/<?= $courseId ?>/bacheca/categorie" method="post" class="form">
-        <?= Csrf::field() ?>
+        <?= Csrf::field() ?><?= ($tornaBacheca ?? false) ? '<input type="hidden" name="torna" value="bacheca">' : '' ?>
         <?= $campiCategoria('cat-nuova', []) ?>
         <div class="form-actions">
             <button type="submit" class="btn btn-secondary">Aggiungi la categoria</button>

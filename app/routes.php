@@ -359,6 +359,9 @@ $router->post('/live/{id}/attendance/{userId}', [LiveSessionController::class, '
 // La Bacheca (17/10): le risorse condivise di un corso, per categorie. Le
 // categorie le crea l'admin da «Modifica corso».
 $router->get('/bacheca', [BoardController::class, 'index']);
+// Le bacheche di tutti i corsi e le categorie di un corso (06/11), per chi le gestisce.
+$router->get('/bacheca/corsi', [BoardController::class, 'courses']);
+$router->get('/bacheca/corsi/{id}/categorie', [BoardController::class, 'categories']);
 $router->get('/bacheca/mie', [BoardController::class, 'mine']);
 $router->get('/bacheca/condividi', [BoardController::class, 'shareForm']);
 $router->get('/bacheca/nuova', [BoardController::class, 'createForm']);

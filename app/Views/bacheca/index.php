@@ -27,7 +27,11 @@ use App\Core\Icona;
 <div class="page-header">
     <?php /* Il corso si sceglie entrando nel corso (17/10, variante C): qui
              niente menu dei corsi, ma il ritorno al corso di questa bacheca. */ ?>
-    <?php if ($corso !== null): ?>
+    <?php /* Il ritorno al corso solo a chi lo apre (06/11): il supervisore
+             i corsi pubblicati non li apre, e torna all'elenco «Bacheca». */ ?>
+    <?php if ($corso !== null && !\App\Auth\BachecaScope::apreIlCorso((int) $corso['id'])): ?>
+        <a href="/bacheca/corsi" class="back-link"><span class="back-link-testo">Bacheca dei corsi</span></a>
+    <?php elseif ($corso !== null): ?>
         <a href="/courses/<?= (int) $corso['id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $corso['title']) ?></span></a>
     <?php endif; ?>
     <h1>Bacheca</h1>
@@ -52,7 +56,7 @@ use App\Core\Icona;
     <?php if ($partecipa || $puoPubblicare || $gestisceCategorie): ?>
         <div class="bacheca-comandi">
             <?php if ($gestisceCategorie): ?>
-                <a href="/admin/courses/<?= $courseId ?>/edit#bacheca" class="bacheca-comando">Gestione categorie</a>
+                <a href="/bacheca/corsi/<?= $courseId ?>/categorie" class="bacheca-comando">Gestione categorie</a>
             <?php endif; ?>
             <?php if ($partecipa): ?>
                 <a href="/bacheca/mie?corso=<?= $courseId ?>" class="bacheca-comando comando-con-icona"><?= Icona::svg('bookmark') ?>Le mie risorse (<?= $tenute ?>)</a>

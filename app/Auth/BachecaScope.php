@@ -219,6 +219,21 @@ final class BachecaScope
      * Lo studente iscritto al corso: si tiene le risorse («Le mie
      * risorse»).
      */
+    /**
+     * Se chi guarda apre i contenuti del corso (06/11): il supervisore solo
+     * quelli dei corsi in bozza. Serve a non mostrargli collegamenti al
+     * corso che porterebbero a una pagina negata; per gli altri ruoli
+     * resta tutto com'era.
+     */
+    public static function apreIlCorso(int $courseId): bool
+    {
+        if (!Auth::hasRole('supervisore')) {
+            return true;
+        }
+
+        return in_array($courseId, CourseModel::idsInBozza(), true);
+    }
+
     public static function partecipa(int $courseId): bool
     {
         return Auth::hasRole('studente') && EnrollmentModel::find((int) Auth::id(), $courseId) !== null;

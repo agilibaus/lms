@@ -51,10 +51,10 @@ final class Ruoli
         // incontri, ne' `course.welcome`, che vale per tutti i corsi.
         // Delle impostazioni apre solo «Video di benvenuto»
         // (`settings.welcome`) e «Informazioni».
-        // Dal 06/11 (Alessandro) anche i report di tutti e la gestione dei
-        // gruppi, come l'admin; eliminare un gruppo (`group.delete`) resta
-        // dell'admin.
-        'supervisore' => ['course.build', 'course.create', 'group.manage', 'report.view', 'settings.welcome'],
+        // Dal 06/11 (Alessandro) anche i report di tutti, la gestione dei
+        // gruppi e la Bacheca di tutti i corsi, categorie comprese, come
+        // l'admin; eliminare un gruppo (`group.delete`) resta dell'admin.
+        'supervisore' => ['board.manage', 'course.build', 'course.create', 'group.manage', 'report.view', 'settings.welcome'],
         'tutor' => ['board.manage_own', 'course.edit', 'course.welcome_own', 'group.manage_own', 'report.view'],
         'assistente' => [],
         'studente' => [],

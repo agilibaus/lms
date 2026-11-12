@@ -662,6 +662,9 @@ PAGINE_INTERNE.push(
     ['/bacheca?corso=' + SEMINATI.corso, 'Bacheca (semina)'],
     ['/bacheca/categorie/' + SEMINATI.bacheca_categoria, 'Categoria della bacheca (semina)'],
     ['/bacheca/proposte?corso=' + SEMINATI.corso, 'Proposte da valutare (semina)'],
+    // Le due pagine del 06/11: le bacheche di tutti i corsi e le categorie di un corso.
+    ['/bacheca/corsi', 'Bacheca dei corsi'],
+    ['/bacheca/corsi/' + SEMINATI.corso + '/categorie', 'Categorie della bacheca (semina)'],
     ['/bacheca/nuova?corso=' + SEMINATI.corso, 'Nuova risorsa della bacheca (semina)'],
     ['/bacheca/risorse/' + SEMINATI.bacheca_risorsa + '/modifica', 'Modifica risorsa con file (semina)'],
     ['/bacheca/risorse/' + SEMINATI.bacheca_proposta + '/modifica', 'Correggi la proposta (semina)'],

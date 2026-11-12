@@ -127,8 +127,13 @@ use App\Core\Csrf;
 
         if ($ramo !== null) {
             $id = (int) $ramo['id'];
+            // Il nome del corso e' un collegamento solo per chi apre il corso
+            // (06/11): il supervisore, nella bacheca di un corso pubblicato,
+            // ne vede il nome ma non i contenuti.
             $ramoHtml = '<div class="nav-corso" role="group" aria-label="' . htmlspecialchars('Corso: ' . $ramo['title'], ENT_QUOTES) . '">'
-                . '<a href="/courses/' . $id . '" class="nav-link nav-corso-nome">' . htmlspecialchars($ramo['title']) . '</a>';
+                . (\App\Auth\BachecaScope::apreIlCorso($id)
+                    ? '<a href="/courses/' . $id . '" class="nav-link nav-corso-nome">' . htmlspecialchars($ramo['title']) . '</a>'
+                    : '<span class="nav-link nav-corso-nome">' . htmlspecialchars($ramo['title']) . '</span>');
 
             if ($ramo['bacheca']) {
                 $ramoHtml .= '<a href="/bacheca?corso=' . $id . '" class="nav-link nav-corso-voce' . $voce('/bacheca') . '">Bacheca'
@@ -170,6 +175,12 @@ use App\Core\Csrf;
             <?php endif; ?>
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
                 <a href="/reports" class="nav-link<?= $voce('/reports') ?>">Report</a>
+            <?php endif; ?>
+            <?php /* La Bacheca di tutti i corsi (06/11): al supervisore, che la
+                     bacheca dei corsi pubblicati non la raggiunge dal ramo del
+                     corso. L'admin la apre dal ramo come prima. */ ?>
+            <?php if ($supervisore && Auth::can('board.manage')): ?>
+                <a href="/bacheca/corsi" class="nav-link<?= $voce('/bacheca') ?>">Bacheca</a>
             <?php endif; ?>
             <?php if (Auth::can('question.answer')): ?>
                 <?php
