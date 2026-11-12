@@ -35,7 +35,7 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   | Ruolo | Ambito |
   |---|---|
   | `admin` | Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni; risponde come esperto. **Uno solo** |
-  | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale. Non pubblica e non vede i corsi pubblicati |
+  | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale; non pubblica e non apre i contenuti dei corsi pubblicati. Dal 06/11 anche, per tutti i corsi: report, gruppi (senza eliminarli) e Bacheca |
   | `tutor` | Legge i corsi e lavora sulla sua classe: cura i suoi gruppi, i loro incontri, la Bacheca e i report dei suoi studenti |
   | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), in sola lettura: report, tentativi e incontri dei loro studenti, secondo gli interruttori |
   | `studente` | Si registra da solo, si iscrive ai corsi aperti o paga quelli a pagamento, svolge i questionari, scarica i propri certificati |
@@ -94,6 +94,11 @@ In sviluppo iniziale.
 - ✅ Versione in un file (`VERSION`) e pagina «Informazioni su Pistacchio LMS»
 - ✅ Bacheca ed «L'esperto risponde» per modulo: la risorsa è di tutti, la persona è della classe
 - ✅ Incontri: chi è atteso lo dice una regola sola; date dei moduli per gruppo
+- ✅ Dopo il pagamento su Stripe si torna a Pistacchio, con la pagina «Pagamento ricevuto» (0333, 0335)
+- ✅ Date uguali in tutta la piattaforma, «16/09/2026 18:00»; nei file scaricati date per Excel (0346, 0347)
+- ✅ Dopo l'accesso si torna alla pagina chiesta, per esempio dal collegamento di un'email (0353)
+- ✅ Supervisore «subito sotto l'admin»: report, gruppi e Bacheca di tutti i corsi (0354–0356)
+- ✅ Strumenti per il test di carico: `bin/carico` e lo script k6 (0339)
 - ✅ Tutor e assistente: il corso è dell'admin, il tutor lavora sulla sua classe
 - ✅ Ruoli: un nucleo fisso e cinque interruttori che fanno quello che dicono
 - ✅ Il questionario come test d'uscita del modulo, e la verifica finale del corso
@@ -104,7 +109,7 @@ In sviluppo iniziale.
 - ✅ «Amministratore» in tutti i testi che si leggono (0325)
 - ✅ Le schede di «Esplora corsi» con il blocco finale in fondo, alla stessa altezza (0331)
 
-Ultimo aggiornamento del manuale: 06/11, versione 1.0.331.
+Ultimo aggiornamento del manuale: 06/11, versione 1.0.357.
 
 ## Requisiti
 
@@ -283,6 +288,7 @@ torna indietro, se non svuotando la casella a mano.
                          Bacheca, TreParole, StudentiFermi, GrigliaCorso, Presenza
                          Icona, CorsoCorrente, Versione, Ambiente → interfaccia e informazioni
                          CorsiAPagamento, AvvisoStripe          → corsi a pagamento e avvisi di Stripe
+                         Quando                                  → le date come si mostrano (vedi **Le date**)
     /Google            → client minimale per Calendar API (ServiceAccountClient, MeetCalendar, trasporto HTTP)
     /Mail              → client SMTP scritto in casa, trasporti e testi dei messaggi
   /Views
@@ -291,7 +297,8 @@ torna indietro, se non svuotando la casella a mano.
 /bin
   rilascio-moduli      → comando da cron: avvisa gli studenti dei moduli che si aprono
   invita-utenti        → comando da cron: gli inviti agli utenti importati, a scaglioni
-  avvisi               → comando da cron: le email che non partono dalla pagina (conferme di iscrizione dello staff, promemoria degli incontri)
+  avvisi               → comando da cron, ogni 5 minuti: le email che non partono dalla pagina (conferme di iscrizione, promemoria degli incontri, pagamenti da controllare)
+  carico               → il test di carico: crea e toglie gli studenti di prova (vedi **Test di carico**)
 /config
   config.php           → bootstrap (env, error reporting, timezone)
 /storage
@@ -606,6 +613,23 @@ la fruizione dei video, gli incontri, Studenti fermi, la Griglia — e gli elenc
 (Corsi, Studenti, Incontri) contano solo gli studenti del perimetro, come le pagine che si aprono
 da lì. In Report il tutor legge «Stai vedendo solo gli studenti dei gruppi che segui».
 
+#### La pagina «Dettaglio» di uno studente (06/11)
+
+Report › Studenti › «Dettaglio» (`/reports/students/{id}`):
+
+- **Due schede** (0345, variante C), «Corsi (N)» e «Incontri dal vivo (N)», se ci sono tutte e
+  due le cose; una alla volta. La scheda è il parametro `scheda` dell'indirizzo: funziona senza
+  JavaScript, e l'ordinamento delle colonne la conserva. I riquadri dei corsi hanno il filo verde
+  e la barra dell'avanzamento; quello degli incontri il filo color terra, come in Agenda.
+- **«Esito»** dei questionari si ordina in ordine alfabetico dell'etichetta, «non superato»,
+  «non svolto», «superato» (0344): prima si ordinava sul dato `passed`, e i «non svolto», che non
+  ce l'hanno, restavano in fondo in tutti e due i versi.
+- **Completato con il contenuto di allora** (0346, strada b): se un corso risulta completato ma
+  oggi ha più lezioni o questionari di quelli fatti — una lezione aggiunta dopo — sotto il titolo
+  compare «Completato il 17/09/2026 15:04, prima che il corso cambiasse.». Percentuale e
+  certificato restano: la percentuale si salva quando lo studente completa una lezione e non si
+  ricalcola quando si aggiunge contenuto.
+
 #### Studenti fermi
 `/reports/fermi`: chi non ha attività in un corso da almeno **7, 14 o 30 giorni** (di base 14), o
 non l'ha mai iniziato. Colonne: Studente (senza email), Corso, Gruppo, Iscritto da, **Ultima
@@ -668,8 +692,9 @@ a mano nel database.** La regola sta nella piattaforma, non nel database: la ric
 crea l'admin di prova direttamente.
 
 ### Gruppi (`/admin/groups`)
-Classi/coorti con tutor responsabile, membri e corsi assegnati. **Creare ed eliminare i gruppi e
-assegnare i corsi è dell'admin** (`group.manage`). Il tutor (`group.manage_own`) cura i gruppi di
+Classi/coorti con tutor responsabile, membri e corsi assegnati. **Creare i gruppi e assegnare i
+corsi è dell'admin e, dal 06/11, del supervisore** (`group.manage`); **eliminare un gruppo è solo
+dell'admin** (`group.delete`, 0355). Il tutor (`group.manage_own`) cura i gruppi di
 cui è tutor: nome, immagine, descrizione, link WhatsApp, **date dei moduli** (vedi **Sblocco
 progressivo dei moduli**); i membri solo con l'interruttore «Membri dei gruppi» acceso (vedi
 **Ruoli**).
@@ -802,7 +827,10 @@ libero va fra la descrizione e il blocco (`.catalogo-fondo`, con `margin-top: au
 a colonna). In una colonna flessibile i margini non si fondono, quindi quelli della descrizione
 sono azzerati: le distanze dentro la scheda sono quelle di prima, al pixel (8 px dalla testata,
 almeno 22 px fino al blocco, 18 px fra la riga e il pulsante). Al telefono non cambia niente.
-`accessibilita.js` controlla i pulsanti allineati e la distanza minima.
+`accessibilita.js` controlla i pulsanti allineati e la distanza minima. Nei corsi a pagamento il
+blocco è il solo pulsante diviso, prezzo e «Iscriviti» (0336, 0341; vedi **Corsi a pagamento
+(Stripe)**), a 22 px dal testo. L'etichetta della modalità «Aperta» è «iscrizione gratuita»
+(0334; prima «iscrizione libera»).
 È un `details`, senza JavaScript. `accessibilita.js` controlla nel catalogo che una descrizione
 lunga non si veda intera da chiusa, che aperta si legga tutta, e che il comando stia più vicino al
 testo che alle lezioni.
@@ -857,13 +885,36 @@ tutor apre anche gli incontri, né `course.welcome`, che vale per tutti i corsi.
 - `CourseRights::canEdit` risponde sì all'admin, e al supervisore se il corso è in bozza
   (`bozzaDelSupervisore`): tutte le pagine di moduli, lezioni, materiali, video, H5P,
   questionari, domande e verifica finale passano da lì. Nei corsi in bozza può anche eliminare.
-- **I corsi pubblicati, per lui, non ci sono**: non li vede negli elenchi e non li apre. Anche il
-  catalogo gli è chiuso, perché da lì si iscriverebbe a un corso pubblicato.
+- **Nei corsi pubblicati non entra**: non li vede fra i corsi da costruire («Corsi», «Gestione
+  corsi») e non ne apre i contenuti. Anche il catalogo gli è chiuso, perché da lì si iscriverebbe
+  a un corso pubblicato. Dal 06/11 li vede però nei report, nei gruppi e nella Bacheca (sotto).
 - **Non pubblica**: la casella «Pubblicato» è spenta, con «Il corso lo pubblica l’Amministratore», e un
   corso creato o salvato da lui resta in bozza. Non elimina un corso, non iscrive studenti; nella
   scheda del corso non vede iscritti, richieste e report.
-- Il suo menu: «Corsi», «Gestione corsi», «Impostazioni» (solo «Video di benvenuto» e
-  «Informazioni»), «Profilo». I supervisori possono essere più d'uno.
+- Il suo menu: «Corsi», «Report», «Bacheca», «Gestione corsi», «Gruppi», «Impostazioni» (solo
+  «Video di benvenuto» e «Informazioni»), «Profilo». I supervisori possono essere più d'uno.
+
+**Subito sotto l'admin (06/11, 0354–0356).** Alessandro: il supervisore è di supporto
+all'admin, e ha tre capacità in più, sempre accese e per tutti i corsi, anche pubblicati:
+
+- **Report** (0354, `report.view`): tutti, come l'admin. `StudentScope::tutorIds()` gli dà il
+  perimetro di tutti; da lì passano report, fruizione dei video, presenze agli incontri, file
+  scaricati e l'apertura dei tentativi dal report di uno studente, in sola lettura.
+- **Gruppi** (0355, `group.manage`): crea e gestisce tutti i gruppi — dati, tutor responsabile,
+  membri (che vengono iscritti ai corsi del gruppo), corsi assegnati anche pubblicati, date dei
+  moduli. **Eliminare un gruppo** ha un permesso suo, `group.delete`, solo dell'admin. La pagina
+  del gruppo dei partecipanti (`/gruppi/…`) resta di membri, tutor del gruppo e admin, e i
+  collegamenti «vai al gruppo» e «Pagina del gruppo» si vedono solo a chi la apre.
+- **Bacheca** (0356, `board.manage`): risorse, proposte degli studenti e categorie di ogni
+  corso. Ci arriva dalla voce «Bacheca» del menu, che apre la pagina **«Bacheca»**
+  (`/bacheca/corsi`: tutti i corsi con stato, categorie, risorse e proposte da valutare); le
+  categorie di un corso hanno una pagina loro, **«Categorie della bacheca»**
+  (`/bacheca/corsi/{id}/categorie`), raggiungibile da «Gestione categorie» nella bacheca, dove
+  le azioni tornano (campo `torna`). Dove il corso non lo apre, il ritorno porta a «Bacheca dei
+  corsi» e nella barra laterale il nome del corso è testo (`BachecaScope::apreIlCorso`).
+
+I contenuti dei corsi pubblicati restano chiusi: non li apre, non li modifica, non pubblica,
+non gestisce utenti, iscrizioni dalla scheda del corso, incontri, certificati e domande.
 
 `tests/supervisore.js` lo prova (vedi **Test**).
 
@@ -1386,10 +1437,13 @@ ogni quarto d'ora):
 schtasks /create /tn "Pistacchio - inviti" /sc minute /mo 15 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\invita-utenti >> storage\logs\inviti.log 2>&1"
 ```
 
-Per `bin/avvisi` è identica, ogni quarto d'ora anche lei, con il suo nome e il suo log:
+Per `bin/avvisi` è identica, ma **ogni cinque minuti** (`/mo 5`, 06/11: con i pagamenti,
+l'«Iscrizione confermata» arriva al massimo cinque minuti dopo), con il suo nome e il suo log.
+Attenzione alle virgolette con la barra rovesciata intorno al percorso del PHP (`\"…php.exe\"`):
+senza quella dopo `php.exe`, `schtasks` risponde «Opzione o argomento non valido - 'bin\avvisi'».
 
 ```
-schtasks /create /tn "Pistacchio - avvisi" /sc minute /mo 15 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\avvisi >> storage\logs\avvisi.log 2>&1"
+schtasks /create /tn "Pistacchio - avvisi" /sc minute /mo 5 /ru "%USERNAME%" /tr "cmd /c cd /d C:\laragon\www\lms && \"C:\laragon\bin\php\php-8.4.3-Win32-vs17-x64\php.exe\" bin\avvisi >> storage\logs\avvisi.log 2>&1"
 ```
 
 Per il rilascio dei moduli è identica, con `/sc daily /st 07:30` al posto di `/sc minute /mo 15`.
@@ -1590,6 +1644,17 @@ password data dall'admin) → video di benvenuto. Il cancello della password e q
 lasciano passare chi sta facendo il primo accesso: senza, si rimandavano a vicenda all'infinito
 (il secondo caso con il video configurato, trovato da `permessi.js`). Il saluto «Che bello
 rivederti» non compare al primo accesso.
+
+## Dopo l'accesso, la pagina chiesta
+
+Dal 06/11 (0353): chi apre una pagina senza essere collegato — per esempio il collegamento al
+corso nell'«Iscrizione confermata» — passa dal login e poi **arriva a quella pagina**, non a «I
+miei corsi». `Auth::requireLogin` la ricorda quando manda al login, solo per le pagine (GET) e
+solo se è un indirizzo di questa piattaforma (`Auth::destinazioneValida`: una sola «/»
+all'inizio, niente barre rovesciate o caratteri di controllo, che i browser leggono come un
+altro sito; non l'accesso o l'uscita). L'accesso riuscito la usa una volta; senza, «I miei
+corsi». Primo accesso, password da cambiare e video di benvenuto passano comunque prima. Chi è
+già collegato apre il collegamento direttamente, come prima.
 
 ## Il saluto dopo l'accesso
 
@@ -1844,6 +1909,17 @@ email (`METHOD:REQUEST`, con organizzatore e invitato): un calendario sottoscrit
 non invita, e mandare dei REQUEST in un feed vorrebbe dire chiedere a ogni rilettura di
 rispondere a un invito già accettato.
 
+### Data e ora su una riga, il mese (06/11)
+
+Nei riquadri dell'Elenco dell'Agenda e di «Sessioni live» (sono gli stessi) data e orario stanno
+su una riga sola: la colonna della data è larga 13 rem e non va a capo, uguale per tutte le voci,
+così gli orari si incolonnano (0342, 0343, 0346: con l'anno). Al telefono la data sta sulla sua
+riga. `accessibilita.js` controlla «data e ora di ogni voce su una riga sola».
+
+Nella vista mensile i pulsanti del mese precedente e successivo hanno il triangolo pieno dei
+collegamenti «indietro» (`.freccia-triangolo`, girato verso destra per il successivo) al posto
+di «←» e «→», quasi invisibili (0351); il nome del mese mostrato è a 1,3 rem (0352).
+
 ## La barra laterale: il ramo del corso
 
 Dal 17/10 (Alessandro, variante C del mockup) le voci che riguardano un corso compaiono solo
@@ -1903,6 +1979,18 @@ titolo nel colore della categoria, la descrizione e il numero delle risorse pubb
 Regole in `App\Auth\BachecaScope` (chi vede, pubblica e modera) e `App\Core\Bacheca` (campi,
 link, ordine, colori). I file stanno in `storage/bacheca/`. Migrazioni
 `2026_10_17_bacheca.sql`, `2026_10_17_bacheca_colori.sql` e `2026_10_25_bacheca_moduli.sql`.
+
+### Le bacheche di tutti i corsi e le categorie in una pagina (06/11)
+
+Per chi gestisce la Bacheca di tutti i corsi (`board.manage`: l'admin e il supervisore):
+
+- **«Bacheca»** (`/bacheca/corsi`): una riga per corso, con stato, categorie, risorse
+  pubblicate, proposte da valutare e «Apri la bacheca». Ci porta la voce «Bacheca» del menu del
+  supervisore; l'admin apre la bacheca dal ramo del corso, come prima.
+- **«Categorie della bacheca»** (`/bacheca/corsi/{id}/categorie`): lo stesso riquadro della
+  scheda del corso, in una pagina sua. «Gestione categorie» nella bacheca porta qui, per tutti;
+  le azioni sulle categorie tornano qui (campo `torna`), mentre dalla scheda del corso tornano
+  alla scheda.
 
 ## Tre parole
 
@@ -1998,6 +2086,35 @@ Regole in `App\Core\H5P` (voci dell'archivio, `h5p.json`, punteggi, nomi dei tip
 `h5p-questionario.js` per i questionari, `h5p-lezione.js` e `h5p-editor.js` per le lezioni.
 Migrazioni `2026_10_22_h5p.sql` e `2026_10_23_h5p_lezioni.sql`.
 
+## Le date
+
+**Nelle pagine** (06/11, 0346): «16/09/2026 18:00» dove c'è anche l'ora, «16/09/2026» dove c'è
+solo il giorno; mai come stanno nel database («2026-09-16 18:00:42»), mai senza zeri
+(«3/11/2026»), senza anno («16/09») o con «alle». `App\Core\Quando` le scrive
+(`dataOra()`, `data()`). Resta un modo di dire relativo, «Ultimo giro: oggi alle 10:15», nella
+coda delle email. `accessibilita.js` controlla su ogni pagina «nessuna data nel formato del
+database».
+
+**Nei file scaricati** (06/11, 0347) le date servono a lavorare in Excel: le colonne di date
+partono sempre dal valore del database e le converte il generatore del file. Nell'**XLSX** sono
+date vere — un numero che Excel ordina e con cui calcola — mostrate come «16/09/2026 18:00»
+(tipo `data`) o «16/09/2026» (tipo `giorno`); un valore non data ma numerico resta un numero (il
+file dello studente ha due tabelle una sotto l'altra). Nel **CSV**, solo testo, escono come
+«2026-09-16 18:00», che Excel riconosce con qualunque lingua e che si ordina anche da testo
+(`Csv::send` riceve gli stessi tipi). `tests/scaricati.js` scarica i nove file nei due formati e
+guarda ogni colonna di date.
+
+## La gerarchia dei riquadri
+
+Tre livelli che si distinguono a colpo d'occhio (06/11, 0348–0350): il titolo della pagina
+(24 px), il **titolo del riquadro** (`.card h2`, 1,2 rem, peso 600, 1 rem sotto) e
+l'**etichetta del campo** (0,92 rem, peso 500, in tutte le famiglie di moduli). Prima titolo del
+riquadro ed etichetta erano 16 e 15,2 px, tutti e due a 600. Il titolo «Amministrazione» della
+barra laterale (`.nav-section`) è a 0,8 rem (0340).
+
+«Il mio profilo» al telefono: la scelta del file e «Sostituisci» (o «Carica») stanno a destra
+della foto (0348). `accessibilita.js` controlla, nel profilo, la gerarchia e il pulsante.
+
 ## Icone
 
 Dal 18/10 accanto ai comandi ci sono le icone di **Bootstrap Icons 1.11.3** (MIT), scritte come
@@ -2027,9 +2144,38 @@ non da git, perché sul server la cartella `.git` di solito non c'è.
 In **Impostazioni**, in fondo, la tessera «Informazioni su Pistacchio LMS» porta a una pagina con
 il logo, il nome, la versione, il collegamento al repository (in una scheda nuova) e **i dati per
 l'assistenza**: la versione di PHP, il database («MySQL 8.0.30», «MariaDB 10.11.14») e la data
-d'installazione, presa da `storage/installed.lock` o, senza, dal `.env` (`App\Core\Ambiente`).
+d'installazione, presa da `storage/installed.lock` o, senza, dal `.env` (`App\Core\Ambiente`), e dal
+06/11 (0337) **OPcache**: «attivo», «non attivo» o «non installato» (`Ambiente::opcache()`, che lo
+chiede a OPcache o, se il server non lo permette, guarda `opcache.enable`). In produzione deve
+essere attivo, ed è la condizione del test di carico.
 La vede solo chi apre le impostazioni: la versione esatta, mostrata a tutti, aiuterebbe chi cerca
 un'installazione con un difetto noto.
+
+## Test di carico
+
+Per la prova sul Semidedicato 1 di SupportHost prima dell'apertura (35 processi PHP dedicati,
+500 studenti registrati, 150 collegati insieme). Il conto: 150 persone che cambiano pagina in
+media ogni 10 secondi fanno 15 pagine al secondo, 30 nei momenti di punta; con 35 processi ogni
+pagina deve rispondere entro **1,15 secondi** (limite), **390 ms** con un margine di tre volte
+(obiettivo), nel 95% dei casi.
+
+- **`bin/carico`**, sul server: `semina --corso=ID --password=...` crea
+  `carico-001@carico.invalid` … `carico-500@carico.invalid`, già oltre il primo accesso, e li
+  iscrive ai corsi dati (pubblicati), senza email in coda; `togli` li cancella con tutto quello
+  che hanno; `conta` dice quanti sono.
+- **`tests/carico/studente.js`**, lo script k6, dal PC: lo studente entra, apre i suoi corsi,
+  il corso, due lezioni, il questionario, Agenda ed «Esplora corsi», ed esce, con pause da 5 a 15
+  secondi; nella prima lezione con un video di Bunny manda la fruizione ogni 60 secondi, come il
+  lettore vero. Salita a 150 in 5 minuti, 20 minuti a 150, discesa in 2. `-e PICCOLO=1`: 5
+  utenti per 3 minuti.
+- **`tests/carico/LEGGIMI.md`**: i passi, dalla copia del database (da rimettere dopo la prova)
+  alla pulizia. k6 dal PC è gratuito e manda il carico da un solo indirizzo IP, quello da
+  comunicare a SupportHost un'ora prima (data e orario qualche giorno prima), perché Imunify360
+  non lo blocchi. I grafici: il pannello web di k6 (`K6_WEB_DASHBOARD`) o, facoltativo, Grafana
+  Cloud, che consuma ore-utente del piano.
+
+Il blocco dei tentativi d'accesso conta solo le password sbagliate: gli accessi giusti dei 150
+studenti di prova non lo fanno scattare.
 
 ## Test
 
@@ -2090,27 +2236,29 @@ php tests/accesso_test.php          # limite ai tentativi di accesso (5 per acco
 php tests/csv_test.php              # CSV: i testi-formula escono con l'apostrofo, numeri e telefoni come sono
 php tests/ruoli_test.php            # ruoli: nucleo fisso e cinque interruttori, «Tentativi» solo con «Report»
 php tests/fuso_orario_test.php      # la connessione al database usa lo scarto orario di PHP
-php tests/corsi_a_pagamento_test.php # corsi a pagamento: prezzo scritto, link, identificativo, impedimenti, interruttore
+php tests/corsi_a_pagamento_test.php # corsi a pagamento: prezzo scritto, link, identificativo, impedimenti, interruttore, prezzo breve
+php tests/dopo_accesso_test.php     # dopo l'accesso: quali pagine chieste si accettano (solo di questa piattaforma)
 
 # richiedono il server attivo:  php -S 127.0.0.1:8123 -t public router-dev.php
 #   (`router-dev.php` sta nella radice del repo: il server integrato di PHP non ha
 #    `.htaccess`, e senza di lui gli indirizzi dell'applicazione rispondono 404)
 node tests/accessibilita.js         # circa 5.300 controlli su più di 65 pagine, a tre larghezze, un giro senza mouse e uno da studente e da tutor (il numero dipende dai dati)
-node tests/supervisore.js           # 50 prove: il supervisore costruisce i corsi in bozza e non tocca il resto (circa 15 secondi)
+node tests/supervisore.js           # 94 prove: il supervisore costruisce i corsi in bozza; report, gruppi (senza eliminarli) e Bacheca di tutti; non tocca il resto (circa 30 secondi)
 node tests/permessi.js              # circa 700 prove: ogni ruolo prova a raggiungere le cose di un altro, più il perimetro di tutor e assistenti, gli interruttori dei ruoli, la bacheca, il ramo del corso, le tre parole, i file H5P, il percorso e la verifica finale e molto altro
 node tests/coerenza_moduli.js       # i tre sistemi di moduli disegnano la stessa cosa allo stesso modo
 node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cliccata davvero (crea e toglie da sé 55 studenti per la seconda pagina)
-node tests/pagamenti.js             # 86 prove: «A pagamento», vie gratuite chiuse, avvisi di Stripe firmati, catalogo, Impostazioni › Pagamenti (circa 20 secondi)
+node tests/pagamenti.js             # 97 prove: «A pagamento», vie gratuite chiuse, avvisi di Stripe firmati, catalogo, ritorno da Stripe, Impostazioni › Pagamenti, il collegamento dell'email dopo l'accesso (circa 25 secondi)
+node tests/scaricati.js             # i file scaricati: nel CSV date «AAAA-MM-GG HH:MM», nell'XLSX date vere (circa 10 secondi)
 node tests/bozze.js                 # 35 prove: le bozze non hanno iscritti, la pubblicazione iscrive i gruppi, incontri e inviti di una bozza (circa 10 secondi)
 ```
 
-Il 06/11, sul database di sviluppo, alla 1.0.331: 51 file PHP con 1.845 controlli,
-`accessibilita.js` 5.340, `permessi.js` 698, `ordinamento_pagine.js` 286, `coerenza_moduli.js` 16,
-`supervisore.js` 50, `pagamenti.js` 86, `bozze.js` 35. Due controlli rossi dipendono dai dati di
-quel database e non dal codice: `tema_test.php` («con la tavolozza predefinita non si stampa
-niente»: il raggio «morbido» scelto il 04/11 stampa il suo blocco) e, in `ordinamento_pagine.js`,
-«Esito» nel report per studente (la colonna si ordina sul solo `passed`, e «non svolto» resta in
-fondo: un difetto vecchio, emerso con questi dati, da correggere). Il 29/10, con i dati di allora:
+Il 06/11, sul database di sviluppo, alla 1.0.356: 52 file PHP con 1.870 controlli,
+`accessibilita.js` 5.763, `permessi.js` 698, `ordinamento_pagine.js` 287, `coerenza_moduli.js` 16,
+`supervisore.js` 94, `pagamenti.js` 97, `bozze.js` 35, `scaricati.js` 18. Un controllo rosso
+dipende dai dati di quel database e non dal codice: `tema_test.php` («con la tavolozza
+predefinita non si stampa niente»: il raggio «morbido» scelto il 04/11 stampa il suo blocco).
+Il rosso di «Esito» nel report per studente è corretto dalla 0344. Alla 1.0.331: 51 file PHP con
+1.845 controlli, `accessibilita.js` 5.340, `ordinamento_pagine.js` 286. Il 29/10, con i dati di allora:
 49 file PHP con 1.761 controlli, `accessibilita.js` 5.025, `permessi.js` 656,
 `ordinamento_pagine.js` 307, `coerenza_moduli.js` 16, tutti superati, anche con MySQL in UTC. `permessi.js` e `accessibilita.js` rifanno la semina all'inizio (`permessi.js` con
 `--lezioni-fatte`, che segna come fatta la lezione del mondo A, così le prove possono svolgere
@@ -3119,7 +3267,7 @@ iscritti: la conferma dei membri dei gruppi parte dalla pubblicazione. Anche l'i
 pagamento di Stripe la mette in coda (la ricevuta del pagamento la manda Stripe).
 
 ```
-*/15 * * * * cd /percorso/del/sito && php bin/avvisi >> storage/logs/avvisi.log 2>&1
+*/5 * * * * cd /percorso/del/sito && php bin/avvisi >> storage/logs/avvisi.log 2>&1
 ```
 
 `php bin/avvisi --prova` elenca che cosa manderebbe senza mandare niente.
@@ -3158,12 +3306,32 @@ regole stanno in `App\Core\CorsiAPagamento` e `App\Core\AvvisoStripe`; gli avvis
 
 ### Come funziona
 
-Lo studente apre «Esplora corsi», vede la scheda del corso con il prezzo e **«Paga e iscriviti»**
-(variante B ridotta: senza etichetta, senza il numero di lezioni, senza frase sotto). Il pulsante
-porta al **link di pagamento di Stripe** del corso con due parametri: il numero dello studente
+Lo studente apre «Esplora corsi» e vede la scheda del corso con il **pulsante diviso**: il prezzo
+su verde chiaro a sinistra («100 €», con i centesimi solo se ci sono: `CorsiAPagamento::
+prezzoBreve`) e **«Iscriviti»** a destra, come per i corsi gratuiti (0334, 0336, 0341: alto 40
+px come gli altri pulsanti, il prezzo con lo stesso carattere di «Iscriviti», un filo verde
+disegnato all'interno). Niente etichetta, niente numero di lezioni. Il pulsante porta al **link
+di pagamento di Stripe** del corso con due parametri: il numero dello studente
 (`client_reference_id`), da cui Pistacchio lo riconoscerà, e la sua email già scritta
-(`prefilled_email`). Paga su Stripe; dopo il pagamento resta la pagina di conferma di Stripe, e la
-ricevuta la manda Stripe.
+(`prefilled_email`). La ricevuta del pagamento la manda Stripe, se nell'account è attivo l'invio
+delle ricevute.
+
+**Dopo il pagamento si torna a Pistacchio** (0333, 0335). Ogni link di pagamento, su Stripe,
+rimanda all'«Indirizzo dopo il pagamento» di Impostazioni › Pagamenti
+(`/pagamento-ricevuto?sessione={CHECKOUT_SESSION_ID}`, lo stesso per tutti i corsi; il
+segnaposto lo sostituisce Stripe). La pagina **«Pagamento ricevuto»** («Un momento: stiamo
+preparando il tuo corso.», tre punti che si accendono a turno, fermi con il movimento ridotto,
+«Tra pochi secondi tornerai a «I miei corsi».») compare **sempre**, per 5 secondi
+(`CorsiAPagamento::ATTESA_SECONDI`, intestazione `Refresh`, anche senza JavaScript), poi porta a
+«I miei corsi» con il codice del pagamento. Lì, finché il pagamento non risulta registrato per
+quello studente (`PaymentModel::registratoPer`), un riquadro informativo dice «Il pagamento non
+è ancora confermato da Stripe: il corso comparirà qui appena arriva la conferma. Se non lo
+vedi, ricarica la pagina tra poco.»; ricaricando dopo la conferma sparisce. La sola
+differenza fra confermato e non confermato è quell'avviso. Un pagamento in rosso non lo
+mostra: lo gestisce l'Amministratore, con l'email.
+
+Il collegamento dell'«Iscrizione confermata» porta al corso anche passando dall'accesso: vedi
+**Dopo l'accesso, la pagina chiesta**.
 
 Stripe manda allora un **avviso firmato** a `POST /stripe/avvisi`. Pistacchio:
 
@@ -3191,7 +3359,7 @@ aperto a mano); importo diverso dal prezzo; corso in bozza; iscrizione che c'era
 rimborsare su Stripe). La risposta a Stripe è 200 anche in questi casi: ripetere l'avviso non
 cambierebbe niente. Un errore vero risponde 500, e Stripe ritenta.
 
-Se l'avviso tarda, lo studente vede ancora «Paga e iscriviti» e potrebbe pagare due volte: il
+Se l'avviso tarda, lo studente vede ancora «Iscriviti» con il prezzo e potrebbe pagare due volte: il
 secondo pagamento compare in rosso, «L'iscrizione c'era già», e va rimborsato su Stripe.
 
 ### Le vie gratuite chiuse (0323)
@@ -3224,8 +3392,9 @@ Variante A: tutto in una pagina.
   stesso iscrive comunque chi ha pagato.
 - **Il riquadro «Stripe»**: la **chiave degli avvisi** (`STRIPE_WEBHOOK_SECRET`, comincia con
   `whsec_`; non torna mai al browser, e a campo vuoto resta quella di prima), l'**indirizzo degli
-  avvisi** da copiare su Stripe, e la **modalità di prova** (`PAYMENTS_TEST_MODE`, accesa di
-  partenza): accesa, si accettano solo i pagamenti di prova; spenta, solo quelli veri.
+  avvisi** da copiare su Stripe, l'**indirizzo dopo il pagamento** da incollare in ogni link di
+  pagamento (0333), e la **modalità di prova** (`PAYMENTS_TEST_MODE`, accesa di partenza):
+  accesa, si accettano solo i pagamenti di prova; spenta, solo quelli veri.
 - **«Pagamenti ricevuti»**, dal più recente, filtrabili per corso: data, studente (o l'email
   scritta su Stripe), corso, importo («con sconto, su 49,00 €», «di prova») ed esito,
   «iscrizione completata» o «iscrizione non riuscita» con il motivo.
@@ -3252,6 +3421,11 @@ Stripe CLI:
 
 Una carta di prova su un link vero dà «La tua carta è stata rifiutata. La richiesta era in
 modalità live…»: il link nel corso non è quello di prova.
+
+**Il ritorno, in ogni link di pagamento** (anche quelli di prova): su Stripe si apre il link,
+**Modifica**, scheda **«After the payment»**, alla voce **«Confirmation page»** si sceglie di
+rimandare al proprio sito e si incolla l'«Indirizzo dopo il pagamento» così com'è, con le
+graffe. Senza, lo studente resta sulla pagina di conferma di Stripe.
 
 **Online.** Su Stripe si crea un endpoint con l'indirizzo che la pagina mostra in «Indirizzo
 degli avvisi» e gli eventi `checkout.session.completed` e
@@ -3345,8 +3519,8 @@ persona e incontro: ripremendo, non si raddoppiano.
 
 **Impostazioni › Posta › Email in coda e non partite** mostra le due tabelle, con «Riprova» (altre
 24 ore), «Riprova tutte» e «Rimuovi», con conferma (`App\Core\Mail\CodaEmail`). Per questo
-**`bin/avvisi` va pianificato**, ogni quarto d'ora o meglio ogni cinque minuti: senza, le email in
-coda non partono.
+**`bin/avvisi` va pianificato**, ogni cinque minuti (06/11): senza, le email in coda non
+partono, e restano in coda finché qualcuno non lancia il comando a mano.
 
 ## Configurazione dell'invio email
 
