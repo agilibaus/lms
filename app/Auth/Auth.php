@@ -14,6 +14,9 @@ use App\Models\UserModel;
  */
 class Auth
 {
+    /** La pagina da riaprire dopo l'accesso (06/11). */
+    private const DOPO_ACCESSO = 'dopo_accesso';
+
     /** Il supervisore (30/10) costruisce i corsi in bozza: vedi `Ruoli::NUCLEO`. */
     public const ROLES = ['admin', 'supervisore', 'tutor', 'assistente', 'studente'];
 
@@ -191,11 +194,43 @@ class Auth
     public static function requireLogin(): void
     {
         if (!self::check()) {
+            // La pagina chiesta si ricorda, per tornarci dopo l'accesso
+            // (06/11, Alessandro): il collegamento di un'email,
+            // «/courses/4», portava a «I miei corsi» invece che al corso.
+            // Solo le pagine (GET), e solo indirizzi di questa piattaforma.
+            $chiesta = (string) ($_SERVER['REQUEST_URI'] ?? '');
+
+            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && self::destinazioneValida($chiesta)) {
+                $_SESSION[self::DOPO_ACCESSO] = $chiesta;
+            }
+
             header('Location: /login');
             exit;
         }
 
         self::guardSession();
+    }
+
+    /** Dove andare dopo l'accesso, una volta sola; null se non c'e'. */
+    public static function destinazioneDopoAccesso(): ?string
+    {
+        $d = $_SESSION[self::DOPO_ACCESSO] ?? null;
+        unset($_SESSION[self::DOPO_ACCESSO]);
+
+        return is_string($d) && self::destinazioneValida($d) ? $d : null;
+    }
+
+    /**
+     * Un indirizzo di questa piattaforma: comincia con una sola «/», niente
+     * barre rovesciate o caratteri di controllo (che i browser leggono come
+     * un altro sito), e non e' l'accesso o l'uscita.
+     */
+    public static function destinazioneValida(string $d): bool
+    {
+        return $d !== '' && strlen($d) <= 2000
+            && $d[0] === '/' && !str_starts_with($d, '//')
+            && preg_match('/[\\\\\x00-\x1F\x7F]/', $d) !== 1
+            && preg_match('~^/(login|logout)(?:[/?#]|$)~', $d) !== 1;
     }
 
     /**

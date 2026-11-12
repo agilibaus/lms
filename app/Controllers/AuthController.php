@@ -116,7 +116,11 @@ class AuthController
             $_SESSION['saluto'] = (string) (UserModel::find((int) Auth::id())['first_name'] ?? '');
         }
 
-        header('Location: /');
+        // La pagina che si era chiesta prima dell'accesso, per esempio il
+        // corso dal collegamento di un'email (06/11); se no, «I miei corsi».
+        // Primo accesso, password da cambiare e video di benvenuto passano
+        // comunque prima: li impone ogni pagina.
+        header('Location: ' . (Auth::destinazioneDopoAccesso() ?? '/'));
         exit;
     }
 

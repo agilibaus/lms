@@ -547,6 +547,26 @@ const VALIDI = { price: '49,00', payment_link_url: LINK, payment_link_id: 'plink
         check('in Impostazioni › Pagamenti l\'indirizzo dopo il pagamento, con il segnaposto di Stripe',
             (await admin.$eval('#stripe-ritorno', (i) => i.value)).endsWith('/pagamento-ricevuto?sessione={CHECKOUT_SESSION_ID}'));
 
+        // --- il collegamento dell'email porta al corso, anche passando dall'accesso (06/11)
+        const ospiteE = await (await browser.newContext()).newPage();
+        await ospiteE.goto(BASE + '/courses/' + A.corso);
+        check('senza accesso, il corso manda al login', ospiteE.url().includes('/login'), [ospiteE.url()]);
+        await ospiteE.fill('input[name="email"]', 'stud@test.it');
+        await ospiteE.fill('input[name="password"]', PASSWORD);
+        await ospiteE.click('form.auth-form button[type="submit"]');
+        await ospiteE.waitForLoadState('networkidle');
+        check('… e dopo l\'accesso apre proprio quel corso', new URL(ospiteE.url()).pathname === '/courses/' + A.corso, [ospiteE.url()]);
+        await ospiteE.goto(BASE + '/logout').catch(() => {});
+        await ospiteE.context().close();
+        const ospiteF = await (await browser.newContext()).newPage();
+        await ospiteF.goto(BASE + '/login');
+        await ospiteF.fill('input[name="email"]', 'stud@test.it');
+        await ospiteF.fill('input[name="password"]', PASSWORD);
+        await ospiteF.click('form.auth-form button[type="submit"]');
+        await ospiteF.waitForLoadState('networkidle');
+        check('controprova: entrando dalla pagina di accesso si arriva a «I miei corsi»', new URL(ospiteF.url()).pathname === '/', [ospiteF.url()]);
+        await ospiteF.context().close();
+
         // --- chi apre Impostazioni › Pagamenti -----------------------------------------------
         for (const email of ['tutor1@test.it', 'assist@test.it', 'stud@test.it']) {
             const p = (await entra(browser, email)).page;
