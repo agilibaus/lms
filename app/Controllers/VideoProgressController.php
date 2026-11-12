@@ -232,6 +232,8 @@ class VideoProgressController
          * pone piu'.
          */
         $dati = [];
+        // Le tre date sono date vere nell'XLSX, «2026-09-16 18:00» nel CSV (06/11).
+        $tipi = [4 => 'numero', 5 => 'numero', 6 => 'numero', 7 => 'numero', 8 => 'data', 9 => 'data', 10 => 'data'];
 
         foreach ($righe as $riga) {
             $dati[] = [
@@ -243,20 +245,18 @@ class VideoProgressController
                 self::secondi($riga['watched_seconds']),
                 $riga['duration_seconds'] === null ? '' : self::secondi($riga['duration_seconds']),
                 $riga['position_seconds'] === null ? '' : self::secondi($riga['position_seconds']),
-                self::data($riga['first_seen_at']),
-                self::data($riga['updated_at']),
-                self::data($riga['completed_at']),
+                $riga['first_seen_at'] ?? '',
+                $riga['updated_at'] ?? '',
+                $riga['completed_at'] ?? '',
             ];
         }
 
         if ($xlsx) {
-            Xlsx::send($nome . '.xlsx', $intestazioni, $dati, [
-                4 => 'numero', 5 => 'numero', 6 => 'numero', 7 => 'numero',
-            ], 'Fruizione');
+            Xlsx::send($nome . '.xlsx', $intestazioni, $dati, $tipi, 'Fruizione');
             return;
         }
 
-        Csv::send($nome . '.csv', $intestazioni, $dati);
+        Csv::send($nome . '.csv', $intestazioni, $dati, $tipi);
     }
 
     /**
@@ -408,15 +408,5 @@ class VideoProgressController
         return max(0, $secondi);
     }
 
-    private static function data(?string $quando): string
-    {
-        if ($quando === null) {
-            return '';
-        }
-
-        $ora = strtotime($quando);
-
-        return $ora === false ? '' : date('d/m/Y H:i', $ora);
-    }
 
 }

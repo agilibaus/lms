@@ -486,18 +486,10 @@ class UserController extends AdminController
 
         [$intestazione, $righe, $tipi] = $this->exportTable();
 
-        // Nel CSV le date diventano testo leggibile: non c'e' un tipo "data"
-        // da dichiarare, e la forma ISO del database si legge male. Nel foglio
-        // di calcolo restano date vere, cosi' l'ordinamento funziona.
-        foreach ($righe as $indice => $riga) {
-            foreach ($tipi as $colonna => $tipo) {
-                if ($tipo === 'data' && ($riga[$colonna] ?? null) !== null) {
-                    $righe[$indice][$colonna] = date('d/m/Y H:i', (int) strtotime((string) $riga[$colonna]));
-                }
-            }
-        }
-
-        Csv::send('utenti-' . date('Y-m-d') . '.csv', $intestazione, $righe);
+        // Le date come in tutti i file scaricati (06/11): nel CSV
+        // «2026-09-16 18:00», che Excel riconosce e che si ordina; nel
+        // foglio di calcolo date vere.
+        Csv::send('utenti-' . date('Y-m-d') . '.csv', $intestazione, $righe, $tipi);
     }
 
     public function exportXlsx(array $params = []): void

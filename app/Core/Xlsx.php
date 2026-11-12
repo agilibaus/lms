@@ -169,11 +169,20 @@ class Xlsx
             return '';
         }
 
-        if ($tipo === 'data') {
+        // Date vere (06/11): un numero che Excel ordina e con cui calcola,
+        // mostrato come «16/09/2026 18:00» («data») o «16/09/2026»
+        // («giorno»). Un valore che non e' una data ma un numero resta un
+        // numero: in un file con due tabelle una sotto l'altra la stessa
+        // colonna puo' avere date sopra e minuti sotto.
+        if ($tipo === 'data' || $tipo === 'giorno') {
             $seriale = self::serial((string) $valore);
 
             if ($seriale !== null) {
-                return '<c r="' . $riferimento . '" s="2"><v>' . $seriale . '</v></c>';
+                return '<c r="' . $riferimento . '" s="' . ($tipo === 'giorno' ? '3' : '2') . '"><v>' . $seriale . '</v></c>';
+            }
+
+            if (is_numeric($valore)) {
+                return '<c r="' . $riferimento . '"><v>' . $valore . '</v></c>';
             }
 
             // Data illeggibile: si scrive com'e' invece di sparire, cosi'
@@ -200,11 +209,18 @@ class Xlsx
      */
     private static function serial(string $dateTime): ?string
     {
-        $data = DateTimeImmutable::createFromFormat(
-            'Y-m-d H:i:s',
-            $dateTime,
-            new DateTimeZone('UTC')
-        );
+        // Dal database: con i secondi, senza, o solo il giorno (06/11).
+        $data = false;
+
+        foreach (['!Y-m-d H:i:s', '!Y-m-d H:i', '!Y-m-d'] as $formato) {
+            $data = DateTimeImmutable::createFromFormat($formato, $dateTime, new DateTimeZone('UTC'));
+
+            if ($data !== false && DateTimeImmutable::getLastErrors() === false) {
+                break;
+            }
+
+            $data = false;
+        }
 
         if ($data === false) {
             return null;
@@ -329,7 +345,8 @@ class Xlsx
     {
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="1"><numFmt numFmtId="164" formatCode="dd/mm/yyyy\ hh:mm"/></numFmts>'
+            . '<numFmts count="2"><numFmt numFmtId="164" formatCode="dd/mm/yyyy\ hh:mm"/>'
+            . '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/></numFmts>'
             . '<fonts count="2">'
             . '<font><sz val="11"/><name val="Calibri"/></font>'
             . '<font><b/><sz val="11"/><name val="Calibri"/></font>'
@@ -337,10 +354,11 @@ class Xlsx
             . '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>'
             . '<borders count="1"><border/></borders>'
             . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            . '<cellXfs count="3">'
+            . '<cellXfs count="4">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             . '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
             . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
             . '</cellXfs>'
             // Lo stile predefinito "Normal" va dichiarato: senza, i lettori
             // di fogli di calcolo segnalano un foglio privo di stile di base

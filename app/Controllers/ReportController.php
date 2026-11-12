@@ -280,7 +280,7 @@ class ReportController
                 $row['full_name'],
                 $row['email'],
                 $row['joined_at'] === null ? 'assente' : 'presente',
-                self::dateTimeLabel($row['joined_at']),
+                $row['joined_at'] ?? '',
                 self::delayLabel($row),
                 self::sourceLabel($row['source']),
             ];
@@ -291,7 +291,7 @@ class ReportController
             'report-incontro-' . Csv::slug((string) $session['title']),
             ['Partecipante', 'Email', 'Presenza', 'Ingresso', 'Ritardo (minuti)', 'Origine'],
             $rows,
-            [4 => 'numero'],
+            [3 => 'data', 4 => 'numero'],
             'Incontro'
         );
     }
@@ -364,7 +364,7 @@ class ReportController
             'report-corso-' . Csv::slug((string) $course['title']),
             ['Studente', 'Email', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Questionari superati', 'Completato il', 'Certificato'],
             $rows,
-            [3 => 'numero'],
+            [2 => 'data', 3 => 'numero', 6 => 'data'],
             'Corso'
         );
     }
@@ -727,10 +727,10 @@ class ReportController
             foreach ($sessions as $session) {
                 $rows[] = [
                     $session['title'],
-                    self::dateTimeLabel($session['starts_at']),
+                    $session['starts_at'],
                     $session['course_title'] ?? $session['group_name'] ?? '',
                     $session['joined_at'] === null ? 'assente' : 'presente',
-                    self::dateTimeLabel($session['joined_at']),
+                    $session['joined_at'] ?? '',
                     self::delayLabel($session),
                 ];
             }
@@ -748,7 +748,11 @@ class ReportController
             'report-studente-' . Csv::slug((string) $student['full_name']),
             ['Corso', 'Iscritto il', 'Progresso %', 'Lezioni completate', 'Questionari superati', 'Completato il', 'Certificato'],
             $rows,
-            [],
+            // Due tabelle una sotto l'altra (corsi, poi incontri): la colonna
+            // 1 ha date in tutte e due, la 4 l'ingresso degli incontri, la 5
+            // il completamento dei corsi e il ritardo degli incontri, che
+            // resta un numero (06/11).
+            [1 => 'data', 4 => 'data', 5 => 'data'],
             'Studente'
         );
     }
@@ -813,7 +817,7 @@ class ReportController
             'report-gruppo-' . Csv::slug((string) $group['name']),
             ['Studente', 'Email', 'Corso', 'Progresso %', 'Questionari superati', 'Completato il', 'Certificato'],
             $rows,
-            [],
+            [5 => 'data'],
             'Gruppo'
         );
     }
@@ -827,8 +831,10 @@ class ReportController
      * cosi' CSV e XLSX escono per forza dagli stessi dati: se un giorno si
      * aggiunge una colonna, non c'e' un secondo posto da ricordarsi.
      *
-     * `$tipi` vale solo per l'XLSX e dice quali colonne sono numeri — senza,
-     * un foglio di calcolo le tratta come testo e non si sommano.
+     * `$tipi` dice quali colonne sono numeri e quali date. Nell'XLSX i numeri
+     * si sommano e le date sono date vere, mostrate come «16/09/2026 18:00»;
+     * nel CSV le date escono come «2026-09-16 18:00» (06/11). Le date si
+     * passano sempre come vengono dal database.
      *
      * @param list<string>                                  $intestazioni
      * @param array<int, array<int, string|int|float|null>> $righe
@@ -852,7 +858,7 @@ class ReportController
             return;
         }
 
-        Csv::send($nomeSenzaEstensione . '.csv', $intestazioni, $righe);
+        Csv::send($nomeSenzaEstensione . '.csv', $intestazioni, $righe, $tipi);
     }
 
     /**

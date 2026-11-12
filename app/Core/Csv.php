@@ -13,8 +13,19 @@ class Csv
      * @param string[] $header
      * @param array<int, array<int, string|int|float|null>> $rows
      */
-    public static function send(string $fileName, array $header, array $rows): void
+    /**
+     * `$columnTypes` (06/11): come per l'XLSX, quali colonne sono date. Un
+     * CSV e' solo testo e non puo' contenere date vere: escono come
+     * «2026-09-16 18:00» («data») o «2026-09-16» («giorno»), che Excel
+     * riconosce con qualunque lingua impostata, come gli altri programmi, e
+     * che anche da testo si ordinano bene.
+     *
+     * @param array<int, string> $columnTypes
+     */
+    public static function send(string $fileName, array $header, array $rows, array $columnTypes = []): void
     {
+        $rows = self::date($rows, $columnTypes);
+
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('X-Content-Type-Options: nosniff');
@@ -32,6 +43,33 @@ class Csv
 
         fclose($out);
         exit;
+    }
+
+    /**
+     * Le colonne di date nel formato del CSV. Un valore che non e' una data
+     * del database resta com'e'.
+     *
+     * @param array<int, array<int, mixed>> $rows
+     * @param array<int, string> $columnTypes
+     * @return array<int, array<int, mixed>>
+     */
+    public static function date(array $rows, array $columnTypes): array
+    {
+        foreach ($rows as $i => $row) {
+            foreach ($columnTypes as $colonna => $tipo) {
+                if (($tipo !== 'data' && $tipo !== 'giorno') || !isset($row[$colonna])) {
+                    continue;
+                }
+
+                $valore = (string) $row[$colonna];
+
+                if (preg_match('/^(\d{4}-\d{2}-\d{2})(?: (\d{2}:\d{2})(?::\d{2})?)?$/', $valore, $m) === 1) {
+                    $rows[$i][$colonna] = $tipo === 'giorno' || !isset($m[2]) ? $m[1] : $m[1] . ' ' . $m[2];
+                }
+            }
+        }
+
+        return $rows;
     }
 
     /**
