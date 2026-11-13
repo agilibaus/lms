@@ -91,8 +91,11 @@ use App\Models\CourseModel;
                     <?php if (isset($daValutare[(int) $course['id']])): ?>
                         <?php /* Le proposte della bacheca (17/10): la voce sta nel
                                  ramo del corso, e da qui si vede in quale corso
-                                 aspettano. */ ?>
-                        <span class="course-card-valutare"><?= htmlspecialchars(\App\Core\Bacheca::daValutare($daValutare[(int) $course['id']])) ?> nella bacheca</span>
+                                 aspettano. Su una riga sola (13/11, Alessandro):
+                                 «12 da valutare in bacheca» occupa 157 px, la
+                                 scheda piu' stretta (computer, 189 px) li tiene;
+                                 «… proposte da valutare nella bacheca» no. */ ?>
+                        <span class="course-card-valutare"><?= (int) $daValutare[(int) $course['id']] ?> da valutare in bacheca</span>
                     <?php endif; ?>
                 </div>
             </a>

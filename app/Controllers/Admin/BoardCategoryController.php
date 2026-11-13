@@ -106,9 +106,8 @@ class BoardCategoryController extends AdminController
      */
     private static function qui(int $courseId): string
     {
-        // Con il segno di chi e' arrivato da «Bacheche» (13/11).
         return ($_POST['torna'] ?? '') === 'bacheca'
-            ? Bacheca::conOrigine('/bacheca/corsi/' . $courseId . '/categorie')
+            ? '/bacheca/corsi/' . $courseId . '/categorie'
             : '/admin/courses/' . $courseId . '/edit#bacheca';
     }
 }

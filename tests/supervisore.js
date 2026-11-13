@@ -14,9 +14,10 @@
  *     anche pubblicati, date dei moduli), ma non li elimina e non apre la
  *     pagina del gruppo dei partecipanti;
  *   - dal 06/11 gestisce la Bacheca di tutti i corsi, anche pubblicati
- *     (risorse, proposte, categorie), dalla voce «Bacheche» del menu (cosi'
- *     dal 13/11: dentro la bacheca di un corso e' accesa solo la «Bacheca»
- *     del ramo del corso);
+ *     (risorse, proposte, categorie), dal ramo di ogni corso: la voce
+ *     «Bacheche» del menu e la sua pagina non ci sono piu' dal 13/11; le
+ *     proposte da valutare le vede in «Corsi» («N da valutare in bacheca»,
+ *     su una riga) e nel ramo;
  *   - dal 06/11 vede i report di tutti, come l'admin, anche dei corsi
  *     pubblicati, con i tentativi, e scarica i file;
  *   - delle impostazioni apre solo «Video di benvenuto» e «Informazioni».
@@ -141,9 +142,10 @@ async function posta(page, url, campi, paginaToken) {
         // --- il menu -------------------------------------------------------
         await page.goto(BASE + '/admin/courses');
         const menu = await page.evaluate(() => [...document.querySelectorAll('.sidebar-nav a')].map((a) => a.textContent.trim()));
-        const devono = ['Corsi', 'Report', 'Bacheche', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
-        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Utenti', 'Domande'];
-        check('menu: «Corsi», «Report», «Bacheche», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
+        const devono = ['Corsi', 'Report', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
+        // «Bacheche» non c'e' piu' dal 13/11.
+        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Utenti', 'Domande', 'Bacheche', 'Bacheca'];
+        check('menu: «Corsi», «Report», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
             devono.every((v) => menu.includes(v)) && nonDevono.every((v) => !menu.includes(v)), [menu.join(' | ')]);
 
         // --- le pagine -----------------------------------------------------
@@ -186,7 +188,6 @@ async function posta(page, url, campi, paginaToken) {
             ['/admin/groups/' + A.gruppo + '/edit', 'la scheda di un gruppo'],
             ['/admin/groups/' + A.gruppo + '/courses/' + A.corso + '/date', 'le date dei moduli di un gruppo'],
             // La Bacheca di tutti i corsi (06/11).
-            ['/bacheca/corsi', 'l\'elenco delle bacheche'],
             ['/bacheca?corso=' + A.corso, 'la bacheca di un corso pubblicato'],
             ['/bacheca/corsi/' + A.corso + '/categorie', 'le categorie della bacheca di un corso pubblicato'],
             ['/bacheca/proposte?corso=' + A.corso, 'le proposte da valutare di un corso pubblicato'],
@@ -199,9 +200,8 @@ async function posta(page, url, campi, paginaToken) {
         }
 
         // Una voce accesa sola (13/11, Alessandro, A): nella bacheca di un
-        // corso, e nelle sue categorie, la «Bacheca» del ramo; nell'elenco di
-        // tutte, «Bacheche», che e' anche il titolo della pagina. Prima nella
-        // bacheca di un corso erano accese tutte e due.
+        // corso, e nelle sue categorie, la «Bacheca» del ramo. Prima era
+        // accesa anche «Bacheche», che dal 13/11 non c'e' piu'.
         const accese = async (url) => {
             await page.goto(BASE + url);
             return page.evaluate(() => ({
@@ -218,90 +218,27 @@ async function posta(page, url, campi, paginaToken) {
             check('menu ' + cosa + ': accesa solo la «Bacheca» del ramo del corso', // accanto alla voce del ramo puo' esserci il numero delle proposte da valutare
                 v.accese.length === 1 && /^ramo: Bacheca( |$)/.test(v.accese[0]), [JSON.stringify(v)]);
         }
-        const tutte = await accese('/bacheca/corsi');
-        check('nell\'elenco di tutte le bacheche: accesa solo «Bacheche», e la pagina si chiama «Bacheche»',
-            tutte.accese.length === 1 && tutte.accese[0] === 'Bacheche' && tutte.titolo.trim() === 'Bacheche' && tutte.scheda.startsWith('Bacheche'), [JSON.stringify(tutte)]);
 
-        // Arrivati da «Bacheche» (13/11, Alessandro): nella bacheca del corso
-        // il ritorno e' «◀ Bacheche», e lo resta passando da categorie,
-        // proposte, nuova risorsa e gestione delle categorie, anche dopo
-        // un'azione. Arrivati dal ramo del corso, il ritorno e' il corso.
-        const indietro = () => page.evaluate(() => {
-            const a = document.querySelector('a.back-link');
-            return a ? { testo: a.textContent.trim(), href: a.getAttribute('href') } : null;
-        });
-        const conSegno = (h) => typeof h === 'string' && h.includes('da=bacheche');
-        const titoloA = php('$s = $pdo->prepare("SELECT title FROM courses WHERE id = ?"); $s->execute([$argv[1]]); echo $s->fetchColumn();', A.corso).trim();
+        // L'elenco «Bacheche» non c'e' piu' (13/11): la pagina non esiste.
+        const paginaBacheche = await page.goto(BASE + '/bacheca/corsi');
+        check('l\'elenco «Bacheche» non esiste più (404)', paginaBacheche !== null && paginaBacheche.status() === 404, [String(paginaBacheche && paginaBacheche.status())]);
 
-        await page.goto(BASE + '/bacheca/corsi');
-        const versoA = await page.evaluate((id) => [...document.querySelectorAll('a[href^="/bacheca?corso=' + id + '"]')].map((a) => a.getAttribute('href')), A.corso);
-        check('«Bacheche»: il nome del corso e «Apri la bacheca» portano il segno da=bacheche',
-            versoA.length === 2 && versoA.every(conSegno), [JSON.stringify(versoA)]);
-        await page.click('a[href^="/bacheca?corso=' + A.corso + '&"]:has-text("Apri la bacheca")');
-        await page.waitForLoadState('load');
-        let r = await indietro();
-        check('aperta da «Bacheche», la bacheca del corso ha «◀ Bacheche», che riporta all\'elenco',
-            r !== null && r.testo === 'Bacheche' && r.href === '/bacheca/corsi', [JSON.stringify(r)]);
-
-        // Dentro la bacheca: ogni pagina rimanda indietro con il segno.
-        const dentro = await page.evaluate(() => [...document.querySelectorAll('main a[href^="/bacheca/"]')]
-            .map((a) => a.getAttribute('href')).filter((h) => !h.startsWith('/bacheca/corsi?') && h !== '/bacheca/corsi'));
-        check('nella bacheca, categorie, «Valuta», «Gestione categorie» e «Nuova risorsa» portano il segno',
-            dentro.length >= 4 && dentro.every(conSegno), [JSON.stringify(dentro)]);
-        for (const [url, cosa] of [
-            ['/bacheca/categorie/' + A.bacheca_categoria, 'una categoria'],
-            ['/bacheca/proposte?corso=' + A.corso, 'le proposte da valutare'],
-            ['/bacheca/nuova?corso=' + A.corso, 'nuova risorsa'],
-            ['/bacheca/risorse/' + A.bacheca_risorsa + '/modifica', 'modifica di una risorsa'],
-            ['/bacheca/corsi/' + A.corso + '/categorie', 'gestione categorie'],
-        ]) {
-            await page.goto(BASE + url + (url.includes('?') ? '&' : '?') + 'da=bacheche');
-            const v = await page.evaluate(() => ({
-                indietro: (document.querySelector('a.back-link') || {}).getAttribute ? document.querySelector('a.back-link').getAttribute('href') : null,
-                annulla: [...document.querySelectorAll('main a.btn')].filter((a) => a.textContent.trim() === 'Annulla').map((a) => a.getAttribute('href')),
-                moduli: [...document.querySelectorAll('main form[method="post"]')].filter((f) => !f.action.includes('/tengo') && !f.action.includes('/uso')),
-            }));
-            const moduliSenza = await page.evaluate(() => [...document.querySelectorAll('main form[method="post"]')]
-                .filter((f) => !f.action.includes('/tengo') && !f.action.includes('/uso'))
-                .filter((f) => !f.querySelector('input[name="da"][value="bacheche"]')).map((f) => f.getAttribute('action')));
-            check('da «Bacheche», ' + cosa + ': il ritorno, «Annulla» e i moduli portano il segno',
-                conSegno(v.indietro) && v.annulla.every(conSegno) && moduliSenza.length === 0, [JSON.stringify({ indietro: v.indietro, annulla: v.annulla, moduliSenza })]);
-        }
-
-        // Dopo un'azione si resta «da Bacheche»: metti in evidenza e togli,
-        // dalla pagina della categoria; sposta giu' e su una categoria,
-        // dalla gestione delle categorie.
-        const dopoAzione = async (pagina, bottone) => {
-            await page.goto(BASE + pagina);
-            // Il modulo come lo invia il suo pulsante: alcuni (le categorie)
-            // stanno in un pannello che si apre, e il clic non li raggiunge.
-            await Promise.all([page.waitForNavigation(), page.evaluate((t) => {
-                const b = [...document.querySelectorAll('main button')].find((x) => x.textContent.includes(t));
-                b.form.requestSubmit(b);
-            }, bottone)]);
-            return page.url();
-        };
-        let u1 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria + '?da=bacheche', 'Metti in evidenza');
-        let u2 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria + '?da=bacheche', 'Togli dall’evidenza');
-        check('da «Bacheche», dopo «Metti in evidenza» e «Togli dall’evidenza» si resta con il segno', conSegno(u1) && conSegno(u2), [u1, u2]);
-        let u3 = await dopoAzione('/bacheca/corsi/' + A.corso + '/categorie?da=bacheche', 'Sposta giù');
-        let u4 = await dopoAzione('/bacheca/corsi/' + A.corso + '/categorie?da=bacheche', 'Sposta su');
-        check('da «Bacheche», dopo «Sposta giù» e «Sposta su» di una categoria si resta con il segno', conSegno(u3) && conSegno(u4), [u3, u4]);
-        await page.goto(BASE + '/bacheca/categorie/' + A.bacheca_categoria + '?da=bacheche');
-        await page.click('a.back-link');
-        await page.waitForLoadState('load');
-        r = await indietro();
-        check('dalla categoria, tornati alla bacheca: ancora «◀ Bacheche»', r !== null && r.testo === 'Bacheche', [JSON.stringify(r)]);
-
-        // Controprova: dal ramo del corso, senza segno, tutto come prima.
+        // Le proposte da valutare si vedono in «Corsi», su una riga, anche
+        // sulla scheda piu' stretta (computer, 1440 px), e nel ramo.
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.goto(BASE + '/');
+        const avvisoScheda = await page.evaluate((id) => {
+            const s = document.querySelector('.course-card[data-corso="' + id + '"] .course-card-valutare');
+            if (!s) return null;
+            const riga = parseFloat(getComputedStyle(s).lineHeight) || 20;
+            return { testo: s.textContent.trim(), righe: Math.round((s.getBoundingClientRect().height - parseFloat(getComputedStyle(s).paddingTop) - parseFloat(getComputedStyle(s).paddingBottom)) / riga) };
+        }, A.corso);
+        check('«Corsi»: sulla scheda del corso A «1 da valutare in bacheca», su una riga',
+            avvisoScheda !== null && avvisoScheda.testo === '1 da valutare in bacheca' && avvisoScheda.righe === 1, [JSON.stringify(avvisoScheda)]);
         await page.goto(BASE + '/bacheca?corso=' + A.corso);
-        r = await indietro();
-        const senza = await page.evaluate(() => [...document.querySelectorAll('main a[href^="/bacheca/"]')].map((a) => a.getAttribute('href')).filter((h) => h.includes('da=')));
-        check('controprova: dal ramo del corso il ritorno è il corso, e nessun collegamento porta il segno',
-            r !== null && r.testo === titoloA && r.href === '/courses/' + A.corso && senza.length === 0, [JSON.stringify(r), JSON.stringify(senza)]);
-        u1 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria, 'Metti in evidenza');
-        u2 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria, 'Togli dall’evidenza');
-        check('controprova: senza segno, dopo un\'azione il segno non compare', !conSegno(u1) && !conSegno(u2), [u1, u2]);
+        const ramoB = await page.evaluate(() => (document.querySelector('.nav-corso a[href^="/bacheca?corso="]') || {}).textContent || '');
+        check('nel ramo del corso A: «Bacheca» con il numero da valutare', /^Bacheca\s+1\s+da valutare$/.test(ramoB.replace(/\s+/g, ' ').trim()), [ramoB]);
+        await page.setViewportSize({ width: 1280, height: 720 });
 
         // E vede davvero tutti, non pagine vuote: gli studenti del corso
         // pubblicato, come l'admin.
@@ -497,10 +434,6 @@ async function posta(page, url, campi, paginaToken) {
         }), A.corso);
         check('nella bacheca di un corso pubblicato: il ritorno al corso, che dal 06/11 legge, e «Gestione categorie» alla pagina nuova',
             testaB.ritorno === '/courses/' + A.corso && testaB.alCorso && testaB.categorie === '/bacheca/corsi/' + A.corso + '/categorie', [JSON.stringify(testaB)]);
-        await page.goto(BASE + '/bacheca/corsi');
-        const righeB = await page.$$eval('table tbody tr td[data-label="Corso"]', (t) => t.map((x) => x.textContent.trim()));
-        const tuttiCorsi = conta('SELECT COUNT(*) FROM courses');
-        check('l\'elenco «Bacheca» ha tutti i corsi, anche pubblicati e in bozza (' + tuttiCorsi + ')', righeB.length === tuttiCorsi, [righeB.length + ' righe']);
 
         await posta(page, '/admin/courses/' + A.corso + '/bacheca/categorie', [['name', '[prova-supervisore] categoria'], ['color', '#4f7256'], ['torna', 'bacheca']], '/bacheca/corsi/' + A.corso + '/categorie');
         const catNuova = conta('SELECT id FROM board_categories WHERE course_id = ? AND name = ?', A.corso, '[prova-supervisore] categoria');

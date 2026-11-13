@@ -29,7 +29,7 @@ $conCategoria = $categoria === null;
     $col = Bacheca::colore((string) $categoria['color']);
     $base = '/bacheca/categorie/' . (int) $categoria['id'];
     ?>
-    <a href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca?corso=' . $courseId)) ?>" class="back-link"><span class="back-link-testo">Bacheca</span></a>
+    <a href="/bacheca?corso=<?= $courseId ?>" class="back-link"><span class="back-link-testo">Bacheca</span></a>
     <div class="bacheca-cat-testa" style="--cat:<?= $col['primary'] ?>;--cat-soft:<?= $col['soft'] ?>;--cat-titolo:<?= $col['titolo'] ?>">
         <h1><?= htmlspecialchars((string) $categoria['name']) ?></h1>
         <?php if (!empty($categoria['description'])): ?>
@@ -39,11 +39,11 @@ $conCategoria = $categoria === null;
 
     <div class="bacheca-sotto-testa">
         <nav class="bacheca-filtri" aria-label="Quali risorse">
-            <a href="<?= htmlspecialchars(Bacheca::conOrigine($base)) ?>" class="bacheca-filtro<?= $mie ? '' : ' attivo" aria-current="page' ?>">Tutte (<?= $conteggi['tutte'] ?>)</a>
-            <a href="<?= htmlspecialchars(Bacheca::conOrigine($base . '?mie=1')) ?>" class="bacheca-filtro<?= $mie ? ' attivo" aria-current="page' : '' ?>"><?= Icona::svg('bookmark') ?>Le mie risorse (<?= $conteggi['mie'] ?>)</a>
+            <a href="<?= $base ?>" class="bacheca-filtro<?= $mie ? '' : ' attivo" aria-current="page' ?>">Tutte (<?= $conteggi['tutte'] ?>)</a>
+            <a href="<?= $base ?>?mie=1" class="bacheca-filtro<?= $mie ? ' attivo" aria-current="page' : '' ?>"><?= Icona::svg('bookmark') ?>Le mie risorse (<?= $conteggi['mie'] ?>)</a>
         </nav>
         <?php if (BachecaScope::puoPubblicare($courseId)): ?>
-            <a href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca/nuova?corso=' . $courseId . '&categoria=' . (int) $categoria['id'])) ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova risorsa</a>
+            <a href="/bacheca/nuova?corso=<?= $courseId ?>&amp;categoria=<?= (int) $categoria['id'] ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova risorsa</a>
         <?php endif; ?>
     </div>
 <?php else: ?>

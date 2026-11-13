@@ -2704,8 +2704,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     return c ? c.textContent.trim() : null;
                 }, A.corso);
                 check(chi + ' → in «' + (vede ? 'Corsi' : 'I miei corsi') + '», sulla scheda del corso A: '
-                    + (vede ? '«1 proposta da valutare nella bacheca»' : 'nessun avviso di proposte'),
-                    vede ? scheda === '1 proposta da valutare nella bacheca' : scheda === null, [String(scheda)]);
+                    + (vede ? '«1 da valutare in bacheca»' : 'nessun avviso di proposte'),
+                    vede ? scheda === '1 da valutare in bacheca' : scheda === null, [String(scheda)]);
                 await ctx.close();
             }
             for (const [email, chi, prove] of CASI) {

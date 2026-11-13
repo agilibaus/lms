@@ -44,30 +44,6 @@ final class BoardModel
     }
 
     /** @return array<string, mixed>|null */
-    /**
-     * Per ogni corso: categorie, risorse pubblicate e proposte da valutare
-     * (06/11, la pagina «Bacheca» di chi gestisce le bacheche di tutti).
-     *
-     * @return array<int, array{categorie: int, risorse: int, proposte: int}>
-     */
-    public static function riepilogoPerCorso(): array
-    {
-        $righe = Database::connection()->query(
-            "SELECT c.id,
-                    (SELECT COUNT(*) FROM board_categories bc WHERE bc.course_id = c.id) AS categorie,
-                    (SELECT COUNT(*) FROM board_resources r WHERE r.course_id = c.id AND r.status = 'published') AS risorse,
-                    (SELECT COUNT(*) FROM board_resources r WHERE r.course_id = c.id AND r.status = 'pending') AS proposte
-             FROM courses c"
-        )->fetchAll();
-        $out = [];
-
-        foreach ($righe as $r) {
-            $out[(int) $r['id']] = ['categorie' => (int) $r['categorie'], 'risorse' => (int) $r['risorse'], 'proposte' => (int) $r['proposte']];
-        }
-
-        return $out;
-    }
-
     public static function categoria(int $id): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM board_categories WHERE id = :id');

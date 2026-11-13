@@ -26,7 +26,7 @@ $courseId = (int) $corso['id'];
 ?>
 <?php require __DIR__ . '/../admin/_flash.php'; ?>
 <div class="page-header">
-    <a href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca?corso=' . $courseId)) ?>" class="back-link"><span class="back-link-testo">Bacheca</span></a>
+    <a href="/bacheca?corso=<?= $courseId ?>" class="back-link"><span class="back-link-testo">Bacheca</span></a>
     <h1>Proposte da valutare</h1>
     <p class="page-subtitle">
         <?= $proposte === [] ? 'Nessuna proposta in attesa' : htmlspecialchars(ucfirst(Bacheca::daValutare(count($proposte)))) ?>
@@ -54,7 +54,7 @@ $courseId = (int) $corso['id'];
 
         <div class="bacheca-decidi">
             <form action="/bacheca/risorse/<?= $pid ?>/pubblica" method="post" class="form-inline">
-                <?= Csrf::field() ?><?= Bacheca::campoOrigine() ?>
+                <?= Csrf::field() ?>
                 <label for="proposta-<?= $pid ?>-modulo">Modulo</label>
                 <select id="proposta-<?= $pid ?>-modulo" name="module_id">
                     <?php foreach ($moduli as $m): ?>
@@ -74,10 +74,10 @@ $courseId = (int) $corso['id'];
                 <button type="submit" class="btn btn-primary">Pubblica</button>
                 <button type="reset" class="btn btn-secondary">Annulla</button>
             </form>
-            <a class="link-btn comando-con-icona" href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca/risorse/' . $pid . '/modifica')) ?>"><?= Icona::svg('pencil') ?>Correggi prima di pubblicare</a>
+            <a class="link-btn comando-con-icona" href="/bacheca/risorse/<?= $pid ?>/modifica"><?= Icona::svg('pencil') ?>Correggi prima di pubblicare</a>
             <form action="/bacheca/risorse/<?= $pid ?>/scarta" method="post"
                   onsubmit="return confirm('Non pubblicare la proposta? Chi l’ha proposta la vedrà «Non pubblicata».');">
-                <?= Csrf::field() ?><?= Bacheca::campoOrigine() ?>
+                <?= Csrf::field() ?>
                 <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-lg') ?>Non pubblicare</button>
             </form>
         </div>

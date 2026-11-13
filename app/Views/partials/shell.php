@@ -176,16 +176,11 @@ use App\Core\Csrf;
             <?php if (Auth::canAny('report.view', 'report.view_assigned')): ?>
                 <a href="/reports" class="nav-link<?= $voce('/reports') ?>">Report</a>
             <?php endif; ?>
-            <?php /* La Bacheca di tutti i corsi (06/11): al supervisore, che la
-                     bacheca dei corsi pubblicati non la raggiunge dal ramo del
-                     corso. L'admin la apre dal ramo come prima.
-                     Dal 13/11 (Alessandro, A) si chiama «Bacheche», e si accende
-                     solo fuori da un corso: dentro la bacheca di un corso e' accesa
-                     la «Bacheca» del ramo, e prima lo erano tutte e due. */ ?>
-            <?php if ($supervisore && Auth::can('board.manage')): ?>
-                <?php $bachecheAccesa = ($ramo === null || !$ramo['bacheca']) ? $voce('/bacheca') : ''; ?>
-                <a href="/bacheca/corsi" class="nav-link<?= $bachecheAccesa ?>">Bacheche</a>
-            <?php endif; ?>
+            <?php /* La voce «Bacheche» (06/11, rinominata il 13/11) non c'e' piu'
+                     dal 13/11 (Alessandro): il supervisore, che legge tutti i
+                     corsi, arriva alla bacheca di ognuno dal ramo del corso, come
+                     l'Amministratore, e le proposte da valutare le vede in «Corsi»
+                     e nel ramo. */ ?>
             <?php if (Auth::can('question.answer')): ?>
                 <?php
                 /* Le domande degli studenti (07/10), con il numero di quelle in

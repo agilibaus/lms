@@ -20,9 +20,7 @@ use App\Core\FileType;
  */
 
 $rid = (int) $r['id'];
-// Con il segno di chi arriva da «Bacheche» (13/11): dopo l'azione si torna
-// qui, e la bacheca dice ancora «◀ Bacheche».
-$torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, ENT_QUOTES) . '">' . Bacheca::campoOrigine();
+$torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, ENT_QUOTES) . '">';
 ?>
 <li class="bacheca-risorsa<?= (int) $r['featured'] === 1 ? ' in-evidenza' : '' ?>" id="risorsa-<?= $rid ?>">
     <div class="bacheca-testa">
@@ -60,7 +58,7 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
             </button>
         </form>
         <?php if ($r['gestisce']): ?>
-            <a class="link-btn comando-con-icona" href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca/risorse/' . $rid . '/modifica')) ?>"><?= Icona::svg('pencil') ?>Modifica</a>
+            <a class="link-btn comando-con-icona" href="/bacheca/risorse/<?= $rid ?>/modifica"><?= Icona::svg('pencil') ?>Modifica</a>
             <form action="/bacheca/risorse/<?= $rid ?>/evidenza" method="post">
                 <?= Csrf::field() ?><?= $torna ?>
                 <input type="hidden" name="si" value="<?= (int) $r['featured'] === 1 ? '0' : '1' ?>">
@@ -68,7 +66,7 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
             </form>
             <form action="/bacheca/risorse/<?= $rid ?>/togli" method="post"
                   onsubmit="return confirm('Togliere la risorsa dalla bacheca? Non si cancella: chi l’ha proposta la vede «Non pubblicata».');">
-                <?= Csrf::field() ?><?= Bacheca::campoOrigine() ?>
+                <?= Csrf::field() ?>
                 <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-circle') ?>Togli dalla bacheca</button>
             </form>
         <?php endif; ?>

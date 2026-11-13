@@ -535,25 +535,6 @@ class BoardController
      * @return array<string, mixed>|null
      */
     /**
-     * La pagina «Bacheca» di chi gestisce le bacheche di tutti i corsi
-     * (06/11, variante 1A): il supervisore la raggiunge dal menu, perche' la
-     * bacheca di un corso si apre dal ramo del corso, e lui i corsi
-     * pubblicati non li apre.
-     */
-    public function courses(array $params = []): void
-    {
-        Auth::requirePermission('board.manage');
-
-        View::render('bacheca/corsi', [
-            // «Bacheche» (13/11, Alessandro): come la voce del menu, per non
-            // confonderla con la «Bacheca» di un corso.
-            'pageTitle' => 'Bacheche',
-            'corsi' => BachecaScope::corsi(),
-            'numeri' => BoardModel::riepilogoPerCorso(),
-        ]);
-    }
-
-    /**
      * Le categorie della bacheca di un corso, in una pagina sua (06/11,
      * variante 2A): lo stesso riquadro della scheda del corso, che il
      * supervisore non apre per i corsi pubblicati. Le azioni tornano qui.
@@ -740,8 +721,7 @@ class BoardController
     private function torna(string $dove, string $messaggio, bool $bene, string $ancora = ''): never
     {
         $_SESSION[$bene ? 'flash_success' : 'flash_error'] = $messaggio;
-        // Chi e' arrivato da «Bacheche» ci resta anche dopo un'azione (13/11).
-        header('Location: ' . Bacheca::conOrigine($dove) . $ancora);
+        header('Location: ' . $dove . $ancora);
         exit;
     }
 }

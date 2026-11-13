@@ -41,7 +41,7 @@ $stati = [
 ?>
 <?php require __DIR__ . '/../admin/_flash.php'; ?>
 <div class="page-header">
-    <a href="<?= htmlspecialchars(Bacheca::conOrigine($inAttesa ? '/bacheca/proposte?corso=' . $courseId : '/bacheca?corso=' . $courseId)) ?>" class="back-link"><span class="back-link-testo"><?= $inAttesa ? 'Proposte da valutare' : 'Bacheca' ?></span></a>
+    <a href="<?= $inAttesa ? '/bacheca/proposte?corso=' . $courseId : '/bacheca?corso=' . $courseId ?>" class="back-link"><span class="back-link-testo"><?= $inAttesa ? 'Proposte da valutare' : 'Bacheca' ?></span></a>
     <h1><?= htmlspecialchars((string) $pageTitle) ?></h1>
     <p class="page-subtitle">
         <?php if (!$staff): ?>
@@ -60,7 +60,7 @@ $stati = [
 <?php else: ?>
     <section class="card" aria-label="<?= htmlspecialchars((string) $pageTitle, ENT_QUOTES) ?>">
         <form action="<?= htmlspecialchars($azione, ENT_QUOTES) ?>" method="post" class="form"<?= $staff ? ' enctype="multipart/form-data"' : '' ?>>
-            <?= Csrf::field() ?><?= Bacheca::campoOrigine() ?>
+            <?= Csrf::field() ?>
 
             <label for="bacheca-titolo">Titolo</label>
             <input type="text" id="bacheca-titolo" name="title" required maxlength="<?= Bacheca::MAX_TITOLO ?>" value="<?= $v('title') ?>">
@@ -153,7 +153,7 @@ $stati = [
                 <?php else: ?>
                     <button type="submit" class="btn btn-primary"><?= $esistente ? 'Salva' : 'Pubblica' ?></button>
                 <?php endif; ?>
-                <a href="<?= htmlspecialchars(Bacheca::conOrigine($inAttesa ? '/bacheca/proposte?corso=' . $courseId : '/bacheca?corso=' . $courseId)) ?>" class="btn btn-secondary">Annulla</a>
+                <a href="<?= $inAttesa ? '/bacheca/proposte?corso=' . $courseId : '/bacheca?corso=' . $courseId ?>" class="btn btn-secondary">Annulla</a>
             </div>
         </form>
     </section>
