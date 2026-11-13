@@ -1872,14 +1872,24 @@ EXTRA['Catalogo'] = async (page, nome) => {
             // «Leggi tutto» e «Chiudi» stanno con il testo che aprono, non con
             // le lezioni sotto (variante C, 10/10): prima erano a 14 px dalla
             // descrizione e a 3 dalle lezioni.
-            const lezioni = c.querySelector('.catalogo-lezioni');
+            // In un corso a pagamento al posto della riga delle lezioni c'e' il
+            // pulsante del prezzo (0331, 0336): la distanza si misura da quello
+            // (13/11). Prima la prova cercava la riga che non c'e' e si
+            // fermava, e con lei tutta la suite.
+            const lezioni = c.querySelector('.catalogo-lezioni') || c.querySelector('.catalogo-paga');
+
+            if (lezioni === null) {
+                problemi.push(titolo + ': sotto «Leggi tutto» non c\'e\' ne\' la riga delle lezioni ne\' il prezzo');
+                continue;
+            }
+
             const vicini = (sopra, comando) => {
                 const a = sopra.getBoundingClientRect(), b = comando.getBoundingClientRect(), l = lezioni.getBoundingClientRect();
                 return { col_testo: Math.round(b.top - a.bottom), con_lezioni: Math.round(l.top - b.bottom) };
             };
             const chiusa = vicini(c.querySelector('.catalogo-estratto'), leggi.querySelector(':scope > summary'));
 
-            if (lezioni === null || chiusa.col_testo >= chiusa.con_lezioni) {
+            if (chiusa.col_testo >= chiusa.con_lezioni) {
                 problemi.push(titolo + ': «Leggi tutto» non sta piu\' vicino alla descrizione che alle lezioni ' + JSON.stringify(chiusa));
             }
 
