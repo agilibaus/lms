@@ -552,10 +552,13 @@ class QuizController
             return;
         }
 
-        // Il supervisore vede le domande ma non invia risposte, in nessun
-        // corso, nemmeno nelle bozze (06/11, Alessandro): non lascia tentativi
-        // suoi.
-        if (Auth::hasRole('supervisore')) {
+        // Solo lo studente invia le risposte (13/11, Alessandro): gli altri
+        // ruoli vedono le domande ma non lasciano tentativi, in nessun corso,
+        // nemmeno nelle bozze. Era la regola del supervisore (06/11), estesa
+        // a tutti: le righe dello staff non servono e appesantiscono report e
+        // database. Una regola sola, scritta «solo lo studente»: un ruolo
+        // nuovo resta fuori finche' qualcuno non decide di farlo entrare.
+        if (!Auth::hasRole('studente')) {
             $_SESSION['flash_error'] = 'Sola lettura: le risposte non si inviano.';
             $this->redirect('/quizzes/' . $quiz['id']);
         }

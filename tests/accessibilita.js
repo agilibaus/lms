@@ -446,8 +446,12 @@ async function fuocoInvisibile(page) {
                     }
                 }
 
+                // `:disabled` e non `el.disabled` (13/11): un campo dentro un
+                // `fieldset` disattivato e' spento e non prende il fuoco, ma
+                // la sua proprieta' `disabled` resta falsa. Sono le risposte
+                // di un questionario in sola lettura, per chi non e' studente.
                 return r.width > 0 && r.height > 0 && s.visibility !== 'hidden'
-                    && el.getAttribute('tabindex') !== '-1' && !el.disabled;
+                    && el.getAttribute('tabindex') !== '-1' && !el.matches(':disabled');
             });
 
         for (const el of comandi) {

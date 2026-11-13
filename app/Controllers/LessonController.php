@@ -736,10 +736,13 @@ class LessonController
             return;
         }
 
-        // Il supervisore legge e basta (06/11): non lascia avanzamenti suoi.
-        if (Auth::hasRole('supervisore')) {
+        // Solo lo studente segna le lezioni come fatte (13/11, Alessandro):
+        // gli altri ruoli leggono e basta, come il supervisore dal 06/11, e
+        // non lasciano avanzamenti loro. La stessa regola dell'invio dei
+        // questionari, in `QuizController::submit`.
+        if (!Auth::hasRole('studente')) {
             http_response_code(403);
-            echo 'Sola lettura: il supervisore non segna le lezioni come fatte.';
+            echo 'Sola lettura: le lezioni le segna come fatte solo lo studente.';
             return;
         }
 

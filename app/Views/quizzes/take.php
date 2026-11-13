@@ -64,9 +64,11 @@ use App\Core\QuizScoring;
         <?= Csrf::field() ?>
         <?php /* Concluso: un `fieldset` disattivato spegne in un colpo solo
                  tutte le risposte e il pulsante, anche da tastiera. */ ?>
-        <?php /* Il supervisore (06/11) vede le domande in sola lettura: le
-                 risposte spente come in un questionario concluso. */ ?>
-        <?php $solaLettura = Auth::hasRole('supervisore'); ?>
+        <?php /* Chi non e' studente vede le domande in sola lettura: le
+                 risposte spente come in un questionario concluso. Era del
+                 supervisore (06/11); dal 13/11 vale per tutti gli altri
+                 ruoli, come il blocco in `QuizController::submit`. */ ?>
+        <?php $solaLettura = !Auth::hasRole('studente'); ?>
         <fieldset class="quiz-concluso-campi" <?= $concluso || $solaLettura ? 'disabled' : '' ?>>
         <ol class="quiz-question-list">
             <?php foreach ($questions as $indice => $question): ?>
@@ -162,10 +164,8 @@ use App\Core\QuizScoring;
                     <a href="/courses/<?= (int) $module['course_id'] ?>#modulo-<?= (int) $module['id'] ?>" class="btn btn-secondary">Annulla</a>
                 <?php endif; ?>
             </div>
-        <?php elseif ($solaLettura): ?>
-            <p class="form-hint">Sola lettura: le risposte non si inviano.</p>
         <?php else: ?>
-            <p class="form-hint">Anteprima per lo staff: l'invio è riservato agli studenti iscritti.</p>
+            <p class="form-hint">Sola lettura: le risposte non si inviano.</p>
         <?php endif; ?>
         </fieldset>
     </form>
