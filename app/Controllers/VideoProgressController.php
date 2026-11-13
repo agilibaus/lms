@@ -105,17 +105,19 @@ class VideoProgressController
         $userId = (int) Auth::id();
         $courseId = (int) $module['course_id'];
 
-        // Chi non e' iscritto non genera fruizione. Lo staff puo' guardare i
+        // Solo lo studente iscritto genera fruizione. Lo staff puo' guardare i
         // video per lavoro, e quel tempo non e' didattica di nessuno: non va
-        // nel rendiconto. Anche il supervisore, sui corsi in bozza (30/10).
-        if (!Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente')) {
-            if (EnrollmentModel::find($userId, $courseId) === null) {
-                http_response_code(403);
-                echo json_encode(['errore' => 'non iscritto']);
-                return;
-            }
-        } elseif (EnrollmentModel::find($userId, $courseId) === null) {
+        // nel rendiconto, nemmeno se ha iscrizioni (13/11: uno studente
+        // diventato staff le conserva). La stessa regola di «Segna come
+        // fatta» e dell'invio dei questionari (0360).
+        if (!Auth::hasRole('studente')) {
             http_response_code(204);
+            return;
+        }
+
+        if (EnrollmentModel::find($userId, $courseId) === null) {
+            http_response_code(403);
+            echo json_encode(['errore' => 'non iscritto']);
             return;
         }
 

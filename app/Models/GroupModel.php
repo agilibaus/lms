@@ -255,12 +255,32 @@ class GroupModel
         $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * Solo gli studenti sono membri di un gruppo (13/11, Alessandro): il
+     * tutor guida il gruppo come tutor responsabile, e nessuno dello staff
+     * vi entra come membro. Chi chiama controlla il ruolo per dire perche';
+     * qui la regola vale comunque, qualunque sia la strada.
+     */
     public static function addMember(int $groupId, int $userId): void
     {
         $stmt = Database::connection()->prepare(
-            'INSERT IGNORE INTO group_members (group_id, user_id) VALUES (:group_id, :user_id)'
+            'INSERT IGNORE INTO group_members (group_id, user_id)
+             SELECT :group_id, u.id FROM users u WHERE u.id = :user_id AND u.role = \'studente\''
         );
         $stmt->execute(['group_id' => $groupId, 'user_id' => $userId]);
+    }
+
+    /**
+     * Toglie un utente da tutti i suoi gruppi (13/11): succede quando uno
+     * studente diventa staff. Le iscrizioni restano, come in `removeMember()`.
+     * Torna da quanti gruppi e' uscito.
+     */
+    public static function removeFromAllGroups(int $userId): int
+    {
+        $stmt = Database::connection()->prepare('DELETE FROM group_members WHERE user_id = :user_id');
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->rowCount();
     }
 
     public static function removeMember(int $groupId, int $userId): void

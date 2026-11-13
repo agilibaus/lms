@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\ExStudente;
 use App\Core\Ordinamento;
 use App\Core\Icona;
 
@@ -88,6 +89,11 @@ $rows = $ordine->applica($rows);
                 <td role="cell" data-label="Studente">
                     <a href="/reports/students/<?= (int) $row['user_id'] ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
                     <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
+                    <?php /* Lo studente diventato staff (13/11, variante 3A). */ ?>
+                    <?php $exStudente = ExStudente::frase((string) $row['role']); ?>
+                    <?php if ($exStudente !== null): ?>
+                        <span class="cell-sub"><?= htmlspecialchars($exStudente) ?></span>
+                    <?php endif; ?>
                 </td>
                 <td role="cell" data-label="Progresso">
                     <?= number_format((float) $row['progress_pct'], 0) ?>%
@@ -107,7 +113,8 @@ $rows = $ordine->applica($rows);
                     <?php endif; ?>
                 </td>
                 <td role="cell" class="row-actions">
-                    <?php if (Auth::can('certificate.issue') && empty($row['certificate_code'])): ?>
+                    <?php /* Solo a uno studente (13/11): a chi e' diventato staff no. */ ?>
+                    <?php if (Auth::can('certificate.issue') && empty($row['certificate_code']) && $exStudente === null): ?>
                         <form action="/certificates/issue" method="post">
     <?= Csrf::field() ?>
                             <input type="hidden" name="user_id" value="<?= (int) $row['user_id'] ?>">

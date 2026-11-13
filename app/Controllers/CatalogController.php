@@ -27,7 +27,7 @@ class CatalogController
     public function index(array $params = []): void
     {
         Auth::requireLogin();
-        $this->chiusoAlSupervisore();
+        $this->soloStudenti();
 
         View::render('catalog/index', [
             'pageTitle' => 'Esplora corsi',
@@ -41,7 +41,7 @@ class CatalogController
     public function enroll(array $params): void
     {
         Auth::requireLogin();
-        $this->chiusoAlSupervisore();
+        $this->soloStudenti();
 
         $course = CourseModel::find((int) $params['id']);
         $userId = (int) Auth::id();
@@ -129,14 +129,16 @@ class CatalogController
     }
 
     /**
-     * Il catalogo serve a iscriversi ai corsi pubblicati: il supervisore lavora
-     * solo sui corsi in bozza, e per lui i pubblicati non ci sono (30/10).
+     * Il catalogo e' degli studenti (13/11, Alessandro): serve a iscriversi,
+     * e ai corsi si iscrivono solo loro. Lo staff, supervisore compreso, non
+     * ha la voce nel menu e non ci arriva in nessun modo: la pagina e l'invio
+     * lo rimandano a «Corsi», dove vede tutti i corsi. Un invio fatto a mano
+     * si ferma qui, prima di creare un'iscrizione o una richiesta.
      */
-    private function chiusoAlSupervisore(): void
+    private function soloStudenti(): void
     {
-        if (Auth::hasRole('supervisore')) {
-            http_response_code(403);
-            exit('Il catalogo è per gli studenti: il supervisore lavora sui corsi in bozza, da «Gestione corsi».');
+        if (!Auth::hasRole('studente')) {
+            $this->redirect('/');
         }
     }
 }

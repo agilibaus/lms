@@ -67,6 +67,11 @@ class EnrollmentModel
      * in un gruppo, importazione): i membri dei gruppi a cui la bozza e'
      * assegnata li iscrive la pubblicazione (`iscriviAllaPubblicazione()`).
      *
+     * Solo gli studenti (13/11, Alessandro): lo staff non e' mai iscritto a
+     * un corso, qualunque sia la strada (catalogo, a mano, gruppo,
+     * pubblicazione, Stripe). Le iscrizioni di uno studente diventato staff
+     * restano: sono la sua storia di studente.
+     *
      * @param int[] $userIds
      * @param int[] $courseIds
      * @param bool $conferma come in `enroll()`
@@ -85,7 +90,7 @@ class EnrollmentModel
              SELECT u.id, c.id, IF(:conferma = 1 AND u.invite_pending = 0, 1, 0)
              FROM users u
              INNER JOIN courses c ON c.id = :course_id AND c.is_published = 1
-             WHERE u.id = :user_id'
+             WHERE u.id = :user_id AND u.role = \'studente\''
         );
 
         $created = 0;

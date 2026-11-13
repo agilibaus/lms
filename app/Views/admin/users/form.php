@@ -126,7 +126,11 @@ $haFoto = !empty($user['avatar_path']);
     </div>
 </form>
 
-<?php if ($isEdit): ?>
+<?php /* Nei gruppi entrano solo gli studenti (13/11, variante 2A): per lo
+         staff la sezione non c'e'. Resta solo se lo staff e' ancora membro di
+         un gruppo da prima, per poterlo togliere, ma senza «Aggiungi». */ ?>
+<?php $gruppiPerLui = $currentRole === 'studente'; ?>
+<?php if ($isEdit && ($gruppiPerLui || $groups !== [])): ?>
     <section class="card">
         <h2>Gruppi</h2>
         <p class="card-meta">
@@ -167,7 +171,9 @@ $haFoto = !empty($user['avatar_path']);
             </ul>
         <?php endif; ?>
 
-        <?php if ($canManageGroups && $availableGroups !== []): ?>
+        <?php if (!$gruppiPerLui): ?>
+            <?php /* Staff ancora membro da prima: si toglie, non si aggiunge. */ ?>
+        <?php elseif ($canManageGroups && $availableGroups !== []): ?>
             <form action="/admin/users/<?= $userId ?>/groups" method="post" class="form form-inline">
                 <?= Csrf::field() ?>
                 <select name="group_id" aria-label="Gruppo a cui aggiungere l'utente">

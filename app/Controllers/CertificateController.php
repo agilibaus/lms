@@ -96,8 +96,18 @@ class CertificateController
         $courseId = (int) ($_POST['course_id'] ?? 0);
         $redirectTo = $this->safeRedirectTarget($_POST['redirect_to'] ?? '/certificates');
 
-        if (UserModel::find($userId) === null || CourseModel::find($courseId) === null) {
+        $utente = UserModel::find($userId);
+
+        if ($utente === null || CourseModel::find($courseId) === null) {
             $_SESSION['flash_error'] = 'Utente o corso non validi.';
+            $this->redirect($redirectTo);
+        }
+
+        // Il certificato si emette solo a uno studente (13/11): a chi e'
+        // diventato staff non piu', anche se ha le iscrizioni di allora. Nel
+        // Report per corso «Emetti certificato» per lui non c'e'.
+        if (($utente['role'] ?? '') !== 'studente') {
+            $_SESSION['flash_error'] = 'Il certificato si emette solo agli studenti.';
             $this->redirect($redirectTo);
         }
 

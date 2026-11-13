@@ -7,7 +7,9 @@
  *   - dal 06/11 legge i corsi pubblicati (in «Corsi», pagina, lezioni,
  *     questionari) senza modificarli; non invia questionari e non segna
  *     lezioni come fatte, in nessun corso;
- *   - non gestisce utenti, iscrizioni dalla scheda del corso, incontri, catalogo;
+ *   - non gestisce utenti, iscrizioni dalla scheda del corso, incontri, catalogo
+ *     (dal 13/11 il catalogo rimanda a «Corsi», come per tutto lo staff: lo
+ *     prova `staff_studenti.js`);
  *   - dal 06/11 crea e gestisce tutti i gruppi (dati, tutor, membri, corsi
  *     anche pubblicati, date dei moduli), ma non li elimina e non apre la
  *     pagina del gruppo dei partecipanti;
@@ -218,7 +220,6 @@ async function posta(page, url, campi, paginaToken) {
             ['/lessons/' + A.lezione + '/edit', 'modifica di una lezione di un corso pubblicato'],
             ['/modules/' + A.modulo + '/edit', 'un modulo di un corso pubblicato'],
             ['/quizzes/' + A.quiz + '/edit', 'modifica di un questionario di un corso pubblicato'],
-            ['/catalogo', 'il catalogo, che iscrive ai corsi pubblicati'],
             ['/admin/users', 'gli utenti'],
             ['/gruppi/' + A.gruppo, 'la pagina del gruppo dei partecipanti'],
             ['/admin/settings/posta', 'il server di posta'],

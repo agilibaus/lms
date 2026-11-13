@@ -586,7 +586,8 @@ const PAGINE_INTERNE = [
     ['/admin/settings/meet', 'Google Meet'],
     ['/admin/settings/informazioni', 'Informazioni su Pistacchio LMS'],
 
-    ['/catalogo', 'Catalogo'],
+    // Il catalogo dal 13/11 e' solo degli studenti: lo staff viene rimandato
+    // a «Corsi». Lo prova `giroCatalogoStudente`, alle stesse larghezze.
 ];
 
 /*
@@ -1953,6 +1954,9 @@ EXTRA['Catalogo'] = async (page, nome) => {
 // pubblicate (10/10).
 EXTRA['Domande in attesa (semina)'] = EXTRA['Quiz da svolgere'];
 
+// Il catalogo, visto dallo studente (13/11): `giroCatalogoStudente`.
+EXTRA['Catalogo (studente)'] = EXTRA['Catalogo'];
+
 // E i campi che hanno avuto il limite il 10/10: descrizione del gruppo e
 // della sessione dal vivo, testo della domanda del questionario, titolo e
 // testo della pagina d'accesso, testi delle email (pagina Messaggi email, 12/10).
@@ -2083,6 +2087,53 @@ async function giroSenzaMouse(browser) {
             segni.conMouse ? ['il contesto dice di avere il mouse'] : segni.senzaSottolineatura);
     }
 
+    await ctx.close();
+}
+
+/*
+ * IL CATALOGO, DA STUDENTE (13/11). Fino al 13/11 lo guardava l'admin, nel
+ * giro principale e in quelli alle larghezze estreme e senza mouse; da quel
+ * giorno il catalogo e' solo degli studenti e lo staff viene rimandato a
+ * «Corsi». Qui lo studente del mondo A lo ripercorre tutto: le prove intere
+ * sul computer e al telefono, lo sforamento a 320 px e col telefono di lato,
+ * i comandi sottolineati senza mouse.
+ */
+async function giroCatalogoStudente(browser) {
+    const accedi = async (page) => {
+        await page.goto(BASE + '/login');
+        await page.fill('input[name="email"]', 'stud@test.it');
+        await page.fill('input[name="password"]', PASS);
+        await page.click('form.auth-form button[type="submit"]');
+        await page.waitForLoadState('load');
+    };
+
+    for (const [larghezza, altezza, etichetta] of [[1440, 900, 'desktop'], [390, 844, 'telefono']]) {
+        console.log('\n=== catalogo, da studente: ' + etichetta + ' (' + larghezza + '×' + altezza + ') ===');
+        const ctx = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+        const page = await ctx.newPage();
+        await accedi(page);
+        await esamina(page, '/catalogo', 'Catalogo (studente)', BERSAGLIO_MINIMO, larghezza <= 500);
+        await ctx.close();
+    }
+
+    for (const [larghezza, altezza, etichetta] of [[320, 568, 'minimo WCAG'], [844, 390, 'telefono di lato']]) {
+        console.log('\n=== catalogo, da studente: ' + etichetta + ' (' + larghezza + '×' + altezza + ') — solo scorrimento orizzontale ===');
+        const ctx = await browser.newContext({ viewport: { width: larghezza, height: altezza } });
+        const page = await ctx.newPage();
+        await accedi(page);
+        await page.goto(BASE + '/catalogo');
+        await controllaSforamento(page, 'Catalogo (studente)');
+        await ctx.close();
+    }
+
+    console.log('\n=== catalogo, da studente: telefono senza mouse (390×844, tattile) ===');
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await ctx.newPage();
+    await accedi(page);
+    await page.goto(BASE + '/catalogo');
+    const segni = await comeSiRiconoscono(page);
+    check('Catalogo (studente): senza mouse ogni comando è sottolineato', !segni.conMouse && segni.senzaSottolineatura.length === 0,
+        segni.conMouse ? ['il contesto dice di avere il mouse'] : segni.senzaSottolineatura);
     await ctx.close();
 }
 
@@ -3268,6 +3319,7 @@ async function giroBenvenuto(browser) {
 
         await giroLarghezzeEstreme(browser);
         await giroSenzaMouse(browser);
+        await giroCatalogoStudente(browser);
         await giroBenvenuto(browser);
         await giroAgendaMese(browser);
     } finally {

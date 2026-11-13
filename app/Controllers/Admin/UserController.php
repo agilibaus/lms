@@ -291,6 +291,13 @@ class UserController extends AdminController
         );
         UserModel::setAssistantTutors($id, $data['role'], $data['tutor_ids']);
 
+        // Uno studente che diventa staff esce dai suoi gruppi (13/11,
+        // Alessandro): nei gruppi stanno solo gli studenti. Le iscrizioni ai
+        // corsi restano, e fra gli iscritti lo dice una frase.
+        if ($data['role'] !== 'studente') {
+            GroupModel::removeFromAllGroups($id);
+        }
+
         if ($nuovaFoto !== null) {
             UserModel::updateAvatar($id, $nuovaFoto);
 
@@ -426,6 +433,13 @@ class UserController extends AdminController
 
         $userId = (int) $user['id'];
         $redirect = '/admin/users/' . $userId . '/edit';
+
+        // Nei gruppi entrano solo gli studenti (13/11): per lo staff la pagina
+        // non propone nemmeno la sezione.
+        if ($user['role'] !== 'studente') {
+            $this->fail('Nei gruppi entrano solo gli studenti.', $redirect);
+        }
+
         $group = $this->findManageableGroup((int) ($_POST['group_id'] ?? 0));
 
         if ($group === null) {

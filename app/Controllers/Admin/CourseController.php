@@ -449,8 +449,16 @@ class CourseController extends AdminController
         $redirect = '/admin/courses/' . (int) $course['id'] . '/edit';
         $userId = (int) ($_POST['user_id'] ?? 0);
 
-        if (UserModel::find($userId) === null) {
+        $iscritto = UserModel::find($userId);
+
+        if ($iscritto === null) {
             $this->fail('Utente non trovato.', $redirect);
+        }
+
+        // Ai corsi si iscrivono solo gli studenti (13/11): l'elenco propone
+        // gia' solo loro, e un invio fatto a mano si ferma qui.
+        if ($iscritto['role'] !== 'studente') {
+            $this->fail('Ai corsi si iscrivono solo gli studenti.', $redirect);
         }
 
         // A una bozza non si iscrive nessuno (06/11): e' un corso non ancora
@@ -516,6 +524,14 @@ class CourseController extends AdminController
 
         if ($approve && $corsoRichiesta !== null && (int) $corsoRichiesta['is_published'] === 0) {
             $this->fail('Il corso è in bozza: la richiesta si approva quando viene pubblicato.', $redirect);
+        }
+
+        // Chi l'ha fatta da studente e nel frattempo e' diventato staff non si
+        // iscrive piu' (13/11): approvarla direbbe «iscritto» senza esserlo.
+        $richiedente = UserModel::find($userId);
+
+        if ($approve && ($richiedente === null || $richiedente['role'] !== 'studente')) {
+            $this->fail('Chi ha fatto la richiesta non è più uno studente: si può solo rifiutare.', $redirect);
         }
 
         EnrollmentRequestModel::decide((int) $request['id'], $approve ? 'approved' : 'rejected', (int) Auth::id());

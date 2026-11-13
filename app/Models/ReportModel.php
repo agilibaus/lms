@@ -41,7 +41,7 @@ class ReportModel
     public static function courseDetail(int $courseId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT u.id AS user_id, u.full_name, u.email,
+            'SELECT u.id AS user_id, u.full_name, u.email, u.role,
                     e.enrolled_at, e.progress_pct, e.completed_at,
                     (SELECT COUNT(*)
                        FROM lesson_progress lp

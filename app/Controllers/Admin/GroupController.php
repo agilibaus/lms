@@ -309,6 +309,12 @@ class GroupController extends AdminController
             $this->fail('Utente non trovato.', $redirect);
         }
 
+        // Nel gruppo entrano solo gli studenti (13/11): l'elenco propone gia'
+        // solo loro, e un invio fatto a mano si ferma qui.
+        if ($user['role'] !== 'studente') {
+            $this->fail('Nei gruppi entrano solo gli studenti.', $redirect);
+        }
+
         // Il tutor aggiunge solo chi e' gia' iscritto a un corso del gruppo e
         // in quel corso non ha ancora un gruppo (26/10): non sceglie fra tutti
         // gli studenti della piattaforma.
