@@ -545,7 +545,9 @@ class BoardController
         Auth::requirePermission('board.manage');
 
         View::render('bacheca/corsi', [
-            'pageTitle' => 'Bacheca',
+            // «Bacheche» (13/11, Alessandro): come la voce del menu, per non
+            // confonderla con la «Bacheca» di un corso.
+            'pageTitle' => 'Bacheche',
             'corsi' => BachecaScope::corsi(),
             'numeri' => BoardModel::riepilogoPerCorso(),
         ]);

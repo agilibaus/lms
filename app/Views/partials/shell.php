@@ -178,9 +178,13 @@ use App\Core\Csrf;
             <?php endif; ?>
             <?php /* La Bacheca di tutti i corsi (06/11): al supervisore, che la
                      bacheca dei corsi pubblicati non la raggiunge dal ramo del
-                     corso. L'admin la apre dal ramo come prima. */ ?>
+                     corso. L'admin la apre dal ramo come prima.
+                     Dal 13/11 (Alessandro, A) si chiama «Bacheche», e si accende
+                     solo fuori da un corso: dentro la bacheca di un corso e' accesa
+                     la «Bacheca» del ramo, e prima lo erano tutte e due. */ ?>
             <?php if ($supervisore && Auth::can('board.manage')): ?>
-                <a href="/bacheca/corsi" class="nav-link<?= $voce('/bacheca') ?>">Bacheca</a>
+                <?php $bachecheAccesa = ($ramo === null || !$ramo['bacheca']) ? $voce('/bacheca') : ''; ?>
+                <a href="/bacheca/corsi" class="nav-link<?= $bachecheAccesa ?>">Bacheche</a>
             <?php endif; ?>
             <?php if (Auth::can('question.answer')): ?>
                 <?php

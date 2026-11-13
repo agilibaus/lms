@@ -13,7 +13,7 @@ declare(strict_types=1);
  */
 ?>
 <div class="page-header">
-    <h1>Bacheca</h1>
+    <h1>Bacheche</h1>
     <p class="page-subtitle">Le bacheche di tutti i corsi. Apri un corso per pubblicare risorse, valutare le proposte degli studenti e gestire le categorie.</p>
 </div>
 

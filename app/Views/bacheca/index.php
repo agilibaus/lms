@@ -28,9 +28,9 @@ use App\Core\Icona;
     <?php /* Il corso si sceglie entrando nel corso (17/10, variante C): qui
              niente menu dei corsi, ma il ritorno al corso di questa bacheca. */ ?>
     <?php /* Il ritorno al corso solo a chi lo apre (06/11): il supervisore
-             i corsi pubblicati non li apre, e torna all'elenco «Bacheca». */ ?>
+             i corsi pubblicati non li apre, e torna all'elenco «Bacheche». */ ?>
     <?php if ($corso !== null && !\App\Auth\BachecaScope::apreIlCorso((int) $corso['id'])): ?>
-        <a href="/bacheca/corsi" class="back-link"><span class="back-link-testo">Bacheca dei corsi</span></a>
+        <a href="/bacheca/corsi" class="back-link"><span class="back-link-testo">Bacheche</span></a>
     <?php elseif ($corso !== null): ?>
         <a href="/courses/<?= (int) $corso['id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $corso['title']) ?></span></a>
     <?php endif; ?>

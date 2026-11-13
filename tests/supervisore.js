@@ -14,7 +14,9 @@
  *     anche pubblicati, date dei moduli), ma non li elimina e non apre la
  *     pagina del gruppo dei partecipanti;
  *   - dal 06/11 gestisce la Bacheca di tutti i corsi, anche pubblicati
- *     (risorse, proposte, categorie), dalla voce «Bacheca» del menu;
+ *     (risorse, proposte, categorie), dalla voce «Bacheche» del menu (cosi'
+ *     dal 13/11: dentro la bacheca di un corso e' accesa solo la «Bacheca»
+ *     del ramo del corso);
  *   - dal 06/11 vede i report di tutti, come l'admin, anche dei corsi
  *     pubblicati, con i tentativi, e scarica i file;
  *   - delle impostazioni apre solo «Video di benvenuto» e «Informazioni».
@@ -139,9 +141,9 @@ async function posta(page, url, campi, paginaToken) {
         // --- il menu -------------------------------------------------------
         await page.goto(BASE + '/admin/courses');
         const menu = await page.evaluate(() => [...document.querySelectorAll('.sidebar-nav a')].map((a) => a.textContent.trim()));
-        const devono = ['Corsi', 'Report', 'Bacheca', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
+        const devono = ['Corsi', 'Report', 'Bacheche', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
         const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Utenti', 'Domande'];
-        check('menu: «Corsi», «Report», «Bacheca», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
+        check('menu: «Corsi», «Report», «Bacheche», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
             devono.every((v) => menu.includes(v)) && nonDevono.every((v) => !menu.includes(v)), [menu.join(' | ')]);
 
         // --- le pagine -----------------------------------------------------
@@ -195,6 +197,30 @@ async function posta(page, url, campi, paginaToken) {
             const e = await esitoGet(page, url);
             check('supervisore → ' + url + ' (' + cosa + '): consentito', e === 'consentito', [e]);
         }
+
+        // Una voce accesa sola (13/11, Alessandro, A): nella bacheca di un
+        // corso, e nelle sue categorie, la «Bacheca» del ramo; nell'elenco di
+        // tutte, «Bacheche», che e' anche il titolo della pagina. Prima nella
+        // bacheca di un corso erano accese tutte e due.
+        const accese = async (url) => {
+            await page.goto(BASE + url);
+            return page.evaluate(() => ({
+                accese: [...document.querySelectorAll('.sidebar-nav .nav-link-active')].map((a) => (a.closest('.nav-corso') ? 'ramo: ' : '') + a.textContent.trim()),
+                titolo: (document.querySelector('h1') || {}).textContent || '',
+                scheda: document.title,
+            }));
+        };
+        for (const [url, cosa] of [
+            ['/bacheca?corso=' + A.corso, 'nella bacheca di un corso'],
+            ['/bacheca/corsi/' + A.corso + '/categorie', 'nelle categorie della bacheca di un corso'],
+        ]) {
+            const v = await accese(url);
+            check('menu ' + cosa + ': accesa solo la «Bacheca» del ramo del corso', // accanto alla voce del ramo puo' esserci il numero delle proposte da valutare
+                v.accese.length === 1 && /^ramo: Bacheca( |$)/.test(v.accese[0]), [JSON.stringify(v)]);
+        }
+        const tutte = await accese('/bacheca/corsi');
+        check('nell\'elenco di tutte le bacheche: accesa solo «Bacheche», e la pagina si chiama «Bacheche»',
+            tutte.accese.length === 1 && tutte.accese[0] === 'Bacheche' && tutte.titolo.trim() === 'Bacheche' && tutte.scheda.startsWith('Bacheche'), [JSON.stringify(tutte)]);
 
         // E vede davvero tutti, non pagine vuote: gli studenti del corso
         // pubblicato, come l'admin.
