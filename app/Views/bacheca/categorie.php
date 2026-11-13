@@ -17,7 +17,7 @@ $titoloRiquadro = 'Categorie';
 ?>
 <?php require __DIR__ . '/../admin/_flash.php'; ?>
 <div class="page-header">
-    <a href="/bacheca?corso=<?= (int) $course['id'] ?>" class="back-link"><span class="back-link-testo">Bacheca di <?= htmlspecialchars((string) $course['title']) ?></span></a>
+    <a href="<?= htmlspecialchars(\App\Core\Bacheca::conOrigine('/bacheca?corso=' . (int) $course['id'])) ?>" class="back-link"><span class="back-link-testo">Bacheca di <?= htmlspecialchars((string) $course['title']) ?></span></a>
     <h1>Categorie della bacheca</h1>
     <p class="page-subtitle"><?= htmlspecialchars((string) $course['title']) ?></p>
 </div>

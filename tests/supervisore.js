@@ -222,6 +222,87 @@ async function posta(page, url, campi, paginaToken) {
         check('nell\'elenco di tutte le bacheche: accesa solo «Bacheche», e la pagina si chiama «Bacheche»',
             tutte.accese.length === 1 && tutte.accese[0] === 'Bacheche' && tutte.titolo.trim() === 'Bacheche' && tutte.scheda.startsWith('Bacheche'), [JSON.stringify(tutte)]);
 
+        // Arrivati da «Bacheche» (13/11, Alessandro): nella bacheca del corso
+        // il ritorno e' «◀ Bacheche», e lo resta passando da categorie,
+        // proposte, nuova risorsa e gestione delle categorie, anche dopo
+        // un'azione. Arrivati dal ramo del corso, il ritorno e' il corso.
+        const indietro = () => page.evaluate(() => {
+            const a = document.querySelector('a.back-link');
+            return a ? { testo: a.textContent.trim(), href: a.getAttribute('href') } : null;
+        });
+        const conSegno = (h) => typeof h === 'string' && h.includes('da=bacheche');
+        const titoloA = php('$s = $pdo->prepare("SELECT title FROM courses WHERE id = ?"); $s->execute([$argv[1]]); echo $s->fetchColumn();', A.corso).trim();
+
+        await page.goto(BASE + '/bacheca/corsi');
+        const versoA = await page.evaluate((id) => [...document.querySelectorAll('a[href^="/bacheca?corso=' + id + '"]')].map((a) => a.getAttribute('href')), A.corso);
+        check('«Bacheche»: il nome del corso e «Apri la bacheca» portano il segno da=bacheche',
+            versoA.length === 2 && versoA.every(conSegno), [JSON.stringify(versoA)]);
+        await page.click('a[href^="/bacheca?corso=' + A.corso + '&"]:has-text("Apri la bacheca")');
+        await page.waitForLoadState('load');
+        let r = await indietro();
+        check('aperta da «Bacheche», la bacheca del corso ha «◀ Bacheche», che riporta all\'elenco',
+            r !== null && r.testo === 'Bacheche' && r.href === '/bacheca/corsi', [JSON.stringify(r)]);
+
+        // Dentro la bacheca: ogni pagina rimanda indietro con il segno.
+        const dentro = await page.evaluate(() => [...document.querySelectorAll('main a[href^="/bacheca/"]')]
+            .map((a) => a.getAttribute('href')).filter((h) => !h.startsWith('/bacheca/corsi?') && h !== '/bacheca/corsi'));
+        check('nella bacheca, categorie, «Valuta», «Gestione categorie» e «Nuova risorsa» portano il segno',
+            dentro.length >= 4 && dentro.every(conSegno), [JSON.stringify(dentro)]);
+        for (const [url, cosa] of [
+            ['/bacheca/categorie/' + A.bacheca_categoria, 'una categoria'],
+            ['/bacheca/proposte?corso=' + A.corso, 'le proposte da valutare'],
+            ['/bacheca/nuova?corso=' + A.corso, 'nuova risorsa'],
+            ['/bacheca/risorse/' + A.bacheca_risorsa + '/modifica', 'modifica di una risorsa'],
+            ['/bacheca/corsi/' + A.corso + '/categorie', 'gestione categorie'],
+        ]) {
+            await page.goto(BASE + url + (url.includes('?') ? '&' : '?') + 'da=bacheche');
+            const v = await page.evaluate(() => ({
+                indietro: (document.querySelector('a.back-link') || {}).getAttribute ? document.querySelector('a.back-link').getAttribute('href') : null,
+                annulla: [...document.querySelectorAll('main a.btn')].filter((a) => a.textContent.trim() === 'Annulla').map((a) => a.getAttribute('href')),
+                moduli: [...document.querySelectorAll('main form[method="post"]')].filter((f) => !f.action.includes('/tengo') && !f.action.includes('/uso')),
+            }));
+            const moduliSenza = await page.evaluate(() => [...document.querySelectorAll('main form[method="post"]')]
+                .filter((f) => !f.action.includes('/tengo') && !f.action.includes('/uso'))
+                .filter((f) => !f.querySelector('input[name="da"][value="bacheche"]')).map((f) => f.getAttribute('action')));
+            check('da «Bacheche», ' + cosa + ': il ritorno, «Annulla» e i moduli portano il segno',
+                conSegno(v.indietro) && v.annulla.every(conSegno) && moduliSenza.length === 0, [JSON.stringify({ indietro: v.indietro, annulla: v.annulla, moduliSenza })]);
+        }
+
+        // Dopo un'azione si resta «da Bacheche»: metti in evidenza e togli,
+        // dalla pagina della categoria; sposta giu' e su una categoria,
+        // dalla gestione delle categorie.
+        const dopoAzione = async (pagina, bottone) => {
+            await page.goto(BASE + pagina);
+            // Il modulo come lo invia il suo pulsante: alcuni (le categorie)
+            // stanno in un pannello che si apre, e il clic non li raggiunge.
+            await Promise.all([page.waitForNavigation(), page.evaluate((t) => {
+                const b = [...document.querySelectorAll('main button')].find((x) => x.textContent.includes(t));
+                b.form.requestSubmit(b);
+            }, bottone)]);
+            return page.url();
+        };
+        let u1 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria + '?da=bacheche', 'Metti in evidenza');
+        let u2 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria + '?da=bacheche', 'Togli dall’evidenza');
+        check('da «Bacheche», dopo «Metti in evidenza» e «Togli dall’evidenza» si resta con il segno', conSegno(u1) && conSegno(u2), [u1, u2]);
+        let u3 = await dopoAzione('/bacheca/corsi/' + A.corso + '/categorie?da=bacheche', 'Sposta giù');
+        let u4 = await dopoAzione('/bacheca/corsi/' + A.corso + '/categorie?da=bacheche', 'Sposta su');
+        check('da «Bacheche», dopo «Sposta giù» e «Sposta su» di una categoria si resta con il segno', conSegno(u3) && conSegno(u4), [u3, u4]);
+        await page.goto(BASE + '/bacheca/categorie/' + A.bacheca_categoria + '?da=bacheche');
+        await page.click('a.back-link');
+        await page.waitForLoadState('load');
+        r = await indietro();
+        check('dalla categoria, tornati alla bacheca: ancora «◀ Bacheche»', r !== null && r.testo === 'Bacheche', [JSON.stringify(r)]);
+
+        // Controprova: dal ramo del corso, senza segno, tutto come prima.
+        await page.goto(BASE + '/bacheca?corso=' + A.corso);
+        r = await indietro();
+        const senza = await page.evaluate(() => [...document.querySelectorAll('main a[href^="/bacheca/"]')].map((a) => a.getAttribute('href')).filter((h) => h.includes('da=')));
+        check('controprova: dal ramo del corso il ritorno è il corso, e nessun collegamento porta il segno',
+            r !== null && r.testo === titoloA && r.href === '/courses/' + A.corso && senza.length === 0, [JSON.stringify(r), JSON.stringify(senza)]);
+        u1 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria, 'Metti in evidenza');
+        u2 = await dopoAzione('/bacheca/categorie/' + A.bacheca_categoria, 'Togli dall’evidenza');
+        check('controprova: senza segno, dopo un\'azione il segno non compare', !conSegno(u1) && !conSegno(u2), [u1, u2]);
+
         // E vede davvero tutti, non pagine vuote: gli studenti del corso
         // pubblicato, come l'admin.
         await page.goto(BASE + '/reports/courses/' + A.corso);

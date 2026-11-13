@@ -273,4 +273,48 @@ final class Bacheca
 
         return $altrimenti;
     }
+
+    // -----------------------------------------------------------------
+    // Arrivati da «Bacheche» (13/11, Alessandro)
+    // -----------------------------------------------------------------
+    // Chi apre la bacheca di un corso dall'elenco «Bacheche» trova in alto
+    // «◀ Bacheche», e non il nome del corso. Lo dice un segno nell'indirizzo
+    // (`da=bacheche`), che viaggia con lui dentro le pagine della bacheca
+    // (categorie, proposte, nuova risorsa, modifica, gestione categorie) e
+    // nei moduli, cosi' anche dopo un salvataggio si torna alla bacheca con
+    // «◀ Bacheche». Senza il segno tutto resta com'era.
+
+    public const ORIGINE = 'da';
+    public const DA_BACHECHE = 'bacheche';
+
+    /** La pagina, o il modulo inviato, viene dall'elenco «Bacheche». */
+    public static function daBacheche(): bool
+    {
+        return ($_GET[self::ORIGINE] ?? $_POST[self::ORIGINE] ?? '') === self::DA_BACHECHE;
+    }
+
+    /**
+     * Lo stesso indirizzo con il segno, se si arriva da «Bacheche» e
+     * l'indirizzo e' una pagina della bacheca di un corso; altrimenti com'e'.
+     */
+    public static function conOrigine(string $url): string
+    {
+        if (!self::daBacheche() || !str_starts_with($url, '/bacheca') || $url === '/bacheca/corsi'
+            || str_contains($url, self::ORIGINE . '=' . self::DA_BACHECHE)) {
+            return $url;
+        }
+
+        $parti = explode('#', $url, 2);
+        $con = $parti[0] . (str_contains($parti[0], '?') ? '&' : '?') . self::ORIGINE . '=' . self::DA_BACHECHE;
+
+        return isset($parti[1]) ? $con . '#' . $parti[1] : $con;
+    }
+
+    /** Il campo nascosto per i moduli, se si arriva da «Bacheche». */
+    public static function campoOrigine(): string
+    {
+        return self::daBacheche()
+            ? '<input type="hidden" name="' . self::ORIGINE . '" value="' . self::DA_BACHECHE . '">'
+            : '';
+    }
 }

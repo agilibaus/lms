@@ -28,8 +28,9 @@ use App\Core\Icona;
     <?php /* Il corso si sceglie entrando nel corso (17/10, variante C): qui
              niente menu dei corsi, ma il ritorno al corso di questa bacheca. */ ?>
     <?php /* Il ritorno al corso solo a chi lo apre (06/11): il supervisore
-             i corsi pubblicati non li apre, e torna all'elenco «Bacheche». */ ?>
-    <?php if ($corso !== null && !\App\Auth\BachecaScope::apreIlCorso((int) $corso['id'])): ?>
+             i corsi pubblicati non li apre, e torna all'elenco «Bacheche».
+             E chi arriva da «Bacheche» (13/11, Alessandro) torna li'. */ ?>
+    <?php if ($corso !== null && (Bacheca::daBacheche() || !\App\Auth\BachecaScope::apreIlCorso((int) $corso['id']))): ?>
         <a href="/bacheca/corsi" class="back-link"><span class="back-link-testo">Bacheche</span></a>
     <?php elseif ($corso !== null): ?>
         <a href="/courses/<?= (int) $corso['id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $corso['title']) ?></span></a>
@@ -49,14 +50,14 @@ use App\Core\Icona;
     <?php if ($daValutare > 0): ?>
         <div class="bacheca-avviso">
             <span><strong><?= htmlspecialchars(Bacheca::daValutare($daValutare)) ?></strong></span>
-            <a href="/bacheca/proposte?corso=<?= $courseId ?>" class="btn btn-primary">Valuta</a>
+            <a href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca/proposte?corso=' . $courseId)) ?>" class="btn btn-primary">Valuta</a>
         </div>
     <?php endif; ?>
 
     <?php if ($partecipa || $puoPubblicare || $gestisceCategorie): ?>
         <div class="bacheca-comandi">
             <?php if ($gestisceCategorie): ?>
-                <a href="/bacheca/corsi/<?= $courseId ?>/categorie" class="bacheca-comando">Gestione categorie</a>
+                <a href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca/corsi/' . $courseId . '/categorie')) ?>" class="bacheca-comando">Gestione categorie</a>
             <?php endif; ?>
             <?php if ($partecipa): ?>
                 <a href="/bacheca/mie?corso=<?= $courseId ?>" class="bacheca-comando comando-con-icona"><?= Icona::svg('bookmark') ?>Le mie risorse (<?= $tenute ?>)</a>
@@ -65,7 +66,7 @@ use App\Core\Icona;
                 <?php endif; ?>
             <?php endif; ?>
             <?php if ($puoPubblicare && $categorie !== []): ?>
-                <a href="/bacheca/nuova?corso=<?= $courseId ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova risorsa</a>
+                <a href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca/nuova?corso=' . $courseId)) ?>" class="btn btn-secondary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuova risorsa</a>
             <?php endif; ?>
         </div>
     <?php endif; ?>
@@ -79,7 +80,7 @@ use App\Core\Icona;
             <?php foreach ($categorie as $c): ?>
                 <?php $col = Bacheca::colore((string) $c['color']); ?>
                 <li>
-                    <a href="/bacheca/categorie/<?= (int) $c['id'] ?>" class="bacheca-riquadro"
+                    <a href="<?= htmlspecialchars(Bacheca::conOrigine('/bacheca/categorie/' . (int) $c['id'])) ?>" class="bacheca-riquadro"
                        style="--cat:<?= $col['primary'] ?>;--cat-soft:<?= $col['soft'] ?>;--cat-titolo:<?= $col['titolo'] ?>">
                         <h2 class="bacheca-riquadro-titolo"><?= htmlspecialchars((string) $c['name']) ?></h2>
                         <?php if (!empty($c['description'])): ?>

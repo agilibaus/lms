@@ -740,7 +740,8 @@ class BoardController
     private function torna(string $dove, string $messaggio, bool $bene, string $ancora = ''): never
     {
         $_SESSION[$bene ? 'flash_success' : 'flash_error'] = $messaggio;
-        header('Location: ' . $dove . $ancora);
+        // Chi e' arrivato da «Bacheche» ci resta anche dopo un'azione (13/11).
+        header('Location: ' . Bacheca::conOrigine($dove) . $ancora);
         exit;
     }
 }

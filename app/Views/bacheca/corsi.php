@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Core\Bacheca;
+
 /**
- * La pagina «Bacheca» di chi gestisce le bacheche di tutti i corsi (06/11,
+ * La pagina «Bacheche» (cosi' dal 13/11) di chi gestisce le bacheche di tutti i corsi (06/11,
  * variante 1A del mockup): una riga per corso, con stato, categorie, risorse
  * pubblicate e proposte da valutare, e il collegamento alla sua bacheca. La
  * raggiunge il supervisore dal menu.
@@ -41,12 +43,12 @@ declare(strict_types=1);
                 $pubblicato = (int) ($c['is_published'] ?? 0) === 1;
                 ?>
                 <tr role="row">
-                    <td role="cell" data-label="Corso"><a href="/bacheca?corso=<?= $id ?>"><?= htmlspecialchars((string) $c['title']) ?></a></td>
+                    <td role="cell" data-label="Corso"><a href="/bacheca?corso=<?= $id ?>&amp;<?= Bacheca::ORIGINE ?>=<?= Bacheca::DA_BACHECHE ?>"><?= htmlspecialchars((string) $c['title']) ?></a></td>
                     <td role="cell" data-label="Stato"><span class="badge<?= $pubblicato ? ' badge-success' : '' ?>"><?= $pubblicato ? 'pubblicato' : 'bozza' ?></span></td>
                     <td role="cell" data-label="Categorie"><?= $n['categorie'] ?></td>
                     <td role="cell" data-label="Risorse"><?= $n['risorse'] ?></td>
                     <td role="cell" data-label="Da valutare"><?= $n['proposte'] ?></td>
-                    <td role="cell" class="row-actions"><a href="/bacheca?corso=<?= $id ?>">Apri la bacheca</a></td>
+                    <td role="cell" class="row-actions"><a href="/bacheca?corso=<?= $id ?>&amp;<?= Bacheca::ORIGINE ?>=<?= Bacheca::DA_BACHECHE ?>">Apri la bacheca</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
