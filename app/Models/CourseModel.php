@@ -19,7 +19,7 @@ class CourseModel
     public static function allForStaff(): array
     {
         return Database::connection()->query(
-            'SELECT id, title, slug, description, cover_image, cover_alt, is_published, enrollment_mode, position
+            'SELECT id, title, slug, description, cover_image, cover_alt, is_published, presso, enrollment_mode, position
              FROM courses ORDER BY position, id'
         )->fetchAll();
     }
@@ -82,13 +82,14 @@ class CourseModel
         bool $isPublished,
         int $createdBy,
         string $enrollmentMode = 'closed',
-        ?string $objective = null
+        ?string $objective = null,
+        string $presso = 'amministratore'
     ): int {
         $db = Database::connection();
 
         $stmt = $db->prepare(
-            'INSERT INTO courses (title, slug, objective, description, is_published, enrollment_mode, created_by)
-             VALUES (:title, :slug, :objective, :description, :is_published, :enrollment_mode, :created_by)'
+            'INSERT INTO courses (title, slug, objective, description, is_published, presso, enrollment_mode, created_by)
+             VALUES (:title, :slug, :objective, :description, :is_published, :presso, :enrollment_mode, :created_by)'
         );
         $stmt->execute([
             'title' => $title,
@@ -96,11 +97,31 @@ class CourseModel
             'objective' => $objective,
             'description' => $description,
             'is_published' => $isPublished ? 1 : 0,
+            // Presso chi nasce la bozza (14/11): presso il supervisore quella
+            // che crea lui, presso l'Amministratore tutte le altre.
+            'presso' => $presso === 'supervisore' ? 'supervisore' : 'amministratore',
             'enrollment_mode' => $enrollmentMode,
             'created_by' => $createdBy,
         ]);
 
         return (int) $db->lastInsertId();
+    }
+
+    /**
+     * Il passaggio della bozza all'Amministratore (14/11): 'invio' del
+     * supervisore o 'ripresa' dell'Amministratore. Uno solo, e solo da una
+     * bozza presso il supervisore: la condizione sta nella query, cosi' due
+     * richieste insieme non lo fanno due volte. Torna se e' avvenuto.
+     */
+    public static function passaAllAmministratore(int $id, string $come): bool
+    {
+        $stmt = Database::connection()->prepare(
+            "UPDATE courses SET presso = 'amministratore', passato_il = NOW(), passaggio = :come
+             WHERE id = :id AND is_published = 0 AND presso = 'supervisore'"
+        );
+        $stmt->execute(['id' => $id, 'come' => $come === 'ripresa' ? 'ripresa' : 'invio']);
+
+        return $stmt->rowCount() === 1;
     }
 
     /**

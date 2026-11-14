@@ -2944,6 +2944,36 @@ body.has-focus-video {
     color: var(--color-danger);
 }
 
+/* Il comando spento (14/11, Alessandro): un comando che c'e' ma adesso non si
+   usa («Report» di una bozza, «Elimina» di una bozza presso il supervisore).
+   Non e' un comando: e' un testo, che non si preme e non si raggiunge con il
+   tabulatore, e per questo non sta nell'elenco dei comandi qui sopra. Grigio
+   anche quando, acceso, sarebbe rosso: spento non fa perdere niente. Sta
+   allo stesso posto del comando acceso, con la sua icona. */
+.comando-spento {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    cursor: default;
+    text-decoration: none;
+}
+
+/* Campi in sola lettura (14/11): la scheda di una bozza che chi guarda non ha
+   presso di se'. Il `fieldset` disattivato spegne tutto in un colpo solo,
+   come le risposte di un questionario per lo staff (`.quiz-concluso-campi`). */
+.campi-sola-lettura {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.campi-sola-lettura[disabled] :is(input, textarea, select) {
+    opacity: 0.5;
+}
+
 /* ---------- Card ---------- */
 
 .card {
@@ -4516,7 +4546,8 @@ fieldset.checkbox-group legend {
     }
 
     .tabella-schede .data-table td.row-actions form:has(.link-btn-danger),
-    .tabella-schede .data-table td.row-actions > .link-btn-danger {
+    .tabella-schede .data-table td.row-actions > .link-btn-danger,
+    .tabella-schede .data-table td.row-actions > .comando-spento-elimina {
         margin-left: auto;
     }
 }

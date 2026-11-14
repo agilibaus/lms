@@ -25,10 +25,18 @@ $ordine = Ordinamento::daRichiesta([
     // `enrollment_mode`, che cadeva nello stesso ordine delle etichette;
     // con «a pagamento» (06/11, `paid`) non piu': lo spareggio e' l'etichetta
     // mostrata, e `ordinamento_pagine.js` lo verifica sul testo.
-    'stato' => ['is_published', Ordinamento::NUMERO, 'modalita_etichetta'],
+    // Dal 14/11 gli stati sono tre, e l'ordine e' quello delle parole
+    // mostrate: «Bozza presso Amministratore», «Bozza presso supervisore»,
+    // «Pubblicato». Le bozze restano raggruppate da una parte.
+    'stato' => ['stato_etichetta', Ordinamento::TESTO, 'modalita_etichetta'],
 ]);
 $courses = array_map(
-    static fn (array $c): array => $c + ['modalita_etichetta' => CourseModel::enrollmentLabel($c['enrollment_mode'] ?? 'closed')],
+    static fn (array $c): array => $c + [
+        'modalita_etichetta' => CourseModel::enrollmentLabel($c['enrollment_mode'] ?? 'closed'),
+        'stato_etichetta' => (int) $c['is_published'] === 1
+            ? 'Pubblicato'
+            : (($c['presso'] ?? '') === 'supervisore' ? 'Bozza presso supervisore' : 'Bozza presso Amministratore'),
+    ],
     $courses
 );
 $courses = $ordine->applica($courses);
@@ -80,11 +88,9 @@ $courses = $ordine->applica($courses);
                     <span class="cell-sub">/<?= htmlspecialchars((string) $course['slug']) ?></span>
                 </td>
                 <td role="cell" data-label="Stato">
-                    <?php if ((int) $course['is_published'] === 1): ?>
-                        <span class="badge badge-success">pubblicato</span>
-                    <?php else: ?>
-                        <span class="badge">bozza</span>
-                    <?php endif; ?>
+                    <?php /* Tre stati dal 14/11 (Alessandro): pubblicato, o bozza
+                             presso chi la modifica. */ ?>
+                    <span class="badge<?= (int) $course['is_published'] === 1 ? ' badge-success' : '' ?>"><?= htmlspecialchars((string) $course['stato_etichetta']) ?></span>
                     <?php /* Anche l'iscrizione chiusa ha la sua etichetta: prima la
                              riga taceva, e un corso pubblicato ma chiuso sembrava
                              disponibile agli studenti mentre nel catalogo non
@@ -105,10 +111,19 @@ $courses = $ordine->applica($courses);
                 </td>
                 <td role="cell" class="row-actions">
                     <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
-                    <?php if (!$supervisore): ?>
+                    <?php if (!$supervisore && (int) $course['is_published'] === 0): ?>
+                        <?php /* Una bozza non ha iscritti, e il suo report e' sempre
+                                 vuoto: il comando resta, spento (14/11). */ ?>
+                        <span class="comando-spento" aria-disabled="true"><?= Icona::svg('bar-chart') ?>Report</span>
+                    <?php elseif (!$supervisore): ?>
                         <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                     <?php endif; ?>
-                    <?php if ($canDelete): ?>
+                    <?php if ($canDelete && (int) $course['is_published'] === 0 && ($course['presso'] ?? '') === 'supervisore'): ?>
+                        <?php /* Una bozza presso il supervisore non si elimina: prima
+                                 l'Amministratore la riprende (14/11). Spento, allo
+                                 stesso posto; al telefono a destra, come acceso. */ ?>
+                        <span class="comando-spento comando-spento-elimina" aria-disabled="true"><?= Icona::svg('trash3') ?>Elimina</span>
+                    <?php elseif ($canDelete): ?>
                         <form action="/admin/courses/<?= (int) $course['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare il corso con moduli, lezioni, questionari, iscrizioni e certificati?');">
                             <?= Csrf::field() ?>

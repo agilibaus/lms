@@ -116,7 +116,10 @@ class CourseController extends AdminController
             Auth::hasRole('supervisore') ? false : $data['is_published'],
             (int) Auth::id(),
             $modalita,
-            $data['objective']
+            $data['objective'],
+            // La bozza del supervisore nasce presso di lui (14/11): la modifica
+            // lui, l'Amministratore la legge finche' non gli passa.
+            Auth::hasRole('supervisore') ? 'supervisore' : 'amministratore'
         );
 
         if ($pagamento !== null) {
@@ -134,8 +137,11 @@ class CourseController extends AdminController
 
         // L'admin modifica il corso; il tutor apre la pagina dei corsi dei
         // suoi gruppi per il suo benvenuto e i suoi studenti, in sola lettura
-        // (26/10, conflitti 1 e 3).
-        $tutor = !CourseRights::canEdit((int) $params['id']);
+        // (26/10, conflitti 1 e 3). Una bozza la apre in sola lettura anche
+        // chi non la ha presso di se' (14/11): l'Amministratore quella presso
+        // il supervisore, il supervisore quella presso l'Amministratore.
+        $solaLettura = CourseRights::leggeLaBozza((int) $params['id']);
+        $tutor = !$solaLettura && !CourseRights::canEdit((int) $params['id']);
 
         if ($tutor && !in_array((int) $params['id'], CourseRights::courseIdsFor((int) Auth::id()), true)) {
             CourseRights::requireEdit((int) $params['id']);
@@ -173,6 +179,12 @@ class CourseController extends AdminController
             // Dal database, non dal modulo riproposto: a una bozza non si
             // iscrive nessuno (06/11).
             'bozza' => (int) $course['is_published'] === 0,
+            // Il passaggio della bozza (14/11): presso chi e', se chi guarda la
+            // legge soltanto, e quale comando ha.
+            'presso' => CourseRights::presso((int) $course['id']),
+            'solaLettura' => $solaLettura,
+            'puoInviare' => Auth::hasRole('supervisore') && CourseRights::presso((int) $course['id']) === 'supervisore',
+            'puoRiprendere' => Auth::hasRole('admin') && CourseRights::presso((int) $course['id']) === 'supervisore',
             // L'admin vede il blocco di ogni tutor del corso, il tutor solo il
             // proprio; chi non ne puo' gestire nessuno, la sezione non la vede.
             'welcomes' => Auth::can('course.welcome') || Auth::can('course.welcome_own')
@@ -260,6 +272,77 @@ class CourseController extends AdminController
         }
 
         $this->success('Corso aggiornato.', $redirect);
+    }
+
+    /**
+     * «Invia all'Amministratore» (14/11, Alessandro): il supervisore passa la
+     * sua bozza all'Amministratore. Da quel momento la modifica l'Amministratore
+     * e il supervisore la legge; non si torna indietro. L'Amministratore
+     * riceve l'email (Messaggi email › «Corso inviato all'Amministratore»).
+     */
+    public function invia(array $params): void
+    {
+        Auth::requireLogin();
+        $course = CourseModel::find((int) $params['id']);
+        $redirect = '/admin/courses/' . (int) $params['id'] . '/edit';
+
+        if (!Auth::hasRole('supervisore') || $course === null) {
+            http_response_code(403);
+            exit('Accesso negato.');
+        }
+
+        if (!CourseModel::passaAllAmministratore((int) $course['id'], 'invio')) {
+            $this->fail('Il corso non è presso di te: non si può inviare.', $redirect);
+        }
+
+        $link = Url::to($redirect);
+
+        foreach (UserModel::amministratoriAttivi() as $admin) {
+            Mailer::subitoOInCoda(Mailer::corsoInviato(
+                (string) $admin['email'],
+                (string) $admin['full_name'],
+                (string) Auth::name(),
+                (string) $course['title'],
+                $link
+            ));
+        }
+
+        $this->success('Corso inviato all’Amministratore.', $redirect);
+    }
+
+    /**
+     * «Riprendi il corso» (14/11, Alessandro): l'Amministratore si prende la
+     * bozza presso il supervisore, prima che gliela invii. Da quel momento la
+     * modifica lui; il supervisore che l'ha creata la legge e riceve l'email
+     * (Messaggi email › «Corso ripreso dall'Amministratore»).
+     */
+    public function riprendiCorso(array $params): void
+    {
+        Auth::requireLogin();
+        $course = CourseModel::find((int) $params['id']);
+        $redirect = '/admin/courses/' . (int) $params['id'] . '/edit';
+
+        if (!Auth::hasRole('admin') || $course === null) {
+            http_response_code(403);
+            exit('Accesso negato.');
+        }
+
+        if (!CourseModel::passaAllAmministratore((int) $course['id'], 'ripresa')) {
+            $this->fail('Il corso non è presso il supervisore: non c’è niente da riprendere.', $redirect);
+        }
+
+        $autore = UserModel::find((int) $course['created_by']);
+
+        if ($autore !== null && $autore['role'] === 'supervisore' && (int) $autore['is_active'] === 1) {
+            Mailer::subitoOInCoda(Mailer::corsoRipreso(
+                (string) $autore['email'],
+                (string) $autore['full_name'],
+                (string) $course['title'],
+                Url::to($redirect)
+            ));
+        }
+
+        $this->success('Corso ripreso: ora lo modifichi tu.', $redirect);
     }
 
     public function destroy(array $params): void

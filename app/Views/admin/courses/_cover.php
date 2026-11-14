@@ -13,11 +13,13 @@ use App\Core\Icona;
  * significherebbe che ogni salvataggio del titolo passa da un upload.
  *
  * @var array $course
+ * @var bool|null $solaLettura chi non ha la bozza presso di se' la legge (14/11)
  */
 
 $courseId = (int) $course['id'];
 $coverUrl = CourseCover::url($course, false);
 $isExternal = $coverUrl !== null && CourseCover::isExternalUrl($coverUrl);
+$solaLettura ??= false;
 ?>
 <section class="card">
     <h2>Copertina</h2>
@@ -45,6 +47,8 @@ $isExternal = $coverUrl !== null && CourseCover::isExternalUrl($coverUrl);
     <form action="/admin/courses/<?= $courseId ?>/copertina" method="post" class="form" enctype="multipart/form-data">
         <?= Csrf::field() ?>
 
+        <?php /* In sola lettura (14/11): campi spenti, niente comandi. */ ?>
+        <fieldset class="campi-sola-lettura" <?= $solaLettura ? 'disabled' : '' ?>>
         <label for="cover"><?= $coverUrl !== null ? 'Sostituisci immagine' : 'Immagine' ?></label>
         <input type="file" id="cover" name="cover" accept="image/jpeg,image/png,image/gif,image/webp">
         <p class="form-hint">JPG, PNG, GIF o WebP, fino a 8 MB. Larghezza consigliata almeno 1280 px.</p>
@@ -57,14 +61,17 @@ $isExternal = $coverUrl !== null && CourseCover::isExternalUrl($coverUrl);
             Lo leggono i lettori di schermo e compare se l'immagine non si carica.
             Descrivi cosa si vede, non ripetere il titolo del corso: se lo lasci vuoto viene usato il titolo.
         </p>
+        </fieldset>
 
+        <?php if (!$solaLettura): ?>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva copertina</button>
             <button type="reset" class="btn btn-secondary">Annulla</button>
         </div>
+        <?php endif; ?>
     </form>
 
-    <?php if ($coverUrl !== null): ?>
+    <?php if ($coverUrl !== null && !$solaLettura): ?>
         <form action="/admin/courses/<?= $courseId ?>/copertina/elimina" method="post"
               onsubmit="return confirm('Rimuovere la copertina di questo corso?');">
             <?= Csrf::field() ?>

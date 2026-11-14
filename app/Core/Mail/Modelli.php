@@ -392,6 +392,50 @@ final class Modelli
                     '{titolo}' => 'Un’app per dividere le faccende di casa', $link => $esempioLink,
                 ],
             ],
+            // Il passaggio della bozza dal supervisore all'Amministratore (14/11).
+            'corso_inviato' => [
+                'gruppo' => 'corso',
+                'titolo' => 'Corso inviato all’Amministratore',
+                'quando' => 'All’Amministratore, quando il supervisore gli invia un corso in bozza: da quel momento '
+                    . 'lo modifica l’Amministratore, e il supervisore lo legge soltanto.',
+                'oggetto' => 'EMAIL_CORSO_INVIATO_OGGETTO',
+                'testo' => 'EMAIL_CORSO_INVIATO_TESTO',
+                'predefinito' => [
+                    'Corso inviato: {corso}',
+                    "Ciao {nome},\n\n"
+                    . "{supervisore} ti ha inviato il corso in bozza «{corso}».\n\n"
+                    . "Da adesso lo modifichi tu, e lo pubblichi quando è pronto:\n"
+                    . "{link}",
+                ],
+                'segnaposto' => [
+                    '{supervisore}' => 'nome e cognome del supervisore',
+                    '{corso}' => 'il titolo del corso',
+                    $link => 'la scheda del corso',
+                ],
+                'obbligatori' => [$link],
+                'esempio' => ['{supervisore}' => 'Giulia Bianchi', '{corso}' => 'Il corso di esempio', $link => $esempioLink],
+            ],
+            'corso_ripreso' => [
+                'gruppo' => 'corso',
+                'titolo' => 'Corso ripreso dall’Amministratore',
+                'quando' => 'Al supervisore che ha creato un corso in bozza, quando l’Amministratore lo riprende prima '
+                    . 'che glielo invii: da quel momento il supervisore lo legge soltanto.',
+                'oggetto' => 'EMAIL_CORSO_RIPRESO_OGGETTO',
+                'testo' => 'EMAIL_CORSO_RIPRESO_TESTO',
+                'predefinito' => [
+                    'Corso ripreso dall’Amministratore: {corso}',
+                    "Ciao {nome},\n\n"
+                    . "l’Amministratore ha ripreso il corso in bozza «{corso}»: da adesso lo modifica lui, "
+                    . "e tu lo puoi leggere.\n\n"
+                    . "{link}",
+                ],
+                'segnaposto' => [
+                    '{corso}' => 'il titolo del corso',
+                    $link => 'la scheda del corso',
+                ],
+                'obbligatori' => [],
+                'esempio' => ['{corso}' => 'Il corso di esempio', $link => $esempioLink],
+            ],
             'pagamento_non_riuscito' => [
                 'gruppo' => 'iscrizioni',
                 'titolo' => 'Pagamento da controllare',

@@ -71,14 +71,14 @@ function pulisci() {
         + ' $pdo->prepare("DELETE FROM users WHERE email IN (?, ?)")->execute([$argv[1], $argv[2]]);', EMAIL, STUDENTE_GRUPPO);
 }
 
-/** Il supervisore di prova e un corso in bozza con un modulo, una lezione e un questionario. */
+/** Il supervisore di prova e un corso in bozza, presso di lui (14/11), con un modulo, una lezione e un questionario. */
 function prepara() {
     pulisci();
     return json('$h = password_hash($argv[1], PASSWORD_DEFAULT);'
         + ' $pdo->prepare("INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at)'
         + ' VALUES (?, ?, \'Supervisore\', \'Prova\', \'supervisore\', 1, NOW(), NOW())")->execute([$argv[2], $h]);'
         + ' $u = (int) $pdo->lastInsertId();'
-        + ' $pdo->prepare("INSERT INTO courses (title, slug, description, is_published, enrollment_mode, created_by) VALUES (?, ?, \'\', 0, \'closed\', ?)")'
+        + ' $pdo->prepare("INSERT INTO courses (title, slug, description, is_published, presso, enrollment_mode, created_by) VALUES (?, ?, \'\', 0, \'supervisore\', \'closed\', ?)")'
         + '     ->execute([\'[prova-supervisore] corso in bozza\', \'prova-supervisore-bozza-\' . time(), $u]);'
         + ' $c = (int) $pdo->lastInsertId();'
         + ' $m = App\\Models\\ModuleModel::create($c, \'Modulo uno\');'

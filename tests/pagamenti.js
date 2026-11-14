@@ -80,6 +80,9 @@ function prepara(A) {
         + ' $altro = $nuovo("[prova-pagamenti] altro corso", 1, "open");'
         + ' $richiesta = $nuovo("[prova-pagamenti] corso su richiesta", 1, "request");'
         + ' $bozza = $nuovo("[prova-pagamenti] bozza", 0, "closed");'
+        // La bozza su cui lavora il supervisore e' presso di lui (14/11): le
+        // prove sulle modalita' che sceglie hanno senso solo se puo' salvare.
+        + ' $pdo->prepare("UPDATE courses SET presso = \'supervisore\' WHERE id = ?")->execute([$bozza]);'
         + ' $bozzaPagata = $nuovo("[prova-pagamenti] bozza a pagamento", 0, "paid");'
         + ' $pdo->prepare("UPDATE courses SET price_cents = 3000, payment_link_url = ?, payment_link_id = \'plink_bozza1\' WHERE id = ?")->execute([$argv[3], $bozzaPagata]);'
         + ' $pdo->prepare("INSERT INTO enrollment_requests (user_id, course_id, status, requested_at) VALUES (?, ?, \'pending\', NOW())")->execute([(int) $argv[1], $richiesta]);'

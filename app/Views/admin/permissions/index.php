@@ -19,6 +19,7 @@ $ruoli = [
     'Admin' => [
         'sempre' => [
             'Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni.',
+            'Le bozze create dal supervisore le legge soltanto, finché il supervisore non gliele invia o lui non le riprende con «Riprendi il corso».',
             'Risponde alle domande degli studenti come esperto.',
             'Vede report, tentativi e certificati di tutti.',
         ],
@@ -28,6 +29,7 @@ $ruoli = [
     'Supervisore' => [
         'sempre' => [
             'Costruisce i corsi in bozza: li crea, ne modifica i dati e la copertina, e crea, modifica ed elimina moduli, lezioni, materiali, video, contenuti H5P, questionari e la verifica finale.',
+            'Una bozza che crea resta presso di lui finché non la invia all’Amministratore, che riceve un’email; l’Amministratore può anche riprenderla prima. Da quel momento la legge soltanto. Le bozze create dall’Amministratore le legge soltanto.',
             'Non pubblica i corsi (lo fa l’Amministratore) e non elimina un corso. I corsi pubblicati li legge — pagina, lezioni, materiali, video e questionari — senza modificarli.',
             'Non invia questionari e non segna lezioni come fatte, in nessun corso: delle domande vede il testo in sola lettura.',
             'Vede i report di tutti, come l’Amministratore, con i tentativi dei questionari, e li scarica.',

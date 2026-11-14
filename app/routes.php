@@ -258,6 +258,9 @@ $router->get('/admin/courses/{id}/edit', [AdminCourseController::class, 'editFor
 $router->post('/admin/courses/ordine', [AdminCourseController::class, 'reorder']);
 $router->post('/admin/courses/{id}', [AdminCourseController::class, 'update']);
 $router->post('/admin/courses/{id}/delete', [AdminCourseController::class, 'destroy']);
+// Il passaggio della bozza all'Amministratore (14/11).
+$router->post('/admin/courses/{id}/invia', [AdminCourseController::class, 'invia']);
+$router->post('/admin/courses/{id}/riprendi', [AdminCourseController::class, 'riprendiCorso']);
 $router->post('/admin/courses/{id}/move', [AdminCourseController::class, 'move']);
 $router->post('/admin/courses/{id}/copertina', [AdminCourseController::class, 'updateCover']);
 $router->post('/admin/courses/{id}/copertina/elimina', [AdminCourseController::class, 'deleteCover']);

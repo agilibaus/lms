@@ -207,6 +207,13 @@ CREATE TABLE courses (
     -- Testo alternativo dell'immagine; se vuoto la vista usa il titolo.
     cover_alt       VARCHAR(255),
     is_published    TINYINT(1) NOT NULL DEFAULT 0,
+    -- Presso chi e' la bozza (2026_11_14_bozza_presso.sql): la modifica solo
+    -- lui, l'altro la legge. Un solo passaggio, dal supervisore
+    -- all'Amministratore: 'invio' del supervisore o 'ripresa'
+    -- dell'Amministratore, con la data. Sui corsi pubblicati non conta.
+    presso          ENUM('supervisore','amministratore') NOT NULL DEFAULT 'amministratore',
+    passato_il      DATETIME NULL DEFAULT NULL,
+    passaggio       ENUM('invio','ripresa') NULL DEFAULT NULL,
     -- come ci si iscrive: 'open' iscrizione immediata dal catalogo,
     -- 'request' richiesta da approvare, 'closed' solo admin/tutor o gruppi,
     -- 'paid' a pagamento su Stripe (2026_11_06_corsi_a_pagamento.sql)

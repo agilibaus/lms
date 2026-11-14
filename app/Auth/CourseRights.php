@@ -42,7 +42,40 @@ class CourseRights
             return false;
         }
 
-        return Auth::hasRole('admin') || self::bozzaDelSupervisore($courseId);
+        // Una bozza e' presso qualcuno (14/11, Alessandro): la modifica solo
+        // lui. L'Amministratore modifica tutto, tranne le bozze presso il
+        // supervisore, che legge finche' il supervisore non gliele invia o
+        // lui non le riprende.
+        if (Auth::hasRole('admin')) {
+            return self::presso($courseId) !== 'supervisore';
+        }
+
+        return self::bozzaDelSupervisore($courseId);
+    }
+
+    /**
+     * Presso chi e' una bozza (14/11): 'supervisore' o 'amministratore'; null
+     * per un corso pubblicato, o che non c'e'.
+     */
+    public static function presso(int $courseId): ?string
+    {
+        $corso = CourseModel::find($courseId);
+
+        if ($corso === null || (int) $corso['is_published'] === 1) {
+            return null;
+        }
+
+        return (string) $corso['presso'] === 'supervisore' ? 'supervisore' : 'amministratore';
+    }
+
+    /**
+     * La bozza la apre, in sola lettura, chi non la ha presso di se': il
+     * supervisore quella presso l'Amministratore, l'Amministratore quella
+     * presso il supervisore (14/11). Gli altri ruoli restano come sono.
+     */
+    public static function leggeLaBozza(int $courseId): bool
+    {
+        return Auth::hasRole('admin', 'supervisore') && self::presso($courseId) !== null && !self::canEdit($courseId);
     }
 
     /**
@@ -59,17 +92,13 @@ class CourseRights
 
     /**
      * Il supervisore (30/10, Alessandro) modifica solo i corsi in bozza. Dal
-     * 06/11 legge anche quelli pubblicati (`leggeIlCorso`).
+     * 06/11 legge anche quelli pubblicati (`leggeIlCorso`). Dal 14/11 solo le
+     * bozze presso di lui: quelle che ha creato, finche' non le invia
+     * all'Amministratore o lui non le riprende.
      */
     public static function bozzaDelSupervisore(int $courseId): bool
     {
-        if (!Auth::hasRole('supervisore')) {
-            return false;
-        }
-
-        $corso = CourseModel::find($courseId);
-
-        return $corso !== null && (int) $corso['is_published'] === 0;
+        return Auth::hasRole('supervisore') && self::presso($courseId) === 'supervisore';
     }
 
     /**
@@ -97,7 +126,13 @@ class CourseRights
 
         if (!self::canEdit($courseId)) {
             http_response_code(403);
-            exit('Accesso negato: i contenuti del corso li modifica l\'Amministratore, puoi solo consultarlo.');
+            // Chi non ha la bozza presso di se' (14/11): la frase dice dov'e'.
+            $presso = Auth::hasRole('admin', 'supervisore') ? self::presso($courseId) : null;
+            exit(match (true) {
+                $presso === 'supervisore' => 'La bozza è presso il supervisore: per modificarla, prima riprendi il corso. Le modifiche non sono state salvate.',
+                $presso === 'amministratore' => 'La bozza è passata all’Amministratore: puoi solo leggerla. Le modifiche non sono state salvate.',
+                default => 'Accesso negato: i contenuti del corso li modifica l\'Amministratore, puoi solo consultarlo.',
+            });
         }
     }
 

@@ -285,6 +285,25 @@ class Mailer
         ]);
     }
 
+    /** Un corso in bozza inviato dal supervisore, all'Amministratore (14/11). */
+    public static function corsoInviato(string $email, string $name, string $supervisore, string $courseTitle, string $link): Message
+    {
+        return Modelli::messaggio('corso_inviato', $email, $name, [
+            '{supervisore}' => $supervisore,
+            '{corso}' => $courseTitle,
+            '{link}' => $link,
+        ]);
+    }
+
+    /** Un corso in bozza ripreso dall'Amministratore, al supervisore (14/11). */
+    public static function corsoRipreso(string $email, string $name, string $courseTitle, string $link): Message
+    {
+        return Modelli::messaggio('corso_ripreso', $email, $name, [
+            '{corso}' => $courseTitle,
+            '{link}' => $link,
+        ]);
+    }
+
     /** Il certificato e' stato emesso (12/10). */
     public static function courseCompleted(string $email, string $name, string $courseTitle, string $link): Message
     {

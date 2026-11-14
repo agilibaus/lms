@@ -695,6 +695,20 @@ class UserModel
      *
      * @return list<array{id: int, email: string, full_name: string, first_name: string}>
      */
+    /**
+     * Gli amministratori attivi (uno solo, dalla 0305): chi riceve l'avviso
+     * di un corso inviato dal supervisore (14/11).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function amministratoriAttivi(): array
+    {
+        return Database::connection()->query(
+            "SELECT id, email, full_name, first_name FROM users
+             WHERE is_active = 1 AND role = 'admin' ORDER BY full_name, email"
+        )->fetchAll();
+    }
+
     public static function decisoriRichiesta(int $courseId): array
     {
         return Database::connection()->query(

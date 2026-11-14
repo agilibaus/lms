@@ -19,6 +19,14 @@ $supervisore ??= false;
 /** @var list<array<string, mixed>>|null $welcomes null se chi guarda non puo' caricare benvenuti */
 /** @var list<array<string, mixed>>|null $bacheca le categorie della bacheca; null se chi guarda non le gestisce */
 /** @var bool $tutor il tutor del corso (26/10): il suo benvenuto e i suoi studenti, in sola lettura */
+/** @var string|null $presso presso chi e' la bozza (14/11): 'supervisore', 'amministratore', null se pubblicato */
+/** @var bool $solaLettura chi guarda non ha la bozza presso di se': la legge soltanto (14/11) */
+/** @var bool $puoInviare il supervisore, con la bozza presso di lui: «Invia all'Amministratore» */
+/** @var bool $puoRiprendere l'Amministratore, con la bozza presso il supervisore: «Riprendi il corso» */
+$presso ??= null;
+$solaLettura ??= false;
+$puoInviare ??= false;
+$puoRiprendere ??= false;
 
 $courseId = (int) $course['id'];
 
@@ -41,7 +49,12 @@ $enrollments = $ordineIscritti->applica($enrollments);
     <a href="/admin/courses" class="back-link"><span class="back-link-testo">Gestione corsi</span></a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
-        <?php if ($supervisore): ?>
+        <?php /* La bozza dice presso chi e' (14/11), all'Amministratore e al
+                 supervisore; niente «report», che per una bozza e' sempre vuoto. */ ?>
+        <?php if ($presso !== null && !$tutor): ?>
+            <?= $presso === 'supervisore' ? 'Bozza presso supervisore' : 'Bozza presso Amministratore' ?> ·
+            <a href="/courses/<?= $courseId ?>">gestisci contenuti</a>
+        <?php elseif ($supervisore): ?>
             In bozza · <a href="/courses/<?= $courseId ?>">gestisci contenuti</a>
         <?php else: ?>
             <?= count($enrollments) ?> <?= count($enrollments) === 1 ? 'iscritto' : 'iscritti' ?> ·
@@ -53,6 +66,10 @@ $enrollments = $ordineIscritti->applica($enrollments);
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
+<?php if ($presso !== null && !$tutor): ?>
+    <?php require __DIR__ . '/_passaggio.php'; ?>
+<?php endif; ?>
+
 <?php /* Dal 26/10 i dati, la copertina e gli iscritti li gestisce l'admin;
          il tutor qui ha il suo benvenuto e l'elenco dei suoi studenti. */ ?>
 <?php if (!$tutor): ?>
@@ -60,11 +77,18 @@ $enrollments = $ordineIscritti->applica($enrollments);
     <h2>Dati del corso</h2>
     <form action="/admin/courses/<?= $courseId ?>" method="post" class="form">
         <?= Csrf::field() ?>
+        <?php /* Chi non ha la bozza presso di se' la legge (14/11): i campi
+                 spenti in un colpo solo, come le risposte di un questionario
+                 per lo staff, e niente «Salva» e «Annulla». */ ?>
+        <fieldset class="campi-sola-lettura" <?= $solaLettura ? 'disabled' : '' ?>>
         <?php require __DIR__ . '/_fields.php'; ?>
+        </fieldset>
+        <?php if (!$solaLettura): ?>
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Salva</button>
             <button type="reset" class="btn btn-secondary">Annulla</button>
         </div>
+        <?php endif; ?>
     </form>
 </section>
 
@@ -220,10 +244,16 @@ $enrollments = $ordineIscritti->applica($enrollments);
                  una `section`: senza titolo non e' una sezione della pagina. */ ?>
     <div class="card">
         <p class="card-meta">Vengono rimossi anche moduli, lezioni, questionari, tentativi, iscrizioni e certificati collegati.</p>
+        <?php /* Una bozza presso il supervisore non si elimina (14/11): prima
+                 si riprende. Il comando resta, spento. */ ?>
+        <?php if ($presso === 'supervisore'): ?>
+            <div><span class="comando-spento" aria-disabled="true"><?= Icona::svg('trash3') ?>Elimina corso</span></div>
+        <?php else: ?>
         <form action="/admin/courses/<?= $courseId ?>/delete" method="post"
               onsubmit="return confirm('Eliminare definitivamente questo corso e tutti i dati collegati?');">
             <?= Csrf::field() ?>
             <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina corso</button>
         </form>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
