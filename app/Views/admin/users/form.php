@@ -48,16 +48,24 @@ $haFoto = !empty($user['avatar_path']);
     <input type="email" id="email" name="email" maxlength="190" required
            value="<?= htmlspecialchars((string) ($user['email'] ?? '')) ?>">
 
-    <label for="role">Ruolo</label>
-    <select id="role" name="role" data-role-select>
-        <?php foreach ($roles as $role): ?>
-            <?php /* Il valore inviato resta minuscolo: e' quello che sta in
-                     tabella. Cambia solo come lo si legge. */ ?>
-            <option value="<?= htmlspecialchars($role) ?>" <?= $currentRole === $role ? 'selected' : '' ?>>
-                <?= htmlspecialchars(Auth::roleLabel($role)) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
+    <?php if (count($roles) === 1): ?>
+        <?php /* Un ruolo solo da scegliere (il supervisore, 15/11: solo
+                 studenti): un menu con una voce sarebbe un comando che non
+                 fa niente. Si scrive, e il server lo impone comunque. */ ?>
+        <p><strong>Ruolo:</strong> <?= htmlspecialchars(Auth::roleLabel($roles[0])) ?></p>
+        <input type="hidden" name="role" value="<?= htmlspecialchars($roles[0]) ?>">
+    <?php else: ?>
+        <label for="role">Ruolo</label>
+        <select id="role" name="role" data-role-select>
+            <?php foreach ($roles as $role): ?>
+                <?php /* Il valore inviato resta minuscolo: e' quello che sta in
+                         tabella. Cambia solo come lo si legge. */ ?>
+                <option value="<?= htmlspecialchars($role) ?>" <?= $currentRole === $role ? 'selected' : '' ?>>
+                    <?= htmlspecialchars(Auth::roleLabel($role)) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    <?php endif; ?>
 
     <?php if (count($roles) > 1): ?>
         <div data-tutor-field <?= $currentRole === 'assistente' ? '' : 'hidden' ?>>

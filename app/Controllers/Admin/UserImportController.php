@@ -41,7 +41,8 @@ class UserImportController extends AdminController
 
     public function form(array $params = []): void
     {
-        Auth::requirePermission('user.manage');
+        // Anche il supervisore (15/11): il file crea solo studenti.
+        Auth::requirePermission('user.manage', 'student.manage');
 
         View::render('admin/users/importa', [
             'pageTitle' => 'Importa utenti',
@@ -55,7 +56,8 @@ class UserImportController extends AdminController
      */
     public function preview(array $params = []): void
     {
-        Auth::requirePermission('user.manage');
+        // Anche il supervisore (15/11): il file crea solo studenti.
+        Auth::requirePermission('user.manage', 'student.manage');
 
         $file = $_FILES['file'] ?? null;
 
@@ -104,7 +106,8 @@ class UserImportController extends AdminController
      */
     public function run(array $params = []): void
     {
-        Auth::requirePermission('user.manage');
+        // Anche il supervisore (15/11): il file crea solo studenti.
+        Auth::requirePermission('user.manage', 'student.manage');
 
         $righe = $_SESSION[self::SESSIONE] ?? null;
         unset($_SESSION[self::SESSIONE]);

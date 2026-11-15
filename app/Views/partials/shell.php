@@ -208,7 +208,7 @@ use App\Core\Csrf;
             <?php endif; ?>
             <a href="/profilo" class="nav-link<?= $voce('/profilo') ?>">Profilo</a>
 
-            <?php if (Auth::canAny('user.manage', 'assistant.manage', 'group.manage', 'group.manage_own', 'course.create', 'course.edit', 'course.delete', 'settings.manage') || Auth::hasRole('admin')): ?>
+            <?php if (Auth::canAny('user.manage', 'student.manage', 'assistant.manage', 'group.manage', 'group.manage_own', 'course.create', 'course.edit', 'course.delete', 'settings.manage') || Auth::hasRole('admin')): ?>
                 <span class="nav-section">Amministrazione</span>
 
                 <?php if (Auth::canAny('course.create', 'course.edit', 'course.delete')): ?>
@@ -217,7 +217,7 @@ use App\Core\Csrf;
                 <?php if (Auth::canAny('group.manage', 'group.manage_own')): ?>
                     <a href="/admin/groups" class="nav-link<?= $voce('/admin/groups') ?>">Gruppi</a>
                 <?php endif; ?>
-                <?php if (Auth::canAny('user.manage', 'assistant.manage')): ?>
+                <?php if (Auth::canAny('user.manage', 'student.manage', 'assistant.manage')): ?>
                     <a href="/admin/users" class="nav-link<?= $voce('/admin/users') ?>">Utenti</a>
                 <?php endif; ?>
                 <?php /* Cinque pagine di configurazione sotto una voce sola: si

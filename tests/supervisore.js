@@ -142,10 +142,11 @@ async function posta(page, url, campi, paginaToken) {
         // --- il menu -------------------------------------------------------
         await page.goto(BASE + '/admin/courses');
         const menu = await page.evaluate(() => [...document.querySelectorAll('.sidebar-nav a')].map((a) => a.textContent.trim()));
-        const devono = ['Corsi', 'Report', 'Gestione corsi', 'Gruppi', 'Impostazioni', 'Profilo'];
+        // «Utenti» dal 15/11: gestisce gli studenti.
+        const devono = ['Corsi', 'Report', 'Gestione corsi', 'Gruppi', 'Utenti', 'Impostazioni', 'Profilo'];
         // «Bacheche» non c'e' piu' dal 13/11.
-        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Utenti', 'Domande', 'Bacheche', 'Bacheca'];
-        check('menu: «Corsi», «Report», «Gestione corsi», «Gruppi», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
+        const nonDevono = ['I miei corsi', 'Esplora corsi', 'Agenda', 'Sessioni live', 'Certificati', 'Domande', 'Bacheche', 'Bacheca'];
+        check('menu: «Corsi», «Report», «Gestione corsi», «Gruppi», «Utenti», «Impostazioni», «Profilo», e niente altro di quello che non e\' suo',
             devono.every((v) => menu.includes(v)) && nonDevono.every((v) => !menu.includes(v)), [menu.join(' | ')]);
 
         // --- le pagine -----------------------------------------------------
@@ -264,7 +265,9 @@ async function posta(page, url, campi, paginaToken) {
             ['/lessons/' + A.lezione + '/edit', 'modifica di una lezione di un corso pubblicato'],
             ['/modules/' + A.modulo + '/edit', 'un modulo di un corso pubblicato'],
             ['/quizzes/' + A.quiz + '/edit', 'modifica di un questionario di un corso pubblicato'],
-            ['/admin/users', 'gli utenti'],
+            // Gli studenti si' (15/11, `studenti_supervisore.js`); l'elenco
+            // degli utenti non lo scarica.
+            ['/admin/users/csv', 'l\'elenco degli utenti da scaricare'],
             ['/gruppi/' + A.gruppo, 'la pagina del gruppo dei partecipanti'],
             ['/admin/settings/posta', 'il server di posta'],
             ['/admin/settings/email', 'i messaggi email'],

@@ -28,6 +28,11 @@ use App\Models\UserModel;
  * Accesso con `user.manage` (admin). Un tutor con `assistant.manage` puo'
  * gestire soltanto i propri assistenti: vede solo loro e non puo' assegnare
  * altri ruoli ne' spostarli sotto un altro tutor.
+ *
+ * Il supervisore, con `student.manage` (15/11, Alessandro), gestisce solo
+ * gli studenti: li crea, anche da un file, ne modifica nome, cognome, email
+ * e stato, li mette nei gruppi, manda la password temporanea, li elimina.
+ * Non vede lo staff, non cambia ruoli e non scarica l'elenco.
  */
 class UserController extends AdminController
 {
@@ -39,10 +44,12 @@ class UserController extends AdminController
             'pageTitle' => 'Utenti',
             'users' => $this->visibleUsers(),
             'canManageAll' => Auth::can('user.manage'),
+            'soloStudenti' => self::soloStudenti(),
             // Gli inviti ancora da mandare. Si mostrano perche' un cron
             // fermo non si lamenta, e qui il silenzio vuol dire persone che
-            // non riescono a entrare.
-            'invitiInAttesa' => Auth::can('user.manage') ? UserModel::countPendingInvites() : 0,
+            // non riescono a entrare. Li vede anche il supervisore, che
+            // importa: gli invitati sono tutti studenti.
+            'invitiInAttesa' => Auth::canAny('user.manage', 'student.manage') ? UserModel::countPendingInvites() : 0,
             'ultimoInvio' => Settings::get(Invites::KEY_LAST_RUN),
             // Il pulsante XLSX non compare dove il server non puo' produrlo:
             // meglio non offrirlo che offrirlo e fallire.
@@ -61,7 +68,7 @@ class UserController extends AdminController
      */
     public function sendInvites(array $params = []): void
     {
-        Auth::requirePermission('user.manage');
+        Auth::requirePermission('user.manage', 'student.manage');
 
         $esito = Invites::mandaScaglione();
 
@@ -607,17 +614,35 @@ class UserController extends AdminController
 
     private function requireUserAccess(): void
     {
-        Auth::requirePermission('user.manage', 'assistant.manage');
+        Auth::requirePermission('user.manage', 'student.manage', 'assistant.manage');
     }
 
     /**
-     * Chi ha solo `assistant.manage` vede esclusivamente i propri assistenti.
+     * Il supervisore (15/11): gestisce gli studenti e nessun altro.
+     */
+    private static function soloStudenti(): bool
+    {
+        return !Auth::can('user.manage') && Auth::can('student.manage');
+    }
+
+    /**
+     * Chi ha solo `assistant.manage` vede esclusivamente i propri assistenti;
+     * il supervisore solo gli studenti.
      */
     private function visibleUsers(): array
     {
-        return Auth::can('user.manage')
-            ? UserModel::all()
-            : UserModel::assistantsForTutor((int) Auth::id());
+        if (Auth::can('user.manage')) {
+            return UserModel::all();
+        }
+
+        if (self::soloStudenti()) {
+            return array_values(array_filter(
+                UserModel::all(),
+                static fn (array $u): bool => $u['role'] === 'studente'
+            ));
+        }
+
+        return UserModel::assistantsForTutor((int) Auth::id());
     }
 
     private function findManageableUser(int $id): ?array
@@ -629,6 +654,17 @@ class UserController extends AdminController
             echo 'Utente non trovato.';
 
             return null;
+        }
+
+        if (self::soloStudenti()) {
+            if ($user['role'] !== 'studente') {
+                http_response_code(403);
+                echo 'Puoi gestire soltanto gli studenti.';
+
+                return null;
+            }
+
+            return $user;
         }
 
         if (!Auth::can('user.manage')) {
@@ -678,7 +714,11 @@ class UserController extends AdminController
      */
     private function assignableRoles(): array
     {
-        return Auth::can('user.manage') ? Auth::ROLES : ['assistente'];
+        if (Auth::can('user.manage')) {
+            return Auth::ROLES;
+        }
+
+        return self::soloStudenti() ? ['studente'] : ['assistente'];
     }
 
     /**
@@ -755,7 +795,9 @@ class UserController extends AdminController
 
         // Chi non ha user.manage non sceglie i tutor: se mai qualcuno gestisse
         // assistenti con il solo assistant.manage, li terrebbe sotto di se'.
-        if (!Auth::can('user.manage')) {
+        if (self::soloStudenti()) {
+            $tutorIds = [];
+        } elseif (!Auth::can('user.manage')) {
             $tutorIds = [(int) Auth::id()];
         }
 

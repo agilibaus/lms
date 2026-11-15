@@ -10,6 +10,7 @@ use App\Core\Icona;
 
 /** @var array $users */
 /** @var bool $canManageAll */
+/** @var bool $soloStudenti il supervisore (15/11): gestisce solo gli studenti, non scarica l'elenco */
 /** @var bool $canExportXlsx */
 /** @var int $invitiInAttesa */
 /** @var ?string $ultimoInvio */
@@ -30,12 +31,12 @@ $users = $ordine->applica($users);
     <p class="page-subtitle">
         <?= $canManageAll
             ? 'Creazione utenti, ruoli, tutor di riferimento e password.'
-            : 'Gli assistenti assegnati a te.' ?>
+            : ($soloStudenti ? 'Gli studenti: creazione, dati, gruppi e password.' : 'Gli assistenti assegnati a te.') ?>
     </p>
     <div class="page-actions">
         <a href="/admin/users/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo utente</a>
 
-        <?php if ($canManageAll): ?>
+        <?php if ($canManageAll || $soloStudenti): ?>
             <a href="/admin/users/importa" class="btn btn-secondary btn-con-icona"><?= Icona::svg('upload') ?>Importa da file</a>
         <?php endif; ?>
 
@@ -64,7 +65,7 @@ $users = $ordine->applica($users);
          creato, o si e' fermato, queste persone non entrano e nessuno se ne
          accorge — il difetto gia' noto del rilascio dei moduli, ma qui le
          conseguenze sono peggiori. Il numero non scende, e si vede. */ ?>
-<?php if ($canManageAll && $invitiInAttesa > 0): ?>
+<?php if (($canManageAll || $soloStudenti) && $invitiInAttesa > 0): ?>
     <div class="alert alert-warning">
         <strong><?= (int) $invitiInAttesa ?></strong>
         <?= $invitiInAttesa === 1 ? 'invito è ancora da mandare' : 'inviti sono ancora da mandare' ?>:

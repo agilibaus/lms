@@ -54,7 +54,11 @@ final class Ruoli
         // Dal 06/11 (Alessandro) anche i report di tutti, la gestione dei
         // gruppi e la Bacheca di tutti i corsi, categorie comprese, come
         // l'admin; eliminare un gruppo (`group.delete`) resta dell'admin.
-        'supervisore' => ['board.manage', 'course.build', 'course.create', 'group.manage', 'report.view', 'settings.welcome'],
+        // Dal 15/11 (Alessandro) gestisce gli studenti (`student.manage`):
+        // li crea, anche da un file, li modifica, manda la password
+        // temporanea, li elimina. Lo staff non lo vede e non lo tocca, e
+        // l'elenco degli utenti non lo scarica (`user.manage`).
+        'supervisore' => ['board.manage', 'course.build', 'course.create', 'group.manage', 'report.view', 'settings.welcome', 'student.manage'],
         'tutor' => ['board.manage_own', 'course.edit', 'course.welcome_own', 'group.manage_own', 'report.view'],
         'assistente' => [],
         'studente' => [],
