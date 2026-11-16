@@ -85,6 +85,87 @@ class QuizAttemptModel
         return (int) $stmt->fetchColumn();
     }
 
+    /** Quanti studenti hanno almeno un tentativo sul questionario. */
+    public static function countStudentsForQuiz(int $quizId): int
+    {
+        $stmt = Database::connection()->prepare('SELECT COUNT(DISTINCT user_id) FROM quiz_attempts WHERE quiz_id = :quiz_id');
+        $stmt->execute(['quiz_id' => $quizId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * I tentativi di un questionario come li vuole `Ricalcolo` (16/11): per
+     * ognuno chi l'ha fatto, punteggio ed esito salvati, e per ogni domanda a
+     * cui ha risposto il tipo e le opzioni scelte. Un'opzione tolta prima del
+     * 16/11 ha lasciato la scelta a NULL: la domanda resta, senza scelte.
+     *
+     * @return array<int, array{user_id: int, score_pct: float, passed: bool,
+     *                          risposte: array<int, array{tipo: string, scelte: list<int>}>}>
+     */
+    public static function perRicalcolo(int $quizId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT qa.id, qa.user_id, qa.score_pct, qa.passed,
+                    qaa.question_id, qaa.selected_option_id, qq.question_type
+             FROM quiz_attempts qa
+             LEFT JOIN quiz_attempt_answers qaa ON qaa.attempt_id = qa.id
+             LEFT JOIN quiz_questions qq ON qq.id = qaa.question_id
+             WHERE qa.quiz_id = :quiz_id
+             ORDER BY qa.id, qaa.id'
+        );
+        $stmt->execute(['quiz_id' => $quizId]);
+
+        $tentativi = [];
+
+        foreach ($stmt->fetchAll() as $riga) {
+            $id = (int) $riga['id'];
+            $tentativi[$id] ??= [
+                'user_id' => (int) $riga['user_id'],
+                'score_pct' => (float) $riga['score_pct'],
+                'passed' => (int) $riga['passed'] === 1,
+                'risposte' => [],
+            ];
+
+            if ($riga['question_id'] === null) {
+                continue;
+            }
+
+            $domanda = (int) $riga['question_id'];
+            $tentativi[$id]['risposte'][$domanda] ??= ['tipo' => (string) $riga['question_type'], 'scelte' => []];
+
+            if ($riga['selected_option_id'] !== null) {
+                $tentativi[$id]['risposte'][$domanda]['scelte'][] = (int) $riga['selected_option_id'];
+            }
+        }
+
+        return $tentativi;
+    }
+
+    /**
+     * Scrive i voti ricalcolati: punteggio ed esito di ogni tentativo e, per
+     * ogni domanda valutata, se e' stata indovinata. Va chiamata dentro la
+     * transazione che salva la modifica del questionario.
+     *
+     * @param array<int, array{score_pct: float, passed: bool, giuste: array<int, bool>}> $esiti
+     */
+    public static function applicaRicalcolo(array $esiti): void
+    {
+        $db = Database::connection();
+        $tentativo = $db->prepare('UPDATE quiz_attempts SET score_pct = :score, passed = :passed WHERE id = :id');
+        $risposta = $db->prepare(
+            'UPDATE quiz_attempt_answers SET is_correct = :giusta WHERE attempt_id = :id AND question_id = :domanda'
+        );
+
+        foreach ($esiti as $id => $esito) {
+            $tentativo->execute(['score' => $esito['score_pct'], 'passed' => $esito['passed'] ? 1 : 0, 'id' => $id]);
+
+            foreach ($esito['giuste'] as $domanda => $giusta) {
+                $risposta->execute(['giusta' => $giusta ? 1 : 0, 'id' => $id, 'domanda' => $domanda]);
+            }
+        }
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM quiz_attempts WHERE id = :id LIMIT 1');

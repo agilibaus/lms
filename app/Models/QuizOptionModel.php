@@ -72,6 +72,32 @@ class QuizOptionModel
     }
 
     /**
+     * Le opzioni corrette di tutte le domande di un questionario, per
+     * domanda (16/11, il ricalcolo dei voti).
+     *
+     * @return array<int, list<int>>
+     */
+    public static function correctIdsForQuiz(int $quizId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT o.question_id, o.id
+             FROM quiz_options o
+             INNER JOIN quiz_questions q ON q.id = o.question_id
+             WHERE q.quiz_id = :quiz_id AND o.is_correct = 1
+             ORDER BY o.question_id, o.position, o.id'
+        );
+        $stmt->execute(['quiz_id' => $quizId]);
+
+        $corrette = [];
+
+        foreach ($stmt->fetchAll() as $riga) {
+            $corrette[(int) $riga['question_id']][] = (int) $riga['id'];
+        }
+
+        return $corrette;
+    }
+
+    /**
      * Allinea le opzioni di una domanda a quelle inviate dal form.
      *
      * Le righe esistenti vengono aggiornate in posizione invece di essere

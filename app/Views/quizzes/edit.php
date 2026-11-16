@@ -13,6 +13,9 @@ use App\Core\QuizScoring;
 /** @var array<int, array> $optionsByQuestion */
 /** @var int $incompleteQuestions */
 /** @var int $maxOptions */
+/** @var int $tentativi i tentativi gia' svolti: se ce ne sono, le domande non si aggiungono e non si eliminano (16/11) */
+/** @var int $studenti gli studenti che li hanno svolti */
+$bloccato = $tentativi > 0;
 ?>
 <div class="page-header">
     <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
@@ -27,6 +30,11 @@ use App\Core\QuizScoring;
 <?php if (!empty($_SESSION['flash_error'])): ?>
     <div class="alert alert-error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
     <?php unset($_SESSION['flash_error']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['flash_success'])): ?>
+    <div class="alert alert-success"><?= htmlspecialchars($_SESSION['flash_success']) ?></div>
+    <?php unset($_SESSION['flash_success']); ?>
 <?php endif; ?>
 
 <?php if ($questions === []): ?>
@@ -86,6 +94,10 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
                 <?php endif; ?>
             <?php endif; ?>
             I tentativi sono illimitati e vale il punteggio migliore.
+            <?php if ($bloccato): ?>
+                <strong>Modificandola, i voti dei tentativi già svolti vengono ricalcolati</strong>: prima di
+                salvare puoi vedere quanti cambiano.
+            <?php endif; ?>
         </p>
 
         <div class="form-actions">
@@ -107,6 +119,15 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
 
 <section class="card">
     <h2>Domande</h2>
+
+    <?php if ($bloccato): ?>
+        <p class="form-hint" style="margin-top: 0;">
+            Il questionario ha <?= $tentativi === 1 ? '1 tentativo' : $tentativi . ' tentativi' ?>
+            di <?= $studenti === 1 ? '1 studente' : $studenti . ' studenti' ?>: non è possibile aggiungere o
+            eliminare domande, né cambiare il loro tipo. Puoi modificare i testi e cambiare le risposte
+            corrette: in questo caso i voti dei tentativi vengono ricalcolati.
+        </p>
+    <?php endif; ?>
 
     <?php if ($questions === []): ?>
         <p class="empty-state-small">Nessuna domanda.</p>
@@ -155,11 +176,16 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
                                     <?= $indice === count($questions) - 1 ? 'disabled' : '' ?>><?= Icona::svg('arrow-down') ?></button>
                         </form>
                         <a href="/questions/<?= (int) $question['id'] ?>/edit" class="comando-con-icona"><?= Icona::svg('pencil') ?>Modifica</a>
-                        <form action="/questions/<?= (int) $question['id'] ?>/delete" method="post"
-                              onsubmit="return confirm('Eliminare questa domanda?');">
-                            <?= Csrf::field() ?>
-                            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
-                        </form>
+                        <?php if ($bloccato): ?>
+                            <?php /* Spento, senza spiegazione accanto: la dice la frase in cima. */ ?>
+                            <span class="comando-spento comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</span>
+                        <?php else: ?>
+                            <form action="/questions/<?= (int) $question['id'] ?>/delete" method="post"
+                                  onsubmit="return confirm('Eliminare questa domanda?');">
+                                <?= Csrf::field() ?>
+                                <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </li>
             <?php endforeach; ?>
@@ -167,6 +193,7 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
     <?php endif; ?>
 </section>
 
+<?php if (!$bloccato): ?>
 <section class="card">
     <h2>Nuova domanda</h2>
     <form action="/quizzes/<?= (int) $quiz['id'] ?>/questions" method="post" class="form" data-question-form>
@@ -182,5 +209,6 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
         </div>
     </form>
 </section>
+<?php endif; ?>
 
 <?php require __DIR__ . '/_question_script.php'; ?>

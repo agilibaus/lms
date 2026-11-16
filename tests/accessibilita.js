@@ -641,6 +641,10 @@ PAGINE_INTERNE.push(
     ['/lessons/' + SEMINATI.lezione, 'Lezione con materiale (semina)'],
     ['/lessons/' + SEMINATI.lezione + '/fruizione', 'Fruizione senza durata (semina)'],
     ['/questions/' + SEMINATI.domanda_vero_falso + '/edit', 'Modifica domanda vero/falso (semina)'],
+    // Un questionario senza tentativi (16/11): con dei tentativi, come il
+    // quiz 1 e quello del mondo A, «Nuova domanda» non c'e' e la domanda si
+    // corregge senza scegliere il tipo; qui c'e' tutto il modulo di prima.
+    ['/quizzes/' + SEMINATI.quiz_chiuso + '/edit', 'Questionario senza tentativi (semina)'],
     ['/admin/groups/' + SEMINATI.gruppo + '/edit', 'Modifica gruppo con corso (semina)'],
     // Le date dei moduli del gruppo (26/10): una tabella con un campo data
     // per riga, che sul telefono diventa schede.

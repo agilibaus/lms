@@ -51,13 +51,20 @@ $soglia = (int) $quiz['passing_score_pct'];
 
         <label for="quiz-soglia">Punteggio minimo per superarlo</label>
         <div class="campo-con-unita">
+            <?php /* Con dei tentativi la soglia non si cambia (16/11): il ricalcolo
+                     dei voti lascia fuori gli H5P, il cui punteggio lo da'
+                     l'esercizio. Il server la tiene comunque com'e'. */ ?>
             <input type="number" id="quiz-soglia" name="passing_score_pct" min="1" max="100" step="1"
-                   value="<?= $soglia ?>" aria-describedby="quiz-soglia-aiuto">
+                   value="<?= $soglia ?>" aria-describedby="quiz-soglia-aiuto" <?= $tentativi > 0 ? 'disabled' : '' ?>>
             <span aria-hidden="true">%</span>
         </div>
         <p class="form-hint" id="quiz-soglia-aiuto">
             In percentuale dei punti dell'esercizio: con <?= $soglia ?>% e un esercizio da 10 punti ne servono almeno
             <?= (int) ceil($soglia / 10) ?>. Ogni «Verifica» è un tentativo; i tentativi sono illimitati e vale il migliore.
+            <?php if ($tentativi > 0): ?>
+                Il questionario ha già <?= $tentativi === 1 ? '1 tentativo' : $tentativi . ' tentativi' ?>: la soglia non
+                si può più cambiare.
+            <?php endif; ?>
         </p>
 
         <h3 class="quiz-h5p-titolo">Il contenuto</h3>

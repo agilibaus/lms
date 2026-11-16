@@ -16,6 +16,7 @@ use App\Core\PrimaDomanda;
 use App\Core\H5PArchivio;
 use App\Core\OrphanFiles;
 use App\Core\QuizScoring;
+use App\Core\Ricalcolo;
 use App\Core\View;
 use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
@@ -24,6 +25,7 @@ use App\Models\QuizAttemptModel;
 use App\Models\QuizModel;
 use App\Models\QuizOptionModel;
 use App\Models\QuizQuestionModel;
+use App\Models\UserModel;
 
 /**
  * Gestione quiz (admin/tutor) e svolgimento (studente).
@@ -226,6 +228,10 @@ class QuizController
             'optionsByQuestion' => $optionsByQuestion,
             'incompleteQuestions' => QuizOptionModel::countQuestionsWithoutCorrectOption((int) $quiz['id']),
             'maxOptions' => self::MAX_OPTIONS,
+            // Con dei tentativi le domande non si aggiungono e non si
+            // eliminano (16/11): la pagina lo dice, e spegne i comandi.
+            'tentativi' => QuizAttemptModel::countForQuiz((int) $quiz['id']),
+            'studenti' => QuizAttemptModel::countStudentsForQuiz((int) $quiz['id']),
         ]);
     }
 
@@ -249,7 +255,34 @@ class QuizController
             $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
         }
 
-        QuizModel::update((int) $quiz['id'], $title, self::sogliaDalPost());
+        $tentativi = QuizAttemptModel::countForQuiz((int) $quiz['id']);
+        $soglia = self::sogliaDalPost();
+
+        // La soglia con dei tentativi (16/11): in un questionario a domande
+        // si cambia ricalcolando gli esiti; in un H5P non si cambia, perche'
+        // il ricalcolo lascia fuori gli H5P (il campo e' spento, e un valore
+        // mandato a mano non conta).
+        if ($tentativi > 0 && ($quiz['kind'] ?? '') === 'h5p') {
+            $soglia = (int) $quiz['passing_score_pct'];
+        }
+
+        if ($tentativi > 0 && ($quiz['kind'] ?? '') !== 'h5p' && $soglia !== (int) $quiz['passing_score_pct']) {
+            $esito = $this->salvaConRicalcolo(
+                $quiz,
+                QuizOptionModel::correctIdsForQuiz((int) $quiz['id']),
+                $soglia,
+                static fn () => QuizModel::update((int) $quiz['id'], $title, $soglia),
+                [
+                    'cosa' => 'Hai cambiato la soglia di superamento da ' . (int) $quiz['passing_score_pct'] . '% a ' . $soglia . '%.',
+                    'cambia' => 'l’esito',
+                    'annulla' => '/quizzes/' . $quiz['id'] . '/edit',
+                ]
+            );
+            $_SESSION['flash_success'] = 'Impostazioni salvate. ' . $esito;
+            $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
+        }
+
+        QuizModel::update((int) $quiz['id'], $title, $soglia);
 
         // Un contenuto H5P nuovo al posto del vecchio (22/10): la cartella
         // nuova prima, la vecchia si toglie solo quando la nuova e' a posto.
@@ -334,6 +367,13 @@ class QuizController
             $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
         }
 
+        // Con dei tentativi le domande non si aggiungono (16/11): cambierebbe
+        // il significato dei tentativi gia' svolti.
+        if (QuizAttemptModel::countForQuiz((int) $quiz['id']) > 0) {
+            $_SESSION['flash_error'] = 'Il questionario ha già dei tentativi: non è possibile aggiungere domande.';
+            $this->redirect('/quizzes/' . $quiz['id'] . '/edit');
+        }
+
         try {
             [$text, $type, $options] = self::domandaDalPost();
         } catch (\RuntimeException $e) {
@@ -365,6 +405,7 @@ class QuizController
             'options' => QuizOptionModel::forQuestion((int) $question['id']),
             'quiz' => QuizModel::find((int) $question['quiz_id']),
             'maxOptions' => self::MAX_OPTIONS,
+            'tentativi' => QuizAttemptModel::countForQuiz((int) $question['quiz_id']),
         ]);
     }
 
@@ -387,10 +428,150 @@ class QuizController
             $this->redirect('/questions/' . $question['id'] . '/edit');
         }
 
-        QuizQuestionModel::update((int) $question['id'], $text, $type);
-        QuizOptionModel::replaceForQuestion((int) $question['id'], $options);
+        $questionId = (int) $question['id'];
+        $quizId = (int) $question['quiz_id'];
+        $salva = static function () use ($questionId, $text, $type, $options): void {
+            QuizQuestionModel::update($questionId, $text, $type);
+            QuizOptionModel::replaceForQuestion($questionId, $options);
+        };
 
-        $this->redirect('/quizzes/' . $question['quiz_id'] . '/edit');
+        // Con dei tentativi (16/11) si correggono i testi e si cambiano le
+        // risposte corrette, non il tipo ne' il numero delle opzioni; se
+        // cambiano le corrette, i voti si ricalcolano.
+        if (QuizAttemptModel::countForQuiz($quizId) > 0) {
+            $indietro = '/questions/' . $questionId . '/edit';
+
+            if ($type !== (string) $question['question_type']) {
+                $_SESSION['flash_error'] = 'Il questionario ha già dei tentativi: il tipo della domanda non si può cambiare. '
+                    . 'Le modifiche non sono state salvate.';
+                $this->redirect($indietro);
+            }
+
+            $esistenti = array_values(QuizOptionModel::forQuestion($questionId));
+
+            if (count($options) !== count($esistenti)) {
+                $_SESSION['flash_error'] = 'Il questionario ha già dei tentativi: le opzioni non si possono aggiungere né togliere, '
+                    . 'solo correggere. Le modifiche non sono state salvate.';
+                $this->redirect($indietro);
+            }
+
+            // Le opzioni si aggiornano in posizione: la corretta nuova e'
+            // l'opzione che sta gia' in quel posto.
+            $prima = [];
+            $dopo = [];
+            $nuove = [];
+
+            foreach ($esistenti as $i => $opzione) {
+                if ((int) $opzione['is_correct'] === 1) {
+                    $prima[] = (string) $opzione['option_text'];
+                }
+
+                if ($options[$i]['is_correct']) {
+                    $nuove[] = (int) $opzione['id'];
+                    $dopo[] = $options[$i]['text'];
+                }
+            }
+
+            $vecchie = QuizOptionModel::correctIdsForQuestion($questionId);
+            sort($vecchie);
+            sort($nuove);
+
+            if ($nuove !== $vecchie) {
+                $quiz = QuizModel::find($quizId);
+                $corrette = QuizOptionModel::correctIdsForQuiz($quizId);
+                $corrette[$questionId] = $nuove;
+                $piu = count($prima) > 1 || count($dopo) > 1;
+
+                $esito = $this->salvaConRicalcolo($quiz ?? [], $corrette, (int) ($quiz['passing_score_pct'] ?? 0), $salva, [
+                    'cosa' => 'Hai cambiato ' . ($piu ? 'le risposte corrette' : 'la risposta corretta') . ' della domanda «'
+                        . mb_strimwidth($text, 0, 120, '…') . '»: da ' . self::elenco($prima) . ' a ' . self::elenco($dopo) . '.',
+                    'cambia' => 'il punteggio',
+                    'annulla' => $indietro,
+                ]);
+                $_SESSION['flash_success'] = 'Domanda salvata. ' . $esito;
+                $this->redirect('/quizzes/' . $quizId . '/edit');
+            }
+        }
+
+        $salva();
+
+        $this->redirect('/quizzes/' . $quizId . '/edit');
+    }
+
+    /**
+     * Salva una modifica che cambia i voti, e i voti ricalcolati, insieme
+     * (16/11, Alessandro).
+     *
+     * Prima si calcola che cosa cambierebbe. Se cambia almeno un tentativo e
+     * chi salva non l'ha ancora visto, si mostra la pagina «Ricalcolo dei
+     * voti» con i campi del modulo da rimandare, e ci si ferma. Altrimenti
+     * modifica e voti nuovi vanno nella stessa transazione: un questionario
+     * salvato con i voti di prima non esiste mai. Alla conferma il calcolo si
+     * rifa': vale per i tentativi che ci sono in quel momento.
+     *
+     * @param array<int, list<int>> $corrette le risposte corrette dopo la modifica
+     * @param array{cosa: string, cambia: string, annulla: string} $conferma
+     * @return string la frase per l'avviso dopo il salvataggio
+     */
+    private function salvaConRicalcolo(array $quiz, array $corrette, int $soglia, callable $salva, array $conferma): string
+    {
+        $tentativi = QuizAttemptModel::perRicalcolo((int) $quiz['id']);
+        $esiti = Ricalcolo::esiti($tentativi, $corrette, $soglia);
+        $riepilogo = Ricalcolo::riepilogo($tentativi, $esiti);
+
+        if ($riepilogo['tentativi'] !== [] && ($_POST['conferma_ricalcolo'] ?? '') !== '1') {
+            $nomi = [];
+
+            foreach ($riepilogo['righe'] as $riga) {
+                $nomi[$riga['user_id']] = (string) (UserModel::find($riga['user_id'])['full_name'] ?? '—');
+            }
+
+            $campi = $_POST;
+            unset($campi['_token'], $campi['conferma_ricalcolo']);
+            $modulo = ModuleModel::find((int) $quiz['module_id']);
+
+            View::render('quizzes/ricalcolo', [
+                'pageTitle' => 'Ricalcolo dei voti',
+                'quiz' => $quiz,
+                'riepilogo' => $riepilogo,
+                'nomi' => $nomi,
+                'obbligatorio' => !empty($modulo['quiz_required']),
+                'campi' => $campi,
+                'azione' => (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH),
+            ] + $conferma);
+
+            exit;
+        }
+
+        $db = Database::connection();
+        $db->beginTransaction();
+
+        try {
+            $salva();
+            QuizAttemptModel::applicaRicalcolo($esiti);
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+
+            throw $e;
+        }
+
+        $n = count($riepilogo['tentativi']);
+        $m = count($riepilogo['studenti']);
+
+        return $n === 0
+            ? 'Nessun voto cambia.'
+            : 'Voti ricalcolati: ' . ($n === 1 ? 'cambia 1 tentativo' : 'cambiano ' . $n . ' tentativi')
+                . ' di ' . ($m === 1 ? '1 studente' : $m . ' studenti') . '.';
+    }
+
+    /** «Vero»; «A» e «B»; «A», «B» e «C». */
+    private static function elenco(array $testi): string
+    {
+        $testi = array_map(static fn (string $t): string => '«' . $t . '»', $testi);
+        $ultimo = array_pop($testi);
+
+        return $testi === [] ? (string) $ultimo : implode(', ', $testi) . ' e ' . $ultimo;
     }
 
     /**
@@ -426,6 +607,13 @@ class QuizController
         if (!$question) {
             $this->notFound('Domanda non trovata.');
             return;
+        }
+
+        // Con dei tentativi le domande non si eliminano (16/11): con la
+        // domanda se ne andrebbero le risposte gia' date, aperte comprese.
+        if (QuizAttemptModel::countForQuiz((int) $question['quiz_id']) > 0) {
+            $_SESSION['flash_error'] = 'Il questionario ha già dei tentativi: non è possibile eliminare domande.';
+            $this->redirect('/quizzes/' . $question['quiz_id'] . '/edit');
         }
 
         // Un questionario non resta senza domande (30/10, Alessandro): la
