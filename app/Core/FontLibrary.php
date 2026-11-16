@@ -152,7 +152,8 @@ class FontLibrary
         if ($indirizzo === null) {
             throw new RuntimeException(
                 'Google ha risposto, ma nella risposta non c\'è un file woff2 per "' . $famiglia . '". '
-                . 'Può succedere con famiglie molto particolari: carica il file a mano.'
+                . 'Può succedere con famiglie molto particolari: metti il file a mano in storage/fonts/, '
+                . 'come spiegato nella sezione «Caratteri».'
             );
         }
 
@@ -163,46 +164,6 @@ class FontLibrary
         }
 
         if (file_put_contents(self::percorso($famiglia), $font) === false) {
-            throw new RuntimeException('Non riesco a scrivere in storage/fonts: controlla i permessi.');
-        }
-    }
-
-    /**
-     * Accetta un file caricato a mano. E' il ripiego per i server che non
-     * possono uscire su internet, e per questo **non deve dipendere da
-     * niente di esterno**.
-     *
-     * @param array{tmp_name: string, size: int, error: int} $file
-     * @throws RuntimeException
-     */
-    public static function accettaCaricato(string $famiglia, array $file): void
-    {
-        if (!self::esiste($famiglia)) {
-            throw new RuntimeException('La famiglia "' . $famiglia . '" non è nel catalogo.');
-        }
-
-        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            throw new RuntimeException('Il caricamento del file non è riuscito.');
-        }
-
-        $contenuto = (string) file_get_contents($file['tmp_name']);
-
-        // La firma di un woff2: i primi quattro byte sono "wOF2". Si guarda
-        // il contenuto e non l'estensione, perche' l'estensione la decide
-        // chi carica.
-        if (substr($contenuto, 0, 4) !== 'wOF2') {
-            throw new RuntimeException(
-                'Il file non è un woff2. Dalla pagina del carattere su fonts.google.com, '
-                . 'scarica la famiglia e converti il .ttf in woff2, oppure usa il file woff2 '
-                . 'indicato nel foglio di stile di Google.'
-            );
-        }
-
-        if (!is_dir(self::CARTELLA) && !mkdir(self::CARTELLA, 0775, true) && !is_dir(self::CARTELLA)) {
-            throw new RuntimeException('Non riesco a creare la cartella storage/fonts.');
-        }
-
-        if (file_put_contents(self::percorso($famiglia), $contenuto) === false) {
             throw new RuntimeException('Non riesco a scrivere in storage/fonts: controlla i permessi.');
         }
     }
@@ -278,9 +239,11 @@ class FontLibrary
      * Il messaggio per chi non e' riuscito a scaricare un carattere.
      *
      * Ogni messaggio dice anche **che cosa fare**: lo legge chi amministra
-     * Pistacchio nel pannello Aspetto, subito sopra il modulo per caricare il
-     * file a mano, e un messaggio che dice solo «non riuscito» lo lascia
-     * senza una strada. Tre casi, decisi con Elena il 06/10:
+     * Pistacchio nel pannello Aspetto, e un messaggio che dice solo «non
+     * riuscito» lo lascia senza una strada. La strada e' mettere il file a
+     * mano in `storage/fonts/`, come spiega la sezione «Caratteri»: fino al
+     * 16/11 il messaggio diceva «qui sotto», verso un modulo per caricarlo
+     * che nessuna pagina mostrava, ed e' stato tolto. Tre casi, decisi con Elena il 06/10:
      *
      *   1. **Nessuna connessione** (`$erroreRete` non vuoto): l'hosting
      *      chiude le connessioni in uscita.
@@ -298,7 +261,7 @@ class FontLibrary
      */
     public static function messaggioErrore(string $host, string $erroreRete, int $stato, string $atteso): string
     {
-        $aMano = 'carica il file del carattere a mano, qui sotto.';
+        $aMano = 'metti il file del carattere a mano in storage/fonts/, come spiegato nella sezione «Caratteri».';
 
         if ($erroreRete !== '') {
             return 'Il server non è riuscito a raggiungere ' . $host . ': ' . $erroreRete . '. '

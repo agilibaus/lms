@@ -41,8 +41,6 @@ check('l\'aperta NON fa punteggio', !QuizScoring::valutata('open'));
 
 check('solo la multipla accetta piu\' risposte', QuizScoring::piuRisposte('multiple_choice'));
 check('la singola no', !QuizScoring::piuRisposte('single_choice'));
-check('l\'aperta non ha opzioni', !QuizScoring::haOpzioni('open'));
-check('le altre si\'', QuizScoring::haOpzioni('true_false'));
 
 echo PHP_EOL . '--- Scelta multipla: tutto o niente' . PHP_EOL;
 

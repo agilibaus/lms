@@ -53,21 +53,6 @@ final class PersonName
     public const PRESELEZIONATA = self::FIRST;
 
     /**
-     * Divide un nome completo: la prima parola e' il nome, il resto il
-     * cognome. Sbaglia con i nomi doppi («Maria Grazia Rossi»), ed e' per
-     * questo che moduli e importazione vogliono i due campi separati. E' la
-     * stessa divisione che la migrazione 2026_10_07_nome_cognome.sql ha fatto
-     * in SQL sui nomi che c'erano gia'; qui serve ai test che partono da un
-     * nome solo.
-     */
-    public static function split(string $completo): array
-    {
-        $parole = preg_split('/\s+/u', trim($completo), 2) ?: [''];
-
-        return [$parole[0], $parole[1] ?? ''];
-    }
-
-    /**
      * Nome e cognome come li scrive una persona, ripuliti. Tutti e due
      * obbligatori: e' formazione finanziata, e il cognome serve.
      *

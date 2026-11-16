@@ -57,11 +57,6 @@ class QuizScoring
         return $tipo === 'multiple_choice';
     }
 
-    public static function haOpzioni(string $tipo): bool
-    {
-        return $tipo !== 'open';
-    }
-
     public static function etichetta(string $tipo): string
     {
         return match ($tipo) {

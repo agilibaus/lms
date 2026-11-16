@@ -162,57 +162,6 @@ check(
 );
 
 // ---------------------------------------------------------------
-echo PHP_EOL . 'Il ripiego: il file caricato a mano' . PHP_EOL;
-
-$woff2 = __DIR__ . '/../public/assets/fonts/albert-sans-latin.woff2';
-
-if (!is_file($woff2)) {
-    echo '  --   manca il file di Albert Sans: prove sul caricamento saltate' . PHP_EOL;
-} else {
-    $tmp = (string) tempnam(sys_get_temp_dir(), 'font');
-    copy($woff2, $tmp);
-
-    $gia = FontLibrary::presente('Albert Sans');
-
-    try {
-        FontLibrary::accettaCaricato('Albert Sans', ['tmp_name' => $tmp, 'size' => filesize($tmp), 'error' => UPLOAD_ERR_OK]);
-        check('un woff2 vero viene accettato', FontLibrary::presente('Albert Sans'));
-    } catch (Throwable $e) {
-        check('un woff2 vero viene accettato', false, $e->getMessage());
-    }
-
-    // Un file che non e' un carattere: si guarda il CONTENUTO, non il nome,
-    // perche' il nome lo decide chi carica.
-    $finto = (string) tempnam(sys_get_temp_dir(), 'font');
-    file_put_contents($finto, str_repeat('questo non e un carattere', 100));
-
-    try {
-        FontLibrary::accettaCaricato('Lora', ['tmp_name' => $finto, 'size' => filesize($finto), 'error' => UPLOAD_ERR_OK]);
-        check('un file qualunque viene respinto', false, 'accettato: il controllo della firma non ha funzionato');
-    } catch (Throwable $e) {
-        check('un file qualunque viene respinto', str_contains($e->getMessage(), 'woff2'), $e->getMessage());
-    }
-
-    try {
-        FontLibrary::accettaCaricato('Famiglia Inventata', ['tmp_name' => $tmp, 'size' => 1, 'error' => UPLOAD_ERR_OK]);
-        check('una famiglia fuori catalogo viene respinta', false);
-    } catch (Throwable $e) {
-        check('una famiglia fuori catalogo viene respinta', str_contains($e->getMessage(), 'catalogo'));
-    }
-
-    unlink($tmp);
-    unlink($finto);
-
-    // Si lascia il disco com'era: un test non deve cambiare la
-    // configurazione dell'installazione su cui gira.
-    if (!$gia && FontLibrary::presente('Albert Sans')) {
-        unlink(FontLibrary::percorso('Albert Sans'));
-    }
-
-    check('il test non lascia niente dietro di se', $gia === FontLibrary::presente('Albert Sans'));
-}
-
-// ---------------------------------------------------------------
 echo PHP_EOL . 'Quando lo scaricamento non riesce: i messaggi' . PHP_EOL;
 
 // Senza rete: si prova la funzione che scrive il messaggio, su tutti i casi.
@@ -235,7 +184,7 @@ $casi = [
 foreach ($casi as $caso => $messaggio) {
     check(
         $caso . ': dice che cosa fare',
-        str_contains($messaggio, 'a mano'),
+        str_contains($messaggio, 'a mano in storage/fonts/'),
         'un messaggio che dice solo «non riuscito» lascia chi lo legge senza una strada'
     );
     check($caso . ': nomina il server', str_contains($messaggio, $host), $messaggio);

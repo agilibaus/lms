@@ -30,14 +30,6 @@ function check(string $label, bool $condition, string $detail = ''): void
     }
 }
 
-echo PHP_EOL . 'La divisione di un nome tutto insieme' . PHP_EOL;
-
-check('«Mario Rossi»: nome e cognome', PersonName::split('Mario Rossi') === ['Mario', 'Rossi']);
-check('«Maria Grazia Rossi»: la prima parola è il nome (il caso che sbaglia, ed è dichiarato)',
-    PersonName::split('Maria Grazia Rossi') === ['Maria', 'Grazia Rossi']);
-check('spazi in più: ignorati', PersonName::split("  Mario \t Rossi ") === ['Mario', 'Rossi']);
-check('una parola sola: cognome vuoto', PersonName::split('Mario') === ['Mario', '']);
-
 echo PHP_EOL . 'Nome e cognome come li scrive una persona' . PHP_EOL;
 
 $pulito = static function (string $n, string $c): string {

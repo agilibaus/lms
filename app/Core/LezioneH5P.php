@@ -123,18 +123,6 @@ final class LezioneH5P
         return 'Esercizio interattivo: ' . $contenuto['h5p_file'] . ' (' . H5P::nome((string) $contenuto['h5p_library']) . ')';
     }
 
-    /** Se un testo ha qualcosa da leggere oltre ai segnaposto (per la regola del solo video). */
-    public static function testoSenzaSegnaposti(?string $html): string
-    {
-        $html = (string) $html;
-
-        if (!str_contains($html, self::ATTRIBUTO)) {
-            return trim(strip_tags($html));
-        }
-
-        return trim(strip_tags(self::componi($html, [], static fn (int $id): string => '')['html']));
-    }
-
     /**
      * Il documento, i segnaposto e la radice. I segnaposto sono i `div` con
      * l'attributo numerico: il sanificatore lascia l'attributo solo li'.

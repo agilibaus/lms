@@ -169,29 +169,4 @@ class CourseAccess
             $quizPassedByModule
         );
     }
-
-    /**
-     * La data di apertura del prossimo modulo chiuso per data, se c'e'.
-     *
-     * Serve alla frase mostrata allo studente accanto all'avanzamento. Si
-     * guarda solo il rilascio per data: «torna il 15 novembre» e' una
-     * promessa che la piattaforma puo' mantenere, mentre per un modulo
-     * chiuso da un quiz la data dipende da lui.
-     */
-    public static function nextUnlockAt(int $userId, int $courseId): ?string
-    {
-        $date = null;
-
-        foreach (self::locks($userId, $courseId) as $lock) {
-            if ($lock['motivo'] !== self::MOTIVO_DATA || $lock['available_from'] === null) {
-                continue;
-            }
-
-            if ($date === null || $lock['available_from'] < $date) {
-                $date = $lock['available_from'];
-            }
-        }
-
-        return $date;
-    }
 }

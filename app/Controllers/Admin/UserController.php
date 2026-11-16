@@ -25,11 +25,7 @@ use App\Models\UserModel;
 /**
  * Gestione utenti.
  *
- * Accesso con `user.manage` (admin). Un tutor con `assistant.manage` puo'
- * gestire soltanto i propri assistenti: vede solo loro e non puo' assegnare
- * altri ruoli ne' spostarli sotto un altro tutor.
- *
- * Il supervisore, con `student.manage` (15/11, Alessandro), gestisce solo
+ * Accesso con `user.manage` (admin). Il supervisore, con `student.manage` (15/11, Alessandro), gestisce solo
  * gli studenti: li crea, anche da un file, ne modifica nome, cognome, email
  * e stato, li mette nei gruppi, manda la password temporanea, li elimina.
  * Non vede lo staff, non cambia ruoli e non scarica l'elenco.
@@ -44,12 +40,11 @@ class UserController extends AdminController
             'pageTitle' => 'Utenti',
             'users' => $this->visibleUsers(),
             'canManageAll' => Auth::can('user.manage'),
-            'soloStudenti' => self::soloStudenti(),
             // Gli inviti ancora da mandare. Si mostrano perche' un cron
             // fermo non si lamenta, e qui il silenzio vuol dire persone che
             // non riescono a entrare. Li vede anche il supervisore, che
             // importa: gli invitati sono tutti studenti.
-            'invitiInAttesa' => Auth::canAny('user.manage', 'student.manage') ? UserModel::countPendingInvites() : 0,
+            'invitiInAttesa' => UserModel::countPendingInvites(),
             'ultimoInvio' => Settings::get(Invites::KEY_LAST_RUN),
             // Il pulsante XLSX non compare dove il server non puo' produrlo:
             // meglio non offrirlo che offrirlo e fallire.
@@ -498,8 +493,8 @@ class UserController extends AdminController
     // ---------------------------------------------------------------
 
     /**
-     * Solo `user.manage`, non `assistant.manage`: un tutor che gestisce i
-     * propri assistenti non scarica l'anagrafica di tutta la piattaforma.
+     * Solo `user.manage`: il supervisore, che gestisce gli studenti, non
+     * scarica l'anagrafica di tutta la piattaforma (15/11).
      */
     public function exportCsv(array $params = []): void
     {
@@ -576,8 +571,8 @@ class UserController extends AdminController
 
     /**
      * Se il modulo porta una foto del profilo (09/10). La carica solo chi ha
-     * `user.manage`: chi gestisce i propri assistenti non vede il campo, e
-     * un file mandato lo stesso viene ignorato.
+     * `user.manage`: il supervisore non vede il campo, e un file mandato lo
+     * stesso viene ignorato.
      */
     private function fotoNelModulo(): bool
     {
@@ -614,35 +609,31 @@ class UserController extends AdminController
 
     private function requireUserAccess(): void
     {
-        Auth::requirePermission('user.manage', 'student.manage', 'assistant.manage');
+        Auth::requirePermission('user.manage', 'student.manage');
     }
 
     /**
-     * Il supervisore (15/11): gestisce gli studenti e nessun altro.
+     * Il supervisore (15/11): gestisce gli studenti e nessun altro. Chi entra
+     * qui senza `user.manage` ha `student.manage` (`requireUserAccess`).
+     * Fino al 16/11 c'era anche `assistant.manage`, il tutor che gestiva i
+     * propri assistenti: non lo aveva piu' nessun ruolo dal 26/10, ed e'
+     * stato tolto.
      */
     private static function soloStudenti(): bool
     {
-        return !Auth::can('user.manage') && Auth::can('student.manage');
+        return !Auth::can('user.manage');
     }
 
     /**
-     * Chi ha solo `assistant.manage` vede esclusivamente i propri assistenti;
-     * il supervisore solo gli studenti.
+     * Tutti per l'admin, solo gli studenti per il supervisore.
      */
     private function visibleUsers(): array
     {
-        if (Auth::can('user.manage')) {
-            return UserModel::all();
-        }
+        $tutti = UserModel::all();
 
-        if (self::soloStudenti()) {
-            return array_values(array_filter(
-                UserModel::all(),
-                static fn (array $u): bool => $u['role'] === 'studente'
-            ));
-        }
-
-        return UserModel::assistantsForTutor((int) Auth::id());
+        return self::soloStudenti()
+            ? array_values(array_filter($tutti, static fn (array $u): bool => $u['role'] === 'studente'))
+            : $tutti;
     }
 
     private function findManageableUser(int $id): ?array
@@ -656,27 +647,11 @@ class UserController extends AdminController
             return null;
         }
 
-        if (self::soloStudenti()) {
-            if ($user['role'] !== 'studente') {
-                http_response_code(403);
-                echo 'Puoi gestire soltanto gli studenti.';
+        if (self::soloStudenti() && $user['role'] !== 'studente') {
+            http_response_code(403);
+            echo 'Puoi gestire soltanto gli studenti.';
 
-                return null;
-            }
-
-            return $user;
-        }
-
-        if (!Auth::can('user.manage')) {
-            $isOwnAssistant = $user['role'] === 'assistente'
-                && in_array((int) Auth::id(), UserModel::tutorIdsForAssistant((int) $user['id']), true);
-
-            if (!$isOwnAssistant) {
-                http_response_code(403);
-                echo 'Puoi gestire soltanto i tuoi assistenti.';
-
-                return null;
-            }
+            return null;
         }
 
         return $user;
@@ -684,10 +659,8 @@ class UserController extends AdminController
 
     /**
      * Gruppi in cui chi guarda mette o toglie un utente da questa pagina:
-     * tutti con `group.manage`, nessuno altrimenti (26/10). Il tutor qui
-     * gestisce solo i suoi assistenti, che non sono membri di gruppi; i
-     * membri dei suoi gruppi li gestisce, con l'interruttore acceso, dalla
-     * pagina del gruppo, e solo fra gli iscritti ai corsi del gruppo.
+     * tutti con `group.manage` (l'admin e il supervisore), nessuno
+     * altrimenti (26/10).
      */
     private function manageableGroups(): array
     {
@@ -714,11 +687,7 @@ class UserController extends AdminController
      */
     private function assignableRoles(): array
     {
-        if (Auth::can('user.manage')) {
-            return Auth::ROLES;
-        }
-
-        return self::soloStudenti() ? ['studente'] : ['assistente'];
+        return self::soloStudenti() ? ['studente'] : Auth::ROLES;
     }
 
     /**
@@ -793,12 +762,9 @@ class UserController extends AdminController
             static fn (int $v): bool => $v > 0
         ));
 
-        // Chi non ha user.manage non sceglie i tutor: se mai qualcuno gestisse
-        // assistenti con il solo assistant.manage, li terrebbe sotto di se'.
+        // Il supervisore non sceglie i tutor: crea solo studenti.
         if (self::soloStudenti()) {
             $tutorIds = [];
-        } elseif (!Auth::can('user.manage')) {
-            $tutorIds = [(int) Auth::id()];
         }
 
         return [

@@ -85,30 +85,6 @@ class VideoProgressModel
     }
 
     /**
-     * Gli intervalli gia' registrati, in ordine.
-     *
-     * @return list<array{0: int, 1: int}>
-     */
-    public static function intervals(int $userId, int $lessonId): array
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT start_seconds, end_seconds
-             FROM lesson_video_intervals
-             WHERE user_id = :user_id AND lesson_id = :lesson_id
-             ORDER BY start_seconds'
-        );
-        $stmt->execute(['user_id' => $userId, 'lesson_id' => $lessonId]);
-
-        $intervalli = [];
-
-        foreach ($stmt->fetchAll() as $riga) {
-            $intervalli[] = [(int) $riga['start_seconds'], (int) $riga['end_seconds']];
-        }
-
-        return $intervalli;
-    }
-
-    /**
      * Registra una porzione di visione.
      *
      * Gli intervalli nuovi si uniscono a quelli gia' in tabella e la riga
@@ -188,9 +164,9 @@ class VideoProgressModel
     }
 
     /**
-     * Come `intervals()`, ma dentro la transazione e con le righe bloccate:
-     * due schede dello stesso studente sullo stesso video non devono
-     * sovrascriversi a vicenda.
+     * Gli intervalli gia' registrati, in ordine, letti dentro la transazione
+     * e con le righe bloccate: due schede dello stesso studente sullo stesso
+     * video non devono sovrascriversi a vicenda.
      *
      * @return list<array{0: int, 1: int}>
      */

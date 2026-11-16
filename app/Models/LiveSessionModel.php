@@ -518,17 +518,4 @@ class LiveSessionModel
 
         return $stmt->fetchAll();
     }
-
-    /**
-     * Vero se l'utente e' fra i partecipanti attesi della sessione.
-     */
-    public static function isParticipant(int $sessionId, int $userId): bool
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT 1 FROM live_sessions ls WHERE ls.id = :session_id AND ' . self::atteso((string) $userId) . ' LIMIT 1'
-        );
-        $stmt->execute(['session_id' => $sessionId]);
-
-        return (bool) $stmt->fetchColumn();
-    }
 }

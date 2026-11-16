@@ -194,11 +194,6 @@ class ServiceAccountClient
         return $signingInput . '.' . self::base64UrlEncode($signature);
     }
 
-    public function impersonateEmail(): ?string
-    {
-        return $this->impersonateEmail;
-    }
-
     public static function base64UrlEncode(string $value): string
     {
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');

@@ -62,15 +62,6 @@ class CourseModel
         return $course ?: null;
     }
 
-    public static function findBySlug(string $slug): ?array
-    {
-        $stmt = Database::connection()->prepare('SELECT * FROM courses WHERE slug = :slug LIMIT 1');
-        $stmt->execute(['slug' => $slug]);
-        $course = $stmt->fetch();
-
-        return $course ?: null;
-    }
-
     // -----------------------------------------------------------------
     // Scrittura (pannello di amministrazione)
     // -----------------------------------------------------------------

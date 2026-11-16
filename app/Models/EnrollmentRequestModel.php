@@ -94,21 +94,6 @@ class EnrollmentRequestModel
     }
 
     /**
-     * Tutte le richieste in attesa (pannello di amministrazione).
-     */
-    public static function allPending(): array
-    {
-        return Database::connection()->query(
-            "SELECT r.*, u.full_name, u.email, c.title AS course_title
-             FROM enrollment_requests r
-             INNER JOIN users u ON u.id = r.user_id
-             INNER JOIN courses c ON c.id = r.course_id
-             WHERE r.status = 'pending'
-             ORDER BY r.requested_at"
-        )->fetchAll();
-    }
-
-    /**
      * Le richieste in attesa, di tutti i corsi (`null`) o solo di quelli
      * indicati: i corsi che chi guarda puo' gestire (13/10).
      *

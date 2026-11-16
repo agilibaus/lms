@@ -38,8 +38,6 @@ echo 'Chiavi scrivibili' . PHP_EOL;
 check('una chiave di posta è scrivibile', Settings::isWritable('MAIL_HOST'));
 check('una chiave di Google è scrivibile', Settings::isWritable('GOOGLE_CALENDAR_ID'));
 check('una chiave estranea non lo è', !Settings::isWritable('DB_PASS'));
-check('la password SMTP è marcata come segreta', Settings::isSecret('MAIL_PASSWORD'));
-check('il server SMTP non è un segreto', !Settings::isSecret('MAIL_HOST'));
 
 $rifiutata = false;
 

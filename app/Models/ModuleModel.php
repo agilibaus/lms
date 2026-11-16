@@ -124,24 +124,6 @@ class ModuleModel
                          {$m}.available_from)";
     }
 
-    /**
-     * Un solo modulo, con lo stesso `is_available` calcolato in SQL.
-     *
-     * `find()` resta com'era — la usano in molti punti che non c'entrano con
-     * il rilascio — ma chi deve decidere se far entrare qualcuno usa questa.
-     */
-    public static function findWithAvailability(int $id): ?array
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT *, (available_from IS NULL OR available_from <= NOW()) AS is_available
-             FROM modules WHERE id = :id LIMIT 1'
-        );
-        $stmt->execute(['id' => $id]);
-        $module = $stmt->fetch();
-
-        return $module ?: null;
-    }
-
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM modules WHERE id = :id LIMIT 1');

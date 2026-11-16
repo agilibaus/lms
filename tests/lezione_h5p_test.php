@@ -82,8 +82,6 @@ check('un testo senza segnaposto non si tocca', $senza['html'] === '<p>Solo test
 $accenti = LezioneH5P::componi('<p>perché è così</p><div data-h5p="1">x</div>', [1], static fn (int $id): string => '[E]');
 check('gli accenti restano accenti', str_contains($accenti['html'], 'perché è così') || str_contains($accenti['html'], 'perch&eacute;'), $accenti['html']);
 
-check('solo segnaposto: niente testo da leggere', LezioneH5P::testoSenzaSegnaposti('<div data-h5p="3">Esercizio interattivo</div>') === '');
-check('con un paragrafo: c e testo', LezioneH5P::testoSenzaSegnaposti('<p>Ciao</p><div data-h5p="3">x</div>') === 'Ciao');
 
 echo PHP_EOL . 'Nomi e indirizzi' . PHP_EOL;
 

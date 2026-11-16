@@ -183,11 +183,6 @@ try {
         'motivo: ' . ($locks[$dopo]['motivo'] ?? 'nessuno')
     );
 
-    check(
-        'la prossima apertura e quella del modulo chiuso',
-        CourseAccess::nextUnlockAt($studente, $corso) !== null
-    );
-
     // ---------------------------------------------------------------
     echo PHP_EOL . 'I conti della frase mostrata allo studente' . PHP_EOL;
 

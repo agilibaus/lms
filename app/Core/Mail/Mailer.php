@@ -99,23 +99,6 @@ class Mailer
         self::transport()->send($message);
     }
 
-    /**
-     * Invio "non bloccante": un avviso che non arriva non deve far fallire
-     * l'operazione che lo ha generato (un'iscrizione, un'approvazione).
-     */
-    public static function sendQuietly(Message $message): bool
-    {
-        try {
-            self::send($message);
-
-            return true;
-        } catch (MailException $e) {
-            error_log('[Mail] ' . $e->getMessage());
-
-            return false;
-        }
-    }
-
     public static function isLogTransport(): bool
     {
         return strtolower((string) Settings::get('MAIL_TRANSPORT', 'log')) === 'log';

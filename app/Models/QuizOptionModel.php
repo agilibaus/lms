@@ -50,24 +50,12 @@ class QuizOptionModel
         return $option ?: null;
     }
 
-    public static function correctOptionId(int $questionId): ?int
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT id FROM quiz_options WHERE question_id = :question_id AND is_correct = 1 ORDER BY position, id LIMIT 1'
-        );
-        $stmt->execute(['question_id' => $questionId]);
-        $id = $stmt->fetchColumn();
-
-        return $id === false ? null : (int) $id;
-    }
-
     /**
      * Gli id di **tutte** le opzioni corrette di una domanda.
      *
-     * `correctOptionId()` qui sopra ne restituisce una sola, e per la scelta
-     * singola va benissimo. La scelta multipla ne ha piu' d'una, e con
-     * quella funzione prenderebbe la prima: il confronto «tutto o niente»
-     * direbbe sbagliato a chi ha risposto bene.
+     * Tutte, non la prima: la scelta multipla ne ha piu' d'una, e prendendo
+     * solo la prima il confronto «tutto o niente» direbbe sbagliato a chi ha
+     * risposto bene.
      *
      * @return list<int>
      */

@@ -78,15 +78,4 @@ class LessonH5PModel
     {
         Database::connection()->prepare('DELETE FROM lesson_h5p WHERE id = :id')->execute(['id' => $id]);
     }
-
-    /**
-     * Le cartelle dei contenuti di una lezione: da togliere dal disco quando
-     * la lezione si elimina (le righe se ne vanno da sole, con lei).
-     *
-     * @return list<string>
-     */
-    public static function dirsForLesson(int $lessonId): array
-    {
-        return array_map(static fn (array $r): string => (string) $r['h5p_dir'], self::forLesson($lessonId));
-    }
 }

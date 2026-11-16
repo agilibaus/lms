@@ -76,27 +76,9 @@ CREATE TABLE users (
     KEY idx_invite_pending (invite_pending)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ---------------------------------------------------
--- Permessi per ruolo (configurabili senza toccare il codice)
--- ---------------------------------------------------
-CREATE TABLE role_permissions (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    role            ENUM('admin','tutor','assistente','studente') NOT NULL,
-    permission_key  VARCHAR(100) NOT NULL,   -- es. 'course.create', 'course.edit', 'quiz.grade', 'user.manage', 'group.manage', 'report.view'
-    UNIQUE KEY uq_role_permission (role, permission_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Permessi di default (personalizzabili in seguito da pannello admin)
-INSERT INTO role_permissions (role, permission_key) VALUES
-    ('admin','course.create'), ('admin','course.edit'), ('admin','course.delete'),
-    ('admin','user.manage'), ('admin','group.manage'), ('admin','quiz.grade'),
-    ('admin','report.view'), ('admin','certificate.issue'),
-    ('admin','settings.manage'), ('admin','course.welcome'), ('admin','question.answer'),
-    ('admin','board.manage'),
-    ('tutor','course.edit'), ('tutor','quiz.grade'), ('tutor','report.view'),
-    ('tutor','group.manage_own'), ('tutor','course.welcome_own'), ('tutor','board.manage_own'),
-    ('assistente','quiz.grade_assigned'), ('assistente','report.view_assigned'),
-    ('studente','course.view'), ('studente','quiz.take'), ('studente','certificate.view_own');
+-- I permessi dei ruoli stanno nel codice (`app/Auth/Ruoli.php`) dal 26/10:
+-- la tabella `role_permissions`, che non si leggeva piu', e' stata tolta il
+-- 16/11 (migrazione 2026_11_16_via_tabelle_morte.sql).
 
 -- ---------------------------------------------------
 -- Gruppi (classi/coorti + assegnazione corsi a gruppi)
@@ -522,17 +504,6 @@ CREATE TABLE enrollment_requests (
     FOREIGN KEY (decided_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ---------------------------------------------------
--- Sessioni (login persistente / "ricordami")
--- ---------------------------------------------------
-CREATE TABLE remember_tokens (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id         INT UNSIGNED NOT NULL,
-    token_hash      VARCHAR(255) NOT NULL,
-    expires_at      DATETIME NOT NULL,
-    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------
 -- Sessioni live (Google Meet)

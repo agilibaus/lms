@@ -122,13 +122,6 @@ class Settings
         'STRIPE_WEBHOOK_SECRET',
     ];
 
-    /** Chiavi da non rimandare mai al browser. */
-    public const SECRET_KEYS = [
-        'MAIL_PASSWORD',
-        'BUNNY_TOKEN_KEY',
-        'STRIPE_WEBHOOK_SECRET',
-    ];
-
     public static function isWritable(string $key): bool
     {
         return in_array($key, self::MAIL_KEYS, true)
@@ -140,11 +133,6 @@ class Settings
             || in_array($key, self::ROLE_KEYS, true)
             || in_array($key, self::PAYMENT_KEYS, true)
             || in_array($key, Mail\Modelli::chiaviSettings(), true);
-    }
-
-    public static function isSecret(string $key): bool
-    {
-        return in_array($key, self::SECRET_KEYS, true);
     }
 
     /**

@@ -74,17 +74,6 @@ class LiveSessionAttendanceModel
         return $byUser;
     }
 
-    public static function countForSession(int $sessionId): int
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT COUNT(*) FROM live_session_attendance
-             WHERE session_id = :session_id AND joined_at IS NOT NULL'
-        );
-        $stmt->execute(['session_id' => $sessionId]);
-
-        return (int) $stmt->fetchColumn();
-    }
-
     public static function hasJoined(int $sessionId, int $userId): bool
     {
         $stmt = Database::connection()->prepare(
@@ -94,28 +83,5 @@ class LiveSessionAttendanceModel
         $stmt->execute(['session_id' => $sessionId, 'user_id' => $userId]);
 
         return (bool) $stmt->fetchColumn();
-    }
-
-    /**
-     * Sessioni seguite da uno studente, su quelle a cui era atteso (per i report).
-     *
-     * @return array{attended: int, total: int}
-     */
-    public static function summaryForUser(int $userId): array
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT
-                (SELECT COUNT(*) FROM live_session_attendance a
-                  WHERE a.user_id = :user_id_attended AND a.joined_at IS NOT NULL) AS attended,
-                (SELECT COUNT(*) FROM live_sessions ls
-                  WHERE ' . LiveSessionModel::atteso((string) $userId) . ') AS total'
-        );
-        $stmt->execute(['user_id_attended' => $userId]);
-        $row = $stmt->fetch();
-
-        return [
-            'attended' => (int) ($row['attended'] ?? 0),
-            'total' => (int) ($row['total'] ?? 0),
-        ];
     }
 }

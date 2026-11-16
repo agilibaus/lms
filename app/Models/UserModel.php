@@ -190,24 +190,6 @@ class UserModel
     }
 
     /**
-     * Assistenti che affiancano un tutor.
-     */
-    public static function assistantsForTutor(int $tutorId): array
-    {
-        $stmt = Database::connection()->prepare(
-            'SELECT u.id, u.email, u.full_name, u.is_active, u.role,
-                    ' . self::TUTOR_DI_RIFERIMENTO . ' AS tutor_riferimento
-             FROM assistant_tutors at
-             INNER JOIN users u ON u.id = at.assistant_id AND u.role = \'assistente\'
-             WHERE at.tutor_id = :tutor_id
-             ORDER BY u.full_name, u.email'
-        );
-        $stmt->execute(['tutor_id' => $tutorId]);
-
-        return $stmt->fetchAll();
-    }
-
-    /**
      * Tutor che un assistente affianca: possono essere piu' d'uno.
      *
      * @return int[]
@@ -390,12 +372,6 @@ class UserModel
               WHERE id = :id AND welcome_seen_at IS NULL'
         );
         $stmt->execute(['id' => $id]);
-    }
-
-    public static function setActive(int $id, bool $isActive): void
-    {
-        $stmt = Database::connection()->prepare('UPDATE users SET is_active = :is_active WHERE id = :id');
-        $stmt->execute(['is_active' => $isActive ? 1 : 0, 'id' => $id]);
     }
 
     public static function delete(int $id): void
