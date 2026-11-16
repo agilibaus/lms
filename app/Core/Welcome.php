@@ -26,12 +26,6 @@ class Welcome
 {
     public const PAGE = '/benvenuto';
 
-    /** Le chiavi in `settings`, scritte dalla pagina Impostazioni → Benvenuto. */
-    public const KEYS = [
-        'WELCOME_VIDEO_PROVIDER',
-        'WELCOME_VIDEO_REF',
-    ];
-
     /**
      * I provider ammessi.
      *
