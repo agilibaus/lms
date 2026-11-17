@@ -297,6 +297,18 @@ CREATE TABLE lesson_materials (
     INDEX idx_lesson_materials_order (lesson_id, position)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Chi ha scaricato un materiale, e quando la prima volta
+-- (2026_11_17_materiali_scaricati.sql): solo gli studenti.
+CREATE TABLE material_downloads (
+    material_id     INT UNSIGNED NOT NULL,
+    user_id         INT UNSIGNED NOT NULL,
+    first_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (material_id, user_id),
+    FOREIGN KEY (material_id) REFERENCES lesson_materials(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_material_downloads_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Contenuti H5P di una lezione (2026_10_23_h5p_lezioni.sql): messi nel testo
 -- con un segnaposto <div data-h5p="id">, o dopo il testo. Nessun punteggio.
 CREATE TABLE lesson_h5p (

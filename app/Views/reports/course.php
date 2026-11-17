@@ -12,6 +12,9 @@ use App\Core\Icona;
 /** @var array $course */
 /** @var array $rows */
 /** @var array{lessons: int, quizzes: int} $totals */
+/** @var list<array<string, mixed>> $materiali */
+
+$materiali ??= [];
 
 // «Lezioni» e «Quiz superati» mostrano «3/12»: si ordinano sul numero di
 // sinistra, perche' il denominatore e' uguale per tutta la tabella.
@@ -23,6 +26,19 @@ $ordine = Ordinamento::daRichiesta([
     'certificato' => ['certificate_code', Ordinamento::TESTO],
 ]);
 $rows = $ordine->applica($rows);
+
+// I materiali (17/11) si ordinano per conto loro, con chiavi che la tabella
+// degli iscritti non riconosce: l'indirizzo ne porta una alla volta, e
+// l'altra tabella resta com'e'. Senza ordine, quello del corso.
+$ordineMateriali = Ordinamento::daRichiesta([
+    'materiale' => ['file_name', Ordinamento::TESTO],
+    'lezione' => ['lesson_title', Ordinamento::TESTO],
+    'scaricato' => ['quanti', Ordinamento::NUMERO],
+]);
+$materiali = $ordineMateriali->applica(array_map(
+    static fn (array $m): array => $m + ['quanti' => count($m['scaricati'])],
+    $materiali
+));
 ?>
 <div class="page-header">
     <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
@@ -130,6 +146,49 @@ $rows = $ordine->applica($rows);
         </tbody>
     </table>
     </div>
+    </section>
+<?php endif; ?>
+
+<?php if ($materiali !== []): ?>
+    <?php /* Chi ha scaricato i materiali (17/11, Alessandro): il conteggio e i
+             nomi in due colonne, la data accanto al nome. Chi non ha
+             scaricato non si elenca: lo dice il conteggio. */ ?>
+    <section class="card">
+        <h2>Materiali (<?= count($materiali) ?>)</h2>
+        <p class="card-meta">Chi ha scaricato i materiali delle lezioni, e quando la prima volta. Si contano solo gli studenti.</p>
+        <div class="tabella-schede">
+        <table class="data-table report-materiali" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
+                <?= $ordineMateriali->th('Materiale', 'materiale') ?>
+                <?= $ordineMateriali->th('Lezione', 'lezione') ?>
+                <?= $ordineMateriali->th('Scaricato da', 'scaricato') ?>
+                <th scope="col" role="columnheader">Nomi</th>
+            </tr>
+            </thead>
+            <tbody role="rowgroup">
+            <?php foreach ($materiali as $materiale): ?>
+                <tr role="row">
+                    <td role="cell" data-label="Materiale"><?= htmlspecialchars((string) $materiale['file_name']) ?></td>
+                    <td role="cell" data-label="Lezione"><?= htmlspecialchars((string) $materiale['lesson_title']) ?></td>
+                    <td role="cell" data-label="Scaricato da"><?= (int) $materiale['quanti'] ?> su <?= (int) $materiale['su'] ?></td>
+                    <td role="cell" data-label="Nomi">
+                        <?php if ($materiale['scaricati'] === []): ?>
+                            <span class="valore-assente">—</span>
+                        <?php else: ?>
+                            <ul class="elenco-scaricati">
+                                <?php foreach ($materiale['scaricati'] as $s): ?>
+                                    <li><?= htmlspecialchars((string) $s['full_name']) ?>
+                                        <span class="elenco-scaricati-quando"><?= htmlspecialchars(App\Controllers\ReportController::dateTimeLabel((string) $s['first_at'])) ?></span></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
     </section>
 <?php endif; ?>
 

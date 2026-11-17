@@ -12,6 +12,9 @@ use App\Core\ContestoStudente;
 /** @var array $student */
 /** @var array $courses */
 /** @var array<int, array> $quizzesByCourse */
+/** @var array<int, list<array<string, mixed>>> $materialiByCourse */
+
+$materialiByCourse ??= [];
 /** @var array{attended: int, total: int} $liveAttendance */
 /** @var array $liveSessions */
 /** @var array<string, mixed>|null $contesto */
@@ -242,6 +245,35 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                                     —
                                 <?php endif; ?>
                             </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
+            <?php endif; ?>
+
+            <?php /* I materiali del corso e quando li ha scaricati la prima
+                     volta (17/11). Stretta diventa un elenco di schede,
+                     come le altre tabelle: i nomi dei file sono lunghi. */ ?>
+            <?php $materiali = $materialiByCourse[$course['course_id']] ?? []; ?>
+            <?php if ($materiali !== []): ?>
+                <div class="tabella-schede report-studente-materiali">
+                <table class="data-table" role="table">
+                    <thead role="rowgroup">
+                    <tr role="row">
+                        <th scope="col" role="columnheader">Materiale</th>
+                        <th scope="col" role="columnheader">Lezione</th>
+                        <th scope="col" role="columnheader">Scaricato la prima volta</th>
+                    </tr>
+                    </thead>
+                    <tbody role="rowgroup">
+                    <?php foreach ($materiali as $m): ?>
+                        <tr role="row">
+                            <td role="cell" data-label="Materiale"><?= htmlspecialchars((string) $m['file_name']) ?></td>
+                            <td role="cell" data-label="Lezione"><?= htmlspecialchars((string) $m['lesson_title']) ?></td>
+                            <td role="cell" data-label="Scaricato la prima volta"><?= $m['first_at'] === null
+                                ? '<span class="valore-assente">non ancora</span>'
+                                : htmlspecialchars($quando((string) $m['first_at'])) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

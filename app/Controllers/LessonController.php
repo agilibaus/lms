@@ -21,6 +21,7 @@ use App\Models\CourseModel;
 use App\Models\EnrollmentModel;
 use App\Models\LessonH5PModel;
 use App\Models\LessonMaterialModel;
+use App\Models\MaterialDownloadModel;
 use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
 use App\Models\LiveSessionModel;
@@ -650,6 +651,12 @@ class LessonController
             http_response_code(404);
             echo 'File non trovato sul server.';
             return;
+        }
+
+        // Chi ha scaricato che cosa (17/11): solo gli studenti, la prima
+        // volta. Lo staff che scarica per controllare non conta.
+        if (Auth::hasRole('studente')) {
+            MaterialDownloadModel::registra((int) $material['id'], (int) Auth::id());
         }
 
         header('Content-Description: File Transfer');

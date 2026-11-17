@@ -18,6 +18,7 @@ use App\Models\CourseModel;
 use App\Models\GrigliaCorsoModel;
 use App\Models\GroupModel;
 use App\Models\LiveSessionModel;
+use App\Models\MaterialDownloadModel;
 use App\Models\QuizAttemptModel;
 use App\Models\ReportModel;
 use App\Models\StudentiFermiModel;
@@ -317,11 +318,14 @@ class ReportController
             return;
         }
 
+        $rows = $this->courseRows((int) $course['id']);
+
         View::render('reports/course', [
             'pageTitle' => 'Report · ' . $course['title'],
             'course' => $course,
-            'rows' => $this->courseRows((int) $course['id']),
+            'rows' => $rows,
             'totals' => ReportModel::courseTotals((int) $course['id']),
+            'materiali' => self::materialiScaricati((int) $course['id'], $rows),
         ]);
     }
 
@@ -347,7 +351,9 @@ class ReportController
         $totals = ReportModel::courseTotals((int) $course['id']);
         $rows = [];
 
-        foreach ($this->courseRows((int) $course['id']) as $row) {
+        $iscritti = $this->courseRows((int) $course['id']);
+
+        foreach ($iscritti as $row) {
             $rows[] = [
                 $row['full_name'],
                 $row['email'],
@@ -358,6 +364,22 @@ class ReportController
                 $row['completed_at'] ?? '',
                 $this->certificateLabel($row),
             ];
+        }
+
+        // Chi ha scaricato i materiali (17/11): in fondo, dopo una riga
+        // bianca, come gli incontri nel file dello studente. Una riga per
+        // scaricamento, con la data nella colonna delle date.
+        $materiali = self::materialiScaricati((int) $course['id'], $iscritti);
+
+        if ($materiali !== []) {
+            $rows[] = [];
+            $rows[] = ['Studente', 'Materiale', 'Scaricato il', 'Lezione'];
+
+            foreach ($materiali as $materiale) {
+                foreach ($materiale['scaricati'] as $s) {
+                    $rows[] = [$s['full_name'], $materiale['file_name'], $s['first_at'], $materiale['lesson_title']];
+                }
+            }
         }
 
         $this->inviaReport(
@@ -675,9 +697,14 @@ class ReportController
         }
 
         $quizzesByCourse = [];
+        $materialiByCourse = [];
 
         foreach ($courses as $course) {
             $quizzesByCourse[$course['course_id']] = QuizAttemptModel::summaryForUserAndCourse(
+                (int) $student['id'],
+                (int) $course['course_id']
+            );
+            $materialiByCourse[$course['course_id']] = MaterialDownloadModel::delloStudenteNelCorso(
                 (int) $student['id'],
                 (int) $course['course_id']
             );
@@ -689,6 +716,7 @@ class ReportController
             'contesto' => $contesto,
             'courses' => $courses,
             'quizzesByCourse' => $quizzesByCourse,
+            'materialiByCourse' => $materialiByCourse,
             'liveAttendance' => self::presenze($incontri),
             'liveSessions' => $incontri,
         ]);
@@ -750,6 +778,22 @@ class ReportController
                     self::delayLabel($session),
                 ];
             }
+        }
+
+        // I materiali scaricati (17/11), terzo blocco: uno per riga, con la
+        // data nella colonna delle date; vuota se non ancora scaricato.
+        $materiali = [];
+
+        foreach ($corsi as $corso) {
+            foreach (MaterialDownloadModel::delloStudenteNelCorso((int) $student['id'], (int) $corso['course_id']) as $m) {
+                $materiali[] = [$m['file_name'], $m['first_at'] ?? '', $corso['course_title'], $m['lesson_title']];
+            }
+        }
+
+        if ($materiali !== []) {
+            $rows[] = [];
+            $rows[] = ['Materiale', 'Scaricato il', 'Corso', 'Lezione'];
+            array_push($rows, ...$materiali);
         }
 
         /*
@@ -1089,6 +1133,37 @@ class ReportController
         }
 
         return [$corsi, array_values(array_filter($incontri, $tiene))];
+    }
+
+    /**
+     * I materiali del corso, ciascuno con gli studenti che l'hanno scaricato
+     * (17/11): solo gli iscritti che chi guarda vede, cosi' «4 su 7» conta
+     * sugli stessi studenti della tabella degli iscritti.
+     *
+     * @param list<array<string, mixed>> $iscritti le righe di `courseRows`
+     * @return list<array{id: int, file_name: string, lesson_title: string, scaricati: list<array<string, mixed>>, su: int}>
+     */
+    private static function materialiScaricati(int $courseId, array $iscritti): array
+    {
+        $materiali = MaterialDownloadModel::materialiDelCorso($courseId);
+
+        if ($materiali === []) {
+            return [];
+        }
+
+        $visibili = array_flip(array_map(static fn (array $r): int => (int) $r['user_id'], $iscritti));
+        $perMateriale = [];
+
+        foreach (MaterialDownloadModel::scaricamentiDelCorso($courseId) as $s) {
+            if (isset($visibili[(int) $s['user_id']])) {
+                $perMateriale[(int) $s['material_id']][] = $s;
+            }
+        }
+
+        return array_map(static fn (array $m): array => $m + [
+            'scaricati' => $perMateriale[(int) $m['id']] ?? [],
+            'su' => count($visibili),
+        ], $materiali);
     }
 
     /**

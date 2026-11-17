@@ -9483,3 +9483,28 @@ details[open] > summary .obiettivo-comando::after,
         transition: none;
     }
 }
+
+/* Chi ha scaricato un materiale (17/11): un nome per riga, la data accanto
+   in piccolo, senza puntini. La data non va a capo da sola: si sposta tutta
+   sulla riga dopo se il nome e' lungo. */
+.elenco-scaricati {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.elenco-scaricati li + li {
+    margin-top: 0.15rem;
+}
+
+.elenco-scaricati-quando {
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    margin-left: 0.4rem;
+    white-space: nowrap;
+}
+
+/* Nel riquadro del corso del report dello studente, sotto i questionari. */
+.report-studente-materiali {
+    margin-top: 1.25rem;
+}

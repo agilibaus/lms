@@ -244,7 +244,8 @@ async function posta(page, url, campi, paginaToken) {
         // E vede davvero tutti, non pagine vuote: gli studenti del corso
         // pubblicato, come l'admin.
         await page.goto(BASE + '/reports/courses/' + A.corso);
-        const righeReport = await page.$$eval('table tbody tr', (r) => r.length);
+        // Solo la tabella degli iscritti: sotto c'e' quella dei materiali (17/11).
+        const righeReport = await page.$$eval('table:not(.report-materiali) tbody tr', (r) => r.length);
         const iscrittiA = conta('SELECT COUNT(*) FROM enrollments e JOIN users u ON u.id = e.user_id WHERE e.course_id = ? AND u.role = \'studente\'', A.corso);
         check('il report del corso pubblicato mostra tutti i suoi studenti (' + iscrittiA + ')', iscrittiA > 0 && righeReport === iscrittiA, [righeReport + ' righe']);
 
