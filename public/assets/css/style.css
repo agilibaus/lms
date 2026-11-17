@@ -9524,14 +9524,18 @@ details[open] > summary .obiettivo-comando::after,
     flex: none;
     align-items: center;
     justify-content: center;
-    width: 1.3em;
-    height: 1.3em;
+    width: 1.4em;
+    height: 1.4em;
+    /* Il cerchio e' piu' alto della riga del titolo: senza questo margine
+       negativo la allungherebbe di 3 px, e la descrizione scenderebbe
+       rispetto ai riquadri accanto. */
+    margin-block: -0.2em;
     border-radius: 50%;
     /* Colori fissi (17/11, Alessandro), non quelli del tema: il segnale
        resta lo stesso con ogni tavolozza. Contrasto 7,1:1. */
     background: #fce9e9;
     color: #9b1717;
-    font-size: 0.85em;
+    font-size: 1em;
     font-weight: 700;
     line-height: 1;
 }
