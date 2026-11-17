@@ -9527,8 +9527,10 @@ details[open] > summary .obiettivo-comando::after,
     width: 1.3em;
     height: 1.3em;
     border-radius: 50%;
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
+    /* Colori fissi (17/11, Alessandro), non quelli del tema: il segnale
+       resta lo stesso con ogni tavolozza. Contrasto 7,1:1. */
+    background: #fce9e9;
+    color: #9b1717;
     font-size: 0.85em;
     font-weight: 700;
     line-height: 1;
