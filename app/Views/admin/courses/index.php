@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\Csrf;
 use App\Core\Icona;
 use App\Core\Ordinamento;
@@ -110,13 +111,13 @@ $courses = $ordine->applica($courses);
                     </span>
                 </td>
                 <td role="cell" class="row-actions">
-                    <a href="/courses/<?= (int) $course['id'] ?>">Contenuti</a>
+                    <a href="<?= htmlspecialchars(Ritorno::link('/courses/' . (int) $course['id'], 'gestione-corsi', 0, $_GET)) ?>">Contenuti</a>
                     <?php if (!$supervisore && (int) $course['is_published'] === 0): ?>
                         <?php /* Una bozza non ha iscritti, e il suo report e' sempre
                                  vuoto: il comando resta, spento (14/11). */ ?>
                         <span class="comando-spento" aria-disabled="true"><?= Icona::svg('bar-chart') ?>Report</span>
                     <?php elseif (!$supervisore): ?>
-                        <a href="/reports/courses/<?= (int) $course['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
+                        <a href="<?= htmlspecialchars(Ritorno::link('/reports/courses/' . (int) $course['id'], 'gestione-corsi', 0, $_GET)) ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                     <?php endif; ?>
                     <?php if ($canDelete && (int) $course['is_published'] === 0 && ($course['presso'] ?? '') === 'supervisore'): ?>
                         <?php /* Una bozza presso il supervisore non si elimina: prima

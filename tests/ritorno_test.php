@@ -18,7 +18,10 @@ declare(strict_types=1);
  *   2. **Solo le partenze che la pagina accetta**; senza `da_id`, o con un
  *      `da_id` storto, dove serve, niente.
  *   3. **Il ritorno non porta fuori**: il percorso lo scrive il server.
- *   4. **Una partenza sconosciuta nel codice** e' un errore, non un
+ *   4. **Dopo un salvataggio** il rimando alla stessa pagina si porta dietro
+ *      il ritorno; verso un'altra pagina, un altro sito, o senza Referer,
+ *      resta com'e'.
+ *   5. **Una partenza sconosciuta nel codice** e' un errore, non un
  *      collegamento muto.
  */
 
@@ -95,7 +98,26 @@ foreach (['https://altrove.example/x', '//altrove.example', 'a/b=1', 'x[]=1&x[]=
 $r = Ritorno::daRichiesta(['da' => 'agenda', 'torna' => str_repeat('a=1&', 600)], ['agenda']);
 check('un `torna` troppo lungo si lascia', Ritorno::indirizzo($r) === '/agenda');
 
-echo "\n4. Una partenza sconosciuta nel codice\n";
+echo "\n4. Dopo un salvataggio\n";
+
+$sito = 'lms.example';
+$da = 'https://lms.example/live/9?da=report-incontro&da_id=9&torna=ordina%3Dnome';
+$s = Ritorno::dopoIlSalvataggio('/live/9', $da, $sito);
+check('stessa pagina: il rimando si porta dietro il ritorno', $s === '/live/9?da=report-incontro&da_id=9&torna=ordina%3Dnome', $s);
+$s = Ritorno::dopoIlSalvataggio('/live/9#presenze', $da, $sito);
+check('con l\'ancora, il ritorno va prima dell\'ancora', $s === '/live/9?da=report-incontro&da_id=9&torna=ordina%3Dnome#presenze', $s);
+$s = Ritorno::dopoIlSalvataggio('/admin/courses/3/edit?scheda=iscritti', 'https://lms.example/admin/courses/3/edit?da=scheda-gruppo&da_id=4', $sito);
+check('un rimando con i suoi parametri li tiene', $s === '/admin/courses/3/edit?scheda=iscritti&da=scheda-gruppo&da_id=4', $s);
+check('un\'altra pagina: il rimando non cambia', Ritorno::dopoIlSalvataggio('/live', $da, $sito) === '/live');
+check('un altro sito: il rimando non cambia', Ritorno::dopoIlSalvataggio('/live/9', 'https://altrove.example/live/9?da=agenda', $sito) === '/live/9');
+check('senza Referer: il rimando non cambia', Ritorno::dopoIlSalvataggio('/live/9', '', $sito) === '/live/9');
+check('una pagina senza ritorno: il rimando non cambia', Ritorno::dopoIlSalvataggio('/live/9', 'https://lms.example/live/9?ordina=nome', $sito) === '/live/9');
+check('un rimando che ha gia\' il suo ritorno non si tocca',
+    Ritorno::dopoIlSalvataggio('/live/9?da=agenda', $da, $sito) === '/live/9?da=agenda');
+check('un rimando fuori dal sito non si tocca', Ritorno::dopoIlSalvataggio('https://altrove.example/live/9', $da, $sito) === 'https://altrove.example/live/9');
+check('la porta del sito non conta', Ritorno::dopoIlSalvataggio('/live/9', $da, 'lms.example:8443') !== '/live/9');
+
+echo "\n5. Una partenza sconosciuta nel codice\n";
 
 try {
     Ritorno::link('/live/9', 'boh');

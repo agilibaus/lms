@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Models\CourseModel;
 use App\Controllers\LessonController;
 use App\Core\Csrf;
@@ -27,7 +28,13 @@ $provider = $lesson['video_provider'] ?? 'none';
 <div class="page-header">
     <?php /* Il titolo del corso, come nelle altre pagine che tornano al corso (17/11). */ ?>
     <?php $corsoDellaLezione = CourseModel::find((int) $module['course_id']); ?>
-    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) ($corsoDellaLezione['title'] ?? 'Corso')) ?></span></a>
+    <?php
+    /* Da «Modifica lezione» sulla lezione si torna alla lezione (17/11). */
+    [$indietro, $testoIndietro] = Ritorno::indietro($_GET, [
+        'lezione' => static fn (int $id): ?string => $lesson !== null && $id === (int) $lesson['id'] ? (string) $lesson['title'] : null,
+    ], '/courses/' . (int) $module['course_id'], (string) ($corsoDellaLezione['title'] ?? 'Corso'));
+    ?>
+    <a href="<?= htmlspecialchars($indietro) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($testoIndietro) ?></span></a>
     <h1><?= $isEdit ? 'Modifica lezione' : 'Nuova lezione' ?> &mdash; <?= htmlspecialchars($module['title']) ?></h1>
 </div>
 

@@ -2950,9 +2950,11 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const viaDa = async (page, url) => {
                 await page.goto(BASE + url);
 
+                // Con o senza la partenza (17/11): dall'anteprima il
+                // collegamento porta `?da=questionario`.
                 return await page.$$eval(
-                    'a[href$="/edit"]',
-                    (link, atteso) => link.some((a) => a.getAttribute('href') === atteso),
+                    'a[href*="/edit"]',
+                    (link, atteso) => link.some((a) => a.getAttribute('href').split('?')[0] === atteso),
                     '/quizzes/' + String(A.quiz) + '/edit'
                 );
             };

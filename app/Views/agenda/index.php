@@ -35,11 +35,11 @@ $adesso = new DateTimeImmutable('now');
  * delle WCAG: «l'uso del colore»).
  */
 /*
- * Il collegamento a un incontro dice che si parte dall'Agenda (17/11): la
- * pagina dell'incontro torna qui, nella stessa vista e nello stesso mese,
- * invece che a «Sessioni live».
+ * Il collegamento a un incontro, o al corso di un modulo che si apre, dice
+ * che si parte dall'Agenda (17/11): la pagina torna qui, nella stessa vista
+ * e nello stesso mese, invece che a «Sessioni live» o all'elenco dei corsi.
  */
-$urlEvento = static fn (array $e): string => str_starts_with((string) $e['url'], '/live/')
+$urlEvento = static fn (array $e): string => str_starts_with((string) $e['url'], '/live/') || str_starts_with((string) $e['url'], '/courses/')
     ? Ritorno::link((string) $e['url'], 'agenda', 0, $_GET)
     : (string) $e['url'];
 

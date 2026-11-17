@@ -82,7 +82,7 @@ $groups = $ordine->applica($groups);
                     <?php if (in_array((int) $group['id'], $pagineApribili ?? [], true)): ?>
                         <a href="<?= htmlspecialchars(Ritorno::link('/gruppi/' . (int) $group['id'], 'gruppi', 0, $_GET)) ?>">Vai al gruppo</a>
                     <?php endif; ?>
-                    <a href="/reports/groups/<?= (int) $group['id'] ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
+                    <a href="<?= htmlspecialchars(Ritorno::link('/reports/groups/' . (int) $group['id'], 'gruppi', 0, $_GET)) ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                     <?php if ($canDelete ?? false): ?>
                         <form action="/admin/groups/<?= (int) $group['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
@@ -152,7 +152,7 @@ $groups = $ordine->applica($groups);
                             <?php if (in_array((int) $id, $pagineApribili ?? [], true)): ?>
                                 <a href="<?= htmlspecialchars(Ritorno::link('/gruppi/' . $id, 'gruppi', 0, $_GET)) ?>" class="comando-con-icona"><?= Icona::svg('box-arrow-up-right') ?>Pagina del gruppo</a>
                             <?php endif; ?>
-                            <a href="/reports/groups/<?= $id ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
+                            <a href="<?= htmlspecialchars(Ritorno::link('/reports/groups/' . $id, 'gruppi', 0, $_GET)) ?>" class="comando-con-icona"><?= Icona::svg('bar-chart') ?>Report</a>
                             <?php if ($canDelete ?? false): ?>
                                 <form action="/admin/groups/<?= $id ?>/delete" method="post"
                                       onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">

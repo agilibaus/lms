@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\Csrf;
 use App\Core\Icona;
 
@@ -20,7 +21,13 @@ use App\Core\Icona;
 $soglia = (int) $quiz['passing_score_pct'];
 ?>
 <div class="page-header">
-    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
+    <?php
+    /* Da «Modifica questionario» sull'anteprima si torna all'anteprima (17/11). */
+    [$indietro, $testoIndietro] = Ritorno::indietro($_GET, [
+        'questionario' => static fn (int $id): ?string => $id === (int) $quiz['id'] ? (string) $quiz['title'] : null,
+    ], '/courses/' . (int) $module['course_id'], (string) ($course['title'] ?? 'Corso'));
+    ?>
+    <a href="<?= htmlspecialchars($indietro) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($testoIndietro) ?></span></a>
     <h1><?= htmlspecialchars($quiz['title']) ?></h1>
     <p class="page-subtitle">
         Modulo: <?= htmlspecialchars($module['title']) ?> ·

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\Quando;
 use App\Auth\Auth;
 use App\Auth\CourseRights;
@@ -35,7 +36,7 @@ use App\Core\QuizScoring;
          nell'intestazione del modulo, e chi partiva dal quiz non la trovava.
          Il permesso e' quello del corso, come per la lezione. */ ?>
 <?php if ($course !== null && CourseRights::canEdit((int) $course['id'])): ?>
-    <p><a href="/quizzes/<?= (int) $quiz['id'] ?>/edit" class="btn btn-primary btn-con-icona"><?= Icona::svg('pencil') ?>Modifica questionario</a></p>
+    <p><a href="<?= htmlspecialchars(Ritorno::link('/quizzes/' . (int) $quiz['id'] . '/edit', 'questionario', (int) $quiz['id'])) ?>" class="btn btn-primary btn-con-icona"><?= Icona::svg('pencil') ?>Modifica questionario</a></p>
 <?php endif; ?>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>

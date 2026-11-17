@@ -43,9 +43,16 @@ $materiali = $ordineMateriali->applica(array_map(
 ));
 ?>
 <div class="page-header">
-    <?php /* Da Report › Corsi si torna all'elenco (17/11); altrimenti a «Report». */ ?>
-    <?php $ritorno = Ritorno::daRichiesta($_GET, ['elenco-corsi']); ?>
-    <a href="<?= htmlspecialchars($ritorno !== null ? Ritorno::indirizzo($ritorno) : '/reports') ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($ritorno !== null ? (string) ReportSections::tutte()['courses']['titolo'] : 'Report') ?></span></a>
+    <?php
+    /* Da Report › Corsi si torna all'elenco, da Gestione corsi o dalla
+       scheda del corso li' (17/11); altrimenti a «Report». */
+    [$indietro, $testoIndietro] = Ritorno::indietro($_GET, [
+        'elenco-corsi' => static fn (int $id): string => (string) ReportSections::tutte()['courses']['titolo'],
+        'gestione-corsi' => static fn (int $id): string => 'Gestione corsi',
+        'scheda-corso' => static fn (int $id): ?string => $id === (int) $course['id'] ? (string) $course['title'] : null,
+    ], '/reports', 'Report');
+    ?>
+    <a href="<?= htmlspecialchars($indietro) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($testoIndietro) ?></span></a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
         <?= (int) $totals['lessons'] ?> <?= (int) $totals['lessons'] === 1 ? 'lezione' : 'lezioni' ?> ·

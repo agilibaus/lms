@@ -30,6 +30,14 @@
  *   5. **Le controprove**: senza partenza, l'«indietro» di sempre; una
  *      partenza che la pagina non accetta, o con l'id di un'altra cosa, si
  *      ignora.
+ *   6. **Dopo un salvataggio** la pagina tiene il suo ritorno: una presenza
+ *      corretta nell'incontro aperto dal suo report, la scheda di un corso
+ *      salvata aperta da un gruppo.
+ *   7. **Altri percorsi**: il report e i contenuti di un corso aperti da
+ *      Gestione corsi o dalla sua scheda, il report di un gruppo aperto da
+ *      Gruppi o dalla sua scheda, la modifica di una lezione dalla lezione,
+ *      la modifica di un questionario dalla sua anteprima, il corso di un
+ *      modulo dall'Agenda.
  *
  * Esecuzione:  node tests/ritorni.js   (server di sviluppo acceso)
  */
@@ -197,6 +205,44 @@ async function giro(page, nome, partenza, selettore, prima = null) {
         await giro(a, 'scheda dell\'utente › scheda del gruppo', '/admin/users/' + A.studente + '/edit', 'main a[href^="/admin/groups/"][href*="da=scheda-utente"]');
         await giro(a, 'categoria della Bacheca › Nuova risorsa', '/bacheca/categorie/' + A.bacheca_categoria, 'main a[href^="/bacheca/nuova"]');
         await giro(a, 'categoria della Bacheca › Modifica', '/bacheca/categorie/' + A.bacheca_categoria, 'main a[href*="/modifica?da=categoria"]');
+
+        // --- 6. dopo un salvataggio --------------------------------------------
+        console.log('\n6. Dopo un salvataggio');
+        /** Apre `url`, invia il primo modulo che risponde a `selettore`, e legge l'«indietro». */
+        const salvaELeggi = async (url, selettore) => {
+            await vai(a, url);
+            const prima = await indietro(a);
+            const lasciata = a.url();
+            await Promise.all([a.waitForURL((u) => u.href !== lasciata || true), a.locator(selettore).first().click()]);
+            await a.waitForLoadState('domcontentloaded');
+            return { prima, dopo: await indietro(a), url: qui(a) };
+        };
+        let sv = await salvaELeggi('/live/' + A.incontro + '?da=report-incontro&da_id=' + A.incontro, 'form[action*="/attendance/"] button[type="submit"]');
+        check('incontro aperto dal suo report: corretta una presenza, l\'«indietro» torna ancora al report',
+            sv.prima !== null && sv.dopo !== null && sv.dopo.href === sv.prima.href && sv.dopo.href.startsWith('/reports/live/'), [JSON.stringify(sv)]);
+        sv = await salvaELeggi('/admin/courses/' + A.corso + '/edit?da=scheda-gruppo&da_id=' + A.gruppo, 'form[action="/admin/courses/' + A.corso + '"] button[type="submit"]');
+        check('scheda del corso aperta dal gruppo: salvata, l\'«indietro» torna ancora al gruppo',
+            sv.dopo !== null && sv.dopo.href === '/admin/groups/' + A.gruppo + '/edit', [JSON.stringify(sv)]);
+        sv = await salvaELeggi('/admin/courses/' + A.corso + '/edit', 'form[action="/admin/courses/' + A.corso + '"] button[type="submit"]');
+        check('controprova: salvata senza partenza, «Gestione corsi» come sempre',
+            sv.dopo !== null && sv.dopo.href === '/admin/courses', [JSON.stringify(sv)]);
+
+        // --- 7. altri percorsi ---------------------------------------------------
+        console.log('\n7. Altri percorsi');
+        await giro(a, 'Gestione corsi › Contenuti', '/admin/courses', 'main a[href^="/courses/"][href*="da=gestione-corsi"]');
+        await giro(a, 'Gestione corsi › Report', '/admin/courses', 'main a[href^="/reports/courses/"][href*="da=gestione-corsi"]');
+        await giro(a, 'scheda del corso › contenuti', '/admin/courses/' + A.corso + '/edit', 'main a[href^="/courses/"][href*="da=scheda-corso"]');
+        await giro(a, 'scheda del corso › report', '/admin/courses/' + A.corso + '/edit', 'main a[href^="/reports/courses/"][href*="da=scheda-corso"]');
+        await giro(a, 'Gruppi › Report', '/admin/groups', 'main a[href^="/reports/groups/"][href*="da=gruppi"]');
+        await giro(a, 'scheda del gruppo › report', '/admin/groups/' + A.gruppo + '/edit', 'main a[href^="/reports/groups/"][href*="da=scheda-gruppo"]');
+        await giro(a, 'lezione › Modifica lezione', '/lessons/' + A.lezione, 'main a[href*="/edit?da=lezione"]');
+        await giro(a, 'anteprima del questionario › Modifica questionario', '/quizzes/' + A.quiz, 'main a[href*="/edit?da=questionario"]');
+        // Lo studente A: il modulo del gruppo A si apre il giorno della semina
+        // (`data_gruppo_A`), nella vista del mese.
+        const stud2 = await entra(browser, 'stud@test.it');
+        await giro(stud2.page, 'studente: Agenda (mese) › corso di un modulo che si apre', '/agenda?vista=mese&mese=' + A.data_gruppo_A.slice(0, 7),
+            'main a[href^="/courses/"][href*="da=agenda"]');
+        await stud2.ctx.close();
 
         // --- 5. controprove ------------------------------------------------------
         console.log('\n5. Controprove');

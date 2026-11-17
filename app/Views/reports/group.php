@@ -25,9 +25,16 @@ $ordine = Ordinamento::daRichiesta([
 $rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
-    <?php /* Da Report › Gruppi si torna all'elenco (17/11); altrimenti a «Report». */ ?>
-    <?php $ritorno = Ritorno::daRichiesta($_GET, ['elenco-gruppi']); ?>
-    <a href="<?= htmlspecialchars($ritorno !== null ? Ritorno::indirizzo($ritorno) : '/reports') ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($ritorno !== null ? (string) ReportSections::tutte()['groups']['titolo'] : 'Report') ?></span></a>
+    <?php
+    /* Da Report › Gruppi si torna all'elenco, da Gruppi o dalla scheda del
+       gruppo li' (17/11); altrimenti a «Report». */
+    [$indietro, $testoIndietro] = Ritorno::indietro($_GET, [
+        'elenco-gruppi' => static fn (int $id): string => (string) ReportSections::tutte()['groups']['titolo'],
+        'gruppi' => static fn (int $id): string => 'Gruppi',
+        'scheda-gruppo' => static fn (int $id): ?string => $id === (int) $group['id'] ? (string) $group['name'] : null,
+    ], '/reports', 'Report');
+    ?>
+    <a href="<?= htmlspecialchars($indietro) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($testoIndietro) ?></span></a>
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         Tutor: <?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?> ·

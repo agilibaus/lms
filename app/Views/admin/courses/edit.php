@@ -64,13 +64,13 @@ $enrollments = $ordineIscritti->applica($enrollments);
                  supervisore; niente «report», che per una bozza e' sempre vuoto. */ ?>
         <?php if ($presso !== null && !$tutor): ?>
             <?= $presso === 'supervisore' ? 'Bozza presso supervisore' : 'Bozza presso Amministratore' ?> ·
-            <a href="/courses/<?= $courseId ?>">gestisci contenuti</a>
+            <a href="<?= htmlspecialchars(Ritorno::link('/courses/' . $courseId, 'scheda-corso', $courseId, $_GET)) ?>">gestisci contenuti</a>
         <?php elseif ($supervisore): ?>
-            In bozza · <a href="/courses/<?= $courseId ?>">gestisci contenuti</a>
+            In bozza · <a href="<?= htmlspecialchars(Ritorno::link('/courses/' . $courseId, 'scheda-corso', $courseId, $_GET)) ?>">gestisci contenuti</a>
         <?php else: ?>
             <?= count($enrollments) ?> <?= count($enrollments) === 1 ? 'iscritto' : 'iscritti' ?> ·
-            <a href="/courses/<?= $courseId ?>"><?= $tutor ? 'contenuti' : 'gestisci contenuti' ?></a> ·
-            <a href="/reports/courses/<?= $courseId ?>">report</a>
+            <a href="<?= htmlspecialchars(Ritorno::link('/courses/' . $courseId, 'scheda-corso', $courseId, $_GET)) ?>"><?= $tutor ? 'contenuti' : 'gestisci contenuti' ?></a> ·
+            <a href="<?= htmlspecialchars(Ritorno::link('/reports/courses/' . $courseId, 'scheda-corso', $courseId, $_GET)) ?>">report</a>
         <?php endif; ?>
     </p>
 </div>

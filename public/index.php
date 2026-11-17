@@ -18,11 +18,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config/config.php';
 
 use App\Core\Intestazioni;
+use App\Core\Ritorno;
 use App\Core\Router;
 use App\Core\Sessione;
 
 // Nessun altro sito incornicia la piattaforma (13/10).
 Intestazioni::sicurezza();
+// Dopo un salvataggio, la pagina torna con il suo «indietro» (17/11).
+Ritorno::tieniDopoIlSalvataggio();
 
 // Il cookie di sessione protetto (13/10): HttpOnly, SameSite e, in https, Secure.
 Sessione::avvia();

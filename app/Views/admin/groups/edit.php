@@ -47,7 +47,7 @@ $members = $ordineMembri->applica($members);
         <?php if ($paginaApribile ?? true): ?>
             <a href="<?= htmlspecialchars(Ritorno::link('/gruppi/' . $groupId, 'scheda-gruppo', $groupId)) ?>">vai al gruppo</a> ·
         <?php endif; ?>
-        <a href="/reports/groups/<?= $groupId ?>">vedi report</a>
+        <a href="<?= htmlspecialchars(Ritorno::link('/reports/groups/' . $groupId, 'scheda-gruppo', $groupId, $_GET)) ?>">vedi report</a>
     </p>
 </div>
 

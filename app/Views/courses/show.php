@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Auth\CourseRights;
 use App\Auth\Auth;
 use App\Core\CourseAccess;
@@ -34,7 +35,16 @@ use App\Core\TestoBreve;
 $isStaff = CourseRights::canEdit((int) $course['id']);
 ?>
 <div class="page-header">
-    <a href="/" class="back-link"><span class="back-link-testo"><?= Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente') ? 'Corsi' : 'I miei corsi' ?></span></a>
+    <?php
+    /* Da Gestione corsi, dalla scheda del corso o dall'Agenda si torna li'
+       (17/11); altrimenti all'elenco dei corsi. */
+    [$indietro, $testoIndietro] = Ritorno::indietro($_GET, [
+        'gestione-corsi' => static fn (int $id): string => 'Gestione corsi',
+        'scheda-corso' => static fn (int $id): ?string => $id === (int) $course['id'] ? (string) $course['title'] : null,
+        'agenda' => static fn (int $id): string => 'Agenda',
+    ], '/', Auth::hasRole('admin', 'supervisore', 'tutor', 'assistente') ? 'Corsi' : 'I miei corsi');
+    ?>
+    <a href="<?= htmlspecialchars($indietro) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($testoIndietro) ?></span></a>
     <h1><?= htmlspecialchars($course['title']) ?></h1>
     <?php /* Il gruppo e' parte della didattica (14/10, Alessandro): un
              collegamento solo, senza nome ne' tutor (il tutor sta nel

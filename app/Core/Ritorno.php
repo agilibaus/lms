@@ -47,6 +47,10 @@ final class Ritorno
         'scheda-gruppo' => '/admin/groups/{id}/edit',
         'scheda-utente' => '/admin/users/{id}/edit',
         'categoria' => '/bacheca/categorie/{id}',
+        'gestione-corsi' => '/admin/courses',
+        'scheda-corso' => '/admin/courses/{id}/edit',
+        'lezione' => '/lessons/{id}',
+        'questionario' => '/quizzes/{id}',
     ];
 
     /** Oltre questa lunghezza `torna` non e' un indirizzo nostro: si lascia. */
@@ -117,12 +121,117 @@ final class Ritorno
         return ['da' => $da, 'id' => $id, 'torna' => $torna];
     }
 
+    /**
+     * L'«indietro» di una pagina: dove porta e che cosa dice.
+     *
+     * `$partenze` sono le partenze accettate, ciascuna con una funzione che,
+     * dato l'id della partenza, dice il titolo di quella pagina, o null se
+     * l'id non va bene (un altro corso, un utente che non c'e'). Senza una
+     * partenza buona, l'«indietro» di sempre.
+     *
+     * @param array<string, mixed> $get
+     * @param array<string, callable(int): ?string> $partenze
+     * @return array{0: string, 1: string} indirizzo e testo
+     */
+    public static function indietro(array $get, array $partenze, string $indirizzo, string $testo): array
+    {
+        $ritorno = self::daRichiesta($get, array_keys($partenze));
+
+        if ($ritorno !== null) {
+            $titolo = ($partenze[$ritorno['da']])($ritorno['id']);
+
+            if ($titolo !== null) {
+                return [self::indirizzo($ritorno), $titolo];
+            }
+        }
+
+        return [$indirizzo, $testo];
+    }
+
     /** @param array{da: string, id: int, torna: array<string, string>} $ritorno */
     public static function indirizzo(array $ritorno): string
     {
         $url = str_replace('{id}', (string) $ritorno['id'], self::ORIGINI[$ritorno['da']]);
 
         return $ritorno['torna'] === [] ? $url : $url . '?' . http_build_query($ritorno['torna']);
+    }
+
+    /**
+     * Il ritorno sopravvive a un salvataggio (17/11, Alessandro).
+     *
+     * Una pagina con un ritorno (la scheda di un corso aperta da un gruppo,
+     * un incontro aperto dal suo report) ha dei moduli: salvando, il
+     * controller rimanda alla stessa pagina senza parametri, e l'«indietro»
+     * tornava quello di sempre. Qui, in un punto solo invece che in ognuno
+     * dei rimandi: se una richiesta POST rimanda alla stessa pagina da cui
+     * e' partito il modulo (`Referer`, stesso sito e stesso percorso), e
+     * quella pagina aveva un ritorno, il rimando se lo porta dietro.
+     *
+     * Senza `Referer` (qualche browser lo toglie) il ritorno si perde come
+     * prima: niente di peggio.
+     *
+     * @param string $location il rimando scelto dal controller
+     * @param string $referer  la pagina da cui e' partito il modulo
+     * @param string $host     il sito di questa richiesta
+     * @return string il rimando, con il ritorno se serve
+     */
+    public static function dopoIlSalvataggio(string $location, string $referer, string $host): string
+    {
+        if (!str_starts_with($location, '/') || str_starts_with($location, '//') || $referer === '') {
+            return $location;
+        }
+
+        $da = parse_url($referer);
+
+        if (!is_array($da) || ($da['host'] ?? '') === '' || strcasecmp((string) $da['host'], explode(':', $host)[0]) !== 0) {
+            return $location;
+        }
+
+        [$senzaAncora, $ancora] = array_pad(explode('#', $location, 2), 2, null);
+        $percorso = (string) parse_url($senzaAncora, PHP_URL_PATH);
+
+        if ($percorso !== ($da['path'] ?? '')) {
+            return $location;
+        }
+
+        parse_str((string) ($da['query'] ?? ''), $parametri);
+        parse_str((string) parse_url($senzaAncora, PHP_URL_QUERY), $gia);
+        $ritorno = array_intersect_key(self::pulisci($parametri), ['da' => 1, 'da_id' => 1, 'torna' => 1]);
+
+        if (!isset($ritorno['da']) || isset($gia['da'])) {
+            return $location;
+        }
+
+        return $senzaAncora . (str_contains($senzaAncora, '?') ? '&' : '?') . http_build_query($ritorno)
+            . ($ancora === null ? '' : '#' . $ancora);
+    }
+
+    /**
+     * Da chiamare all'avvio di ogni richiesta POST: riscrive il rimando,
+     * se c'e', appena prima che partano le intestazioni.
+     */
+    public static function tieniDopoIlSalvataggio(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            return;
+        }
+
+        header_register_callback(static function (): void {
+            foreach (headers_list() as $intestazione) {
+                if (stripos($intestazione, 'Location:') === 0) {
+                    $location = trim(substr($intestazione, 9));
+                    $nuova = self::dopoIlSalvataggio(
+                        $location,
+                        (string) ($_SERVER['HTTP_REFERER'] ?? ''),
+                        (string) ($_SERVER['HTTP_HOST'] ?? '')
+                    );
+
+                    if ($nuova !== $location) {
+                        header('Location: ' . $nuova);
+                    }
+                }
+            }
+        });
     }
 
     /**

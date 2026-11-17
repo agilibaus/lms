@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Auth\CourseRights;
 use App\Auth\Auth;
 use App\Core\Csrf;
@@ -48,7 +49,7 @@ $minutoSecondo = static function (int $secondi): string {
 </div>
 
 <?php if (CourseRights::canEdit((int) $course['id'])): ?>
-    <p><a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="btn btn-primary btn-con-icona"><?= Icona::svg('pencil') ?>Modifica lezione</a></p>
+    <p><a href="<?= htmlspecialchars(Ritorno::link('/lessons/' . (int) $lesson['id'] . '/edit', 'lezione', (int) $lesson['id'])) ?>" class="btn btn-primary btn-con-icona"><?= Icona::svg('pencil') ?>Modifica lezione</a></p>
 <?php endif; ?>
 
 <?php
