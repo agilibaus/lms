@@ -105,6 +105,9 @@ const PAGINE = [
     // La scheda degli incontri (06/11): con le schede, la tabella degli
     // incontri sta solo li'.
     ['/reports/students/2?scheda=incontri', 'Report per studente, incontri'],
+    // Aperto da un corso e da un gruppo (17/11): una colonna sola.
+    ['/reports/students/5?corso=1&da=corso', 'Report per studente, dal corso'],
+    ['/reports/students/5?gruppo=1&da=gruppo', 'Report per studente, dal gruppo'],
     ['/reports/groups/1', 'Report per gruppo'],
     ['/reports/fruizione/1', 'Fruizione per corso'],
     ['/lessons/1/fruizione', 'Fruizione della lezione'],

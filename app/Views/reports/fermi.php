@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\ContestoStudente;
 use App\Core\Icona;
 use App\Core\Ordinamento;
 use App\Core\StudentiFermi;
@@ -139,7 +140,7 @@ $legenda = [
                             </td>
                             <td role="cell" data-label="Avanzamento" class="col-numero"><?= (int) round((float) $r['progress_pct']) ?>%</td>
                             <td role="cell" class="row-actions">
-                                <a href="/reports/students/<?= (int) $r['user_id'] ?>">Dettaglio</a>
+                                <a href="<?= $esc(ContestoStudente::link((int) $r['user_id'], 'fermi', (int) $r['course_id'], $_GET)) ?>">Dettaglio</a>
                                 <?php /* L'email gia' indirizzata, con il corso nell'oggetto:
                                          il resto lo scrive il tutor. */ ?>
                                 <a href="mailto:<?= $esc((string) $r['email']) ?>?subject=<?= rawurlencode((string) $r['course_title']) ?>">Scrivi</a>

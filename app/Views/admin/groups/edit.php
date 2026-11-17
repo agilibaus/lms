@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\ContestoStudente;
 use App\Core\Quando;
 use App\Core\Csrf;
 use App\Core\Ordinamento;
@@ -151,7 +152,7 @@ $members = $ordineMembri->applica($members);
             <tbody role="rowgroup">
             <?php foreach ($members as $member): ?>
                 <tr role="row">
-                    <td role="cell" data-label="Nome"><a href="/reports/students/<?= (int) $member['id'] ?>"><?= htmlspecialchars((string) $member['full_name']) ?></a></td>
+                    <td role="cell" data-label="Nome"><a href="<?= htmlspecialchars(ContestoStudente::link((int) $member['id'], 'scheda-gruppo', $groupId, $_GET)) ?>"><?= htmlspecialchars((string) $member['full_name']) ?></a></td>
                     <td role="cell" data-label="Email"><?= htmlspecialchars((string) $member['email']) ?></td>
                     <td role="cell" data-label="Nel gruppo dal"><?= htmlspecialchars(Quando::dataOra((string) $member['joined_at'])) ?></td>
                     <?php if ($gestisceMembri): ?>

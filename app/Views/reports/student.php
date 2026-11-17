@@ -7,12 +7,16 @@ use App\Core\StudentiFermi;
 use App\Controllers\ReportController;
 use App\Core\Ordinamento;
 use App\Core\Icona;
+use App\Core\ContestoStudente;
 
 /** @var array $student */
 /** @var array $courses */
 /** @var array<int, array> $quizzesByCourse */
 /** @var array{attended: int, total: int} $liveAttendance */
 /** @var array $liveSessions */
+/** @var array<string, mixed>|null $contesto */
+
+$contesto ??= null;
 
 /*
  * Due ordinamenti su una pagina sola, con chiavi diverse: l'indirizzo ne
@@ -53,17 +57,36 @@ $liveSessions = $ordineIncontri->applica(array_map(
 // Le schede ci sono solo se ci sono tutte e due le cose; la scheda e' un
 // parametro dell'indirizzo, cosi' funziona senza JavaScript e l'ordinamento
 // delle colonne la conserva.
-$conSchede = $courses !== [] && $liveSessions !== [];
+$conSchede = $contesto === null && $courses !== [] && $liveSessions !== [];
 $scheda = ($_GET['scheda'] ?? '') === 'incontri' && $liveSessions !== [] ? 'incontri' : 'corsi';
 if ($courses === [] && $liveSessions !== []) {
     $scheda = 'incontri';
 }
 
+/*
+ * Aperta da un corso o da un gruppo (17/11, Alessandro, strada A): una
+ * colonna sola, l'avanzamento e poi gli incontri, senza schede. Il corso si
+ * nomina una volta, nel collegamento in alto; con un gruppo i corsi possono
+ * essere piu' d'uno, e ogni riquadro porta il nome del suo.
+ */
+$tuttoInColonna = $contesto !== null;
+$titoloCorso = $contesto !== null && $contesto['tipo'] === 'corso' ? 'Avanzamento' : null;
+
+// La colonna «Corso o gruppo» solo dove distingue qualcosa: nella scheda
+// completa e da un gruppo con piu' corsi. Dal corso, o da un gruppo con un
+// corso solo, gli incontri sono tutti di quello.
+$corsoOGruppo = static fn (array $s): string => (string) ($s['course_title'] ?? $s['group_name'] ?? '—');
+$conColonnaCorso = $contesto === null || ($contesto['tipo'] === 'gruppo' && count($courses) > 1);
+
 /** Le date come in tutta la piattaforma: «16/09/2026 18:00» (06/11). */
 $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
+    <?php if ($contesto !== null): ?>
+        <a href="<?= htmlspecialchars((string) $contesto['indietro']) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $contesto['etichetta']) ?></span></a>
+    <?php else: ?>
+        <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
+    <?php endif; ?>
     <h1><?= htmlspecialchars((string) $student['full_name']) ?></h1>
     <?php /* Solo il ruolo sotto il nome (21/10, Alessandro): l'email sta
              nell'elenco degli studenti e nei file scaricati, e per scrivere
@@ -81,7 +104,9 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
             (<?= htmlspecialchars(date('d/m/Y H:i', (int) strtotime((string) $student['last_seen_at']))) ?>)
         <?php endif; ?>
     </p>
-    <?php if ($liveAttendance['total'] > 0): ?>
+    <?php /* Dal corso o dal gruppo le presenze stanno nel titolo del
+             riquadro degli incontri. */ ?>
+    <?php if ($contesto === null && $liveAttendance['total'] > 0): ?>
         <p class="page-subtitle">
             Sessioni live seguite: <?= (int) $liveAttendance['attended'] ?>/<?= (int) $liveAttendance['total'] ?>
         </p>
@@ -94,9 +119,9 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
             <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica</summary>
             <div class="dropdown-menu">
                 <?php if (App\Core\Xlsx::disponibile()): ?>
-                    <a href="/reports/students/<?= (int) $student['id'] ?>/xlsx">XLSX</a>
+                    <a href="/reports/students/<?= (int) $student['id'] ?>/xlsx<?= htmlspecialchars(ContestoStudente::perScaricare($contesto)) ?>">XLSX</a>
                 <?php endif; ?>
-                <a href="/reports/students/<?= (int) $student['id'] ?>/csv">CSV</a>
+                <a href="/reports/students/<?= (int) $student['id'] ?>/csv<?= htmlspecialchars(ContestoStudente::perScaricare($contesto)) ?>">CSV</a>
             </div>
         </details>
     </p>
@@ -111,15 +136,21 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
     </nav>
 <?php endif; ?>
 
-<?php if ($scheda !== 'corsi'): ?>
+<?php if ($scheda !== 'corsi' && !$tuttoInColonna): ?>
     <?php /* La scheda «Incontri dal vivo»: i corsi non si stampano. */ ?>
 <?php elseif ($courses === []): ?>
-    <p class="empty-state">Questo utente non è iscritto ad alcun corso.</p>
+    <p class="empty-state"><?= $contesto !== null
+        ? 'Questo studente non è iscritto ai corsi di questo gruppo.'
+        : 'Questo utente non è iscritto ad alcun corso.' ?></p>
 <?php else: ?>
     <?php foreach ($courses as $course): ?>
         <section class="card report-studente-corso">
             <div class="card-head">
-                <h2><a href="/reports/courses/<?= (int) $course['course_id'] ?>"><?= htmlspecialchars((string) $course['course_title']) ?></a></h2>
+                <?php if ($titoloCorso !== null): ?>
+                    <h2><?= htmlspecialchars($titoloCorso) ?></h2>
+                <?php else: ?>
+                    <h2><a href="/reports/courses/<?= (int) $course['course_id'] ?>"><?= htmlspecialchars((string) $course['course_title']) ?></a></h2>
+                <?php endif; ?>
                 <span>
                     <?= number_format((float) $course['progress_pct'], 0) ?>%
                     <?php if ($course['completed_at'] !== null): ?>
@@ -221,11 +252,15 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
     <?php endforeach; ?>
 <?php endif; ?>
 
-<?php if ($liveSessions !== [] && $scheda === 'incontri'): ?>
+<?php if ($liveSessions !== [] && ($scheda === 'incontri' || $tuttoInColonna)): ?>
     <section class="card report-studente-incontri">
-        <?php /* Il titolo lo dice la scheda; senza schede resta, per un lettore
-                 di schermo, come titolo di sezione nascosto. */ ?>
-        <h2 class="sr-only">Incontri dal vivo</h2>
+        <?php if ($tuttoInColonna): ?>
+            <h2>Incontri dal vivo · presente a <?= (int) $liveAttendance['attended'] ?> su <?= (int) $liveAttendance['total'] ?></h2>
+        <?php else: ?>
+            <?php /* Il titolo lo dice la scheda; senza schede resta, per un
+                     lettore di schermo, come titolo di sezione nascosto. */ ?>
+            <h2 class="sr-only">Incontri dal vivo</h2>
+        <?php endif; ?>
         <p class="card-meta">
             Gli incontri a cui questo studente era atteso. L’ingresso è quello registrato quando
             ha aperto la riunione da Pistacchio; quanto sia rimasto in riunione non lo sappiamo,
@@ -240,7 +275,9 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
             <tr role="row">
                 <?= $ordineIncontri->th('Incontro', 'incontro') ?>
                 <?= $ordineIncontri->th('Quando', 'quando') ?>
-                <th scope="col" role="columnheader">Corso o gruppo</th>
+                <?php if ($conColonnaCorso): ?>
+                    <th scope="col" role="columnheader">Corso o gruppo</th>
+                <?php endif; ?>
                 <?= $ordineIncontri->th('Presenza', 'presenza') ?>
                 <?= $ordineIncontri->th('Ingresso', 'ingresso') ?>
                 <th scope="col" role="columnheader">Ritardo</th>
@@ -255,7 +292,9 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                 <tr role="row">
                     <td role="cell" data-label="Incontro"><a href="/reports/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></td>
                     <td role="cell" data-label="Quando"><?= htmlspecialchars(ReportController::dateTimeLabel((string) $incontro['starts_at'])) ?></td>
-                    <td role="cell" data-label="Corso o gruppo"><?= htmlspecialchars((string) ($incontro['course_title'] ?? $incontro['group_name'] ?? '—')) ?></td>
+                    <?php if ($conColonnaCorso): ?>
+                        <td role="cell" data-label="Corso o gruppo"><?= htmlspecialchars($corsoOGruppo($incontro)) ?></td>
+                    <?php endif; ?>
                     <td role="cell" data-label="Presenza">
                         <?php if ($presente): ?>
                             <span class="badge badge-success">presente</span>

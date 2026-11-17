@@ -642,7 +642,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     // La griglia del corso A, dove lo studente B e' iscritto
                     // per la prova: la riga non c'e', ne' a schermo ne' nel file.
                     await page.goto(BASE + '/reports/courses/' + A.corso + '/griglia');
-                    const rigaB = '/reports/students/' + d.utenti.studenteB + '"';
+                    const rigaB = '/reports/students/' + d.utenti.studenteB + '?';
                     const grigliaPulita = !(await page.content()).includes(rigaB);
                     const csvGriglia = await page.evaluate(async (u) => (await (await fetch(u, { credentials: 'same-origin' })).text()), '/reports/courses/' + A.corso + '/griglia/csv');
                     const csvGrigliaPulito = csvGriglia.includes('Studente;Email;Gruppo') && !csvGriglia.includes(emailB);
@@ -669,7 +669,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 await admin.page.goto(BASE + '/reports/fermi?giorni=30');
                 const csvAdmin = await admin.page.evaluate(async () => (await (await fetch('/reports/fermi/csv?giorni=30', { credentials: 'same-origin' })).text()));
                 await admin.page.goto(BASE + '/reports/courses/' + A.corso + '/griglia');
-                const nellaGriglia = (await admin.page.content()).includes('/reports/students/' + d.utenti.studenteB + '"');
+                const nellaGriglia = (await admin.page.content()).includes('/reports/students/' + d.utenti.studenteB + '?');
                 await admin.page.goto(BASE + '/reports/fermi?giorni=30');
                 const loTrova = (await admin.page.content()).includes(emailB) && csvAdmin.includes(emailB) && nellaGriglia;
                 check(

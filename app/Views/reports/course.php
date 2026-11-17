@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\ContestoStudente;
 use App\Auth\Auth;
 use App\Core\Csrf;
 use App\Core\ExStudente;
@@ -87,7 +88,7 @@ $rows = $ordine->applica($rows);
         <?php foreach ($rows as $row): ?>
             <tr role="row">
                 <td role="cell" data-label="Studente">
-                    <a href="/reports/students/<?= (int) $row['user_id'] ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
+                    <a href="<?= htmlspecialchars(ContestoStudente::link((int) $row['user_id'], 'corso', (int) $course['id'], $_GET)) ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
                     <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                     <?php /* Lo studente diventato staff (13/11, variante 3A). */ ?>
                     <?php $exStudente = ExStudente::frase((string) $row['role']); ?>

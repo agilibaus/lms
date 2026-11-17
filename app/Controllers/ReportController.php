@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\Auth;
 use App\Auth\StudentScope;
+use App\Core\ContestoStudente;
 use App\Core\Csv;
 use App\Core\GrigliaCorso;
 use App\Core\Ordinamento;
@@ -666,6 +667,13 @@ class ReportController
         }
 
         $courses = $this->corsiVisibili((int) $student['id'], ReportModel::studentDetail((int) $student['id']));
+        $incontri = $this->incontriVisibili((int) $student['id']);
+        $contesto = $this->contestoStudente((int) $student['id'], $courses);
+
+        if ($contesto !== null) {
+            [$courses, $incontri] = self::nelContesto($contesto, $courses, $incontri);
+        }
+
         $quizzesByCourse = [];
 
         foreach ($courses as $course) {
@@ -675,11 +683,10 @@ class ReportController
             );
         }
 
-        $incontri = $this->incontriVisibili((int) $student['id']);
-
         View::render('reports/student', [
             'pageTitle' => 'Report · ' . $student['full_name'],
             'student' => $student,
+            'contesto' => $contesto,
             'courses' => $courses,
             'quizzesByCourse' => $quizzesByCourse,
             'liveAttendance' => self::presenze($incontri),
@@ -700,9 +707,19 @@ class ReportController
         $formato = self::formato($params);
         $xlsx = $formato === 'xlsx';
 
+        // Il file segue la pagina da cui si scarica: solo il corso o il
+        // gruppo da cui si e' arrivati, se se ne e' arrivati da uno (17/11).
+        $corsi = $this->corsiVisibili((int) $student['id'], ReportModel::studentDetail((int) $student['id']));
+        $sessions = $this->incontriVisibili((int) $student['id']);
+        $contesto = $this->contestoStudente((int) $student['id'], $corsi);
+
+        if ($contesto !== null) {
+            [$corsi, $sessions] = self::nelContesto($contesto, $corsi, $sessions);
+        }
+
         $rows = [];
 
-        foreach ($this->corsiVisibili((int) $student['id'], ReportModel::studentDetail((int) $student['id'])) as $row) {
+        foreach ($corsi as $row) {
             $rows[] = [
                 $row['course_title'],
                 $row['enrolled_at'],
@@ -718,7 +735,6 @@ class ReportController
         // allargare la tabella con campi che per i corsi resterebbero vuoti,
         // si aggiungono in fondo, dopo una riga bianca e una loro intestazione.
         // Un foglio di calcolo li legge come un secondo blocco.
-        $sessions = $this->incontriVisibili((int) $student['id']);
 
         if ($sessions !== []) {
             $rows[] = [];
@@ -975,6 +991,104 @@ class ReportController
             $incontri,
             static fn (array $s): bool => !empty($s['group_id']) && in_array((int) $s['group_id'], $gruppi, true)
         ));
+    }
+
+    /**
+     * Il corso o il gruppo da cui si e' aperto il report dello studente
+     * (17/11, vedi `ContestoStudente`), se regge: il corso deve essere uno
+     * di quelli dello studente che chi guarda vede; il gruppo uno di quelli
+     * che chi guarda segue, con lo studente fra i membri. Altrimenti null, e
+     * la pagina e' la scheda completa di sempre.
+     *
+     * @param list<array<string, mixed>> $corsi i corsi visibili dello studente
+     * @return array<string, mixed>|null il contesto, con `indietro` (dove
+     *         porta il collegamento in alto), `etichetta` (che cosa dice) e
+     *         `corsi` (gli id dei corsi da mostrare)
+     */
+    private function contestoStudente(int $studentId, array $corsi): ?array
+    {
+        $contesto = ContestoStudente::daRichiesta($_GET);
+
+        if ($contesto === null) {
+            return null;
+        }
+
+        if ($contesto['tipo'] === 'corso') {
+            $titolo = null;
+
+            foreach ($corsi as $c) {
+                if ((int) $c['course_id'] === $contesto['id']) {
+                    $titolo = (string) $c['course_title'];
+                }
+            }
+
+            if ($titolo === null) {
+                return null;
+            }
+
+            $etichetta = match ($contesto['da']) {
+                'griglia' => 'Griglia del corso',
+                'fermi' => 'Studenti fermi',
+                default => $titolo,
+            };
+
+            return $contesto + [
+                'indietro' => ContestoStudente::indietro($contesto),
+                'etichetta' => $etichetta,
+                'corsi' => [$contesto['id']],
+            ];
+        }
+
+        $gruppo = GroupModel::find($contesto['id']);
+        $visibili = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
+
+        if ($gruppo === null
+            || !in_array($contesto['id'], $visibili, true)
+            || !in_array($studentId, GroupModel::memberIds($contesto['id']), true)) {
+            return null;
+        }
+
+        return $contesto + [
+            'indietro' => ContestoStudente::indietro($contesto),
+            'etichetta' => (string) $gruppo['name'],
+            'corsi' => GroupModel::courseIds($contesto['id']),
+        ];
+    }
+
+    /**
+     * Corsi e incontri ristretti al contesto.
+     *
+     * Con un corso: gli incontri del corso, e quelli dei gruppi a cui il
+     * corso e' assegnato che non sono legati a nessun corso. Con un gruppo:
+     * gli incontri del gruppo, e quelli dei suoi corsi non legati a nessun
+     * gruppo. Un incontro di un corso per un altro gruppo, dal gruppo, non
+     * c'entra.
+     *
+     * @param array<string, mixed> $contesto
+     * @param list<array<string, mixed>> $corsi
+     * @param list<array<string, mixed>> $incontri
+     * @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>}
+     */
+    private static function nelContesto(array $contesto, array $corsi, array $incontri): array
+    {
+        $idCorsi = $contesto['corsi'];
+        $corsi = array_values(array_filter(
+            $corsi,
+            static fn (array $c): bool => in_array((int) $c['course_id'], $idCorsi, true)
+        ));
+
+        if ($contesto['tipo'] === 'corso') {
+            $gruppiDelCorso = GroupModel::courseGroupIds($contesto['id']);
+            $tiene = static fn (array $s): bool => $s['course_id'] !== null
+                ? (int) $s['course_id'] === $contesto['id']
+                : ($s['group_id'] !== null && in_array((int) $s['group_id'], $gruppiDelCorso, true));
+        } else {
+            $tiene = static fn (array $s): bool => $s['group_id'] !== null
+                ? (int) $s['group_id'] === $contesto['id']
+                : ($s['course_id'] !== null && in_array((int) $s['course_id'], $idCorsi, true));
+        }
+
+        return [$corsi, array_values(array_filter($incontri, $tiene))];
     }
 
     /**

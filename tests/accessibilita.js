@@ -548,6 +548,9 @@ const PAGINE_INTERNE = [
     ['/reports/courses/1/griglia?modulo=1', 'Griglia del corso, modulo aperto'],
     ['/reports/students/2', 'Report per studente'],
     ['/reports/students/2?scheda=incontri', 'Report per studente, incontri'],
+    // Aperto da un corso e da un gruppo (17/11): una colonna sola.
+    ['/reports/students/5?corso=1&da=corso', 'Report per studente, dal corso'],
+    ['/reports/students/5?gruppo=1&da=gruppo', 'Report per studente, dal gruppo'],
     ['/reports/groups/1', 'Report per gruppo'],
     ['/lessons/1/edit', 'Modifica lezione'],
     ['/courses/1', 'Corso'],

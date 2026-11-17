@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\ContestoStudente;
 use App\Core\GrigliaCorso;
 use App\Core\Icona;
 use App\Core\Ordinamento;
@@ -207,7 +208,7 @@ $casella = static function (array $c) use ($esc): string {
                     <?php foreach ($studenti as $s): ?>
                         <tr>
                             <th scope="row" class="griglia-nome">
-                                <a href="/reports/students/<?= (int) $s['user_id'] ?>"><?= $esc($s['full_name']) ?></a>
+                                <a href="<?= $esc(ContestoStudente::link((int) $s['user_id'], 'griglia', (int) $course['id'], $_GET)) ?>"><?= $esc($s['full_name']) ?></a>
                             </th>
                             <td class="griglia-testo">
                                 <?= $s['gruppi'] === [] ? '<span class="valore-assente">—</span>' : $esc(implode(', ', $s['gruppi'])) ?>

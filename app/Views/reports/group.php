@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\ContestoStudente;
 use App\Core\Ordinamento;
 use App\Core\Icona;
 
@@ -72,7 +73,7 @@ $rows = $ordine->applica($rows);
         <?php foreach ($rows as $row): ?>
             <tr role="row">
                 <td role="cell" data-label="Studente">
-                    <a href="/reports/students/<?= (int) $row['user_id'] ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
+                    <a href="<?= htmlspecialchars(ContestoStudente::link((int) $row['user_id'], 'gruppo', (int) $group['id'], $_GET)) ?>"><?= htmlspecialchars((string) $row['full_name']) ?></a>
                     <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                 </td>
                 <td role="cell" data-label="Corso"><?= htmlspecialchars((string) $row['course_title']) ?></td>
