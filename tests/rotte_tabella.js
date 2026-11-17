@@ -214,6 +214,7 @@ const RIGHE = [
     ['POST', '/domande/{id}/togli',                                         '/domande/{B.domanda_in_attesa}/togli',                             'L', '403', '403', '403', '403', '-'],
     ['GET',  '/admin/settings',                                             '/admin/settings',                                                  'L', '403', '403', '403', 'S', 'S'],
     ['GET',  '/admin/settings/informazioni',                                '/admin/settings/informazioni',                                     'L', '403', '403', '403', 'S', 'S'],
+    ['GET',  '/admin/settings/comandi',                                     '/admin/settings/comandi',                                          'L', '403', '403', '403', '403', 'S'],
     ['GET',  '/admin/settings/posta',                                       '/admin/settings/posta',                                            'L', '403', '403', '403', '403', 'S'],
     ['POST', '/admin/settings/posta',                                       '/admin/settings/posta',                                            'L', '403', '403', '403', '403', '-'],
     ['POST', '/admin/settings/posta/prova',                                 '/admin/settings/posta/prova',                                      'L', '403', '403', '403', '403', '-'],

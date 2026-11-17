@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Auth\Auth;
 use App\Core\CampoContato;
+use App\Core\ComandiPianificati;
 use App\Core\Ambiente;
 use App\Core\AuthLayout;
 use App\Core\BunnyToken;
@@ -86,6 +87,28 @@ class SettingsController extends AdminController
             // Il supervisore (30/10): «Video di benvenuto» e «Informazioni».
             'canWelcome' => Auth::can('settings.manage') || Auth::can('settings.welcome'),
             'canPermissions' => Auth::hasRole('admin'),
+            // Il punto esclamativo sul riquadro dei comandi pianificati (17/11).
+            'comandiDaControllare' => Auth::can('settings.manage')
+                ? ComandiPianificati::daControllare(static fn (string $k): ?string => Settings::get($k), time())
+                : 0,
+        ]);
+    }
+
+    /**
+     * «Comandi pianificati» (17/11, Alessandro): quando hanno girato
+     * l'ultima volta avvisi, inviti e rilascio dei moduli, e se sono fermi.
+     * Solo l'Amministratore (`settings.manage`).
+     */
+    public function comandi(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $adesso = time();
+
+        View::render('admin/settings/comandi', [
+            'pageTitle' => 'Comandi pianificati',
+            'comandi' => ComandiPianificati::elenco(static fn (string $k): ?string => Settings::get($k), $adesso),
+            'adesso' => $adesso,
         ]);
     }
 

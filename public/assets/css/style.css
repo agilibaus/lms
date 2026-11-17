@@ -9508,3 +9508,38 @@ details[open] > summary .obiettivo-comando::after,
 .report-studente-materiali {
     margin-top: 1.25rem;
 }
+
+/* Il punto esclamativo sul riquadro «Comandi pianificati» (17/11): un
+   comando fermo o mai partito. Il titolo diventa una riga flessibile per
+   centrare il cerchio sul testo; senza cerchio non cambia niente, perche'
+   l'altezza della riga resta quella del testo. */
+.settings-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.settings-card-avviso {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.3em;
+    height: 1.3em;
+    border-radius: 50%;
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* «ogni 5 minuti», e la data con l'ora, non vanno a capo a meta'. */
+.comandi-frequenza,
+.comandi-quando {
+    white-space: nowrap;
+}
+
+.comandi-ultima {
+    display: block;
+}

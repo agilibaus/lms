@@ -231,8 +231,17 @@ use App\Core\Csrf;
                          permessi vive altrove e va aggiunta a mano. */ ?>
                 <?php if (Auth::can('settings.manage') || Auth::hasRole('admin') || $supervisore): ?>
                     <?php $inImpostazioni = $voce('/admin/settings') !== '' || $voce('/admin/permissions') !== ''; ?>
+                    <?php
+                    /* Quanti comandi pianificati sono fermi o mai partiti
+                       (17/11), solo all'Amministratore: un cron fermo non
+                       se ne lamenta da solo. */
+                    $comandiFermi = Auth::can('settings.manage')
+                        ? \App\Core\ComandiPianificati::daControllare(static fn (string $k): ?string => \App\Core\Settings::get($k), time())
+                        : 0;
+                    ?>
                     <a href="/admin/settings"
-                       class="nav-link<?= $inImpostazioni ? ' nav-link-active" aria-current="page' : '' ?>">Impostazioni</a>
+                       class="nav-link<?= $inImpostazioni ? ' nav-link-active" aria-current="page' : '' ?>">Impostazioni<?php if ($comandiFermi > 0): ?>
+                        <span class="nav-conteggio"><?= $comandiFermi ?><span class="sr-only"> <?= $comandiFermi === 1 ? 'comando pianificato da controllare' : 'comandi pianificati da controllare' ?></span></span><?php endif; ?></a>
                 <?php endif; ?>
             <?php endif; ?>
         </nav>

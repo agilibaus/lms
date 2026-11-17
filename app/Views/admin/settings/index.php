@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 /**
+ * @var int $comandiDaControllare comandi pianificati fermi o mai partiti (17/11)
  * @var bool $canSettings
  * @var bool $canPermissions
  * @var bool $canWelcome «Video di benvenuto»: anche il supervisore (30/10)
@@ -63,6 +64,14 @@ $sezioni = [
         'visibile' => $canSettings,
     ],
     [
+        'titolo' => 'Comandi pianificati',
+        'href' => '/admin/settings/comandi',
+        'testo' => 'Quando hanno girato l’ultima volta i comandi che il server lancia da solo: avvisi, inviti, rilascio dei moduli.',
+        'visibile' => $canSettings,
+        // Un punto esclamativo se qualcuno e' fermo o mai partito (17/11).
+        'avviso' => ($comandiDaControllare ?? 0) > 0,
+    ],
+    [
         'titolo' => 'Informazioni su Pistacchio LMS',
         'href' => '/admin/settings/informazioni',
         'testo' => 'La versione installata e il collegamento al codice sorgente su GitHub.',
@@ -84,7 +93,7 @@ $sezioni = [
             continue;
         } ?>
         <a class="settings-card" href="<?= $sezione['href'] ?>">
-            <span class="settings-card-title"><?= htmlspecialchars($sezione['titolo']) ?></span>
+            <span class="settings-card-title"><?= htmlspecialchars($sezione['titolo']) ?><?php if (!empty($sezione['avviso'])): ?><span class="settings-card-avviso" aria-hidden="true">!</span><span class="sr-only"> (da controllare)</span><?php endif; ?></span>
             <span class="settings-card-text"><?= htmlspecialchars($sezione['testo']) ?></span>
         </a>
     <?php endforeach; ?>

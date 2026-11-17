@@ -588,6 +588,7 @@ const PAGINE_INTERNE = [
     ['/admin/settings/pagamenti', 'Pagamenti'],
     ['/admin/settings/meet', 'Google Meet'],
     ['/admin/settings/informazioni', 'Informazioni su Pistacchio LMS'],
+    ['/admin/settings/comandi', 'Comandi pianificati'],
 
     // Il catalogo dal 13/11 e' solo degli studenti: lo staff viene rimandato
     // a «Corsi». Lo prova `giroCatalogoStudente`, alle stesse larghezze.
