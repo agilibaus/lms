@@ -24,21 +24,73 @@ class EnrollmentModel
 
     /**
      * Aggiorna la percentuale di completamento; imposta completed_at la prima
-     * volta che si raggiunge il 100% (senza sovrascriverlo se già valorizzato,
-     * e lo azzera se il progresso torna sotto al 100%).
+     * volta che si raggiunge il 100%, senza sovrascriverlo se c'e' gia'.
+     *
+     * IL «COMPLETATO» RESTA (17/11, Alessandro, come nella maggior parte
+     * degli LMS): chi ha finito il corso resta completato anche se dopo si
+     * aggiunge una lezione e la percentuale scende. Fino al 17/11 completed_at
+     * si azzerava appena la percentuale tornava sotto il 100%.
      */
     public static function updateProgress(int $userId, int $courseId, float $progressPct): void
     {
         $stmt = Database::connection()->prepare(
             'UPDATE enrollments
              SET progress_pct = :progress_pct,
-                 completed_at = CASE WHEN :is_complete THEN COALESCE(completed_at, NOW()) ELSE NULL END
+                 completed_at = CASE WHEN :is_complete THEN COALESCE(completed_at, NOW()) ELSE completed_at END
              WHERE user_id = :user_id AND course_id = :course_id'
         );
         $stmt->execute([
             'progress_pct' => $progressPct,
             'is_complete' => $progressPct >= 100 ? 1 : 0,
             'user_id' => $userId,
+            'course_id' => $courseId,
+        ]);
+    }
+
+    /**
+     * Ricalcola l'avanzamento di tutti gli iscritti di un corso (17/11, la
+     * seconda lista della revisione, voce 5). Lo chiamano i modelli quando
+     * il numero delle lezioni del corso cambia: una lezione creata o
+     * eliminata, un modulo eliminato. Prima l'avanzamento si aggiornava solo
+     * quando lo studente completava una lezione, e una lezione aggiunta dopo
+     * lasciava al 100% chi aveva finito.
+     *
+     * Lo stesso conto di `LessonController::complete`: lezioni fatte su
+     * lezioni del corso, due decimali, 0 se il corso non ha lezioni. Il
+     * «completato» resta a chi l'aveva (vedi `updateProgress`); chi arriva al
+     * 100% perche' si e' tolta la lezione che gli mancava lo diventa adesso.
+     * I certificati non si toccano: quelli emessi restano, e quello di chi
+     * diventa idoneo lo emette la pagina del corso alla prossima visita.
+     */
+    public static function ricalcolaAvanzamentoCorso(int $courseId): void
+    {
+        $pdo = Database::connection();
+
+        $totale = $pdo->prepare(
+            'SELECT COUNT(*) FROM lessons l INNER JOIN modules m ON m.id = l.module_id WHERE m.course_id = :course_id'
+        );
+        $totale->execute(['course_id' => $courseId]);
+        $lezioni = (int) $totale->fetchColumn();
+
+        $stmt = $pdo->prepare(
+            'UPDATE enrollments e
+             LEFT JOIN (SELECT lp.user_id, COUNT(*) AS fatte
+                          FROM lesson_progress lp
+                          INNER JOIN lessons l ON l.id = lp.lesson_id
+                          INNER JOIN modules m ON m.id = l.module_id
+                         WHERE m.course_id = :corso_fatte
+                         GROUP BY lp.user_id) f ON f.user_id = e.user_id
+             SET e.progress_pct = IF(:lezioni > 0, ROUND(100 * COALESCE(f.fatte, 0) / :lezioni_div, 2), 0),
+                 e.completed_at = CASE WHEN :lezioni_fine > 0 AND COALESCE(f.fatte, 0) >= :lezioni_tutte
+                                       THEN COALESCE(e.completed_at, NOW()) ELSE e.completed_at END
+             WHERE e.course_id = :course_id'
+        );
+        $stmt->execute([
+            'corso_fatte' => $courseId,
+            'lezioni' => $lezioni,
+            'lezioni_div' => $lezioni,
+            'lezioni_fine' => $lezioni,
+            'lezioni_tutte' => $lezioni,
             'course_id' => $courseId,
         ]);
     }

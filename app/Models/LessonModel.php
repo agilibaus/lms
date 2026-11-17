@@ -55,7 +55,22 @@ class LessonModel
             'position' => self::nextPosition($moduleId),
         ]);
 
-        return (int) $db->lastInsertId();
+        $id = (int) $db->lastInsertId();
+
+        // Una lezione in piu': l'avanzamento degli iscritti cambia (17/11).
+        self::ricalcolaIlCorsoDelModulo($moduleId);
+
+        return $id;
+    }
+
+    /** L'avanzamento degli iscritti del corso a cui appartiene il modulo. */
+    private static function ricalcolaIlCorsoDelModulo(int $moduleId): void
+    {
+        $modulo = ModuleModel::find($moduleId);
+
+        if ($modulo !== null) {
+            EnrollmentModel::ricalcolaAvanzamentoCorso((int) $modulo['course_id']);
+        }
     }
 
     public static function update(
@@ -94,10 +109,17 @@ class LessonModel
 
     public static function delete(int $id): void
     {
+        $lezione = self::find($id);
+
         // Materiali collegati rimossi a cascata (FK ON DELETE CASCADE); i file fisici
         // restano orfani su disco e vanno ripuliti separatamente dal chiamante.
         $stmt = Database::connection()->prepare('DELETE FROM lessons WHERE id = :id');
         $stmt->execute(['id' => $id]);
+
+        // Una lezione in meno: l'avanzamento degli iscritti cambia (17/11).
+        if ($lezione !== null) {
+            self::ricalcolaIlCorsoDelModulo((int) $lezione['module_id']);
+        }
     }
 
     /**

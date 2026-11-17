@@ -197,9 +197,16 @@ class ModuleModel
 
     public static function delete(int $id): void
     {
+        $modulo = self::find($id);
+
         // Le lezioni del modulo vengono rimosse a cascata (FK ON DELETE CASCADE).
         $stmt = Database::connection()->prepare('DELETE FROM modules WHERE id = :id');
         $stmt->execute(['id' => $id]);
+
+        // Con le sue lezioni cambia l'avanzamento degli iscritti (17/11).
+        if ($modulo !== null) {
+            EnrollmentModel::ricalcolaAvanzamentoCorso((int) $modulo['course_id']);
+        }
     }
 
     private static function nextPosition(int $courseId): int
