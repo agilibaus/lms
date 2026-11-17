@@ -13,6 +13,7 @@ use App\Core\BunnyToken;
 use App\Core\CorsiAPagamento;
 use App\Core\ElementStyle;
 use App\Core\FontLibrary;
+use App\Core\Google\ChiaveGoogle;
 use App\Core\Google\GoogleException;
 use App\Core\Google\MeetCalendar;
 use App\Core\Google\ServiceAccountClient;
@@ -49,9 +50,6 @@ class SettingsController extends AdminController
     private const APPEARANCE_PAGE = '/admin/settings/aspetto';
     private const BUNNY_PAGE = '/admin/settings/bunny';
     private const PAGAMENTI_PAGE = '/admin/settings/pagamenti';
-
-    /** Dove finisce la chiave dell'account di servizio, fuori dal document root. */
-    private const KEY_DIR = __DIR__ . '/../../../storage/google';
 
     // ---------------------------------------------------------------
     // Raccolta delle impostazioni
@@ -868,7 +866,7 @@ class SettingsController extends AdminController
     {
         Auth::requirePermission('settings.manage');
 
-        $keyPath = (string) Settings::get('GOOGLE_SERVICE_ACCOUNT_JSON', '');
+        $keyPath = ChiaveGoogle::percorso();
 
         View::render('admin/settings/meet', [
             'pageTitle' => 'Google Meet',
@@ -920,13 +918,13 @@ class SettingsController extends AdminController
     {
         Auth::requirePermission('settings.manage');
 
-        $current = (string) Settings::get('GOOGLE_SERVICE_ACCOUNT_JSON', '');
+        $current = ChiaveGoogle::percorso();
 
         Settings::set('GOOGLE_SERVICE_ACCOUNT_JSON', null, Auth::id());
 
         // Si cancella solo quello che abbiamo caricato noi: un percorso
         // scritto nel .env punta a un file che non ci appartiene.
-        if ($current !== '' && is_file($current) && str_starts_with(realpath($current) ?: '', self::keyDir())) {
+        if ($current !== '' && is_file($current) && ChiaveGoogle::eNostra($current)) {
             @unlink($current);
         }
 
@@ -981,13 +979,13 @@ class SettingsController extends AdminController
             $this->fail('Il file non contiene client_email e private_key: non è la chiave giusta.', self::MEET_PAGE);
         }
 
-        $directory = self::KEY_DIR;
+        $directory = ChiaveGoogle::cartella();
 
         if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) {
             $this->fail('Impossibile creare la cartella delle credenziali sul server.', self::MEET_PAGE);
         }
 
-        $previous = (string) Settings::get('GOOGLE_SERVICE_ACCOUNT_JSON', '');
+        $previous = ChiaveGoogle::percorso();
         $path = $directory . '/' . bin2hex(random_bytes(16)) . '.json';
 
         if (!move_uploaded_file($file['tmp_name'], $path)) {
@@ -999,9 +997,11 @@ class SettingsController extends AdminController
         // comunque fuori dal document root.
         @chmod($path, 0600);
 
-        Settings::set('GOOGLE_SERVICE_ACCOUNT_JSON', $path, Auth::id());
+        // Solo il nome del file (17/11): il percorso completo valeva solo su
+        // questo server, in questa cartella.
+        Settings::set('GOOGLE_SERVICE_ACCOUNT_JSON', ChiaveGoogle::nome($path), Auth::id());
 
-        if ($previous !== '' && is_file($previous) && str_starts_with(realpath($previous) ?: '', self::keyDir())) {
+        if ($previous !== '' && $previous !== $path && is_file($previous) && ChiaveGoogle::eNostra($previous)) {
             @unlink($previous);
         }
     }
@@ -1038,11 +1038,6 @@ class SettingsController extends AdminController
         return is_array($credentials) && !empty($credentials['client_email'])
             ? (string) $credentials['client_email']
             : null;
-    }
-
-    private static function keyDir(): string
-    {
-        return realpath(self::KEY_DIR) ?: self::KEY_DIR;
     }
 
     /**

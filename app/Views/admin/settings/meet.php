@@ -58,7 +58,7 @@ use App\Core\Icona;
         <p class="form-hint">
             Il file JSON scaricato da Google Cloud quando crei l'account di servizio. Viene salvato in
             <code>storage/google</code>, fuori dalle cartelle raggiungibili dal web, e in tabella resta
-            solo il percorso. Contiene una chiave privata: trattalo come una password.
+            solo il nome del file. Contiene una chiave privata: trattalo come una password.
         </p>
 
         <label for="GOOGLE_IMPERSONATE_EMAIL">Indirizzo da impersonare</label>

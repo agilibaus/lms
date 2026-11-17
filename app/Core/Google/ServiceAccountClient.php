@@ -48,7 +48,8 @@ class ServiceAccountClient
      */
     public static function fromEnv(?HttpTransport $transport = null): ?self
     {
-        $keyFile = (string) Settings::get('GOOGLE_SERVICE_ACCOUNT_JSON', '');
+        // Il nome del file in `storage/google`, o il percorso del .env (17/11).
+        $keyFile = ChiaveGoogle::percorso();
 
         if ($keyFile === '' || !is_file($keyFile)) {
             return null;
