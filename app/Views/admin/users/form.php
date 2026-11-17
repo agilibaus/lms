@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Auth\Auth;
 use App\Core\AvatarImage;
 use App\Core\Csrf;
@@ -154,7 +155,7 @@ $haFoto = !empty($user['avatar_path']);
                     <li>
                         <span class="assign-info">
                             <?php if ($canManageGroups): ?>
-                                <a href="/admin/groups/<?= (int) $group['id'] ?>/edit"><?= htmlspecialchars((string) $group['name']) ?></a>
+                                <a href="<?= htmlspecialchars(Ritorno::link('/admin/groups/' . (int) $group['id'] . '/edit', 'scheda-utente', (int) $user['id'])) ?>"><?= htmlspecialchars((string) $group['name']) ?></a>
                             <?php else: ?>
                                 <?= htmlspecialchars((string) $group['name']) ?>
                             <?php endif; ?>

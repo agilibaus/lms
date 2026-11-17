@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\ContestoStudente;
 use App\Core\Quando;
 use App\Core\Csrf;
@@ -47,7 +48,16 @@ $ordineIscritti = Ordinamento::daRichiesta([
 $enrollments = $ordineIscritti->applica($enrollments);
 ?>
 <div class="page-header">
-    <a href="/admin/courses" class="back-link"><span class="back-link-testo">Gestione corsi</span></a>
+    <?php /* Dalla scheda di un gruppo si torna al gruppo (17/11); altrimenti a «Gestione corsi». */ ?>
+    <?php
+    $ritorno = Ritorno::daRichiesta($_GET, ['scheda-gruppo']);
+    $gruppoRitorno = $ritorno !== null ? \App\Models\GroupModel::find($ritorno['id']) : null;
+    ?>
+    <?php if ($gruppoRitorno !== null): ?>
+        <a href="<?= htmlspecialchars(Ritorno::indirizzo($ritorno)) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $gruppoRitorno['name']) ?></span></a>
+    <?php else: ?>
+        <a href="/admin/courses" class="back-link"><span class="back-link-testo">Gestione corsi</span></a>
+    <?php endif; ?>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
         <?php /* La bozza dice presso chi e' (14/11), all'Amministratore e al

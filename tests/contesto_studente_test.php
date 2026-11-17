@@ -88,7 +88,7 @@ foreach ($storti as $nome => $torna) {
     check("con {$nome} si torna comunque al corso", str_starts_with($indietro, '/reports/courses/7') && !str_contains($indietro, 'altrove') && !str_contains($indietro, '//'), $indietro);
 }
 
-$c = ContestoStudente::daRichiesta(['corso' => '7', 'da' => 'corso', 'torna' => str_repeat('a=1&', 200)]);
+$c = ContestoStudente::daRichiesta(['corso' => '7', 'da' => 'corso', 'torna' => str_repeat('a=1&', 600)]);
 check('un `torna` troppo lungo si lascia', ContestoStudente::indietro($c) === '/reports/courses/7');
 $c = ContestoStudente::daRichiesta(['corso' => '7', 'da' => 'corso', 'torna' => ['giorni' => '30']]);
 check('un `torna` che non e\' un testo si lascia', ContestoStudente::indietro($c) === '/reports/courses/7');

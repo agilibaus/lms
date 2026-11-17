@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\UserModel;
+use App\Core\Ritorno;
 /** @var array $attempt */
 /** @var array $quiz */
 /** @var array $module */
@@ -27,7 +29,18 @@ $h5p = ($quiz['kind'] ?? '') === 'h5p';
 $soloAperte = $scoredCount === 0 && !$h5p;
 ?>
 <div class="page-header">
-    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
+    <?php
+    /* Aperto dallo staff dal report di uno studente (17/11), si torna al
+       report, con il nome dello studente: e' il titolo di quella pagina. Il
+       report deve essere dello studente del tentativo. */
+    $ritorno = Ritorno::daRichiesta($_GET, ['report-studente']);
+    $studenteRitorno = $ritorno !== null && $ritorno['id'] === (int) $attempt['user_id'] ? UserModel::find($ritorno['id']) : null;
+    ?>
+    <?php if ($studenteRitorno !== null): ?>
+        <a href="<?= htmlspecialchars(Ritorno::indirizzo($ritorno)) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $studenteRitorno['full_name']) ?></span></a>
+    <?php else: ?>
+        <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($course['title'] ?? 'Corso') ?></span></a>
+    <?php endif; ?>
     <h1>Esito: <?= htmlspecialchars($quiz['title']) ?></h1>
 </div>
 

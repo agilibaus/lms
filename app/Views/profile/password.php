@@ -89,7 +89,7 @@ if ($obbligato) {
 }
 ?>
 <div class="page-header">
-    <a href="/profilo" class="back-link"><span class="back-link-testo">Profilo</span></a>
+    <a href="/profilo" class="back-link"><span class="back-link-testo">Il mio profilo</span></a>
     <h1>Cambia password</h1>
 </div>
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\Ordinamento;
 use App\Core\ReportSections;
 use App\Core\Xlsx;
@@ -164,6 +165,19 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
                 </tr>
             </thead>
             <tbody role="rowgroup">
+                <?php
+                /* «Dettaglio» e «Griglia» dicono che si parte da questo elenco
+                   (17/11): l'«indietro» del dettaglio torna qui, con la ricerca,
+                   l'ordinamento e la pagina, invece che a «Report». */
+                $partenza = [
+                    'courses' => 'elenco-corsi',
+                    'groups' => 'elenco-gruppi',
+                    'students' => 'elenco-studenti',
+                    'live' => 'elenco-incontri',
+                    'fruizione' => 'elenco-fruizione',
+                ][$chiave] ?? null;
+                $dettaglio = static fn (string $url): string => $partenza === null ? $url : Ritorno::link($url, $partenza, 0, $_GET);
+                ?>
                 <?php foreach ($righe as $riga): ?>
                     <?php $base = $sezione['base'] . '/' . (int) $riga['id']; ?>
                     <tr role="row">
@@ -174,9 +188,9 @@ $conParametro = static function (string $nome, string $valore) use ($chiave, $ce
                             </td>
                         <?php endforeach; ?>
                         <td role="cell" data-label="Azioni" class="col-azioni row-actions">
-                            <a href="<?= $esc($base) ?>">Dettaglio</a>
+                            <a href="<?= $esc($dettaglio($base)) ?>">Dettaglio</a>
                             <?php if ($chiave === 'courses'): ?>
-                                <a href="<?= $esc($base) ?>/griglia">Griglia</a>
+                                <a href="<?= $esc($dettaglio($base . '/griglia')) ?>">Griglia</a>
                             <?php endif; ?>
                             <?= $scarica($base) ?>
                         </td>

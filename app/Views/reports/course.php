@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\ReportSections;
+use App\Core\Ritorno;
 use App\Core\ContestoStudente;
 use App\Auth\Auth;
 use App\Core\Csrf;
@@ -41,7 +43,9 @@ $materiali = $ordineMateriali->applica(array_map(
 ));
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
+    <?php /* Da Report › Corsi si torna all'elenco (17/11); altrimenti a «Report». */ ?>
+    <?php $ritorno = Ritorno::daRichiesta($_GET, ['elenco-corsi']); ?>
+    <a href="<?= htmlspecialchars($ritorno !== null ? Ritorno::indirizzo($ritorno) : '/reports') ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($ritorno !== null ? (string) ReportSections::tutte()['courses']['titolo'] : 'Report') ?></span></a>
     <h1><?= htmlspecialchars((string) $course['title']) ?></h1>
     <p class="page-subtitle">
         <?= (int) $totals['lessons'] ?> <?= (int) $totals['lessons'] === 1 ? 'lezione' : 'lezioni' ?> ·

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\UserModel;
+use App\Core\ReportSections;
+use App\Core\Ritorno;
 use App\Controllers\ReportController;
 use App\Core\Ordinamento;
 use App\Core\Icona;
@@ -41,7 +44,18 @@ $ordine = Ordinamento::daRichiesta([
 $rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
+    <?php /* Da Report › Sessioni live si torna all'elenco, dal report di uno
+             studente al suo report (17/11); altrimenti a «Report». */ ?>
+    <?php
+    $ritorno = Ritorno::daRichiesta($_GET, ['elenco-incontri', 'report-studente']);
+    $studenteRitorno = $ritorno !== null && $ritorno['da'] === 'report-studente' ? UserModel::find($ritorno['id']) : null;
+    if ($ritorno !== null && $ritorno['da'] === 'report-studente' && $studenteRitorno === null) {
+        $ritorno = null;
+    }
+    $etichettaRitorno = $ritorno === null ? 'Report'
+        : ($studenteRitorno !== null ? (string) $studenteRitorno['full_name'] : (string) ReportSections::tutte()['live']['titolo']);
+    ?>
+    <a href="<?= htmlspecialchars($ritorno !== null ? Ritorno::indirizzo($ritorno) : '/reports') ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($etichettaRitorno) ?></span></a>
     <h1><?= htmlspecialchars((string) $session['title']) ?></h1>
     <p class="page-subtitle">
         <?= htmlspecialchars($inizio->format('d/m/Y H:i')) ?>–<?= htmlspecialchars($fine->format('H:i')) ?>
@@ -74,7 +88,7 @@ $rows = $ordine->applica($rows);
         L’ingresso viene registrato quando qualcuno apre la riunione da Pistacchio, dalla pagina
         dell’incontro o dalla lezione. Quanto ciascuno sia poi rimasto in riunione non lo sappiamo:
         l’uscita avviene dentro Google Meet, che non ce lo comunica.
-        Le presenze si correggono dalla <a href="/live/<?= $id ?>">pagina dell’incontro</a>.
+        Le presenze si correggono dalla <a href="<?= htmlspecialchars(Ritorno::link('/live/' . $id, 'report-incontro', $id, $_GET)) ?>">pagina dell’incontro</a>.
     </p>
 
     <?php if ($rows === []): ?>

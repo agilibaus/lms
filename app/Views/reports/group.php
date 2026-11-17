@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\ReportSections;
+use App\Core\Ritorno;
 use App\Core\ContestoStudente;
 use App\Core\Ordinamento;
 use App\Core\Icona;
@@ -23,7 +25,9 @@ $ordine = Ordinamento::daRichiesta([
 $rows = $ordine->applica($rows);
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
+    <?php /* Da Report › Gruppi si torna all'elenco (17/11); altrimenti a «Report». */ ?>
+    <?php $ritorno = Ritorno::daRichiesta($_GET, ['elenco-gruppi']); ?>
+    <a href="<?= htmlspecialchars($ritorno !== null ? Ritorno::indirizzo($ritorno) : '/reports') ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($ritorno !== null ? (string) ReportSections::tutte()['groups']['titolo'] : 'Report') ?></span></a>
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         Tutor: <?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?> ·

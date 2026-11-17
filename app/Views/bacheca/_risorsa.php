@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\Bacheca;
 use App\Core\CampoContato;
 use App\Core\Csrf;
@@ -58,7 +59,9 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
             </button>
         </form>
         <?php if ($r['gestisce']): ?>
-            <a class="link-btn comando-con-icona" href="/bacheca/risorse/<?= $rid ?>/modifica"><?= Icona::svg('pencil') ?>Modifica</a>
+            <?php /* Dalla categoria si torna alla categoria (17/11). */ ?>
+            <?php $modifica = '/bacheca/risorse/' . $rid . '/modifica'; ?>
+            <a class="link-btn comando-con-icona" href="<?= htmlspecialchars(isset($categoria) && $categoria !== null ? Ritorno::link($modifica, 'categoria', (int) $categoria['id'], $_GET) : $modifica) ?>"><?= Icona::svg('pencil') ?>Modifica</a>
             <form action="/bacheca/risorse/<?= $rid ?>/evidenza" method="post">
                 <?= Csrf::field() ?><?= $torna ?>
                 <input type="hidden" name="si" value="<?= (int) $r['featured'] === 1 ? '0' : '1' ?>">

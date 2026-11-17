@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\ReportSections;
+use App\Core\Ritorno;
 use App\Auth\Auth;
 use App\Core\StudentiFermi;
 use App\Controllers\ReportController;
@@ -88,7 +90,9 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
     <?php if ($contesto !== null): ?>
         <a href="<?= htmlspecialchars((string) $contesto['indietro']) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) $contesto['etichetta']) ?></span></a>
     <?php else: ?>
-        <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
+        <?php /* Da Report › Studenti si torna all'elenco (17/11); altrimenti a «Report». */ ?>
+        <?php $ritornoElenco = Ritorno::daRichiesta($_GET, ['elenco-studenti']); ?>
+        <a href="<?= htmlspecialchars($ritornoElenco !== null ? Ritorno::indirizzo($ritornoElenco) : '/reports') ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($ritornoElenco !== null ? (string) ReportSections::tutte()['students']['titolo'] : 'Report') ?></span></a>
     <?php endif; ?>
     <h1><?= htmlspecialchars((string) $student['full_name']) ?></h1>
     <?php /* Solo il ruolo sotto il nome (21/10, Alessandro): l'email sta
@@ -132,9 +136,12 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
 
 <?php if ($conSchede): ?>
     <nav class="schede-pagina" aria-label="Sezioni della pagina">
-        <a href="?scheda=corsi" class="<?= $scheda === 'corsi' ? 'attiva' : '' ?>"
+        <?php /* Le schede tengono la partenza (17/11): da Report › Studenti,
+                 cambiando scheda, l'«indietro» torna ancora all'elenco. */ ?>
+        <?php $partenza = array_intersect_key($_GET, ['da' => 1, 'torna' => 1]); ?>
+        <a href="?<?= htmlspecialchars(http_build_query(['scheda' => 'corsi'] + $partenza)) ?>" class="<?= $scheda === 'corsi' ? 'attiva' : '' ?>"
            <?= $scheda === 'corsi' ? 'aria-current="page"' : '' ?>>Corsi (<?= count($courses) ?>)</a>
-        <a href="?scheda=incontri" class="<?= $scheda === 'incontri' ? 'attiva' : '' ?>"
+        <a href="?<?= htmlspecialchars(http_build_query(['scheda' => 'incontri'] + $partenza)) ?>" class="<?= $scheda === 'incontri' ? 'attiva' : '' ?>"
            <?= $scheda === 'incontri' ? 'aria-current="page"' : '' ?>>Incontri dal vivo (<?= count($liveSessions) ?>)</a>
     </nav>
 <?php endif; ?>
@@ -236,7 +243,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                                          «Tentativi dei questionari» spento vede
                                          la data, non il collegamento. */ ?>
                                 <?php if (!empty($quiz['last_attempt_id']) && \App\Auth\StudentScope::puoAprireTentativo((int) $student['id'], (int) $course['course_id'])): ?>
-                                    <a href="/attempts/<?= (int) $quiz['last_attempt_id'] ?>">
+                                    <a href="<?= htmlspecialchars(Ritorno::link('/attempts/' . (int) $quiz['last_attempt_id'], 'report-studente', (int) $student['id'], $_GET)) ?>">
                                         <?= htmlspecialchars($quiz['last_attempt_at'] !== null ? $quando((string) $quiz['last_attempt_at']) : '—') ?>
                                     </a>
                                 <?php elseif (!empty($quiz['last_attempt_id'])): ?>
@@ -322,7 +329,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                 $ritardo = ReportController::delayLabel($incontro);
                 ?>
                 <tr role="row">
-                    <td role="cell" data-label="Incontro"><a href="/reports/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></td>
+                    <td role="cell" data-label="Incontro"><a href="<?= htmlspecialchars(Ritorno::link('/reports/live/' . (int) $incontro['id'], 'report-studente', (int) $student['id'], $_GET)) ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></td>
                     <td role="cell" data-label="Quando"><?= htmlspecialchars(ReportController::dateTimeLabel((string) $incontro['starts_at'])) ?></td>
                     <?php if ($conColonnaCorso): ?>
                         <td role="cell" data-label="Corso o gruppo"><?= htmlspecialchars($corsoOGruppo($incontro)) ?></td>

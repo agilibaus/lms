@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\ContestoStudente;
 use App\Core\Quando;
 use App\Core\Csrf;
@@ -32,12 +33,19 @@ $ordineMembri = Ordinamento::daRichiesta([
 $members = $ordineMembri->applica($members);
 ?>
 <div class="page-header">
-    <a href="/admin/groups" class="back-link"><span class="back-link-testo">Gruppi</span></a>
+    <?php /* Dalla scheda di un utente si torna all'utente (17/11); altrimenti a «Gruppi». */ ?>
+    <?php
+    $ritorno = Ritorno::daRichiesta($_GET, ['scheda-utente']);
+    $indietro = $ritorno !== null && \App\Models\UserModel::find($ritorno['id']) !== null
+        ? [Ritorno::indirizzo($ritorno), 'Modifica utente']
+        : ['/admin/groups', 'Gruppi'];
+    ?>
+    <a href="<?= htmlspecialchars($indietro[0]) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($indietro[1]) ?></span></a>
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         <?= count($members) ?> membri · <?= count($courses) ?> corsi assegnati ·
         <?php if ($paginaApribile ?? true): ?>
-            <a href="/gruppi/<?= $groupId ?>">vai al gruppo</a> ·
+            <a href="<?= htmlspecialchars(Ritorno::link('/gruppi/' . $groupId, 'scheda-gruppo', $groupId)) ?>">vai al gruppo</a> ·
         <?php endif; ?>
         <a href="/reports/groups/<?= $groupId ?>">vedi report</a>
     </p>
@@ -88,7 +96,7 @@ $members = $ordineMembri->applica($members);
         <ul class="assign-list">
             <?php foreach ($courses as $course): ?>
                 <li>
-                    <a href="/admin/courses/<?= (int) $course['id'] ?>/edit"><?= htmlspecialchars((string) $course['title']) ?></a>
+                    <a href="<?= htmlspecialchars(Ritorno::link('/admin/courses/' . (int) $course['id'] . '/edit', 'scheda-gruppo', $groupId)) ?>"><?= htmlspecialchars((string) $course['title']) ?></a>
                     <?php /* Le date dei moduli per questo gruppo (26/10, conflitto 3). */ ?>
                     <a href="/admin/groups/<?= $groupId ?>/courses/<?= (int) $course['id'] ?>/date" class="link-btn comando-con-icona"><?= Icona::svg('pencil') ?>Date dei moduli</a>
                     <?php if ($gestisceTutto): ?>

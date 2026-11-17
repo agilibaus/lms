@@ -3260,7 +3260,8 @@ async function giroBenvenuto(browser) {
         })));
         check('nell\'elenco Gruppi del tutor ogni riga porta anche alla pagina del gruppo',
             righeGruppi.length > 0 && righeGruppi.every((r) => r.pagina !== null
-                && r.gestione === r.pagina.replace('/gruppi/', '/admin/groups/') + '/edit'),
+                // Senza la partenza (17/11): `?da=gruppi` fa tornare all'elenco.
+                && r.gestione === r.pagina.split('?')[0].replace('/gruppi/', '/admin/groups/') + '/edit'),
             [JSON.stringify(righeGruppi)]);
         await esamina(tp, '/admin/groups/' + seme.gruppo_cerchio + '/edit', 'Modifica gruppo (tutor)', BERSAGLIO_MINIMO, daTelefono);
         const daModifica = await tp.evaluate(() => {
@@ -3276,7 +3277,7 @@ async function giroBenvenuto(browser) {
             }));
         }
         check('da Modifica gruppo il tutor apre la pagina del gruppo, dove pone la domanda',
-            daModifica === '/gruppi/' + seme.gruppo_cerchio && paginaTutor !== null
+            daModifica !== null && daModifica.split('?')[0] === '/gruppi/' + seme.gruppo_cerchio && paginaTutor !== null
                 && paginaTutor.titolo === 'Gruppo [prova-permessi] cerchio' && paginaTutor.modera,
             [JSON.stringify({ daModifica, paginaTutor })]);
 

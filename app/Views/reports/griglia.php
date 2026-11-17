@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\ReportSections;
+use App\Core\Ritorno;
 use App\Core\ContestoStudente;
 use App\Core\GrigliaCorso;
 use App\Core\Icona;
@@ -32,13 +34,18 @@ $base = '/reports/courses/' . $corsoId . '/griglia';
  * ordine) e ne cambia una: chi ordina per avanzamento e apre un modulo si
  * aspetta di ritrovare lo stesso ordine.
  */
-$indirizzo = static function (array $cambia, string $percorso = '') use ($base, $modulo, $gruppo, $ordine): string {
+// Aperta da Report › Corsi (17/11): la partenza resta in ogni indirizzo
+// della pagina, cosi' cambiando modulo o gruppo l'«indietro» torna ancora
+// all'elenco. Nei file scaricati non serve.
+$partenza = Ritorno::daRichiesta($_GET, ['elenco-corsi']) === null ? []
+    : array_intersect_key($_GET, ['da' => 1, 'torna' => 1]);
+$indirizzo = static function (array $cambia, string $percorso = '') use ($base, $modulo, $gruppo, $ordine, $partenza): string {
     $q = array_filter([
         'modulo' => $modulo,
         'gruppo' => $gruppo,
         'ordina' => $ordine->chiave(),
         'verso' => $ordine->chiave() === null ? null : $ordine->verso(),
-    ], static fn ($v): bool => $v !== null);
+    ] + ($percorso === '' ? $partenza : []), static fn ($v): bool => $v !== null);
     $q = array_filter(array_merge($q, $cambia), static fn ($v): bool => $v !== null);
 
     return $base . $percorso . ($q === [] ? '' : '?' . http_build_query($q));
@@ -92,7 +99,13 @@ $casella = static function (array $c) use ($esc): string {
 };
 ?>
 <div class="page-header">
-    <a href="/reports/courses/<?= $corsoId ?>" class="back-link"><span class="back-link-testo"><?= $esc((string) $course['title']) ?></span></a>
+    <?php /* Aperta da Report › Corsi si torna all'elenco (17/11); dal report del corso, al corso. */ ?>
+    <?php $ritorno = Ritorno::daRichiesta($_GET, ['elenco-corsi']); ?>
+    <?php if ($ritorno !== null): ?>
+        <a href="<?= $esc(Ritorno::indirizzo($ritorno)) ?>" class="back-link"><span class="back-link-testo"><?= $esc((string) ReportSections::tutte()['courses']['titolo']) ?></span></a>
+    <?php else: ?>
+        <a href="/reports/courses/<?= $corsoId ?>" class="back-link"><span class="back-link-testo"><?= $esc((string) $course['title']) ?></span></a>
+    <?php endif; ?>
     <h1>Griglia del corso</h1>
     <p class="page-subtitle">
         <?= $esc((string) $course['title']) ?> ·

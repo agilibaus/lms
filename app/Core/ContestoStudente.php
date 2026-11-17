@@ -43,7 +43,7 @@ final class ContestoStudente
     ];
 
     /** Oltre questa lunghezza `torna` non e' un indirizzo nostro: si lascia. */
-    private const TORNA_MAX = 500;
+    private const TORNA_MAX = 2000;
 
     /**
      * Il collegamento allo studente da una pagina di corso o di gruppo.
@@ -121,22 +121,14 @@ final class ContestoStudente
     }
 
     /**
-     * Solo coppie nome=valore semplici: niente elenchi, niente nomi strani.
+     * Solo coppie nome=valore semplici: le stesse regole di `Ritorno`, che
+     * lascia passare anche il `torna` della pagina di partenza.
      *
      * @param array<mixed> $parametri
      * @return array<string, string>
      */
     private static function pulisci(array $parametri): array
     {
-        $puliti = [];
-
-        foreach ($parametri as $nome => $valore) {
-            if (is_string($nome) && preg_match('/^[a-z_]{1,30}$/', $nome) === 1
-                && (is_string($valore) || is_int($valore)) && strlen((string) $valore) <= 100) {
-                $puliti[$nome] = (string) $valore;
-            }
-        }
-
-        return $puliti;
+        return Ritorno::pulisci($parametri);
     }
 }

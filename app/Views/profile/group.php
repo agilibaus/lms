@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Controllers\GroupPageController;
 use App\Core\CampoContato;
 use App\Core\CourseCover;
@@ -84,7 +85,24 @@ $conPresentazione = array_values(array_filter(
 $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
 ?>
 <div class="page-header">
-    <a href="/profilo" class="back-link"><span class="back-link-testo">Profilo</span></a>
+    <?php
+    /* Da dove si arriva (17/11): dal corso («Vai al tuo gruppo», «Il mio
+       gruppo» nel ramo) si torna al corso; dall'elenco dei gruppi o dalla
+       scheda del gruppo, li'; altrimenti al profilo. Il testo e' il titolo
+       della pagina a cui si torna. */
+    $ritorno = Ritorno::daRichiesta($_GET, ['gruppi', 'scheda-gruppo']);
+    if ($ritorno !== null && $ritorno['da'] === 'scheda-gruppo' && $ritorno['id'] !== (int) $group['id']) {
+        $ritorno = null;
+    }
+    if ($ritorno !== null) {
+        $indietro = [Ritorno::indirizzo($ritorno), $ritorno['da'] === 'gruppi' ? 'Gruppi' : (string) $group['name']];
+    } elseif (isset($corso) && $corso !== null) {
+        $indietro = ['/courses/' . (int) $corso['id'], (string) $corso['title']];
+    } else {
+        $indietro = ['/profilo', 'Il mio profilo'];
+    }
+    ?>
+    <a href="<?= htmlspecialchars($indietro[0]) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($indietro[1]) ?></span></a>
     <?php /* L'immagine del gruppo accanto al nome (19/10, Alessandro): il
              limone del Giallo. La stessa dell'elenco dei gruppi e del
              profilo, con le iniziali quando manca. `alt` vuoto: il nome e'
@@ -118,7 +136,7 @@ $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
     <section class="card gruppo-incontro" aria-labelledby="gruppo-incontro-titolo">
         <div class="gruppo-incontro-testo">
             <h2 class="gruppo-riquadro-titolo" id="gruppo-incontro-titolo">Prossimo incontro del gruppo</h2>
-            <h3 class="gruppo-incontro-nome"><a href="/live/<?= (int) $incontro['id'] ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></h3>
+            <h3 class="gruppo-incontro-nome"><a href="<?= htmlspecialchars(Ritorno::link('/live/' . (int) $incontro['id'], 'gruppo', (int) $group['id'], $_GET)) ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></h3>
             <p class="gruppo-incontro-quando"><?= htmlspecialchars(GiroDelCerchio::quando((string) $incontro['starts_at'], (string) $incontro['ends_at'])) ?></p>
         </div>
         <div class="gruppo-incontro-chi">

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Core\ReportSections;
+use App\Core\Ritorno;
 use App\Controllers\VideoProgressController;
 use App\Core\Ordinamento;
 use App\Core\Xlsx;
@@ -27,7 +29,9 @@ $ordine = Ordinamento::daRichiesta([
 $righe = $ordine->applica($righe);
 ?>
 <div class="page-header">
-    <a href="/reports" class="back-link"><span class="back-link-testo">Report</span></a>
+    <?php /* Da Report › Video si torna all'elenco (17/11); altrimenti a «Report». */ ?>
+    <?php $ritornoElenco = Ritorno::daRichiesta($_GET, ['elenco-fruizione']); ?>
+    <a href="<?= htmlspecialchars($ritornoElenco !== null ? Ritorno::indirizzo($ritornoElenco) : '/reports') ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($ritornoElenco !== null ? (string) ReportSections::tutte()['fruizione']['titolo'] : 'Report') ?></span></a>
     <h1>Fruizione dei video</h1>
     <p class="page-subtitle"><?= htmlspecialchars((string) $course['title']) ?></p>
     <div class="page-actions">
@@ -69,7 +73,7 @@ $righe = $ordine->applica($righe);
                     <?php foreach ($lezioni as $lezione): ?>
                         <th scope="col">
                             <?php if ($dettaglioApribile): ?>
-                                <a href="/lessons/<?= (int) $lezione['id'] ?>/fruizione">
+                                <a href="<?= htmlspecialchars(Ritorno::link('/lessons/' . (int) $lezione['id'] . '/fruizione', 'report-fruizione', (int) $course['id'], $_GET)) ?>">
                                     <?= htmlspecialchars($lezione['title']) ?>
                                 </a>
                             <?php else: ?>

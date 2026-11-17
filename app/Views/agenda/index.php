@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\Agenda;
 use App\Core\Csrf;
 use App\Core\Url;
@@ -33,7 +34,16 @@ $adesso = new DateTimeImmutable('now');
  * perche' il colore da solo non lo distingue chi non lo distingue (1.4.1
  * delle WCAG: «l'uso del colore»).
  */
-$voce = static function (array $e) use ($esc, $adesso): string {
+/*
+ * Il collegamento a un incontro dice che si parte dall'Agenda (17/11): la
+ * pagina dell'incontro torna qui, nella stessa vista e nello stesso mese,
+ * invece che a «Sessioni live».
+ */
+$urlEvento = static fn (array $e): string => str_starts_with((string) $e['url'], '/live/')
+    ? Ritorno::link((string) $e['url'], 'agenda', 0, $_GET)
+    : (string) $e['url'];
+
+$voce = static function (array $e) use ($esc, $adesso, $urlEvento): string {
     $incontro = $e['tipo'] === Agenda::INCONTRO;
     $fine = $e['fine'] ?? $e['inizio'];
 
@@ -52,7 +62,7 @@ $voce = static function (array $e) use ($esc, $adesso): string {
         . '<span class="agenda-quando"><span class="agenda-giorno">'
         . $esc($e['inizio']->format('d/m/Y')) . '</span> <span class="agenda-ora">' . $esc($ora) . '</span></span>'
         . '<span class="agenda-cosa">'
-        . '<a href="' . $esc((string) $e['url']) . '">' . $esc((string) $e['titolo']) . '</a>'
+        . '<a href="' . $esc($urlEvento($e)) . '">' . $esc((string) $e['titolo']) . '</a>'
         . '<span class="agenda-tipo">' . $esc(Agenda::etichettaTipo((string) $e['tipo'])) . '</span>'
         . ($e['contesto'] === '' ? '' : '<span class="agenda-contesto">' . $esc((string) $e['contesto']) . '</span>')
         . '</span>'
@@ -227,7 +237,7 @@ $titoliGruppi = [
                                              collegamento. */ ?>
                                     <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?>"
                                        title="<?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?>"
-                                       href="<?= $esc((string) $e['url']) ?>">
+                                       href="<?= $esc($urlEvento($e)) ?>">
                                         <span class="agenda-pillola-ora"><?= $esc($e['inizio']->format('H:i')) ?></span>
                                         <?= $esc((string) $e['titolo']) ?>
                                         <span class="sr-only">
@@ -310,7 +320,7 @@ $titoliGruppi = [
                         <p class="empty-state-small">Nessun impegno.</p>
                     <?php endif; ?>
                     <?php foreach ($casella['eventi'] as $e): ?>
-                        <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?>" href="<?= $esc((string) $e['url']) ?>">
+                        <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?>" href="<?= $esc($urlEvento($e)) ?>">
                             <span class="agenda-pillola-ora"><?= $esc($e['inizio']->format('H:i')) ?></span>
                             <?= $esc((string) $e['titolo']) ?>
                             <span class="sr-only">— <?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?></span>

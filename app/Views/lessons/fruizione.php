@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Controllers\VideoProgressController;
 use App\Core\Ordinamento;
 use App\Core\Icona;
@@ -47,9 +48,21 @@ $quando = static function (?string $data): string {
 };
 ?>
 <div class="page-header">
-    <a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="back-link">
-        <span class="back-link-testo"><?= htmlspecialchars($course['title']) ?> &mdash; <?= htmlspecialchars($lesson['title']) ?></span>
-    </a>
+    <?php
+    /* Dal report «Fruizione dei video» si torna al report (17/11): la
+       modifica della lezione, per un corso pubblicato, al supervisore
+       risponde 403. Da li', o senza partenza, la modifica della lezione,
+       con il suo titolo. */
+    $ritorno = Ritorno::daRichiesta($_GET, ['report-fruizione']);
+    if ($ritorno !== null && $ritorno['id'] !== (int) $course['id']) {
+        $ritorno = null;
+    }
+    ?>
+    <?php if ($ritorno !== null): ?>
+        <a href="<?= htmlspecialchars(Ritorno::indirizzo($ritorno)) ?>" class="back-link"><span class="back-link-testo">Fruizione dei video</span></a>
+    <?php else: ?>
+        <a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="back-link"><span class="back-link-testo">Modifica lezione &mdash; <?= htmlspecialchars((string) $module['title']) ?></span></a>
+    <?php endif; ?>
     <h1>Fruizione del video</h1>
     <p class="page-subtitle">
         Quanta parte del video ha guardato ciascuno studente iscritto al corso.

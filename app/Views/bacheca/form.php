@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Ritorno;
 use App\Core\Bacheca;
 use App\Core\CampoContato;
 use App\Core\Csrf;
@@ -41,7 +42,21 @@ $stati = [
 ?>
 <?php require __DIR__ . '/../admin/_flash.php'; ?>
 <div class="page-header">
-    <a href="<?= $inAttesa ? '/bacheca/proposte?corso=' . $courseId : '/bacheca?corso=' . $courseId ?>" class="back-link"><span class="back-link-testo"><?= $inAttesa ? 'Proposte da valutare' : 'Bacheca' ?></span></a>
+    <?php
+    /* Aperta da una categoria (17/11) — «Nuova risorsa», che porta gia'
+       `categoria=`, o «Modifica» su una sua risorsa — si torna alla
+       categoria, con il suo nome. Altrimenti come prima: le proposte da
+       valutare per una risorsa in attesa, la Bacheca per le altre. */
+    $ritorno = Ritorno::daRichiesta($_GET, ['categoria']);
+    $categoriaRitorno = $ritorno['id'] ?? ($esistente ? 0 : (int) ($_GET['categoria'] ?? 0));
+    $indietro = $inAttesa ? ['/bacheca/proposte?corso=' . $courseId, 'Proposte da valutare'] : ['/bacheca?corso=' . $courseId, 'Bacheca'];
+    foreach ($categorie as $c) {
+        if ((int) $c['id'] === $categoriaRitorno && $categoriaRitorno > 0) {
+            $indietro = [$ritorno !== null ? Ritorno::indirizzo($ritorno) : '/bacheca/categorie/' . $categoriaRitorno, (string) $c['name']];
+        }
+    }
+    ?>
+    <a href="<?= htmlspecialchars($indietro[0]) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($indietro[1]) ?></span></a>
     <h1><?= htmlspecialchars((string) $pageTitle) ?></h1>
     <p class="page-subtitle">
         <?php if (!$staff): ?>

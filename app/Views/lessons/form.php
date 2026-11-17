@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\CourseModel;
 use App\Controllers\LessonController;
 use App\Core\Csrf;
 use App\Core\Icona;
@@ -24,7 +25,9 @@ $action = $isEdit ? '/lessons/' . $lessonId : '/modules/' . $module['id'] . '/le
 $provider = $lesson['video_provider'] ?? 'none';
 ?>
 <div class="page-header">
-    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo">Torna al corso</span></a>
+    <?php /* Il titolo del corso, come nelle altre pagine che tornano al corso (17/11). */ ?>
+    <?php $corsoDellaLezione = CourseModel::find((int) $module['course_id']); ?>
+    <a href="/courses/<?= (int) $module['course_id'] ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars((string) ($corsoDellaLezione['title'] ?? 'Corso')) ?></span></a>
     <h1><?= $isEdit ? 'Modifica lezione' : 'Nuova lezione' ?> &mdash; <?= htmlspecialchars($module['title']) ?></h1>
 </div>
 

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Controllers\GroupPageController;
+use App\Models\GroupModel;
+use App\Core\Ritorno;
 use App\Core\Csrf;
 use App\Core\Ordinamento;
 use App\Core\Icona;
@@ -49,7 +52,21 @@ $isPast = $endsAt < $now;
 $apribile = (bool) ($session['joinable'] ?? false);
 ?>
 <div class="page-header">
-    <a href="/live" class="back-link"><span class="back-link-testo">Sessioni live</span></a>
+    <?php
+    /* Da dove si arriva (17/11): dall'Agenda, dalla pagina del gruppo o dal
+       report dell'incontro si torna li'; altrimenti a «Sessioni live». Il
+       testo e' il titolo della pagina a cui si torna. */
+    $ritorno = Ritorno::daRichiesta($_GET, ['agenda', 'gruppo', 'report-incontro']);
+    $indietro = ['/live', 'Sessioni live'];
+    if ($ritorno !== null && $ritorno['da'] === 'agenda') {
+        $indietro = [Ritorno::indirizzo($ritorno), 'Agenda'];
+    } elseif ($ritorno !== null && $ritorno['da'] === 'report-incontro' && $ritorno['id'] === (int) $session['id']) {
+        $indietro = [Ritorno::indirizzo($ritorno), (string) $session['title']];
+    } elseif ($ritorno !== null && $ritorno['da'] === 'gruppo' && ($gruppoRitorno = GroupModel::find($ritorno['id'])) !== null) {
+        $indietro = [Ritorno::indirizzo($ritorno), GroupPageController::titolo((string) $gruppoRitorno['name'])];
+    }
+    ?>
+    <a href="<?= htmlspecialchars($indietro[0]) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($indietro[1]) ?></span></a>
     <h1><?= htmlspecialchars((string) $session['title']) ?></h1>
     <p class="page-subtitle">
         <?= htmlspecialchars($startsAt->format('d/m/Y H:i')) ?>–<?= htmlspecialchars($endsAt->format('H:i')) ?>

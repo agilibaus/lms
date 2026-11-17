@@ -3046,7 +3046,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const linkIcs = async (id) => await page.$$eval(
                 '.agenda-voce',
                 (voci, atteso) => voci
-                    .filter(v => v.querySelector('a[href="/live/' + atteso + '"]'))
+                    // Con o senza la partenza (17/11, `?da=agenda`).
+                    .filter(v => v.querySelector('a[href="/live/' + atteso + '"], a[href^="/live/' + atteso + '?"]'))
                     .some(v => v.querySelector('a[href$="/' + atteso + '.ics"]')),
                 String(id)
             );
