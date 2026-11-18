@@ -1171,6 +1171,11 @@ h3 { font-size: 1.05rem; }
     min-height: 2.5rem;
     border-radius: var(--radius-sm);
     border: none;
+    /* Un <button> non eredita il carattere della pagina (§4 del promemoria):
+       «Salva» e «Annulla» del profilo erano in Arial su Windows, accanto a
+       «Cambia password», che e' un collegamento, nel carattere di sistema
+       (18/11, Alessandro). Valeva per tutti i pulsanti `.btn`. */
+    font-family: inherit;
     font-size: 0.92rem;
     font-weight: 600;
     text-align: center;
@@ -9550,6 +9555,15 @@ details[open] > summary .obiettivo-comando::after,
 
 .comandi-ultima {
     display: block;
+}
+
+/* Il campo per scegliere un file (la foto del profilo, i materiali): anche
+   il suo pulsante «Scegli file» nel carattere della pagina (18/11). */
+input[type="file"] {
+    font-family: inherit;
+    /* Il carattere di sistema e' piu' largo di Arial: a 320 px il campo
+       usciva di 5 px dalla pagina. Non oltre lo spazio che ha. */
+    max-width: 100%;
 }
 
 /* ---------- Privacy (18/11, Alessandro) ---------- */

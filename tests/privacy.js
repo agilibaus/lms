@@ -129,6 +129,13 @@ const TESTO = '<h2>1. Chi tratta i tuoi dati</h2><p>Il titolare del trattamento.
         const sezione = st.page.locator('section.card', { has: st.page.locator('h2', { hasText: 'Privacy' }) });
         check('il profilo ha la sezione Privacy, senza link all\'informativa', await sezione.count() === 1
             && await sezione.locator('a[href^="/privacy"]').count() === 0);
+        const stili = await st.page.evaluate(() => {
+            const s = (e) => { const c = getComputedStyle(e); return [c.fontSize, c.color, c.fontFamily].join(' / '); };
+            const nota = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Password').querySelector('p');
+            const privacy = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Privacy').querySelector('p');
+            return [s(nota), s(privacy)];
+        });
+        check('il testo del riquadro Privacy come le note degli altri riquadri', stili[0] === stili[1], stili);
         check('…e con «Chiedi la cancellazione dei tuoi dati»', await sezione.locator('a', { hasText: 'Chiedi la cancellazione dei tuoi dati' }).count() === 1);
 
         console.log('\n2. La pubblicazione');

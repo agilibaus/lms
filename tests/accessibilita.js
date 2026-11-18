@@ -970,6 +970,20 @@ async function comeSiRiconoscono(page) {
             }
         }
 
+        // Ogni pulsante nel carattere della pagina (18/11, Alessandro): non
+        // solo nelle file di comandi. «Salva» e «Annulla» del profilo erano
+        // in Arial accanto a «Cambia password» nel carattere di sistema: un
+        // <button> non lo eredita, un <a> si'. Anche il campo per scegliere
+        // un file. Fuori l'editor (`.tox`), che ha il suo, e i pulsanti con la
+        // sola icona (le frecce per spostare): senza testo il carattere non
+        // si vede.
+        const pagina = getComputedStyle(document.body).fontFamily;
+        const pulsanti = [...document.querySelectorAll('button, .btn, input[type="file"]')]
+            .filter((e) => visibile(e) && e.closest('.tox') === null && e.closest('.sr-only') === null)
+            .filter((e) => e.type === 'file' || /\S/.test(testo(e)))
+            .filter((e) => getComputedStyle(e).fontFamily !== pagina)
+            .map((e) => '«' + (testo(e) || e.getAttribute('aria-label') || e.type) + '» in ' + getComputedStyle(e).fontFamily.split(',')[0]);
+
         return {
             distanze,
             attaccati,
@@ -979,6 +993,7 @@ async function comeSiRiconoscono(page) {
             senzaSottolineatura: comandi.filter((e) => !sottolineato(e)).map((e) => '«' + testo(e) + '»'),
             sfalsati,
             caratteri: [...new Set(caratteri)],
+            pulsanti: [...new Set(pulsanti)],
         };
     }, [COMANDI, NELLE_FRASI]);
 }
@@ -1034,6 +1049,7 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     check(nome + ': i collegamenti nelle frasi sono sottolineati e colorati', segni.frasi.length === 0, segni.frasi);
     check(nome + ': i comandi di una fila hanno il testo sulla stessa riga', segni.sfalsati.length === 0, segni.sfalsati);
     check(nome + ': i comandi di una fila usano lo stesso carattere', segni.caratteri.length === 0, segni.caratteri);
+    check(nome + ': i pulsanti usano il carattere della pagina', segni.pulsanti.length === 0, segni.pulsanti);
     check(nome + ': un modulo che segue un altro modulo ne sta staccato', segni.attaccati.length === 0, segni.attaccati);
 
     const senzaContatore = await campiSenzaContatore(page);
