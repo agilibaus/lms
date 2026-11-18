@@ -76,7 +76,7 @@ $tabella = static function (array $righe, bool $finite) use ($e, $quando, $tenta
 <?php require __DIR__ . '/../_flash.php'; ?>
 
 <section class="card">
-    <p class="card-meta">
+    <p class="form-hint">
         Le email a più persone partono dal giro della posta (<code>bin/avvisi</code>), le altre subito; quelle che
         non partono si ritentano a ogni giro per <?= CodaEmail::ORE_DI_TENTATIVI ?> ore. <?= $e($giro($ultimoGiro)) ?>
     </p>

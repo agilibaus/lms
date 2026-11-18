@@ -94,18 +94,17 @@ use App\Core\Icona;
     </form>
 
     <?php if ($lastUpdate !== null): ?>
-        <p class="card-meta">
-            Ultima modifica da questa pagina:
+        <p class="form-hint">
+            Ultima modifica:
             <?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $lastUpdate['updated_at'])))
-                . ($lastUpdate['full_name'] !== null ? ' — ' . htmlspecialchars((string) $lastUpdate['full_name']) : '')
-                . '.' ?>
+                . ($lastUpdate['full_name'] !== null ? ' — ' . htmlspecialchars((string) $lastUpdate['full_name']) : '') ?>
         </p>
     <?php endif; ?>
 </section>
 
 <section class="card">
     <h2>Prova di invio</h2>
-    <p class="card-meta">
+    <p class="form-hint">
         Manda un messaggio al tuo indirizzo<?= $myEmail !== null && $myEmail !== '' ? ' (' . htmlspecialchars($myEmail) . ')' : '' ?>,
         usando le impostazioni salvate. Salva prima di provare.
     </p>

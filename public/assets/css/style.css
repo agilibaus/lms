@@ -124,6 +124,28 @@ h1, h2, h3 {
     letter-spacing: -0.01em;
 }
 
+/* LA SCALA DEI TESTI (18/11, Alessandro: «Pistacchio deve essere
+   visivamente coerente, non un miscuglio di font e gerarchie a caso»).
+   Ogni pagina usa questi livelli, e nessuna se ne fa di propri:
+
+     titolo della pagina           h1            1,5 rem   600
+     titolo di un gruppo di        .gruppo-titolo 1,4 rem  600
+       riquadri (Aspetto)
+     titolo di un riquadro         .card h2      1,2 rem   600
+     sottotitolo nel riquadro      h3            1,05 rem  600
+     testo                                       1 rem     400
+     etichetta di un campo o       label         0,92 rem  500
+       di un'opzione
+     nota sotto un campo o un      .form-hint    0,92 rem  400  grigio
+       titolo
+     messaggio «nessun…»           .empty-state  0,9 rem   400  grigio
+     dettaglio (l'account di       .card-meta    0,83 rem  400  grigio
+       servizio collegato)
+
+   «Ultima modifica: …» e' una nota, in fondo al modulo che ha salvato.
+
+   Un titolo diverso da questi, o una nota scritta in un'altra misura,
+   e' un errore da correggere, non una scelta della pagina. */
 h1 { font-size: 1.5rem; }
 h3 { font-size: 1.05rem; }
 
@@ -1291,9 +1313,10 @@ h3 { font-size: 1.05rem; }
 
 .gruppo-titolo {
     margin: 0 0 0.2rem;
-    font-size: 1.05rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
+    /* Sopra i titoli dei riquadri (1,2 rem), sotto quello della pagina
+       (1,5 rem), a 600 come tutti i titoli (18/11): era 1,05 rem a 700,
+       piu' piccolo dei riquadri che contiene. */
+    font-size: 1.4rem;
 }
 
 .gruppo-nota {
@@ -1347,6 +1370,8 @@ h3 { font-size: 1.05rem; }
 }
 
 .ritocco-nome {
+    /* Un sottotitolo nel riquadro (18/11). */
+    font-size: 1.05rem;
     font-weight: 600;
 }
 
@@ -1429,7 +1454,9 @@ h3 { font-size: 1.05rem; }
 }
 
 .tavolozza-nome {
-    font-size: 0.95rem;
+    /* Il nome di un'opzione: un'etichetta (18/11). */
+    font-size: 0.92rem;
+    font-weight: 500;
 }
 
 /* ---------- Auth page ---------- */
@@ -2082,7 +2109,8 @@ form.form + form {
 
 .empty-state-small {
     color: var(--color-text-muted);
-    font-size: 0.85rem;
+    /* La misura di `.empty-state` (18/11): due misure per lo stesso messaggio. */
+    font-size: 0.9rem;
     padding: 0.5rem 0;
 }
 
@@ -3765,8 +3793,11 @@ body.has-focus-video {
 
 .ruoli-interruttore-nome {
     display: block;
-    font-size: 1rem;
-    font-weight: 400;
+    /* Il nome dell'opzione e' un'etichetta e la spiegazione una nota, come
+       ogni altra casella (18/11): nella stessa pagina dei Pagamenti stavano
+       accanto a «Cancella la chiave salvata» con misure diverse. */
+    font-size: 0.92rem;
+    font-weight: 500;
 }
 
 .ruoli-interruttore-cosa {
@@ -3774,7 +3805,7 @@ body.has-focus-video {
     margin: 0.15rem 0 0;
     font-size: 0.92rem;
     font-weight: 400;
-    color: var(--color-text);
+    color: var(--color-text-muted);
 }
 
 .form select,
@@ -3996,11 +4027,10 @@ fieldset.checkbox-group legend {
 
 .email-elenco h2 {
     margin: 0.9rem 0 0.3rem;
-    font-size: 0.76rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
+    /* I gruppi dell'elenco sono sottotitoli, con la misura dei sottotitoli
+       (18/11): erano etichette maiuscole e grigie, uno stile che altrove
+       non c'era. */
+    font-size: 1.05rem;
 }
 
 .email-elenco h2:first-child {
@@ -4038,7 +4068,7 @@ fieldset.checkbox-group legend {
    pagina resta «Messaggi email». */
 .email-scelta-testa h2 {
     margin: 0 0 0.2rem;
-    font-size: 1.05rem;
+    font-size: 1.2rem;
 }
 
 .email-testa-voce {
@@ -4089,6 +4119,8 @@ fieldset.checkbox-group legend {
 
 .aspetto-sommario h3 {
     margin-bottom: 0.4rem;
+    /* E' il titolo del riquadro: la misura dei titoli dei riquadri (18/11). */
+    font-size: 1.2rem;
 }
 
 @media (max-width: 40rem) {
@@ -9196,7 +9228,6 @@ details[open] > summary .obiettivo-se-aperto {
 
 .informazioni-blocco h1 {
     margin: 0 0 0.35rem;
-    font-size: 1.6rem;
 }
 
 .informazioni-versione {
@@ -9561,6 +9592,8 @@ details[open] > summary .obiettivo-comando::after,
    il suo pulsante «Scegli file» nel carattere della pagina (18/11). */
 input[type="file"] {
     font-family: inherit;
+    /* E la misura dei campi (18/11): il browser lo teneva a 13,3 px. */
+    font-size: 0.92rem;
     /* Il carattere di sistema e' piu' largo di Arial: a 320 px il campo
        usciva di 5 px dalla pagina. Non oltre lo spazio che ha. */
     max-width: 100%;

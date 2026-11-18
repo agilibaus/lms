@@ -99,18 +99,17 @@ use App\Core\Icona;
     <?php endif; ?>
 
     <?php if ($lastUpdate !== null): ?>
-        <p class="card-meta">
-            Ultima modifica da questa pagina:
+        <p class="form-hint">
+            Ultima modifica:
             <?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $lastUpdate['updated_at'])))
-                . ($lastUpdate['full_name'] !== null ? ' — ' . htmlspecialchars((string) $lastUpdate['full_name']) : '')
-                . '.' ?>
+                . ($lastUpdate['full_name'] !== null ? ' — ' . htmlspecialchars((string) $lastUpdate['full_name']) : '') ?>
         </p>
     <?php endif; ?>
 </section>
 
 <section class="card">
     <h2>Prova di connessione</h2>
-    <p class="card-meta">
+    <p class="form-hint">
         Legge il calendario configurato senza creare né modificare niente. Verifica in un colpo solo
         le credenziali, la delega e il fatto che quel calendario sia visibile all'utente impersonato.
     </p>

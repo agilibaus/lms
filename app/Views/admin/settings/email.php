@@ -63,10 +63,10 @@ $attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-curr
 <?php require __DIR__ . '/../_flash.php'; ?>
 
 <?php if ($logTransport): ?>
-    <p class="empty-state-small">
+    <div class="alert alert-info"><p>
         L’invio è in modalità “Registro”: i messaggi vengono scritti in <code>storage/mail</code>
         e non raggiungono nessuno. Si cambia nella pagina <a href="/admin/settings/posta">Server di posta elettronica</a>.
-    </p>
+    </p></div>
 <?php endif; ?>
 
 <div class="email-due-colonne <?= $solo === null ? 'email-indice' : 'email-voce' ?>">
@@ -100,12 +100,12 @@ $attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-curr
 <div class="email-scelta-testa">
     <h2><?= $e($titoloScelta) ?></h2>
     <?php if (isset($elenco[$corrente])): /* le due parti comuni la frase l'hanno nel riquadro */ ?>
-        <p class="card-meta"><?= $e($quandoScelta) ?></p>
+        <p class="form-hint"><?= $e($quandoScelta) ?></p>
     <?php endif; ?>
 </div>
 <?php if ($corrente === 'mittente'): ?>
 <section class="card">
-    <p class="card-meta">Valgono per tutte le email.</p>
+    <p class="form-hint">Valgono per tutte le email.</p>
 
     <form action="/admin/settings/email" method="post" class="form">
         <?= $campoPagina ?>
@@ -157,7 +157,7 @@ $attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-curr
 
 <?php if ($corrente === 'segnaposto'): ?>
 <section class="card">
-    <p class="card-meta">
+    <p class="form-hint">
         Si possono usare in ogni email, nell’oggetto e nel testo. Quelli che non esistono restano scritti
         come sono, così un errore di battitura si vede nella prova invece di sparire.
     </p>
@@ -239,7 +239,7 @@ $attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-curr
 <?php endforeach; ?>
 
 <?php if (isset($elenco[$corrente])): ?>
-<p class="card-meta">
+<p class="form-hint">
     La prova parte<?= $myEmail !== null && $myEmail !== '' ? ' a ' . $e($myEmail) : ' al tuo indirizzo' ?>
     con quello che è scritto nei campi, anche se non l’hai ancora salvato, e con valori di esempio al posto
     dei segnaposto. Le prove degli incontri partono senza il file per il calendario.
@@ -250,11 +250,10 @@ $attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-curr
 <script src="/assets/js/email-elenco.js"></script>
 
 <?php if ($lastUpdate !== null): ?>
-    <p class="card-meta">
-        Ultima modifica da questa pagina:
+    <p class="form-hint">
+        Ultima modifica:
         <?= $e(date('d/m/Y H:i', strtotime((string) $lastUpdate['updated_at'])))
-            . ($lastUpdate['full_name'] !== null ? ' — ' . $e((string) $lastUpdate['full_name']) : '')
-            . '.' ?>
+            . ($lastUpdate['full_name'] !== null ? ' — ' . $e((string) $lastUpdate['full_name']) : '') ?>
     </p>
 <?php endif; ?>
 </div>
