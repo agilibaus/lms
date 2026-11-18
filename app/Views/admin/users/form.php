@@ -120,6 +120,13 @@ $haFoto = !empty($user['avatar_path']);
         <input type="checkbox" name="is_active" value="1" <?= (int) ($user['is_active'] ?? 1) === 1 ? 'checked' : '' ?>>
         Account attivo (un account disattivato non può accedere)
     </label>
+    <?php if (!empty($user['deletion_requested_at'])): ?>
+        <?php /* Privacy (18/11): chi ha chiesto la cancellazione ha l'accesso chiuso. */ ?>
+        <p class="form-hint">
+            Ha chiesto la cancellazione dei suoi dati il <?= htmlspecialchars(App\Core\Quando::data((string) $user['deletion_requested_at'])) ?>:
+            per questo l'account è disattivato. Se lo riattivi, la richiesta non vale più.
+        </p>
+    <?php endif; ?>
 
     <?php if (!$isEdit): ?>
         <p class="form-hint">

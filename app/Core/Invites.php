@@ -6,6 +6,7 @@ namespace App\Core;
 
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
+use App\Models\PrivacyModel;
 use App\Models\UserModel;
 
 /**
@@ -102,7 +103,8 @@ class Invites
                     $email,
                     (string) $utente['full_name'],
                     $password,
-                    Url::to('/login')
+                    Url::to('/login'),
+                    ($utente['role'] ?? 'studente') === 'studente'
                 ));
             } catch (MailException $e) {
                 error_log('[Inviti] ' . $email . ': ' . $e->getMessage());
@@ -111,6 +113,11 @@ class Invites
             }
 
             UserModel::markInviteSent($id);
+
+            // L'email conteneva l'informativa privacy: e' comunicata (18/11).
+            if (($utente['role'] ?? 'studente') === 'studente' && Privacy::inVigore() !== null) {
+                PrivacyModel::segnaComunicata($id, (int) Privacy::inVigore());
+            }
             $mandati++;
         }
 

@@ -29,6 +29,7 @@ use App\Core\Versione;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\PaymentModel;
+use App\Models\PrivacyModel;
 
 /**
  * Configurazione di posta elettronica e Google Meet dal pannello.
@@ -89,6 +90,8 @@ class SettingsController extends AdminController
             'comandiDaControllare' => Auth::can('settings.manage')
                 ? ComandiPianificati::daControllare(static fn (string $k): ?string => Settings::get($k), time())
                 : 0,
+            // E sul riquadro Privacy, se ci sono richieste di cancellazione (18/11).
+            'richiestePrivacy' => Auth::can('settings.manage') ? PrivacyModel::contaRichieste() : 0,
         ]);
     }
 

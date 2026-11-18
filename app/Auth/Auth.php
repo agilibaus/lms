@@ -71,6 +71,8 @@ class Auth
     public const FAILURE_CREDENTIALS = 'credentials';
     public const FAILURE_UNVERIFIED = 'unverified';
     public const FAILURE_INACTIVE = 'inactive';
+    /** Ha chiesto la cancellazione dei suoi dati dal profilo (18/11). */
+    public const FAILURE_CANCELLAZIONE = 'cancellazione';
 
     public static function attempt(string $email, string $password): bool
     {
@@ -86,7 +88,9 @@ class Auth
         // Le credenziali sono giuste: da qui i motivi del rifiuto si possono
         // dire senza rivelare nulla a chi sta tirando a indovinare.
         if (!(bool) $user['is_active']) {
-            self::$failureReason = self::FAILURE_INACTIVE;
+            self::$failureReason = ($user['deletion_requested_at'] ?? null) !== null
+                ? self::FAILURE_CANCELLAZIONE
+                : self::FAILURE_INACTIVE;
 
             return false;
         }
@@ -270,7 +274,9 @@ class Auth
         // restava collegato finche' non usciva da solo.
         if (!(bool) $stato['is_active']) {
             self::logout();
-            header('Location: /login?motivo=disattivato');
+            // Le altre sessioni di chi ha chiesto la cancellazione dei dati
+            // (18/11) escono con il motivo vero, non con «disattivato».
+            header('Location: /login?motivo=' . (($stato['deletion_requested_at'] ?? null) !== null ? 'cancellazione' : 'disattivato'));
             exit;
         }
 

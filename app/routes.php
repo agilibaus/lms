@@ -6,6 +6,7 @@ use App\Controllers\Admin\BoardCategoryController;
 use App\Controllers\Admin\CourseController as AdminCourseController;
 use App\Controllers\Admin\GroupController as AdminGroupController;
 use App\Controllers\Admin\PermissionController as AdminPermissionController;
+use App\Controllers\Admin\PrivacyController as AdminPrivacyController;
 use App\Controllers\Admin\SettingsController;
 use App\Controllers\Admin\UserController as AdminUserController;
 use App\Controllers\Admin\UserImportController;
@@ -23,6 +24,7 @@ use App\Controllers\LessonController;
 use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
 use App\Controllers\PasswordResetController;
+use App\Controllers\PrivacyController;
 use App\Controllers\ProfileController;
 use App\Controllers\FirstAccessController;
 use App\Controllers\QuestionController;
@@ -55,6 +57,12 @@ $router->get('/password/reimposta/{token}', [PasswordResetController::class, 're
 $router->post('/password/reimposta/{token}', [PasswordResetController::class, 'reset']);
 
 // --- Catalogo e auto-iscrizione ---------------------------------------
+// Privacy (18/11): l'informativa si legge senza accedere.
+$router->get('/privacy', [PrivacyController::class, 'show']);
+$router->post('/privacy/avviso', [PrivacyController::class, 'chiudiAvviso']);
+$router->get('/profilo/cancellazione', [PrivacyController::class, 'cancellazioneForm']);
+$router->post('/profilo/cancellazione', [PrivacyController::class, 'chiediCancellazione']);
+
 $router->get('/catalogo', [CatalogController::class, 'index']);
 $router->post('/catalogo/{id}/iscrizione', [CatalogController::class, 'enroll']);
 
@@ -293,6 +301,9 @@ $router->get('/admin/settings', [SettingsController::class, 'index']);
 $router->get('/admin/settings/informazioni', [SettingsController::class, 'informazioni']);
 // Quando hanno girato i comandi pianificati (17/11): solo l'Amministratore.
 $router->get('/admin/settings/comandi', [SettingsController::class, 'comandi']);
+$router->get('/admin/settings/privacy', [AdminPrivacyController::class, 'index']);
+$router->post('/admin/settings/privacy', [AdminPrivacyController::class, 'salva']);
+$router->post('/admin/settings/privacy/{id}/cancella', [AdminPrivacyController::class, 'cancella']);
 $router->get('/admin/settings/posta', [SettingsController::class, 'mail']);
 $router->post('/admin/settings/posta', [SettingsController::class, 'updateMail']);
 $router->post('/admin/settings/posta/prova', [SettingsController::class, 'sendTestMail']);

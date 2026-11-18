@@ -10,6 +10,7 @@ use App\Core\Csrf;
 use App\Core\GroupLogo;
 use App\Core\Welcome;
 use App\Core\Icona;
+use App\Core\Privacy;
 
 /** @var array $user */
 /** @var array $groups */
@@ -266,6 +267,20 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
                 </li>
             <?php endforeach; ?>
         </ul>
+    </section>
+<?php endif; ?>
+
+<?php /* Privacy (18/11): solo per gli studenti, che sono i genitori a cui si
+         rivolge l'informativa. La cancellazione e' un collegamento a una
+         pagina che spiega e chiede conferma, non un pulsante che agisce. */ ?>
+<?php if ($user['role'] === 'studente'): ?>
+    <section class="card">
+        <h2>Privacy</h2>
+        <?php if (Privacy::inVigore() !== null): ?>
+            <p>Come trattiamo i tuoi dati lo spiega l’<a href="<?= htmlspecialchars(Privacy::link('profilo')) ?>">Informativa sulla privacy</a>.</p>
+        <?php endif; ?>
+        <p>Puoi chiedere di cancellare il tuo account e i tuoi dati. L’accesso si chiude subito e l’account viene cancellato entro un mese.</p>
+        <a href="/profilo/cancellazione" class="link-btn link-btn-danger">Chiedi la cancellazione dei tuoi dati</a>
     </section>
 <?php endif; ?>
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 /**
  * @var int $comandiDaControllare comandi pianificati fermi o mai partiti (17/11)
+ * @var int $richiestePrivacy richieste di cancellazione dei dati in attesa (18/11)
  * @var bool $canSettings
  * @var bool $canPermissions
  * @var bool $canWelcome «Video di benvenuto»: anche il supervisore (30/10)
@@ -62,6 +63,14 @@ $sezioni = [
         'href' => '/admin/settings/pagamenti',
         'testo' => 'I corsi a pagamento con Stripe: se si possono creare, e i pagamenti ricevuti.',
         'visibile' => $canSettings,
+    ],
+    [
+        'titolo' => 'Privacy',
+        'href' => '/admin/settings/privacy',
+        'testo' => 'Il testo dell’informativa, le sue versioni e le richieste di cancellazione dei dati.',
+        'visibile' => $canSettings,
+        // Un punto esclamativo se qualcuno ha chiesto la cancellazione (18/11).
+        'avviso' => ($richiestePrivacy ?? 0) > 0,
     ],
     [
         'titolo' => 'Comandi pianificati',

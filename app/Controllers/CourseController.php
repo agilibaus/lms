@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth\CourseRights;
 use App\Models\QuestionModel;
+use App\Core\Privacy;
 use App\Core\TutorWelcome;
 use App\Models\TutorWelcomeModel;
 use App\Auth\Auth;
@@ -28,6 +29,7 @@ use App\Models\LessonModel;
 use App\Models\LessonProgressModel;
 use App\Models\ModuleModel;
 use App\Models\PaymentModel;
+use App\Models\PrivacyModel;
 use App\Models\QuizAttemptModel;
 use App\Models\QuizModel;
 use App\Models\TreParoleModel;
@@ -64,6 +66,10 @@ class CourseController
             // Tornando da Stripe dopo la pagina d'attesa (06/11): l'avviso solo
             // finche' il pagamento non risulta registrato, cosi' ricaricando
             // sparisce da solo.
+            // L'informativa privacy e' cambiata dall'ultima volta che lo
+            // studente l'ha ricevuta (18/11): un avviso, finche' non lo chiude.
+            'avvisoPrivacy' => Auth::hasRole('studente')
+                && Privacy::avvisoDaMostrare(PrivacyModel::comunicata((int) Auth::id()), Privacy::inVigore()),
             'pagamentoInAttesa' => !$isStaff && isset($_GET['pagamento'])
                 && !PaymentModel::registratoPer((string) $_GET['pagamento'], (int) Auth::id()),
             // La percentuale dice quanto manca alla fine del corso; questa

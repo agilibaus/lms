@@ -238,10 +238,15 @@ use App\Core\Csrf;
                     $comandiFermi = Auth::can('settings.manage')
                         ? \App\Core\ComandiPianificati::daControllare(static fn (string $k): ?string => \App\Core\Settings::get($k), time())
                         : 0;
+                    // Le richieste di cancellazione dei dati (18/11): nel
+                    // menu un numero solo, la somma; quale riquadro lo
+                    // dice il punto esclamativo dentro Impostazioni.
+                    $richiestePrivacy = Auth::can('settings.manage') ? \App\Models\PrivacyModel::contaRichieste() : 0;
+                    $daGuardare = $comandiFermi + $richiestePrivacy;
                     ?>
                     <a href="/admin/settings"
-                       class="nav-link<?= $inImpostazioni ? ' nav-link-active" aria-current="page' : '' ?>">Impostazioni<?php if ($comandiFermi > 0): ?>
-                        <span class="nav-conteggio"><?= $comandiFermi ?><span class="sr-only"> <?= $comandiFermi === 1 ? 'comando pianificato da controllare' : 'comandi pianificati da controllare' ?></span></span><?php endif; ?></a>
+                       class="nav-link<?= $inImpostazioni ? ' nav-link-active" aria-current="page' : '' ?>">Impostazioni<?php if ($daGuardare > 0): ?>
+                        <span class="nav-conteggio"><?= $daGuardare ?><span class="sr-only"> <?= $daGuardare === 1 ? 'cosa da controllare' : 'cose da controllare' ?></span></span><?php endif; ?></a>
                 <?php endif; ?>
             <?php endif; ?>
         </nav>

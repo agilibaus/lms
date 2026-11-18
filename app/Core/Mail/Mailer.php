@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Mail;
 
+use App\Core\Privacy;
 use App\Core\Settings;
 
 /**
@@ -145,13 +146,15 @@ class Mailer
      * esistente e **false** per uno appena creato, che una password
      * precedente non ce l'ha mai avuta.
      */
-    public static function invite(string $email, string $name, string $password, string $link): Message
+    public static function invite(string $email, string $name, string $password, string $link, bool $studente = false): Message
     {
+        // Agli studenti, dopo il testo, la riga fissa con l'informativa
+        // privacy (18/11): e' il momento in cui ricevono i loro dati.
         return Modelli::messaggio('accesso', $email, $name, [
             '{email}' => $email,
             '{password}' => $password,
             '{link}' => $link,
-        ]);
+        ], [], null, $studente ? Privacy::rigaEmail(Privacy::inVigore()) : '');
     }
 
     /**

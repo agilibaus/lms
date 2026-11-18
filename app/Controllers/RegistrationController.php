@@ -9,9 +9,11 @@ use App\Auth\Auth;
 use App\Core\Env;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
+use App\Core\Privacy;
 use App\Core\PasswordPolicy;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\PrivacyModel;
 use App\Models\UserModel;
 use App\Models\UserTokenModel;
 
@@ -107,6 +109,16 @@ class RegistrationController
                 UserModel::riprendiRegistrazione((int) $existing['id'], $firstName, $lastName, $password);
                 $this->sendVerification((int) $existing['id'], (string) $existing['email'], $fullName);
             }
+        }
+
+        // Il modulo mostrava la frase con l'informativa privacy (18/11): e'
+        // comunicata. Anche quando l'indirizzo era gia' registrato e non
+        // lo diciamo: segnarla non rivela niente, e la frase l'ha letta.
+        $privacy = Privacy::inVigore();
+        $registrato = $existing === null ? ($userId ?? null) : (int) $existing['id'];
+
+        if ($privacy !== null && $registrato !== null && ($existing === null || ($existing['email_verified_at'] ?? null) === null)) {
+            PrivacyModel::segnaComunicata((int) $registrato, $privacy);
         }
 
         unset($_SESSION['register_old']);

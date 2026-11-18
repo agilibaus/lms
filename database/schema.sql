@@ -67,6 +67,11 @@ CREATE TABLE users (
     -- L'ultimo accesso alla piattaforma, scritto al piu' ogni cinque minuti
     -- («Studenti fermi», 2026_10_20). Solo l'ultima volta, non ogni accesso.
     last_seen_at    DATETIME NULL DEFAULT NULL,
+    -- Privacy (2026_11_18_privacy.sql): l'ultima versione dell'informativa
+    -- comunicata (registrazione, email «Il tuo accesso», avviso chiuso), e
+    -- quando lo studente ha chiesto la cancellazione dei suoi dati.
+    privacy_version_id INT UNSIGNED NULL DEFAULT NULL,
+    deletion_requested_at DATETIME NULL DEFAULT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     -- Indici con i nomi delle migrazioni che li hanno creati
@@ -307,6 +312,15 @@ CREATE TABLE material_downloads (
     FOREIGN KEY (material_id) REFERENCES lesson_materials(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_material_downloads_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Le versioni dell'informativa privacy (2026_11_18_privacy.sql): la piu'
+-- recente e' in vigore; una correzione la cambia senza crearne una nuova.
+CREATE TABLE privacy_versions (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    content_html    MEDIUMTEXT NOT NULL,
+    published_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    corrected_at    DATETIME NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Contenuti H5P di una lezione (2026_10_23_h5p_lezioni.sql): messi nel testo

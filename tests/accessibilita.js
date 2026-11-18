@@ -494,6 +494,8 @@ const PAGINE_PUBBLICHE = [
     ['/password/dimenticata', 'Password dimenticata'],
     ['/register/verifica-inviata', 'Verifica inviata'],
     ['/register/rinvia', 'Rinvia il link di conferma'],
+    // L'informativa privacy (18/11): pubblica, con la barra ferma in cima.
+    ['/privacy?da=registrazione', 'Informativa sulla privacy'],
     /*
      * La pagina della nuova password si apre da un collegamento ricevuto per
      * email, quindi spesso dal telefono. Il token qui sotto e' un dato di
@@ -589,6 +591,7 @@ const PAGINE_INTERNE = [
     ['/admin/settings/meet', 'Google Meet'],
     ['/admin/settings/informazioni', 'Informazioni su Pistacchio LMS'],
     ['/admin/settings/comandi', 'Comandi pianificati'],
+    ['/admin/settings/privacy', 'Privacy'],
 
     // Il catalogo dal 13/11 e' solo degli studenti: lo staff viene rimandato
     // a «Corsi». Lo prova `giroCatalogoStudente`, alle stesse larghezze.

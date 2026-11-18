@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Privacy;
 
 /** @var string|null $error */
 /** @var array $old */
@@ -53,11 +54,24 @@ ob_start();
     <p class="form-hint"><?= htmlspecialchars($passwordHint) ?></p>
 
     <button type="submit" class="btn btn-primary btn-block">Registrati</button>
+
+    <?php /* Privacy (18/11): l'informativa si comunica qui, con una frase e
+             il collegamento. Nessuna casella da spuntare: e' una
+             comunicazione, non un consenso. Solo quando ce n'e' una pubblicata. */ ?>
+    <?php if (Privacy::inVigore() !== null): ?>
+        <p class="form-hint nota-privacy">
+            Registrandoti dichiari di aver preso visione della nostra
+            <a href="<?= htmlspecialchars(Privacy::link('registrazione')) ?>" data-privacy-registrazione>Informativa sulla privacy</a>.
+        </p>
+    <?php endif; ?>
 </form>
 
 <p class="auth-links">
     Hai già un account? <a href="/login">Accedi</a>
 </p>
+<?php if (Privacy::inVigore() !== null): ?>
+    <script src="/assets/js/registrazione-privacy.js" defer></script>
+<?php endif; ?>
 <?php
 $cardContent = ob_get_clean();
 require __DIR__ . '/_card.php';

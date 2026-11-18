@@ -20,7 +20,7 @@ class UserModel
     {
         $stmt = Database::connection()->prepare(
             'SELECT id, email, password_hash, password_changed_at, full_name, role,
-                    is_active, email_verified_at
+                    is_active, email_verified_at, deletion_requested_at
              FROM users WHERE email = :email LIMIT 1'
         );
         $stmt->execute(['email' => $email]);
@@ -36,7 +36,7 @@ class UserModel
     {
         $stmt = Database::connection()->prepare(
             'SELECT id, email, contact_email, first_name, last_name, name_display, full_name, role, is_active, email_verified_at,
-                    bio, phone, city, avatar_path, created_at, last_seen_at
+                    bio, phone, city, avatar_path, created_at, last_seen_at, deletion_requested_at
              FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);
@@ -344,7 +344,7 @@ class UserModel
         // stato cambiato, senza aspettare che esca da solo.
         $stmt = Database::connection()->prepare(
             'SELECT password_changed_at, must_change_password, welcome_seen_at, name_display,
-                    is_active, role
+                    is_active, role, deletion_requested_at
                FROM users WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);
@@ -580,7 +580,7 @@ class UserModel
     public static function pendingInvites(int $quanti): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, email, full_name FROM users
+            'SELECT id, email, full_name, role FROM users
               WHERE invite_pending = 1
               ORDER BY id
               LIMIT ' . max(1, $quanti)

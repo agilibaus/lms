@@ -17,6 +17,18 @@ use App\Models\CourseModel;
     <h1><?= htmlspecialchars($heading) ?></h1>
 </div>
 
+<?php if ($avvisoPrivacy ?? false): ?>
+    <?php /* Privacy (18/11): solo qui, finche' lo studente non lo chiude. La x
+             e' un modulo: funziona anche senza JavaScript. */ ?>
+    <div class="alert alert-info avviso-privacy" role="status">
+        <p>Abbiamo aggiornato l’informativa sulla privacy. <a href="<?= htmlspecialchars(App\Core\Privacy::link('avviso')) ?>">Leggi la nuova versione</a></p>
+        <form action="/privacy/avviso" method="post">
+            <?= App\Core\Csrf::field() ?>
+            <button type="submit" class="avviso-chiudi" aria-label="Chiudi l’avviso"><span aria-hidden="true">×</span></button>
+        </form>
+    </div>
+<?php endif; ?>
+
 <?php if ($pagamentoInAttesa ?? false): ?>
     <?php /* Variante 2A (06/11): il riquadro informativo sotto il titolo. */ ?>
     <div class="alert alert-info" role="status">

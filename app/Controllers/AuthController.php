@@ -33,6 +33,8 @@ class AuthController
             'password' => 'La password di questo account è stata cambiata. Entra con quella nuova.',
             'sessione' => 'La sessione non è più valida. Entra di nuovo.',
             'disattivato' => 'Questo account è stato disattivato: contatta chi gestisce la piattaforma.',
+            // Dopo «Chiedi la cancellazione dei tuoi dati» (18/11).
+            'cancellazione' => 'Abbiamo ricevuto la tua richiesta. L’accesso è chiuso e cancelleremo il tuo account entro un mese.',
             default => null,
         };
 
@@ -79,6 +81,10 @@ class AuthController
                 ],
                 Auth::FAILURE_INACTIVE => [
                     'Questo account è disattivato: contatta chi gestisce la piattaforma.',
+                    false,
+                ],
+                Auth::FAILURE_CANCELLAZIONE => [
+                    'Hai chiesto la cancellazione dei tuoi dati: l’accesso è chiuso. Per qualunque domanda scrivi a chi gestisce la piattaforma.',
                     false,
                 ],
                 // Una password sbagliata: dalla terza l'avviso dice quanti

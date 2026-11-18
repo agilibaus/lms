@@ -11,6 +11,7 @@ use App\Core\Csv;
 use App\Core\Mail\MailException;
 use App\Core\Mail\Mailer;
 use App\Core\PasswordGenerator;
+use App\Core\Privacy;
 use App\Core\Upload;
 use App\Core\Url;
 use App\Core\Invites;
@@ -20,6 +21,7 @@ use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
+use App\Models\PrivacyModel;
 use App\Models\UserModel;
 
 /**
@@ -170,7 +172,8 @@ class UserController extends AdminController
                 $data['email'],
                 $data['full_name'],
                 $password,
-                Url::to('/login')
+                Url::to('/login'),
+                $data['role'] === 'studente'
             ));
         } catch (MailException $e) {
             error_log('[Mail] ' . $e->getMessage());
@@ -181,6 +184,11 @@ class UserController extends AdminController
                 . '"Genera e invia password temporanea" dalla sua scheda.',
                 '/admin/users/' . $newId . '/edit'
             );
+        }
+
+        // L'email conteneva l'informativa privacy: e' comunicata (18/11).
+        if ($data['role'] === 'studente' && Privacy::inVigore() !== null) {
+            PrivacyModel::segnaComunicata($newId, (int) Privacy::inVigore());
         }
 
         $this->success(
@@ -292,6 +300,12 @@ class UserController extends AdminController
             $data['is_active']
         );
         UserModel::setAssistantTutors($id, $data['role'], $data['tutor_ids']);
+
+        // Riattivato dopo una richiesta di cancellazione dei dati (18/11): la
+        // richiesta non vale piu', ed esce da Impostazioni › Privacy.
+        if ($data['is_active'] && ($user['deletion_requested_at'] ?? null) !== null) {
+            PrivacyModel::annullaCancellazione($id);
+        }
 
         // Uno studente che diventa staff esce dai suoi gruppi (13/11,
         // Alessandro): nei gruppi stanno solo gli studenti. Le iscrizioni ai

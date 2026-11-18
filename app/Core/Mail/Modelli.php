@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Mail;
 
 use App\Core\Database;
+use App\Core\Privacy;
 use App\Core\Settings;
 
 /**
@@ -616,7 +617,8 @@ final class Modelli
         string $nomeCompleto,
         array $variabili,
         array $allegati = [],
-        ?string $nome = null
+        ?string $nome = null,
+        string $coda = ''
     ): Message {
         $voce = self::voce($chiave);
 
@@ -628,7 +630,8 @@ final class Modelli
             $nomeCompleto,
             $variabili,
             $allegati,
-            $nome
+            $nome,
+            $coda
         );
     }
 
@@ -648,7 +651,9 @@ final class Modelli
             $nomeCompleto,
             $voce['esempio'],
             [],
-            null
+            null,
+            // La prova mostra anche la riga fissa dell'informativa (18/11).
+            $chiave === 'accesso' ? Privacy::rigaEmail(Privacy::inVigore()) : ''
         );
         $messaggio->subject = '[Prova] ' . $messaggio->subject;
 
@@ -684,7 +689,8 @@ final class Modelli
         string $nomeCompleto,
         array $variabili,
         array $allegati,
-        ?string $nome
+        ?string $nome,
+        string $coda = ''
     ): Message {
         $tutte = $variabili + self::variabiliComuni(self::nomeDi($email, $nomeCompleto, $nome));
 
@@ -692,7 +698,12 @@ final class Modelli
         // spezzerebbe l'intestazione in due.
         $oggetto = trim(str_replace(["\r", "\n"], ' ', self::rendi($oggetto, $tutte)));
 
+        // `$coda`: righe fisse che Pistacchio aggiunge dopo il testo
+        // modificabile, come il collegamento all'informativa privacy nell'email
+        // «Il tuo accesso» (18/11): un testo riscritto dal pannello non puo'
+        // toglierle.
         $corpo = self::rendi($testo, $tutte)
+            . ($coda !== '' ? "\n\n" . rtrim($coda) : '')
             . "\n"
             . self::rendi(self::testoInVigore(self::CHIUSURA, self::CHIUSURA_PREDEFINITA), $tutte);
 

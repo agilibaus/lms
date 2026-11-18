@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Csrf;
+use App\Core\Privacy;
 
 /** @var string|null $error */
 /** @var string|null $notice */
@@ -42,6 +43,12 @@ ob_start();
 <p class="auth-links">
     Non hai un account? <a href="/register">Registrati</a>
 </p>
+<?php /* Privacy (18/11): una parola sola, piccola e grigia. Le linee guida
+         europee sulla trasparenza (WP260) chiedono il collegamento in ogni
+         pagina, e serve a chi non riesce a entrare. */ ?>
+<?php if (Privacy::inVigore() !== null): ?>
+    <p class="auth-privacy"><a class="auth-privacy-link" href="<?= htmlspecialchars(Privacy::link('accesso')) ?>">Privacy</a></p>
+<?php endif; ?>
 <?php
 $cardContent = ob_get_clean();
 require __DIR__ . '/_card.php';
