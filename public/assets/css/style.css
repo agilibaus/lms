@@ -4,6 +4,15 @@
    ========================================================== */
 
 :root {
+    /* La scala dei testi (18/11): ogni misura del foglio usa uno di questi.
+       Spiegata accanto a h1, qui sotto. */
+    --fs-pagina: 1.5rem;
+    --fs-gruppo: 1.4rem;
+    --fs-riquadro: 1.2rem;
+    --fs-sottotitolo: 1.05rem;
+    --fs-testo: 1rem;
+    --fs-secondario: 0.92rem;
+    --fs-piccolo: 0.8rem;
     --color-bg: #fafaf9;
     /* Sfondo caldo delle pagine pubbliche (accesso, registrazione, password),
        ripreso dal sito Mindfulness in Voce: crema con tre cerchi traslucidi */
@@ -126,28 +135,30 @@ h1, h2, h3 {
 
 /* LA SCALA DEI TESTI (18/11, Alessandro: «Pistacchio deve essere
    visivamente coerente, non un miscuglio di font e gerarchie a caso»).
-   Ogni pagina usa questi livelli, e nessuna se ne fa di propri:
+   Ogni misura del foglio e' una di queste sette (le variabili `--fs-` in
+   cima), e nessuna pagina se ne fa di proprie:
 
-     titolo della pagina           h1            1,5 rem   600
-     titolo di un gruppo di        .gruppo-titolo 1,4 rem  600
-       riquadri (Aspetto)
-     titolo di un riquadro         .card h2      1,2 rem   600
-     sottotitolo nel riquadro      h3            1,05 rem  600
-     testo                                       1 rem     400
-     etichetta di un campo o       label         0,92 rem  500
-       di un'opzione
-     nota sotto un campo o un      .form-hint    0,92 rem  400  grigio
-       titolo
-     messaggio «nessun…»           .empty-state  0,9 rem   400  grigio
-     dettaglio (l'account di       .card-meta    0,83 rem  400  grigio
-       servizio collegato)
+     --fs-pagina       1,5 rem   il titolo della pagina (h1)
+     --fs-gruppo       1,4 rem   il titolo di un gruppo di riquadri, i mesi
+                                 dell'agenda
+     --fs-riquadro     1,2 rem   il titolo di un riquadro
+     --fs-sottotitolo  1,05 rem  un sottotitolo nel riquadro, il titolo di
+                                 una scheda (un corso, un modulo, una voce)
+     --fs-testo        1 rem     il testo
+     --fs-secondario   0,92 rem  etichette, campi, pulsanti, comandi, note,
+                                 avvisi, tabelle, messaggi «nessun…»
+     --fs-piccolo      0,8 rem   dettagli: date, conteggi, intestazioni delle
+                                 tabelle, distintivi
 
-   «Ultima modifica: …» e' una nota, in fondo al modulo che ha salvato.
-
-   Un titolo diverso da questi, o una nota scritta in un'altra misura,
-   e' un errore da correggere, non una scelta della pagina. */
-h1 { font-size: 1.5rem; }
-h3 { font-size: 1.05rem; }
+   I titoli sono a 600, le etichette a 500, il resto a 400; i grigi sono
+   uno solo, `--color-text-muted`. Fuori scala solo il testo dentro un
+   disegno (iniziali nelle foto, icone, la nuvola delle Tre parole, il
+   capolettera, i numeri in evidenza) e la presentazione delle pagine
+   pubbliche, che sceglie l'Amministratore. Una misura diversa e' un errore
+   da correggere, non una scelta della pagina: `tests/scala_testi.js` le
+   cerca in tutte le pagine. */
+h1 { font-size: var(--fs-pagina); }
+h3 { font-size: var(--fs-sottotitolo); }
 
 /* ---------- App shell ---------- */
 
@@ -171,7 +182,7 @@ h3 { font-size: 1.05rem; }
     align-items: center;
     gap: 0.5rem;
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     padding: 0 0.5rem 1.25rem;
     color: var(--color-primary);
 }
@@ -193,7 +204,7 @@ h3 { font-size: 1.05rem; }
 .nav-link {
     padding: 0.55rem 0.6rem;
     border-radius: var(--radius-sm);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
 }
 
@@ -214,7 +225,7 @@ h3 { font-size: 1.05rem; }
     justify-content: space-between;
     padding: 0.6rem;
     border-top: 1px solid var(--color-border);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -331,7 +342,7 @@ h3 { font-size: 1.05rem; }
     border: none;
     padding: 0;
     color: var(--color-text);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     /* Un pulsante non eredita il carattere della pagina (la trappola di
        Albert Sans, §4 del promemoria): «Elimina» era in Arial accanto a
        «Modifica» nel carattere di sistema, e sul Windows di Elena, dove il
@@ -541,7 +552,7 @@ h3 { font-size: 1.05rem; }
     border-radius: var(--radius-sm);
     color: var(--color-text);
     text-decoration: none;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -569,7 +580,7 @@ h3 { font-size: 1.05rem; }
     width: 100%;
     padding: 0.5rem 0.9rem;
     border-radius: var(--radius-sm);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 600;
     text-align: left;
     white-space: nowrap;
@@ -579,7 +590,7 @@ h3 { font-size: 1.05rem; }
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
     margin-bottom: 0.2rem;
 }
@@ -604,7 +615,7 @@ h3 { font-size: 1.05rem; }
    che non conoscono `cap`. */
 @media (min-width: 769px) {
     .back-link {
-        font-size: 0.90rem;
+        font-size: var(--fs-secondario);
     }
 }
 
@@ -833,7 +844,7 @@ h3 { font-size: 1.05rem; }
 }
 
 .pagamento-attesa h1 {
-    font-size: 1.4rem;
+    font-size: var(--fs-pagina);
     margin: 0 0 0.6rem;
 }
 
@@ -896,7 +907,7 @@ h3 { font-size: 1.05rem; }
     padding: 0 1.1rem;
     background: var(--color-primary-soft);
     color: var(--color-primary);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -933,9 +944,10 @@ h3 { font-size: 1.05rem; }
    del modulo, 0,3 rem, che va tolto. */
 .form-hint.tag-consentiti {
     margin-top: 0.0625rem;
-    /* 0,85 rem e non gli 0,92 degli aiuti (13/10, Alessandro): e' un
-       comando accessorio, e alla misura del testo d'aiuto pesava troppo. */
-    font-size: 0.85rem;
+    /* Piu' piccolo degli 0,92 degli aiuti (13/10, Alessandro): e' un
+       comando accessorio, e alla misura del testo d'aiuto pesava troppo.
+       Il livello «piccolo» della scala (18/11). */
+    font-size: var(--fs-piccolo);
 }
 
 .stacked-form > .form-hint.tag-consentiti {
@@ -976,7 +988,7 @@ h3 { font-size: 1.05rem; }
 
 .catalogo-leggi-comando {
     display: inline-grid;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
 }
 
@@ -1038,11 +1050,11 @@ h3 { font-size: 1.05rem; }
    sotto l'h1 della pagina; la misura resta quella di prima, perche' e' il
    livello nella struttura a cambiare, non l'importanza visiva. */
 .course-card-body h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .course-card-excerpt {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
     margin: 0.25rem 0 0.6rem;
     line-height: 1.4;
@@ -1104,7 +1116,7 @@ h3 { font-size: 1.05rem; }
 .progress-label {
     display: block;
     margin-top: 0.35rem;
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
     color: var(--color-text-muted);
 }
 
@@ -1117,7 +1129,7 @@ h3 { font-size: 1.05rem; }
     margin: 0.5rem 0 0;
     padding-left: 0.6rem;
     border-left: 2px solid var(--color-border);
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
     line-height: 1.35;
     color: var(--color-text-muted);
 }
@@ -1131,7 +1143,7 @@ h3 { font-size: 1.05rem; }
 
 .badge {
     display: inline-block;
-    font-size: 0.72rem;
+    font-size: var(--fs-piccolo);
     font-weight: 600;
     padding: 0.15rem 0.5rem;
     border-radius: 999px;
@@ -1152,7 +1164,7 @@ h3 { font-size: 1.05rem; }
 .alert {
     padding: 0.65rem 0.9rem;
     border-radius: var(--radius-sm);
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     margin-bottom: 1rem;
 }
 
@@ -1171,7 +1183,7 @@ h3 { font-size: 1.05rem; }
 
 .empty-state {
     color: var(--color-text-muted);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     padding: 2rem 0;
     text-align: center;
 }
@@ -1198,7 +1210,7 @@ h3 { font-size: 1.05rem; }
        «Cambia password», che e' un collegamento, nel carattere di sistema
        (18/11, Alessandro). Valeva per tutti i pulsanti `.btn`. */
     font-family: inherit;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 600;
     text-align: center;
     cursor: pointer;
@@ -1240,7 +1252,7 @@ h3 { font-size: 1.05rem; }
 .form legend,
 .stacked-form label,
 .auth-form label {
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 500;
 }
 
@@ -1281,7 +1293,7 @@ h3 { font-size: 1.05rem; }
     background: var(--color-surface);
     color: var(--color-text);
     font-family: inherit;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     /* Tutti i campi di una riga alti uguale: un `datetime-local` e' 2 px
        piu' alto perche' dentro ha il pulsantino del calendario, che sta nel
        guscio del browser e non si rimpicciolisce (0076). */
@@ -1316,13 +1328,13 @@ h3 { font-size: 1.05rem; }
     /* Sopra i titoli dei riquadri (1,2 rem), sotto quello della pagina
        (1,5 rem), a 600 come tutti i titoli (18/11): era 1,05 rem a 700,
        piu' piccolo dei riquadri che contiene. */
-    font-size: 1.4rem;
+    font-size: var(--fs-gruppo);
 }
 
 .gruppo-nota {
     margin: 0 0 0.9rem;
     max-width: 44rem;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     line-height: 1.45;
     color: var(--color-text-muted);
 }
@@ -1371,7 +1383,7 @@ h3 { font-size: 1.05rem; }
 
 .ritocco-nome {
     /* Un sottotitolo nel riquadro (18/11). */
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     font-weight: 600;
 }
 
@@ -1455,7 +1467,7 @@ h3 { font-size: 1.05rem; }
 
 .tavolozza-nome {
     /* Il nome di un'opzione: un'etichetta (18/11). */
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 500;
 }
 
@@ -1535,7 +1547,7 @@ h3 { font-size: 1.05rem; }
 
 .settings-card-title {
     font-weight: 600;
-    font-size: 0.98rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .settings-card:hover .settings-card-title,
@@ -1544,7 +1556,7 @@ h3 { font-size: 1.05rem; }
 }
 
 .settings-card-text {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     line-height: 1.5;
     color: var(--color-text-muted);
 }
@@ -1598,7 +1610,7 @@ h3 { font-size: 1.05rem; }
     align-items: center;
     gap: 0.7rem;
     margin-left: 1.2rem;
-    font-size: 1.15rem;
+    font-size: var(--fs-riquadro);
     font-weight: 700;
     color: var(--color-primary);
 }
@@ -1648,7 +1660,7 @@ h3 { font-size: 1.05rem; }
 
 .auth-panel-title {
     margin: 0 0 0.25rem;
-    font-size: 1.35rem;
+    font-size: var(--fs-pagina);
 }
 
 /* Nel guscio il sottotitolo sta sotto al marchio ed e' centrato; qui segue
@@ -1716,14 +1728,14 @@ h3 { font-size: 1.05rem; }
 
 .auth-title {
     color: var(--color-primary);
-    font-size: 1.25rem;
+    font-size: var(--fs-pagina);
     text-align: center;
 }
 
 .auth-subtitle {
     text-align: center;
     color: var(--color-text-muted);
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     margin: 0 0 1.4rem;
 }
 
@@ -2030,7 +2042,7 @@ form.form + form {
    misura resta quella di prima: a cambiare è il livello nella struttura, non
    l'importanza visiva. */
 .module-card-header h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .module-card-header {
@@ -2055,7 +2067,7 @@ form.form + form {
     /* 0.85rem come `.link-btn`, che in questa riga e' «Elimina»: gli altri
        comandi stavano a 0.82, cioe' 13,12 px contro 13,6. Mezzo pixel: non
        si sa nominare e si vede lo stesso. */
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 /* Neutri come ogni comando: al passaggio si sottolineano (regole comuni
@@ -2103,14 +2115,14 @@ form.form + form {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 
 .empty-state-small {
     color: var(--color-text-muted);
     /* La misura di `.empty-state` (18/11): due misure per lo stesso messaggio. */
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     padding: 0.5rem 0;
 }
 
@@ -2178,8 +2190,9 @@ form.form + form {
 }
 
 .video-fieldset legend {
-    font-size: 0.82rem;
-    font-weight: 600;
+    /* Un'etichetta (18/11, la scala dei testi). */
+    font-size: var(--fs-secondario);
+    font-weight: 500;
     padding: 0 0.4rem;
 }
 
@@ -2203,7 +2216,7 @@ form.form + form {
    adesso almeno e' grande abbastanza. Se un giorno quel grigio si
    schiarisce, questo testo diventa non conforme: e' un margine del 2%. */
 .hint {
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
     margin: 0.2rem 0;
 }
@@ -2233,7 +2246,7 @@ form.form + form {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
 }
 
 .material-list li form {
@@ -2242,7 +2255,7 @@ form.form + form {
 
 .material-size {
     color: var(--color-text-muted);
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
     white-space: nowrap;
 }
 
@@ -2293,7 +2306,7 @@ form.form + form {
 
 .material-meta {
     color: var(--color-text-muted);
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
 }
 
 .material-actions {
@@ -2304,6 +2317,8 @@ form.form + form {
 }
 
 .icon-btn {
+    /* Come ogni pulsante (18/11): il carattere della pagina, non Arial. */
+    font-family: inherit;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2375,7 +2390,7 @@ form.form + form {
    si prende lo spazio che le separa invece di appoggiarsi a una delle due. */
 .profilo-benvenuto {
     margin: -0.5rem 0 1.25rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 .benvenuto-azioni {
@@ -2401,7 +2416,7 @@ form.form + form {
    l'importanza visiva. */
 .live-sessions-box h2 {
     margin: 0 0 0.6rem;
-    font-size: 0.95rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .live-session-list {
@@ -2435,7 +2450,7 @@ form.form + form {
 
 .live-session-when,
 .live-session-note {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -2458,7 +2473,7 @@ form.form + form {
 }
 
 .lesson-done {
-    font-size: 0.72rem;
+    font-size: var(--fs-piccolo);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -2582,7 +2597,7 @@ form.form + form {
 
 .gruppi-riga-titolo {
     display: block;
-    font-weight: 700;
+    font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
     line-height: 1.3;
     color: var(--color-primary);
     text-decoration: underline;
@@ -2858,7 +2873,7 @@ body.has-focus-video {
 
 .video-embed-error {
     color: var(--color-danger);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 .lesson-content {
@@ -2883,9 +2898,9 @@ body.has-focus-video {
 
 /* Il contenuto arriva dall'editor: qui si danno misure sensate a quello che
    l'autore puo' inserire, immagini e tabelle comprese. */
-.lesson-content h2 { font-size: 1.3rem; margin: 1.6rem 0 0.6rem; }
-.lesson-content h3 { font-size: 1.1rem; margin: 1.3rem 0 0.5rem; }
-.lesson-content h4 { font-size: 1rem; margin: 1.1rem 0 0.4rem; }
+.lesson-content h2 { font-size: var(--fs-riquadro); margin: 1.6rem 0 0.6rem; }
+.lesson-content h3 { font-size: var(--fs-sottotitolo); margin: 1.3rem 0 0.5rem; }
+.lesson-content h4 { font-size: var(--fs-testo); margin: 1.1rem 0 0.4rem; }
 .lesson-content p { margin: 0 0 0.9rem; }
 .lesson-content ul,
 .lesson-content ol { margin: 0 0 0.9rem; padding-left: 1.3rem; }
@@ -2903,7 +2918,7 @@ body.has-focus-video {
 
 .lesson-content figcaption {
     color: var(--color-text-muted);
-    font-size: 0.82rem;
+    font-size: var(--fs-piccolo);
     margin-top: 0.3rem;
 }
 
@@ -2920,14 +2935,14 @@ body.has-focus-video {
     border-radius: var(--radius-sm);
     padding: 0.8rem;
     overflow-x: auto;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 .lesson-content table {
     width: 100%;
     border-collapse: collapse;
     margin: 1.2rem 0;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 .lesson-content th,
@@ -2957,7 +2972,7 @@ body.has-focus-video {
 
 .page-subtitle {
     color: var(--color-text-muted);
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     margin: 0.35rem 0 0;
 }
 
@@ -3049,7 +3064,7 @@ body.has-focus-video {
     margin: 0 0 1rem;
     /* 1,2 rem, non 1,25, e peso 600, non 700: erano invadenti (06/11,
        Alessandro). L'etichetta resta a 500, quindi la gerarchia tiene. */
-    font-size: 1.2rem;
+    font-size: var(--fs-riquadro);
     font-weight: 600;
 }
 
@@ -3063,7 +3078,7 @@ body.has-focus-video {
 
 .card-meta {
     color: var(--color-text-muted);
-    font-size: 0.83rem;
+    font-size: var(--fs-piccolo);
     margin: 0.2rem 0 0.9rem;
 }
 
@@ -3086,7 +3101,7 @@ body.has-focus-video {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
 }
 
 .data-table th,
@@ -3118,7 +3133,9 @@ body.has-focus-video {
 }
 
 .data-table th {
-    font-size: 0.76rem;
+    font-size: var(--fs-piccolo);
+    /* 600 come gli altri titoli: il browser li faceva 700 (18/11). */
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--color-text-muted);
@@ -3187,7 +3204,7 @@ body.has-focus-video {
 .cell-sub {
     display: block;
     color: var(--color-text-muted);
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
 }
 
 /* Riga a se' dentro una cella, con il testo normale: manda a capo senza
@@ -3257,7 +3274,7 @@ body.has-focus-video {
     display: block;
     margin-top: 0.9rem;
     margin-bottom: 0.3rem;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 500;
 }
 
@@ -3359,7 +3376,7 @@ body.has-focus-video {
 
 .form-hint {
     color: var(--color-text-muted);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     margin-top: 0.5rem;
 }
 
@@ -3373,7 +3390,7 @@ body.has-focus-video {
        misura minima, altrimenti resta alta quanto una riga di testo. */
     min-height: var(--tap-target);
     margin: 0.9rem 0;
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
     line-height: 1.4;
 }
 
@@ -3459,14 +3476,14 @@ body.has-focus-video {
 
 .question-text {
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .option-preview {
     list-style: none;
     margin: 0.5rem 0 0.4rem;
     padding: 0;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -3483,7 +3500,7 @@ body.has-focus-video {
     display: flex;
     gap: 0.8rem;
     align-items: center;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 /* ---------- Svolgimento quiz ---------- */
@@ -3510,7 +3527,7 @@ body.has-focus-video {
     border-radius: var(--radius-sm);
     background: var(--color-surface);
     margin-bottom: 0.35rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     cursor: pointer;
 }
 
@@ -3547,7 +3564,7 @@ body.has-focus-video {
 }
 
 .result-detail {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     margin: 0.5rem 0 0;
 }
 
@@ -3570,7 +3587,7 @@ body.has-focus-video {
     margin: 0.35rem 0 0;
     padding: 0.45rem 0.6rem;
     border-radius: var(--radius-sm);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 .module-quiz-row:hover {
@@ -3590,7 +3607,7 @@ body.has-focus-video {
 
 .course-progress-hint {
     color: var(--color-text-muted);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 /* ---------- Alert e badge aggiuntivi ---------- */
@@ -3653,14 +3670,14 @@ body.has-focus-video {
 
 .verify-brand {
     color: var(--color-primary);
-    font-size: 0.75rem;
+    font-size: var(--fs-piccolo);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     margin: 0;
 }
 
 .verify-card h1 {
-    font-size: 1.25rem;
+    font-size: var(--fs-pagina);
     margin: 0.3rem 0 1rem;
 }
 
@@ -3682,12 +3699,12 @@ body.has-focus-video {
 
 .verify-details {
     margin: 1.2rem 0 0;
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
 }
 
 .verify-details dt {
     color: var(--color-text-muted);
-    font-size: 0.76rem;
+    font-size: var(--fs-piccolo);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     margin-top: 0.8rem;
@@ -3712,7 +3729,7 @@ body.has-focus-video {
 .nav-section {
     display: block;
     margin: 1.1rem 0.75rem 0.3rem 0.6rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3723,7 +3740,7 @@ body.has-focus-video {
     list-style: none;
     margin: 0 0 1rem;
     padding: 0;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 .assign-list li {
@@ -3761,7 +3778,7 @@ body.has-focus-video {
 }
 
 .ruoli > .card > h2 {
-    font-size: 1.2rem;
+    font-size: var(--fs-riquadro);
 }
 
 .ruoli-sempre {
@@ -3796,14 +3813,14 @@ body.has-focus-video {
     /* Il nome dell'opzione e' un'etichetta e la spiegazione una nota, come
        ogni altra casella (18/11): nella stessa pagina dei Pagamenti stavano
        accanto a «Cancella la chiave salvata» con misure diverse. */
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 500;
 }
 
 .ruoli-interruttore-cosa {
     display: block;
     margin: 0.15rem 0 0;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 400;
     color: var(--color-text-muted);
 }
@@ -3832,13 +3849,13 @@ body.has-focus-video {
 
 .catalog-card h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .auth-links {
     margin-top: 1rem;
     text-align: center;
-    font-size: 0.86rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -3855,7 +3872,7 @@ fieldset.checkbox-group legend {
     padding: 0;
     margin-bottom: 0.4rem;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 /* ---------- Fruizione del video ---------- */
@@ -3895,7 +3912,7 @@ fieldset.checkbox-group legend {
 }
 
 .riepilogo-fruizione dt {
-    font-size: 0.82rem;
+    font-size: var(--fs-piccolo);
     color: var(--color-text-muted);
 }
 
@@ -3909,7 +3926,7 @@ fieldset.checkbox-group legend {
    leggono sempre insieme allargherebbero la tabella senza aggiungere niente. */
 .riga-secondaria {
     display: block;
-    font-size: 0.82rem;
+    font-size: var(--fs-piccolo);
     color: var(--color-text-muted);
 }
 
@@ -3942,7 +3959,7 @@ fieldset.checkbox-group legend {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 .nota-metodo summary {
@@ -4030,7 +4047,7 @@ fieldset.checkbox-group legend {
     /* I gruppi dell'elenco sono sottotitoli, con la misura dei sottotitoli
        (18/11): erano etichette maiuscole e grigie, uno stile che altrove
        non c'era. */
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .email-elenco h2:first-child {
@@ -4047,7 +4064,7 @@ fieldset.checkbox-group legend {
 }
 
 .email-elenco .email-voce-titolo {
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     font-weight: 400;
 }
 
@@ -4068,7 +4085,7 @@ fieldset.checkbox-group legend {
    pagina resta «Messaggi email». */
 .email-scelta-testa h2 {
     margin: 0 0 0.2rem;
-    font-size: 1.2rem;
+    font-size: var(--fs-riquadro);
 }
 
 .email-testa-voce {
@@ -4099,7 +4116,7 @@ fieldset.checkbox-group legend {
 
 .email-voci .card-meta {
     margin: 0.1rem 0 0;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 /* «Aspetto» (30/10, A): al computer i titoli delle sezioni sono titoli, e
@@ -4120,7 +4137,7 @@ fieldset.checkbox-group legend {
 .aspetto-sommario h3 {
     margin-bottom: 0.4rem;
     /* E' il titolo del riquadro: la misura dei titoli dei riquadri (18/11). */
-    font-size: 1.2rem;
+    font-size: var(--fs-riquadro);
 }
 
 @media (max-width: 40rem) {
@@ -4140,7 +4157,7 @@ fieldset.checkbox-group legend {
 
     .email-elenco h2 {
         margin: 1.1rem 0 0.4rem;
-        font-size: 1.05rem;
+        font-size: var(--fs-sottotitolo);
         letter-spacing: normal;
         text-transform: none;
         color: inherit;
@@ -4155,7 +4172,7 @@ fieldset.checkbox-group legend {
     }
 
     .email-elenco .email-voce-titolo {
-        font-size: 1rem;
+        font-size: var(--fs-testo);
         font-weight: 600;
     }
 
@@ -4240,7 +4257,7 @@ fieldset.checkbox-group legend {
    colonna: qui si annullano maiuscoletto, spaziatura e colore smorzato
    delle intestazioni. */
 .data-table th.cella-studente {
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
     text-transform: none;
     letter-spacing: normal;
     color: var(--color-text);
@@ -4377,7 +4394,7 @@ fieldset.checkbox-group legend {
    misura del titolo (20/10, Alessandro: a 1,6 rem pesava piu' del nome).
    Cifre a larghezza fissa, come nelle tabelle. */
 .report-taglio-numero {
-    font-size: 1rem;
+    font-size: var(--fs-testo);
     font-weight: 700;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -4399,7 +4416,7 @@ fieldset.checkbox-group legend {
    volta scorsa per la stessa ragione: 7,38:1 sul bianco e 6,42:1 sullo
    sfondo del passaggio. Un tono in piu' invece di due. */
 .report-taglio-nota {
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     line-height: 1.4;
     color: #5A554F;
 }
@@ -4413,8 +4430,8 @@ fieldset.checkbox-group legend {
 .report-ricerca label {
     display: block;
     margin-bottom: 0.25rem;
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: var(--fs-secondario);
+    font-weight: 500;
 }
 
 .report-ricerca-riga {
@@ -4513,7 +4530,7 @@ fieldset.checkbox-group legend {
     .tabella-schede .schede-ordina > summary {
         min-height: 40px;
         padding: 0.35rem 0.8rem;
-        font-size: 0.92rem;
+        font-size: var(--fs-secondario);
     }
 
     .tabella-schede .schede-ordina .dropdown-menu a[aria-current="true"] {
@@ -4538,8 +4555,8 @@ fieldset.checkbox-group legend {
     .tabella-schede:not(.schede-senza-titolo) .data-table tbody tr > :first-child {
         display: block;
         margin-bottom: 0.3rem;
-        font-size: 1.02rem;
-        font-weight: 700;
+        font-size: var(--fs-testo);
+        font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
         line-height: 1.3;
     }
 
@@ -4549,7 +4566,7 @@ fieldset.checkbox-group legend {
 
     .tabella-schede:not(.schede-senza-titolo) .data-table tbody tr > :first-child .cell-line,
     .tabella-schede:not(.schede-senza-titolo) .data-table tbody tr > :first-child small {
-        font-size: 0.88rem;
+        font-size: var(--fs-secondario);
         font-weight: 400;
         color: var(--color-text-muted);
     }
@@ -4561,7 +4578,7 @@ fieldset.checkbox-group legend {
 
     .tabella-schede .data-table tbody tr td::before,
     .tabella-schede .data-table tbody tr th::before {
-        font-size: 0.72rem;
+        font-size: var(--fs-piccolo);
         line-height: 1.25;
     }
 
@@ -4613,7 +4630,7 @@ fieldset.checkbox-group legend {
 }
 
 .live-gruppo {
-    font-size: 1.15rem;
+    font-size: var(--fs-riquadro);
     margin: 0.4rem 0 0.2rem;
 }
 
@@ -4623,13 +4640,13 @@ fieldset.checkbox-group legend {
 
 .live-concluse > summary {
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
     padding: 0.4rem 0;
 }
 
 .live-concluse > summary .card-meta {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     font-weight: 400;
 }
 
@@ -4766,7 +4783,7 @@ fieldset.checkbox-group legend {
         content: attr(data-label);
         grid-column: 1;
         grid-row: 1;
-        font-size: 0.78rem;
+        font-size: var(--fs-piccolo);
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--color-text-muted);
@@ -4812,7 +4829,7 @@ fieldset.checkbox-group legend {
    livello scende sotto l'h1 senza saltare, la misura non cambia. */
 .materials-section h2,
 .video-actions h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 /* Collegamenti che sono anche bersagli, in due posti dove restavano alti
@@ -4849,7 +4866,7 @@ fieldset.checkbox-group legend {
     border-radius: 999px;
     background: var(--color-primary-soft);
     color: var(--color-primary);
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -4869,7 +4886,7 @@ fieldset.checkbox-group legend {
 .quiz-open-count {
     align-self: flex-end;
     margin-bottom: 0.2rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
     color: var(--color-text-muted);
     font-variant-numeric: tabular-nums;
 }
@@ -4884,6 +4901,11 @@ fieldset.checkbox-group legend {
 
 .quiz-open-answer {
     width: 100%;
+    /* Anche fuori da un modulo `.form` (la risposta aperta di un
+       questionario): carattere, misura e colore dei campi (18/11). */
+    font-family: inherit;
+    font-size: var(--fs-secondario);
+    color: var(--color-text);
 }
 
 /* La domanda aperta (18/10): la domanda e il contatore sulla stessa riga,
@@ -5024,7 +5046,7 @@ fieldset.checkbox-group legend {
 /* Stessa cosa per «Materiali» nella pagina della lezione. */
 .lesson-materials h2,
 .materials-section h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 /* Tabelle strette che non diventano schede — due colonne sole — ma il cui
@@ -5077,7 +5099,7 @@ fieldset.checkbox-group legend {
 }
 
 .agenda-gruppo h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     margin-bottom: 0.8rem;
 }
 
@@ -5189,7 +5211,7 @@ fieldset.checkbox-group legend {
 }
 
 .agenda-giorno {
-    font-weight: 700;
+    font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
 }
 
 .agenda-ora {
@@ -5216,12 +5238,12 @@ fieldset.checkbox-group legend {
 }
 
 .agenda-tipo {
-    font-size: 0.82rem;
+    font-size: var(--fs-piccolo);
     color: #5A554F;
 }
 
 .agenda-contesto {
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     color: #5A554F;
 }
 
@@ -5256,7 +5278,7 @@ fieldset.checkbox-group legend {
 
 .quiz-tipo legend {
     margin-bottom: 0.4rem;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .form .quiz-tipo-scelta {
@@ -5285,7 +5307,7 @@ fieldset.checkbox-group legend {
 
 .quiz-h5p-titolo {
     margin: 1.4rem 0 0.4rem;
-    font-size: 1rem;
+    font-size: var(--fs-testo);
 }
 
 .quiz-h5p-attuale {
@@ -5405,7 +5427,7 @@ fieldset.checkbox-group legend {
     background: var(--color-primary-soft);
     color: var(--color-text);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
     cursor: default;
 }
 
@@ -5503,7 +5525,7 @@ fieldset.checkbox-group legend {
 
 .tre-parole h2 {
     margin: 0 0 0.35rem;
-    font-size: 1.1rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .tre-parole p {
@@ -5553,7 +5575,7 @@ fieldset.checkbox-group legend {
 
 .tre-parole .tre-parole-nota {
     margin: 0.7rem 0 0;
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
 }
 
 .tre-parole .tre-parole-errore {
@@ -5562,7 +5584,7 @@ fieldset.checkbox-group legend {
 
 .tre-parole-mie {
     margin: 0 0 0.8rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -5579,7 +5601,7 @@ fieldset.checkbox-group legend {
    titoli da leggere per primi. */
 .tp-sottotitolo {
     margin: 0 0 0.6rem;
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
     font-weight: 400;
     color: var(--color-text-muted);
 }
@@ -5620,7 +5642,7 @@ fieldset.checkbox-group legend {
 
 .tp-scelta label {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     font-weight: 400;
     color: var(--color-text-muted);
 }
@@ -5692,7 +5714,7 @@ fieldset.checkbox-group legend {
     justify-content: center;
     gap: 0.4rem 0.9rem;
     margin: 0.8rem 0 0;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -5736,7 +5758,7 @@ fieldset.checkbox-group legend {
 
 .tp-volte {
     margin-left: 0.2rem;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     font-weight: 400;
     color: var(--color-text-muted);
     font-variant-numeric: tabular-nums;
@@ -5789,7 +5811,7 @@ fieldset.checkbox-group legend {
 }
 
 .griglia-filtri-etichetta {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -5814,14 +5836,14 @@ fieldset.checkbox-group legend {
     padding: 0.55rem 0.45rem;
     border-bottom: 1px solid var(--color-border);
     text-align: center;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     white-space: nowrap;
 }
 
 .griglia thead th {
     vertical-align: bottom;
     white-space: normal;
-    font-size: 0.82rem;
+    font-size: var(--fs-piccolo);
     font-weight: 600;
     line-height: 1.3;
     color: var(--color-text-muted);
@@ -5881,7 +5903,7 @@ fieldset.checkbox-group legend {
 .griglia-titolo-modulo {
     border-bottom: 2px solid var(--color-primary) !important;
     color: var(--color-text) !important;
-    font-size: 0.88rem !important;
+    font-size: var(--fs-secondario) !important;
 }
 
 .griglia-fatto {
@@ -5918,7 +5940,7 @@ fieldset.checkbox-group legend {
 .griglia tfoot td {
     border-bottom: 0;
     background: var(--color-bg);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -5932,7 +5954,7 @@ fieldset.checkbox-group legend {
     flex-wrap: wrap;
     gap: 0.35rem 1.4rem;
     margin: 1rem 0 0;
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -5979,7 +6001,7 @@ fieldset.checkbox-group legend {
     flex-direction: column;
     gap: 0.4rem;
     margin: 1.1rem 0 0;
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -6006,7 +6028,7 @@ fieldset.checkbox-group legend {
     /* La misura delle altre righe del riquadro (20/10, Alessandro): a 0,85
        rem, appena piu' piccola del corso sopra, la differenza si notava
        senza dire niente. */
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -6025,7 +6047,7 @@ fieldset.checkbox-group legend {
     /* La misura di ogni altro comando di una riga (0107): a 16 px, quella
        del testo, «Aggiungi al calendario» pesava quanto il titolo
        dell'incontro accanto (Elena, 07/10). */
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 .agenda-passati {
@@ -6046,7 +6068,7 @@ fieldset.checkbox-group legend {
    questa regola l'h2 prenderebbe la misura predefinita del browser,
    che il foglio di stile per l'h2 non dichiara. */
 .agenda-passati > summary h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     margin: 0;
 }
 
@@ -6082,7 +6104,7 @@ fieldset.checkbox-group legend {
 .agenda-mesi h2 {
     margin: 0;
     /* 1,3 rem (06/11, Alessandro): a 1,1 il mese mostrato si leggeva poco. */
-    font-size: 1.3rem;
+    font-size: var(--fs-gruppo);
 }
 
 .agenda-mese {
@@ -6098,7 +6120,7 @@ fieldset.checkbox-group legend {
 
 .agenda-griglia th {
     padding: 0.3rem;
-    font-size: 0.76rem;
+    font-size: var(--fs-piccolo);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: #5A554F;
@@ -6171,7 +6193,7 @@ fieldset.checkbox-group legend {
 
 .agenda-numero {
     display: block;
-    font-size: 0.82rem;
+    font-size: var(--fs-piccolo);
     font-weight: 700;
     margin-bottom: 0.15rem;
 }
@@ -6182,7 +6204,7 @@ fieldset.checkbox-group legend {
     padding: 0.15rem 0.35rem;
     margin-bottom: 0.15rem;
     border-radius: var(--radius-sm);
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
     line-height: 1.25;
     text-decoration: none;
     overflow-wrap: anywhere;
@@ -6219,7 +6241,7 @@ fieldset.checkbox-group legend {
     list-style: none;
     margin: 0.7rem 0 0;
     padding: 0;
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
 }
 
 .agenda-legenda li {
@@ -6306,7 +6328,7 @@ fieldset.checkbox-group legend {
 
     .agenda-mini th {
         padding: 0.3rem 0 0.1rem;
-        font-size: 0.8rem;
+        font-size: var(--fs-piccolo);
         font-weight: 600;
         color: var(--color-text-muted);
         text-align: center;
@@ -6419,7 +6441,7 @@ fieldset.checkbox-group legend {
         align-items: center;
         gap: 0.5rem;
         margin: 0 0 0.05rem;
-        font-size: 1rem;
+        font-size: var(--fs-testo);
     }
 
     .agenda-badge-oggi {
@@ -6446,7 +6468,7 @@ fieldset.checkbox-group legend {
 }
 
 .agenda-calendario h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 /* Un rem sopra al pulsante: senza, «Crea l'indirizzo del calendario»
@@ -6572,7 +6594,7 @@ fieldset.checkbox-group legend {
 
 /* 16 px, la misura del testo (09/10, Elena: a 14,4 li trovava piccoli). */
 .persona-nome {
-    font-size: 1rem;
+    font-size: var(--fs-testo);
     line-height: 1.3;
     overflow-wrap: anywhere;
 }
@@ -6581,13 +6603,13 @@ fieldset.checkbox-group legend {
    piccola, come il ruolo del tutor, ma senza maiuscolo. */
 .persona-come-ti-vedono {
     display: block;
-    font-size: 0.75rem;
+    font-size: var(--fs-piccolo);
     color: var(--color-text-muted);
 }
 
 .persona-ruolo {
     display: block;
-    font-size: 0.75rem;
+    font-size: var(--fs-piccolo);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--color-text-muted);
@@ -6859,7 +6881,7 @@ fieldset.checkbox-group legend {
     flex: 1;
     min-width: 0;
     margin: 0;
-    font-size: 1.1rem;
+    font-size: var(--fs-sottotitolo);
     overflow-wrap: anywhere;
 }
 
@@ -7014,7 +7036,7 @@ fieldset.checkbox-group legend {
 
 .gruppo-etichetta {
     margin: 0 0 0.3rem;
-    font-size: 0.75rem;
+    font-size: var(--fs-piccolo);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--color-text-muted);
@@ -7032,7 +7054,7 @@ fieldset.checkbox-group legend {
    visto confrontando al pixel). */
 .card .gruppo-riquadro-titolo {
     margin: 0 0 0.4rem;
-    font-size: 1rem;
+    font-size: var(--fs-testo);
     font-weight: 600;
     letter-spacing: normal;
     color: var(--color-text);
@@ -7055,7 +7077,7 @@ fieldset.checkbox-group legend {
 
 .gruppo-incontro-nome {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--fs-testo);
     font-weight: 400;
     overflow-wrap: anywhere;
 }
@@ -7074,7 +7096,7 @@ fieldset.checkbox-group legend {
 
 .gruppo-incontro-quando {
     margin: 0.15rem 0 0;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -7111,7 +7133,7 @@ fieldset.checkbox-group legend {
 }
 
 .gruppo-ci-saranno {
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -7145,18 +7167,18 @@ fieldset.checkbox-group legend {
     width: 40px;
     height: 40px;
     flex-shrink: 0;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .giro-chi {
     margin: 0;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .giro .giro-domanda {
     margin: 0.7rem 0 0.2rem;
-    font-size: 1.15rem;
+    font-size: var(--fs-riquadro);
     line-height: 1.35;
     overflow-wrap: anywhere;
 }
@@ -7164,19 +7186,19 @@ fieldset.checkbox-group legend {
 /* Nella pagina del gruppo la domanda sta sotto il titolo del riquadro, ed e'
    un h3 un po' piu' piccolo (17/10); nelle domande passate resta com'era. */
 .giro h3.giro-domanda {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .giro-conto,
 .giro-spiega {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
 .giro-spiega {
     margin-bottom: 0.4rem;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .giro-modulo {
@@ -7194,7 +7216,7 @@ fieldset.checkbox-group legend {
     min-height: var(--tap-target);
     list-style: none;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
 }
 
@@ -7226,7 +7248,7 @@ fieldset.checkbox-group legend {
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.2rem 0.8rem;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     overflow-wrap: anywhere;
 }
 
@@ -7235,7 +7257,7 @@ fieldset.checkbox-group legend {
 }
 
 .giro-modera .link-btn {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 .giro-risposta-testo {
@@ -7250,7 +7272,7 @@ fieldset.checkbox-group legend {
 
 .giro-nascosta-nota {
     margin: 0.1rem 0 0;
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
     font-style: italic;
     color: var(--color-text-muted);
 }
@@ -7263,7 +7285,7 @@ fieldset.checkbox-group legend {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
     text-decoration: none;
 }
@@ -7323,13 +7345,13 @@ fieldset.checkbox-group legend {
 
 .tutor-benvenuto-testo h2 {
     margin: 0 0 0.3rem;
-    font-size: 1.15rem;
+    font-size: var(--fs-riquadro);
 }
 
 .tutor-benvenuto-sotto {
     margin: 0 0 0.8rem;
     color: var(--color-text-muted);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 /* I contatti del tutor (07/10): l'email per gli studenti e il link al
@@ -7348,7 +7370,7 @@ fieldset.checkbox-group legend {
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
     min-width: 0;
 }
 
@@ -7398,7 +7420,7 @@ fieldset.checkbox-group legend {
     align-items: center;
     min-height: var(--tap-target);
     cursor: pointer;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .tutor-benvenuto-trascrizione p {
@@ -7426,7 +7448,7 @@ fieldset.checkbox-group legend {
     /* 1,25 rem ai lati come i moduli (23/10): foto e icone dei riquadri
        partono dalla stessa linea dei titoli dei moduli. */
     padding: 0.5rem 1.25rem;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .tutor-benvenuto-ridotto > summary::-webkit-details-marker {
@@ -7458,7 +7480,7 @@ fieldset.checkbox-group legend {
 }
 
 .tutor-benvenuto-riascolta {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
 }
 
@@ -7504,7 +7526,7 @@ fieldset.checkbox-group legend {
 
 .obiettivo-corso-testa h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .obiettivo-corso .testo-breve {
@@ -7572,7 +7594,7 @@ fieldset.checkbox-group legend {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: 0.5rem 1.25rem;  /* come i moduli (23/10) */
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .obiettivo-ridotto[open] > summary {
@@ -7608,7 +7630,7 @@ fieldset.checkbox-group legend {
     padding: 0.55rem 0.8rem;
     border-left: 3px solid var(--color-primary);
     background: var(--color-bg);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     line-height: 1.5;
 }
 
@@ -7627,7 +7649,7 @@ fieldset.checkbox-group legend {
     min-height: var(--tap-target);
     list-style: none;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -7640,7 +7662,7 @@ fieldset.checkbox-group legend {
    ogni comando: e' nell'elenco dei comandi in cima al foglio. */
 .obiettivo-comando {
     display: inline-grid;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
 }
 
@@ -7675,7 +7697,7 @@ details[open] > summary .obiettivo-se-aperto {
     gap: 0.3rem 1rem;
     min-height: var(--tap-target);
     margin: 1.75rem 0 0.6rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -7685,7 +7707,7 @@ details[open] > summary .obiettivo-se-aperto {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
     text-decoration: none;
 }
@@ -7703,8 +7725,8 @@ details[open] > summary .obiettivo-se-aperto {
     margin-left: 0.4rem;
     padding: 0.1rem 0.55rem;
     border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: var(--fs-piccolo);
+    font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
     vertical-align: middle;
     background: var(--color-primary);
     color: #fff;
@@ -7724,7 +7746,7 @@ details[open] > summary .obiettivo-se-aperto {
    dice la parola. */
 .lezioni-fatte {
     margin: 0.5rem 0 0;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -7753,7 +7775,7 @@ details[open] > summary .obiettivo-se-aperto {
     flex: 0 0 auto;
     min-height: var(--tap-target);
     color: var(--color-primary);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 0.15em;
@@ -7823,7 +7845,7 @@ details[open] > summary .obiettivo-se-aperto {
 .modulo-riga-titolo {
     grid-area: titolo;
     margin: 0 0.8rem 0 0;
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
 }
 
 .modulo-riga > summary .obiettivo-comando {
@@ -7859,7 +7881,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .modulo-riga-stato {
     grid-area: stato;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -7881,7 +7903,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .tutor-benvenuto-admin h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--fs-testo);
 }
 
 .tutor-benvenuto-anteprima {
@@ -8003,7 +8025,7 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .qa-riga h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     margin: 0;
 }
 
@@ -8012,7 +8034,7 @@ details[open] > summary .obiettivo-se-aperto {
     display: inline-grid;
     justify-items: end;
     white-space: nowrap;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text);
 }
 
@@ -8040,7 +8062,7 @@ details[open] > summary .obiettivo-se-aperto {
 .qa-intro {
     color: var(--color-text-muted);
     margin: 0 0 0.8rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 /* In cima, sotto la frase d'apertura e prima del primo modulo (21/10). */
@@ -8054,7 +8076,7 @@ details[open] > summary .obiettivo-se-aperto {
     margin: 1.25rem 0 0;
     padding-top: 1rem;
     border-top: 1px solid var(--color-border);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -8064,7 +8086,7 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .qa-modulo {
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     margin: 1rem 0 0.5rem;
 }
 
@@ -8091,7 +8113,7 @@ details[open] > summary .obiettivo-se-aperto {
     padding: 0.65rem 0.9rem;
     /* Alla misura e al peso delle lezioni; quella aperta in grassetto, per
        vedere quale si sta leggendo. */
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     font-weight: 400;
     list-style: none;
     cursor: pointer;
@@ -8130,7 +8152,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .qa-chi {
     color: var(--color-text-muted);
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
     margin: 0 0 0.7rem;
 }
 
@@ -8141,21 +8163,21 @@ details[open] > summary .obiettivo-se-aperto {
 
 .qa-risposta p {
     margin: 0 0 0.4rem;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     line-height: 1.55;
     overflow-wrap: anywhere;
 }
 
 .qa-risposta .qa-chi {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
 }
 
 /* Il collegamento all'archivio del corso, sotto il modulo per chiedere
    (09/10): prima di chiedere, si controlla se qualcuno l'ha gia' fatto. */
 .qa-vai-archivio {
     margin: 1.25rem 0 0;
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 /* La pagina «Domande e risposte» (09/10): l'archivio in un riquadro con
@@ -8163,12 +8185,12 @@ details[open] > summary .obiettivo-se-aperto {
    (0153). Il menu del corso sopra non c'e' piu' dal 17/10: il corso si
    sceglie entrando nel corso. */
 .qa-archivio h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     margin: 0 0 0.3rem;
 }
 
 .qa-mie-titolo {
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     margin: 1.5rem 0 0.4rem;
 }
 
@@ -8185,7 +8207,7 @@ details[open] > summary .obiettivo-se-aperto {
     gap: 1rem;
     padding: 0.55rem 0;
     border-top: 1px solid var(--color-border);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
 }
 
 .qa-mie-testo {
@@ -8198,7 +8220,7 @@ details[open] > summary .obiettivo-se-aperto {
     flex-shrink: 0;
     border-radius: 999px;
     padding: 0.1rem 0.6rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
     white-space: nowrap;
 }
 
@@ -8241,7 +8263,7 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .qa-pubblicate > h2 {
-    font-size: 1.15rem;
+    font-size: var(--fs-riquadro);
     margin: 0 0 0.3rem;
 }
 
@@ -8258,7 +8280,7 @@ details[open] > summary .obiettivo-se-aperto {
     border-radius: 999px;
     background: var(--color-primary);
     color: #fff;
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
     font-weight: 600;
     line-height: 1.4rem;
     text-align: center;
@@ -8298,7 +8320,7 @@ details[open] > summary .obiettivo-se-aperto {
     border-left: 4px solid var(--color-primary);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
     color: var(--color-text);
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     font-weight: 600;
     text-align: center;
     overflow-wrap: anywhere;
@@ -8369,7 +8391,7 @@ details[open] > summary .obiettivo-se-aperto {
         border: 0;
         border-radius: 0;
         box-shadow: none;
-        font-size: 1rem;
+        font-size: var(--fs-testo);
         text-align: left;
         transform: none;
         animation-name: saluto-barra;
@@ -8558,7 +8580,7 @@ details[open] > summary .obiettivo-se-aperto {
     align-items: center;
     min-height: var(--tap-target);
     color: var(--color-text);
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-avviso {
@@ -8571,7 +8593,7 @@ details[open] > summary .obiettivo-se-aperto {
     padding: 0.8rem 1.25rem;
     background: var(--color-primary-soft);
     border-radius: var(--radius-md);
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
 }
 
 /* `min(22rem, 100%)`: su un telefono da 320 px una colonna da 22 rem
@@ -8615,19 +8637,19 @@ details[open] > summary .obiettivo-se-aperto {
     /* La tinta scelta, scurita quanto serve a leggersi (17/10, strada 2):
        il filo in cima resta nel colore esatto. */
     color: var(--cat-titolo, var(--cat));
-    font-size: 1.2rem;
+    font-size: var(--fs-riquadro);
     font-weight: 600;
     line-height: 1.3;
     letter-spacing: normal;
 }
 
 .bacheca-riquadro-desc {
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-riquadro-conto {
     margin-top: auto;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 /* La testata di una categoria, come il riquadro da cui si arriva. */
@@ -8647,7 +8669,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .bacheca-cat-testa p {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-sotto-testa {
@@ -8663,7 +8685,7 @@ details[open] > summary .obiettivo-se-aperto {
     display: flex;
     flex-wrap: wrap;
     gap: 0.2rem 1.2rem;
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-filtro {
@@ -8715,7 +8737,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .card .bacheca-titolo {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--fs-testo);
     font-weight: 600;
 }
 
@@ -8725,7 +8747,7 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .bacheca-cat {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
     color: var(--color-text-muted);
 }
 
@@ -8736,7 +8758,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .bacheca-link {
     margin: 0 0 0.3rem;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-file-info {
@@ -8748,7 +8770,7 @@ details[open] > summary .obiettivo-se-aperto {
     flex-wrap: wrap;
     align-items: center;
     gap: 0 1.2rem;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-azioni form {
@@ -8758,7 +8780,7 @@ details[open] > summary .obiettivo-se-aperto {
 .bacheca-chi {
     margin: 0;
     color: var(--color-text-muted);
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-tengo.tenuta {
@@ -8772,7 +8794,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .bacheca-uso p {
     margin: 0.2rem 0 0.3rem;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-uso.nascosto p {
@@ -8785,7 +8807,7 @@ details[open] > summary .obiettivo-se-aperto {
     align-items: center;
     gap: 0 0.8rem;
     margin: 0 0 0.5rem;
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-uso-nota .badge {
@@ -8871,7 +8893,7 @@ details[open] > summary .obiettivo-se-aperto {
     background: var(--color-surface);
     color: var(--color-text);
     font-family: inherit;
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     min-height: 2.5rem;
     max-width: 100%;
 }
@@ -8915,7 +8937,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .card .bacheca-cat-admin-nuova {
     margin: 1.25rem 0 0;
-    font-size: 1rem;
+    font-size: var(--fs-testo);
 }
 
 .bacheca-cat-admin-azioni .card-meta {
@@ -8956,7 +8978,7 @@ details[open] > summary .obiettivo-se-aperto {
     border-radius: var(--radius-sm);
     background: var(--color-surface);
     color: var(--color-text);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     list-style: none;
     cursor: pointer;
 }
@@ -9052,7 +9074,7 @@ details[open] > summary .obiettivo-se-aperto {
     gap: 0.6rem;
     margin: 0.35rem 0 0;
     color: var(--color-text-muted);
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
 }
 
 .form label.bacheca-colore-intensita,
@@ -9061,7 +9083,7 @@ details[open] > summary .obiettivo-se-aperto {
     align-items: center;
     gap: 0.6rem;
     margin: 0.7rem 0 0;
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
     font-weight: 600;
 }
 
@@ -9089,7 +9111,7 @@ details[open] > summary .obiettivo-se-aperto {
 .bacheca-colore-anteprima-etichetta {
     margin: 0 0 0.35rem;
     color: var(--color-text-muted);
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
 }
 
 .bacheca-colore-anteprima-riquadro {
@@ -9105,13 +9127,13 @@ details[open] > summary .obiettivo-se-aperto {
 
 .bacheca-colore-anteprima-titolo {
     color: var(--cat-titolo, var(--cat));
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     font-weight: 600;
     line-height: 1.3;
 }
 
 .bacheca-colore-anteprima-testo {
-    font-size: 0.85rem;
+    font-size: var(--fs-secondario);
 }
 
 @media (max-width: 40rem) {
@@ -9145,7 +9167,7 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 .nav-corso .nav-link {
-    font-size: 0.88rem;
+    font-size: var(--fs-secondario);
 }
 
 .nav-corso .nav-corso-nome {
@@ -9166,7 +9188,7 @@ details[open] > summary .obiettivo-se-aperto {
     border-radius: var(--radius-sm);
     background: var(--color-primary-soft);
     color: var(--color-primary);
-    font-size: 0.8rem;
+    font-size: var(--fs-piccolo);
     font-weight: 600;
     line-height: 1.35;
 }
@@ -9176,7 +9198,7 @@ details[open] > summary .obiettivo-se-aperto {
 .bacheca-file-errore {
     margin: 0.4rem 0 0;
     color: var(--color-danger);
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
 }
 
 .bacheca-file-errore:empty {
@@ -9240,7 +9262,7 @@ details[open] > summary .obiettivo-se-aperto {
 
 .informazioni-link {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: var(--fs-secondario);
 }
 
 /* I dati per l'assistenza (18/10): un riquadro bianco con PHP, database e
@@ -9258,8 +9280,10 @@ details[open] > summary .obiettivo-se-aperto {
     display: flex;
     align-items: baseline;
     gap: 0.35rem;
-    padding: 0.65rem 1.2rem;
-    font-size: 0.9rem;
+    /* 1,1 rem ai lati, non 1,2 (18/11): con le misure della scala la fila
+       usciva di 3 px dal telefono tenuto di lato. */
+    padding: 0.65rem 1.1rem;
+    font-size: var(--fs-secondario);
 }
 
 .informazioni-dato + .informazioni-dato {
@@ -9297,11 +9321,11 @@ details[open] > summary .obiettivo-se-aperto {
     }
 
     .informazioni-etichetta {
-        font-size: 0.78rem;
+        font-size: var(--fs-piccolo);
     }
 
     .informazioni-valore {
-        font-size: 0.95rem;
+        font-size: var(--fs-secondario);
     }
 }
 
@@ -9413,7 +9437,7 @@ details[open] > summary .obiettivo-se-aperto {
    livello) con la misura di un h3, com'erano nel mockup; i margini sono
    quelli di tutti i titoli (`h1, h2, h3`), che `.card h2` cambierebbe. */
 .card .coda-email-titolo {
-    font-size: 1.05rem;
+    font-size: var(--fs-sottotitolo);
     margin: 0 0 0.4em;
 }
 
@@ -9537,7 +9561,7 @@ details[open] > summary .obiettivo-comando::after,
 
 .elenco-scaricati-quando {
     color: var(--color-text-muted);
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
     margin-left: 0.4rem;
     white-space: nowrap;
 }
@@ -9593,7 +9617,7 @@ details[open] > summary .obiettivo-comando::after,
 input[type="file"] {
     font-family: inherit;
     /* E la misura dei campi (18/11): il browser lo teneva a 13,3 px. */
-    font-size: 0.92rem;
+    font-size: var(--fs-secondario);
     /* Il carattere di sistema e' piu' largo di Arial: a 320 px il campo
        usciva di 5 px dalla pagina. Non oltre lo spazio che ha. */
     max-width: 100%;
@@ -9629,7 +9653,7 @@ input[type="file"] {
 }
 
 .privacy-barra .btn {
-    font-size: 1rem;
+    font-size: var(--fs-testo);
     padding-inline: 1.1rem;
 }
 
@@ -9638,7 +9662,7 @@ input[type="file"] {
     align-items: center;
     gap: 0.5rem;
     color: var(--color-text-muted);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     font-weight: 600;
 }
 
@@ -9657,14 +9681,14 @@ input[type="file"] {
 }
 
 .privacy-testo h1 {
-    font-size: 1.6rem;
+    font-size: var(--fs-pagina);
     line-height: 1.25;
     margin: 0 0 0.3rem;
 }
 
 .privacy-versione {
     color: var(--color-text-muted);
-    font-size: 0.9rem;
+    font-size: var(--fs-secondario);
     margin-top: 0;
 }
 
@@ -9682,7 +9706,7 @@ input[type="file"] {
 
 .auth-privacy {
     text-align: center;
-    font-size: 0.78rem;
+    font-size: var(--fs-piccolo);
     margin: 1.75rem 0 0;
 }
 
@@ -9750,13 +9774,6 @@ input[type="file"] {
 
 .btn-pericolo:hover {
     filter: brightness(0.92);
-}
-
-.privacy-versione-riga {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: baseline;
 }
 
 .privacy-form .privacy-azioni .btn {

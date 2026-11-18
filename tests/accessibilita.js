@@ -1501,9 +1501,10 @@ const EXTRA = {
                     stessaRiga: r ? r.top >= c.top - 1 && r.bottom <= c.bottom + 1 : null,
                     subitoDopo: r ? Math.abs(r.left - c.right) < 2 : null,
                     testo: (s.textContent + elenco.textContent).trim(),
-                    // 0,85 rem, piu' piccolo degli aiuti (13/10, Alessandro).
+                    // Piu' piccolo degli aiuti (13/10, Alessandro): il livello «piccolo»
+                    // della scala, 0,8 rem (18/11).
                     misura: Math.abs(parseFloat(getComputedStyle(s).fontSize)
-                        - 0.85 * parseFloat(getComputedStyle(document.documentElement).fontSize)) < 0.1,
+                        - 0.8 * parseFloat(getComputedStyle(document.documentElement).fontSize)) < 0.1,
                     // Attaccato al suo campo (11/10): dal fondo del campo alla
                     // cima del testo del comando al massimo 6 px, e meno della
                     // distanza da cio' che viene dopo.
@@ -1537,7 +1538,7 @@ const EXTRA = {
             }
         }
         if (comandiTag.length > 0) {
-            check(nome + ': «Tag HTML consentiti», a 0,85 rem, sta attaccato al campo, apre l\'elenco sulla stessa riga, e un secondo clic lo chiude',
+            check(nome + ': «Tag HTML consentiti», a 0,8 rem, sta attaccato al campo, apre l\'elenco sulla stessa riga, e un secondo clic lo chiude',
                 tagStorti.length === 0, tagStorti);
         }
 

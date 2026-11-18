@@ -69,12 +69,12 @@ use App\Core\Quando;
 
 <section class="card">
     <h2>Informativa</h2>
-    <p class="form-hint privacy-versione-riga">
+    <p class="form-hint">
         <?php if ($inVigore !== null): ?>
-            <span>Versione in vigore: <strong><?= htmlspecialchars(Quando::data($inVigore['published_at'])) ?></strong></span>
-            <a href="<?= Privacy::PAGINA ?>">Vedi la pagina pubblica</a>
+            Versione in vigore: <strong><?= htmlspecialchars(Quando::data($inVigore['published_at'])) ?></strong> ·
+            <a href="<?= Privacy::PAGINA ?>">vedi la pagina pubblica</a>.
         <?php else: ?>
-            <span>Non ancora pubblicata: finché non lo è, la registrazione, l’email «Il tuo accesso», la pagina di accesso e il profilo non la nominano.</span>
+            Non ancora pubblicata: finché non lo è, la registrazione, l’email «Il tuo accesso», la pagina di accesso e il profilo non la nominano.
         <?php endif; ?>
     </p>
 
