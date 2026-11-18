@@ -27,6 +27,9 @@
  *   7. un solo carattere, quello della pagina;
  *   8. i titoli h1, h2, h3 a 600; le etichette a 500.
  *
+ * E il piede della barra laterale: «Esci» sotto il nome, allineato, mai
+ * attaccato, anche con un nome lunghissimo.
+ *
  * Esecuzione:  node tests/scala_testi.js   (server di sviluppo acceso)
  */
 'use strict';
@@ -131,6 +134,38 @@ async function giroCompleto(browser) {
     }
 }
 
+/**
+ * Il piede della barra laterale (18/11, Alessandro): nome accanto al
+ * cerchio, «Esci» sotto, allineato al nome e mai attaccato. Con il nome
+ * corto e con uno lunghissimo, al computer e al telefono.
+ */
+async function piedeBarra(browser) {
+    console.log('\nIl piede della barra laterale');
+    for (const [w, h] of [[1280, 800], [390, 844]]) {
+        const page = await (await browser.newContext({ viewport: { width: w, height: h } })).newPage();
+        await page.goto(BASE + '/login');
+        await page.fill('input[name="email"]', 'stud@test.it');
+        await page.fill('input[name="password"]', PASSWORD);
+        await page.click('form.auth-form button[type="submit"]');
+        await page.waitForLoadState('networkidle');
+        for (const nome of ['Alessandro Gilibini', 'Compagna con un nome davvero molto lungo Bartolomeo-Castiglioni']) {
+            const m = await page.evaluate((nome) => {
+                const piede = document.querySelector('.sidebar-footer');
+                piede.closest('.sidebar').style.transform = 'none';
+                piede.querySelector('.user-name').textContent = nome;
+                const r = (s) => piede.querySelector(s).getBoundingClientRect();
+                return { nome: r('.user-name'), cerchio: r('.avatar'), esci: r('.link-btn'), piede: piede.getBoundingClientRect() };
+            }, nome);
+            const centro = (x) => (x.top + x.bottom) / 2;
+            check(w + ' px, «' + nome.slice(0, 20) + '»: il nome centrato sul cerchio', Math.abs(centro(m.nome) - centro(m.cerchio)) < 1.5);
+            check(w + ' px, «' + nome.slice(0, 20) + '»: «Esci» sotto il nome, senza coprirlo', m.esci.top >= m.nome.bottom - 0.5);
+            check(w + ' px, «' + nome.slice(0, 20) + '»: «Esci» allineato al nome', Math.abs(m.esci.left - m.nome.left) < 0.5);
+            check(w + ' px, «' + nome.slice(0, 20) + '»: «Esci» alto almeno 24 px', m.esci.height >= 24);
+            check(w + ' px, «' + nome.slice(0, 20) + '»: il nome resta dentro la barra', m.nome.right <= m.piede.right + 0.5);
+        }
+    }
+}
+
 (async () => {
     const browser = await chromium.launch();
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
@@ -188,6 +223,7 @@ async function giroCompleto(browser) {
     }
 
     await giroCompleto(browser);
+    await piedeBarra(browser);
 
     await browser.close();
     console.log('\nTotale: ' + ok + ' superati, ' + fail + ' falliti');
