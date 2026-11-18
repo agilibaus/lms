@@ -15,7 +15,9 @@
 -- cancellazione dei suoi dati dal profilo. L'accesso si chiude subito
 -- (is_active = 0) e l'Amministratore cancella l'account entro un mese.
 --
--- Si puo' rieseguire: IF NOT EXISTS.
+-- Si puo' rieseguire: la tabella con IF NOT EXISTS, le colonne si
+-- aggiungono solo se mancano (information_schema, perche' `ADD COLUMN IF NOT
+-- EXISTS` c'e' su MariaDB ma non su MySQL 8).
 -- ---------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS privacy_versions (
@@ -25,6 +27,20 @@ CREATE TABLE IF NOT EXISTS privacy_versions (
     corrected_at    DATETIME NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS privacy_version_id INT UNSIGNED NULL DEFAULT NULL AFTER last_seen_at,
-    ADD COLUMN IF NOT EXISTS deletion_requested_at DATETIME NULL DEFAULT NULL AFTER privacy_version_id;
+SET @manca := (SELECT COUNT(*) = 0 FROM information_schema.COLUMNS
+               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'privacy_version_id');
+SET @sql := IF(@manca,
+    'ALTER TABLE users ADD COLUMN privacy_version_id INT UNSIGNED NULL DEFAULT NULL AFTER last_seen_at',
+    'DO 0');
+PREPARE passo FROM @sql;
+EXECUTE passo;
+DEALLOCATE PREPARE passo;
+
+SET @manca := (SELECT COUNT(*) = 0 FROM information_schema.COLUMNS
+               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deletion_requested_at');
+SET @sql := IF(@manca,
+    'ALTER TABLE users ADD COLUMN deletion_requested_at DATETIME NULL DEFAULT NULL AFTER privacy_version_id',
+    'DO 0');
+PREPARE passo FROM @sql;
+EXECUTE passo;
+DEALLOCATE PREPARE passo;
