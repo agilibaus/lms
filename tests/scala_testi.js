@@ -18,8 +18,9 @@
  *   5. messaggi «nessun…» alla misura delle note.
  *
  * E POI TUTTO PISTACCHIO: da anonimo, studente, tutor e Amministratore si
- * seguono i collegamenti delle pagine (fino a 140 per ruolo, un indirizzo
- * per forma: /courses/1 e /courses/2 sono la stessa pagina) e su ognuna:
+ * seguono i collegamenti di tutte le pagine (un indirizzo per forma:
+ * /courses/1 e /courses/2, o la stessa tabella ordinata in un altro modo,
+ * sono la stessa pagina) e su ognuna:
  *
  *   6. ogni testo e' a una delle sette misure della scala, tranne il testo
  *      dentro un disegno (iniziali, icone, nuvola delle Tre parole) e il
@@ -62,12 +63,17 @@ const RUOLI = [
 ];
 
 // Il testo dentro un disegno: fuori scala per natura.
+// Le parole della nuvola (`li.tp-n1`…`tp-n6`) sono grandi quanto sono
+// state scelte: fuori scala loro, non il «×3» che hanno accanto.
 const FUORI = ['icon-btn', 'avatar', 'file-icon', 'group-logo', 'course-card-cover', 'video-start', 'ordina-freccia',
-    'result-score', 'tp-n', 'tp-volte', 'persona-foto', 'presentazione-chiudi', 'avviso-chiudi', 'settings-card-avviso',
-    'scene-claim', 'griglia-numero', 'gruppo-volto', 'riepilogo-fruizione'];
+    'result-score', 'persona-foto', 'presentazione-chiudi', 'avviso-chiudi', 'settings-card-avviso',
+    'scene-claim', 'gruppo-volto', 'riepilogo-fruizione'];
+const PAROLA_DELLA_NUVOLA = /^(li|span)\.tp-n\d/;  // anche i campioni della legenda
 const MISURE = [1.5, 1.4, 1.2, 1.05, 1, 0.92, 0.8];
 const NON_SEGUIRE = /logout|\/join|\.csv|\.xlsx|\/download|\/scarica|\/file|\/immagine|\/materials\/\d+|\/pdf|\/calendario|\.ics|\/h5p|\/video|\/copertina|\/logo|mailto:|tel:/;
-const forma = (u) => u.split('#')[0].replace(/\d+/g, 'N').replace(/([?&](da_id|torna|da)=)[^&]*/g, '$1x');
+// Una pagina per forma: /courses/1 e /courses/2 sono la stessa, e cosi'
+// la stessa pagina ordinata o filtrata in un altro modo.
+const forma = (u) => u.split('#')[0].replace(/\d+/g, 'N').replace(/([?&](da_id|torna|da|ordina|verso|giorni|pagina|cerca|q)=)[^&]*/g, '$1x');
 
 async function giroCompleto(browser) {
     for (const [ruolo, email] of [['anonimo', null], ['studente', 'stud@test.it'], ['tutor', 'tutor1@test.it'], ['admin', 'admin@test.it']]) {
@@ -85,7 +91,7 @@ async function giroCompleto(browser) {
         const viste = new Set();
         const sbagli = { misure: [], caratteri: [], pesi: [] };
         let n = 0;
-        while (coda.length && n < 140) {
+        while (coda.length && n < 600) {
             const u = coda.shift();
             if (viste.has(forma(u))) continue;
             viste.add(forma(u));
@@ -99,7 +105,8 @@ async function giroCompleto(browser) {
             if (!r || r.status() >= 400 || !(r.headers()['content-type'] || '').includes('text/html') || !page.url().startsWith(BASE)) continue;
             n++;
             const dove = page.url().replace(BASE, '');
-            const esito = await page.evaluate(([FUORI, MISURE]) => {
+            const esito = await page.evaluate(([FUORI, MISURE, nuvola]) => {
+                const PAROLA_DELLA_NUVOLA = new RegExp(nuvola);
                 const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
                 const pagina = getComputedStyle(document.body).fontFamily;
                 const out = { misure: [], caratteri: [], pesi: [] };
@@ -111,7 +118,9 @@ async function giroCompleto(browser) {
                     if (e.getClientRects().length === 0) continue;
                     const nome = e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).join('.') : '');
                     const contesto = nome + ' ' + (e.parentElement && typeof e.parentElement.className === 'string' ? e.parentElement.className : '');
-                    if (FUORI.some((f) => contesto.includes(f))) continue;
+                    // Fuori scala anche dentro un contenitore con quei nomi (i
+                    // numeri in evidenza del riepilogo stanno in un <dd> senza classe).
+                    if (FUORI.some((f) => contesto.includes(f) || e.closest('[class*="' + f + '"]')) || PAROLA_DELLA_NUVOLA.test(nome)) continue;
                     const c = getComputedStyle(e);
                     const t = (e.innerText || e.value || '').trim().replace(/\s+/g, ' ').slice(0, 30);
                     if (!MISURE.some((m) => Math.abs(parseFloat(c.fontSize) - m * rem) < 0.05)) out.misure.push(nome + ' «' + t + '» ' + c.fontSize);
@@ -120,7 +129,7 @@ async function giroCompleto(browser) {
                     if (e.tagName === 'LABEL' && !e.closest('.campo-contato-testa, .tp-scelta, .checkbox-label') && !e.classList.contains('checkbox-label') && c.fontWeight !== '500') out.pesi.push(nome + ' «' + t + '» ' + c.fontWeight);
                 }
                 return out;
-            }, [FUORI, MISURE]);
+            }, [FUORI, MISURE, PAROLA_DELLA_NUVOLA.source]);
             for (const k of Object.keys(sbagli)) esito[k].forEach((x) => sbagli[k].push(dove + ': ' + x));
             const link = await page.$$eval('a[href]', (as) => as.map((a) => a.getAttribute('href')).filter((h) => h && h.startsWith('/')));
             link.filter((l) => !NON_SEGUIRE.test(l)).forEach((l) => coda.push(l));

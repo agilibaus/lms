@@ -1269,7 +1269,10 @@ h3 { font-size: var(--fs-sottotitolo); }
 .form label,
 .form legend,
 .stacked-form label,
-.auth-form label {
+.auth-form label,
+/* Anche nei moduli su una riga (19/11): «Modulo» e «Categoria» delle
+   proposte della Bacheca erano a 400, le sole etichette senza il loro peso. */
+.form-inline label:not(.checkbox-label) {
     font-size: var(--fs-secondario);
     font-weight: 500;
 }
@@ -5721,7 +5724,8 @@ fieldset.checkbox-group legend {
 
 .tp-nuvola .tp-volte {
     margin-left: 0.12rem;
-    font-size: 0.7rem;
+    /* Testo da leggere: il livello «piccolo» della scala (19/11). */
+    font-size: var(--fs-piccolo);
     font-weight: 400;
 }
 
@@ -5912,7 +5916,8 @@ fieldset.checkbox-group legend {
 .griglia-numero {
     display: block;
     white-space: nowrap;
-    font-size: 0.7rem;
+    /* «MODULO 1», «LEZIONE»: testo da leggere, il livello «piccolo» (19/11). */
+    font-size: var(--fs-piccolo);
     letter-spacing: 0.02em;
     text-transform: uppercase;
     color: var(--color-text-muted);
