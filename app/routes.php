@@ -62,6 +62,8 @@ $router->get('/privacy', [PrivacyController::class, 'show']);
 $router->post('/privacy/avviso', [PrivacyController::class, 'chiudiAvviso']);
 $router->get('/profilo/cancellazione', [PrivacyController::class, 'cancellazioneForm']);
 $router->post('/profilo/cancellazione', [PrivacyController::class, 'chiediCancellazione']);
+// «Scarica i tuoi dati» (19/11): il file XLSX con i dati dello studente.
+$router->get('/profilo/i-tuoi-dati', [PrivacyController::class, 'scaricaDati']);
 
 $router->get('/catalogo', [CatalogController::class, 'index']);
 $router->post('/catalogo/{id}/iscrizione', [CatalogController::class, 'enroll']);

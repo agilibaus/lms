@@ -7,12 +7,14 @@ namespace App\Controllers;
 use App\Auth\Auth;
 use App\Core\Privacy;
 use App\Core\View;
+use App\Core\Xlsx;
+use App\Models\DatiPersonaliModel;
 use App\Models\PrivacyModel;
 
 /**
  * Privacy (18/11, Alessandro), dalla parte dello studente: la pagina
- * pubblica dell'informativa, l'avviso di aggiornamento e la richiesta di
- * cancellazione dei dati dal profilo.
+ * pubblica dell'informativa, l'avviso di aggiornamento, la richiesta di
+ * cancellazione dei dati dal profilo e, dal 19/11, «Scarica i tuoi dati».
  */
 class PrivacyController
 {
@@ -95,9 +97,30 @@ class PrivacyController
     }
 
     /**
-     * Solo gli studenti: lo staff ha un rapporto di lavoro, non di
-     * partecipazione ai corsi, e un Amministratore che si chiude fuori da
-     * solo lascerebbe la piattaforma senza nessuno.
+     * «Scarica i tuoi dati» (19/11, Alessandro): un file XLSX con un foglio
+     * per argomento, creato al momento e non conservato sul server. Che cosa
+     * c'e' e che cosa no lo dice `DatiPersonaliModel`. Senza l'estensione zip
+     * il pulsante non compare, e l'indirizzo risponde 404.
+     */
+    public function scaricaDati(array $params = []): void
+    {
+        $this->soloStudenti();
+
+        if (!Xlsx::disponibile()) {
+            http_response_code(404);
+            exit('Pagina non trovata.');
+        }
+
+        Xlsx::sendFogli(
+            'pistacchio-i-miei-dati-' . date('Y-m-d') . '.xlsx',
+            DatiPersonaliModel::fogli((int) Auth::id())
+        );
+    }
+
+    /**
+     * Solo gli studenti (per ora, 19/11): lo staff ha un rapporto di lavoro,
+     * non di partecipazione ai corsi, e un Amministratore che si chiude fuori
+     * da solo lascerebbe la piattaforma senza nessuno.
      */
     private function soloStudenti(): void
     {
@@ -105,7 +128,7 @@ class PrivacyController
 
         if (!Auth::hasRole('studente')) {
             http_response_code(403);
-            exit('Accesso negato: la cancellazione dal profilo è per gli studenti.');
+            exit('Accesso negato: questa pagina è per gli studenti.');
         }
     }
 }

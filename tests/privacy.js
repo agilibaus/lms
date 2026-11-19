@@ -33,6 +33,7 @@
 const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
+const fs = require('node:fs');
 
 const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const PASSWORD = process.env.LMS_PASS || 'Password1!';
@@ -131,11 +132,27 @@ const TESTO = '<h2>1. Chi tratta i tuoi dati</h2><p>Il titolare del trattamento.
             && await sezione.locator('a[href^="/privacy"]').count() === 0);
         const stili = await st.page.evaluate(() => {
             const s = (e) => { const c = getComputedStyle(e); return [c.fontSize, c.color, c.fontFamily].join(' / '); };
-            const nota = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Password').querySelector('p');
-            const privacy = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Privacy').querySelector('p');
+            const nota = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Password').querySelector('p.form-hint');
+            const privacy = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Privacy').querySelector('p.form-hint');
             return [s(nota), s(privacy)];
         });
         check('il testo del riquadro Privacy come le note degli altri riquadri', stili[0] === stili[1], stili);
+        // «Scarica i tuoi dati» (19/11): il pulsante come «Cambia password», con l'icona del vocabolario, e il file.
+        const pulsanti = await st.page.evaluate(() => {
+            const s = (e) => { const c = getComputedStyle(e); return [c.fontSize, c.color, c.fontFamily, c.borderTopColor].join(' / '); };
+            const cambia = [...document.querySelectorAll('a.btn')].find((a) => a.textContent.trim() === 'Cambia password');
+            const scarica = [...document.querySelectorAll('a.btn')].find((a) => a.textContent.trim() === 'Scarica i tuoi dati');
+            return cambia && scarica ? [s(cambia), s(scarica)] : null;
+        });
+        check('«Scarica i tuoi dati» c\'e\' ed e\' come «Cambia password»', pulsanti !== null && pulsanti[0] === pulsanti[1], pulsanti || []);
+        const [scaricato] = await Promise.all([
+            st.page.waitForEvent('download'),
+            sezione.locator('a', { hasText: 'Scarica i tuoi dati' }).click(),
+        ]);
+        const nomeFile = scaricato.suggestedFilename();
+        const contenuto = fs.readFileSync(await scaricato.path());
+        check('il file si chiama pistacchio-i-miei-dati-<data>.xlsx ed e\' uno zip', /^pistacchio-i-miei-dati-\d{4}-\d{2}-\d{2}\.xlsx$/.test(nomeFile)
+            && contenuto.subarray(0, 2).toString() === 'PK', [nomeFile]);
         check('…e con «Chiedi la cancellazione dei tuoi dati»', await sezione.locator('a', { hasText: 'Chiedi la cancellazione dei tuoi dati' }).count() === 1);
 
         console.log('\n2. La pubblicazione');

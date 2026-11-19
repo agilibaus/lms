@@ -11,6 +11,7 @@ use App\Core\GroupLogo;
 use App\Core\Welcome;
 use App\Core\Icona;
 use App\Core\Privacy;
+use App\Core\Xlsx;
 
 /** @var array $user */
 /** @var array $groups */
@@ -272,12 +273,17 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
 
 <?php /* Privacy (18/11): solo per gli studenti, che sono i genitori a cui si
          rivolge l'informativa. La cancellazione e' un collegamento a una
-         pagina che spiega e chiede conferma, non un pulsante che agisce. */ ?>
+         pagina che spiega e chiede conferma, non un pulsante che agisce.
+         «Scarica i tuoi dati» (19/11) senza una frase sotto, per scelta di
+         Alessandro; senza l'estensione zip non c'e'. */ ?>
 <?php if ($user['role'] === 'studente'): ?>
     <section class="card">
         <h2>Privacy</h2>
         <?php if (Privacy::inVigore() !== null): ?>
             <p class="form-hint">Come trattiamo i tuoi dati lo spiega l’<a href="<?= htmlspecialchars(Privacy::link('profilo')) ?>">Informativa sulla privacy</a>.</p>
+        <?php endif; ?>
+        <?php if (Xlsx::disponibile()): ?>
+            <p><a href="/profilo/i-tuoi-dati" class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica i tuoi dati</a></p>
         <?php endif; ?>
         <p class="form-hint">Puoi chiedere di cancellare il tuo account e i tuoi dati. L’accesso si chiude subito e l’account viene cancellato entro un mese.</p>
         <a href="/profilo/cancellazione" class="link-btn link-btn-danger">Chiedi la cancellazione dei tuoi dati</a>

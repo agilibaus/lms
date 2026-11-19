@@ -13,9 +13,10 @@ use ZipArchive;
  *
  * Un file .xlsx e' un archivio zip con dentro qualche file XML. Scriverlo a
  * mano evita una dipendenza nuova: il progetto ne ha una sola, Dompdf, ed e'
- * una scelta presa (pistacchio-lms.md Sezione 1). Qui serve il minimo per un
- * foglio solo, con l'intestazione in grassetto, le date vere e le colonne
- * larghe quanto basta — non un generatore di fogli di calcolo.
+ * una scelta presa (pistacchio-lms.md Sezione 1). Qui serve il minimo: uno o
+ * piu' fogli (piu' fogli solo per «Scarica i tuoi dati», 19/11), con
+ * l'intestazione in grassetto, le date vere e le colonne larghe quanto basta
+ * — non un generatore di fogli di calcolo.
  *
  * I testi sono scritti in linea (`t="inlineStr"`) invece che nella tabella
  * delle stringhe condivise: qualche byte in piu', un file in meno da tenere
@@ -51,8 +52,22 @@ class Xlsx
         array $columnTypes = [],
         string $sheetName = 'Foglio1'
     ): void {
-        $percorso = self::build($header, $rows, $columnTypes, $sheetName);
+        self::invia($fileName, self::build($header, $rows, $columnTypes, $sheetName));
+    }
 
+    /**
+     * Come `send()`, con piu' fogli (vedi `buildFogli()`).
+     *
+     * @param array<int, array{nome: string, intestazione: string[],
+     *        righe: array<int, array<int, string|int|float|null>>, tipi?: array<int, string>}> $fogli
+     */
+    public static function sendFogli(string $fileName, array $fogli): void
+    {
+        self::invia($fileName, self::buildFogli($fogli));
+    }
+
+    private static function invia(string $fileName, ?string $percorso): void
+    {
         if ($percorso === null) {
             http_response_code(500);
             echo 'Impossibile creare il file temporaneo per il foglio di calcolo.';
@@ -85,21 +100,48 @@ class Xlsx
         array $columnTypes = [],
         string $sheetName = 'Foglio1'
     ): ?string {
+        return self::buildFogli([[
+            'nome' => $sheetName,
+            'intestazione' => $header,
+            'righe' => $rows,
+            'tipi' => $columnTypes,
+        ]]);
+    }
+
+    /**
+     * Piu' fogli nello stesso file, nell'ordine dato. I nomi devono essere
+     * diversi fra loro, al massimo 31 caratteri e senza [ ] : * ? / \
+     * (regole di Excel): chi chiama li sceglie fissi.
+     *
+     * @param array<int, array{nome: string, intestazione: string[],
+     *        righe: array<int, array<int, string|int|float|null>>, tipi?: array<int, string>}> $fogli
+     */
+    public static function buildFogli(array $fogli): ?string
+    {
         $percorso = tempnam(sys_get_temp_dir(), 'xlsx');
 
         if ($percorso === false) {
             return null;
         }
 
+        $fogli = array_values($fogli);
+        $nomi = array_map(static fn (array $f): string => $f['nome'], $fogli);
+
         $zip = new ZipArchive();
         $zip->open($percorso, ZipArchive::OVERWRITE | ZipArchive::CREATE);
 
-        $zip->addFromString('[Content_Types].xml', self::contentTypes());
+        $zip->addFromString('[Content_Types].xml', self::contentTypes(count($fogli)));
         $zip->addFromString('_rels/.rels', self::rels());
-        $zip->addFromString('xl/workbook.xml', self::workbook($sheetName));
-        $zip->addFromString('xl/_rels/workbook.xml.rels', self::workbookRels());
+        $zip->addFromString('xl/workbook.xml', self::workbook($nomi));
+        $zip->addFromString('xl/_rels/workbook.xml.rels', self::workbookRels(count($fogli)));
         $zip->addFromString('xl/styles.xml', self::styles());
-        $zip->addFromString('xl/worksheets/sheet1.xml', self::sheet($header, $rows, $columnTypes));
+
+        foreach ($fogli as $i => $foglio) {
+            $zip->addFromString(
+                'xl/worksheets/sheet' . ($i + 1) . '.xml',
+                self::sheet($foglio['intestazione'], $foglio['righe'], $foglio['tipi'] ?? [])
+            );
+        }
 
         $zip->close();
 
@@ -297,14 +339,19 @@ class Xlsx
     // Ossatura del file, sempre uguale
     // ---------------------------------------------------------------
 
-    private static function contentTypes(): string
+    private static function contentTypes(int $fogli): string
     {
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
             . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
             . '<Default Extension="xml" ContentType="application/xml"/>'
-            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
-            . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
+
+        for ($i = 1; $i <= $fogli; $i++) {
+            $xml .= '<Override PartName="/xl/worksheets/sheet' . $i . '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        }
+
+        return $xml
             . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
             . '</Types>';
     }
@@ -317,22 +364,34 @@ class Xlsx
             . '</Relationships>';
     }
 
-    private static function workbook(string $sheetName): string
+    /** @param string[] $nomi */
+    private static function workbook(array $nomi): string
     {
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
             . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            . '<sheets><sheet name="' . self::escape(mb_substr($sheetName, 0, 31))
-            . '" sheetId="1" r:id="rId1"/></sheets>'
-            . '</workbook>';
+            . '<sheets>';
+
+        foreach (array_values($nomi) as $i => $nome) {
+            $xml .= '<sheet name="' . self::escape(mb_substr($nome, 0, 31))
+                . '" sheetId="' . ($i + 1) . '" r:id="rId' . ($i + 1) . '"/>';
+        }
+
+        return $xml . '</sheets></workbook>';
     }
 
-    private static function workbookRels(): string
+    /** I fogli sono rId1…rIdN, gli stili vengono dopo: rId(N+1). */
+    private static function workbookRels(int $fogli): string
     {
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
-            . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+
+        for ($i = 1; $i <= $fogli; $i++) {
+            $xml .= '<Relationship Id="rId' . $i . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' . $i . '.xml"/>';
+        }
+
+        return $xml
+            . '<Relationship Id="rId' . ($fogli + 1) . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
             . '</Relationships>';
     }
 

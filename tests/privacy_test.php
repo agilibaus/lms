@@ -116,6 +116,89 @@ check('e dopo tutto il testo modificabile (l\'ultima frase dell\'email)', $posRi
 $staff = Mailer::invite('tutor@example.it', 'Tutor Prova', 'k7Qm-2pXr', 'https://lms.example/login', false)->body;
 check('allo staff niente riga', !str_contains($staff, 'Accedendo dichiari'), $staff);
 
+echo "\n6. «Scarica i tuoi dati»\n";
+
+// Il file a piu' fogli: Excel lo apre solo se fogli, relazioni e tipi sono
+// numerati allo stesso modo.
+$percorso = App\Core\Xlsx::buildFogli([
+    ['nome' => 'Primo', 'intestazione' => ['A'], 'righe' => [['uno']]],
+    ['nome' => 'Secondo', 'intestazione' => ['B'], 'righe' => [['=SOMMA(1;2)']]],
+]);
+$zip = new ZipArchive();
+$zip->open((string) $percorso);
+$libro = (string) $zip->getFromName('xl/workbook.xml');
+$relazioni = (string) $zip->getFromName('xl/_rels/workbook.xml.rels');
+$tipi = (string) $zip->getFromName('[Content_Types].xml');
+$secondo = (string) $zip->getFromName('xl/worksheets/sheet2.xml');
+$zip->close();
+@unlink((string) $percorso);
+check('due fogli, con il loro nome e il loro numero', str_contains($libro, 'name="Primo" sheetId="1" r:id="rId1"')
+    && str_contains($libro, 'name="Secondo" sheetId="2" r:id="rId2"'), $libro);
+check('le relazioni: i due fogli, poi gli stili', str_contains($relazioni, 'Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"')
+    && str_contains($relazioni, 'Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"'), $relazioni);
+check('i tipi dichiarano tutti e due i fogli', str_contains($tipi, '/xl/worksheets/sheet2.xml'), $tipi);
+check('un testo che comincia con = resta testo, non formula', str_contains($secondo, 't="inlineStr"') && !str_contains($secondo, '<f>'), $secondo);
+
+// Lo studente con piu' risposte ai questionari: il caso in cui i dati
+// degli altri sarebbero piu' facili da tirarsi dietro.
+$db = App\Core\Database::connection();
+$uid = (int) $db->query(
+    "SELECT a.user_id FROM quiz_attempt_answers aa JOIN quiz_attempts a ON a.id = aa.attempt_id
+       JOIN users u ON u.id = a.user_id WHERE u.role = 'studente'
+      GROUP BY a.user_id ORDER BY COUNT(*) DESC LIMIT 1"
+)->fetchColumn();
+
+if ($uid === 0) {
+    check('nel database c\'e\' uno studente con delle risposte', false);
+} else {
+    $fogli = App\Models\DatiPersonaliModel::fogli($uid);
+    $perNome = [];
+    foreach ($fogli as $f) {
+        $perNome[$f['nome']] = $f;
+    }
+    $nomi = array_keys($perNome);
+    check('i nomi dei fogli sono diversi e validi per Excel', count($nomi) === count($fogli)
+        && array_filter($nomi, static fn ($n) => mb_strlen($n) > 31 || preg_match('/[\[\]:*?\/\\\\]/', $n)) === [],
+        implode(' | ', $nomi));
+
+    $conta = static function (string $sql) use ($db, $uid): int {
+        // PDO non ripete lo stesso segnaposto con le query preparate native:
+        // ogni :u diventa :u1, :u2…
+        $n = 0;
+        $sql = (string) preg_replace_callback('/:u\\b/', static function () use (&$n) { return ':u' . (++$n); }, $sql);
+        $st = $db->prepare($sql);
+        $st->execute(array_combine(array_map(static fn ($i) => 'u' . $i, range(1, $n)), array_fill(0, $n, $uid)));
+        return (int) $st->fetchColumn();
+    };
+    check('sei fogli, nell\'ordine deciso', $nomi === ['Profilo', 'Corsi', 'Lezioni e video', 'Questionari', 'Incontri dal vivo', 'Quello che hai scritto'],
+        implode(' | ', $nomi));
+    check('Questionari: una riga per domanda di ogni suo tentativo, una per tentativo senza domande',
+        count($perNome['Questionari']['righe'])
+        === $conta('SELECT COUNT(DISTINCT aa.attempt_id, aa.question_id) FROM quiz_attempt_answers aa
+                      JOIN quiz_attempts a ON a.id = aa.attempt_id WHERE a.user_id = :u')
+          + $conta('SELECT COUNT(*) FROM quiz_attempts a WHERE a.user_id = :u
+                      AND NOT EXISTS (SELECT 1 FROM quiz_attempt_answers aa WHERE aa.attempt_id = a.id)'));
+    check('Corsi: una riga per ogni suo corso, e solo i suoi', count($perNome['Corsi']['righe'])
+        === $conta('SELECT COUNT(DISTINCT course_id) FROM (
+                        SELECT course_id FROM enrollments WHERE user_id = :u
+                        UNION SELECT course_id FROM enrollment_requests WHERE user_id = :u
+                        UNION SELECT course_id FROM payments WHERE user_id = :u
+                        UNION SELECT course_id FROM certificates WHERE user_id = :u
+                        UNION SELECT m.course_id FROM module_unlock_notifications n
+                              JOIN modules m ON m.id = n.module_id WHERE n.user_id = :u) t'));
+    check('Lezioni e video: una riga per lezione completata, almeno', count($perNome['Lezioni e video']['righe'])
+        >= $conta('SELECT COUNT(*) FROM lesson_progress WHERE user_id = :u'));
+
+    $tutto = json_encode($fogli, JSON_UNESCAPED_UNICODE);
+    $utente = $db->query('SELECT email, password_hash, calendar_token FROM users WHERE id = ' . $uid)->fetch();
+    check('niente impronta della password', !str_contains((string) $tutto, (string) $utente['password_hash']));
+    check('niente token del calendario', $utente['calendar_token'] === null
+        || !str_contains((string) $tutto, (string) $utente['calendar_token']));
+    $altre = $db->query('SELECT email FROM users WHERE id <> ' . $uid)->fetchAll(PDO::FETCH_COLUMN);
+    $trovate = array_values(array_filter($altre, static fn ($e) => str_contains((string) $tutto, '"' . $e . '"')));
+    check('nessuna email di altre persone', $trovate === [], implode(', ', $trovate));
+}
+
 echo PHP_EOL . "Totale: {$ok} superati, {$fail} falliti" . PHP_EOL;
 
 exit($fail > 0 ? 1 : 0);

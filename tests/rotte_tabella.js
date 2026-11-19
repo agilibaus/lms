@@ -71,6 +71,7 @@ const RIGHE = [
     ['POST', '/privacy/avviso',                                             '/privacy/avviso',                                                  'L', '-', '-', '-', '-', '-'],
     ['GET',  '/profilo/cancellazione',                                      '/profilo/cancellazione',                                           'L', 'S', '403', '403', '403', '403'],
     ['POST', '/profilo/cancellazione',                                      '/profilo/cancellazione',                                           'L', '-', '403', '403', '403', '403'],
+    ['GET',  '/profilo/i-tuoi-dati',                                        '/profilo/i-tuoi-dati',                                             'L', 'S', '403', '403', '403', '403'],
     ['POST', '/profilo/immagine',                                           '/profilo/immagine',                                                'L', '-', '-', '-', '-', '-'],
     ['POST', '/profilo/immagine/elimina',                                   '/profilo/immagine/elimina',                                        'L', '-', '-', '403', '-', '-'],
     ['GET',  '/utenti/{id}/immagine',                                       '/utenti/{u.tutorB}/immagine',                                      'L', '404', '404', '404', '404', 'S'],
