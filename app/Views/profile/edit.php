@@ -219,27 +219,6 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
     </section>
 <?php endif; ?>
 
-<section class="card">
-    <h2>Password</h2>
-    <p class="form-hint" style="margin-top: 0;">
-        Per cambiarla ti verrà chiesta quella attuale. Le altre sessioni aperte con la
-        password precedente vengono chiuse.
-    </p>
-    <p>
-        <a href="<?= Auth::PASSWORD_PAGE ?>" class="btn btn-secondary">Cambia password</a>
-    </p>
-</section>
-
-<?php /* Il benvenuto si rivede solo se un video c'e' davvero: una voce che
-         porta a una pagina vuota e' peggio di una voce che manca. E' un
-         collegamento discreto e non una scheda sua, perche' si usa una
-         volta ogni tanto. */ ?>
-<?php if (Welcome::configurato()): ?>
-    <p class="profilo-benvenuto">
-        <a href="<?= Welcome::PAGE ?>">Rivedi video di benvenuto</a>
-    </p>
-<?php endif; ?>
-
 <?php if ($groups !== []): ?>
     <section class="card">
         <h2>I miei gruppi</h2>
@@ -269,6 +248,27 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
             <?php endforeach; ?>
         </ul>
     </section>
+<?php endif; ?>
+
+<section class="card">
+    <h2>Password</h2>
+    <p class="form-hint" style="margin-top: 0;">
+        Per cambiarla ti verrà chiesta quella attuale. Le altre sessioni aperte con la
+        password precedente vengono chiuse.
+    </p>
+    <p>
+        <a href="<?= Auth::PASSWORD_PAGE ?>" class="btn btn-secondary">Cambia password</a>
+    </p>
+</section>
+
+<?php /* Il benvenuto si rivede solo se un video c'e' davvero: una voce che
+         porta a una pagina vuota e' peggio di una voce che manca. E' un
+         collegamento discreto e non una scheda sua, perche' si usa una
+         volta ogni tanto. */ ?>
+<?php if (Welcome::configurato()): ?>
+    <p class="profilo-benvenuto">
+        <a href="<?= Welcome::PAGE ?>">Rivedi video di benvenuto</a>
+    </p>
 <?php endif; ?>
 
 <?php /* Privacy (18/11): solo per gli studenti, che sono i genitori a cui si
