@@ -4,7 +4,7 @@
 
 Il manuale completo dell'applicazione: come funziona ogni parte, le scelte fatte e perché.
 Per una presentazione breve e l'installazione basta il [README](README.md). Questo testo era il
-README fino alla versione 1.0.306, ed è aggiornato alla versione 1.0.320.
+README fino alla versione 1.0.306, ed è aggiornato alla versione 1.0.394.
 
 Learning Management System leggero e moderno in PHP puro + MySQL.
 
@@ -35,10 +35,10 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
   | Ruolo | Ambito |
   |---|---|
   | `admin` | Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni; risponde come esperto. **Uno solo** |
-  | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale; non pubblica. Dal 06/11, per tutti i corsi: legge i contenuti dei pubblicati senza modificarli, report, gruppi (senza eliminarli) e Bacheca |
+  | `supervisore` | Costruisce i corsi **in bozza**: dati del corso, moduli, lezioni, questionari, verifica finale; non pubblica, e passa la bozza all'Amministratore. Per tutti i corsi: legge i contenuti dei pubblicati senza modificarli, report, gruppi (senza eliminarli), Bacheca e **gli studenti** (crea, importa, modifica, elimina) |
   | `tutor` | Legge i corsi e lavora sulla sua classe: cura i suoi gruppi, i loro incontri, la Bacheca e i report dei suoi studenti |
   | `assistente` | Affianca uno o piu' tutor (tabella `assistant_tutors`), in sola lettura: report, tentativi e incontri dei loro studenti, secondo gli interruttori |
-  | `studente` | Si registra da solo, si iscrive ai corsi aperti o paga quelli a pagamento, svolge i questionari, scarica i propri certificati |
+  | `studente` | Si registra da solo, si iscrive ai corsi aperti o paga quelli a pagamento, svolge i questionari, scarica i propri certificati e i propri dati. **Solo lo studente** si iscrive ai corsi, entra nei gruppi, invia questionari e segna le lezioni come fatte |
 - **Profilo personale**: ogni utente compila i propri dati e carica un'immagine, che compare tonda accanto al suo nome
 - **Gruppi**: classi/coorti di studenti, con corsi assegnabili all'intero gruppo oltre che al singolo utente
 - **Sessioni live** integrate con **Google Meet**, tramite Google Calendar API (`conferenceData`) — richiede un account di servizio Google con accesso al Calendar
@@ -55,6 +55,12 @@ Learning Management System leggero e moderno in PHP puro + MySQL.
 - **Corsi a pagamento** con Stripe (06/11): lo studente paga con il link di pagamento del corso e
   Pistacchio lo iscrive quando arriva l'avviso firmato di Stripe; i pagamenti ricevuti si vedono
   in Impostazioni › Pagamenti (vedi **Corsi a pagamento (Stripe)**)
+- **Privacy** (18–19/11): l'informativa scritta dal pannello, con le sue versioni e l'avviso
+  quando cambia; dal profilo lo studente scarica i suoi dati in un file Excel e può chiederne
+  la cancellazione (vedi **Privacy**)
+- **Comandi pianificati**: una pagina dice se girano, e un avviso compare quando uno è fermo
+- **Una scala dei testi sola**, di sette misure, per tutte le pagine (vedi **La gerarchia dei
+  riquadri**)
 
 ## Stato del progetto
 
@@ -108,8 +114,20 @@ In sviluppo iniziale.
   e gli incontri di un corso in bozza non sono ancora loro (0328, 0329)
 - ✅ «Amministratore» in tutti i testi che si leggono (0325)
 - ✅ Le schede di «Esplora corsi» con il blocco finale in fondo, alla stessa altezza (0331)
+- ✅ Solo lo studente invia questionari e segna lezioni; lo staff non è mai iscritto né membro di un gruppo (0360, 0362)
+- ✅ La bozza è presso il supervisore o l'Amministratore, con un passaggio solo (0366)
+- ✅ Il supervisore gestisce gli studenti (0367)
+- ✅ La tabella delle rotte: per ogni rotta, che cosa risponde a ogni ruolo (0368); via il codice morto (0369, 0370)
+- ✅ Questionari con dei tentativi: le domande si correggono, i voti si ricalcolano (0371); l'avanzamento si ricalcola quando il corso cambia (0372)
+- ✅ Report: lo studente nel contesto di un corso o di un gruppo (0373), chi ha scaricato i materiali (0374)
+- ✅ La pagina dei comandi pianificati, con un avviso se uno è fermo (0375, 0377, 0378)
+- ✅ La chiave di Google salvata con il solo nome del file (0376)
+- ✅ Ogni «indietro» torna alla pagina di partenza, anche dopo un salvataggio (0379, 0380)
+- ✅ Privacy: informativa, avviso di aggiornamento, cancellazione dei dati (0381, 0382) e «Scarica i tuoi dati» (0390)
+- ✅ Una scala dei testi di sette misure in tutto Pistacchio, e il piede della barra laterale (0383–0389)
+- ✅ Nessun collegamento a pagine che chi lo vede non può aprire, e il controllo che lo verifica (0392)
 
-Ultimo aggiornamento del manuale: 06/11, versione 1.0.359.
+Ultimo aggiornamento del manuale: 19/11, versione 1.0.394.
 
 ## Requisiti
 
@@ -242,6 +260,10 @@ danni. Le piu' recenti:
 | `2026_10_30_supervisore.sql` | il ruolo `supervisore` |
 | `2026_11_06_corsi_a_pagamento.sql` | `courses.enrollment_mode` con `paid`, e `price_cents`, `payment_link_url`, `payment_link_id`: i corsi a pagamento |
 | `2026_11_06_pagamenti_stripe.sql` | la tabella `payments`: i pagamenti ricevuti da Stripe, con l'esito |
+| `2026_11_14_bozza_presso.sql` | `courses.presso`, `passato_il`, `passaggio`: presso chi è una bozza e quando è passata all'Amministratore |
+| `2026_11_16_via_tabelle_morte.sql` | toglie `role_permissions` e `remember_tokens`, che il codice non usava |
+| `2026_11_17_materiali_scaricati.sql` | la tabella `material_downloads`: chi ha scaricato quale materiale, e quando la prima volta |
+| `2026_11_18_privacy.sql` | la tabella `privacy_versions`, e `users.privacy_version_id` e `deletion_requested_at`: l'informativa e le richieste di cancellazione |
 
 **Dopo `2026_10_01_rilascio_moduli.sql` va anche impostato il cron** del rilascio progressivo:
 vedi più sotto, altrimenti i moduli si aprono lo stesso ma nessuno avvisa gli studenti.
@@ -925,8 +947,17 @@ fatta»**. Le altre non scrivono già per chi non è iscritto: fruizione dei vid
 tutor, domande, tre parole, visita dell'obiettivo, «tieni da parte» della Bacheca, punteggi H5P
 (gli esercizi H5P si provano, in anteprima).
 
-Non pubblica, non elimina corsi né gruppi, non gestisce utenti, iscrizioni dalla scheda del
-corso, incontri, certificati e domande.
+**Dal 13 al 15/11.** Nella bacheca di un corso è accesa una sola voce del menu, quella del ramo
+del corso (0363), e la pagina «Bacheca»/«Bacheche» di tutti i corsi è stata tolta (0365): il
+supervisore arriva a ogni bacheca dal ramo del corso, e in «Corsi» la scheda dice «N da valutare
+in bacheca». **La bozza è presso qualcuno** (0366, vedi **La bozza e il suo passaggio**). **Gestisce
+gli studenti** (0367, permesso `student.manage`): «Utenti» nel suo menu mostra solo gli studenti;
+li crea (il ruolo è fisso), li importa da file, ne modifica dati, stato e gruppi, manda la
+password temporanea e li elimina. Lo staff non lo vede e non lo tocca («Puoi gestire soltanto
+gli studenti.»); l'elenco da scaricare resta dell'Amministratore.
+
+Non pubblica, non elimina corsi né gruppi, non gestisce lo staff, le iscrizioni dalla scheda del
+corso, gli incontri, i certificati e le domande.
 
 `tests/supervisore.js` lo prova (vedi **Test**).
 
@@ -1994,6 +2025,10 @@ link, ordine, colori). I file stanno in `storage/bacheca/`. Migrazioni
 
 ### Le bacheche di tutti i corsi e le categorie in una pagina (06/11)
 
+**La pagina «Bacheca» di tutti i corsi (`/bacheca/corsi`) è stata tolta il 13/11 (0365)**: il
+supervisore arriva a ogni bacheca dal ramo del corso, e l'indirizzo risponde 404. Resta la pagina
+delle categorie di un corso. Il testo che segue racconta com'era.
+
 Per chi gestisce la Bacheca di tutti i corsi (`board.manage`: l'admin e il supervisore):
 
 - **«Bacheca»** (`/bacheca/corsi`): una riga per corso, con stato, categorie, risorse
@@ -2128,6 +2163,33 @@ barra laterale (`.nav-section`) è a 0,8 rem (0340).
 «Il mio profilo» al telefono: la scelta del file e «Sostituisci» (o «Carica») stanno a destra
 della foto (0348). `accessibilita.js` controlla, nel profilo, la gerarchia e il pulsante.
 
+### La scala dei testi (18/11, 0383–0389)
+
+Alessandro: «Pistacchio deve essere visivamente coerente, non un miscuglio di font e gerarchie a
+caso». Ogni testo è a una di **sette misure**, scritte come variabili in cima al foglio di stile:
+
+| Variabile | Misura | Per |
+|---|---|---|
+| `--fs-pagina` | 1,5 rem | il titolo della pagina |
+| `--fs-gruppo` | 1,4 rem | il titolo di un gruppo di riquadri |
+| `--fs-riquadro` | 1,2 rem | il titolo di un riquadro |
+| `--fs-sottotitolo` | 1,05 rem | un sottotitolo dentro un riquadro |
+| `--fs-testo` | 1 rem | il testo |
+| `--fs-secondario` | 0,92 rem | etichette, note, comandi |
+| `--fs-piccolo` | 0,8 rem | i dettagli |
+
+I titoli sono a peso 600, le etichette a 500, e c'è un solo grigio (`--color-text-muted`). Fuori
+scala resta solo il testo dentro un disegno: iniziali degli avatar, icone, frecce di
+ordinamento, parole della nuvola delle Tre parole, punteggi e numeri in evidenza, il motto delle
+pagine pubbliche, la copertina segnaposto, il codice. Pulsanti e campi file usano il carattere
+della pagina.
+
+**Il piede della barra laterale** (0386, 0388, 0389): nome ed «Esci» stanno su una riga quando ci
+stanno; se il nome è lungo, «Esci» va sotto, rientrato sotto il nome. Tutte e due le forme stanno
+a 18 px dal fondo dello schermo. Lo decide `piede-barra.js` (classe `una-riga`).
+
+`tests/scala_testi.js` visita tutte le pagine di ogni ruolo e controlla misure, carattere e pesi.
+
 ## Icone
 
 Dal 18/10 accanto ai comandi ci sono le icone di **Bootstrap Icons 1.11.3** (MIT), scritte come
@@ -2189,6 +2251,119 @@ pagina deve rispondere entro **1,15 secondi** (limite), **390 ms** con un margin
 
 Il blocco dei tentativi d'accesso conta solo le password sbagliate: gli accessi giusti dei 150
 studenti di prova non lo fanno scattare.
+
+## Le novità dal 13 al 19/11 (0360–0393)
+
+### Solo gli studenti partecipano (0360, 0362)
+
+**Solo lo studente invia un questionario e segna una lezione come fatta**: per tutti gli altri
+ruoli il questionario si vede con le risposte spente e «Sola lettura: le risposte non si
+inviano.», e il server rifiuta l'invio e «Segna come fatta» (`!Auth::hasRole('studente')`).
+**Ai corsi si iscrivono e nei gruppi entrano solo gli studenti**, per qualunque strada
+(`EnrollmentModel::enrollMany`, `GroupModel::addMember`); «Esplora corsi» è solo degli
+studenti. Uno studente che diventa staff esce dai suoi gruppi e tiene le iscrizioni, con «Ora è
+tutor: iscrizione di quando era studente.» fra gli iscritti; non gli si emettono più certificati.
+
+### La bozza e il suo passaggio (0366)
+
+Una bozza è sempre **presso qualcuno**: quella del supervisore presso di lui, quella
+dell'Amministratore presso l'Amministratore. La modifica solo chi la ha; l'altro la legge
+(`CourseRights::canEdit`). «**Invia all'Amministratore**» (il supervisore) e «**Riprendi il
+corso**» (l'Amministratore) la passano all'Amministratore, una volta sola e senza ritorno, con la
+conferma del browser e un'email («Corso inviato all'Amministratore», «Corso ripreso
+dall'Amministratore»). In «Gestione corsi» lo stato dice «Bozza presso supervisore», «Bozza
+presso Amministratore» o «Pubblicato».
+
+### La tabella delle rotte (0368)
+
+`tests/rotte_tabella.js` scrive, per ogni rotta di `app/routes.php`, che cosa risponde a chi non
+è entrato e a ciascun ruolo; `tests/rotte.js` lo confronta con il sito ed è rosso anche quando
+una rotta non ha la sua riga. Una pagina nuova non nasce senza che qualcuno abbia deciso chi la
+apre.
+
+### Questionari con dei tentativi, e l'avanzamento (0371, 0372)
+
+Quando un questionario ha dei tentativi, le domande **non si aggiungono né si tolgono**, il loro
+tipo non cambia e le opzioni restano quelle; si correggono i testi, le risposte giuste e la
+soglia. Se cambia almeno un voto, prima la pagina **«Ricalcolo dei voti»** dice che cosa cambia
+(chi non supera più, chi supera ora, i moduli che si richiudono), poi «Salva e ricalcola» scrive
+modifica e voti nuovi insieme (`App\Core\Ricalcolo`). I certificati già emessi restano.
+**L'avanzamento si ricalcola** quando si crea o si elimina una lezione o un modulo; il
+«completato» resta a chi l'aveva.
+
+### Report: il contesto dello studente e i materiali scaricati (0373, 0374)
+
+Il report di uno studente aperto da un corso o da un gruppo mostra solo quel corso o i corsi di
+quel gruppo, e torna alla pagina di partenza. **Chi ha scaricato i materiali**: lo scaricamento
+di un materiale da parte di uno studente si registra (`material_downloads`, la prima volta); il
+report del corso ha il riquadro «Materiali» con «Scaricato da» e i nomi, quello dello studente
+la data per ogni materiale.
+
+### Comandi pianificati (0375, 0377, 0378)
+
+Impostazioni › **«Comandi pianificati»** (solo l'Amministratore): per avvisi, inviti e rilascio
+dei moduli, che cosa fanno, ogni quanto, l'ultima esecuzione e lo stato — «regolare», «fermo»
+(avvisi e inviti oltre 30 minuti, rilascio dei moduli oltre 2 giorni) o «mai partito». Se uno
+non è regolare, sul riquadro nelle Impostazioni c'è un punto esclamativo rosso (#9b1717 su
+#fce9e9) e accanto a «Impostazioni» nel menu il numero, insieme alle richieste di cancellazione
+dei dati.
+
+### La chiave di Google (0376)
+
+Caricando la chiave dal pannello si salva **solo il nome del file**, cercato sempre in
+`storage/google` di questo sito: per spostare il sito basta copiare il database e la cartella
+`storage`. Un valore di prima, con il percorso completo, vale per il suo nome. Il percorso nel
+`.env` resta com'è scritto.
+
+### I ritorni alla pagina di partenza (0379, 0380)
+
+Ogni collegamento «indietro» torna alla pagina da cui si è partiti, com'era (filtri, ricerca,
+ordinamento, scheda), anche dopo un salvataggio. Il collegamento verso una pagina dice da dove
+parte (`?da=`, `da_id=`, `torna=`), il percorso lo scrive il server e ogni pagina accetta solo le
+sue partenze (`App\Core\Ritorno`). Il testo dell'«indietro» è il titolo della pagina a cui
+porta.
+
+### Privacy (0381, 0382, 0390)
+
+L'informativa è **una comunicazione, non un consenso**: nessuna casella da spuntare, nessuna
+pagina che blocca.
+
+- **La scrive l'Amministratore** in Impostazioni › Privacy, con l'editor delle lezioni senza
+  immagini, video ed H5P. «Pubblica una nuova versione» mette la data e fa comparire l'avviso;
+  «Salva la correzione» cambia la versione in vigore senza avvisare. Le versioni passate restano,
+  e le apre solo l'Amministratore.
+- **`/privacy`**, pubblica, senza accesso: una barra in cima con un solo pulsante che riporta da
+  dove si è arrivati (registrazione, accesso, email, profilo, avviso).
+- **Dove si comunica**: sotto «Registrati» (andando all'informativa e tornando, nome, cognome ed
+  email restano; la password mai); nell'email «Il tuo accesso» agli studenti, una riga fissa in
+  fondo; «Privacy» piccolo e grigio in fondo alla pagina di accesso; il riquadro Privacy del
+  profilo. Finché non c'è una versione pubblicata, nessuno di questi la nomina.
+- **L'avviso** «Abbiamo aggiornato l'informativa sulla privacy» solo sulla pagina dei corsi,
+  finché lo studente non lo chiude.
+- **«Chiedi la cancellazione dei tuoi dati»** (profilo, solo studenti): una pagina spiega e
+  chiede conferma; confermando, l'accesso si chiude subito. L'Amministratore vede le richieste in
+  Impostazioni › Privacy, con la data entro cui cancellare (un mese), e «Cancella l'account».
+  Riattivare l'account annulla la richiesta.
+- **«Scarica i tuoi dati»** (profilo, solo studenti; 0390): un file Excel con sei fogli —
+  Profilo (con i gruppi), Corsi (richiesta, pagamento, iscrizione, certificato, email di
+  apertura), Lezioni e video, Questionari (una riga per risposta), Incontri dal vivo, Quello che
+  hai scritto (giro del cerchio, Tre parole, domande all'esperto, Bacheca). Solo i dati dello
+  studente; mai password, token, tentativi di accesso né foto. Il file si crea al momento e non
+  resta sul server (`DatiPersonaliModel`, `Xlsx::buildFogli`). **Serve l'estensione zip di PHP**:
+  senza, il pulsante non c'è.
+
+Il riquadro Privacy è l'ultimo del profilo: Immagine, Dati personali, Come ti vedono gli altri
+studenti, I miei gruppi, Password, Privacy (0391).
+
+### I collegamenti (0392)
+
+Nessun collegamento porta a una pagina che chi lo vede non può aprire. `tests/collegamenti.js`
+visita le pagine di ogni ruolo e prova ogni collegamento interno con la sessione di quel ruolo:
+è un errore una risposta 400 o più, o un rimando all'accesso. Restano fuori «Entra» negli
+incontri e lo scaricamento dei materiali, che registrano qualcosa, e i file caricati che nel
+contenitore di prova mancano. Il primo giro ha trovato due collegamenti sbagliati: nel report di
+un incontro la frase sulla pagina dell'incontro (ora solo a chi la apre) e, nella fruizione di un
+video, «Modifica lezione» (ora solo all'Amministratore).
 
 ## Test
 
@@ -2263,7 +2438,27 @@ node tests/ordinamento_pagine.js    # ogni colonna ordinabile di ogni pagina, cl
 node tests/pagamenti.js             # 97 prove: «A pagamento», vie gratuite chiuse, avvisi di Stripe firmati, catalogo, ritorno da Stripe, Impostazioni › Pagamenti, il collegamento dell'email dopo l'accesso (circa 25 secondi)
 node tests/scaricati.js             # i file scaricati: nel CSV date «AAAA-MM-GG HH:MM», nell'XLSX date vere (circa 10 secondi)
 node tests/bozze.js                 # 35 prove: le bozze non hanno iscritti, la pubblicazione iscrive i gruppi, incontri e inviti di una bozza (circa 10 secondi)
+node tests/rotte.js                 # ogni rotta, per ogni ruolo, confrontata con tests/rotte_tabella.js
+node tests/collegamenti.js          # ogni collegamento interno di ogni pagina, per sei ruoli (circa un minuto)
+node tests/scala_testi.js           # le sette misure dei testi, un solo carattere, i pesi, su tutte le pagine
+node tests/privacy.js               # informativa, avviso, cancellazione, «Scarica i tuoi dati»
+node tests/solo_studenti.js         # solo lo studente invia questionari e segna lezioni
+node tests/staff_studenti.js        # lo staff non si iscrive e non entra nei gruppi
+node tests/passaggio_bozza.js       # la bozza presso qualcuno e il suo passaggio
+node tests/studenti_supervisore.js  # il supervisore gestisce gli studenti, non lo staff
+node tests/ricalcolo.js             # il ricalcolo dei voti
+node tests/contesto_studente.js     # il report dello studente nel contesto di un corso o di un gruppo
+node tests/materiali_scaricati.js   # chi ha scaricato i materiali
+node tests/comandi_pianificati.js   # la pagina dei comandi pianificati
+node tests/ritorni.js               # gli «indietro» che tornano alla partenza
+node tests/chiave_google.js         # la chiave di Google con il solo nome del file
 ```
+
+**Dal 13/11 si lanciano le suite che riguardano la patch, non tutte ogni volta.** `rotte.js`,
+`collegamenti.js`, `permessi.js` e `accessibilita.js` rifanno la semina: mai due insieme. Il 19/11,
+alla 1.0.392: `rotte.js` 1.209 risposte, `collegamenti.js` 573 pagine e 3.038 collegamenti per sei
+ruoli, `privacy.js` 62, `privacy_test.php` 46, tutte verdi; `tema_test.php` ha ancora il rosso
+che dipende dai dati.
 
 Il 06/11, sul database di sviluppo, alla 1.0.358: 52 file PHP con 1.870 controlli,
 `accessibilita.js` 5.763, `permessi.js` 698, `ordinamento_pagine.js` 287, `coerenza_moduli.js` 16,
