@@ -18,7 +18,8 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
 - **Un percorso guidato**: ogni modulo può aprirsi in una data, il suo questionario si apre a
   lezioni fatte, e la verifica finale a moduli completati.
 - **Questionari** con scelta singola, vero/falso, risposta multipla e risposta aperta, o con un
-  esercizio H5P; tentativi illimitati, conta il punteggio migliore.
+  esercizio H5P; tentativi illimitati, conta il punteggio migliore. Con dei tentativi già svolti
+  le domande si correggono, e se cambiano i voti si ricalcolano dopo un riepilogo.
 - **Certificati** in PDF, emessi a corso completato, con un codice di verifica pubblico.
 - **Gruppi** di studenti con il loro tutor, i loro incontri e le loro date.
 - **Incontri dal vivo** su Google Meet, con inviti, promemoria e presenze; si possono usare anche
@@ -27,23 +28,29 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
 - **Bacheca** delle risorse di ogni corso, **L'esperto risponde** per le domande degli studenti e
   **Tre parole** alla fine di ogni modulo, che il tutor rilegge per gruppo in una nuvola di parole.
 - **Report** per corso, gruppo, studente, incontro e video, «Studenti fermi» e «Griglia del
-  corso», scaricabili in CSV e XLSX.
-- **Cinque ruoli**: l'Amministratore (uno solo), il supervisore che costruisce i corsi in bozza,
-  legge i pubblicati e gestisce report, gruppi e Bacheca di tutti i corsi,
-  il tutor, l'assistente e lo studente. Alcuni permessi si accendono e spengono dal pannello.
+  corso», con chi ha scaricato i materiali, scaricabili in CSV e XLSX.
+- **Cinque ruoli**: l'Amministratore (uno solo), il supervisore che costruisce i corsi in bozza
+  e li passa all'Amministratore, legge i pubblicati, gestisce gli studenti e report, gruppi e
+  Bacheca di tutti i corsi, il tutor, l'assistente e lo studente. Ai corsi e ai gruppi
+  partecipano solo gli studenti. Alcuni permessi si accendono e spengono dal pannello.
 - **Corsi a pagamento** con Stripe: lo studente paga con il link di pagamento del corso, torna a
   Pistacchio con la pagina «Pagamento ricevuto» e viene
   iscritto quando arriva l'avviso firmato di Stripe; i pagamenti ricevuti si vedono dal pannello.
 - **Bozze senza iscritti**: un corso in costruzione non lo vede nessuno studente; pubblicandolo,
   vengono iscritti i membri dei gruppi a cui è assegnato.
 - **Email** con testi modificabili dal pannello, e una coda che ritenta quelle non partite.
+  Una pagina mostra se i comandi pianificati girano, con un avviso quando uno è fermo.
+- **Privacy**: l'informativa scritta dal pannello, con le sue versioni e un avviso quando cambia;
+  dal profilo lo studente scarica i suoi dati in un file Excel e può chiederne la cancellazione.
 - **Accessibile e responsive**: ogni pagina è controllata automaticamente a tre larghezze, per
-  contrasto, etichette, uso da tastiera e permessi di ogni ruolo.
+  contrasto, etichette, uso da tastiera e permessi di ogni ruolo; i testi seguono una sola scala
+  di sette misure, e nessun collegamento porta a una pagina che chi lo vede non può aprire.
 
 ## Requisiti
 
 - PHP **8.1 o superiore**, con le estensioni `pdo_mysql`, `mbstring`, `dom`, `gd`, `openssl`,
-  `curl` (e `zip`, facoltativa: per i report in XLSX e gli esercizi H5P)
+  `curl` (e `zip`, facoltativa ma consigliata: per i report in XLSX, gli esercizi H5P e lo
+  scaricamento dei propri dati da parte degli studenti)
 - MySQL 8+ o MariaDB 10.6+
 - Un server web con la riscrittura degli indirizzi (Apache con `mod_rewrite`, o Nginx)
 - Composer
