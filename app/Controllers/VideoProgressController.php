@@ -196,6 +196,10 @@ class VideoProgressController
             'course' => $course,
             'righe' => $righe,
             'riepilogo' => self::riepilogo($righe),
+            // «Modifica lezione» solo a chi la puo' modificare, cioe'
+            // l'Amministratore (19/11): tutor, assistente e supervisore
+            // leggono il rendiconto, e il collegamento dava loro 403.
+            'puoModificare' => CourseRights::canEdit((int) $course['id']),
         ]);
     }
 

@@ -88,7 +88,9 @@ $rows = $ordine->applica($rows);
         L’ingresso viene registrato quando qualcuno apre la riunione da Pistacchio, dalla pagina
         dell’incontro o dalla lezione. Quanto ciascuno sia poi rimasto in riunione non lo sappiamo:
         l’uscita avviene dentro Google Meet, che non ce lo comunica.
-        Le presenze si correggono dalla <a href="<?= htmlspecialchars(Ritorno::link('/live/' . $id, 'report-incontro', $id, $_GET)) ?>">pagina dell’incontro</a>.
+        <?php if ($apreIncontro ?? false): ?>
+            Le presenze si correggono dalla <a href="<?= htmlspecialchars(Ritorno::link('/live/' . $id, 'report-incontro', $id, $_GET)) ?>">pagina dell’incontro</a>.
+        <?php endif; ?>
     </p>
 
     <?php if ($rows === []): ?>

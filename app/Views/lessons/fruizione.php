@@ -60,8 +60,10 @@ $quando = static function (?string $data): string {
     ?>
     <?php if ($ritorno !== null): ?>
         <a href="<?= htmlspecialchars(Ritorno::indirizzo($ritorno)) ?>" class="back-link"><span class="back-link-testo">Fruizione dei video</span></a>
-    <?php else: ?>
+    <?php elseif ($puoModificare ?? false): ?>
         <a href="/lessons/<?= (int) $lesson['id'] ?>/edit" class="back-link"><span class="back-link-testo">Modifica lezione &mdash; <?= htmlspecialchars((string) $module['title']) ?></span></a>
+    <?php else: ?>
+        <a href="/reports/fruizione/<?= (int) $course['id'] ?>" class="back-link"><span class="back-link-testo">Fruizione dei video</span></a>
     <?php endif; ?>
     <h1>Fruizione del video</h1>
     <p class="page-subtitle">
@@ -93,8 +95,8 @@ $quando = static function (?string $data): string {
         <p>
             La durata del video non è indicata sulla lezione, e nessuno studente l'ha ancora
             aperto: finché manca un denominatore non si può calcolare una percentuale. Si
-            riempie da sé appena il primo studente guarda il video, oppure scrivendo la durata
-            in <a href="/lessons/<?= (int) $lesson['id'] ?>/edit">Modifica lezione</a>.
+            riempie da sé appena il primo studente guarda il video<?php if ($puoModificare ?? false): ?>, oppure scrivendo la durata
+            in <a href="/lessons/<?= (int) $lesson['id'] ?>/edit">Modifica lezione</a><?php endif; ?>.
         </p>
     </div>
 <?php endif; ?>

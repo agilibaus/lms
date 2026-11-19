@@ -9,6 +9,7 @@ use App\Auth\StudentScope;
 use App\Core\ContestoStudente;
 use App\Core\Csv;
 use App\Core\GrigliaCorso;
+use App\Core\LiveScope;
 use App\Core\Ordinamento;
 use App\Core\ReportSections;
 use App\Core\StudentiFermi;
@@ -255,6 +256,10 @@ class ReportController
             'session' => $session,
             'rows' => $this->liveSessionRows((int) $session['id']),
             'restricted' => $this->allowedStudentIds() !== null,
+            // La frase che porta alla pagina dell'incontro solo a chi la
+            // puo' aprire (19/11: il supervisore legge il report, non
+            // l'incontro, e il collegamento gli dava 403).
+            'apreIncontro' => LiveScope::visibile($session),
         ]);
     }
 
