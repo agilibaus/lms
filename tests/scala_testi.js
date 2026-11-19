@@ -36,6 +36,8 @@
 'use strict';
 
 const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
+const { execFileSync } = require('node:child_process');
+const path = require('node:path');
 
 const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const PASSWORD = process.env.LMS_PASS || 'Password1!';
@@ -144,34 +146,64 @@ async function giroCompleto(browser) {
 }
 
 /**
- * Il piede della barra laterale (18/11, Alessandro): nome accanto al
- * cerchio, «Esci» sotto, allineato al nome e mai attaccato. Con il nome
- * corto e con uno lunghissimo, al computer e al telefono.
+ * Il piede della barra laterale (18-19/11, Alessandro). Un nome corto sta
+ * su una riga con «Esci» a destra, almeno 16 px fra i due; un nome lungo
+ * manda «Esci» sotto, allineato al nome e senza coprirlo; in fondo, nei due
+ * casi, la stessa distanza dal bordo della finestra. Con utenti veri, che la
+ * prova crea e toglie: la scelta la fa la pagina quando si apre.
  */
 async function piedeBarra(browser) {
     console.log('\nIl piede della barra laterale');
-    for (const [w, h] of [[1280, 800], [390, 844]]) {
-        const page = await (await browser.newContext({ viewport: { width: w, height: h } })).newPage();
-        await page.goto(BASE + '/login');
-        await page.fill('input[name="email"]', 'stud@test.it');
-        await page.fill('input[name="password"]', PASSWORD);
-        await page.click('form.auth-form button[type="submit"]');
-        await page.waitForLoadState('networkidle');
-        for (const nome of ['Alessandro Gilibini', 'Compagna con un nome davvero molto lungo Bartolomeo-Castiglioni']) {
-            const m = await page.evaluate((nome) => {
-                const piede = document.querySelector('.sidebar-footer');
-                piede.closest('.sidebar').style.transform = 'none';
-                piede.querySelector('.user-name').textContent = nome;
-                const r = (s) => piede.querySelector(s).getBoundingClientRect();
-                return { nome: r('.user-name'), cerchio: r('.avatar'), esci: r('.link-btn'), piede: piede.getBoundingClientRect() };
-            }, nome);
-            const centro = (x) => (x.top + x.bottom) / 2;
-            check(w + ' px, «' + nome.slice(0, 20) + '»: il nome centrato sul cerchio', Math.abs(centro(m.nome) - centro(m.cerchio)) < 1.5);
-            check(w + ' px, «' + nome.slice(0, 20) + '»: «Esci» sotto il nome, senza coprirlo', m.esci.top >= m.nome.bottom - 0.5);
-            check(w + ' px, «' + nome.slice(0, 20) + '»: «Esci» allineato al nome', Math.abs(m.esci.left - m.nome.left) < 0.5);
-            check(w + ' px, «' + nome.slice(0, 20) + '»: «Esci» alto almeno 24 px', m.esci.height >= 24);
-            check(w + ' px, «' + nome.slice(0, 20) + '»: il nome resta dentro la barra', m.nome.right <= m.piede.right + 0.5);
+    const NOMI = [['Mario', 'Rossi', 1], ['Alessandro', 'Gilibini', 2],
+        ['Compagna con un nome davvero', 'molto lungo Bartolomeo-Castiglioni', 2]];
+    const email = (i) => 'piede-barra-' + i + '@test.it';
+    const php = (codice, ...a) => execFileSync('php', ['-r', 'require "vendor/autoload.php"; require "config/config.php"; ' + codice, '--', ...a],
+        { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
+    const togli = () => NOMI.forEach((_, i) => php('App\\Core\\Database::connection()->prepare("DELETE FROM users WHERE email = ?")->execute([$argv[1]]);', email(i)));
+    togli();
+    NOMI.forEach(([n, c], i) => {
+        php('App\\Models\\UserModel::create($argv[1], $argv[2], $argv[3], $argv[4]);', email(i), PASSWORD, n, c);
+        php('App\\Core\\Database::connection()->prepare("UPDATE users SET name_display = \'full\', welcome_seen_at = NOW() WHERE email = ?")->execute([$argv[1]]);', email(i));
+    });
+    try {
+        for (const [w, h] of [[1280, 800], [390, 844]]) {
+            const fondi = [];
+            for (const [i, [n, c, righe]] of NOMI.entries()) {
+                const page = await (await browser.newContext({ viewport: { width: w, height: h } })).newPage();
+                await page.goto(BASE + '/login');
+                await page.fill('input[name="email"]', email(i));
+                await page.fill('input[name="password"]', PASSWORD);
+                await page.click('form.auth-form button[type="submit"]');
+                await page.waitForLoadState('networkidle');
+                await page.evaluate(() => document.fonts.ready);
+                const m = await page.evaluate(() => {
+                    const piede = document.querySelector('.sidebar-footer');
+                    const r = (s) => piede.querySelector(s).getBoundingClientRect();
+                    const nome = piede.querySelector('.user-name');
+                    return { nome: r('.user-name'), cerchio: r('.avatar'), esci: r('.link-btn'), piede: piede.getBoundingClientRect(),
+                        intero: nome.scrollWidth <= nome.clientWidth, una: piede.classList.contains('una-riga'),
+                        basso: piede.closest('.sidebar').getBoundingClientRect().bottom };
+                });
+                const chi = w + ' px, «' + (n + ' ' + c).slice(0, 20) + '»: ';
+                const centro = (x) => (x.top + x.bottom) / 2;
+                check(chi + 'il nome centrato sul cerchio', Math.abs(centro(m.nome) - centro(m.cerchio)) < 1.5);
+                check(chi + 'il nome resta dentro la barra', m.nome.right <= m.piede.right + 0.5);
+                check(chi + '«Esci» alto almeno 24 px', m.esci.height >= 24);
+                if (righe === 1) {
+                    check(chi + 'una riga sola', m.una && Math.abs(centro(m.esci) - centro(m.nome)) < 1.5);
+                    check(chi + 'il nome intero, e almeno 16 px prima di «Esci»', m.intero && m.esci.left - m.nome.right >= 16, [JSON.stringify(m)]);
+                } else {
+                    check(chi + '«Esci» sotto il nome, senza coprirlo', !m.una && m.esci.top >= m.nome.bottom - 0.5);
+                    check(chi + '«Esci» allineato al nome', Math.abs(m.esci.left - m.nome.left) < 0.5);
+                }
+                fondi.push(m.basso - Math.max(m.esci.bottom, m.cerchio.bottom));
+                await page.context().close();
+            }
+            check(w + ' px: le due varianti alla stessa distanza dal fondo (' + fondi.map((x) => x.toFixed(1)).join(', ') + ' px)',
+                Math.max(...fondi) - Math.min(...fondi) < 1);
         }
+    } finally {
+        togli();
     }
 }
 

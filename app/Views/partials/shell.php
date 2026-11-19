@@ -301,5 +301,7 @@ use App\Core\Csrf;
          schede delle tabelle al telefono (30/10), su ogni pagina. */ ?>
 <script src="/assets/js/dropdown.js" defer></script>
 <script src="/assets/js/schede-ordina.js" defer></script>
+<?php /* Nome ed «Esci» in basso a sinistra: su una riga se ci stanno (19/11). */ ?>
+<script src="/assets/js/piede-barra.js" defer></script>
 </body>
 </html>

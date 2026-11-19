@@ -259,6 +259,24 @@ h3 { font-size: var(--fs-sottotitolo); }
     color: var(--color-text-muted);
 }
 
+/* Una riga sola quando c'e' spazio (19/11, Alessandro): nome a sinistra,
+   «Esci» a destra, come prima, se il nome si legge intero e fra i due
+   restano almeno 16 px. Lo decide piede-barra.js misurando; senza script
+   restano le due righe, che vanno sempre bene. In fondo, nei due casi, la
+   stessa distanza dal bordo della finestra. */
+.sidebar-footer.una-riga {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.sidebar-footer.una-riga form {
+    margin: 0;
+    padding-left: 0;
+    flex: none;
+}
+
 .sidebar-user:hover .user-name {
     text-decoration: underline;
 }
