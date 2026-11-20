@@ -7,6 +7,7 @@ use App\Auth\Auth;
 use App\Core\AvatarImage;
 use App\Core\Csrf;
 use App\Core\Icona;
+use App\Core\Quando;
 
 /** @var array|null $user */
 /** @var array $tutors */
@@ -88,6 +89,15 @@ $haFoto = !empty($user['avatar_path']);
                 <p class="form-hint">Vede i report degli studenti dei gruppi di tutti i tutor selezionati.</p>
             </fieldset>
         </div>
+    <?php endif; ?>
+
+    <?php if ($isEdit): ?>
+        <?php /* Quando l'account e' nato (20/11, Alessandro): la
+                 registrazione, o la creazione da parte dello staff o di
+                 un'importazione. Senza `name`, non viaggia con il modulo.
+                 Dopo i tutor di un assistente, che dipendono dal ruolo. */ ?>
+        <label for="registrato_il">Registrato il</label>
+        <input type="text" id="registrato_il" value="<?= htmlspecialchars(Quando::dataOra($user['created_at'] ?? null)) ?>" readonly>
     <?php endif; ?>
 
     <?php if ($puoCaricareFoto): ?>

@@ -3056,6 +3056,15 @@ body.has-focus-video {
     text-decoration: none;
 }
 
+/* Un campo da leggere e non da scrivere (`readonly`: «Registrato il» nella
+   scheda dell'utente, gli indirizzi da copiare per Stripe): lo sfondo della
+   pagina invece del bianco, cosi' non sembra in attesa di essere compilato.
+   Si seleziona e si copia come prima. */
+.form input[readonly] {
+    background: var(--color-bg);
+    cursor: default;
+}
+
 /* Campi in sola lettura (14/11): la scheda di una bozza che chi guarda non ha
    presso di se'. Il `fieldset` disattivato spegne tutto in un colpo solo,
    come le risposte di un questionario per lo staff (`.quiz-concluso-campi`). */
