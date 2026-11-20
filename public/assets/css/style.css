@@ -5634,10 +5634,9 @@ fieldset.checkbox-group legend {
    Nella lezione: l'esercizio nel suo riquadro bianco, dove l'autore ha messo
    il segnaposto, con una riga sotto. Le regole delle figure e degli iframe
    del testo (16:9 per i video) qui non valgono: l'altezza la decide il
-   riproduttore. `clear` per il capolettera: con un primo paragrafo corto,
-   la lettera alta tre righe finiva sopra l'esercizio. */
+   riproduttore. (Il `clear` per il capolettera e' andato via con lui,
+   il 20/11.) */
 .lesson-content .lezione-h5p {
-    clear: both;
     margin: 1.4rem 0;
 }
 
@@ -5654,13 +5653,12 @@ fieldset.checkbox-group legend {
     color: var(--color-danger);
 }
 
-/* Il primo paragrafo contiene il suo capolettera, qualunque cosa venga
-   dopo (dove c'e' `initial-letter` la lettera non e' un float, e `clear`
-   da solo non basta). Anche nella descrizione del corso (06/11): con una
+/* Il primo paragrafo della descrizione del corso contiene il suo
+   capolettera, qualunque cosa venga dopo (dove c'e' `initial-letter` la
+   lettera non e' un float, e `clear` da solo non basta): con una
    descrizione di una riga la lettera, alta tre, finiva sopra il riquadro
-   dell'obiettivo. */
-.course-description > p:first-child,
-.lesson-content:not(.mce-content-body) > p:first-child {
+   dell'obiettivo (06/11). */
+.course-description > p:first-child {
     display: flow-root;
 }
 
@@ -8763,29 +8761,25 @@ details[open] > summary .obiettivo-se-aperto {
    Il capolettera (09/10)
    ==========================================================
 
-   All'inizio della descrizione del corso e del testo di ogni lezione
-   (Elena), alto tre righe, nel verde del progetto. Solo all'inizio del
-   blocco intero, non di ogni paragrafo; e solo se il blocco comincia con
-   un paragrafo: su un titolo, un'immagine o un elenco non va.
+   All'inizio della descrizione del corso (Elena), alto tre righe, nel
+   verde del progetto. Solo all'inizio del blocco intero, non di ogni
+   paragrafo; e solo se il blocco comincia con un paragrafo: su un titolo,
+   un'immagine o un elenco non va.
+
+   Non piu' nel testo delle lezioni (20/11, Alessandro): con la
+   formattazione libera dell'editor chi scrive decide come comincia il
+   testo, e un capolettera automatico era troppo rigido. Dal 14/10 non
+   compariva nell'editor, e dal 18/11 non nell'informativa sulla privacy.
 
    E' solo aspetto: `::first-letter` non cambia il testo, e un lettore di
    schermo lo legge com'e'.
-
-   Non nell'editor della lezione (14/10, Alessandro): l'editor carica questo
-   foglio e da' al testo la classe `lesson-content`, e il capolettera
-   compariva mentre si scriveva o incollava, come se fosse stato aggiunto al
-   testo. Non lo era (il testo salvato e' pulito), ma lo sembrava. Il corpo
-   dell'editor ha la classe `mce-content-body`, e li' la regola non vale.
-   Nemmeno nell'informativa privacy (18/11): e' un testo da consultare, non
-   una lezione.
 
    Due modi. Dove c'e' `initial-letter` (Chrome, Edge, Safari) il browser
    allinea la lettera esattamente su tre righe. Altrove (Firefox, al 09/10)
    la lettera scorre a sinistra e il testo le gira intorno, con misure
    calcolate per tre righe di 1,6 di interlinea: la lettera e' alta 3 x 1,6
    = 4,8 volte il testo, meno lo spazio sopra le maiuscole. */
-.course-description > p:first-child::first-letter,
-.lesson-content:not(.mce-content-body, .privacy-contenuto) > p:first-child::first-letter {
+.course-description > p:first-child::first-letter {
     float: left;
     margin: 0.06em 0.08em 0 0;
     font-size: 4.1em;
@@ -8795,8 +8789,7 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 @supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
-    .course-description > p:first-child::first-letter,
-    .lesson-content:not(.mce-content-body, .privacy-contenuto) > p:first-child::first-letter {
+    .course-description > p:first-child::first-letter {
         float: none;
         /* Con initial-letter il margine e' lo spazio fra la lettera e il
            testo che le gira intorno: a 0,12 la «U» toccava la «n». */

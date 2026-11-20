@@ -2815,8 +2815,9 @@ async function giroBenvenuto(browser) {
 
         // L'introduzione del corso larga quanto i moduli, e il capolettera
         // (09/10, Elena): alto tre righe, nel verde del progetto, all'inizio
-        // della descrizione del corso e del testo della lezione, e solo li':
-        // non all'inizio del secondo paragrafo.
+        // della descrizione del corso. Nel testo della lezione non c'e' piu'
+        // (20/11, Alessandro): chi scrive decide come comincia, con la
+        // formattazione libera dell'editor.
         const capo = async () => page.evaluate(() => {
             const verde = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
             const prova = document.createElement('span');
@@ -2850,8 +2851,8 @@ async function giroBenvenuto(browser) {
             nelCorso.descrizione !== null && nelCorso.descrizione.verde && nelCorso.descrizione.tre, [JSON.stringify(nelCorso)]);
         await page.goto(BASE + '/lessons/' + seme.A.lezione);
         const nellaLezione = await capo();
-        check('il testo della lezione comincia con il capolettera, e il secondo paragrafo no',
-            nellaLezione.lezione !== null && nellaLezione.lezione.verde && nellaLezione.lezione.tre && nellaLezione.secondo === true,
+        check('il testo della lezione non comincia con il capolettera',
+            nellaLezione.lezione !== null && !nellaLezione.lezione.verde && !nellaLezione.lezione.tre && nellaLezione.secondo === true,
             [JSON.stringify(nellaLezione)]);
 
         // «Fai una domanda al tutor» in fondo al corso (dal 09/10 senza

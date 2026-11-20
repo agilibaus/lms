@@ -125,6 +125,14 @@ const nomeFile = (f) => php('echo App\\Core\\FontLibrary::nomeFile($argv[1]);', 
                 parola: parola ? { font: g(parola).fontFamily, size: g(parola).fontSize, color: g(parola).color, sfondo: g(parola).backgroundColor } : null,
                 centrato: centrato ? g(centrato).textAlign : null,
                 fontFace: [...document.querySelectorAll('style')].some((s) => s.textContent.includes('font-family:"Playfair Display"')),
+                // Il capolettera automatico non c'e' piu' (20/11): la prima
+                // lettera ha la misura e il colore del suo paragrafo.
+                capolettera: (() => {
+                    const p = c.querySelector(':scope > p');
+                    const l = getComputedStyle(p, '::first-letter');
+                    const ini = l.getPropertyValue('initial-letter') || l.getPropertyValue('-webkit-initial-letter') || 'normal';
+                    return { size: l.fontSize, sizeP: g(p).fontSize, color: l.color, colorP: g(p).color, float: l.float, initial: ini };
+                })(),
             };
         });
         check('il testo non formattato è nel carattere di Aspetto', vista.base.startsWith('"Albert Sans"'), [vista.base]);
@@ -132,6 +140,9 @@ const nomeFile = (f) => php('echo App\\Core\\FontLibrary::nomeFile($argv[1]);', 
             vista.parola !== null && vista.parola.font.startsWith('"Playfair Display"') && vista.parola.size === '32px'
                 && vista.parola.color === 'rgb(224, 62, 45)' && vista.parola.sfondo === 'rgb(251, 238, 184)' && vista.centrato === 'center', [JSON.stringify(vista)]);
         check('la pagina dichiara il carattere scaricato che la lezione usa', vista.fontFace, [JSON.stringify(vista)]);
+        const cl = vista.capolettera;
+        check('il testo della lezione non comincia più con il capolettera automatico',
+            cl.size === cl.sizeP && cl.color === cl.colorP && cl.float === 'none' && /^(normal|)$/.test(cl.initial), [JSON.stringify(cl)]);
 
         console.log('\n--- l\'informativa sulla privacy');
         await page.goto(BASE + '/admin/settings/privacy');
