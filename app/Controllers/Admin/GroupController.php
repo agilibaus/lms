@@ -126,6 +126,7 @@ class GroupController extends AdminController
             // l'admin e, con «Membri dei gruppi» acceso, il tutor.
             'gestisceTutto' => Auth::can('group.manage'),
             'puoEliminare' => Auth::can('group.delete'),
+            'eliminazione' => Auth::can('group.delete') ? GroupModel::eliminazione((int) $group['id']) : null,
             'paginaApribile' => GroupPeers::canViewGroup((int) Auth::id(), (int) $group['id']),
             'gestisceMembri' => Auth::can('group.manage') || Auth::can('group.members_own'),
             // Candidati: per l'admin chi non e' gia' dentro; per il tutor solo
@@ -277,6 +278,17 @@ class GroupController extends AdminController
 
         if ($group === null) {
             return;
+        }
+
+        // Un gruppo con incontri in programma non si elimina (20/11,
+        // Alessandro): si annullano prima, dalla loro pagina, cosi' gli
+        // invitati ricevono l'avviso e Google Calendar si aggiorna. Anche
+        // per un invio fatto a mano.
+        if (GroupModel::eliminazione((int) $group['id'])['in_programma'] !== []) {
+            $this->fail(
+                'Il gruppo ha incontri in programma: annullali prima di eliminarlo, così chi era invitato riceve l\'avviso.',
+                '/admin/groups/' . (int) $group['id'] . '/edit'
+            );
         }
 
         GroupModel::delete((int) $group['id']);

@@ -4647,6 +4647,21 @@ fieldset.checkbox-group legend {
     }
 }
 
+/* Il riquadro «Elimina gruppo» (20/11, Alessandro, variante A): il
+   comando, acceso o spento, e accanto la frase che dice che cosa sparisce o
+   che cosa fare prima; sul telefono la frase va sotto. */
+.elimina-gruppo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+}
+
+.elimina-gruppo .form-hint {
+    margin: 0;
+    flex: 1 1 18rem;
+}
+
 /* ---------- Le righe selezionate (Utenti, 20/11, Alessandro) ----------
    Una colonna di caselle al posto di «Modifica / Elimina», e i comandi in
    una barra (variante B del mockup). Senza JavaScript la barra sta ferma in

@@ -247,6 +247,81 @@ class GroupModel
         $stmt->execute(['logo' => $logoPath, 'id' => $id]);
     }
 
+    /**
+     * Che cosa vuol dire eliminare il gruppo (20/11, Alessandro). Una regola
+     * sola, letta dalla pagina del gruppo e da chi elimina:
+     *
+     *   - `in_programma`: gli incontri del gruppo non ancora conclusi (anche
+     *     uno in corso). Finche' ce n'e' uno il gruppo non si elimina: con il
+     *     gruppo l'incontro sparirebbe senza l'avviso di annullamento agli
+     *     invitati e restando su Google Calendar. Si annullano prima, dalla
+     *     loro pagina («Elimina sessione»), che fa l'una e l'altra cosa;
+     *   - `conclusi` e `domande`: quello che sparisce con il gruppo, per
+     *     dirlo prima (gli incontri conclusi con le presenze, le domande del
+     *     giro del cerchio con le risposte). Gli studenti restano iscritti ai
+     *     corsi; le Tre parole restano, senza gruppo.
+     *
+     * Le date si confrontano nel database, come ovunque.
+     *
+     * @return array{in_programma: list<array{id: int, title: string, starts_at: string}>, conclusi: int, domande: int}
+     */
+    public static function eliminazione(int $id): array
+    {
+        $db = Database::connection();
+
+        $stmt = $db->prepare(
+            'SELECT id, title, starts_at FROM live_sessions
+             WHERE group_id = :g AND ends_at > NOW()
+             ORDER BY starts_at, id'
+        );
+        $stmt->execute(['g' => $id]);
+        $inProgramma = array_map(
+            static fn (array $r): array => ['id' => (int) $r['id'], 'title' => (string) $r['title'], 'starts_at' => (string) $r['starts_at']],
+            $stmt->fetchAll()
+        );
+
+        $stmt = $db->prepare(
+            'SELECT
+                (SELECT COUNT(*) FROM live_sessions WHERE group_id = :g1 AND ends_at <= NOW()) AS conclusi,
+                (SELECT COUNT(*) FROM group_questions WHERE group_id = :g2) AS domande'
+        );
+        $stmt->execute(['g1' => $id, 'g2' => $id]);
+        $conti = $stmt->fetch() ?: ['conclusi' => 0, 'domande' => 0];
+
+        return [
+            'in_programma' => $inProgramma,
+            'conclusi' => (int) $conti['conclusi'],
+            'domande' => (int) $conti['domande'],
+        ];
+    }
+
+    /**
+     * La frase di che cosa sparisce con il gruppo, per la pagina e per la
+     * conferma: le voci a zero non si nominano.
+     *
+     * @param array{conclusi: int, domande: int} $eliminazione
+     */
+    public static function cosaSparisce(array $eliminazione): string
+    {
+        $voci = [];
+
+        if ($eliminazione['conclusi'] > 0) {
+            $voci[] = $eliminazione['conclusi'] === 1
+                ? '1 incontro concluso, con le presenze'
+                : $eliminazione['conclusi'] . ' incontri conclusi, con le presenze';
+        }
+
+        if ($eliminazione['domande'] > 0) {
+            $voci[] = $eliminazione['domande'] === 1
+                ? '1 domanda del giro del cerchio'
+                : $eliminazione['domande'] . ' domande del giro del cerchio';
+        }
+
+        $frase = $voci === [] ? '' : 'Con il gruppo spariscono ' . implode(', e ', $voci) . '. ';
+
+        return $frase . 'Gli studenti restano iscritti ai corsi.';
+    }
+
     public static function delete(int $id): void
     {
         // Membri e assegnazioni corso seguono via FK ON DELETE CASCADE;

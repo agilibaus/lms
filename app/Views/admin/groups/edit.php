@@ -9,6 +9,7 @@ use App\Core\Csrf;
 use App\Core\Ordinamento;
 use App\Core\GroupLogo;
 use App\Core\Icona;
+use App\Models\GroupModel;
 
 /** @var array $group */
 /** @var array $tutors */
@@ -20,6 +21,7 @@ use App\Core\Icona;
 /** @var bool $ciSonoCorsiAPagamento la riga sotto «Assegna corso» (06/11) */
 /** @var bool $gestisceTutto l'admin e, dal 06/11, il supervisore: crea, assegna corsi, gestisce membri */
 /** @var bool $puoEliminare solo l'admin elimina il gruppo (06/11) */
+/** @var array{in_programma: list<array{id: int, title: string, starts_at: string}>, conclusi: int, domande: int}|null $eliminazione (20/11) */
 /** @var bool $paginaApribile chi guarda apre la pagina del gruppo dei partecipanti (06/11) */
 /** @var bool $gestisceMembri l'admin, o il tutor con «Membri dei gruppi» acceso */
 
@@ -209,12 +211,40 @@ $members = $ordineMembri->applica($members);
          conferma prima di eliminare resta. Un `div` e non una `section`:
          senza titolo non e' una sezione della pagina. */ ?>
 <?php /* Solo l'admin elimina un gruppo (06/11): il supervisore lo gestisce. */ ?>
-<?php if ($puoEliminare ?? false): ?>
+<?php /* Che cosa vuol dire eliminarlo, accanto al comando (20/11,
+         Alessandro, variante A): con incontri in programma il comando resta
+         al suo posto, spento, e la frase dice di annullarli prima, con un
+         collegamento a ciascuno; senza, il comando rosso e che cosa sparisce
+         con il gruppo, la stessa frase della conferma. La regola sta in
+         `GroupModel::eliminazione()`, e il server la rispetta anche lui. */ ?>
+<?php if (($puoEliminare ?? false) && is_array($eliminazione ?? null)): ?>
 <div class="card">
-    <form action="/admin/groups/<?= $groupId ?>/delete" method="post"
-          onsubmit="return confirm('Eliminare questo gruppo? Le iscrizioni ai corsi restano attive.');">
-        <?= Csrf::field() ?>
-        <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina gruppo</button>
-    </form>
+    <?php if ($eliminazione['in_programma'] !== []): ?>
+        <?php
+        $incontri = array_map(
+            static fn (array $i): string => '<a href="/live/' . (int) $i['id'] . '">' . htmlspecialchars($i['title']) . '</a> ('
+                . htmlspecialchars(Quando::dataOra($i['starts_at'])) . ')',
+            $eliminazione['in_programma']
+        );
+        $ultimo = array_pop($incontri);
+        $elenco = $incontri === [] ? $ultimo : implode(', ', $incontri) . ' e ' . $ultimo;
+        ?>
+        <div class="elimina-gruppo">
+            <span class="comando-spento" aria-disabled="true"><?= Icona::svg('trash3') ?>Elimina gruppo</span>
+            <p class="form-hint">
+                Prima annulla <?= count($eliminazione['in_programma']) === 1 ? 'l\'incontro in programma' : 'gli incontri in programma' ?>
+                del gruppo: <?= $elenco ?>.
+                <?= count($eliminazione['in_programma']) === 1 ? 'Annullandolo' : 'Annullandoli' ?>, chi era invitato riceve l'avviso.
+            </p>
+        </div>
+    <?php else: ?>
+        <?php $sparisce = GroupModel::cosaSparisce($eliminazione); ?>
+        <form action="/admin/groups/<?= $groupId ?>/delete" method="post" class="elimina-gruppo"
+              onsubmit="return confirm(<?= htmlspecialchars((string) json_encode('Eliminare il gruppo «' . $group['name'] . '»? ' . $sparisce, JSON_UNESCAPED_UNICODE)) ?>);">
+            <?= Csrf::field() ?>
+            <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('trash3') ?>Elimina gruppo</button>
+            <p class="form-hint"><?= htmlspecialchars($sparisce) ?></p>
+        </form>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
