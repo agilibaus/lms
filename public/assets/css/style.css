@@ -2991,6 +2991,13 @@ body.has-focus-video {
     border: 1px solid var(--color-border);
     padding: 0.45rem 0.6rem;
     text-align: left;
+    /* Sul telefono una tabella di tre colonne non ci stava: le parole
+       lunghe («Provenienza», «Partecipazione») allargavano la pagina e la
+       facevano scorrere di lato (informativa sulla privacy, 20/11). Le
+       parole vanno a capo in sillabe, con il trattino, secondo la lingua
+       della pagina (`lang="it"`). */
+    hyphens: auto;
+    -webkit-hyphens: auto;
 }
 
 .lesson-content th {
