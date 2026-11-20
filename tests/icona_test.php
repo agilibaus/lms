@@ -127,5 +127,26 @@ foreach ($conVocabolario as $vista) {
 }
 check('niente icona sui collegamenti di navigazione e su «Emetti certificato»', $conIcona === [], implode('; ', $conIcona));
 
+// Le due X dicono cose diverse (20/11, Alessandro): la X nel cerchio toglie
+// qualcosa che si puo' rimettere, ed e' neutra; la X semplice chiude una
+// decisione che non si riapre, ed e' rossa. Icona e colore vanno d'accordo
+// in tutte le viste, non solo in quelle dell'elenco qui sopra.
+$discordi = [];
+$viste = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__ . '/../app/Views', FilesystemIterator::SKIP_DOTS));
+foreach ($viste as $file) {
+    if ($file->getExtension() !== 'php') {
+        continue;
+    }
+    $testo = (string) file_get_contents($file->getPathname());
+    preg_match_all('/class="([^"]*)"[^>]*>\s*<\?= Icona::svg\(\'(x-circle|x-lg)\'\) \?>\s*([^<]*)</u', $testo, $m, PREG_SET_ORDER);
+    foreach ($m as $c) {
+        $rosso = preg_match('/(^|\s)link-btn-danger(\s|$)/', $c[1]) === 1;
+        if (($c[2] === 'x-circle') === $rosso) {
+            $discordi[] = basename(dirname($file->getPathname())) . '/' . $file->getFilename() . ': ' . trim($c[3]) . ' (' . $c[2] . ($rosso ? ', rosso' : ', neutro') . ')';
+        }
+    }
+}
+check('X nel cerchio neutra, X semplice rossa', $discordi === [], implode('; ', $discordi));
+
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail > 0 ? 1 : 0);

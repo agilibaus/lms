@@ -46,7 +46,8 @@ namespace App\Core;
  * Togli senza cancellare: `x-circle` · Aggiungi/Nuovo/«+ …»: `plus-lg`, al
  * posto del «+» scritto · Report: `bar-chart` · Scarica, CSV, XLSX:
  * `download` · PDF: `file-earmark-pdf` · Importa: `upload` · Approva:
- * `check-lg` · Rifiuta, Non pubblicare: `x-lg` · Sposta su/giu':
+ * `check-lg` · Rifiuta, Non pubblicare, Revoca, Togli dalla bacheca: `x-lg`
+ * (rosso: chiude una decisione che non si riapre) · Sposta su/giu':
  * `arrow-up`/`arrow-down` · un invio: `send` · Entra in un incontro dal
  * vivo: `camera-video` · tenersi una risorsa della Bacheca: `bookmark`
  * (`bookmark-fill` quando la si tiene) · una pagina in un'altra scheda:

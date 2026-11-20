@@ -70,7 +70,7 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
             <form action="/bacheca/risorse/<?= $rid ?>/togli" method="post"
                   onsubmit="return confirm('Togliere la risorsa dalla bacheca? Non si cancella: chi l’ha proposta la vede «Non pubblicata».');">
                 <?= Csrf::field() ?>
-                <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-circle') ?>Togli dalla bacheca</button>
+                <button type="submit" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-lg') ?>Togli dalla bacheca</button>
             </form>
         <?php endif; ?>
     </div>
