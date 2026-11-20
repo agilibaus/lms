@@ -4647,6 +4647,212 @@ fieldset.checkbox-group legend {
     }
 }
 
+/* ---------- Le righe selezionate (Utenti, 20/11, Alessandro) ----------
+   Una colonna di caselle al posto di «Modifica / Elimina», e i comandi in
+   una barra (variante B del mockup). Senza JavaScript la barra sta ferma in
+   fondo alla tabella con tutti i comandi; con lo script (`data-js` sul
+   modulo) compare in fondo allo schermo solo quando c'e' una riga scelta.
+   Per ora solo nella pagina Utenti: le altre tabelle si decidono una alla
+   volta. */
+.data-table .sel-col {
+    width: 2.5rem;
+    padding-right: 0;
+}
+
+/* Il bersaglio da toccare e' l'etichetta, 2 rem: il quadratino da solo
+   starebbe sotto i 24 px. */
+.sel-casella {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin: -0.35rem 0 -0.35rem -0.45rem;
+    cursor: pointer;
+}
+
+.sel-casella[hidden] {
+    display: none;
+}
+
+.sel-casella input {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+/* La riga scelta: lo stato lo dice la casella spuntata, la tinta aiuta a
+   ritrovarla. Piu' chiara della tinta piena, che e' quella dell'etichetta
+   «attivo» e la farebbe sparire. */
+.data-table tbody tr:has(.sel-col input:checked) > td {
+    background: #f5f8f6;
+    background: color-mix(in srgb, var(--color-primary-soft) 45%, var(--color-surface));
+}
+
+/* Gruppi e tutor appaiati: una riga per gruppo, e ogni riga non va a capo,
+   cosi' il tutor resta accanto al suo gruppo nella colonna dopo. Nelle
+   schede del telefono si torna a capo: li' le colonne sono una sotto
+   l'altra. */
+.data-table .celle-appaiate .cell-line {
+    white-space: nowrap;
+}
+
+.barra-selezione {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-top: 1rem;
+    font-size: var(--fs-secondario);
+}
+
+.barra-selezione-riga {
+    display: contents;
+}
+
+.barra-selezione [hidden] {
+    display: none;
+}
+
+.barra-selezione-conto {
+    font-weight: 500;
+}
+
+/* Senza script la frase spiega che cosa fare, e non e' un conto. */
+.utenti-selezione:not([data-js]) .barra-selezione-conto {
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+.barra-selezione > .btn {
+    margin-left: auto;
+}
+
+.utenti-selezione[data-js] .barra-selezione {
+    display: none;
+    position: fixed;
+    z-index: 18;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+    white-space: nowrap;
+}
+
+.utenti-selezione[data-js].con-selezione .barra-selezione {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+/* La barra galleggia sopra le ultime righe: lo spazio in fondo le lascia
+   raggiungere. */
+.utenti-selezione[data-js].con-selezione {
+    padding-bottom: 5.5rem;
+}
+
+/* Sul telefono (Alessandro, 20/11): il conto, «Modifica» ed «Elimina» sulla
+   stessa riga, a sinistra, al centro e a destra (con il solo «Elimina», a
+   sinistra e a destra); «Annulla» sempre sotto, al centro. A 320 px e' il
+   conto ad andare a capo, non i comandi. */
+@media (max-width: 768px) {
+    .barra-selezione {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .barra-selezione-riga {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .barra-selezione-conto {
+        min-width: 0;
+    }
+
+    .barra-selezione-riga button {
+        white-space: nowrap;
+    }
+
+    .barra-selezione > .btn {
+        margin: 0;
+    }
+
+    .utenti-selezione[data-js] .barra-selezione {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        transform: none;
+        border-width: 1px 0 0;
+        border-radius: 0;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+        padding: 0.8rem 1.1rem calc(0.8rem + env(safe-area-inset-bottom));
+        white-space: normal;
+    }
+
+    .utenti-selezione[data-js].con-selezione .barra-selezione {
+        flex-direction: column;
+    }
+
+    .utenti-selezione[data-js].con-selezione {
+        padding-bottom: 8rem;
+    }
+}
+
+/* La conferma dell'eliminazione: l'elenco dei nomi parte dal bordo alto
+   del riquadro, come ogni primo elemento. */
+.elenco-da-eliminare {
+    margin: 0 0 0.75rem;
+    padding-left: 1.2rem;
+}
+
+.elenco-da-eliminare:last-child {
+    margin-bottom: 0;
+}
+
+.elenco-da-eliminare li + li {
+    margin-top: 0.35rem;
+}
+
+/* Nelle schede la casella sta in alto a destra della scheda, accanto al
+   nome. */
+@container tabella (max-width: 50rem) {
+    .tabella-schede .data-table tbody tr {
+        position: relative;
+    }
+
+    .tabella-schede .data-table td.sel-col {
+        display: block;
+        position: absolute;
+        top: 0.55rem;
+        right: 0;
+        width: auto;
+        padding: 0;
+    }
+
+    .tabella-schede .data-table td.sel-col::before {
+        content: none;
+    }
+
+    .tabella-schede .data-table td.sel-col + td {
+        padding-right: 2.5rem;
+    }
+
+    .data-table .celle-appaiate .cell-line {
+        white-space: normal;
+    }
+}
+
 /* «Sessioni live» (30/10, Alessandro, disposizione B): sopra i 50 rem di
    spazio la tabella ordinabile, sotto le schede del telefono, divise in
    prossime e concluse. La soglia e' quella delle schede di

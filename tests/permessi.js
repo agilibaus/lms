@@ -1118,7 +1118,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     echo $id;`, A.modulo).trim();
                 const admin = await entra(browser, 'admin@test.it');
                 try {
-                    await esitoPost(admin.page, '/admin/users/' + utente + '/delete', [], '/admin/users');
+                    await esitoPost(admin.page, '/admin/users/elimina', [['ids[]', utente]], '/admin/users');
                     await admin.page.goto(BASE + '/admin/users');
                     const avviso = await admin.page.evaluate(() => ((document.querySelector('.alert.alert-error') || {}).textContent || '').trim());
                     check('admin → eliminare chi ha creato un incontro: rifiutato con la frase, e l\'utente c\'è ancora',
@@ -2017,40 +2017,94 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         console.log('\n--- l\'elenco utenti: la colonna Tutor');
 
         {
+            // Gruppi e Tutor appaiati (20/11, Alessandro): una riga per
+            // gruppo, e sulla stessa riga della colonna dopo il tutor di quel
+            // gruppo, anche ripetuto. Per provarlo serve uno studente con due
+            // gruppi di due tutor diversi, in un ordine che non sia quello
+            // alfabetico dei tutor: «altrogruppo» sta nella sua classe (Tutor
+            // Tre) e per la prova anche nel cerchio (Tutor Uno). In ordine di
+            // gruppo viene prima il cerchio, quindi Tutor Uno e poi Tutor Tre,
+            // mentre in ordine alfabetico sarebbe il contrario.
+            const radice = path.join(__dirname, '..');
+            const php = (codice, ...argomenti) => execFileSync('php', ['-r',
+                'require "vendor/autoload.php"; require "config/config.php";' + codice,
+                '--', ...argomenti.map(String)], { cwd: radice, encoding: 'utf8' });
+            const esegui = (sql, ...argomenti) => php('App\\Core\\Database::connection()->prepare($argv[1])->execute(array_slice($argv, 2));', sql, ...argomenti);
+            const altro = php('echo App\\Models\\UserModel::findByEmail("altrogruppo@test.it")["id"];').trim();
+            esegui('INSERT IGNORE INTO group_members (group_id, user_id) VALUES (?, ?)', d.gruppo_cerchio, altro);
+
             const { ctx, page } = await entra(browser, 'admin@test.it');
-            await page.goto(BASE + '/admin/users');
 
-            const riga = async (email) => page.evaluate((email) => {
-                const tr = [...document.querySelectorAll('tbody tr')]
-                    .find((r) => r.querySelector('td[data-label="Email"]')?.textContent.trim() === email);
+            try {
+                await page.goto(BASE + '/admin/users');
 
-                return tr ? {
-                    nome: tr.querySelector('td[data-label="Nome"]').textContent.trim(),
-                    tutor: tr.querySelector('td[data-label="Tutor"]').textContent.trim(),
-                } : null;
-            }, email);
+                const riga = async (email) => page.evaluate((email) => {
+                    const tr = [...document.querySelectorAll('tbody tr')]
+                        .find((r) => r.querySelector('td[data-label="Email"]')?.textContent.trim() === email);
+                    const righe = (td) => {
+                        const linee = [...td.querySelectorAll('.cell-line')].map((l) => l.textContent.trim());
+                        return linee.length > 0 ? linee : [td.textContent.trim()];
+                    };
 
-            const tutorA = await riga('tutor1@test.it');
-            const studente = await riga('stud@test.it');
-            const assistente = await riga('assist@test.it');
+                    return tr ? {
+                        nome: tr.querySelector('td[data-label="Nome"]').textContent.trim(),
+                        gruppi: righe(tr.querySelector('td[data-label="Gruppi"]')),
+                        tutor: righe(tr.querySelector('td[data-label="Tutor"]')),
+                    } : null;
+                }, email);
 
-            check(
-                'admin → lo studente ha come tutor quello dei suoi gruppi, una volta sola',
-                tutorA !== null && studente !== null && studente.tutor === tutorA.nome,
-                studente === null ? ['riga dello studente non trovata'] : ['trovato: «' + studente.tutor + '»']
-            );
-            check(
-                'admin → l\'assistente ha come tutor quello che affianca',
-                tutorA !== null && assistente !== null && assistente.tutor === tutorA.nome,
-                assistente === null ? ['riga dell\'assistente non trovata'] : ['trovato: «' + assistente.tutor + '»']
-            );
-            check(
-                'admin → un tutor non ha un tutor di riferimento',
-                tutorA !== null && tutorA.tutor === '—',
-                tutorA === null ? ['riga del tutor non trovata'] : ['trovato: «' + tutorA.tutor + '»']
-            );
+                const tutorA = await riga('tutor1@test.it');
+                const studente = await riga('stud@test.it');
+                const doppio = await riga('altrogruppo@test.it');
+                const assistente = await riga('assist@test.it');
+                const j = (x) => JSON.stringify(x);
 
-            await ctx.close();
+                check(
+                    'admin → lo studente ha una riga per gruppo, e accanto a ciascuna il tutor di quel gruppo',
+                    studente !== null && j(studente.gruppi) === j(['[prova-permessi] cerchio', '[prova-permessi] mondo A'])
+                        && j(studente.tutor) === j([tutorA.nome, tutorA.nome]),
+                    [j(studente)]
+                );
+                check(
+                    'admin → due gruppi con due tutor: ogni tutor sta sulla riga del suo gruppo, non in ordine alfabetico',
+                    doppio !== null && j(doppio.gruppi) === j(['[prova-permessi] cerchio', '[prova-permessi] mondo A altra classe'])
+                        && j(doppio.tutor) === j(['Tutor Uno', 'Tutor Tre']),
+                    [j(doppio)]
+                );
+                check(
+                    'admin → l\'assistente ha come tutor quello che affianca, e nessun gruppo',
+                    tutorA !== null && assistente !== null && j(assistente.tutor) === j([tutorA.nome]) && j(assistente.gruppi) === j(['—']),
+                    [j(assistente)]
+                );
+                check(
+                    'admin → un tutor non ha né gruppi né tutor di riferimento',
+                    tutorA !== null && j(tutorA.tutor) === j(['—']) && j(tutorA.gruppi) === j(['—']),
+                    [j(tutorA)]
+                );
+
+                // Lo scaricamento (20/11): due colonne con lo stesso ordine,
+                // separate da punto e virgola.
+                const csv = await (await page.request.get(BASE + '/admin/users/csv')).text();
+                const righeCsv = csv.replace(/^﻿/, '').split(/\r?\n/);
+                const sep = righeCsv[0].includes(';') ? ';' : ',';
+                const celle = (r) => (r.match(new RegExp('("([^"]|"")*"|[^' + sep + ']*)(' + sep + '|$)', 'g')) || [])
+                    .map((c) => c.replace(new RegExp(sep + '$'), '').replace(/^"|"$/g, '').replace(/""/g, '"'));
+                const colonne = celle(righeCsv[0]);
+                const pg = colonne.indexOf('Gruppi');
+                const pt = colonne.indexOf('Tutor di riferimento');
+                const cellaDi = (email, pos) => { const r = righeCsv.find((x) => x.includes(email)); return r === undefined ? null : celle(r)[pos]; };
+                check(
+                    'admin → nello scaricamento gruppi e tutor in due colonne, con lo stesso ordine',
+                    pg !== -1 && pt !== -1
+                        && cellaDi('altrogruppo@test.it', pg) === '[prova-permessi] cerchio; [prova-permessi] mondo A altra classe'
+                        && cellaDi('altrogruppo@test.it', pt) === 'Tutor Uno; Tutor Tre'
+                        && cellaDi('stud@test.it', pt) === 'Tutor Uno; Tutor Uno',
+                    ['intestazione: ' + righeCsv[0], 'gruppi: ' + cellaDi('altrogruppo@test.it', pg), 'tutor: ' + cellaDi('altrogruppo@test.it', pt)]
+                );
+            } finally {
+                await ctx.close();
+                esegui('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', d.gruppo_cerchio, altro);
+            }
         }
 
         console.log('\n--- la pagina del gruppo: che cosa c\'è dentro');
@@ -3422,7 +3476,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
 
             // Pulizia: via chi e' stato creato, anche per sbaglio.
             for (const u of creati.filter((x) => x !== null)) {
-                await esitoPost(page, '/admin/users/' + u.id + '/delete', [], '/admin/users/' + u.id + '/edit');
+                await esitoPost(page, '/admin/users/elimina', [['ids[]', u.id]], '/admin/users/' + u.id + '/edit');
             }
             check('pulizia: gli utenti di prova si tolgono', ['a', 'b', 'c', 'd', 'e'].every((caso) => chi(caso) === null));
 
@@ -3670,7 +3724,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/lessons/' + B.lezione + '/delete', [], 'negato', 'cancellare una lezione'],
                 ['/lessons/' + A.lezione + '/delete', [], 'negato', 'cancellare una lezione del proprio corso'],
                 ['/quizzes/' + A.quiz + '/delete', [], 'negato', 'cancellare un quiz'],
-                ['/admin/users/' + d.utenti.studenteB + '/delete', [], 'negato', 'cancellare un altro utente'],
+                ['/admin/users/elimina', [['ids[]', d.utenti.studenteB]], 'negato', 'cancellare un altro utente'],
             ]],
             ['tutor1@test.it', 'tutor A', [
                 ['/lessons/' + B.lezione + '/delete', [], 'negato', 'cancellare la lezione di un collega'],
@@ -3678,7 +3732,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 ['/quizzes/' + B.quiz + '/delete', [], 'negato', 'cancellare il quiz di un collega'],
                 ['/modules/' + B.modulo + '/delete', [], 'negato', 'cancellare un modulo non suo'],
                 ['/admin/groups/' + B.gruppo + '/delete', [], 'negato', 'cancellare il gruppo di un collega'],
-                ['/admin/users/' + d.utenti.studenteB + '/delete', [], 'negato', 'cancellare un utente'],
+                ['/admin/users/elimina', [['ids[]', d.utenti.studenteB]], 'negato', 'cancellare un utente'],
                 ['/questions/' + B.domanda + '/move', [['direction', 'up']], 'negato', 'riordinare le domande di un collega'],
                 ['/courses/' + A.corso + '/verifica-finale', [['title', 'Verifica del tutor'], ['quiz_title', 'Questionario'], ['question_text', 'Domanda?'], ['question_type', 'open']], 'negato', 'creare la verifica finale del suo corso'],
                 ['/admin/settings/posta/coda/riprova-tutte', [], 'negato', 'rimettere in coda le email (30/10)'],
@@ -3686,7 +3740,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             ['assist@test.it', 'assistente', [
                 ['/lessons/' + A.lezione + '/delete', [], 'negato', 'cancellare una lezione'],
                 ['/questions/' + A.domanda + '/delete', [], 'negato', 'togliere una domanda'],
-                ['/admin/users/' + d.utenti.studenteA + '/delete', [], 'negato', 'cancellare un utente'],
+                ['/admin/users/elimina', [['ids[]', d.utenti.studenteA]], 'negato', 'cancellare un utente'],
                 ['/courses/' + A.corso + '/verifica-finale', [['title', 'Verifica dell\'assistente'], ['quiz_title', 'Questionario'], ['question_text', 'Domanda?'], ['question_type', 'open']], 'negato', 'creare la verifica finale'],
                 ['/admin/settings/posta/coda/1/rimuovi', [], 'negato', 'rimuovere un\'email dalla coda (30/10)'],
             ]],

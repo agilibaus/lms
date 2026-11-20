@@ -136,13 +136,86 @@ class UserModel
         END";
 
     /**
+     * I gruppi di uno studente, per la colonna Gruppi dell'elenco utenti
+     * (20/11, Alessandro): prima si vedevano solo entrando in «Modifica».
+     *
+     * Due frammenti, perche' la colonna si mostra in un modo e si ordina in
+     * un altro:
+     *   - `GRUPPI`, i nomi in ordine alfabetico separati da virgola: il
+     *     valore su cui si ordina la colonna Gruppi;
+     *   - `GRUPPI_E_TUTOR`, le coppie gruppo e tutor di quel gruppo, nello
+     *     stesso ordine: quello che si vede, una riga per gruppo con il suo
+     *     tutor sulla stessa riga nella colonna Tutor (Alessandro, 20/11),
+     *     e quello che esce nello scaricamento. Il tutor si ripete se segue
+     *     due gruppi, e manca se il gruppo non ne ha. La colonna Tutor si
+     *     ordina invece su `TUTOR_DI_RIFERIMENTO`, i tutor in ordine
+     *     alfabetico e una volta sola: chi ha anche Anna Bruni sta sotto la
+     *     «A», qualunque sia il gruppo di Anna Bruni.
+     * Le coppie viaggiano in una stringa, con i separatori di unita' e di
+     * record dell'ASCII (31 e 30, scritti `\x1F` e `\x1E` nella stringa PHP:
+     * `SEPARATOR` vuole un testo, non `CHAR()`), che in un nome non ci sono:
+     * `coppieGruppi()` le rimette in fila.
+     *
+     * Solo per gli studenti: lo staff non sta nei gruppi (0362), e per lui
+     * la colonna dice «—» anche se ne restasse traccia.
+     *
+     * Frammenti SQL, con `u` come alias dell'utente, fra virgolette doppie
+     * come quello sopra.
+     */
+    private const GRUPPI = "CASE u.role
+            WHEN 'studente' THEN (
+                SELECT GROUP_CONCAT(DISTINCT g.name ORDER BY g.name SEPARATOR ', ')
+                FROM group_members gm
+                INNER JOIN `groups` g ON g.id = gm.group_id
+                WHERE gm.user_id = u.id
+            )
+        END";
+
+    private const GRUPPI_E_TUTOR = "CASE u.role
+            WHEN 'studente' THEN (
+                SELECT GROUP_CONCAT(
+                           CONCAT(g.name, '\x1F', COALESCE(t.full_name, ''))
+                           ORDER BY g.name, g.id SEPARATOR '\x1E'
+                       )
+                FROM group_members gm
+                INNER JOIN `groups` g ON g.id = gm.group_id
+                LEFT JOIN users t ON t.id = g.tutor_id
+                WHERE gm.user_id = u.id
+            )
+        END";
+
+    /**
+     * Le coppie di `GRUPPI_E_TUTOR`, in ordine di gruppo. Un tutor vuoto e'
+     * `null`: il gruppo non ne ha uno.
+     *
+     * @return list<array{gruppo: string, tutor: ?string}>
+     */
+    public static function coppieGruppi(?string $valore): array
+    {
+        if ($valore === null || $valore === '') {
+            return [];
+        }
+
+        $coppie = [];
+
+        foreach (explode("\x1E", $valore) as $coppia) {
+            [$gruppo, $tutor] = array_pad(explode("\x1F", $coppia, 2), 2, '');
+            $coppie[] = ['gruppo' => $gruppo, 'tutor' => $tutor === '' ? null : $tutor];
+        }
+
+        return $coppie;
+    }
+
+    /**
      * Elenco utenti, ordinato per nome (per pannello admin/gestione utenti),
-     * con il tutor di riferimento di ciascuno.
+     * con i gruppi e il tutor di riferimento di ciascuno.
      */
     public static function all(): array
     {
         return Database::connection()->query(
             'SELECT u.id, u.email, u.full_name, u.role, u.is_active, u.created_at,
+                    ' . self::GRUPPI . ' AS gruppi,
+                    ' . self::GRUPPI_E_TUTOR . ' AS gruppi_tutor,
                     ' . self::TUTOR_DI_RIFERIMENTO . ' AS tutor_riferimento
              FROM users u
              ORDER BY u.full_name, u.email'
@@ -162,6 +235,7 @@ class UserModel
         return Database::connection()->query(
             'SELECT u.id, u.full_name, u.email, u.role, u.is_active, u.email_verified_at,
                     u.phone, u.city, u.avatar_path, u.created_at, u.updated_at,
+                    ' . self::GRUPPI_E_TUTOR . ' AS gruppi_tutor,
                     ' . self::TUTOR_DI_RIFERIMENTO . ' AS tutor_riferimento
              FROM users u
              ORDER BY u.full_name, u.email'

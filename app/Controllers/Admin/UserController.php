@@ -380,54 +380,219 @@ class UserController extends AdminController
         );
     }
 
-    public function destroy(array $params): void
+    // ---------------------------------------------------------------
+    // Le righe selezionate (20/11, Alessandro, variante B)
+    // ---------------------------------------------------------------
+    // Nell'elenco non c'e' piu' la colonna «Modifica / Elimina»: si
+    // selezionano le righe con le caselle, e i comandi stanno nella barra in
+    // fondo. La barra e' un modulo GET verso `selezione()`: funziona anche
+    // senza JavaScript, e allora la barra resta in fondo alla tabella con
+    // tutti i comandi visibili. Il nome dell'utente apre la modifica.
+
+    /**
+     * «Modifica» porta alla scheda dell'unico utente selezionato; «Elimina»
+     * apre la pagina di conferma, che dice chi verra' eliminato e chi no, e
+     * perche'. Niente si cancella da qui: e' una GET.
+     */
+    public function selezione(array $params = []): void
     {
         $this->requireUserAccess();
 
-        $user = $this->findManageableUser((int) $params['id']);
+        $ids = self::idsSelezionati($_GET['ids'] ?? null);
+        $azione = (string) ($_GET['azione'] ?? '');
 
-        if ($user === null) {
+        if ($azione === 'modifica') {
+            if (count($ids) !== 1) {
+                $this->fail(
+                    $ids === [] ? "Seleziona l'utente da modificare." : 'Seleziona un solo utente per modificarlo.',
+                    '/admin/users'
+                );
+            }
+
+            $this->redirect('/admin/users/' . $ids[0] . '/edit');
+        }
+
+        if ($azione !== 'elimina') {
+            $this->redirect('/admin/users');
+        }
+
+        if ($ids === []) {
+            $this->fail('Seleziona almeno un utente da eliminare.', '/admin/users');
+        }
+
+        $utenti = $this->utentiGestibili($ids);
+
+        if ($utenti === null) {
             return;
         }
 
-        $id = (int) $user['id'];
+        $eliminabili = [];
+        $bloccati = [];
 
-        if ($id === (int) Auth::id()) {
-            $this->fail('Non puoi eliminare il tuo account.', '/admin/users');
+        foreach ($utenti as $utente) {
+            $motivo = self::motivoPerNonEliminare($utente);
+
+            if ($motivo === null) {
+                $eliminabili[] = $utente;
+            } else {
+                $bloccati[] = $utente + ['motivo' => $motivo];
+            }
         }
 
-        if ($user['role'] === 'admin' && UserModel::countActiveAdmins($id) === 0) {
-            $this->fail('Deve restare un Amministratore attivo.', '/admin/users');
+        View::render('admin/users/elimina', [
+            'pageTitle' => count($eliminabili) === 1 ? 'Eliminare un utente?' : 'Eliminare ' . count($eliminabili) . ' utenti?',
+            'eliminabili' => $eliminabili,
+            'bloccati' => $bloccati,
+        ]);
+    }
+
+    /**
+     * Elimina gli utenti confermati. Le regole si rileggono qui, una riga
+     * alla volta e subito prima di eliminarla: fra la conferma e il clic
+     * qualcosa puo' essere cambiato. Chi non si puo' eliminare resta, e
+     * l'avviso dice chi e perche'.
+     */
+    public function eliminaSelezionati(array $params = []): void
+    {
+        $this->requireUserAccess();
+
+        $ids = self::idsSelezionati($_POST['ids'] ?? null);
+
+        if ($ids === []) {
+            $this->fail('Seleziona almeno un utente da eliminare.', '/admin/users');
+        }
+
+        $utenti = $this->utentiGestibili($ids);
+
+        if ($utenti === null) {
+            return;
+        }
+
+        $eliminati = [];
+        $rifiuti = [];
+
+        foreach ($utenti as $utente) {
+            $motivo = self::motivoPerNonEliminare($utente);
+
+            if ($motivo !== null) {
+                $rifiuti[] = $utente['full_name'] . ' ' . $motivo . '.';
+                continue;
+            }
+
+            self::elimina($utente);
+            $eliminati[] = (string) $utente['full_name'];
+        }
+
+        if ($rifiuti !== []) {
+            $_SESSION['flash_error'] = implode(' ', $rifiuti);
+        }
+
+        if ($eliminati === []) {
+            $this->redirect('/admin/users');
+        }
+
+        $this->success(
+            count($eliminati) === 1
+                ? 'Utente eliminato: ' . $eliminati[0] . '.'
+                : count($eliminati) . ' utenti eliminati: ' . implode(', ', $eliminati) . '.',
+            '/admin/users'
+        );
+    }
+
+    /**
+     * Gli identificativi mandati dalle caselle: numeri interi positivi, una
+     * volta sola, nell'ordine in cui arrivano.
+     *
+     * @return list<int>
+     */
+    private static function idsSelezionati(mixed $valore): array
+    {
+        if (!is_array($valore)) {
+            return [];
+        }
+
+        $ids = [];
+
+        foreach ($valore as $v) {
+            $id = is_scalar($v) ? (int) $v : 0;
+
+            if ($id > 0 && !in_array($id, $ids, true)) {
+                $ids[] = $id;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Gli utenti selezionati, se chi guarda li puo' gestire tutti; altrimenti
+     * nessuno: un indirizzo scritto a mano con un utente che non c'e' (404)
+     * o che non e' suo (il supervisore e lo staff, 403) non ne elimina
+     * nemmeno uno. Lo stesso criterio di `findManageableUser()`.
+     *
+     * @param list<int> $ids
+     * @return ?list<array<string, mixed>>
+     */
+    private function utentiGestibili(array $ids): ?array
+    {
+        $utenti = [];
+
+        foreach ($ids as $id) {
+            $utente = $this->findManageableUser($id);
+
+            if ($utente === null) {
+                return null;
+            }
+
+            $utenti[] = $utente;
+        }
+
+        return $utenti;
+    }
+
+    /**
+     * Perche' un utente non si elimina, o `null` se si puo'. La frase segue
+     * il nome dell'utente: «Mario Rossi ha creato …».
+     */
+    private static function motivoPerNonEliminare(array $utente): ?string
+    {
+        $id = (int) $utente['id'];
+
+        if ($id === (int) Auth::id()) {
+            return 'è il tuo account e non può essere eliminato';
+        }
+
+        if ($utente['role'] === 'admin' && UserModel::countActiveAdmins($id) === 0) {
+            return "è l'unico Amministratore attivo e non può essere eliminato";
         }
 
         if (UserModel::countCoursesCreated($id) > 0) {
-            $this->fail(
-                'Questo utente risulta autore di uno o più corsi e non può essere eliminato: disattivalo.',
-                '/admin/users'
-            );
+            return 'risulta autore di uno o più corsi e non può essere eliminato: disattivalo';
         }
 
         // Come per i corsi (29/10, revisione del codice): prima il database
         // rifiutava e l'admin vedeva una pagina di errore 500.
         if (UserModel::countLiveSessionsCreated($id) > 0) {
-            $this->fail(
-                'Questo utente ha creato uno o più incontri dal vivo e non può essere eliminato: disattivalo.',
-                '/admin/users'
-            );
+            return 'ha creato uno o più incontri dal vivo e non può essere eliminato: disattivalo';
         }
+
+        return null;
+    }
+
+    private static function elimina(array $utente): void
+    {
+        $id = (int) $utente['id'];
 
         // L'immagine del profilo sta su disco: la cascata del database non la
         // tocca, quindi va rimossa qui.
-        if (!empty($user['avatar_path'])) {
-            @unlink(Upload::absolutePath((string) $user['avatar_path']));
+        if (!empty($utente['avatar_path'])) {
+            @unlink(Upload::absolutePath((string) $utente['avatar_path']));
             @rmdir(Upload::absolutePath('avatars/' . $id));
         }
 
         // Iscrizioni, progressi, tentativi e certificati vengono eliminati a
         // cascata insieme all'utente: per conservarli, disattivarlo e' preferibile.
         UserModel::delete($id);
-
-        $this->success('Utente eliminato.', '/admin/users');
     }
 
     // ---------------------------------------------------------------
@@ -549,19 +714,29 @@ class UserController extends AdminController
     {
         $intestazione = [
             'ID', 'Nome', 'Email', 'Ruolo', 'Stato', 'Email verificata',
-            'Tutor di riferimento', 'Telefono', 'Citta', 'Immagine',
+            'Gruppi', 'Tutor di riferimento', 'Telefono', 'Citta', 'Immagine',
             'Registrato il', 'Ultima modifica',
         ];
 
         $tipi = [
             'numero', 'testo', 'testo', 'testo', 'testo', 'data',
-            'testo', 'testo', 'testo', 'testo',
+            'testo', 'testo', 'testo', 'testo', 'testo',
             'data', 'data',
         ];
 
         $righe = [];
 
         foreach (UserModel::allForExport() as $utente) {
+            // Gruppi e tutor in due colonne con lo stesso ordine (20/11,
+            // Alessandro): il primo tutor e' quello del primo gruppo, e un
+            // gruppo senza tutor ha «—» al suo posto, cosi' l'ordine regge.
+            // Per l'assistente la colonna Tutor resta quella di sempre, i
+            // tutor che affianca.
+            $coppie = UserModel::coppieGruppi($utente['gruppi_tutor'] ?? null);
+            $tutor = $coppie === []
+                ? (string) ($utente['tutor_riferimento'] ?? '')
+                : implode('; ', array_map(static fn (array $c): string => $c['tutor'] ?? '—', $coppie));
+
             $righe[] = [
                 (int) $utente['id'],
                 (string) $utente['full_name'],
@@ -569,7 +744,8 @@ class UserController extends AdminController
                 Auth::roleLabel($utente['role'] ?? null),
                 (int) $utente['is_active'] === 1 ? 'attivo' : 'disattivato',
                 $utente['email_verified_at'],
-                (string) ($utente['tutor_riferimento'] ?? ''),
+                implode('; ', array_column($coppie, 'gruppo')),
+                $tutor,
                 (string) ($utente['phone'] ?? ''),
                 (string) ($utente['city'] ?? ''),
                 ($utente['avatar_path'] ?? null) === null ? 'no' : 'si',

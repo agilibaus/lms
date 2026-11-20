@@ -579,6 +579,10 @@ const PAGINE_INTERNE = [
     ['/admin/groups/1/edit', 'Modifica gruppo'],
     ['/admin/users/create', 'Nuovo utente'],
     ['/admin/users/2/edit', 'Modifica utente'],
+    // La conferma dell'eliminazione di piu' utenti (20/11), con i due
+    // riquadri: chi si elimina (2 e 3, studenti) e chi no (1, autore di
+    // corsi). Non elimina niente: e' una GET.
+    ['/admin/users/selezione?azione=elimina&ids%5B%5D=1&ids%5B%5D=2&ids%5B%5D=3', 'Eliminare utenti'],
     ['/courses/1/modules/create', 'Nuovo modulo'],
     ['/modules/1/edit', 'Modifica modulo'],
     ['/modules/1/lessons/create', 'Nuova lezione'],

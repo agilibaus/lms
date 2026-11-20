@@ -164,17 +164,17 @@ const persona = (nome, email, ruolo, attivo = true) => [
         check('la scheda di un tutor: 403', await stato(sup.page, '/admin/users/' + tutor.id + '/edit') === 403);
         const r1 = await posta(sup.page, '/admin/users/' + tutor.id, persona('Rubato', 'rubato' + DOMINIO, 'studente'), '/admin/users');
         const r2 = await posta(sup.page, '/admin/users/' + tutor.id + '/password', [], '/admin/users');
-        const r3 = await posta(sup.page, '/admin/users/' + tutor.id + '/delete', [], '/admin/users');
+        const r3 = await posta(sup.page, '/admin/users/elimina', [['ids[]', tutor.id]], '/admin/users');
         const t1 = utenteId(tutor.id);
         check('un tutor non si modifica, non riceve password, non si elimina (403, e niente cambia)',
             r1 === 403 && r2 === 403 && r3 === 403 && JSON.stringify(t0) === JSON.stringify(t1), [r1, r2, r3, JSON.stringify(t1)]);
         const collega = utente(STAFF_SUP);
-        const r4 = await posta(sup.page, '/admin/users/' + collega.id + '/delete', [], '/admin/users');
+        const r4 = await posta(sup.page, '/admin/users/elimina', [['ids[]', collega.id]], '/admin/users');
         check('nemmeno un altro supervisore (403)', r4 === 403 && utente(STAFF_SUP) !== null);
 
         // --- 5. elimina uno studente ----------------------------------------
         const due = utente('due' + DOMINIO);
-        await posta(sup.page, '/admin/users/' + due.id + '/delete', [], '/admin/users');
+        await posta(sup.page, '/admin/users/elimina', [['ids[]', due.id]], '/admin/users');
         check('elimina uno studente', utente('due' + DOMINIO) === null);
 
         // --- 6. importa da file, e gli inviti -------------------------------

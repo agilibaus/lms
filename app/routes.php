@@ -235,12 +235,15 @@ $router->get('/admin/users/importa', [UserImportController::class, 'form']);
 $router->post('/admin/users/importa/anteprima', [UserImportController::class, 'preview']);
 $router->post('/admin/users/importa', [UserImportController::class, 'run']);
 $router->post('/admin/users/inviti/manda', [AdminUserController::class, 'sendInvites']);
+// Le righe selezionate nell'elenco (20/11): «Modifica» e «Elimina» dalla barra,
+// e l'eliminazione confermata. Prima di «{id}» anche queste.
+$router->get('/admin/users/selezione', [AdminUserController::class, 'selezione']);
+$router->post('/admin/users/elimina', [AdminUserController::class, 'eliminaSelezionati']);
 $router->get('/admin/users/create', [AdminUserController::class, 'createForm']);
 $router->post('/admin/users', [AdminUserController::class, 'store']);
 $router->get('/admin/users/{id}/edit', [AdminUserController::class, 'editForm']);
 $router->post('/admin/users/{id}', [AdminUserController::class, 'update']);
 $router->post('/admin/users/{id}/password', [AdminUserController::class, 'generateTemporaryPassword']);
-$router->post('/admin/users/{id}/delete', [AdminUserController::class, 'destroy']);
 $router->post('/admin/users/{id}/groups', [AdminUserController::class, 'addGroup']);
 $router->post('/admin/users/{id}/groups/{groupId}/delete', [AdminUserController::class, 'removeGroup']);
 
