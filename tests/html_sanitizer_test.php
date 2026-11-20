@@ -125,5 +125,46 @@ check(
 );
 
 // ---------------------------------------------------------------
+// La formattazione libera dell'editor (20/11): dentro `style` passano solo
+// carattere, dimensione, colore, sfondo, allineamento e altezza della riga,
+// con valori della forma attesa. `style` e' una porta: si prova che resti
+// stretta.
+echo PHP_EOL . 'style' . PHP_EOL;
+
+check(
+    'style: le sei proprieta del menu Formato passano',
+    clean('<p style="text-align: center; line-height: 1.5"><span style="font-family: \'Playfair Display\', serif; font-size: 24pt; color: #e03e2d; background-color: rgb(251, 238, 184)">x</span></p>')
+        === '<p style="text-align: center; line-height: 1.5;"><span style="font-family: \'Playfair Display\', serif; font-size: 24pt; color: #e03e2d; background-color: rgb(251, 238, 184);">x</span></p>'
+);
+check(
+    'style: una proprieta non ammessa si toglie, le altre restano',
+    clean('<span style="position: fixed; top: 0; color: blue">x</span>') === '<span style="color: blue;">x</span>'
+);
+foreach ([
+    'url()' => 'background: url(https://esempio.invalid/x.png); color: red',
+    'url() nascosto in un carattere' => 'font-family: url(x); color: red',
+    'expression()' => 'color: expression(alert(1))',
+    'javascript:' => 'color: red; font-family: javascript:alert(1)',
+    'barra rovesciata (caratteri scritti in codice)' => 'font-family: \\75 rl(x); color: red',
+    'commento' => 'color: red/**/; font-size: 12pt',
+    'parentesi graffe' => 'color: red} body{display:none',
+    'chiocciola (@import)' => '@import "x"; color: red',
+] as $come => $stile) {
+    check('style: con ' . $come . ' si toglie tutto', clean('<span style="' . htmlspecialchars($stile) . '">x</span>') === '<span>x</span>');
+}
+check(
+    'style: un valore che non ha la forma attesa si toglie',
+    clean('<span style="font-size: 99999px; color: 12; text-align: middle">x</span>') === '<span>x</span>'
+);
+check(
+    'style: su un collegamento non passa',
+    clean('<a href="https://esempio.invalid" style="color: red">x</a>') === '<a href="https://esempio.invalid">x</a>'
+);
+check(
+    'style: nei testi brevi del corso non passa',
+    (string) HtmlSanitizer::clean('<p style="color: red">x</p>', App\Core\TestoBreve::TAG) === '<p>x</p>'
+);
+
+// ---------------------------------------------------------------
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail === 0 ? 0 : 1);

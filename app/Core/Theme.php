@@ -222,7 +222,13 @@ class Theme
     }
 
     /**
-     * I blocchi `@font-face` dei caratteri scelti, pronti da stampare.
+     * I blocchi `@font-face` dei caratteri scelti e di quelli scaricati,
+     * pronti da stampare.
+     *
+     * Anche quelli scaricati e non scelti (20/11): l'editor li offre nel
+     * menu Formato › Caratteri, e un testo scritto con uno di loro deve
+     * vederlo anche lo studente. Il browser scarica un file solo quando un
+     * testo della pagina lo usa davvero: dichiararli tutti non costa niente.
      *
      * `font-display: swap` disegna subito il testo con il carattere di
      * sistema e lo sostituisce appena il file e' pronto. Il comportamento
@@ -234,9 +240,9 @@ class Theme
         $css = '';
         $viste = [];
 
-        foreach ([self::KEY_FONT_AUTH, self::KEY_FONT_APP] as $chiave) {
-            $famiglia = self::fontScelto($chiave);
+        $famiglie = [self::fontScelto(self::KEY_FONT_AUTH), self::fontScelto(self::KEY_FONT_APP)];
 
+        foreach (array_merge($famiglie, FontLibrary::scaricati()) as $famiglia) {
             if ($famiglia === null || isset($viste[$famiglia])) {
                 continue;
             }
@@ -255,6 +261,40 @@ class Theme
         }
 
         return $css;
+    }
+
+    /**
+     * L'elenco del menu Formato › Caratteri dell'editor (20/11), nella forma
+     * di `font_family_formats` di TinyMCE: i caratteri scaricati sul nostro
+     * server, che lo studente vede davvero, e i tre generici che esistono su
+     * ogni dispositivo. Non l'elenco predefinito di TinyMCE: «Book Antiqua»
+     * o «Wingdings» sul telefono di uno studente diventano un altro
+     * carattere.
+     */
+    public static function caratteriEditor(): string
+    {
+        $voci = [];
+
+        foreach (FontLibrary::scaricati() as $famiglia) {
+            $nome = (string) preg_replace('/[^A-Za-z0-9 ]/', '', $famiglia);
+            $voci[] = $nome . '="' . $nome . '", ' . FontLibrary::generico($famiglia);
+        }
+
+        $voci[] = 'Senza grazie=sans-serif';
+        $voci[] = 'Con grazie=serif';
+        $voci[] = 'A spaziatura fissa=monospace';
+
+        return implode('; ', $voci);
+    }
+
+    /**
+     * Lo stile che l'editor aggiunge al foglio di stile (20/11): i caratteri
+     * e le scelte di Aspetto, come nelle pagine. Cosi' il testo non
+     * formattato si vede nell'editor come lo vedra' lo studente.
+     */
+    public static function stileEditor(): string
+    {
+        return self::bloccoFont() . self::blocco();
     }
 
     public static function raggioCorrente(): string

@@ -24,15 +24,18 @@ final class Privacy
      * video e segnaposti H5P. Titoli, elenchi, tabelle e collegamenti bastano.
      */
     public const TAG = [
-        'p' => [], 'br' => [], 'hr' => [],
+        'p' => ['style'], 'br' => [], 'hr' => [],
         'strong' => [], 'b' => [], 'em' => [], 'i' => [], 'u' => [],
-        'h2' => [], 'h3' => [], 'h4' => [],
-        'ul' => [], 'ol' => ['start', 'type'], 'li' => [],
-        'blockquote' => [],
+        'h2' => ['style'], 'h3' => ['style'], 'h4' => ['style'],
+        'ul' => [], 'ol' => ['start', 'type'], 'li' => ['style'],
+        'blockquote' => ['style'],
         'a' => ['href', 'title', 'target', 'rel'],
         'table' => [], 'thead' => [], 'tbody' => [],
-        'tr' => [], 'th' => ['colspan', 'rowspan', 'scope'], 'td' => ['colspan', 'rowspan'],
+        'tr' => [], 'th' => ['colspan', 'rowspan', 'scope', 'style'], 'td' => ['colspan', 'rowspan', 'style'],
         'caption' => [],
+        // La formattazione libera dell'editor (20/11), come nelle lezioni:
+        // `span` e `style`, ripulito da `HtmlSanitizer::stileSicuro()`.
+        'span' => ['style'],
     ];
 
     /**

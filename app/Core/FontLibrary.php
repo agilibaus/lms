@@ -111,6 +111,38 @@ class FontLibrary
         return self::esiste($famiglia) && is_file(self::percorso($famiglia));
     }
 
+    /**
+     * Le famiglie del catalogo che hanno il loro file sul nostro server, in
+     * ordine alfabetico (20/11): sono quelle che l'editor puo' offrire nel
+     * menu Formato › Caratteri, perche' lo studente le vede davvero.
+     *
+     * @return list<string>
+     */
+    public static function scaricati(): array
+    {
+        $file = [];
+
+        foreach (glob(self::CARTELLA . '/*.woff2') ?: [] as $percorso) {
+            $file[basename($percorso)] = true;
+        }
+
+        if ($file === []) {
+            return [];
+        }
+
+        $famiglie = [];
+
+        foreach (array_keys(self::catalogo()) as $famiglia) {
+            if (isset($file[self::nomeFile((string) $famiglia)])) {
+                $famiglie[] = (string) $famiglia;
+            }
+        }
+
+        sort($famiglie, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $famiglie;
+    }
+
     /** L'indirizzo con cui la pagina lo chiede a noi. */
     public static function url(string $famiglia): string
     {

@@ -142,6 +142,16 @@ use App\Core\Quando;
             toolbar: 'undo redo | blocks | bold italic | bullist numlist | link | removeformat',
         },
         content_css: '/assets/css/style.css',
+        // Le scelte di Aspetto anche dentro l'editor (20/11): carattere,
+        // dimensione e colori del testo, come li vedra' lo studente.
+        content_style: <?= json_encode(App\Core\Theme::stileEditor(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+        // La formattazione libera (20/11, Alessandro): nel menu Formato i
+        // caratteri che lo studente vede davvero, non l'elenco di TinyMCE.
+        // Dimensioni, colori, allineamento e altezza della riga sono quelli
+        // di TinyMCE; il salvataggio li tiene (`HtmlSanitizer::STILE`). Il
+        // testo non formattato segue Aspetto; «Cancella la formattazione» ce
+        // lo riporta.
+        font_family_formats: <?= json_encode(App\Core\Theme::caratteriEditor(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
         body_class: 'lesson-content',
         convert_urls: false,
     });
