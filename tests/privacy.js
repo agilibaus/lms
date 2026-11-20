@@ -25,8 +25,14 @@
  *
  * Esecuzione:  node tests/privacy.js   (server di sviluppo acceso)
  *
- * Le versioni e gli studenti di prova si creano e si tolgono; le versioni
- * che c'erano prima restano com'erano.
+ * Le versioni e gli studenti di prova si creano e si tolgono. Le versioni
+ * che c'erano prima, e la versione comunicata a ogni utente, si mettono da
+ * parte in due tabelle di parcheggio e alla fine tornano com'erano, anche
+ * se la prova si interrompe (20/11). Fino al 20/11 si mettevano da parte
+ * spostandone il numero in avanti (+1000000): ma la versione in vigore e'
+ * quella con il numero piu' alto, quindi da quando nel database c'e'
+ * un'informativa pubblicata la prova partiva con quella, e alla fine
+ * riportava le versioni di prova fra quelle vere.
  */
 'use strict';
 
@@ -96,8 +102,55 @@ const TESTO = '<h2>1. Chi tratta i tuoi dati</h2><p>Il titolare del trattamento.
     + Array.from({ length: 12 }, (_, i) => '<h2>' + (i + 2) + '. Sezione</h2><p>' + 'Testo della sezione. '.repeat(30) + '</p>').join('')
     + '<script>window.rotto = 1</script><img src="/x.png" alt="">';
 
+/*
+ * IL PARCHEGGIO. Le versioni dell'informativa e la versione comunicata a
+ * ciascun utente si copiano in due tabelle a parte, e si tolgono: la prova
+ * parte davvero senza informativa. Alla fine si cancella quello che la
+ * prova ha creato e si rimette il resto, con gli stessi numeri.
+ */
+const PARCHEGGIO = 'prova_privacy_versioni';
+const PARCHEGGIO_UTENTI = 'prova_privacy_utenti';
+
+// Un'impronta di quello che si parcheggia, per controllare alla fine che
+// sia tornato tutto com'era.
+const impronta = () => valore(
+    "SELECT CONCAT((SELECT COUNT(*) FROM privacy_versions), ':',"
+    + " (SELECT COALESCE(SUM(CRC32(CONCAT(id, '|', content_html, '|', published_at, '|', COALESCE(corrected_at, '')))), 0) FROM privacy_versions), ':',"
+    + " (SELECT COALESCE(SUM(CRC32(CONCAT(id, '|', privacy_version_id))), 0) FROM users WHERE privacy_version_id IS NOT NULL AND email NOT IN (?, ?, ?)))",
+    STUDENTE, DA_CANCELLARE, NUOVO
+);
+
+const parcheggioPieno = () => valore(
+    'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?', PARCHEGGIO
+) === '1';
+
+function parcheggia() {
+    php(`$pdo->exec("CREATE TABLE ${PARCHEGGIO} LIKE privacy_versions");
+         $pdo->exec("INSERT INTO ${PARCHEGGIO} SELECT * FROM privacy_versions");
+         $pdo->exec("CREATE TABLE ${PARCHEGGIO_UTENTI} AS SELECT id, privacy_version_id FROM users WHERE privacy_version_id IS NOT NULL");
+         $pdo->exec("UPDATE users SET privacy_version_id = NULL");
+         $pdo->exec("DELETE FROM privacy_versions");`);
+}
+
+function ripristina() {
+    php(`$pdo->exec("UPDATE users SET privacy_version_id = NULL");
+         $pdo->exec("DELETE FROM privacy_versions");
+         $pdo->exec("INSERT INTO privacy_versions SELECT * FROM ${PARCHEGGIO}");
+         $pdo->exec("UPDATE users u JOIN ${PARCHEGGIO_UTENTI} p ON p.id = u.id SET u.privacy_version_id = p.privacy_version_id");
+         $pdo->exec("ALTER TABLE privacy_versions AUTO_INCREMENT = 1");
+         $pdo->exec("DROP TABLE ${PARCHEGGIO_UTENTI}");
+         $pdo->exec("DROP TABLE ${PARCHEGGIO}");`);
+}
+
 (async () => {
-    const prima = Number(valore('SELECT COALESCE(MAX(id), 0) FROM privacy_versions'));
+    // Un giro di prima interrotto senza pulizia (il processo fermato a
+    // mano): prima di tutto si rimette quello che aveva parcheggiato.
+    if (parcheggioPieno()) {
+        console.log('Un giro precedente si era interrotto: rimetto le versioni parcheggiate.');
+        ripristina();
+    }
+    let improntaPrima = null;
+
     const browser = await chromium.launch();
     const errori = [];
 
@@ -107,7 +160,8 @@ const TESTO = '<h2>1. Chi tratta i tuoi dati</h2><p>Il titolare del trattamento.
         esegui('DELETE FROM users WHERE email = ?', NUOVO);
 
         // Si parte senza informativa: quelle che c'erano si mettono da parte.
-        esegui('UPDATE privacy_versions SET id = id + 1000000 WHERE id <= ?', prima);
+        improntaPrima = impronta();
+        parcheggia();
 
         const { page: admin } = await entra(browser, 'admin@test.it');
         admin.on('pageerror', (e) => errori.push('admin: ' + e.message));
@@ -158,7 +212,7 @@ const TESTO = '<h2>1. Chi tratta i tuoi dati</h2><p>Il titolare del trattamento.
         console.log('\n2. La pubblicazione');
         const esito = await pubblica(admin, TESTO);
         check('«Informativa pubblicata.»', esito.includes('Informativa pubblicata'), [esito]);
-        const v1 = Number(valore('SELECT MAX(id) FROM privacy_versions WHERE id < 1000000'));
+        const v1 = Number(valore('SELECT MAX(id) FROM privacy_versions'));
         const salvato = valore('SELECT content_html FROM privacy_versions WHERE id = ?', v1);
         check('il testo e\' sanificato: niente script, niente immagini', !salvato.includes('script') && !salvato.includes('<img'), [salvato.slice(-200)]);
         await anonimo.goto(BASE + '/privacy');
@@ -318,10 +372,13 @@ const TESTO = '<h2>1. Chi tratta i tuoi dati</h2><p>Il titolare del trattamento.
     } finally {
         await browser.close();
         esegui('DELETE FROM users WHERE email IN (?, ?, ?)', STUDENTE, DA_CANCELLARE, NUOVO);
-        esegui('DELETE FROM privacy_versions WHERE id < 1000000');
-        esegui('UPDATE privacy_versions SET id = id - 1000000 WHERE id > 1000000');
-        php('$pdo->exec("ALTER TABLE privacy_versions AUTO_INCREMENT = 1");');
-        esegui('UPDATE users SET privacy_version_id = NULL WHERE privacy_version_id > ?', prima);
+        if (parcheggioPieno()) {
+            ripristina();
+        }
+        if (improntaPrima !== null) {
+            const dopo = impronta();
+            check('alla fine le versioni e le versioni comunicate sono tornate com\'erano', dopo === improntaPrima, [improntaPrima + ' → ' + dopo]);
+        }
     }
 
     console.log('\nTotale: ' + ok + ' superati, ' + fail + ' falliti');
