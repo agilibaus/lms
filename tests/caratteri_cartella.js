@@ -91,14 +91,14 @@ function cartella(file) {
         cartella(['lora.woff2']);
         t = await leggi();
         check('un carattere: al singolare, senza indicazione d\'uso',
-            t === 'In storage/fonts/ c\'è 1 carattere, gli stessi che l\'editor offre in Formato › Caratteri: Lora.', [t]);
+            t === 'In storage/fonts/ c\'è 1 carattere: Lora.', [t]);
 
         cartella(['playfair-display.woff2', 'albert-sans.woff2', 'Pippo.woff2', 'lora.ttf']);
         imposta('THEME_FONT_APP', 'Albert Sans');
         imposta('THEME_FONT_AUTH', 'Playfair Display');
         t = await leggi();
         check('due caratteri, in ordine alfabetico, ciascuno con il suo uso',
-            t.startsWith('In storage/fonts/ ci sono 2 caratteri, gli stessi che l\'editor offre in Formato › Caratteri: '
+            t.startsWith('In storage/fonts/ ci sono 2 caratteri: '
                 + 'Albert Sans (applicazione), Playfair Display (pagine pubbliche).'), [t]);
         check('i file sbagliati sono segnalati, con il nome',
             t.endsWith('Questi file non corrispondono a nessuna famiglia del catalogo e Pistacchio non li usa: '

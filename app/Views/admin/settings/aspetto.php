@@ -206,8 +206,7 @@ use App\Core\Icona;
             <?php else: ?>
                 <p class="form-hint">
                     <strong>In <code>storage/fonts/</code>
-                    <?= count($fontScaricati) === 1 ? 'c\'è 1 carattere' : 'ci sono ' . count($fontScaricati) . ' caratteri' ?></strong>,
-                    gli stessi che l'editor offre in Formato › Caratteri:
+                    <?= count($fontScaricati) === 1 ? 'c\'è 1 carattere' : 'ci sono ' . count($fontScaricati) . ' caratteri' ?></strong>:
                     <?= implode(', ', array_map(static function (string $f) use ($fontInterno, $fontPubbliche): string {
                         $uso = array_keys(array_filter([
                             'applicazione' => $f === $fontInterno,
