@@ -105,6 +105,35 @@ class LessonController
 
         $provider = $this->videoProviderFromPost();
 
+        // I materiali scelti alla creazione (20/11, Alessandro, variante C):
+        // si controllano tutti prima di creare la lezione, e se uno non va
+        // non si crea niente. La pagina torna con i campi come li aveva
+        // lasciati chi scrive; i file no, il browser non li ricorda.
+        foreach (Upload::normalizeMultiple($_FILES['materials'] ?? null) as $file) {
+            try {
+                Upload::controlla($file, self::MATERIAL_EXTENSIONS, self::MATERIAL_MAX_BYTES);
+            } catch (\RuntimeException $e) {
+                $_SESSION['flash_error'] = 'La lezione non è stata creata: ' . $e->getMessage()
+                    . ' Il resto è come l\'avevi lasciato; i file vanno scelti di nuovo, perché il browser non li ricorda.';
+                View::render('lessons/form', [
+                    'pageTitle' => 'Nuova lezione',
+                    'module' => $module,
+                    'lesson' => null,
+                    'precompilata' => [
+                        'title' => $title,
+                        'content_html' => $this->contentHtmlFromPost(),
+                        'duration_seconds' => $this->durationFromPost(),
+                        'video_provider' => $provider,
+                        'video_ref' => $provider === 'self_hosted' ? null : $this->externalVideoRefFromPost($provider),
+                    ],
+                    'materials' => [],
+                    'h5p' => [],
+                ]);
+
+                return;
+            }
+        }
+
         $lessonId = LessonModel::create(
             (int) $module['id'],
             $title,
@@ -120,7 +149,19 @@ class LessonController
             $_SESSION['flash_error'] = $e->getMessage();
         }
 
-        $_SESSION['flash_success'] = 'Lezione creata.' . $this->handleH5PUploads($lessonId);
+        // Controllati qui sopra: puo' mancare solo il salvataggio sul disco,
+        // e allora la lezione c'e' e l'avviso dice che cosa non e' entrato.
+        $materiali = 0;
+
+        try {
+            $materiali = $this->handleMaterialUploads($lessonId);
+        } catch (\RuntimeException $e) {
+            $_SESSION['flash_error'] = 'Lezione creata, ma un materiale non è stato salvato: ' . $e->getMessage();
+        }
+
+        $_SESSION['flash_success'] = 'Lezione creata.'
+            . ($materiali === 0 ? '' : ($materiali === 1 ? ' 1 materiale caricato.' : ' ' . $materiali . ' materiali caricati.'))
+            . $this->handleH5PUploads($lessonId);
         $this->warnMissingVideoRef($provider);
 
         header('Location: /lessons/' . $lessonId . '/edit');
@@ -1114,8 +1155,11 @@ class LessonController
         return mb_substr(basename(str_replace('\\', '/', $f['name'])), 0, 255);
     }
 
-    private function handleMaterialUploads(int $lessonId): void
+    /** @return int quanti materiali sono stati salvati */
+    private function handleMaterialUploads(int $lessonId): int
     {
+        $salvati = 0;
+
         foreach (Upload::normalizeMultiple($_FILES['materials'] ?? null) as $file) {
             $stored = Upload::store(
                 $file,
@@ -1131,6 +1175,9 @@ class LessonController
                 $stored['extension'],
                 $stored['size']
             );
+            $salvati++;
         }
+
+        return $salvati;
     }
 }

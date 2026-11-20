@@ -17,13 +17,17 @@ use App\Core\Upload;
 /** @var array|null $lesson */
 /** @var array $materials */
 /** @var array $h5p i contenuti H5P della lezione (23/10) */
+/** @var array|null $precompilata i campi di una lezione nuova non creata, perche' un materiale non andava (20/11) */
 $h5p ??= [];
 $isEdit = $lesson !== null;
+// I valori dei campi: quelli della lezione, o quelli appena scritti per una
+// lezione nuova che non si e' potuta creare.
+$valori = $lesson ?? ($precompilata ?? []);
 // L'id della lezione, 0 quando si sta creando: la vista serve a entrambe le cose,
 // e la riga esiste solo nel secondo caso.
 $lessonId = (int) ($lesson['id'] ?? 0);
 $action = $isEdit ? '/lessons/' . $lessonId : '/modules/' . $module['id'] . '/lessons';
-$provider = $lesson['video_provider'] ?? 'none';
+$provider = $valori['video_provider'] ?? 'none';
 ?>
 <div class="page-header">
     <?php /* Il titolo del corso, come nelle altre pagine che tornano al corso (17/11). */ ?>
@@ -56,10 +60,10 @@ $provider = $lesson['video_provider'] ?? 'none';
 <form action="<?= htmlspecialchars($action) ?>" method="post" enctype="multipart/form-data" class="stacked-form lesson-form">
     <?= Csrf::field() ?>
     <label for="title">Titolo</label>
-    <input type="text" id="title" name="title" required value="<?= htmlspecialchars($lesson['title'] ?? '') ?>">
+    <input type="text" id="title" name="title" required value="<?= htmlspecialchars($valori['title'] ?? '') ?>">
 
     <label for="content_html">Contenuto della lezione</label>
-    <textarea id="content_html" name="content_html" rows="18"><?= htmlspecialchars($lesson['content_html'] ?? '') ?></textarea>
+    <textarea id="content_html" name="content_html" rows="18"><?= htmlspecialchars($valori['content_html'] ?? '') ?></textarea>
     <p class="hint">
         Testo formattato, elenchi, tabelle, immagini e video incorporati da YouTube o Vimeo
         (pulsante <em>Inserisci &rarr; Media</em>).
@@ -73,7 +77,7 @@ $provider = $lesson['video_provider'] ?? 'none';
 
     <label for="duration_seconds">Durata (secondi)</label>
     <input type="number" id="duration_seconds" name="duration_seconds" min="0"
-           value="<?= (int) ($lesson['duration_seconds'] ?? 0) ?>">
+           value="<?= (int) ($valori['duration_seconds'] ?? 0) ?>">
 
     <fieldset class="video-fieldset">
         <legend>Video</legend>
@@ -94,13 +98,13 @@ $provider = $lesson['video_provider'] ?? 'none';
         <div class="video-provider-fields" data-provider="bunny" <?= $provider !== 'bunny' ? 'hidden' : '' ?>>
             <label for="video_ref_bunny">ID video Bunny Stream</label>
             <input type="text" id="video_ref_bunny" name="video_ref_bunny"
-                   value="<?= $provider === 'bunny' ? htmlspecialchars($lesson['video_ref'] ?? '') : '' ?>">
+                   value="<?= $provider === 'bunny' ? htmlspecialchars($valori['video_ref'] ?? '') : '' ?>">
         </div>
 
         <div class="video-provider-fields" data-provider="cloudflare" <?= $provider !== 'cloudflare' ? 'hidden' : '' ?>>
             <label for="video_ref_cf">ID video Cloudflare Stream</label>
             <input type="text" id="video_ref_cf" name="video_ref_cloudflare"
-                   value="<?= $provider === 'cloudflare' ? htmlspecialchars($lesson['video_ref'] ?? '') : '' ?>">
+                   value="<?= $provider === 'cloudflare' ? htmlspecialchars($valori['video_ref'] ?? '') : '' ?>">
         </div>
 
         <div class="video-provider-fields" data-provider="self_hosted" <?= $provider !== 'self_hosted' ? 'hidden' : '' ?>>
@@ -181,6 +185,23 @@ $provider = $lesson['video_provider'] ?? 'none';
             Il punteggio non viene salvato: un esercizio che deve contare va caricato come questionario del modulo.
         </p>
     </fieldset>
+
+    <?php /* I materiali alla creazione (20/11, Alessandro, variante C): un
+             riquadro come quello degli esercizi H5P, e i file partono con
+             «Crea lezione». Se uno non va la lezione non si crea, e la pagina
+             torna compilata. Nella modifica i materiali hanno la loro sezione
+             sotto il modulo, con l'elenco, l'ordine e «Carica». */ ?>
+    <?php if (!$isEdit): ?>
+        <fieldset class="video-fieldset materiali-nuovi-fieldset" id="materiali-nuovi">
+            <legend>Materiali scaricabili</legend>
+            <label for="materials">Aggiungi materiali</label>
+            <input type="file" id="materials" name="materials[]" multiple>
+            <p class="hint">
+                PDF, documenti, presentazioni, fogli di calcolo, audio e archivi &mdash; max 50&nbsp;MB ciascuno.
+                Si caricano con «Crea lezione»; l'ordine si cambia poi dalla modifica.
+            </p>
+        </fieldset>
+    <?php endif; ?>
 
     <?php /* «Annulla» accanto a «Crea lezione» e a «Salva» (14/10, Alessandro:
              ovunque si crea o si salva): non salva niente e riporta al corso,

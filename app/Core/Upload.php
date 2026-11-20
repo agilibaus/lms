@@ -23,6 +23,44 @@ class Upload
      */
     public static function store(array $file, string $subDir, array $allowedExtensions, int $maxBytes): array
     {
+        $extension = self::controlla($file, $allowedExtensions, $maxBytes);
+        $originalName = $file['name'];
+        $size = (int) $file['size'];
+
+        $destinationDir = self::STORAGE_ROOT . '/' . trim($subDir, '/');
+
+        if (!is_dir($destinationDir) && !mkdir($destinationDir, 0775, true) && !is_dir($destinationDir)) {
+            throw new \RuntimeException('Impossibile creare la cartella di destinazione sul server.');
+        }
+
+        $storedName = bin2hex(random_bytes(16)) . '.' . $extension;
+        $destinationPath = $destinationDir . '/' . $storedName;
+
+        if (!move_uploaded_file($file['tmp_name'], $destinationPath)) {
+            throw new \RuntimeException('Impossibile salvare il file caricato sul server.');
+        }
+
+        return [
+            'stored_path' => trim($subDir, '/') . '/' . $storedName,
+            'original_name' => $originalName,
+            'extension' => $extension,
+            'size' => $size,
+        ];
+    }
+
+    /**
+     * Le regole di `store()` senza salvare niente (20/11): file arrivato per
+     * intero, dimensione, estensione. Serve a chi deve sapere che tutti i
+     * file vanno bene prima di creare qualcosa (i materiali di una lezione
+     * nuova: se uno non va, la lezione non si crea).
+     *
+     * @param array{name:string,type:string,tmp_name:string,error:int,size:int} $file
+     * @param string[] $allowedExtensions
+     * @return string l'estensione, minuscola
+     * @throws \RuntimeException con il motivo, come lo direbbe `store()`
+     */
+    public static function controlla(array $file, array $allowedExtensions, int $maxBytes): string
+    {
         $error = $file['error'];
 
         if ($error !== UPLOAD_ERR_OK) {
@@ -54,25 +92,7 @@ class Upload
             ));
         }
 
-        $destinationDir = self::STORAGE_ROOT . '/' . trim($subDir, '/');
-
-        if (!is_dir($destinationDir) && !mkdir($destinationDir, 0775, true) && !is_dir($destinationDir)) {
-            throw new \RuntimeException('Impossibile creare la cartella di destinazione sul server.');
-        }
-
-        $storedName = bin2hex(random_bytes(16)) . '.' . $extension;
-        $destinationPath = $destinationDir . '/' . $storedName;
-
-        if (!move_uploaded_file($file['tmp_name'], $destinationPath)) {
-            throw new \RuntimeException('Impossibile salvare il file caricato sul server.');
-        }
-
-        return [
-            'stored_path' => trim($subDir, '/') . '/' . $storedName,
-            'original_name' => $originalName,
-            'extension' => $extension,
-            'size' => $size,
-        ];
+        return $extension;
     }
 
     /**

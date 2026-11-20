@@ -5685,13 +5685,16 @@ fieldset.checkbox-group legend {
     font-weight: 400;
 }
 
-/* In Modifica lezione. Un fieldset e' largo almeno quanto il suo
-   contenuto, e un campo file e' piu' largo di un telefono. */
-.h5p-lezione-fieldset {
+/* In Modifica lezione, e nei materiali di una lezione nuova (20/11). Un
+   fieldset e' largo almeno quanto il suo contenuto, e un campo file e' piu'
+   largo di un telefono: senza, a 320 px il riquadro sforava di 72 px. */
+.h5p-lezione-fieldset,
+.materiali-nuovi-fieldset {
     min-width: 0;
 }
 
-.h5p-lezione-fieldset input[type="file"] {
+.h5p-lezione-fieldset input[type="file"],
+.materiali-nuovi-fieldset input[type="file"] {
     max-width: 100%;
 }
 
