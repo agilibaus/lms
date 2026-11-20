@@ -564,6 +564,8 @@ class SettingsController extends AdminController
             'catalogoFont' => array_keys(FontLibrary::catalogo()),
             'fontPubbliche' => (string) (Settings::stored(Theme::KEY_FONT_AUTH) ?? ''),
             'fontInterno' => (string) (Settings::stored(Theme::KEY_FONT_APP) ?? ''),
+            'fontScaricati' => FontLibrary::scaricati(),
+            'fontNonRiconosciuti' => FontLibrary::nonRiconosciuti(),
             'elementi' => ElementStyle::ELEMENTI,
             'proprieta' => ElementStyle::PROPRIETA,
             'ritocchi' => ElementStyle::valori(),

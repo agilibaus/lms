@@ -32,6 +32,8 @@ use App\Core\Icona;
  * @var string[] $catalogoFont
  * @var string $fontPubbliche
  * @var string $fontInterno
+ * @var list<string> $fontScaricati
+ * @var list<string> $fontNonRiconosciuti
  * @var array|null $lastUpdate
  */
 ?>
@@ -193,6 +195,39 @@ use App\Core\Icona;
             <code>storage/fonts/</code>: il nome del file è quello della famiglia in
             minuscolo con i trattini, per esempio <code>playfair-display.woff2</code>.
         </p>
+
+        <?php /* Che cosa c'e' davvero sul server (20/11, Alessandro): i
+                 caratteri scaricati sono anche quelli del menu Formato ›
+                 Caratteri dell'editor; un file che non corrisponde a nessuna
+                 famiglia si segnala, perche' Pistacchio lo ignora. */ ?>
+        <div class="caratteri-cartella">
+            <?php if ($fontScaricati === []): ?>
+                <p class="form-hint"><strong>In <code>storage/fonts/</code> non c'è ancora nessun carattere.</strong></p>
+            <?php else: ?>
+                <p class="form-hint">
+                    <strong>In <code>storage/fonts/</code>
+                    <?= count($fontScaricati) === 1 ? 'c\'è 1 carattere' : 'ci sono ' . count($fontScaricati) . ' caratteri' ?></strong>,
+                    gli stessi che l'editor offre in Formato › Caratteri:
+                    <?= implode(', ', array_map(static function (string $f) use ($fontInterno, $fontPubbliche): string {
+                        $uso = array_keys(array_filter([
+                            'applicazione' => $f === $fontInterno,
+                            'pagine pubbliche' => $f === $fontPubbliche,
+                        ]));
+
+                        return htmlspecialchars($f) . ($uso === [] ? '' : ' (' . implode(' e ', $uso) . ')');
+                    }, $fontScaricati)) ?>.
+                </p>
+            <?php endif; ?>
+            <?php if ($fontNonRiconosciuti !== []): ?>
+                <p class="form-hint">
+                    <?= count($fontNonRiconosciuti) === 1 ? 'Questo file non corrisponde' : 'Questi file non corrispondono' ?>
+                    a nessuna famiglia del catalogo e Pistacchio non
+                    <?= count($fontNonRiconosciuti) === 1 ? 'lo usa' : 'li usa' ?>:
+                    <?= implode(', ', array_map(static fn (string $n): string => '<code>' . htmlspecialchars($n) . '</code>', $fontNonRiconosciuti)) ?>.
+                    Controlla il nome e l'estensione <code>.woff2</code>.
+                </p>
+            <?php endif; ?>
+        </div>
     </details>
 
     <details class="card aspetto-sezione" open>

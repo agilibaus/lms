@@ -143,6 +143,39 @@ class FontLibrary
         return $famiglie;
     }
 
+    /**
+     * I file in `storage/fonts/` che non sono il carattere di nessuna famiglia
+     * del catalogo (20/11): un nome scritto diverso da `nomeFile()`, un `.ttf`
+     * al posto del `.woff2`. Pistacchio non li usa, e la sezione «Caratteri»
+     * lo dice, cosi' chi li ha messi a mano sa che cosa correggere.
+     *
+     * @return list<string>
+     */
+    public static function nonRiconosciuti(): array
+    {
+        if (!is_dir(self::CARTELLA)) {
+            return [];
+        }
+
+        $attesi = [];
+
+        foreach (array_keys(self::catalogo()) as $famiglia) {
+            $attesi[self::nomeFile((string) $famiglia)] = true;
+        }
+
+        $altri = [];
+
+        foreach (scandir(self::CARTELLA) ?: [] as $nome) {
+            if ($nome[0] !== '.' && is_file(self::CARTELLA . '/' . $nome) && !isset($attesi[$nome])) {
+                $altri[] = $nome;
+            }
+        }
+
+        sort($altri, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $altri;
+    }
+
     /** L'indirizzo con cui la pagina lo chiede a noi. */
     public static function url(string $famiglia): string
     {
