@@ -102,7 +102,7 @@ function pulisci() {
         let r = await riquadro();
         check('«Elimina gruppo» c\'è, spento, con il cestino', r !== null && r.spento && !r.comandoRosso && r.icona && r.testoComando === 'Elimina gruppo', [JSON.stringify(r)]);
         check('accanto dice di annullarli prima, con un collegamento a ciascuno, in ordine di data',
-            r !== null && r.frase.startsWith('Prima annulla gli incontri in programma del gruppo:') && r.frase.endsWith('Annullandoli, chi era invitato riceve l\'avviso.')
+            r !== null && r.frase.startsWith('Prima annulla le sessioni live in programma del gruppo:') && r.frase.endsWith('Annullandole, chi era invitato riceve l\'avviso.')
                 && JSON.stringify(r.link) === JSON.stringify([['[elimina-gruppo] Tappa 3', '/live/' + futuro1], ['[elimina-gruppo] Tappa 4', '/live/' + futuro2]])
                 && !r.frase.includes('concluso'), [JSON.stringify(r)]);
 
@@ -114,7 +114,7 @@ function pulisci() {
         const rifiuto = await page.evaluate(() => (document.querySelector('.alert-error')?.textContent || '').trim());
         check('un invio fatto a mano viene rifiutato: il gruppo e gli incontri restano',
             uno('SELECT COUNT(*) FROM `groups` WHERE id = ?', gruppo) === '1' && uno('SELECT COUNT(*) FROM live_sessions WHERE group_id = ?', gruppo) === '3'
-                && rifiuto.startsWith('Il gruppo ha incontri in programma: annullali prima di eliminarlo'), [rifiuto]);
+                && rifiuto.startsWith('Il gruppo ha sessioni live in programma: annullale prima di eliminarlo'), [rifiuto]);
 
         // Annullato uno solo, la frase dice dell'altro, al singolare.
         await page.goto(BASE + '/live/' + futuro1);
@@ -123,8 +123,8 @@ function pulisci() {
         await page.goto(BASE + '/admin/groups/' + gruppo + '/edit');
         r = await riquadro();
         check('annullato uno, resta l\'altro, al singolare',
-            r !== null && r.spento && r.frase.startsWith('Prima annulla l\'incontro in programma del gruppo:') && r.link.length === 1
-                && r.frase.endsWith('Annullandolo, chi era invitato riceve l\'avviso.'), [JSON.stringify(r)]);
+            r !== null && r.spento && r.frase.startsWith('Prima annulla la sessione live in programma del gruppo:') && r.link.length === 1
+                && r.frase.endsWith('Annullandola, chi era invitato riceve l\'avviso.'), [JSON.stringify(r)]);
 
         console.log('\n--- senza incontri in programma');
         await page.goto(BASE + '/live/' + futuro2);
@@ -132,7 +132,7 @@ function pulisci() {
         await Promise.all([page.waitForLoadState('networkidle'), page.click('form[action="/live/' + futuro2 + '/delete"] button[type="submit"]')]);
         await page.goto(BASE + '/admin/groups/' + gruppo + '/edit');
         r = await riquadro();
-        const attesa = 'Con il gruppo spariscono 1 incontro concluso, con le presenze, e 1 domanda del giro del cerchio. Gli studenti restano iscritti ai corsi.';
+        const attesa = 'Verranno rimosse 1 sessione live conclusa, con relative presenze, e 1 domanda del giro del cerchio. Gli studenti restano iscritti ai corsi.';
         check('il comando torna rosso, con il cestino, e accanto che cosa sparisce', r !== null && r.comandoRosso && !r.spento && r.icona && r.frase === attesa, [JSON.stringify(r)]);
         check('la conferma dice la stessa cosa, con il nome del gruppo', r !== null && r.conferma.includes('Eliminare il gruppo «' + NOME + '»? ' + attesa), [r ? r.conferma : '']);
 

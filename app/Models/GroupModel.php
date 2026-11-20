@@ -307,8 +307,8 @@ class GroupModel
 
         if ($eliminazione['conclusi'] > 0) {
             $voci[] = $eliminazione['conclusi'] === 1
-                ? '1 incontro concluso, con le presenze'
-                : $eliminazione['conclusi'] . ' incontri conclusi, con le presenze';
+                ? '1 sessione live conclusa, con relative presenze'
+                : $eliminazione['conclusi'] . ' sessioni live concluse, con relative presenze';
         }
 
         if ($eliminazione['domande'] > 0) {
@@ -317,7 +317,10 @@ class GroupModel
                 : $eliminazione['domande'] . ' domande del giro del cerchio';
         }
 
-        $frase = $voci === [] ? '' : 'Con il gruppo spariscono ' . implode(', e ', $voci) . '. ';
+        // Il verbo va al plurale se le voci sono due o se l'unica e' plurale.
+        $plurale = count($voci) > 1
+            || ($voci !== [] && ($eliminazione['conclusi'] > 1 || $eliminazione['domande'] > 1));
+        $frase = $voci === [] ? '' : ($plurale ? 'Verranno rimosse ' : 'Verrà rimossa ') . implode(', e ', $voci) . '. ';
 
         return $frase . 'Gli studenti restano iscritti ai corsi.';
     }

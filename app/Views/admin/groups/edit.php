@@ -232,9 +232,9 @@ $members = $ordineMembri->applica($members);
         <div class="elimina-gruppo">
             <span class="comando-spento" aria-disabled="true"><?= Icona::svg('trash3') ?>Elimina gruppo</span>
             <p class="form-hint">
-                Prima annulla <?= count($eliminazione['in_programma']) === 1 ? 'l\'incontro in programma' : 'gli incontri in programma' ?>
+                Prima annulla <?= count($eliminazione['in_programma']) === 1 ? 'la sessione live in programma' : 'le sessioni live in programma' ?>
                 del gruppo: <?= $elenco ?>.
-                <?= count($eliminazione['in_programma']) === 1 ? 'Annullandolo' : 'Annullandoli' ?>, chi era invitato riceve l'avviso.
+                <?= count($eliminazione['in_programma']) === 1 ? 'Annullandola' : 'Annullandole' ?>, chi era invitato riceve l'avviso.
             </p>
         </div>
     <?php else: ?>

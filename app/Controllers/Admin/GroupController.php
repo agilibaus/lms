@@ -286,7 +286,7 @@ class GroupController extends AdminController
         // per un invio fatto a mano.
         if (GroupModel::eliminazione((int) $group['id'])['in_programma'] !== []) {
             $this->fail(
-                'Il gruppo ha incontri in programma: annullali prima di eliminarlo, così chi era invitato riceve l\'avviso.',
+                'Il gruppo ha sessioni live in programma: annullale prima di eliminarlo, così chi era invitato riceve l\'avviso.',
                 '/admin/groups/' . (int) $group['id'] . '/edit'
             );
         }
