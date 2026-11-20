@@ -154,8 +154,8 @@ use App\Core\Icona;
             Dal catalogo di Google Fonts, <strong><?= count($catalogoFont) ?> famiglie</strong>.
             I caratteri <strong>non si caricano dai server di Google</strong>: quando se ne
             sceglie uno, è Pistacchio a scaricarlo una volta sola e poi a servirlo lui, così
-            chi apre la pagina di accesso non contatta nessuno. Con il campo vuoto vale il carattere
-            di partenza.
+            chi apre la pagina di accesso non contatta nessuno. Con il campo vuoto l'applicazione usa
+            il carattere di sistema e le pagine pubbliche Albert Sans.
         </p>
 
         <?php /* Una tendina da 1941 voci sarebbe inservibile; un `datalist`
@@ -173,7 +173,7 @@ use App\Core\Icona;
                value="<?= htmlspecialchars($fontInterno) ?>"
                placeholder="carattere di sistema" spellcheck="false"
                aria-describedby="font_interno_aiuto" data-carattere>
-        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_interno" hidden><?= Icona::svg('x-circle') ?>Carattere di partenza</button>
+        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_interno" hidden><?= Icona::svg('x-circle') ?>Torna al carattere di sistema</button>
         <p class="form-hint" id="font_interno_aiuto">
             Corsi, lezioni, report, pannello: le pagine dove si legge per ore. Un carattere
             neutro è spesso la scelta giusta qui.
@@ -184,7 +184,7 @@ use App\Core\Icona;
                value="<?= htmlspecialchars($fontPubbliche) ?>"
                placeholder="Albert Sans" spellcheck="false"
                aria-describedby="font_pubbliche_aiuto" data-carattere>
-        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_pubbliche" hidden><?= Icona::svg('x-circle') ?>Carattere di partenza</button>
+        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_pubbliche" hidden><?= Icona::svg('x-circle') ?>Torna ad Albert Sans</button>
         <p class="form-hint" id="font_pubbliche_aiuto">
             Accesso, registrazione, recupero password. È la prima cosa che si vede, e si
             vede per pochi secondi: qui un carattere caratterizzato ha senso.

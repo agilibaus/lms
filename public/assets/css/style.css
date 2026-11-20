@@ -648,9 +648,10 @@ h3 { font-size: var(--fs-sottotitolo); }
     }
 }
 
-/* «Carattere di partenza» sotto i due campi dei caratteri (Aspetto, 21/11):
-   compare solo con un carattere scelto. `hidden` va ribadito, perche'
-   `.comando-con-icona` ha un suo `display`. */
+/* «Torna al carattere di sistema» e «Torna ad Albert Sans» accanto ai due
+   campi dei caratteri (Aspetto, 21/11): compaiono solo con un carattere
+   scelto. `hidden` va ribadito, perche' `.comando-con-icona` ha un suo
+   `display`. */
 .carattere-partenza {
     margin-top: 0.4rem;
 }

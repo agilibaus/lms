@@ -10,9 +10,10 @@
  *     il campo si svuota: l'elenco torna completo, e si scrivono le prime
  *     lettere. Uscendo senza aver scelto, torna il carattere di prima.
  *     Invio con il campo vuoto salva il carattere di prima, non il vuoto;
- *   - «Carattere di partenza» svuota il campo davvero: con il campo vuoto
- *     vale il carattere predefinito, al prossimo «Salva». Compare solo
- *     quando c'e' un carattere scelto.
+ *   - «Torna al carattere di sistema» (applicazione) e «Torna ad Albert
+ *     Sans» (pagine pubbliche) svuotano il campo davvero: con il campo
+ *     vuoto vale il carattere predefinito, al prossimo «Salva». Compaiono
+ *     solo quando c'e' un carattere scelto.
  *
  * Senza JavaScript i campi restano quelli di prima: si cancella il nome a
  * mano, e il comando non c'e'.

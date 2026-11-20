@@ -4,7 +4,8 @@
  * Con un carattere gia' scelto, l'elenco del campo proponeva solo quello:
  * entrando nel campo ora si svuota e l'elenco torna completo; uscendo senza
  * scegliere torna il carattere di prima, e Invio non salva il campo vuoto.
- * «Carattere di partenza» svuota il campo davvero, e compare solo con un
+ * «Torna al carattere di sistema» (e «Torna ad Albert Sans» per le pagine
+ * pubbliche) svuota il campo davvero, e compare solo con un
  * carattere scelto.
  *
  * Esecuzione:  node tests/caratteri_scelta.js   (server di sviluppo acceso)
@@ -79,7 +80,12 @@ const salvato = () => uno("SELECT setting_value FROM settings WHERE setting_key 
         await page.goto(BASE + '/admin/settings/aspetto');
 
         let r = await leggi();
-        check('con un carattere scelto: il nome nel campo e «Carattere di partenza» accanto', r.valore === 'Comfortaa' && r.comando, [JSON.stringify(r)]);
+        check('con un carattere scelto: il nome nel campo e «Torna al carattere di sistema» accanto', r.valore === 'Comfortaa' && r.comando, [JSON.stringify(r)]);
+        const nomi = await page.evaluate(() => ['font_interno', 'font_pubbliche'].map((c) => document.querySelector('[data-carattere-partenza="' + c + '"]')?.textContent.trim()));
+        const intro = await page.evaluate(() => document.querySelector('details:has(#font_interno) > p.form-hint')?.textContent.replace(/\s+/g, ' ').trim() ?? '');
+        check('ogni comando dice dove si torna, e la frase in cima lo ripete',
+            nomi[0] === 'Torna al carattere di sistema' && nomi[1] === 'Torna ad Albert Sans'
+                && intro.endsWith('Con il campo vuoto l\'applicazione usa il carattere di sistema e le pagine pubbliche Albert Sans.'), [JSON.stringify(nomi), intro]);
         const altro = await page.evaluate(() => {
             const b = document.querySelector('[data-carattere-partenza="font_pubbliche"]');
             return b !== null && !b.hidden && b.offsetParent !== null;
@@ -111,14 +117,14 @@ const salvato = () => uno("SELECT setting_value FROM settings WHERE setting_key 
 
         await page.click(comando);
         r = await leggi();
-        check('«Carattere di partenza» svuota il campo, torna il testo d\'esempio e il comando sparisce',
+        check('«Torna al carattere di sistema» svuota il campo, torna il testo d\'esempio e il comando sparisce',
             r.valore === '' && r.esempio === 'carattere di sistema' && !r.comando, [JSON.stringify(r)]);
         await page.focus('#font_pubbliche');
         r = await leggi();
         check('uscendo dal campo resta vuoto', r.valore === '', [JSON.stringify(r)]);
         await salva();
-        // Il campo vuoto cancella l'impostazione (o la lascia vuota): vale il carattere di partenza.
-        check('salvando vale il carattere di partenza', ['', '\x00'].includes(salvato()), [JSON.stringify(salvato())]);
+        // Il campo vuoto cancella l'impostazione (o la lascia vuota): vale il carattere di sistema.
+        check('salvando vale il carattere di sistema', ['', '\x00'].includes(salvato()), [JSON.stringify(salvato())]);
     } finally {
         await browser.close();
         creati.forEach((f) => fs.rmSync(f, { force: true }));
