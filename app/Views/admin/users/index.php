@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Auth\Auth;
 use App\Core\Csrf;
+use App\Core\FiltroUtenti;
 use App\Core\Invites;
 use App\Core\Ordinamento;
 use App\Core\Icona;
@@ -14,6 +15,9 @@ use App\Models\UserModel;
 /** @var bool $canExportXlsx */
 /** @var int $invitiInAttesa */
 /** @var ?string $ultimoInvio */
+/** @var int $totale */
+/** @var FiltroUtenti $filtro */
+/** @var array{gruppi: list<string>, tutor: list<string>} $vociFiltro */
 
 $ordine = Ordinamento::daRichiesta([
     'nome' => ['full_name', Ordinamento::TESTO, 'email'],
@@ -26,6 +30,17 @@ $ordine = Ordinamento::daRichiesta([
     'stato' => ['is_active', Ordinamento::NUMERO],
 ]);
 $users = $ordine->applica($users);
+
+// Il filtro per gruppo e tutor (20/11, Alessandro). L'ordine scelto resta
+// applicando e togliendo il filtro; il filtro resta ordinando (`Ordinamento`
+// rimette gli altri parametri dell'indirizzo).
+$ordineAttuale = array_filter([
+    'ordina' => is_string($_GET['ordina'] ?? null) ? $_GET['ordina'] : null,
+    'verso' => is_string($_GET['verso'] ?? null) ? $_GET['verso'] : null,
+], static fn (?string $v): bool => $v !== null && $v !== '');
+$attivi = $filtro->attivi();
+$conFiltro = $filtro->parametri() === [] ? '' : '?' . http_build_query($filtro->parametri());
+$quantiScaricati = count($users) === 1 ? '1 utente' : count($users) . ' utenti';
 ?>
 <div class="page-header">
     <h1>Utenti</h1>
@@ -48,13 +63,36 @@ $users = $ordine->applica($users);
             <details class="dropdown">
                 <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica dati</summary>
                 <div class="dropdown-menu">
-                    <a href="/admin/users/csv">CSV</a>
+                    <?php /* Con il filtro attivo si scaricano solo gli utenti filtrati, e la voce lo dice. */ ?>
+                    <a href="/admin/users/csv<?= htmlspecialchars($conFiltro) ?>">CSV<?= $attivi > 0 ? ', ' . $quantiScaricati : '' ?></a>
                     <?php if ($canExportXlsx): ?>
-                        <a href="/admin/users/xlsx">XLSX</a>
+                        <a href="/admin/users/xlsx<?= htmlspecialchars($conFiltro) ?>">XLSX<?= $attivi > 0 ? ', ' . $quantiScaricati : '' ?></a>
                     <?php endif; ?>
                 </div>
             </details>
         <?php endif; ?>
+
+        <?php /* «Filtra» (20/11, Alessandro): una tendina come «Scarica dati»,
+                 con dentro un modulo GET. Il numero fra parentesi dice quanti
+                 criteri sono attivi. */ ?>
+        <details class="dropdown">
+            <summary class="btn btn-secondary btn-con-icona"><?= Icona::svg('funnel') ?>Filtra<?= $attivi > 0 ? ' (' . $attivi . ')' : '' ?></summary>
+            <form action="/admin/users" method="get" class="dropdown-menu filtro-utenti">
+                <?php foreach ($ordineAttuale as $nome => $valore): ?>
+                    <input type="hidden" name="<?= htmlspecialchars($nome) ?>" value="<?= htmlspecialchars($valore) ?>">
+                <?php endforeach; ?>
+                <?php foreach (['gruppo' => ['Gruppo', $vociFiltro['gruppi'], $filtro->gruppo()], 'tutor' => ['Tutor', $vociFiltro['tutor'], $filtro->tutor()]] as $campo => [$etichetta, $voci, $scelto]): ?>
+                    <label for="filtro-<?= $campo ?>"><?= $etichetta ?></label>
+                    <select id="filtro-<?= $campo ?>" name="<?= $campo ?>">
+                        <option value="">Tutti</option>
+                        <?php foreach ($voci as $voce): ?>
+                            <option value="<?= htmlspecialchars($voce) ?>" <?= $voce === $scelto ? 'selected' : '' ?>><?= htmlspecialchars($voce) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endforeach; ?>
+                <button type="submit" class="btn btn-primary">Applica</button>
+            </form>
+        </details>
     </div>
 </div>
 
@@ -86,8 +124,19 @@ $users = $ordine->applica($users);
 
 <?php require __DIR__ . '/../_flash.php'; ?>
 
+<?php if ($attivi > 0): ?>
+    <?php /* Il filtro attivo si vede sempre, con il comando per toglierlo:
+             un filtro dimenticato sembra un utente sparito. */ ?>
+    <p class="filtro-attivo">
+        <span><?= count($users) === 1 ? '1 utente' : count($users) . ' utenti' ?> su <?= (int) $totale ?><?php
+            if ($filtro->gruppo() !== null): ?> · Gruppo: <?= htmlspecialchars($filtro->gruppo()) ?><?php endif;
+            if ($filtro->tutor() !== null): ?> · Tutor: <?= htmlspecialchars($filtro->tutor()) ?><?php endif; ?></span>
+        <a href="/admin/users<?= $ordineAttuale === [] ? '' : '?' . htmlspecialchars(http_build_query($ordineAttuale)) ?>" class="link-btn comando-con-icona"><?= Icona::svg('x-circle') ?>Togli filtro</a>
+    </p>
+<?php endif; ?>
+
 <?php if ($users === []): ?>
-    <p class="empty-state">Nessun utente da mostrare.</p>
+    <p class="empty-state"><?= $attivi > 0 ? 'Nessun utente con questo filtro.' : 'Nessun utente da mostrare.' ?></p>
 <?php else: ?>
     <?php /* Le righe si selezionano con le caselle, e i comandi stanno nella
              barra in fondo (20/11, Alessandro, variante B del mockup): la

@@ -601,6 +601,63 @@ h3 { font-size: var(--fs-sottotitolo); }
     color: var(--color-primary);
 }
 
+/* Una tendina con dentro un modulo (il filtro della pagina Utenti, 20/11):
+   etichette sopra i campi, e il pulsante in fondo. */
+.filtro-utenti {
+    gap: 0.35rem;
+    min-width: 17rem;
+    padding: 0.75rem 0.9rem 0.9rem;
+}
+
+.filtro-utenti label {
+    font-size: var(--fs-secondario);
+    font-weight: 500;
+}
+
+.filtro-utenti select {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    margin-bottom: 0.4rem;
+}
+
+.filtro-utenti .btn {
+    align-self: flex-start;
+    margin-top: 0.2rem;
+}
+
+/* Sul telefono la tendina a destra della fila usciva dallo schermo: si
+   aggancia alla fila dei pulsanti e ne prende tutta la larghezza, sotto. */
+@media (max-width: 40rem) {
+    .page-actions {
+        position: relative;
+    }
+
+    .page-actions > .dropdown:has(> .filtro-utenti) {
+        position: static;
+    }
+
+    .filtro-utenti {
+        left: 0;
+        right: 0;
+        min-width: 0;
+    }
+}
+
+/* Il filtro attivo sopra la tabella: che cosa si sta guardando e il comando
+   per tornare a tutti. */
+.filtro-attivo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 1rem;
+    margin: 0 0 0.75rem;
+}
+
 /* Agganciato a destra, per una tendina sul bordo destro dello schermo
    (il «⋯» dei gruppi al telefono, 30/10): a sinistra uscirebbe. */
 .dropdown-menu-destra {

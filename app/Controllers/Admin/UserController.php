@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\FiltroUtenti;
 use App\Core\PersonName;
 use App\Auth\Auth;
 use App\Core\AvatarImage;
@@ -38,9 +39,15 @@ class UserController extends AdminController
     {
         $this->requireUserAccess();
 
+        $tutti = $this->visibleUsers();
+        $filtro = FiltroUtenti::daRichiesta($_GET);
+
         View::render('admin/users/index', [
             'pageTitle' => 'Utenti',
-            'users' => $this->visibleUsers(),
+            'users' => $filtro->applica($tutti),
+            'totale' => count($tutti),
+            'filtro' => $filtro,
+            'vociFiltro' => $filtro->voci($tutti),
             'canManageAll' => Auth::can('user.manage'),
             // Gli inviti ancora da mandare. Si mostrano perche' un cron
             // fermo non si lamenta, e qui il silenzio vuol dire persone che
@@ -726,7 +733,9 @@ class UserController extends AdminController
 
         $righe = [];
 
-        foreach (UserModel::allForExport() as $utente) {
+        // Con il filtro della pagina attivo, si scaricano solo gli utenti
+        // filtrati (20/11, Alessandro): i collegamenti lo ripetono.
+        foreach (FiltroUtenti::daRichiesta($_GET)->applica(UserModel::allForExport()) as $utente) {
             // Gruppi e tutor in due colonne con lo stesso ordine (20/11,
             // Alessandro): il primo tutor e' quello del primo gruppo, e un
             // gruppo senza tutor ha «—» al suo posto, cosi' l'ordine regge.
