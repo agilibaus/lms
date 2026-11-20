@@ -172,7 +172,8 @@ use App\Core\Icona;
         <input type="text" id="font_interno" name="font_interno" list="catalogo-caratteri"
                value="<?= htmlspecialchars($fontInterno) ?>"
                placeholder="carattere di sistema" spellcheck="false"
-               aria-describedby="font_interno_aiuto">
+               aria-describedby="font_interno_aiuto" data-carattere>
+        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_interno" hidden><?= Icona::svg('x-circle') ?>Carattere di partenza</button>
         <p class="form-hint" id="font_interno_aiuto">
             Corsi, lezioni, report, pannello: le pagine dove si legge per ore. Un carattere
             neutro è spesso la scelta giusta qui.
@@ -182,7 +183,8 @@ use App\Core\Icona;
         <input type="text" id="font_pubbliche" name="font_pubbliche" list="catalogo-caratteri"
                value="<?= htmlspecialchars($fontPubbliche) ?>"
                placeholder="Albert Sans" spellcheck="false"
-               aria-describedby="font_pubbliche_aiuto">
+               aria-describedby="font_pubbliche_aiuto" data-carattere>
+        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_pubbliche" hidden><?= Icona::svg('x-circle') ?>Carattere di partenza</button>
         <p class="form-hint" id="font_pubbliche_aiuto">
             Accesso, registrazione, recupero password. È la prima cosa che si vede, e si
             vede per pochi secondi: qui un carattere caratterizzato ha senso.
@@ -396,6 +398,7 @@ use App\Core\Icona;
     </div>
 </form>
 <script src="/assets/js/aspetto.js"></script>
+<script src="/assets/js/caratteri-scelta.js"></script>
 
 <?php if ($lastUpdate !== null): ?>
     <p class="form-hint">

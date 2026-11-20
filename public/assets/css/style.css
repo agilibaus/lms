@@ -648,6 +648,17 @@ h3 { font-size: var(--fs-sottotitolo); }
     }
 }
 
+/* «Carattere di partenza» sotto i due campi dei caratteri (Aspetto, 21/11):
+   compare solo con un carattere scelto. `hidden` va ribadito, perche'
+   `.comando-con-icona` ha un suo `display`. */
+.carattere-partenza {
+    margin-top: 0.4rem;
+}
+
+.carattere-partenza[hidden] {
+    display: none;
+}
+
 /* Il filtro attivo sopra la tabella: che cosa si sta guardando e il comando
    per tornare a tutti. */
 .filtro-attivo {
