@@ -15,7 +15,7 @@ declare(strict_types=1);
  * PERCHE' ESISTE. Una tavolozza non e' un colore, sono sette valori che
  * devono reggersi fra loro. Il controllo di accessibilita' (`accessibilita.js`)
  * misura il contrasto di quello che c'e' **sullo schermo**, quindi vede solo
- * la tavolozza attiva al momento: per sapere che tutte e quattro vanno bene
+ * la tavolozza attiva al momento: per sapere che tutte e otto vanno bene
  * bisognerebbe eseguirlo quattro volte, col server acceso. Questo file rifa
  * lo stesso conto in un secondo, senza server, su ogni tavolozza e su ogni
  * coppia — e fallisce **prima** che una tavolozza nuova arrivi a una pagina.
@@ -159,7 +159,7 @@ foreach (['#4F7256', '#000000', '#3F6079', '#7A2E2E'] as $scelto) {
 }
 
 // ---------------------------------------------------------------
-echo PHP_EOL . 'Le quattro tavolozze, coppia per coppia' . PHP_EOL;
+echo PHP_EOL . 'Le otto tavolozze, coppia per coppia' . PHP_EOL;
 
 /**
  * Le combinazioni che si verificano davvero sullo schermo. L'elenco non e'
@@ -208,6 +208,44 @@ foreach (Theme::TAVOLOZZE as $chiave => $tavolozza) {
 
     printf("         (%s: la coppia piu' stretta e \"%s\", %.2f:1)%s", $chiave, $dove, $peggiore, PHP_EOL);
 }
+
+// Otto tavolozze su un ampio spettro (21/11, Alessandro): calde e fredde,
+// nessuna doppione di un'altra. La tinta del colore principale, in gradi
+// sulla ruota dei colori; due tavolozze piu' vicine di 20 gradi sarebbero
+// la stessa scelta con due nomi.
+$tinta = static function (string $hex): float {
+    [$r, $g, $b] = array_map(static fn (string $c): float => hexdec($c) / 255, str_split(substr($hex, 1), 2));
+    $max = max($r, $g, $b);
+    $d = $max - min($r, $g, $b);
+    if ($d == 0) {
+        return 0.0;
+    }
+    $h = match ($max) {
+        $r => fmod(($g - $b) / $d, 6),
+        $g => ($b - $r) / $d + 2,
+        default => ($r - $g) / $d + 4,
+    };
+    return fmod($h * 60 + 360, 360);
+};
+$tinte = array_map(static fn (array $t): float => $tinta($t['primary']), Theme::TAVOLOZZE);
+$vicine = [];
+$chiavi = array_keys($tinte);
+foreach ($chiavi as $i => $a) {
+    foreach (array_slice($chiavi, $i + 1) as $b) {
+        $distanza = abs($tinte[$a] - $tinte[$b]);
+        $distanza = min($distanza, 360 - $distanza);
+        if ($distanza < 20) {
+            $vicine[] = sprintf('%s e %s (%.0f°)', $a, $b, $distanza);
+        }
+    }
+}
+// Calde: dal rosso al giallo (oltre 330° o sotto 70°); fredde: dal verde
+// acqua al blu (fra 160° e 250°).
+$calde = count(array_filter($tinte, static fn (float $h): bool => $h >= 330 || $h < 70));
+$fredde = count(array_filter($tinte, static fn (float $h): bool => $h >= 160 && $h < 250));
+check('otto tavolozze', count(Theme::TAVOLOZZE) === 8, (string) count(Theme::TAVOLOZZE));
+check('nessuna tavolozza è il doppione di un\'altra (tinte ad almeno 20° di distanza)', $vicine === [], implode('; ', $vicine));
+check('almeno tre calde e tre fredde', $calde >= 3 && $fredde >= 3, "calde $calde, fredde $fredde");
 
 // Ogni tavolozza deve avere tutte le chiavi: una dimenticata uscirebbe come
 // stringa vuota dentro il CSS.

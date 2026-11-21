@@ -19,7 +19,7 @@ namespace App\Core;
  * principale deve staccare sul bianco **e** sul crema delle pagine pubbliche,
  * il bianco deve leggersi sopra il verde, il verde scuro deve leggersi sopra
  * la sua stessa tinta chiara. Offrire sette campi liberi vuol dire offrire
- * combinazioni illeggibili. Le quattro tavolozze qui sotto sono state
+ * combinazioni illeggibili. Le otto tavolozze qui sotto sono state
  * verificate su **undici coppie** ciascuna prima di essere offerte, e il test
  * `tests/tema_test.php` rifa quel conto a ogni esecuzione.
  *
@@ -144,6 +144,12 @@ class Theme
      * resto, ed e' il genere di dettaglio che fa sembrare il lavoro fatto a
      * meta'.
      *
+     * Otto dal 21/11 (Alessandro): alle quattro di partenza (verde, ardesia,
+     * terracotta, prugna) si sono aggiunte due tinte fredde, petrolio e
+     * indaco, e due calde, bordeaux e ocra. Stanno in ordine di tinta, come
+     * su una ruota dei colori che parte dal verde predefinito, e il pannello
+     * le mostra in quell'ordine.
+     *
      * @var array<string, array{nome: string, primary: string, hover: string,
      *                          soft: string, auth_bg: string, orb_a: string,
      *                          orb_b: string, scene_h: string, scene_p: string}>
@@ -160,6 +166,17 @@ class Theme
             'scene_h' => '#2F3A2C',
             'scene_p' => '#5F6B59',
         ],
+        'petrolio' => [
+            'nome' => 'Petrolio',
+            'primary' => '#1F666B',
+            'hover' => '#1C5C60',
+            'soft' => '#E6EEEF',
+            'auth_bg' => '#EEF6F6',
+            'orb_a' => 'rgba(31, 102, 107, 0.07)',
+            'orb_b' => 'rgba(124, 159, 192, 0.12)',
+            'scene_h' => '#1E3738',
+            'scene_p' => '#536D6E',
+        ],
         'ardesia' => [
             'nome' => 'Blu ardesia',
             'primary' => '#3F6079',
@@ -170,6 +187,39 @@ class Theme
             'orb_b' => 'rgba(121, 145, 166, 0.12)',
             'scene_h' => '#27333C',
             'scene_p' => '#55636E',
+        ],
+        'indaco' => [
+            'nome' => 'Indaco',
+            'primary' => '#3F478D',
+            'hover' => '#39407F',
+            'soft' => '#EAEBF2',
+            'auth_bg' => '#EEEFF6',
+            'orb_a' => 'rgba(63, 71, 141, 0.07)',
+            'orb_b' => 'rgba(146, 124, 192, 0.12)',
+            'scene_h' => '#1E2138',
+            'scene_p' => '#53566E',
+        ],
+        'prugna' => [
+            'nome' => 'Prugna',
+            'primary' => '#6B4A77',
+            'hover' => '#61436C',
+            'soft' => '#F0EAF3',
+            'auth_bg' => '#F4EEF6',
+            'orb_a' => 'rgba(107, 74, 119, 0.07)',
+            'orb_b' => 'rgba(160, 130, 170, 0.12)',
+            'scene_h' => '#33243A',
+            'scene_p' => '#60536A',
+        ],
+        'bordeaux' => [
+            'nome' => 'Bordeaux',
+            'primary' => '#8A2E45',
+            'hover' => '#7C293E',
+            'soft' => '#F2E8EB',
+            'auth_bg' => '#F6EEF0',
+            'orb_a' => 'rgba(138, 46, 69, 0.07)',
+            'orb_b' => 'rgba(192, 135, 124, 0.12)',
+            'scene_h' => '#381E25',
+            'scene_p' => '#6E535A',
         ],
         'terracotta' => [
             'nome' => 'Terracotta',
@@ -182,16 +232,16 @@ class Theme
             'scene_h' => '#412620',
             'scene_p' => '#6F5349',
         ],
-        'prugna' => [
-            'nome' => 'Prugna',
-            'primary' => '#6B4A77',
-            'hover' => '#61436C',
-            'soft' => '#F0EAF3',
-            'auth_bg' => '#F4EEF6',
-            'orb_a' => 'rgba(107, 74, 119, 0.07)',
-            'orb_b' => 'rgba(160, 130, 170, 0.12)',
-            'scene_h' => '#33243A',
-            'scene_p' => '#60536A',
+        'ocra' => [
+            'nome' => 'Ocra',
+            'primary' => '#825B17',
+            'hover' => '#755215',
+            'soft' => '#F1EDE5',
+            'auth_bg' => '#F6F3EE',
+            'orb_a' => 'rgba(130, 91, 23, 0.07)',
+            'orb_b' => 'rgba(192, 145, 124, 0.12)',
+            'scene_h' => '#382F1E',
+            'scene_p' => '#6E6553',
         ],
     ];
 

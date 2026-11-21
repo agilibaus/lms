@@ -66,7 +66,7 @@ use App\Core\Icona;
         <summary class="aspetto-sommario"><h3>Colori</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
             Valgono su <strong>tutte</strong> le pagine, non solo su quelle pubbliche.
-            Le quattro tavolozze sono state verificate sui contrasti prima di essere offerte:
+            Le otto tavolozze sono state verificate sui contrasti prima di essere offerte:
             qualunque si scelga, i testi restano leggibili.
         </p>
 
@@ -98,16 +98,21 @@ use App\Core\Icona;
             <legend class="sr-only">Tavolozza</legend>
             <?php foreach ($tavolozze as $chiave => $t): ?>
                 <label class="tavolozza">
-                    <input type="radio" name="<?= Theme::KEY_PALETTE ?>"
-                           value="<?= htmlspecialchars($chiave) ?>"
-                           <?= $palette === $chiave ? 'checked' : '' ?>>
-                    <?php /* I quadratini sono decorazione: il nome accanto dice gia'
-                             di quale tavolozza si tratta, e un lettore di schermo
-                             leggerebbe tre volte la stessa cosa. */ ?>
-                    <span class="tavolozza-campioni" aria-hidden="true">
-                        <span style="background: <?= htmlspecialchars($t['primary']) ?>"></span>
-                        <span style="background: <?= htmlspecialchars($t['soft']) ?>"></span>
-                        <span style="background: <?= htmlspecialchars($t['auth_bg']) ?>"></span>
+                    <?php /* Riquadro stretto (21/11): in alto la scelta e i
+                             campioni, sotto il nome, che ha cosi' tutta la
+                             larghezza. I quadratini sono decorazione: il nome
+                             dice gia' di quale tavolozza si tratta, e un
+                             lettore di schermo leggerebbe tre volte la stessa
+                             cosa. */ ?>
+                    <span class="tavolozza-riga">
+                        <input type="radio" name="<?= Theme::KEY_PALETTE ?>"
+                               value="<?= htmlspecialchars($chiave) ?>"
+                               <?= $palette === $chiave ? 'checked' : '' ?>>
+                        <span class="tavolozza-campioni" aria-hidden="true">
+                            <span style="background: <?= htmlspecialchars($t['primary']) ?>"></span>
+                            <span style="background: <?= htmlspecialchars($t['soft']) ?>"></span>
+                            <span style="background: <?= htmlspecialchars($t['auth_bg']) ?>"></span>
+                        </span>
                     </span>
                     <span class="tavolozza-nome"><?= htmlspecialchars($t['nome']) ?></span>
                 </label>
@@ -144,7 +149,7 @@ use App\Core\Icona;
             questo, schiarito fin dove resta leggibile. Due campi che devono stare in
             rapporto fra loro sono due modi di sbagliare invece di uno.
             Il controllo è fatto su tutti i fondi su cui il testo finisce, <em>comprese le
-            tinte tenui di tutte e quattro le tavolozze</em>: così il colore resta valido
+            tinte tenui di tutte e otto le tavolozze</em>: così il colore resta valido
             anche cambiando tavolozza.
         </p>
     </details>
