@@ -1671,15 +1671,16 @@ h3 { font-size: var(--fs-sottotitolo); }
     }
 }
 
-/* Il riquadro stretto: in alto la scelta e i campioni, sotto il nome a
-   tutta larghezza, che puo' andare su due righe. Due classi nel
+/* Il riquadro stretto (21/11, Alessandro): i campioni a tutta larghezza,
+   sotto il nome centrato, sotto ancora la scelta, centrata. Due classi nel
    selettore perche' `.form label` (blocco e margine in alto) e' piu'
    specifica di una sola: senza, il riquadro non era mai stato un flex e
    fra le righe della griglia restava il margine delle etichette. */
 .tavolozze .tavolozza {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 0.45rem;
     min-width: 0;
     margin: 0;
     min-height: var(--tap-target);
@@ -1705,8 +1706,7 @@ h3 { font-size: var(--fs-sottotitolo); }
 
 .tavolozza-campioni {
     display: flex;
-    flex: 1 1 auto;
-    min-width: 0;
+    align-self: stretch;
     border-radius: var(--radius-sm);
     overflow: hidden;
     border: 1px solid var(--color-border);
@@ -1718,15 +1718,7 @@ h3 { font-size: var(--fs-sottotitolo); }
     height: 22px;
 }
 
-/* La scelta e il nome sulla stessa riga, sotto i campioni. */
-.tavolozza-riga {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-}
-
-.tavolozza-riga input {
-    flex: 0 0 auto;
+.tavolozze .tavolozza input {
     margin: 0;
 }
 
@@ -1735,6 +1727,7 @@ h3 { font-size: var(--fs-sottotitolo); }
     font-size: var(--fs-secondario);
     font-weight: 500;
     line-height: 1.25;
+    text-align: center;
 }
 
 /* ---------- Auth page ---------- */

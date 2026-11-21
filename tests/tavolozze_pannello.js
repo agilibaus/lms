@@ -3,7 +3,9 @@
  *
  * Riquadri stretti: otto in fila su un computer, quattro per riga su un
  * tablet, due sul telefono, sempre a righe piene e con la distanza della
- * griglia fra una riga e l'altra; il nome sta dentro il suo riquadro. Una
+ * griglia fra una riga e l'altra; il nome sta dentro il suo riquadro. Dentro
+ * il riquadro (21/11): i campioni a tutta larghezza, il nome centrato, sotto
+ * la scelta, centrata. Una
  * tavolozza nuova si sceglie, si salva e si vede. I contrasti di ogni
  * tavolozza li controlla `tema_test.php`.
  *
@@ -68,18 +70,31 @@ const tavolozza = () => uno("SELECT setting_value FROM settings WHERE setting_ke
                         const n = t.querySelector('.tavolozza-nome');
                         return n.scrollWidth > n.clientWidth + 1 || n.getBoundingClientRect().right > t.getBoundingClientRect().right;
                     }).map((t) => t.textContent.trim()),
+                    disposizione: riquadri.filter((t) => {
+                        const box = t.getBoundingClientRect();
+                        const stile = getComputedStyle(t);
+                        const interno = box.width - parseFloat(stile.paddingLeft) - parseFloat(stile.paddingRight) - parseFloat(stile.borderLeftWidth) - parseFloat(stile.borderRightWidth);
+                        const c = t.querySelector('.tavolozza-campioni').getBoundingClientRect();
+                        const n = t.querySelector('.tavolozza-nome').getBoundingClientRect();
+                        const i = t.querySelector('input').getBoundingClientRect();
+                        const centro = box.left + box.width / 2;
+                        const centrato = (x) => Math.abs(x.left + x.width / 2 - centro) <= 1.5;
+                        return !(Math.abs(c.width - interno) <= 1.5 && c.bottom <= n.top && n.bottom <= i.top
+                            && centrato(n) && centrato(i) && getComputedStyle(t.querySelector('.tavolozza-nome')).textAlign === 'center');
+                    }).map((t) => t.textContent.trim()),
                 };
             });
 
             if (dove === 'computer') {
                 check('otto tavolozze, in ordine di tinta a partire dal verde',
-                    JSON.stringify(r.nomi) === JSON.stringify(['Verde pistacchio', 'Petrolio', 'Blu ardesia', 'Indaco', 'Prugna', 'Bordeaux', 'Terracotta', 'Ocra']), [JSON.stringify(r.nomi)]);
+                    JSON.stringify(r.nomi) === JSON.stringify(['Verde', 'Petrolio', 'Blu ardesia', 'Indaco', 'Prugna', 'Bordeaux', 'Terracotta', 'Ocra']), [JSON.stringify(r.nomi)]);
             }
             check(`${dove}: ${colonne} per riga, righe piene`, r.righe === 8 / colonne, [JSON.stringify(r)]);
             if (r.distanza !== null) {
                 check(`${dove}: fra una riga e l'altra solo lo spazio della griglia`, r.distanza >= 6 && r.distanza <= 14, [String(r.distanza)]);
             }
             check(`${dove}: ogni nome sta dentro il suo riquadro`, r.fuori.length === 0, r.fuori);
+            check(`${dove}: campioni a tutta larghezza, sotto il nome centrato, sotto la scelta centrata`, r.disposizione.length === 0, r.disposizione);
 
             if (dove === 'computer') {
                 await page.click('.tavolozza:has(input[value="ocra"])');

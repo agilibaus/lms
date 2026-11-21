@@ -98,23 +98,21 @@ use App\Core\Icona;
             <legend class="sr-only">Tavolozza</legend>
             <?php foreach ($tavolozze as $chiave => $t): ?>
                 <label class="tavolozza">
-                    <?php /* Riquadro stretto (21/11): in alto la scelta e i
-                             campioni, sotto il nome, che ha cosi' tutta la
-                             larghezza. I quadratini sono decorazione: il nome
-                             dice gia' di quale tavolozza si tratta, e un
-                             lettore di schermo leggerebbe tre volte la stessa
-                             cosa. */ ?>
-                    <span class="tavolozza-riga">
-                        <input type="radio" name="<?= Theme::KEY_PALETTE ?>"
-                               value="<?= htmlspecialchars($chiave) ?>"
-                               <?= $palette === $chiave ? 'checked' : '' ?>>
-                        <span class="tavolozza-campioni" aria-hidden="true">
-                            <span style="background: <?= htmlspecialchars($t['primary']) ?>"></span>
-                            <span style="background: <?= htmlspecialchars($t['soft']) ?>"></span>
-                            <span style="background: <?= htmlspecialchars($t['auth_bg']) ?>"></span>
-                        </span>
+                    <?php /* Riquadro stretto (21/11, Alessandro): i campioni a
+                             tutta larghezza, sotto il nome centrato, sotto
+                             ancora la scelta, centrata. I quadratini sono
+                             decorazione: il nome dice gia' di quale tavolozza
+                             si tratta, e un lettore di schermo leggerebbe tre
+                             volte la stessa cosa. */ ?>
+                    <span class="tavolozza-campioni" aria-hidden="true">
+                        <span style="background: <?= htmlspecialchars($t['primary']) ?>"></span>
+                        <span style="background: <?= htmlspecialchars($t['soft']) ?>"></span>
+                        <span style="background: <?= htmlspecialchars($t['auth_bg']) ?>"></span>
                     </span>
                     <span class="tavolozza-nome"><?= htmlspecialchars($t['nome']) ?></span>
+                    <input type="radio" name="<?= Theme::KEY_PALETTE ?>"
+                           value="<?= htmlspecialchars($chiave) ?>"
+                           <?= $palette === $chiave ? 'checked' : '' ?>>
                 </label>
             <?php endforeach; ?>
         </fieldset>

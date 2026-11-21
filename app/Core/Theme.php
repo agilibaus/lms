@@ -156,7 +156,7 @@ class Theme
      */
     public const TAVOLOZZE = [
         'verde' => [
-            'nome' => 'Verde pistacchio',
+            'nome' => 'Verde',
             'primary' => '#4F7256',
             'hover' => '#47694F',
             'soft' => '#EAF1EC',
