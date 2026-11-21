@@ -239,6 +239,9 @@ const RIGHE = [
     ['GET',  '/admin/settings/inviti',                                      '/admin/settings/inviti',                                           'L', '403', '403', '403', '403', 'R/admin/settings/email#incontri'],
     ['GET',  '/admin/settings/aspetto',                                     '/admin/settings/aspetto',                                          'L', '403', '403', '403', '403', 'S'],
     ['POST', '/admin/settings/aspetto',                                     '/admin/settings/aspetto',                                          'L', '403', '403', '403', '403', '-'],
+    // L'anteprima di un carattere (21/11): all'admin si chiede una famiglia
+    // fuori catalogo, che risponde 404 senza chiedere niente a Google.
+    ['GET',  '/admin/settings/aspetto/anteprima-carattere',                 '/admin/settings/aspetto/anteprima-carattere?famiglia=Inventato',   'L', '403', '403', '403', '403', '404'],
     ['GET',  '/admin/settings/benvenuto',                                   '/admin/settings/benvenuto',                                        'L', '403', '403', '403', 'S', 'S'],
     ['POST', '/admin/settings/benvenuto',                                   '/admin/settings/benvenuto',                                        'L', '403', '403', '403', '-', '-'],
     ['GET',  '/admin/settings/bunny',                                       '/admin/settings/bunny',                                            'L', '403', '403', '403', '403', 'S'],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\AuthLayout;
 use App\Core\CampoContato;
 use App\Core\Csrf;
+use App\Core\FontLibrary;
 use App\Core\Settings;
 use App\Core\Theme;
 use App\Core\Icona;
@@ -150,12 +151,13 @@ use App\Core\Icona;
 
     <details class="card aspetto-sezione" open>
         <summary class="aspetto-sommario"><h3>Caratteri</h3></summary>
-        <p class="form-hint" style="margin-top: 0;">
-            Dal catalogo di Google Fonts, <strong><?= count($catalogoFont) ?> famiglie</strong>.
-            I caratteri <strong>non si caricano dai server di Google</strong>: quando se ne
-            sceglie uno, è Pistacchio a scaricarlo una volta sola e poi a servirlo lui, così
-            chi apre la pagina di accesso non contatta nessuno. Con il campo vuoto l'applicazione usa
-            il carattere di sistema e le pagine pubbliche Albert Sans.
+        <?php /* Il riquadro rifatto il 21/11 (Alessandro, variante A del
+                 mockup): i due campi affiancati, ciascuno con la sua
+                 anteprima; sotto, i caratteri gia' sul server. */ ?>
+        <p class="form-hint caratteri-intro">
+            Dal catalogo di Google Fonts. Quando si sceglie un carattere, è Pistacchio a scaricarlo una
+            volta sola e poi a servirlo. Con il campo vuoto l'applicazione usa il carattere di sistema e le
+            pagine pubbliche Albert Sans.
         </p>
 
         <?php /* Una tendina da 1941 voci sarebbe inservibile; un `datalist`
@@ -168,66 +170,80 @@ use App\Core\Icona;
             <?php endforeach; ?>
         </datalist>
 
-        <label for="font_interno">Carattere dell’applicazione</label>
-        <input type="text" id="font_interno" name="font_interno" list="catalogo-caratteri"
-               value="<?= htmlspecialchars($fontInterno) ?>"
-               placeholder="carattere di sistema" spellcheck="false"
-               aria-describedby="font_interno_aiuto" data-carattere>
-        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_interno" hidden><?= Icona::svg('x-circle') ?>Torna al carattere di sistema</button>
-        <p class="form-hint" id="font_interno_aiuto">
-            Corsi, lezioni, report, pannello: le pagine dove si legge per ore. Un carattere
-            neutro è spesso la scelta giusta qui.
-        </p>
+        <?php
+        // La pila CSS di un carattere, come `Theme::bloccoFont()` scrive il
+        // nome nel `@font-face`: solo lettere, cifre e spazi.
+        $pila = static function (string $famiglia): string {
+            return '"' . preg_replace('/[^A-Za-z0-9 ]/', '', $famiglia) . '", ' . FontLibrary::generico($famiglia);
+        };
+        $campiCarattere = [
+            'font_interno' => [
+                'etichetta' => 'Carattere dell’applicazione',
+                'valore' => $fontInterno,
+                'predefinito' => 'carattere di sistema',
+                'pilaPredefinita' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                'comando' => 'Torna al carattere di sistema',
+                'aiuto' => 'Corsi, lezioni, report.',
+            ],
+            'font_pubbliche' => [
+                'etichetta' => 'Carattere delle pagine pubbliche',
+                'valore' => $fontPubbliche,
+                'predefinito' => 'Albert Sans',
+                'pilaPredefinita' => '"Albert Sans", sans-serif',
+                'comando' => 'Torna ad Albert Sans',
+                'aiuto' => 'Accesso, registrazione, password.',
+            ],
+        ];
+        ?>
+        <div class="caratteri-campi" data-caratteri-scaricati="<?= htmlspecialchars((string) json_encode($fontScaricati, JSON_UNESCAPED_UNICODE)) ?>">
+            <?php foreach ($campiCarattere as $id => $c): ?>
+                <?php $scelto = $c['valore'] !== '' && in_array($c['valore'], $fontScaricati, true); ?>
+                <div class="caratteri-campo">
+                    <label for="<?= $id ?>"><?= $c['etichetta'] ?></label>
+                    <input type="text" id="<?= $id ?>" name="<?= $id ?>" list="catalogo-caratteri"
+                           value="<?= htmlspecialchars($c['valore']) ?>"
+                           placeholder="<?= htmlspecialchars($c['predefinito']) ?>" spellcheck="false"
+                           aria-describedby="<?= $id ?>_aiuto" data-carattere>
+                    <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="<?= $id ?>" hidden><?= Icona::svg('x-circle') ?><?= $c['comando'] ?></button>
+                    <p class="form-hint" id="<?= $id ?>_aiuto"><?= $c['aiuto'] ?></p>
+                    <?php /* L'anteprima: il carattere salvato, e con lo script
+                             quello che si sta scegliendo (`caratteri-scelta.js`). */ ?>
+                    <div class="carattere-anteprima" data-anteprima="<?= $id ?>"
+                         data-predefinito="<?= htmlspecialchars($c['predefinito']) ?>"
+                         data-pila-predefinita="<?= htmlspecialchars($c['pilaPredefinita']) ?>">
+                        <small>Anteprima · <span data-anteprima-nome><?= htmlspecialchars($c['valore'] !== '' ? $c['valore'] : $c['predefinito']) ?></span></small>
+                        <span class="carattere-anteprima-testo" data-anteprima-testo
+                              style="font-family: <?= htmlspecialchars($scelto ? $pila($c['valore']) : $c['pilaPredefinita']) ?>">Il corso comincia lunedì alle 18:30</span>
+                        <span class="carattere-anteprima-avviso" data-anteprima-avviso hidden></span>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
 
-        <label for="font_pubbliche">Carattere delle pagine pubbliche</label>
-        <input type="text" id="font_pubbliche" name="font_pubbliche" list="catalogo-caratteri"
-               value="<?= htmlspecialchars($fontPubbliche) ?>"
-               placeholder="Albert Sans" spellcheck="false"
-               aria-describedby="font_pubbliche_aiuto" data-carattere>
-        <button type="button" class="link-btn comando-con-icona carattere-partenza" data-carattere-partenza="font_pubbliche" hidden><?= Icona::svg('x-circle') ?>Torna ad Albert Sans</button>
-        <p class="form-hint" id="font_pubbliche_aiuto">
-            Accesso, registrazione, recupero password. È la prima cosa che si vede, e si
-            vede per pochi secondi: qui un carattere caratterizzato ha senso.
-        </p>
-
-        <p class="form-hint">
-            <strong>Se il salvataggio fallisce dicendo che non riesce a raggiungere
-            Google</strong>, il server non può uscire su internet — capita su molti hosting
-            condivisi. In quel caso il carattere va messo a mano in
-            <code>storage/fonts/</code>: il nome del file è quello della famiglia in
-            minuscolo con i trattini, per esempio <code>playfair-display.woff2</code>.
-        </p>
-
-        <?php /* Che cosa c'e' davvero sul server (20/11, Alessandro): i
-                 caratteri scaricati sono anche quelli del menu Formato ›
-                 Caratteri dell'editor; un file che non corrisponde a nessuna
-                 famiglia si segnala, perche' Pistacchio lo ignora. */ ?>
-        <div class="caratteri-cartella">
-            <?php if ($fontScaricati === []): ?>
-                <p class="form-hint"><strong>In <code>storage/fonts/</code> non c'è ancora nessun carattere.</strong></p>
+        <?php /* Che cosa c'e' davvero sul server (20/11): ogni carattere
+                 scritto nel suo carattere; un file che non corrisponde a
+                 nessuna famiglia si segnala, perche' Pistacchio lo ignora. */ ?>
+        <div class="caratteri-server">
+            <p class="caratteri-server-titolo">Sul server, pronti all’uso</p>
+            <?php if ($fontScaricati === [] && $fontNonRiconosciuti === []): ?>
+                <p class="form-hint">Ancora nessuno: il primo arriva quando scegli un carattere e salvi.</p>
             <?php else: ?>
-                <p class="form-hint">
-                    <strong>In <code>storage/fonts/</code>
-                    <?= count($fontScaricati) === 1 ? 'c\'è 1 carattere' : 'ci sono ' . count($fontScaricati) . ' caratteri' ?></strong>:
-                    <?= implode(', ', array_map(static function (string $f) use ($fontInterno, $fontPubbliche): string {
-                        $uso = array_keys(array_filter([
-                            'applicazione' => $f === $fontInterno,
-                            'pagine pubbliche' => $f === $fontPubbliche,
-                        ]));
-
-                        return htmlspecialchars($f) . ($uso === [] ? '' : ' (' . implode(' e ', $uso) . ')');
-                    }, $fontScaricati)) ?>.
-                </p>
+                <p class="form-hint">Si scelgono nei due campi qui sopra e nel menu Formato › Caratteri dell’editor.</p>
+                <ul class="caratteri-elenco">
+                    <?php foreach ($fontScaricati as $f): ?>
+                        <li class="caratteri-voce" style="font-family: <?= htmlspecialchars($pila($f)) ?>"><?= htmlspecialchars($f) ?></li>
+                    <?php endforeach; ?>
+                    <?php foreach ($fontNonRiconosciuti as $n): ?>
+                        <li class="caratteri-voce caratteri-voce-sconosciuta"><code><?= htmlspecialchars($n) ?></code> <em>non riconosciuto</em></li>
+                    <?php endforeach; ?>
+                </ul>
             <?php endif; ?>
-            <?php if ($fontNonRiconosciuti !== []): ?>
-                <p class="form-hint">
-                    <?= count($fontNonRiconosciuti) === 1 ? 'Questo file non corrisponde' : 'Questi file non corrispondono' ?>
-                    a nessuna famiglia del catalogo e Pistacchio non
-                    <?= count($fontNonRiconosciuti) === 1 ? 'lo usa' : 'li usa' ?>:
-                    <?= implode(', ', array_map(static fn (string $n): string => '<code>' . htmlspecialchars($n) . '</code>', $fontNonRiconosciuti)) ?>.
-                    Controlla il nome e l'estensione <code>.woff2</code>.
-                </p>
-            <?php endif; ?>
+            <p class="form-hint">
+                Su molti hosting condivisi, il server non può uscire su internet per raggiungere Google. In quel
+                caso il carattere va messo a mano nella directory <code>storage/fonts/</code>, in formato
+                <code>.woff2</code> e con il nome della famiglia in minuscolo, con i trattini al posto degli spazi:
+                Playfair Display diventa <code>playfair-display.woff2</code>.
+            </p>
         </div>
     </details>
 

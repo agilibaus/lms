@@ -327,6 +327,7 @@ $router->post('/admin/settings/email/prova', [SettingsController::class, 'provaM
 $router->get('/admin/settings/inviti', [SettingsController::class, 'liveMail']);
 $router->get('/admin/settings/aspetto', [SettingsController::class, 'appearance']);
 $router->post('/admin/settings/aspetto', [SettingsController::class, 'updateAppearance']);
+$router->get('/admin/settings/aspetto/anteprima-carattere', [SettingsController::class, 'fontPreview']);
 $router->get('/admin/settings/benvenuto', [SettingsController::class, 'welcome']);
 $router->post('/admin/settings/benvenuto', [SettingsController::class, 'updateWelcome']);
 $router->get('/admin/settings/bunny', [SettingsController::class, 'bunny']);

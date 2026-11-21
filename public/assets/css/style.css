@@ -648,6 +648,128 @@ h3 { font-size: var(--fs-sottotitolo); }
     }
 }
 
+/* Il riquadro «Caratteri» di Aspetto (21/11, Alessandro, variante A): i
+   due campi affiancati, ciascuno nel suo riquadro con l'anteprima; sotto, i
+   caratteri sul server, ognuno scritto nel suo carattere. Sul telefono i
+   due campi vanno uno sotto l'altro. */
+.caratteri-intro {
+    margin: 0 0 1.1rem;
+}
+
+.caratteri-campi {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.caratteri-campo {
+    min-width: 0;
+    padding: 0.9rem 1rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.form .caratteri-campo label {
+    margin-top: 0;
+}
+
+.form .caratteri-campo input[type="text"] {
+    max-width: none;
+}
+
+.caratteri-campo .form-hint {
+    margin-bottom: 0;
+}
+
+.carattere-anteprima {
+    margin-top: 0.7rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+}
+
+.carattere-anteprima small {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--color-text-muted);
+    font-size: var(--fs-secondario);
+}
+
+.carattere-anteprima-testo {
+    display: block;
+    font-size: 1.15rem;
+    line-height: 1.35;
+}
+
+.carattere-anteprima-avviso {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--color-danger);
+    font-size: var(--fs-secondario);
+}
+
+.carattere-anteprima-avviso[hidden] {
+    display: none;
+}
+
+.caratteri-server {
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.caratteri-server-titolo {
+    margin: 0 0 0.15rem;
+    font-weight: 600;
+}
+
+.caratteri-server .form-hint {
+    margin: 0;
+}
+
+.caratteri-elenco {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.6rem 0 0.8rem;
+    padding: 0;
+    list-style: none;
+}
+
+.caratteri-voce {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface);
+    font-size: 1.05rem;
+}
+
+/* Un file che Pistacchio non usa: bordo tratteggiato e «non riconosciuto»
+   in rosso. */
+.caratteri-voce-sconosciuta {
+    border-style: dashed;
+    color: var(--color-text-muted);
+    font-size: var(--fs-secondario);
+}
+
+.caratteri-voce-sconosciuta em {
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-style: normal;
+}
+
+@media (max-width: 40rem) {
+    .caratteri-campi {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* «Torna al carattere di sistema» e «Torna ad Albert Sans» accanto ai due
    campi dei caratteri (Aspetto, 21/11): compaiono solo con un carattere
    scelto. `hidden` va ribadito, perche' `.comando-con-icona` ha un suo

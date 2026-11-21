@@ -43,6 +43,17 @@ class FontLibrary
 
     private const INDICE = __DIR__ . '/../../database/google-fonts.json';
 
+    /**
+     * Le anteprime (21/11, Alessandro): un carattere scelto nel pannello e
+     * non ancora salvato si scarica qui, in una cartella a parte, cosi' non
+     * compare fra quelli «sul server» ne' nel menu dell'editor. Al Salva
+     * passa nella cartella vera; se nessuno lo salva, dopo 12 ore si
+     * cancella.
+     */
+    private const ANTEPRIME = self::CARTELLA . '/anteprime';
+
+    public const ORE_ANTEPRIMA = 12;
+
     /** Quanto si aspetta Google prima di rinunciare, in secondi. */
     private const ATTESA = 15;
 
@@ -200,12 +211,95 @@ class FontLibrary
             return;
         }
 
-        if (!is_dir(self::CARTELLA) && !mkdir(self::CARTELLA, 0775, true) && !is_dir(self::CARTELLA)) {
+        self::cartella(self::CARTELLA);
+
+        // Gia' scaricato per l'anteprima: si sposta, senza chiederlo di
+        // nuovo a Google.
+        if (self::anteprimaFresca($famiglia)) {
+            if (rename(self::percorsoAnteprima($famiglia), self::percorso($famiglia))) {
+                return;
+            }
+        }
+
+        if (file_put_contents(self::percorso($famiglia), self::daGoogle($famiglia)) === false) {
+            throw new RuntimeException('Non riesco a scrivere in storage/fonts: controlla i permessi.');
+        }
+    }
+
+    /**
+     * Il file da mostrare nell'anteprima di una famiglia: quello vero se c'e'
+     * gia', altrimenti quello dell'anteprima, scaricato adesso se manca o se
+     * ha piu' di 12 ore. Ogni volta toglie le anteprime scadute.
+     *
+     * @throws RuntimeException
+     */
+    public static function anteprima(string $famiglia): string
+    {
+        if (!self::esiste($famiglia)) {
+            throw new RuntimeException('La famiglia "' . $famiglia . '" non è nel catalogo.');
+        }
+
+        self::pulisciAnteprime();
+
+        if (self::presente($famiglia)) {
+            return self::percorso($famiglia);
+        }
+
+        if (!self::anteprimaFresca($famiglia)) {
+            self::cartella(self::ANTEPRIME);
+
+            if (file_put_contents(self::percorsoAnteprima($famiglia), self::daGoogle($famiglia)) === false) {
+                throw new RuntimeException('Non riesco a scrivere in storage/fonts: controlla i permessi.');
+            }
+        }
+
+        return self::percorsoAnteprima($famiglia);
+    }
+
+    public static function percorsoAnteprima(string $famiglia): string
+    {
+        return self::ANTEPRIME . '/' . self::nomeFile($famiglia);
+    }
+
+    /** L'anteprima di questa famiglia c'e' e ha meno di 12 ore? */
+    public static function anteprimaFresca(string $famiglia): bool
+    {
+        $percorso = self::percorsoAnteprima($famiglia);
+
+        return is_file($percorso) && (int) filemtime($percorso) > time() - self::ORE_ANTEPRIMA * 3600;
+    }
+
+    /**
+     * Cancella le anteprime con piu' di 12 ore. Senza un comando pianificato
+     * apposta: si fa quando qualcuno apre Aspetto, chiede un'anteprima o
+     * salva un carattere, e fino ad allora un file scaduto non si usa.
+     */
+    public static function pulisciAnteprime(): void
+    {
+        foreach (glob(self::ANTEPRIME . '/*.woff2') ?: [] as $percorso) {
+            if ((int) filemtime($percorso) <= time() - self::ORE_ANTEPRIMA * 3600) {
+                @unlink($percorso);
+            }
+        }
+    }
+
+    /** @throws RuntimeException */
+    private static function cartella(string $percorso): void
+    {
+        if (!is_dir($percorso) && !mkdir($percorso, 0775, true) && !is_dir($percorso)) {
             throw new RuntimeException(
                 'Non riesco a creare la cartella storage/fonts: controlla i permessi di scrittura.'
             );
         }
+    }
 
+    /**
+     * Il file woff2 della famiglia, chiesto a Google.
+     *
+     * @throws RuntimeException
+     */
+    private static function daGoogle(string $famiglia): string
+    {
         $css = self::chiedi(self::indirizzoCss($famiglia), 'text/css');
 
         // Il CSS di Google elenca piu' blocchi @font-face, uno per
@@ -228,9 +322,7 @@ class FontLibrary
             throw new RuntimeException('Il file scaricato è troppo piccolo per essere un carattere.');
         }
 
-        if (file_put_contents(self::percorso($famiglia), $font) === false) {
-            throw new RuntimeException('Non riesco a scrivere in storage/fonts: controlla i permessi.');
-        }
+        return $font;
     }
 
     /**

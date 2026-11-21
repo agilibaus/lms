@@ -2,8 +2,8 @@
  * Che cosa c'e' in `storage/fonts/` (20/11, Alessandro).
  *
  * La sezione «Caratteri» di Impostazioni › Aspetto dice quali caratteri sono
- * sul server, quale usa l'applicazione e quale le pagine pubbliche, e
- * segnala i file che non corrispondono a nessuna famiglia del catalogo.
+ * sul server, ciascuno scritto nel suo carattere, e segnala i file che non
+ * corrispondono a nessuna famiglia del catalogo (riquadro rifatto il 21/11).
  *
  * Esecuzione:  node tests/caratteri_cartella.js   (server di sviluppo acceso)
  *
@@ -68,10 +68,27 @@ function cartella(file) {
 
     const browser = await chromium.launch();
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    // La sezione «Sul server, pronti all'uso» del riquadro (21/11): le
+    // voci, ciascuna con il suo carattere e il suo aspetto, e le frasi.
     const leggi = async () => {
         await page.goto(BASE + '/admin/settings/aspetto');
-        return page.locator('.caratteri-cartella').innerText().then((t) => t.replace(/\s+/g, ' ').trim());
+        return page.evaluate(() => {
+            const s = document.querySelector('.caratteri-server');
+            return {
+                titolo: s.querySelector('.caratteri-server-titolo').textContent.trim(),
+                frasi: [...s.querySelectorAll('p.form-hint')].map((p) => p.textContent.replace(/\s+/g, ' ').trim()),
+                voci: [...s.querySelectorAll('.caratteri-voce')].map((v) => ({
+                    testo: v.textContent.replace(/\s+/g, ' ').trim(),
+                    famiglia: getComputedStyle(v).fontFamily,
+                    bordo: getComputedStyle(v).borderTopStyle,
+                    rosso: v.querySelector('em') ? getComputedStyle(v.querySelector('em')).color : null,
+                })),
+            };
+        });
     };
+    const NOTA = 'Su molti hosting condivisi, il server non può uscire su internet per raggiungere Google. In quel caso '
+        + 'il carattere va messo a mano nella directory storage/fonts/, in formato .woff2 e con il nome della famiglia '
+        + 'in minuscolo, con i trattini al posto degli spazi: Playfair Display diventa playfair-display.woff2.';
 
     try {
         await page.goto(BASE + '/login');
@@ -84,32 +101,36 @@ function cartella(file) {
         imposta('THEME_FONT_AUTH', '\x00');
 
         cartella(null);
-        let t = await leggi();
-        check('cartella assente: dice che non c\'è nessun carattere, e niente altro',
-            t === 'In storage/fonts/ non c\'è ancora nessun carattere.', [t]);
+        let r = await leggi();
+        check('cartella assente: «Ancora nessuno», nessuna voce, e la nota sugli hosting',
+            r.titolo === 'Sul server, pronti all’uso' && r.voci.length === 0
+                && JSON.stringify(r.frasi) === JSON.stringify(['Ancora nessuno: il primo arriva quando scegli un carattere e salvi.', NOTA]), [JSON.stringify(r)]);
 
         cartella(['lora.woff2']);
-        t = await leggi();
-        check('un carattere: al singolare, senza indicazione d\'uso',
-            t === 'In storage/fonts/ c\'è 1 carattere: Lora.', [t]);
+        r = await leggi();
+        check('un carattere: una voce scritta nel suo carattere',
+            r.voci.length === 1 && r.voci[0].testo === 'Lora' && r.voci[0].famiglia.startsWith('Lora')
+                && r.frasi[0] === 'Si scelgono nei due campi qui sopra e nel menu Formato › Caratteri dell’editor.', [JSON.stringify(r)]);
 
         cartella(['playfair-display.woff2', 'albert-sans.woff2', 'Pippo.woff2', 'lora.ttf']);
         imposta('THEME_FONT_APP', 'Albert Sans');
         imposta('THEME_FONT_AUTH', 'Playfair Display');
-        t = await leggi();
-        check('due caratteri, in ordine alfabetico, ciascuno con il suo uso',
-            t.startsWith('In storage/fonts/ ci sono 2 caratteri: '
-                + 'Albert Sans (applicazione), Playfair Display (pagine pubbliche).'), [t]);
-        check('i file sbagliati sono segnalati, con il nome',
-            t.endsWith('Questi file non corrispondono a nessuna famiglia del catalogo e Pistacchio non li usa: '
-                + 'lora.ttf, Pippo.woff2. Controlla il nome e l\'estensione .woff2.'), [t]);
+        r = await leggi();
+        check('due caratteri in ordine alfabetico, senza l\'indicazione d\'uso',
+            JSON.stringify(r.voci.slice(0, 2).map((v) => v.testo)) === JSON.stringify(['Albert Sans', 'Playfair Display'])
+                && r.voci[1].famiglia.startsWith('"Playfair Display"'), [JSON.stringify(r)]);
+        check('i file sbagliati: bordo tratteggiato e «non riconosciuto» in rosso',
+            JSON.stringify(r.voci.slice(2).map((v) => v.testo)) === JSON.stringify(['lora.ttf non riconosciuto', 'Pippo.woff2 non riconosciuto'])
+                && r.voci.slice(2).every((v) => v.bordo === 'dashed' && v.rosso === 'rgb(185, 28, 28)'), [JSON.stringify(r)]);
 
-        imposta('THEME_FONT_AUTH', 'Albert Sans');
-        fs.rmSync(path.join(FONT, 'lora.ttf'));
-        t = await leggi();
-        check('lo stesso carattere per tutte e due, e un solo file sbagliato al singolare',
-            t.includes('Albert Sans (applicazione e pagine pubbliche), Playfair Display.')
-                && t.endsWith('Questo file non corrisponde a nessuna famiglia del catalogo e Pistacchio non lo usa: Pippo.woff2. Controlla il nome e l\'estensione .woff2.'), [t]);
+        const campi = await page.evaluate(() => ({
+            intro: document.querySelector('.caratteri-intro').textContent.replace(/\s+/g, ' ').trim(),
+            aiuti: ['font_interno_aiuto', 'font_pubbliche_aiuto'].map((i) => document.getElementById(i).textContent.trim()),
+        }));
+        check('la frase in cima e le due frasi sotto i campi',
+            campi.intro === 'Dal catalogo di Google Fonts. Quando si sceglie un carattere, è Pistacchio a scaricarlo una volta sola e poi a servirlo. '
+                + 'Con il campo vuoto l\'applicazione usa il carattere di sistema e le pagine pubbliche Albert Sans.'
+                && JSON.stringify(campi.aiuti) === JSON.stringify(['Corsi, lezioni, report.', 'Accesso, registrazione, password.']), [JSON.stringify(campi)]);
     } finally {
         await browser.close();
         fs.rmSync(FONT, { recursive: true, force: true });

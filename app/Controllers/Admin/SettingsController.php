@@ -531,6 +531,9 @@ class SettingsController extends AdminController
     {
         Auth::requirePermission('settings.manage');
 
+        // Le anteprime dei caratteri non salvati durano 12 ore (21/11).
+        FontLibrary::pulisciAnteprime();
+
         $values = [];
 
         foreach (['AUTH_SPLIT_TITLE', 'AUTH_SPLIT_TEXT'] as $key) {
@@ -571,6 +574,43 @@ class SettingsController extends AdminController
             'ritocchi' => ElementStyle::valori(),
             'lastUpdate' => Settings::lastUpdate(Settings::APPEARANCE_KEYS),
         ]);
+    }
+
+    /**
+     * Il file di un carattere per l'anteprima nel pannello (21/11,
+     * Alessandro): lo scarica il server, mai il browser da Google, e lo tiene
+     * a parte finche' non lo si salva (`FontLibrary::anteprima()`). Se il
+     * server non raggiunge Google risponde 502, e la pagina dice che
+     * l'anteprima non e' disponibile.
+     */
+    public function fontPreview(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $famiglia = trim((string) ($_GET['famiglia'] ?? ''));
+
+        if (!FontLibrary::esiste($famiglia)) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Il carattere non è nel catalogo.';
+            return;
+        }
+
+        try {
+            $percorso = FontLibrary::anteprima($famiglia);
+        } catch (\RuntimeException $e) {
+            http_response_code(502);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo $e->getMessage();
+            return;
+        }
+
+        header('Content-Type: font/woff2');
+        header('Content-Length: ' . filesize($percorso));
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, max-age=3600');
+        readfile($percorso);
+        exit;
     }
 
     public function updateAppearance(array $params = []): void
