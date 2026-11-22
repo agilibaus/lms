@@ -450,9 +450,14 @@ h3 { font-size: var(--fs-sottotitolo); }
    chiunque («Modifica lezione» nell'avviso della fruizione) — e le WCAG
    (1.4.1) chiedono piu' del solo colore. Verde, cioe' il colore principale,
    che §4 del promemoria indica gia' per i collegamenti, e sottolineato
-   sempre. Al passaggio diventa il verde scuro della tavolozza (22/11,
-   Alessandro): fino ad allora la sottolineatura passava a 2 px, piu' spessa
-   dei tratti delle lettere, e sembrava una barra sotto la parola.
+   sempre. Al passaggio il colore si scurisce (22/11, Alessandro): fino ad
+   allora la sottolineatura passava a 2 px, piu' spessa dei tratti delle
+   lettere, e sembrava una barra sotto la parola. Non il verde scuro dei
+   pulsanti (`--color-primary-hover`): e' scuro solo del 10% e sul testo non
+   si notava. Il colore principale con il 35% di nero si vede, e resta del
+   colore della tavolozza; piu' scuro diventa quasi nero e non sembra piu'
+   un collegamento. Scurire alza il contrasto: va bene su ogni tavolozza.
+   Il primo `color` vale per i browser senza `color-mix`.
    Solo i collegamenti senza classe: quelli con una classe sono componenti
    (pulsanti, comandi) con regole proprie. */
 :is(p, .alert, .form-hint, .lesson-content) a:not([class]) {
@@ -464,6 +469,7 @@ h3 { font-size: var(--fs-sottotitolo); }
 
 :is(p, .alert, .form-hint, .lesson-content) a:not([class]):is(:hover, :focus-visible) {
     color: var(--color-primary-hover);
+    color: color-mix(in srgb, var(--color-primary), #000 35%);
 }
 
 .main-content {

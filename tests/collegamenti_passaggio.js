@@ -2,8 +2,11 @@
  * Il passaggio del mouse sui collegamenti nelle frasi (22/11, Alessandro).
  *
  * Sottolineatura sempre da 1 px; al passaggio, e con il fuoco della
- * tastiera, cambia il colore (il verde scuro della tavolozza) e non lo
- * spessore: a 2 px la linea era piu' spessa dei tratti delle lettere.
+ * tastiera, il colore si scurisce in modo che si veda (il colore principale
+ * con il 35% di nero) e non cambia lo spessore: a 2 px la linea era piu'
+ * spessa dei tratti delle lettere. Il primo tentativo, il verde scuro dei
+ * pulsanti, non si notava: il controllo chiede fra i due colori almeno
+ * 1,5:1 di contrasto.
  * Prova «Password dimenticata?» e «Registrati» della pagina di accesso.
  *
  * Esecuzione:  node tests/collegamenti_passaggio.js   (server di sviluppo acceso)
@@ -34,11 +37,22 @@ function check(etichetta, condizione, dettagli = []) {
         const colori = await page.evaluate(() => {
             const prova = document.createElement('span');
             document.body.appendChild(prova);
-            const leggi = (v) => { prova.style.color = `var(${v})`; return getComputedStyle(prova).color; };
-            const c = { principale: leggi('--color-primary'), scuro: leggi('--color-primary-hover') };
+            prova.style.color = 'var(--color-primary)';
+            const c = { principale: getComputedStyle(prova).color };
             prova.remove();
             return c;
         });
+        // La luminanza relativa (WCAG) da «rgb(r, g, b)» o «color(srgb r g b)».
+        const luminanza = (css) => {
+            const n = css.match(/[\d.]+/g).slice(0, 3).map(Number);
+            const v = css.startsWith('color(') ? n : n.map((x) => x / 255);
+            const l = v.map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+            return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+        };
+        const distacco = (a, b) => {
+            const [x, y] = [luminanza(a), luminanza(b)].sort((p, q) => q - p);
+            return (x + 0.05) / (y + 0.05);
+        };
         const stile = (testo) => page.locator(`a:has-text("${testo}")`).evaluate((e) => {
             const s = getComputedStyle(e);
             return { linea: s.textDecorationLine, spessore: s.textDecorationThickness, colore: s.color };
@@ -56,9 +70,10 @@ function check(etichetta, condizione, dettagli = []) {
             const fuoco = await stile(testo);
             check(`«${testo}»: a riposo verde, sottolineato da 1 px`,
                 prima.linea === 'underline' && prima.spessore === '1px' && prima.colore === colori.principale, [JSON.stringify(prima)]);
-            check(`«${testo}»: al passaggio e con il fuoco cambia il colore, non lo spessore`,
-                [sopra, fuoco].every((s) => s.linea === 'underline' && s.spessore === '1px' && s.colore === colori.scuro)
-                    && colori.scuro !== colori.principale, [JSON.stringify({ sopra, fuoco, colori })]);
+            check(`«${testo}»: al passaggio e con il fuoco si scurisce in modo che si veda (almeno 1,5:1), lo spessore no`,
+                [sopra, fuoco].every((s) => s.linea === 'underline' && s.spessore === '1px'
+                    && luminanza(s.colore) < luminanza(colori.principale) && distacco(s.colore, colori.principale) >= 1.5),
+                [JSON.stringify({ sopra, fuoco, colori, distacco: distacco(sopra.colore, colori.principale).toFixed(2) })]);
         }
     } finally {
         await browser.close();
