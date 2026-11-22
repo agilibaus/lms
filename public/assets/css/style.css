@@ -3135,21 +3135,21 @@ body.has-focus-video {
     font-size: var(--fs-secondario);
 }
 
+/* Il testo della lezione occupa tutta la colonna (22/11, Alessandro): fino
+   ad allora si fermava a 68 caratteri, e su uno schermo largo il testo
+   sembrava troncato con mezza pagina vuota accanto. La colonna resta quella
+   di tutte le pagine (`.main-content`, al massimo 1080 px). */
 .lesson-content {
-    max-width: 68ch;
     line-height: 1.6;
     margin-bottom: 1.5rem;
 }
 
 /* Nell'editor della lezione (14/10, Alessandro): l'editor carica questo
-   foglio e da' al testo la classe `lesson-content`, e ne prendeva anche la
-   misura di riga — il testo si fermava a 68 caratteri. Li' il testo occupa
-   tutto il riquadro; nella pagina della lezione resta a 68 caratteri, la
-   misura che si legge bene. Il margine interno ai lati non sta qui:
-   l'estensione che allunga l'editor lo scrive sul corpo, e lo si imposta
-   con `autoresize_overflow_padding` (lessons/form.php). Qui sopra e sotto. */
+   foglio e da' al testo la classe `lesson-content`. Il margine interno ai
+   lati non sta qui: l'estensione che allunga l'editor lo scrive sul corpo,
+   e lo si imposta con `autoresize_overflow_padding` (lessons/form.php).
+   Qui sopra e sotto. */
 .lesson-content.mce-content-body {
-    max-width: none;
     margin: 0;
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
