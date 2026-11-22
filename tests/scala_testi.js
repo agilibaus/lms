@@ -9,7 +9,9 @@
  *
  * COSA VERIFICA, su ogni pagina:
  *
- *   1. un solo carattere, quello della pagina (il codice a parte);
+ *   1. un solo carattere, quello della pagina (il codice a parte, e in
+ *      Aspetto l'anteprima dei caratteri e le voci di «Sul server», che
+ *      mostrano ciascuna il proprio);
  *   2. titolo della pagina, titoli dei gruppi, titoli dei riquadri: ognuno
  *      alla sua misura e a 600;
  *   3. etichette e nomi delle opzioni alla misura delle etichette;
@@ -58,7 +60,9 @@ const RUOLI = [
     ['titolo della pagina', 'main h1', 1.5, '600', null],
     ['titolo di un gruppo', '.gruppo-titolo', 1.4, '600', null],
     ['titolo di un riquadro', '.card > h2:not(.coda-email-titolo), .aspetto-sommario h3, .email-scelta-testa h2', 1.2, '600', null],
-    ['sottotitolo nel riquadro', '.card h3:not(.aspetto-sommario h3), .email-elenco h2, .coda-email-titolo, .ritocco-nome', 1.05, '600', null],
+    ['sottotitolo nel riquadro', '.card h3:not(.aspetto-sommario h3), .email-elenco h2, .coda-email-titolo', 1.05, '600', null],
+    // Il nome di un elemento nei ritocchi di Aspetto (22/11, Alessandro).
+    ['nome di un ritocco', '.ritocco-nome', 1, '600', null],
     ['etichetta', 'main label:not(.checkbox-label), .ruoli-interruttore-nome, .tavolozza-nome', 0.92, '500', null],
     ['nota', 'main .form-hint, .gruppo-nota, .ruoli-interruttore-cosa', 0.92, '400', 'grigio'],
     ['messaggio «nessun…»', '.empty-state, .empty-state-small', 0.92, '400', 'grigio'],
@@ -126,7 +130,9 @@ async function giroCompleto(browser) {
                     const c = getComputedStyle(e);
                     const t = (e.innerText || e.value || '').trim().replace(/\s+/g, ' ').slice(0, 30);
                     if (!MISURE.some((m) => Math.abs(parseFloat(c.fontSize) - m * rem) < 0.05)) out.misure.push(nome + ' «' + t + '» ' + c.fontSize);
-                    if (c.fontFamily !== pagina) out.caratteri.push(nome + ' «' + t + '» in ' + c.fontFamily.split(',')[0]);
+                    // L'anteprima dei caratteri e le voci di «Sul server» in
+                    // Aspetto sono scritte apposta in un altro carattere (21/11).
+                    if (c.fontFamily !== pagina && !e.closest('.carattere-anteprima, .caratteri-voce')) out.caratteri.push(nome + ' «' + t + '» in ' + c.fontFamily.split(',')[0]);
                     if (/^h[123]$/.test(e.tagName.toLowerCase()) && c.fontWeight !== '600' && !contesto.includes('tp-sottotitolo')) out.pesi.push(nome + ' «' + t + '» ' + c.fontWeight);
                     if (e.tagName === 'LABEL' && !e.closest('.campo-contato-testa, .tp-scelta, .checkbox-label') && !e.classList.contains('checkbox-label') && c.fontWeight !== '500') out.pesi.push(nome + ' «' + t + '» ' + c.fontWeight);
                 }
@@ -234,7 +240,7 @@ async function piedeBarra(browser) {
             const pagina = getComputedStyle(document.body).fontFamily;
 
             const caratteri = [...document.querySelectorAll('main *')]
-                .filter((e) => visibile(e) && !e.closest('code, pre, .tox') && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))
+                .filter((e) => visibile(e) && !e.closest('code, pre, .tox, .carattere-anteprima, .caratteri-voce') && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))
                 .filter((e) => getComputedStyle(e).fontFamily !== pagina)
                 .map((e) => '«' + testo(e) + '» in ' + getComputedStyle(e).fontFamily.split(',')[0]);
 

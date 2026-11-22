@@ -707,7 +707,8 @@ h3 { font-size: var(--fs-sottotitolo); }
 
 .carattere-anteprima-testo {
     display: block;
-    font-size: 1.15rem;
+    /* Una misura della scala (`--fs-*`): 1,15 rem non lo era. */
+    font-size: var(--fs-riquadro);
     line-height: 1.35;
 }
 
@@ -1628,8 +1629,9 @@ h3 { font-size: var(--fs-sottotitolo); }
 }
 
 .ritocco-nome {
-    /* Un sottotitolo nel riquadro (18/11). */
-    font-size: var(--fs-sottotitolo);
+    /* Il nome di un elemento nel riquadro dei ritocchi: un sottotitolo
+       (18/11), alla misura del testo dal 22/11 (Alessandro). */
+    font-size: var(--fs-testo);
     font-weight: 600;
 }
 
