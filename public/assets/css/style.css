@@ -450,7 +450,9 @@ h3 { font-size: var(--fs-sottotitolo); }
    chiunque («Modifica lezione» nell'avviso della fruizione) — e le WCAG
    (1.4.1) chiedono piu' del solo colore. Verde, cioe' il colore principale,
    che §4 del promemoria indica gia' per i collegamenti, e sottolineato
-   sempre; al passaggio la sottolineatura si ispessisce.
+   sempre. Al passaggio diventa il verde scuro della tavolozza (22/11,
+   Alessandro): fino ad allora la sottolineatura passava a 2 px, piu' spessa
+   dei tratti delle lettere, e sembrava una barra sotto la parola.
    Solo i collegamenti senza classe: quelli con una classe sono componenti
    (pulsanti, comandi) con regole proprie. */
 :is(p, .alert, .form-hint, .lesson-content) a:not([class]) {
@@ -461,7 +463,7 @@ h3 { font-size: var(--fs-sottotitolo); }
 }
 
 :is(p, .alert, .form-hint, .lesson-content) a:not([class]):is(:hover, :focus-visible) {
-    text-decoration-thickness: 2px;
+    color: var(--color-primary-hover);
 }
 
 .main-content {
