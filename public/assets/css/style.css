@@ -790,6 +790,12 @@ h3 { font-size: var(--fs-sottotitolo); }
     display: none;
 }
 
+/* «Mostra tutte» in fondo alle sessioni concluse di chi partecipa
+   (22/11). */
+.agenda-mostra-tutte {
+    margin: 0.75rem 0 0;
+}
+
 /* Il filtro attivo sopra la tabella: che cosa si sta guardando e il comando
    per tornare a tutti. */
 .filtro-attivo {

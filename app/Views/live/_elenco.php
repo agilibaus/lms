@@ -18,6 +18,11 @@ use App\Core\Icona;
  * non e' cominciato: dopo non serve. Niente colonna «Meet»: come e' stato
  * creato il collegamento interessa lo staff.
  *
+ * Delle concluse si vedono le ultime 5 (22/11, Alessandro), con «Mostra
+ * tutte» in fondo: un collegamento che ricarica la pagina con tutte e con
+ * la sezione gia' aperta, come «Mostra tutti i moduli» del corso. Niente
+ * script: senza JavaScript funziona uguale.
+ *
  * @var list<array<string, mixed>> $sessions
  */
 
@@ -35,6 +40,10 @@ foreach ($sessions as $s) {
 
 usort($future, static fn (array $a, array $b): int => strcmp((string) $a['starts_at'], (string) $b['starts_at']));
 usort($concluse, static fn (array $a, array $b): int => strcmp((string) $b['starts_at'], (string) $a['starts_at']));
+
+$CONCLUSE_VISIBILI = 5;
+$tutteConcluse = ($_GET['concluse'] ?? '') === 'tutte';
+$concluseMostrate = $tutteConcluse ? $concluse : array_slice($concluse, 0, $CONCLUSE_VISIBILI);
 
 $riquadro = static function (array $s) use ($adesso): string {
     $inizio = new DateTimeImmutable((string) $s['starts_at']);
@@ -104,12 +113,15 @@ $riquadro = static function (array $s) use ($adesso): string {
 </section>
 
 <?php if ($concluse !== []): ?>
-    <details class="agenda-passati">
+    <details class="agenda-passati" id="concluse" <?= $tutteConcluse ? 'open' : '' ?>>
         <summary><h2>Concluse (<?= count($concluse) ?>)</h2></summary>
         <ul class="agenda-elenco">
-            <?php foreach ($concluse as $s): ?>
+            <?php foreach ($concluseMostrate as $s): ?>
                 <?= $riquadro($s) ?>
             <?php endforeach; ?>
         </ul>
+        <?php if (count($concluseMostrate) < count($concluse)): ?>
+            <p class="agenda-mostra-tutte"><a href="/live?concluse=tutte#concluse" class="link-btn">Mostra tutte</a></p>
+        <?php endif; ?>
     </details>
 <?php endif; ?>
