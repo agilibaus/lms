@@ -83,7 +83,7 @@ $id = (int) $quiz['id'];
                 <th scope="col" role="columnheader">Data</th>
                 <th scope="col" role="columnheader">Punteggio</th>
                 <th scope="col" role="columnheader">Esito</th>
-                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
             </tr>
             </thead>
             <tbody role="rowgroup">
@@ -97,7 +97,7 @@ $id = (int) $quiz['id'];
                         <?php endif; ?>
                     </td>
                     <td role="cell" data-label="Esito"><?= (int) $attempt['passed'] === 1 ? 'Superato' : 'Non superato' ?></td>
-                    <td role="cell" class="row-actions"><a href="/attempts/<?= (int) $attempt['id'] ?>">Dettaglio</a></td>
+                    <td role="cell" class="row-actions col-azioni"><a href="/attempts/<?= (int) $attempt['id'] ?>">Dettaglio</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

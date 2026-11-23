@@ -1022,7 +1022,9 @@ async function esamina(page, url, nome, minimoBersaglio, daTelefono) {
     const r = await page.evaluate(raccogli, minimoBersaglio);
 
     check(nome + ': lingua dichiarata', r.lang !== '');
-    check(nome + ': titolo della scheda', r.titolo !== '');
+    // Con il nome di Pistacchio in tutte le pagine, pubbliche e no (23/11,
+    // Alessandro): dopo l'accesso era «… · LMS».
+    check(nome + ': titolo della scheda, con «Pistacchio LMS» in fondo', /^(.+ · )?Pistacchio LMS$/.test(r.titolo), [r.titolo]);
     check(nome + ': un solo titolo principale', r.h1 === 1, ['trovati ' + r.h1]);
     check(nome + ': contrasto del testo', r.contrasti.length === 0, r.contrasti);
     check(nome + ': campi con etichetta', r.senzaEtichetta.length === 0, r.senzaEtichetta);
@@ -2154,6 +2156,19 @@ async function giroCatalogoStudente(browser) {
         await esamina(page, '/quizzes/' + SEMINA.C.quiz, 'Questionario con tentativi (studente)', BERSAGLIO_MINIMO, larghezza <= 500);
         check('Questionario con tentativi (studente): a ' + larghezza + ' px si vedono i tentativi',
             await page.locator('h2', { hasText: 'I tuoi tentativi' }).count() === 1, [page.url()]);
+        // «Dettaglio», il comando dell'ultima colonna, a destra come nei
+        // report (23/11, Alessandro). Sul computer: sul telefono e' una scheda.
+        if (larghezza > 500) {
+            const comando = await page.evaluate(() => {
+                const t = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'I tuoi tentativi');
+                const cella = t?.querySelector('tbody tr td:last-child');
+                const link = cella?.querySelector('a');
+                if (!link) return null;
+                return Math.round(cella.getBoundingClientRect().right - parseFloat(getComputedStyle(cella).paddingRight) - link.getBoundingClientRect().right);
+            });
+            check('Questionario con tentativi (studente): «Dettaglio» a destra nella sua colonna', comando !== null && comando <= 1,
+                ['distanza dal bordo destro della cella: ' + comando + ' px']);
+        }
         await ctx.close();
     }
 

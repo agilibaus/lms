@@ -191,7 +191,7 @@ use App\Core\QuizScoring;
                 <th scope="col" role="columnheader">Data</th>
                 <th scope="col" role="columnheader">Punteggio</th>
                 <th scope="col" role="columnheader">Esito</th>
-                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
             </tr>
             </thead>
             <tbody role="rowgroup">
@@ -200,7 +200,7 @@ use App\Core\QuizScoring;
                     <td role="cell" data-label="Data"><?= htmlspecialchars(Quando::dataOra((string) $attempt['attempted_at'])) ?></td>
                     <td role="cell" data-label="Punteggio"><?= number_format((float) $attempt['score_pct'], 0) ?>%</td>
                     <td role="cell" data-label="Esito"><?= (int) $attempt['passed'] === 1 ? 'Superato' : 'Non superato' ?></td>
-                    <td role="cell" class="row-actions"><a href="/attempts/<?= (int) $attempt['id'] ?>">Dettaglio</a></td>
+                    <td role="cell" class="row-actions col-azioni"><a href="/attempts/<?= (int) $attempt['id'] ?>">Dettaglio</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
