@@ -14,6 +14,7 @@ use App\Models\CourseModel;
 use App\Models\GroupModel;
 use App\Models\GroupQuestionModel;
 use App\Models\LiveSessionModel;
+use App\Core\Errore;
 
 /**
  * La pagina di un gruppo vista da chi ne fa parte: il tutor al centro e i
@@ -40,14 +41,12 @@ class GroupPageController
         $group = GroupModel::find((int) $params['id']);
 
         if ($group === null) {
-            http_response_code(404);
-            echo 'Gruppo non trovato.';
+            Errore::pagina(404, 'Gruppo non trovato.');
             return;
         }
 
         if (!GroupPeers::canViewGroup((int) Auth::id(), (int) $group['id'])) {
-            http_response_code(403);
-            echo 'Non fai parte di questo gruppo.';
+            Errore::pagina(403, 'Non fai parte di questo gruppo.');
             return;
         }
 
@@ -242,8 +241,7 @@ class GroupPageController
         $risposta = GroupQuestionModel::findAnswer((int) $params['answerId']);
 
         if ($risposta === null) {
-            http_response_code(404);
-            echo 'Risposta non trovata.';
+            Errore::pagina(404, 'Risposta non trovata.');
             exit;
         }
 
@@ -318,8 +316,7 @@ class GroupPageController
         $group = GroupModel::find($groupId);
 
         if ($group === null) {
-            http_response_code(404);
-            echo 'Gruppo non trovato.';
+            Errore::pagina(404, 'Gruppo non trovato.');
             exit;
         }
 
@@ -368,8 +365,7 @@ class GroupPageController
 
     private function vietato(string $messaggio): never
     {
-        http_response_code(403);
-        echo $messaggio;
+        Errore::pagina(403, $messaggio);
         exit;
     }
 

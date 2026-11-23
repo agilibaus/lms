@@ -13,6 +13,7 @@ use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
 use App\Models\ModuleModel;
 use App\Models\TreParoleModel;
+use App\Core\Errore;
 
 /**
  * «Tre parole» (21/10, Alessandro): l'invio dello studente alla fine di un
@@ -94,8 +95,7 @@ class TreParoleController
         $course = CourseModel::find((int) ($_GET['corso'] ?? 0));
 
         if ($course === null) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
 
             return;
         }
@@ -185,8 +185,7 @@ class TreParoleController
 
     private function vietato(string $perche): never
     {
-        http_response_code(403);
-        echo $perche;
+        Errore::pagina(403, $perche);
         exit;
     }
 }

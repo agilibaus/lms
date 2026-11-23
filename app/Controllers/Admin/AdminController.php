@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Errore;
+
 /**
  * Helper comuni ai controller del pannello di amministrazione:
  * messaggi flash e redirect, per non ripeterli in ogni azione.
@@ -32,13 +34,11 @@ abstract class AdminController
 
     protected function notFound(string $message): void
     {
-        http_response_code(404);
-        echo $message;
+        Errore::pagina(404, $message);
     }
 
     protected function forbidden(string $message): void
     {
-        http_response_code(403);
-        echo $message;
+        Errore::pagina(403, $message);
     }
 }

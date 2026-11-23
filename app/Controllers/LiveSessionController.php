@@ -18,6 +18,7 @@ use App\Models\GroupModel;
 use App\Models\LiveSessionAttendanceModel;
 use App\Models\LiveSessionModel;
 use App\Models\ModuleModel;
+use App\Core\Errore;
 
 /**
  * Sessioni live su Google Meet.
@@ -64,8 +65,7 @@ class LiveSessionController
         }
 
         if (!$this->canView($session)) {
-            http_response_code(403);
-            echo 'Questa sessione non è fra quelle a cui sei iscritto.';
+            Errore::pagina(403, 'Questa sessione non è fra quelle a cui sei iscritto.');
             return;
         }
 
@@ -333,8 +333,7 @@ class LiveSessionController
         }
 
         if (!$this->canView($session)) {
-            http_response_code(403);
-            echo 'Questa sessione non è fra quelle a cui sei iscritto.';
+            Errore::pagina(403, 'Questa sessione non è fra quelle a cui sei iscritto.');
             return;
         }
 
@@ -455,8 +454,8 @@ class LiveSessionController
     {
         // Una sessione che non esiste la lascia al 404 del chiamante.
         if ($session !== null && !$this->inScope($session)) {
-            http_response_code(403);
-            exit('Accesso negato: questo incontro non riguarda i tuoi corsi o i tuoi gruppi.');
+            Errore::pagina(403, 'Accesso negato: questo incontro non riguarda i tuoi corsi o i tuoi gruppi.');
+            exit;
         }
     }
 
@@ -749,7 +748,6 @@ class LiveSessionController
 
     private function notFound(string $message): void
     {
-        http_response_code(404);
-        echo $message;
+        Errore::pagina(404, $message);
     }
 }

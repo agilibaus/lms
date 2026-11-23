@@ -18,6 +18,7 @@ use App\Models\EnrollmentModel;
 use App\Models\ModuleModel;
 use App\Models\QuestionModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * Le domande degli studenti all'esperto (07/10; dal 09/10 risponde
@@ -51,8 +52,7 @@ class QuestionController
         $userId = (int) Auth::id();
 
         if ($course === null || !Auth::hasRole('studente') || EnrollmentModel::find($userId, (int) $course['id']) === null) {
-            http_response_code(403);
-            echo 'Puoi fare domande solo nei corsi a cui sei iscritto.';
+            Errore::pagina(403, 'Puoi fare domande solo nei corsi a cui sei iscritto.');
             return;
         }
 
@@ -112,8 +112,7 @@ class QuestionController
         $studente = Auth::hasRole('studente');
 
         if (!$studente && !Auth::hasRole('tutor', 'assistente')) {
-            http_response_code(403);
-            echo 'Questa pagina e\' per studenti, tutor e assistenti: le domande si gestiscono da «Domande».';
+            Errore::pagina(403, 'Questa pagina e\' per studenti, tutor e assistenti: le domande si gestiscono da «Domande».');
             return;
         }
 
@@ -219,8 +218,7 @@ class QuestionController
         Auth::requireLogin();
 
         if (!Auth::can('question.answer')) {
-            http_response_code(403);
-            echo 'Non hai accesso alle domande degli studenti.';
+            Errore::pagina(403, 'Non hai accesso alle domande degli studenti.');
             return;
         }
 
@@ -369,8 +367,7 @@ class QuestionController
         $puo = $domanda !== null && self::puoGestire($domanda);
 
         if (!$puo) {
-            http_response_code(403);
-            echo 'Non puoi gestire questa domanda.';
+            Errore::pagina(403, 'Non puoi gestire questa domanda.');
             exit;
         }
 

@@ -18,6 +18,7 @@ use App\Models\GroupModel;
 use App\Models\GroupModuleDateModel;
 use App\Models\ModuleModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * Gestione gruppi (classi/coorti): membri e corsi assegnati.
@@ -202,16 +203,14 @@ class GroupController extends AdminController
         $stored = (string) ($group['logo_path'] ?? '');
 
         if ($group === null || $stored === '') {
-            http_response_code(404);
-            echo 'Nessun logo per questo gruppo.';
+            Errore::pagina(404, 'Nessun logo per questo gruppo.');
             return;
         }
 
         $absolute = Upload::absolutePath($stored);
 
         if (!is_file($absolute)) {
-            http_response_code(404);
-            echo 'Logo non trovato.';
+            Errore::pagina(404, 'Logo non trovato.');
             return;
         }
 

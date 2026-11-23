@@ -17,6 +17,7 @@ use App\Models\EnrollmentModel;
 use App\Models\LessonModel;
 use App\Models\ModuleModel;
 use App\Models\VideoProgressModel;
+use App\Core\Errore;
 
 /**
  * Riceve dal player quanto lo studente ha guardato, e mostra il rendiconto
@@ -225,8 +226,7 @@ class VideoProgressController
         $xlsx = $formato === 'xlsx';
 
         if ($xlsx && !Xlsx::disponibile()) {
-            http_response_code(500);
-            echo 'Il formato XLSX richiede l\'estensione zip di PHP, che qui non c\'è. Scarica il CSV.';
+            Errore::pagina(500, 'Il formato XLSX richiede l\'estensione zip di PHP, che qui non c\'è. Scarica il CSV.');
             return;
         }
 
@@ -318,28 +318,28 @@ class VideoProgressController
         $lesson = LessonModel::find($lessonId);
 
         if ($lesson === null) {
-            http_response_code(404);
-            exit('Lezione non trovata.');
+            Errore::pagina(404, 'Lezione non trovata.');
+            exit;
         }
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
         if ($module === null) {
-            http_response_code(404);
-            exit('Lezione non trovata.');
+            Errore::pagina(404, 'Lezione non trovata.');
+            exit;
         }
 
         $course = CourseModel::find((int) $module['course_id']);
 
         if ($course === null) {
-            http_response_code(404);
-            exit('Corso non trovato.');
+            Errore::pagina(404, 'Corso non trovato.');
+            exit;
         }
 
         if (!self::apribile((int) $course['id'])) {
-            http_response_code(403);
-            exit('Accesso negato: questa lezione non è in un corso dei gruppi che segui, '
+            Errore::pagina(403, 'Accesso negato: questa lezione non è in un corso dei gruppi che segui, '
                 . 'o non hai i permessi per consultare i report.');
+            exit;
         }
 
         $durata = (int) ($lesson['duration_seconds'] ?? 0);

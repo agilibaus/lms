@@ -25,6 +25,7 @@ use App\Models\ReportModel;
 use App\Models\StudentiFermiModel;
 use App\Models\UserModel;
 use App\Models\VideoProgressModel;
+use App\Core\Errore;
 
 /**
  * Report di avanzamento: per corso, per studente, per gruppo — con export CSV.
@@ -159,8 +160,7 @@ class ReportController
         $chiave = (string) ($params['sezione'] ?? '');
 
         if (!ReportSections::esiste($chiave)) {
-            http_response_code(404);
-            echo 'Report non trovato.';
+            Errore::pagina(404, 'Report non trovato.');
             return;
         }
 
@@ -241,13 +241,12 @@ class ReportController
         $session = LiveSessionModel::find((int) $params['id']);
 
         if ($session !== null && !$this->sessionVisible($session)) {
-            http_response_code(403);
-            exit('Accesso negato: questo incontro non riguarda i corsi o i gruppi che segui.');
+            Errore::pagina(403, 'Accesso negato: questo incontro non riguarda i corsi o i gruppi che segui.');
+            exit;
         }
 
         if ($session === null) {
-            http_response_code(404);
-            echo 'Incontro non trovato.';
+            Errore::pagina(404, 'Incontro non trovato.');
             return;
         }
 
@@ -270,13 +269,12 @@ class ReportController
         $session = LiveSessionModel::find((int) $params['id']);
 
         if ($session !== null && !$this->sessionVisible($session)) {
-            http_response_code(403);
-            exit('Accesso negato: questo incontro non riguarda i corsi o i gruppi che segui.');
+            Errore::pagina(403, 'Accesso negato: questo incontro non riguarda i corsi o i gruppi che segui.');
+            exit;
         }
 
         if ($session === null) {
-            http_response_code(404);
-            echo 'Incontro non trovato.';
+            Errore::pagina(404, 'Incontro non trovato.');
             return;
         }
 
@@ -318,8 +316,7 @@ class ReportController
         }
 
         if (!$course) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
@@ -345,8 +342,7 @@ class ReportController
         }
 
         if (!$course) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
@@ -531,8 +527,7 @@ class ReportController
         $course = CourseModel::find($courseId);
 
         if (!$course) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
 
             return null;
         }
@@ -658,8 +653,8 @@ class ReportController
         $course = CourseModel::find($courseId);
 
         if ($course === null) {
-            http_response_code(404);
-            exit('Corso non trovato.');
+            Errore::pagina(404, 'Corso non trovato.');
+            exit;
         }
 
         $this->requireVisibleCourse($courseId);
@@ -915,8 +910,8 @@ class ReportController
     ): void {
         if ($formato === 'xlsx') {
             if (!Xlsx::disponibile()) {
-                http_response_code(500);
-                exit('Il formato XLSX richiede l\'estensione zip di PHP, che qui non c\'è. Scarica il CSV.');
+                Errore::pagina(500, 'Il formato XLSX richiede l\'estensione zip di PHP, che qui non c\'è. Scarica il CSV.');
+                exit;
             }
 
             Xlsx::send($nomeSenzaEstensione . '.xlsx', $intestazioni, $righe, $tipi, $foglio);
@@ -952,8 +947,8 @@ class ReportController
         Auth::requireLogin();
 
         if (!Auth::can('report.view') && !Auth::can('report.view_assigned')) {
-            http_response_code(403);
-            exit('Accesso negato: non hai i permessi per consultare i report.');
+            Errore::pagina(403, 'Accesso negato: non hai i permessi per consultare i report.');
+            exit;
         }
     }
 
@@ -1235,8 +1230,8 @@ class ReportController
         $visible = $this->visibleCourseIds();
 
         if ($visible !== null && !in_array($courseId, $visible, true)) {
-            http_response_code(403);
-            exit('Accesso negato: questo corso non è assegnato ai gruppi che segui.');
+            Errore::pagina(403, 'Accesso negato: questo corso non è assegnato ai gruppi che segui.');
+            exit;
         }
     }
 
@@ -1323,16 +1318,14 @@ class ReportController
         $student = UserModel::find($userId);
 
         if ($student === null) {
-            http_response_code(404);
-            echo 'Utente non trovato.';
+            Errore::pagina(404, 'Utente non trovato.');
             return null;
         }
 
         $allowed = $this->allowedStudentIds();
 
         if ($allowed !== null && !in_array($userId, $allowed, true)) {
-            http_response_code(403);
-            echo 'Questo studente non rientra nei gruppi che segui.';
+            Errore::pagina(403, 'Questo studente non rientra nei gruppi che segui.');
             return null;
         }
 
@@ -1344,16 +1337,14 @@ class ReportController
         $group = GroupModel::find($groupId);
 
         if ($group === null) {
-            http_response_code(404);
-            echo 'Gruppo non trovato.';
+            Errore::pagina(404, 'Gruppo non trovato.');
             return null;
         }
 
         $visibleIds = array_map(static fn (array $g): int => (int) $g['id'], $this->visibleGroups());
 
         if (!in_array($groupId, $visibleIds, true)) {
-            http_response_code(403);
-            echo 'Questo gruppo non rientra in quelli che segui.';
+            Errore::pagina(403, 'Questo gruppo non rientra in quelli che segui.');
             return null;
         }
 

@@ -31,6 +31,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Models\PaymentModel;
 use App\Models\PrivacyModel;
+use App\Core\Errore;
 
 /**
  * Configurazione di posta elettronica e Google Meet dal pannello.
@@ -77,8 +78,8 @@ class SettingsController extends AdminController
         Auth::requireLogin();
 
         if (!Auth::can('settings.manage') && !Auth::hasRole('admin') && !Auth::hasRole('supervisore')) {
-            http_response_code(403);
-            exit('Accesso negato: permessi insufficienti per questa pagina.');
+            Errore::pagina(403, 'Accesso negato: permessi insufficienti per questa pagina.');
+            exit;
         }
 
         View::render('admin/settings/index', [
@@ -220,8 +221,8 @@ class SettingsController extends AdminController
         Auth::requireLogin();
 
         if (!Auth::can('settings.manage') && !Auth::hasRole('admin') && !Auth::hasRole('supervisore')) {
-            http_response_code(403);
-            exit('Accesso negato: permessi insufficienti per questa pagina.');
+            Errore::pagina(403, 'Accesso negato: permessi insufficienti per questa pagina.');
+            exit;
         }
 
         View::render('admin/settings/informazioni', [

@@ -22,6 +22,7 @@ use App\Models\EnrollmentRequestModel;
 use App\Models\GroupModel;
 use App\Models\TutorWelcomeModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * Gestione corsi e iscrizioni individuali.
@@ -287,8 +288,8 @@ class CourseController extends AdminController
         $redirect = '/admin/courses/' . (int) $params['id'] . '/edit';
 
         if (!Auth::hasRole('supervisore') || $course === null) {
-            http_response_code(403);
-            exit('Accesso negato.');
+            Errore::pagina(403, 'Accesso negato.');
+            exit;
         }
 
         if (!CourseModel::passaAllAmministratore((int) $course['id'], 'invio')) {
@@ -323,8 +324,8 @@ class CourseController extends AdminController
         $redirect = '/admin/courses/' . (int) $params['id'] . '/edit';
 
         if (!Auth::hasRole('admin') || $course === null) {
-            http_response_code(403);
-            exit('Accesso negato.');
+            Errore::pagina(403, 'Accesso negato.');
+            exit;
         }
 
         if (!CourseModel::passaAllAmministratore((int) $course['id'], 'ripresa')) {

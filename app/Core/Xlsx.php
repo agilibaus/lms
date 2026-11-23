@@ -69,8 +69,7 @@ class Xlsx
     private static function invia(string $fileName, ?string $percorso): void
     {
         if ($percorso === null) {
-            http_response_code(500);
-            echo 'Impossibile creare il file temporaneo per il foglio di calcolo.';
+            Errore::pagina(500, 'Impossibile creare il file temporaneo per il foglio di calcolo.');
             exit;
         }
 

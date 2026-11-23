@@ -14,6 +14,7 @@ use App\Models\CourseModel;
 use App\Models\LessonModel;
 use App\Models\ModuleModel;
 use App\Models\QuizModel;
+use App\Core\Errore;
 
 class ModuleController
 {
@@ -51,8 +52,7 @@ class ModuleController
         $course = CourseModel::find((int) $params['courseId']);
 
         if (!$course) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
@@ -76,8 +76,7 @@ class ModuleController
         $courseId = (int) $params['courseId'];
 
         if (CourseModel::find($courseId) === null) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
@@ -154,8 +153,7 @@ class ModuleController
         $course = CourseModel::find((int) $params['courseId']);
 
         if (!$course) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
@@ -176,8 +174,7 @@ class ModuleController
         $course = CourseModel::find($courseId);
 
         if (!$course) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
@@ -215,8 +212,7 @@ class ModuleController
         $module = ModuleModel::find((int) $params['id']);
 
         if (!$module) {
-            http_response_code(404);
-            echo 'Modulo non trovato.';
+            Errore::pagina(404, 'Modulo non trovato.');
             return;
         }
 
@@ -240,8 +236,7 @@ class ModuleController
         $module = ModuleModel::find((int) $params['id']);
 
         if (!$module) {
-            http_response_code(404);
-            echo 'Modulo non trovato.';
+            Errore::pagina(404, 'Modulo non trovato.');
             return;
         }
 
@@ -424,8 +419,7 @@ class ModuleController
         $module = ModuleModel::find((int) $params['id']);
 
         if (!$module) {
-            http_response_code(404);
-            echo 'Modulo non trovato.';
+            Errore::pagina(404, 'Modulo non trovato.');
             return;
         }
 
@@ -448,8 +442,7 @@ class ModuleController
         $module = ModuleModel::find((int) $params['id']);
 
         if (!$module) {
-            http_response_code(404);
-            echo 'Modulo non trovato.';
+            Errore::pagina(404, 'Modulo non trovato.');
             return;
         }
 

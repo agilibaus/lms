@@ -10,6 +10,7 @@ use App\Core\Ics;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\AgendaModel;
+use App\Core\Errore;
 
 /**
  * L'agenda: le cose con una data che riguardano chi guarda.
@@ -113,8 +114,7 @@ class AgendaController
 
         // Un incontro che non e' fra i suoi non esiste, per chi chiede:
         // non «c'e' ma non e' tuo», che sarebbe gia' un'informazione.
-        http_response_code(404);
-        echo 'Evento non trovato.';
+        Errore::pagina(404, 'Evento non trovato.');
     }
 
     /**

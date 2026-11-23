@@ -27,6 +27,7 @@ use App\Models\LessonProgressModel;
 use App\Models\LiveSessionModel;
 use App\Models\ModuleModel;
 use App\Models\VideoProgressModel;
+use App\Core\Errore;
 
 class LessonController
 {
@@ -64,8 +65,7 @@ class LessonController
         $module = ModuleModel::find((int) $params['moduleId']);
 
         if (!$module) {
-            http_response_code(404);
-            echo 'Modulo non trovato.';
+            Errore::pagina(404, 'Modulo non trovato.');
             return;
         }
 
@@ -88,8 +88,7 @@ class LessonController
         $module = ModuleModel::find((int) $params['moduleId']);
 
         if (!$module) {
-            http_response_code(404);
-            echo 'Modulo non trovato.';
+            Errore::pagina(404, 'Modulo non trovato.');
             return;
         }
 
@@ -175,35 +174,30 @@ class LessonController
         $lesson = LessonModel::find((int) $params['id']);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
         if ($module === null) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
         $course = CourseModel::find((int) $module['course_id']);
 
         if ($course === null) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
         if (!$this->canAccessCourse((int) $course['id'])) {
-            http_response_code(403);
-            echo 'Non sei iscritto a questo corso.';
+            Errore::pagina(403, 'Non sei iscritto a questo corso.');
             return;
         }
 
         if ($this->isModuleLocked((int) $module['id'])) {
-            http_response_code(403);
-            echo 'Questo modulo è bloccato: supera prima il questionario del modulo precedente.';
+            Errore::pagina(403, 'Questo modulo è bloccato: supera prima il questionario del modulo precedente.');
             return;
         }
 
@@ -282,8 +276,7 @@ class LessonController
         $lesson = LessonModel::find((int) $params['id']);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
@@ -306,8 +299,7 @@ class LessonController
         $lesson = LessonModel::find((int) $params['id']);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
@@ -369,8 +361,7 @@ class LessonController
         $lesson = LessonModel::find((int) $params['id']);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
@@ -390,8 +381,7 @@ class LessonController
         $lesson = LessonModel::find((int) $params['id']);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
@@ -430,8 +420,7 @@ class LessonController
         $lesson = LessonModel::find($lessonId);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
@@ -458,8 +447,7 @@ class LessonController
         // Il materiale dev'essere della lezione dell'indirizzo, quella su cui
         // si e' controllato il permesso (29/10).
         if (!$material || (int) $material['lesson_id'] !== (int) $params['id']) {
-            http_response_code(404);
-            echo 'Materiale non trovato.';
+            Errore::pagina(404, 'Materiale non trovato.');
             return;
         }
 
@@ -540,22 +528,19 @@ class LessonController
         $lesson = LessonModel::find($lessonId);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
         if ($module === null) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
         if (!$this->canAccessCourse((int) $module['course_id'])) {
-            http_response_code(403);
-            echo 'Non sei iscritto a questo corso.';
+            Errore::pagina(403, 'Non sei iscritto a questo corso.');
             return;
         }
 
@@ -566,16 +551,14 @@ class LessonController
         if (preg_match('/^[0-9a-f]{32}\.([a-z0-9]+)$/', $name, $matches) !== 1
             || !isset(self::IMAGE_MIME[$matches[1]])
         ) {
-            http_response_code(404);
-            echo 'Immagine non trovata.';
+            Errore::pagina(404, 'Immagine non trovata.');
             return;
         }
 
         $absolute = Upload::absolutePath('lesson-images/' . $lessonId . '/' . $name);
 
         if (!is_file($absolute)) {
-            http_response_code(404);
-            echo 'Immagine non trovata.';
+            Errore::pagina(404, 'Immagine non trovata.');
             return;
         }
 
@@ -599,8 +582,7 @@ class LessonController
         // Il materiale dev'essere della lezione dell'indirizzo, quella su cui
         // si e' controllato il permesso (29/10).
         if (!$material || (int) $material['lesson_id'] !== (int) $params['id']) {
-            http_response_code(404);
-            echo 'Materiale non trovato.';
+            Errore::pagina(404, 'Materiale non trovato.');
             return;
         }
 
@@ -626,8 +608,7 @@ class LessonController
         $contenuto = LessonH5PModel::find((int) $params['contenuto']);
 
         if ($contenuto === null || (int) $contenuto['lesson_id'] !== (int) $params['id']) {
-            http_response_code(404);
-            echo 'Contenuto non trovato.';
+            Errore::pagina(404, 'Contenuto non trovato.');
             return;
         }
 
@@ -651,29 +632,25 @@ class LessonController
         $material = LessonMaterialModel::find((int) $params['id']);
 
         if (!$material) {
-            http_response_code(404);
-            echo 'Materiale non trovato.';
+            Errore::pagina(404, 'Materiale non trovato.');
             return;
         }
 
         $lesson = LessonModel::find((int) $material['lesson_id']);
 
         if ($lesson === null) {
-            http_response_code(404);
-            echo 'Materiale non trovato.';
+            Errore::pagina(404, 'Materiale non trovato.');
             return;
         }
         $module = ModuleModel::find((int) $lesson['module_id']);
 
         if ($module === null) {
-            http_response_code(404);
-            echo 'Materiale non trovato.';
+            Errore::pagina(404, 'Materiale non trovato.');
             return;
         }
 
         if (!$this->canAccessCourse((int) $module['course_id'])) {
-            http_response_code(403);
-            echo 'Non sei iscritto a questo corso.';
+            Errore::pagina(403, 'Non sei iscritto a questo corso.');
             return;
         }
 
@@ -681,16 +658,14 @@ class LessonController
         // pagina della lezione: senza questo controllo un modulo chiuso si
         // scavalcherebbe scaricando direttamente i suoi allegati.
         if ($this->isModuleLocked((int) $module['id'])) {
-            http_response_code(403);
-            echo 'Questo materiale appartiene a un modulo non ancora disponibile.';
+            Errore::pagina(403, 'Questo materiale appartiene a un modulo non ancora disponibile.');
             return;
         }
 
         $absolute = Upload::absolutePath($material['file_path']);
 
         if (!is_file($absolute)) {
-            http_response_code(404);
-            echo 'File non trovato sul server.';
+            Errore::pagina(404, 'File non trovato sul server.');
             return;
         }
 
@@ -716,22 +691,19 @@ class LessonController
         $lesson = LessonModel::find((int) $params['id']);
 
         if (!$lesson || $lesson['video_provider'] !== 'self_hosted' || empty($lesson['video_ref'])) {
-            http_response_code(404);
-            echo 'Video non disponibile.';
+            Errore::pagina(404, 'Video non disponibile.');
             return;
         }
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
         if ($module === null) {
-            http_response_code(404);
-            echo 'Video non disponibile.';
+            Errore::pagina(404, 'Video non disponibile.');
             return;
         }
 
         if (!$this->canAccessCourse((int) $module['course_id'])) {
-            http_response_code(403);
-            echo 'Non sei iscritto a questo corso.';
+            Errore::pagina(403, 'Non sei iscritto a questo corso.');
             return;
         }
 
@@ -739,8 +711,7 @@ class LessonController
         // sua pagina, e un modulo chiuso non si scavalca chiedendolo
         // direttamente (13/10).
         if ($this->isModuleLocked((int) $module['id'])) {
-            http_response_code(403);
-            echo 'Questo video appartiene a un modulo non ancora disponibile.';
+            Errore::pagina(403, 'Questo video appartiene a un modulo non ancora disponibile.');
             return;
         }
 
@@ -748,8 +719,7 @@ class LessonController
         $mime = self::VIDEO_MIME[strtolower(pathinfo((string) $lesson['video_ref'], PATHINFO_EXTENSION))] ?? null;
 
         if (!is_file($absolute) || $mime === null) {
-            http_response_code(404);
-            echo 'File video non trovato sul server.';
+            Errore::pagina(404, 'File video non trovato sul server.');
             return;
         }
 
@@ -763,24 +733,21 @@ class LessonController
         $lesson = LessonModel::find((int) $params['id']);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 
         $module = ModuleModel::find((int) $lesson['module_id']);
 
         if ($module === null) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
         $userId = (int) Auth::id();
         $courseId = (int) $module['course_id'];
 
         if (!$this->canAccessCourse($courseId) || $this->isModuleLocked((int) $module['id'])) {
-            http_response_code(403);
-            echo 'Questa lezione non è accessibile.';
+            Errore::pagina(403, 'Questa lezione non è accessibile.');
             return;
         }
 
@@ -789,8 +756,7 @@ class LessonController
         // non lasciano avanzamenti loro. La stessa regola dell'invio dei
         // questionari, in `QuizController::submit`.
         if (!Auth::hasRole('studente')) {
-            http_response_code(403);
-            echo 'Sola lettura: le lezioni le segna come fatte solo lo studente.';
+            Errore::pagina(403, 'Sola lettura: le lezioni le segna come fatte solo lo studente.');
             return;
         }
 
@@ -955,8 +921,7 @@ class LessonController
         $lesson = LessonModel::find($lessonId);
 
         if (!$lesson) {
-            http_response_code(404);
-            echo 'Lezione non trovata.';
+            Errore::pagina(404, 'Lezione non trovata.');
             return;
         }
 

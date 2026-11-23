@@ -12,6 +12,7 @@ use App\Core\View;
 use App\Models\CertificateModel;
 use App\Models\CourseModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 class CertificateController
 {
@@ -47,8 +48,7 @@ class CertificateController
         $certificate = CertificateModel::find((int) $params['id']);
 
         if (!$certificate) {
-            http_response_code(404);
-            echo 'Certificato non trovato.';
+            Errore::pagina(404, 'Certificato non trovato.');
             return;
         }
 
@@ -57,22 +57,19 @@ class CertificateController
         // chiunque.
         if ((int) $certificate['user_id'] !== (int) Auth::id()
             && !StudentScope::puoVedereNelCorso((int) $certificate['user_id'], (int) $certificate['course_id'])) {
-            http_response_code(403);
-            echo 'Non puoi scaricare questo certificato.';
+            Errore::pagina(403, 'Non puoi scaricare questo certificato.');
             return;
         }
 
         if ($certificate['revoked_at'] !== null) {
-            http_response_code(410);
-            echo 'Questo certificato è stato revocato e non è più scaricabile.';
+            Errore::pagina(410, 'Questo certificato è stato revocato e non è più scaricabile.');
             return;
         }
 
         $absolute = Upload::absolutePath((string) $certificate['file_path']);
 
         if (!is_file($absolute)) {
-            http_response_code(404);
-            echo 'File del certificato non trovato sul server.';
+            Errore::pagina(404, 'File del certificato non trovato sul server.');
             return;
         }
 
@@ -129,8 +126,7 @@ class CertificateController
         $redirectTo = $this->safeRedirectTarget($_POST['redirect_to'] ?? '/certificates');
 
         if (!$certificate) {
-            http_response_code(404);
-            echo 'Certificato non trovato.';
+            Errore::pagina(404, 'Certificato non trovato.');
             return;
         }
 

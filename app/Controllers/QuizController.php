@@ -26,6 +26,7 @@ use App\Models\QuizModel;
 use App\Models\QuizOptionModel;
 use App\Models\QuizQuestionModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * Gestione quiz (admin/tutor) e svolgimento (studente).
@@ -921,8 +922,7 @@ class QuizController
 
         if ((int) $attempt['user_id'] !== (int) Auth::id()
             && !StudentScope::puoAprireTentativo((int) $attempt['user_id'], $corsoDelQuiz)) {
-            http_response_code(403);
-            echo 'Non puoi consultare questo tentativo.';
+            Errore::pagina(403, 'Non puoi consultare questo tentativo.');
             return;
         }
         $module = ModuleModel::find((int) $quiz['module_id']);
@@ -968,15 +968,13 @@ class QuizController
         // supervisore in lettura, dal 06/11).
         if (!CourseRights::leggeIlCorso($courseId)) {
             if (EnrollmentModel::find((int) Auth::id(), $courseId) === null) {
-                http_response_code(403);
-                echo 'Non sei iscritto a questo corso.';
+                Errore::pagina(403, 'Non sei iscritto a questo corso.');
 
                 return false;
             }
 
             if (CourseAccess::isModuleLocked((int) Auth::id(), (int) $module['id'])) {
-                http_response_code(403);
-                echo 'Questo modulo è bloccato: supera prima il questionario del modulo precedente.';
+                Errore::pagina(403, 'Questo modulo è bloccato: supera prima il questionario del modulo precedente.');
 
                 return false;
             }
@@ -1139,8 +1137,7 @@ class QuizController
 
     private function notFound(string $message): void
     {
-        http_response_code(404);
-        echo $message;
+        Errore::pagina(404, $message);
     }
 
     private function redirect(string $location): never

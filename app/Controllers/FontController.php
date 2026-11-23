@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\FontLibrary;
+use App\Core\Errore;
 
 /**
  * Serve i caratteri scaricati dal catalogo.
@@ -38,8 +39,7 @@ class FontController
         }
 
         if ($famiglia === null || !FontLibrary::presente($famiglia)) {
-            http_response_code(404);
-            echo 'Carattere non trovato.';
+            Errore::pagina(404, 'Carattere non trovato.');
             return;
         }
 

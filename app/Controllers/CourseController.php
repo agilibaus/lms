@@ -33,6 +33,7 @@ use App\Models\PrivacyModel;
 use App\Models\QuizAttemptModel;
 use App\Models\QuizModel;
 use App\Models\TreParoleModel;
+use App\Core\Errore;
 
 class CourseController
 {
@@ -123,16 +124,14 @@ class CourseController
         $stored = (string) ($course['cover_image'] ?? '');
 
         if ($course === null || $stored === '' || CourseCover::isExternalUrl($stored)) {
-            http_response_code(404);
-            echo 'Copertina non impostata.';
+            Errore::pagina(404, 'Copertina non impostata.');
             return;
         }
 
         $path = CourseCover::pathFor($stored, ($params['size'] ?? '') === 'piccola');
 
         if ($path === null) {
-            http_response_code(404);
-            echo 'Copertina non trovata.';
+            Errore::pagina(404, 'Copertina non trovata.');
             return;
         }
 
@@ -156,8 +155,7 @@ class CourseController
         $course = CourseModel::find((int) $params['id']);
 
         if (!$course) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
@@ -165,8 +163,7 @@ class CourseController
         // per il supervisore, nei corsi pubblicati).
         if (!CourseRights::leggeIlCorso((int) $course['id'])) {
             if (EnrollmentModel::find((int) Auth::id(), (int) $course['id']) === null) {
-                http_response_code(403);
-                echo 'Non sei iscritto a questo corso.';
+                Errore::pagina(403, 'Non sei iscritto a questo corso.');
                 return;
             }
         }

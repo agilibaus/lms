@@ -10,6 +10,7 @@ use App\Core\TutorWelcome;
 use App\Core\Upload;
 use App\Models\CourseModel;
 use App\Models\TutorWelcomeModel;
+use App\Core\Errore;
 
 /**
  * Il benvenuto del tutor all'inizio di un corso (07/10). Lo carica il tutor,
@@ -159,8 +160,7 @@ class TutorWelcomeController extends AdminController
         }
 
         if (!$puo || !is_file(Upload::absolutePath((string) $welcome[$campo]))) {
-            http_response_code(404);
-            echo 'Benvenuto non trovato.';
+            Errore::pagina(404, 'Benvenuto non trovato.');
             return null;
         }
 
@@ -184,8 +184,7 @@ class TutorWelcomeController extends AdminController
         Auth::requireLogin();
 
         if (!self::puoGestire($tutorId)) {
-            http_response_code(403);
-            echo 'Non puoi modificare il benvenuto di questo tutor.';
+            Errore::pagina(403, 'Non puoi modificare il benvenuto di questo tutor.');
             exit;
         }
     }

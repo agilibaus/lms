@@ -10,6 +10,7 @@ use App\Core\View;
 use App\Core\Xlsx;
 use App\Models\DatiPersonaliModel;
 use App\Models\PrivacyModel;
+use App\Core\Errore;
 
 /**
  * Privacy (18/11, Alessandro), dalla parte dello studente: la pagina
@@ -32,8 +33,8 @@ class PrivacyController
 
         if ($chiesta !== null) {
             if (!Auth::check() || !Auth::can('settings.manage')) {
-                http_response_code(404);
-                exit('Pagina non trovata.');
+                Errore::pagina(404, 'Pagina non trovata.');
+                exit;
             }
 
             $versione = PrivacyModel::find($chiesta);
@@ -107,8 +108,8 @@ class PrivacyController
         $this->soloStudenti();
 
         if (!Xlsx::disponibile()) {
-            http_response_code(404);
-            exit('Pagina non trovata.');
+            Errore::pagina(404, 'Pagina non trovata.');
+            exit;
         }
 
         Xlsx::sendFogli(
@@ -127,8 +128,8 @@ class PrivacyController
         Auth::requireLogin();
 
         if (!Auth::hasRole('studente')) {
-            http_response_code(403);
-            exit('Accesso negato: questa pagina è per gli studenti.');
+            Errore::pagina(403, 'Accesso negato: questa pagina è per gli studenti.');
+            exit;
         }
     }
 }

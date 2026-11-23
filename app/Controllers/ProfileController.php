@@ -17,6 +17,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Models\GroupModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * Profilo dell'utente: le informazioni che compila da solo e la sua immagine.
@@ -153,8 +154,7 @@ class ProfileController
         // viene offerto, e una richiesta scritta a mano riceve 403, come la
         // scelta di come compaiono gli studenti chiesta da chi non lo e'.
         if (AvatarImage::obbligatoria((string) ($user['role'] ?? ''))) {
-            http_response_code(403);
-            echo 'Un tutor ha sempre una foto del profilo: puoi sostituirla, non toglierla.';
+            Errore::pagina(403, 'Un tutor ha sempre una foto del profilo: puoi sostituirla, non toglierla.');
             return;
         }
 
@@ -186,8 +186,7 @@ class ProfileController
          * frase: un 403 direbbe che quella persona una foto ce l'ha.
          */
         if (!GroupPeers::canSeeAvatar((int) Auth::id(), (int) $params['id'])) {
-            http_response_code(404);
-            echo 'Immagine non impostata.';
+            Errore::pagina(404, 'Immagine non impostata.');
             return;
         }
 
@@ -195,16 +194,14 @@ class ProfileController
         $path = $user['avatar_path'] ?? null;
 
         if ($path === null) {
-            http_response_code(404);
-            echo 'Immagine non impostata.';
+            Errore::pagina(404, 'Immagine non impostata.');
             return;
         }
 
         $absolute = Upload::absolutePath($path);
 
         if (!is_file($absolute)) {
-            http_response_code(404);
-            echo 'Immagine non trovata.';
+            Errore::pagina(404, 'Immagine non trovata.');
             return;
         }
 
@@ -231,8 +228,7 @@ class ProfileController
         Auth::requireLogin();
 
         if (!Auth::hasRole('studente')) {
-            http_response_code(403);
-            echo 'Questa scelta riguarda solo gli studenti.';
+            Errore::pagina(403, 'Questa scelta riguarda solo gli studenti.');
             return;
         }
 

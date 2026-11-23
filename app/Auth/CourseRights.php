@@ -6,6 +6,7 @@ namespace App\Auth;
 
 use App\Core\Database;
 use App\Models\CourseModel;
+use App\Core\Errore;
 
 /**
  * Chi puo' modificare quale corso.
@@ -117,22 +118,22 @@ class CourseRights
 
         if ($courseId === null) {
             if (!Auth::hasRole('admin')) {
-                http_response_code(404);
-                exit('Non trovato.');
+                Errore::pagina(404, 'Non trovato.');
+                exit;
             }
 
             return;
         }
 
         if (!self::canEdit($courseId)) {
-            http_response_code(403);
             // Chi non ha la bozza presso di se' (14/11): la frase dice dov'e'.
             $presso = Auth::hasRole('admin', 'supervisore') ? self::presso($courseId) : null;
-            exit(match (true) {
+            Errore::pagina(403, match (true) {
                 $presso === 'supervisore' => 'La bozza è presso il supervisore: per modificarla, prima riprendi il corso. Le modifiche non sono state salvate.',
                 $presso === 'amministratore' => 'La bozza è passata all’Amministratore: puoi solo leggerla. Le modifiche non sono state salvate.',
                 default => 'Accesso negato: i contenuti del corso li modifica l\'Amministratore, puoi solo consultarlo.',
             });
+            exit;
         }
     }
 

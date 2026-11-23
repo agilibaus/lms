@@ -80,11 +80,10 @@ class Router
                 // direbbe "sessione scaduta" a chi ha solo caricato un file
                 // troppo grande. Va riconosciuto prima.
                 if ($method === 'POST' && !$route['esterna'] && $_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-                    http_response_code(413);
-                    echo 'Il file inviato supera il limite del server, attualmente '
-                        . htmlspecialchars(Upload::humanIniLimit())
+                    Errore::pagina(413, 'Il file inviato supera il limite del server, attualmente '
+                        . Upload::humanIniLimit()
                         . '. Scegli un file piu\' piccolo, oppure chiedi a chi amministra il server '
-                        . 'di alzare upload_max_filesize e post_max_size nel php.ini.';
+                        . 'di alzare upload_max_filesize e post_max_size nel php.ini.');
 
                     return;
                 }
@@ -92,8 +91,7 @@ class Router
                 if ($method === 'POST' && !$route['esterna'] && !Csrf::isValid($_POST[Csrf::FIELD] ?? null)) {
                     // Token assente o non valido: la richiesta non proviene da un
                     // form dell'applicazione (o la sessione e' scaduta).
-                    http_response_code(419);
-                    echo 'Sessione scaduta o richiesta non valida. Ricarica la pagina e riprova.';
+                    Errore::pagina(419, 'Sessione scaduta o richiesta non valida. Ricarica la pagina e riprova.');
 
                     return;
                 }
@@ -112,7 +110,6 @@ class Router
             }
         }
 
-        http_response_code(404);
-        echo '404 — Pagina non trovata.';
+        Errore::pagina(404, 'Pagina non trovata.');
     }
 }

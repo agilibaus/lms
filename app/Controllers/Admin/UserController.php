@@ -24,6 +24,7 @@ use App\Models\EnrollmentModel;
 use App\Models\GroupModel;
 use App\Models\PrivacyModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * Gestione utenti.
@@ -840,15 +841,13 @@ class UserController extends AdminController
         $user = UserModel::find($id);
 
         if ($user === null) {
-            http_response_code(404);
-            echo 'Utente non trovato.';
+            Errore::pagina(404, 'Utente non trovato.');
 
             return null;
         }
 
         if (self::soloStudenti() && $user['role'] !== 'studente') {
-            http_response_code(403);
-            echo 'Puoi gestire soltanto gli studenti.';
+            Errore::pagina(403, 'Puoi gestire soltanto gli studenti.');
 
             return null;
         }

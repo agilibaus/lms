@@ -7,6 +7,7 @@ namespace App\Auth;
 use App\Core\Csrf;
 use App\Core\Welcome;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * Autenticazione, sessione utente e permessi per ruolo.
@@ -500,8 +501,8 @@ class Auth
         self::requireLogin();
 
         if (!self::hasRole(...$roles)) {
-            http_response_code(403);
-            exit('Accesso negato: permessi insufficienti per questa pagina.');
+            Errore::pagina(403, 'Accesso negato: permessi insufficienti per questa pagina.');
+            exit;
         }
     }
 
@@ -549,8 +550,8 @@ class Auth
         self::requireLogin();
 
         if (!self::canAny(...$permissionKeys)) {
-            http_response_code(403);
-            exit('Accesso negato: permessi insufficienti per questa azione.');
+            Errore::pagina(403, 'Accesso negato: permessi insufficienti per questa azione.');
+            exit;
         }
     }
 

@@ -18,6 +18,7 @@ use App\Models\BoardModel;
 use App\Models\CourseModel;
 use App\Models\GroupModel;
 use App\Models\UserModel;
+use App\Core\Errore;
 
 /**
  * La Bacheca (17/10, Alessandro): le risorse condivise di un corso. Le
@@ -546,8 +547,7 @@ class BoardController
         $course = CourseModel::find((int) $params['id']);
 
         if ($course === null) {
-            http_response_code(404);
-            echo 'Corso non trovato.';
+            Errore::pagina(404, 'Corso non trovato.');
             return;
         }
 
