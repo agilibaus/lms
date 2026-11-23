@@ -213,6 +213,36 @@ async function piedeBarra(browser) {
     }
 }
 
+// La descrizione dei corsi alla stessa misura in «I miei corsi» e in
+// «Esplora corsi» (23/11, Alessandro): nel catalogo era a quella delle note.
+// Si misurano la descrizione corta, l'estratto di quella lunga e la
+// descrizione intera aperta con «Leggi tutto».
+async function descrizioneCorsi(browser) {
+    const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    await page.goto(BASE + '/login');
+    await page.fill('input[name="email"]', 'stud@test.it');
+    await page.fill('input[name="password"]', PASSWORD);
+    await page.click('form.auth-form button[type="submit"]');
+    await page.waitForLoadState('networkidle');
+    const misure = (sel) => page.evaluate((s) => [...document.querySelectorAll(s)]
+        .filter((e) => e.getClientRects().length > 0)
+        .map((e) => getComputedStyle(e).fontSize), sel);
+
+    await page.goto(BASE + '/');
+    const miei = await misure('.course-card-excerpt');
+    await page.goto(BASE + '/catalogo');
+    await page.evaluate(() => document.querySelectorAll('.catalogo-leggi').forEach((d) => { d.open = true; }));
+    const catalogo = await misure('.catalog-card > .card-meta.testo-breve, .catalogo-leggi[open] > .card-meta');
+    await page.evaluate(() => document.querySelectorAll('.catalogo-leggi').forEach((d) => { d.open = false; }));
+    catalogo.push(...await misure('.catalogo-estratto'));
+    await page.close();
+
+    const attesa = (0.92 * 16) + 'px';
+    check('descrizione dei corsi: misurata in tutte e due le pagine', miei.length > 0 && catalogo.length >= 3, ['I miei corsi: ' + miei.length, 'Esplora corsi: ' + catalogo.length]);
+    check('descrizione dei corsi: stessa misura in «I miei corsi» e in «Esplora corsi» (' + attesa + ')',
+        [...miei, ...catalogo].every((m) => m === attesa), ['I miei corsi: ' + miei.join(', '), 'Esplora corsi: ' + catalogo.join(', ')]);
+}
+
 (async () => {
     const browser = await chromium.launch();
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
@@ -271,6 +301,7 @@ async function piedeBarra(browser) {
 
     await giroCompleto(browser);
     await piedeBarra(browser);
+    await descrizioneCorsi(browser);
 
     await browser.close();
     console.log('\nTotale: ' + ok + ' superati, ' + fail + ' falliti');

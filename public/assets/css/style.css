@@ -1055,6 +1055,13 @@ h3 { font-size: var(--fs-sottotitolo); }
     margin-bottom: 0;
 }
 
+/* La descrizione nelle schede del catalogo alla stessa misura di quella in
+   «I miei corsi» (23/11, Alessandro): era quella delle note piccole. */
+.catalog-card > .card-meta.testo-breve,
+.catalog-card .catalogo-descrizione .card-meta {
+    font-size: var(--fs-secondario);
+}
+
 /* Copertina nelle schede del catalogo: stesso rapporto delle card dei corsi,
    cosi' le due pagine si somigliano. */
 .catalog-card-cover {
