@@ -127,7 +127,7 @@ $materiali = $ordineMateriali->applica(array_map(
                          restano incolonnate (23/11). */ ?>
                 <td role="cell" data-label="Progresso" class="col-numero">
                     <?php if ($row['completed_at'] !== null): ?>
-                        <span class="badge badge-success">completato</span>
+                        <span class="badge badge-success">Completato</span>
                     <?php endif; ?>
                     <?= number_format((float) $row['progress_pct'], 0) ?>%
                 </td>
@@ -137,7 +137,7 @@ $materiali = $ordineMateriali->applica(array_map(
                     <?php if (empty($row['certificate_code'])): ?>
                         —
                     <?php elseif ($row['certificate_revoked_at'] !== null): ?>
-                        <span class="badge badge-danger">revocato</span>
+                        <span class="badge badge-danger">Revocato</span>
                     <?php else: ?>
                         <code><?= htmlspecialchars((string) $row['certificate_code']) ?></code>
                     <?php endif; ?>

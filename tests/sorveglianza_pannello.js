@@ -156,12 +156,12 @@ const chiamate = () => (fs.existsSync(REGISTRO) ? fs.readFileSync(REGISTRO, 'utf
         r = await riquadro();
         check('con tutti i check a posto: arrivato a tutti e 6', r.avviso.startsWith('Segnale di prova arrivato a tutti e 6 i check'), [r.avviso]);
 
-        imposta('HEALTHCHECKS_PER_URL', 'https://lms.movimente.it');
+        imposta('HEALTHCHECKS_PER_URL', 'https://pistacchio.esempio.it');
         fs.rmSync(REGISTRO, { force: true });
         await page.goto(BASE + '/admin/settings/comandi');
         r = await riquadro();
         check('la chiave salvata per un altro indirizzo: «Spenta», con l\'avviso e senza segnale di prova',
-            r.stato === 'Spenta' && r.testo.includes('Chiave salvata per https://lms.movimente.it: su questo indirizzo (http://127.0.0.1:8123) la sorveglianza è spenta')
+            r.stato === 'Spenta' && r.testo.includes('Chiave salvata per https://pistacchio.esempio.it: su questo indirizzo (http://127.0.0.1:8123) la sorveglianza è spenta')
                 && !r.prova && r.cancella, [JSON.stringify(r)]);
         const rifiuto = await page.evaluate(async () => {
             const t = document.querySelector('form.sorveglianza input[name="_token"]');

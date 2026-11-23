@@ -12,7 +12,8 @@
  * COSA VERIFICA:
  *
  *   1. **La pagina**: una riga per comando, con le colonne «Frequenza» e
- *      «Ultima esecuzione», e i tre stati: «regolare», «fermo», «mai partito».
+ *      «Ultima esecuzione», e i tre stati: «Regolare», «Fermo», «Mai partito»
+ *      (con la maiuscola dal 23/11, come tutte le etichette di stato).
  *   2. **L'avviso**: con un comando fermo e uno mai partito il menu dice 2 e
  *      il riquadro ha il punto esclamativo; con tutto regolare, niente.
  *   3. **Gli altri ruoli**: supervisore, tutor e assistente non aprono la
@@ -116,9 +117,9 @@ async function avviso(page) {
         check('le colonne: Comando, Che cosa fa, Frequenza, Ultima esecuzione, Stato',
             JSON.stringify(t.colonne) === JSON.stringify(['Comando', 'Che cosa fa', 'Frequenza', 'Ultima esecuzione', 'Stato']), [JSON.stringify(t.colonne)]);
         const [avvisi, inviti, rilascio] = t.righe;
-        check('avvisi di 2 minuti fa: regolare', avvisi && avvisi[0].startsWith('Avvisi') && avvisi[3].includes('2 minuti fa') && avvisi[4] === 'regolare', [JSON.stringify(avvisi)]);
-        check('inviti di 31 minuti fa: fermo', inviti && inviti[0].startsWith('Inviti') && inviti[3].includes('31 minuti fa') && inviti[4] === 'fermo', [JSON.stringify(inviti)]);
-        check('rilascio senza data: «mai», mai partito', rilascio && rilascio[0].startsWith('Rilascio dei moduli') && rilascio[3] === 'mai' && rilascio[4] === 'mai partito', [JSON.stringify(rilascio)]);
+        check('avvisi di 2 minuti fa: regolare', avvisi && avvisi[0].startsWith('Avvisi') && avvisi[3].includes('2 minuti fa') && avvisi[4] === 'Regolare', [JSON.stringify(avvisi)]);
+        check('inviti di 31 minuti fa: fermo', inviti && inviti[0].startsWith('Inviti') && inviti[3].includes('31 minuti fa') && inviti[4] === 'Fermo', [JSON.stringify(inviti)]);
+        check('rilascio senza data: «mai», mai partito', rilascio && rilascio[0].startsWith('Rilascio dei moduli') && rilascio[3] === 'mai' && rilascio[4] === 'Mai partito', [JSON.stringify(rilascio)]);
 
         // --- 2. l'avviso -------------------------------------------------------
         console.log('\nL\'avviso');

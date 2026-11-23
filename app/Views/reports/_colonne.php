@@ -91,7 +91,7 @@ $gruppoConLogo = static function (array $riga) use ($esc): string {
 
 $bozza = static function (array $riga) use ($esc): string {
     return $esc((string) $riga['title'])
-        . ((int) $riga['is_published'] === 0 ? ' <span class="badge">bozza</span>' : '');
+        . ((int) $riga['is_published'] === 0 ? ' <span class="badge">Bozza</span>' : '');
 };
 
 return [
@@ -114,7 +114,7 @@ return [
     'students' => [
         $colonna('Studente', 'testo', static function (array $r) use ($esc): string {
             return $esc((string) $r['full_name'])
-                . ((int) $r['is_active'] === 0 ? ' <span class="badge">disattivato</span>' : '');
+                . ((int) $r['is_active'] === 0 ? ' <span class="badge">Disattivato</span>' : '');
         }, 'studente', 'full_name', 'email'),
         $colonna('Email', 'testo', static fn (array $r): string
             => $esc((string) $r['email']), 'email', 'email'),

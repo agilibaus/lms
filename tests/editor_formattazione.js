@@ -150,9 +150,9 @@ const nomeFile = (f) => php('echo App\\Core\\FontLibrary::nomeFile($argv[1]);', 
         const basePrivacy = await page.evaluate(() => getComputedStyle(window.tinymce.get()[0].getBody()).fontFamily);
         check('anche nel suo editor il testo è nel carattere di Aspetto', basePrivacy.startsWith('"Albert Sans"'), [basePrivacy]);
         const tenuto = php('echo App\\Core\\HtmlSanitizer::clean($argv[1], App\\Core\\Privacy::TAG);',
-            '<p style="text-align: center;">Titolare: <span style="font-size: 18pt; color: #169179;">MoviMente</span></p>').trim();
+            '<p style="text-align: center;">Titolare: <span style="font-size: 18pt; color: #169179;">Associazione Esempio</span></p>').trim();
         check('e il suo salvataggio tiene la formattazione come quello delle lezioni',
-            tenuto === '<p style="text-align: center;">Titolare: <span style="font-size: 18pt; color: #169179;">MoviMente</span></p>', [tenuto]);
+            tenuto === '<p style="text-align: center;">Titolare: <span style="font-size: 18pt; color: #169179;">Associazione Esempio</span></p>', [tenuto]);
     } finally {
         await browser.close();
         esegui('UPDATE lessons SET content_html = ? WHERE id = ?', testoLezione === '\u0000' ? null : testoLezione, lezione);

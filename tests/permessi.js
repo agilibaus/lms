@@ -1420,8 +1420,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                         giuPrima: prima ? (prima.querySelector('button[title="Sposta il modulo giù"]') || {}).disabled : null,
                     };
                 }, verifica.id);
-                check('admin → nella pagina del corso: «verifica finale», senza «+ Lezione», frecce spente, e il modulo prima non scende',
-                    !!carta && carta.etichetta.includes('verifica finale') && !carta.lezione && carta.frecce.every((x) => x) && carta.giuPrima === true, [JSON.stringify(carta)]);
+                check('admin → nella pagina del corso: «Verifica finale», senza «+ Lezione», frecce spente, e il modulo prima non scende',
+                    !!carta && carta.etichetta.includes('Verifica finale') && !carta.lezione && carta.frecce.every((x) => x) && carta.giuPrima === true, [JSON.stringify(carta)]);
 
                 await admin.page.goto(BASE + '/modules/' + verifica.id + '/edit');
                 const scheda = await admin.page.evaluate(() => ({

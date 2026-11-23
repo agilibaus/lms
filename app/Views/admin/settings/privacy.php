@@ -49,7 +49,7 @@ use App\Core\Quando;
                             <td data-label="Da cancellare entro">
                                 <?= htmlspecialchars(Quando::data(Privacy::entro($r['deletion_requested_at']))) ?>
                                 <?php if (Privacy::scaduta($r['deletion_requested_at'], $adesso)): ?>
-                                    <span class="badge badge-danger">scaduta</span>
+                                    <span class="badge badge-danger">Scaduta</span>
                                 <?php endif; ?>
                             </td>
                             <td class="row-actions">

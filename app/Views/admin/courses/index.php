@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Etichetta;
 use App\Core\Ritorno;
 use App\Core\Csrf;
 use App\Core\Icona;
@@ -91,7 +92,7 @@ $courses = $ordine->applica($courses);
                 <td role="cell" data-label="Stato">
                     <?php /* Tre stati dal 14/11 (Alessandro): pubblicato, o bozza
                              presso chi la modifica. */ ?>
-                    <span class="badge<?= (int) $course['is_published'] === 1 ? ' badge-success' : '' ?>"><?= htmlspecialchars((string) $course['stato_etichetta']) ?></span>
+                    <span class="badge<?= (int) $course['is_published'] === 1 ? ' badge-success' : '' ?>"><?= htmlspecialchars(Etichetta::maiuscola((string) $course['stato_etichetta'])) ?></span>
                     <?php /* Anche l'iscrizione chiusa ha la sua etichetta: prima la
                              riga taceva, e un corso pubblicato ma chiuso sembrava
                              disponibile agli studenti mentre nel catalogo non

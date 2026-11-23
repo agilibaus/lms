@@ -88,9 +88,9 @@ $certificates = $ordine->applica($certificates);
                 <td role="cell" data-label="Emesso il"><?= htmlspecialchars(Quando::dataOra((string) $certificate['issued_at'])) ?></td>
                 <td role="cell" data-label="Stato">
                     <?php if ($revoked): ?>
-                        <span class="badge badge-danger">revocato</span>
+                        <span class="badge badge-danger">Revocato</span>
                     <?php else: ?>
-                        <span class="badge badge-success">valido</span>
+                        <span class="badge badge-success">Valido</span>
                     <?php endif; ?>
                 </td>
                 <td role="cell" class="row-actions">

@@ -77,7 +77,7 @@ const NON_SEGUIRE = /csv|xlsx|pdf|scarica|download/;
             await page.goto(BASE + indirizzo);
 
             const esito = await page.evaluate(() => {
-                const NUMERO = /^(completato\s+)?(\d+([.,]\d+)?\s*(%|min|giorn[oi])?|\d+\s*\/\s*\d+|\d+ su \d+|\d+:\d{2}|in orario|non iscritto)$/;
+                const NUMERO = /^([Cc]ompletato\s+)?(\d+([.,]\d+)?\s*(%|min|giorn[oi])?|\d+\s*\/\s*\d+|\d+ su \d+|\d+:\d{2}|in orario|[Nn]on iscritto)$/;
                 const VUOTO = /^(—|-|)$/;
                 const out = { colonne: [], link: [] };
                 document.querySelectorAll('table').forEach((t, ti) => {

@@ -451,10 +451,11 @@ class CourseModel
         return match ($mode) {
             // «gratuita» e non piu' «libera» (06/11, Alessandro): accanto ai corsi
             // a pagamento, la differenza che conta e' il prezzo.
-            'open' => 'iscrizione gratuita',
-            'request' => 'iscrizione su richiesta',
-            'paid' => 'a pagamento',
-            default => 'iscrizione chiusa',
+            // Con la maiuscola: si mostra solo nelle etichette (23/11).
+            'open' => 'Iscrizione gratuita',
+            'request' => 'Iscrizione su richiesta',
+            'paid' => 'A pagamento',
+            default => 'Iscrizione chiusa',
         };
     }
 

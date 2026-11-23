@@ -205,9 +205,9 @@ $quantiScaricati = count($users) === 1 ? '1 utente' : count($users) . ' utenti';
                     <?php endif; ?>
                     <td role="cell" data-label="Stato">
                         <?php if ((int) $user['is_active'] === 1): ?>
-                            <span class="badge badge-success">attivo</span>
+                            <span class="badge badge-success">Attivo</span>
                         <?php else: ?>
-                            <span class="badge badge-danger">disattivato</span>
+                            <span class="badge badge-danger">Disattivato</span>
                         <?php endif; ?>
                     </td>
                 </tr>

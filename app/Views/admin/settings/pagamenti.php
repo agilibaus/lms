@@ -164,9 +164,9 @@ use App\Core\Csrf;
                     </td>
                     <td role="cell" data-label="Esito">
                         <?php if ($p['esito'] === 'iscritto'): ?>
-                            <span class="badge badge-success">iscrizione completata</span>
+                            <span class="badge badge-success">Iscrizione completata</span>
                         <?php else: ?>
-                            <span class="badge badge-danger">iscrizione non riuscita</span>
+                            <span class="badge badge-danger">Iscrizione non riuscita</span>
                             <span class="cell-sub"><?= htmlspecialchars((string) $p['motivo']) ?></span>
                         <?php endif; ?>
                     </td>

@@ -289,7 +289,7 @@ const VALIDI = { price: '49,00', payment_link_url: LINK, payment_link_id: 'plink
             const r = [...document.querySelectorAll('tr')].find((x) => x.textContent.includes(t));
             return r ? [...r.querySelectorAll('.badge')].map((b) => b.textContent.trim()) : [];
         }, '[prova-pagamenti] corso libero');
-        check('Gestione corsi: «a pagamento»', etichetta.includes('a pagamento'), [etichetta.join(' | ')]);
+        check('Gestione corsi: «A pagamento»', etichetta.includes('A pagamento'), [etichetta.join(' | ')]);
 
         // --- il catalogo e lo studente ----------------------------------------------
         const studente = (await entra(browser, 'stud@test.it')).page;
@@ -500,8 +500,8 @@ const VALIDI = { price: '49,00', payment_link_url: LINK, payment_link_id: 'plink
         check('la modalita\' di prova si spegne dalla paginaP', php('echo App\\Core\\Settings::stored("PAYMENTS_TEST_MODE");').trim() === '0');
         imposta('PAYMENTS_TEST_MODE', '1');
         const righeP = await admin.$$eval('.pagamenti-ricevuti tbody tr', (t) => t.map((r) => r.textContent.replace(/\s+/g, ' ')));
-        check('i pagamenti ricevuti, con «iscrizione completata» e «iscrizione non riuscita» e il motivo',
-            righeP.some((r) => r.includes('iscrizione completata')) && righeP.some((r) => r.includes('iscrizione non riuscita') && r.includes('Studente non riconosciuto')), [righeP.length + ' righeP']);
+        check('i pagamenti ricevuti, con «Iscrizione completata» e «Iscrizione non riuscita» e il motivo',
+            righeP.some((r) => r.includes('Iscrizione completata')) && righeP.some((r) => r.includes('Iscrizione non riuscita') && r.includes('Studente non riconosciuto')), [righeP.length + ' righeP']);
         await admin.goto(BASE + '/admin/settings/pagamenti?corso=' + A.corso);
         check('filtrati per un corso senza pagamenti: nessuno', (await admin.$$('.pagamenti-ricevuti tbody tr')).length === 0);
         await admin.goto(BASE + '/admin/settings/pagamenti?corso=' + C.libero);

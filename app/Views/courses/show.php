@@ -225,17 +225,17 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         <?php endif; ?>
                         <?php if ($lockedByDate): ?>
                             <span class="badge badge-muted">
-                                dal <?= htmlspecialchars(date('d/m/Y', strtotime((string) $lock['available_from']))) ?>
+                                Dal <?= htmlspecialchars(date('d/m/Y', strtotime((string) $lock['available_from']))) ?>
                             </span>
                         <?php elseif ($isLocked): ?>
-                            <span class="badge badge-danger">bloccato</span>
+                            <span class="badge badge-danger">Bloccato</span>
                         <?php elseif (!empty($module['quiz_required'])): ?>
-                            <span class="badge">questionario obbligatorio</span>
+                            <span class="badge">Questionario obbligatorio</span>
                         <?php endif; ?>
                         <?php /* La verifica finale (28/10): l'etichetta solo
                                  allo staff; lo studente vede il titolo. */ ?>
                         <?php if ($isStaff && !empty($module['is_final'])): ?>
-                            <span class="badge">verifica finale</span>
+                            <span class="badge">Verifica finale</span>
                         <?php endif; ?>
                     </h2>
                     <?php if ($isStaff): ?>
@@ -428,7 +428,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                                 </a>
                             <?php endif; ?>
                             <?php if (!empty($quizPassedByModule[$moduleId])): ?>
-                                <span class="badge badge-success">superato</span>
+                                <span class="badge badge-success">Superato</span>
                             <?php endif; ?>
                             <?php if ($restaQuestionario): ?>
                                 <a class="da-qui-comando" href="/quizzes/<?= (int) $quiz['id'] ?>"><?= Icona::svg('play') ?>Fallo ora</a>

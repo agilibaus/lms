@@ -60,12 +60,12 @@ use App\Core\Csrf;
                     <td role="cell" data-label="Gruppo"><?= htmlspecialchars((string) $riga['gruppo']) ?></td>
                     <td role="cell" data-label="Esito">
                         <?php if ($riga['errore'] === null): ?>
-                            <span class="badge badge-success">da creare</span>
+                            <span class="badge badge-success">Da creare</span>
                         <?php else: ?>
                             <?php /* Il motivo scritto per esteso, non un'icona: chi
                                      guarda deve poter correggere il file, e per
                                      correggerlo deve sapere che cosa non andava. */ ?>
-                            <span class="badge badge-muted">saltata</span>
+                            <span class="badge badge-muted">Saltata</span>
                             <span class="cell-sub"><?= htmlspecialchars((string) $riga['errore']) ?></span>
                         <?php endif; ?>
                     </td>

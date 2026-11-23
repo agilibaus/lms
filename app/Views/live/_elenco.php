@@ -83,7 +83,7 @@ $riquadro = static function (array $s) use ($adesso): string {
         // telefono; «Aggiungi al calendario» alla sua sinistra (20/10,
         // Alessandro). Lo stesso ordine nell'Agenda.
         if ($inCorso) {
-            $html .= '<span class="badge badge-success">in corso</span>';
+            $html .= '<span class="badge badge-success">In corso</span>';
         }
         if (!$inCorso) {
             $html .= '<a href="/agenda/evento/' . $id . '.ics">Aggiungi al calendario</a>';

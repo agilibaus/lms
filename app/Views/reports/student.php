@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Etichetta;
 use App\Core\ReportSections;
 use App\Core\Ritorno;
 use App\Auth\Auth;
@@ -164,7 +165,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                 <span>
                     <?= number_format((float) $course['progress_pct'], 0) ?>%
                     <?php if ($course['completed_at'] !== null): ?>
-                        <span class="badge badge-success">completato</span>
+                        <span class="badge badge-success">Completato</span>
                     <?php endif; ?>
                 </span>
             </div>
@@ -191,7 +192,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                 <?php if (!empty($course['certificate_code'])): ?>
                     · Certificato
                     <?php if ($course['certificate_revoked_at'] !== null): ?>
-                        <span class="badge badge-danger">revocato</span>
+                        <span class="badge badge-danger">Revocato</span>
                     <?php else: ?>
                         <code><?= htmlspecialchars((string) $course['certificate_code']) ?></code>
                     <?php endif; ?>
@@ -231,7 +232,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                             <td role="cell" data-label="Miglior punteggio" class="col-numero"><?= $quiz['best_score_pct'] === null ? '—' : number_format((float) $quiz['best_score_pct'], 0) . '%' ?></td>
                             <td role="cell" data-label="Esito">
                                 <?php $esito = (string) $quiz['esito_etichetta']; ?>
-                                <span class="badge<?= $esito === 'superato' ? ' badge-success' : ($esito === 'non superato' ? ' badge-danger' : '') ?>"><?= htmlspecialchars($esito) ?></span>
+                                <span class="badge<?= $esito === 'superato' ? ' badge-success' : ($esito === 'non superato' ? ' badge-danger' : '') ?>"><?= htmlspecialchars(Etichetta::maiuscola($esito)) ?></span>
                             </td>
                             <td role="cell" data-label="Ultimo tentativo">
                                 <?php /* Il collegamento all'ultimo tentativo e'
@@ -336,9 +337,9 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                     <?php endif; ?>
                     <td role="cell" data-label="Presenza">
                         <?php if ($presente): ?>
-                            <span class="badge badge-success">presente</span>
+                            <span class="badge badge-success">Presente</span>
                         <?php else: ?>
-                            <span class="badge badge-danger">assente</span>
+                            <span class="badge badge-danger">Assente</span>
                         <?php endif; ?>
                     </td>
                     <td role="cell" data-label="Ingresso"><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($incontro['joined_at'])) : '—' ?></td>

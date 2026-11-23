@@ -123,9 +123,9 @@ $rows = $ordine->applica($rows);
                     </td>
                     <td role="cell" data-label="Presenza">
                         <?php if ($presente): ?>
-                            <span class="badge badge-success">presente</span>
+                            <span class="badge badge-success">Presente</span>
                         <?php else: ?>
-                            <span class="badge badge-danger">assente</span>
+                            <span class="badge badge-danger">Assente</span>
                         <?php endif; ?>
                     </td>
                     <td role="cell" data-label="Ingresso"><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($row['joined_at'])) : '—' ?></td>

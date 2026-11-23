@@ -90,12 +90,12 @@ $rows = $ordine->applica($rows);
                 <td role="cell" data-label="Corso"><?= htmlspecialchars((string) $row['course_title']) ?></td>
                 <td role="cell" data-label="Progresso" class="col-numero">
                     <?php if ($row['progress_pct'] === null): ?>
-                        <span class="badge">non iscritto</span>
+                        <span class="badge">Non iscritto</span>
                     <?php else: ?>
                         <?php /* L'etichetta prima del numero: a destra, le
                                  cifre restano incolonnate (23/11). */ ?>
                         <?php if ($row['completed_at'] !== null): ?>
-                            <span class="badge badge-success">completato</span>
+                            <span class="badge badge-success">Completato</span>
                         <?php endif; ?>
                         <?= number_format((float) $row['progress_pct'], 0) ?>%
                     <?php endif; ?>
@@ -105,7 +105,7 @@ $rows = $ordine->applica($rows);
                     <?php if (empty($row['certificate_code'])): ?>
                         —
                     <?php elseif ($row['certificate_revoked_at'] !== null): ?>
-                        <span class="badge badge-danger">revocato</span>
+                        <span class="badge badge-danger">Revocato</span>
                     <?php else: ?>
                         <code><?= htmlspecialchars((string) $row['certificate_code']) ?></code>
                     <?php endif; ?>

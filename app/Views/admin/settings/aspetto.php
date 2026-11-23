@@ -334,10 +334,10 @@ use App\Core\Icona;
                 <summary>
                     <span class="ritocco-nome"><?= htmlspecialchars($el['nome']) ?></span>
                     <?php if ($aperto): ?>
-                        <span class="badge badge-muted">modificato</span>
+                        <span class="badge badge-muted">Modificato</span>
                     <?php endif; ?>
                     <?php if ($el['solo'] !== null): ?>
-                        <span class="badge">solo affiancato</span>
+                        <span class="badge">Solo affiancato</span>
                     <?php endif; ?>
                 </summary>
 

@@ -209,7 +209,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                     <td role="cell" data-label="Progresso">
                         <?= number_format((float) $row['progress_pct'], 0) ?>%
                         <?php if ($row['completed_at'] !== null): ?>
-                            <span class="badge badge-success">completato</span>
+                            <span class="badge badge-success">Completato</span>
                         <?php endif; ?>
                     </td>
                     <?php if (!$tutor): ?>

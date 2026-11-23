@@ -109,7 +109,7 @@ $c = $chiamate();
 check('«qualcosa non va»: lo stesso indirizzo con /fail, e il messaggio nel corpo',
     count($c) === 1 && $c[0]['uri'] === '/' . CHIAVE . '/pistacchio-inviti/fail' && $c[0]['corpo'] === 'qualcosa', json_encode($c));
 
-Settings::set(Sorveglianza::KEY_URL, 'https://lms.movimente.it');
+Settings::set(Sorveglianza::KEY_URL, 'https://pistacchio.esempio.it');
 $azzera();
 check('la chiave salvata per un altro indirizzo (un database copiato): altrove, e nessun segnale',
     Sorveglianza::stato() === Sorveglianza::ALTROVE && !Sorveglianza::segnala(Sorveglianza::AVVISI) && $chiamate() === []);

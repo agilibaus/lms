@@ -24,9 +24,9 @@ use App\Core\Url;
  */
 
 $etichette = [
-    ComandiPianificati::REGOLARE => ['regolare', 'badge-success'],
-    ComandiPianificati::FERMO => ['fermo', 'badge-danger'],
-    ComandiPianificati::MAI => ['mai partito', 'badge-danger'],
+    ComandiPianificati::REGOLARE => ['Regolare', 'badge-success'],
+    ComandiPianificati::FERMO => ['Fermo', 'badge-danger'],
+    ComandiPianificati::MAI => ['Mai partito', 'badge-danger'],
 ];
 ?>
 <div class="page-header">

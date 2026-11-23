@@ -69,7 +69,7 @@ $voce = static function (array $e) use ($esc, $adesso, $urlEvento): string {
         . '<span class="agenda-azioni">';
 
     if ($inCorso) {
-        $html .= '<span class="badge badge-success">in corso</span>';
+        $html .= '<span class="badge badge-success">In corso</span>';
     }
 
     // Non per un incontro gia' finito: mettere in agenda un appuntamento

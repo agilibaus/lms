@@ -202,10 +202,10 @@ $apribile = (bool) ($session['joinable'] ?? false);
                         <td role="cell" data-label="Origine">
                             <?php if ($present): ?>
                                 <span class="badge <?= $record['source'] === 'manual' ? '' : 'badge-success' ?>">
-                                    <?= $record['source'] === 'manual' ? 'segnata dal tutor' : 'piattaforma' ?>
+                                    <?= $record['source'] === 'manual' ? 'Segnata dal tutor' : 'Piattaforma' ?>
                                 </span>
                             <?php else: ?>
-                                <span class="badge badge-danger">assente</span>
+                                <span class="badge badge-danger">Assente</span>
                             <?php endif; ?>
                         </td>
                         <?php if ($canManage): ?>
