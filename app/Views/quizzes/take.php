@@ -180,20 +180,31 @@ use App\Core\QuizScoring;
 <?php if ($attempts !== []): ?>
     <section class="card">
         <h2>I tuoi tentativi</h2>
-        <table class="data-table">
-            <thead>
-            <tr><th>Data</th><th>Punteggio</th><th>Esito</th><th></th></tr>
+        <?php /* Sul telefono la tabella usciva dallo schermo e «Dettaglio»
+                 restava tagliato (23/11): sotto i 50 rem le righe diventano
+                 schede, come nei certificati. I `role` servono perche'
+                 cambiando il `display` la tabella perderebbe le sue semantiche. */ ?>
+        <div class="tabella-schede">
+        <table class="data-table" role="table">
+            <thead role="rowgroup">
+            <tr role="row">
+                <th scope="col" role="columnheader">Data</th>
+                <th scope="col" role="columnheader">Punteggio</th>
+                <th scope="col" role="columnheader">Esito</th>
+                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+            </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
             <?php foreach ($attempts as $attempt): ?>
-                <tr>
-                    <td><?= htmlspecialchars(Quando::dataOra((string) $attempt['attempted_at'])) ?></td>
-                    <td><?= number_format((float) $attempt['score_pct'], 0) ?>%</td>
-                    <td><?= (int) $attempt['passed'] === 1 ? 'Superato' : 'Non superato' ?></td>
-                    <td><a href="/attempts/<?= (int) $attempt['id'] ?>">Dettaglio</a></td>
+                <tr role="row">
+                    <td role="cell" data-label="Data"><?= htmlspecialchars(Quando::dataOra((string) $attempt['attempted_at'])) ?></td>
+                    <td role="cell" data-label="Punteggio"><?= number_format((float) $attempt['score_pct'], 0) ?>%</td>
+                    <td role="cell" data-label="Esito"><?= (int) $attempt['passed'] === 1 ? 'Superato' : 'Non superato' ?></td>
+                    <td role="cell" class="row-actions"><a href="/attempts/<?= (int) $attempt['id'] ?>">Dettaglio</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     </section>
 <?php endif; ?>

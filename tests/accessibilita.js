@@ -2123,7 +2123,8 @@ async function giroSenzaMouse(browser) {
 }
 
 /*
- * IL CATALOGO, DA STUDENTE (13/11). Fino al 13/11 lo guardava l'admin, nel
+ * IL CATALOGO, DA STUDENTE (13/11), e dal 23/11 un questionario con i
+ * suoi tentativi. Fino al 13/11 lo guardava l'admin, nel
  * giro principale e in quelli alle larghezze estreme e senza mouse; da quel
  * giorno il catalogo e' solo degli studenti e lo staff viene rimandato a
  * «Corsi». Qui lo studente del mondo A lo ripercorre tutto: le prove intere
@@ -2145,6 +2146,14 @@ async function giroCatalogoStudente(browser) {
         const page = await ctx.newPage();
         await accedi(page);
         await esamina(page, '/catalogo', 'Catalogo (studente)', BERSAGLIO_MINIMO, larghezza <= 500);
+        // E un questionario con i suoi tentativi (23/11): «I tuoi tentativi»
+        // sul telefono usciva dallo schermo, e lo staff, che fa il giro
+        // principale, quella tabella non la vede. Quello del corso senza
+        // gruppi: il quiz del mondo A sta dopo una lezione da completare, e
+        // la pagina rimanda al corso.
+        await esamina(page, '/quizzes/' + SEMINA.C.quiz, 'Questionario con tentativi (studente)', BERSAGLIO_MINIMO, larghezza <= 500);
+        check('Questionario con tentativi (studente): a ' + larghezza + ' px si vedono i tentativi',
+            await page.locator('h2', { hasText: 'I tuoi tentativi' }).count() === 1, [page.url()]);
         await ctx.close();
     }
 
@@ -2155,6 +2164,8 @@ async function giroCatalogoStudente(browser) {
         await accedi(page);
         await page.goto(BASE + '/catalogo');
         await controllaSforamento(page, 'Catalogo (studente)');
+        await page.goto(BASE + '/quizzes/' + SEMINA.C.quiz);
+        await controllaSforamento(page, 'Questionario con tentativi (studente)');
         await ctx.close();
     }
 
