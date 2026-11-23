@@ -20,6 +20,7 @@ use App\Core\Url;
  * @var string|null $sorveglianzaPer l'indirizzo per cui la chiave e' stata salvata
  * @var bool $chiaveNelFile la chiave viene dal `.env`
  * @var bool $chiaveSalvata c'e' una chiave scritta dal pannello
+ * @var string $spazioPiano lo spazio del piano scritto nel pannello, o ''
  */
 
 $etichette = [
@@ -31,7 +32,7 @@ $etichette = [
 <div class="page-header">
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Comandi pianificati</h1>
-    <p class="page-subtitle">I tre comandi che il server lancia da solo. Se uno smette di girare, Pistacchio non se ne accorge: lo si vede qui.</p>
+    <p class="page-subtitle">I comandi che il server lancia da solo. Se uno smette di girare, Pistacchio non se ne accorge: lo si vede qui.</p>
 </div>
 
 <?php require __DIR__ . '/../_flash.php'; ?>
@@ -104,6 +105,10 @@ $etichette = [
                     : 'Chiave salvata per <code>' . htmlspecialchars((string) $sorveglianzaPer) . '</code>.' ?>
             </p>
             <p class="form-hint">A ogni giro i comandi mandano un segnale a Healthchecks.io. I check devono chiamarsi <?= $nomi ?>.</p>
+            <p class="form-hint">
+                Il sito e lo spazio li controlla <code>bin/sorveglia</code>, che va aggiunto al cron ogni cinque minuti:
+                <code>*/5 * * * * cd /percorso/del/sito &amp;&amp; php bin/sorveglia &gt;&gt; storage/logs/sorveglia.log 2&gt;&amp;1</code>
+            </p>
         <?php elseif ($sorveglianza === Sorveglianza::ALTROVE): ?>
             <p class="alert alert-warning" role="note">
                 Chiave salvata per <code><?= htmlspecialchars((string) $sorveglianzaPer) ?></code>: su questo indirizzo
@@ -136,11 +141,21 @@ $etichette = [
             <?php endif; ?>
         <?php endif; ?>
 
+        <?php /* Lo spazio del piano (23/11): su un hosting condiviso conta la
+                 quota dell'account, che Pistacchio non puo' leggere da solo. */ ?>
+        <label for="<?= Sorveglianza::KEY_SPAZIO ?>">Spazio del piano di hosting, in GB (facoltativo)</label>
+        <input type="number" id="<?= Sorveglianza::KEY_SPAZIO ?>" name="<?= Sorveglianza::KEY_SPAZIO ?>"
+               value="<?= htmlspecialchars($spazioPiano) ?>" min="0.1" max="100000" step="0.1" inputmode="decimal"
+               aria-describedby="spazio_aiuto">
+        <p class="form-hint" id="spazio_aiuto">
+            Lo leggi in cPanel. Una volta all'ora <code>bin/sorveglia</code> somma i file caricati (<code>storage/</code>)
+            e il database, e oltre l'<?= (int) round(Sorveglianza::SOGLIA_DISCO * 100) ?>% dice a <code><?= Sorveglianza::DISCO ?></code>
+            che qualcosa non va. Con il campo vuoto lo spazio non si controlla.
+        </p>
+
         <div class="sorveglianza-comandi">
-            <?php if (!$chiaveNelFile): ?>
-                <button type="submit" class="btn btn-primary">Salva</button>
-                <a href="/admin/settings" class="btn btn-secondary">Annulla</a>
-            <?php endif; ?>
+            <button type="submit" class="btn btn-primary">Salva</button>
+            <a href="/admin/settings" class="btn btn-secondary">Annulla</a>
             <?php if ($sorveglianza === Sorveglianza::ATTIVA): ?>
                 <button type="submit" formaction="/admin/settings/comandi/prova" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Manda un segnale di prova</button>
             <?php endif; ?>

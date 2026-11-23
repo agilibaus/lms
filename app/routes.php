@@ -25,6 +25,7 @@ use App\Controllers\LiveSessionController;
 use App\Controllers\ModuleController;
 use App\Controllers\PasswordResetController;
 use App\Controllers\PrivacyController;
+use App\Controllers\SaluteController;
 use App\Controllers\ProfileController;
 use App\Controllers\FirstAccessController;
 use App\Controllers\QuestionController;
@@ -59,6 +60,8 @@ $router->post('/password/reimposta/{token}', [PasswordResetController::class, 'r
 // --- Catalogo e auto-iscrizione ---------------------------------------
 // Privacy (18/11): l'informativa si legge senza accedere.
 $router->get('/privacy', [PrivacyController::class, 'show']);
+// Pistacchio risponde? Per `bin/sorveglia` (23/11): «ok» o 503.
+$router->get('/salute', [SaluteController::class, 'show']);
 $router->post('/privacy/avviso', [PrivacyController::class, 'chiudiAvviso']);
 $router->get('/profilo/cancellazione', [PrivacyController::class, 'cancellazioneForm']);
 $router->post('/profilo/cancellazione', [PrivacyController::class, 'chiediCancellazione']);

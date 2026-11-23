@@ -236,7 +236,8 @@ use App\Core\Csrf;
                        (17/11), solo all'Amministratore: un cron fermo non
                        se ne lamenta da solo. */
                     $comandiFermi = Auth::can('settings.manage')
-                        ? \App\Core\ComandiPianificati::daControllare(static fn (string $k): ?string => \App\Core\Settings::get($k), time())
+                        ? \App\Core\ComandiPianificati::daControllare(static fn (string $k): ?string => \App\Core\Settings::get($k), time(),
+                            \App\Core\Sorveglianza::stato() === \App\Core\Sorveglianza::ATTIVA)
                         : 0;
                     // Le richieste di cancellazione dei dati (18/11): nel
                     // menu un numero solo, la somma; quale riquadro lo

@@ -11,6 +11,8 @@
 /storage/bacheca/*
 /storage/h5p/*
 /storage/installed.lock
+# Il conto dei controlli falliti di bin/sorveglia (23/11).
+/storage/sorveglia.json
 /storage/mail/*
 !/storage/mail/.gitkeep
 !/storage/videos/.gitkeep

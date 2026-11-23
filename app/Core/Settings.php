@@ -129,6 +129,7 @@ class Settings
     public const MONITORING_KEYS = [
         'HEALTHCHECKS_PING_KEY',
         'HEALTHCHECKS_PER_URL',
+        'SPAZIO_PIANO_GB',
     ];
 
     public static function isWritable(string $key): bool
@@ -236,6 +237,7 @@ class Settings
         'DRIP_LAST_RUN_AT',
         'INVITES_LAST_RUN_AT',
         'AVVISI_LAST_RUN_AT',
+        'SORVEGLIA_LAST_RUN_AT',
     ];
 
     /**

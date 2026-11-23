@@ -31,6 +31,10 @@ namespace App\Core;
  * MAI UN ERRORE. Un servizio che non risponde non ferma il comando che
  * segnala: attesa massima di 5 secondi, nessuna eccezione verso fuori.
  *
+ * IL SITO E LO SPAZIO (`bin/sorveglia`, ogni 5 minuti): il sito si apre
+ * da `APP_URL/salute`, come lo apre un visitatore, e lo spazio si misura
+ * una volta all'ora contro lo spazio del piano scritto nel pannello.
+ *
  * NIENTE DATI DI PERSONE. Ai check arrivano nomi dei check, orari e numeri
  * («2 email in coda da piu' di un'ora»), mai indirizzi o nomi: il registro
  * di `bin/avvisi` scrive gli indirizzi delle email non partite, e quel testo
@@ -47,9 +51,23 @@ final class Sorveglianza
     public const INVITI = 'pistacchio-inviti';
     public const RILASCIO = 'pistacchio-rilascio';
     public const POSTA = 'pistacchio-posta';
+    public const SITO = 'pistacchio-sito';
+    public const DISCO = 'pistacchio-disco';
 
-    /** I check di questa patch; sito e disco arrivano con `bin/sorveglia`. */
-    public const CHECK = [self::AVVISI, self::INVITI, self::RILASCIO, self::POSTA];
+    /** Tutti i check, nell'ordine del pannello. Sito e disco li segnala `bin/sorveglia`. */
+    public const CHECK = [self::AVVISI, self::INVITI, self::RILASCIO, self::POSTA, self::SITO, self::DISCO];
+
+    /** Lo spazio del piano di hosting, in GB: vuoto, il controllo dello spazio e' spento. */
+    public const KEY_SPAZIO = 'SPAZIO_PIANO_GB';
+
+    /** Oltre questa parte dello spazio del piano, «qualcosa non va». */
+    public const SOGLIA_DISCO = 0.8;
+
+    /** Il sito «non va» dopo tanti controlli falliti di seguito: uno solo e' un riavvio. */
+    public const FALLIMENTI_DEL_SITO = 2;
+
+    /** Ogni quanto si misura lo spazio, in secondi. */
+    public const OGNI_QUANTO_IL_DISCO = 3600;
 
     public const SPENTA = 'spenta';
     public const ATTIVA = 'attiva';
@@ -161,9 +179,10 @@ final class Sorveglianza
     }
 
     /**
-     * «Manda un segnale di prova»: un segnale a ogni check (la posta con il
-     * suo stato vero), e per ciascuno la risposta del servizio: 200 arrivato,
-     * 404 un check con quel nome non c'e', 0 nessuna risposta.
+     * «Manda un segnale di prova»: un segnale a ogni check (la posta e lo
+     * spazio con il loro stato vero, se c'e'), e per ciascuno la risposta
+     * del servizio: 200 arrivato, 404 un check con quel nome non c'e', 0
+     * nessuna risposta.
      *
      * @return array<string, int>
      */
@@ -172,10 +191,182 @@ final class Sorveglianza
         $esiti = [];
 
         foreach (self::CHECK as $check) {
-            $esiti[$check] = $check === self::POSTA ? self::chiamaPosta() : self::chiama($check, true, 'prova dal pannello');
+            $esiti[$check] = match (true) {
+                $check === self::POSTA => self::chiamaPosta(),
+                $check === self::DISCO && self::spazioPiano() !== null => self::chiamaDisco(),
+                default => self::chiama($check, true, 'prova dal pannello'),
+            };
         }
 
         return $esiti;
+    }
+
+    // ---------------------------------------------------------------
+    // Il sito e lo spazio, per `bin/sorveglia`
+    // ---------------------------------------------------------------
+
+    /**
+     * Un giro del controllo del sito: apre l'indirizzo (di solito
+     * `APP_URL/salute`) in https, con il certificato verificato, come un
+     * visitatore. Una risposta buona (200, «ok») manda «tutto bene» e azzera
+     * il conto; un controllo fallito non manda niente; il secondo di seguito
+     * manda «qualcosa non va». Cosi' un riavvio di un minuto non costa un SMS,
+     * e un sito giu' davvero si segnala al secondo giro. Il conto sta in un
+     * file, perche' con il database fermo non si scriverebbe.
+     *
+     * @return string 'bene' | 'primo' (primo fallimento, niente segnale) | 'giu'
+     */
+    public static function giroSito(string $indirizzo, string $fileStato): string
+    {
+        [$codice, $corpo] = self::apri($indirizzo);
+        $stato = self::leggiStato($fileStato);
+
+        if ($codice === 200 && strtolower(trim($corpo)) === 'ok') {
+            $stato['fallimenti'] = 0;
+            self::scriviStato($fileStato, $stato);
+            self::segnala(self::SITO, true);
+
+            return 'bene';
+        }
+
+        $stato['fallimenti'] = (int) ($stato['fallimenti'] ?? 0) + 1;
+        self::scriviStato($fileStato, $stato);
+
+        if ($stato['fallimenti'] < self::FALLIMENTI_DEL_SITO) {
+            return 'primo';
+        }
+
+        self::segnala(self::SITO, false, $codice === 0
+            ? 'la pagina /salute non risponde'
+            : 'la pagina /salute risponde ' . $codice);
+
+        return 'giu';
+    }
+
+    /**
+     * Lo spazio, se e' passata un'ora dall'ultima misura (`bin/sorveglia`
+     * gira ogni 5 minuti). Con il campo dello spazio vuoto non misura e non
+     * segnala niente.
+     *
+     * @return string 'spento' | 'presto' | 'misurato'
+     */
+    public static function giroDisco(string $fileStato, int $adesso): string
+    {
+        if (self::spazioPiano() === null) {
+            return 'spento';
+        }
+
+        $stato = self::leggiStato($fileStato);
+
+        if ($adesso - (int) ($stato['disco'] ?? 0) < self::OGNI_QUANTO_IL_DISCO) {
+            return 'presto';
+        }
+
+        $stato['disco'] = $adesso;
+        self::scriviStato($fileStato, $stato);
+        self::chiamaDisco();
+
+        return 'misurato';
+    }
+
+    /** Lo spazio del piano in GB, o null se non e' scritto. */
+    public static function spazioPiano(): ?float
+    {
+        $valore = str_replace(',', '.', trim((string) Settings::get(self::KEY_SPAZIO, '')));
+
+        return is_numeric($valore) && (float) $valore > 0 ? (float) $valore : null;
+    }
+
+    /**
+     * Lo spazio usato: `storage/`, dove stanno tutti i file caricati, e il
+     * database. Su un hosting condiviso conta la quota dell'account, non lo
+     * spazio libero del disco: per questo si sommano le due cose e si
+     * confrontano con lo spazio del piano.
+     */
+    public static function spazioUsato(): int
+    {
+        $byte = 0;
+        $cartella = dirname(__DIR__, 2) . '/storage';
+
+        if (is_dir($cartella)) {
+            $file = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($cartella, \FilesystemIterator::SKIP_DOTS)
+            );
+            foreach ($file as $f) {
+                if ($f->isFile()) {
+                    $byte += (int) $f->getSize();
+                }
+            }
+        }
+
+        $byte += (int) Database::connection()->query(
+            'SELECT COALESCE(SUM(data_length + index_length), 0) FROM information_schema.TABLES WHERE table_schema = DATABASE()'
+        )->fetchColumn();
+
+        return $byte;
+    }
+
+    /** «uso 82% di 10 GB»: la parte usata, in testo. */
+    public static function descriviSpazio(int $usati, float $pianoGb): string
+    {
+        $parte = $usati / ($pianoGb * 1024 ** 3);
+
+        return 'uso ' . (int) round($parte * 100) . '% di ' . rtrim(rtrim(number_format($pianoGb, 2, '.', ''), '0'), '.') . ' GB';
+    }
+
+    private static function chiamaDisco(): int
+    {
+        $piano = self::spazioPiano();
+
+        if ($piano === null || self::stato() !== self::ATTIVA) {
+            return 0;
+        }
+
+        $usati = self::spazioUsato();
+        $bene = $usati / ($piano * 1024 ** 3) <= self::SOGLIA_DISCO;
+
+        return self::chiama(self::DISCO, $bene, self::descriviSpazio($usati, $piano));
+    }
+
+    /** @return array{0: int, 1: string} il codice e il corpo, [0, ''] senza risposta */
+    private static function apri(string $indirizzo): array
+    {
+        if (!function_exists('curl_init')) {
+            return [0, ''];
+        }
+
+        try {
+            $ch = curl_init($indirizzo);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+            ]);
+            $corpo = curl_exec($ch);
+            $codice = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            return $corpo === false ? [0, ''] : [$codice, (string) $corpo];
+        } catch (\Throwable) {
+            return [0, ''];
+        }
+    }
+
+    /** @return array<string, int> */
+    private static function leggiStato(string $file): array
+    {
+        $dati = is_file($file) ? json_decode((string) file_get_contents($file), true) : null;
+
+        return is_array($dati) ? $dati : [];
+    }
+
+    /** @param array<string, int> $stato */
+    private static function scriviStato(string $file, array $stato): void
+    {
+        @file_put_contents($file, (string) json_encode($stato));
     }
 
     private static function chiamaPosta(): int

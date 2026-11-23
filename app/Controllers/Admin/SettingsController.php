@@ -89,7 +89,7 @@ class SettingsController extends AdminController
             'canPermissions' => Auth::hasRole('admin'),
             // Il punto esclamativo sul riquadro dei comandi pianificati (17/11).
             'comandiDaControllare' => Auth::can('settings.manage')
-                ? ComandiPianificati::daControllare(static fn (string $k): ?string => Settings::get($k), time())
+                ? ComandiPianificati::daControllare(static fn (string $k): ?string => Settings::get($k), time(), Sorveglianza::stato() === Sorveglianza::ATTIVA)
                 : 0,
             // E sul riquadro Privacy, se ci sono richieste di cancellazione (18/11).
             'richiestePrivacy' => Auth::can('settings.manage') ? PrivacyModel::contaRichieste() : 0,
@@ -109,12 +109,13 @@ class SettingsController extends AdminController
 
         View::render('admin/settings/comandi', [
             'pageTitle' => 'Comandi pianificati',
-            'comandi' => ComandiPianificati::elenco(static fn (string $k): ?string => Settings::get($k), $adesso),
+            'comandi' => ComandiPianificati::elenco(static fn (string $k): ?string => Settings::get($k), $adesso, Sorveglianza::stato() === Sorveglianza::ATTIVA),
             'adesso' => $adesso,
             'sorveglianza' => Sorveglianza::stato(),
             'sorveglianzaPer' => Sorveglianza::salvataPer(),
             'chiaveNelFile' => Settings::source(Sorveglianza::KEY) === 'file',
             'chiaveSalvata' => Settings::stored(Sorveglianza::KEY) !== null,
+            'spazioPiano' => (string) (Settings::stored(Sorveglianza::KEY_SPAZIO) ?? ''),
         ]);
     }
 
@@ -130,24 +131,32 @@ class SettingsController extends AdminController
         Auth::requirePermission('settings.manage');
 
         $userId = Auth::id();
+        $chiave = trim((string) ($_POST[Sorveglianza::KEY] ?? ''));
+        $spazio = str_replace(',', '.', trim((string) ($_POST[Sorveglianza::KEY_SPAZIO] ?? '')));
+
+        // Prima si controlla tutto, poi si scrive: un campo sbagliato non
+        // salva a meta' il modulo.
+        if ($chiave !== '' && empty($_POST['cancella_chiave']) && !Sorveglianza::chiaveValida($chiave)) {
+            $this->fail(
+                'Questa non sembra una chiave dei segnali: va incollata solo la «Ping key» del progetto, '
+                . 'lettere e cifre senza spazi, non l\'indirizzo intero.',
+                self::COMANDI_PAGE
+            );
+        }
+
+        if ($spazio !== '' && (!is_numeric($spazio) || (float) $spazio <= 0 || (float) $spazio > 100000)) {
+            $this->fail('Lo spazio del piano va scritto in GB, con un numero maggiore di zero, per esempio 10 o 2,5.', self::COMANDI_PAGE);
+        }
+
+        Settings::set(Sorveglianza::KEY_SPAZIO, $spazio === '' ? null : (string) (float) $spazio, $userId);
 
         if (!empty($_POST['cancella_chiave'])) {
             Sorveglianza::cancella($userId);
             $this->success('Chiave cancellata: la sorveglianza esterna è spenta.', self::COMANDI_PAGE);
         }
 
-        $chiave = trim((string) ($_POST[Sorveglianza::KEY] ?? ''));
-
         if ($chiave === '') {
-            $this->success('Niente da cambiare: la chiave resta quella di prima.', self::COMANDI_PAGE);
-        }
-
-        if (!Sorveglianza::chiaveValida($chiave)) {
-            $this->fail(
-                'Questa non sembra una chiave dei segnali: va incollata solo la «Ping key» del progetto, '
-                . 'lettere e cifre senza spazi, non l\'indirizzo intero.',
-                self::COMANDI_PAGE
-            );
+            $this->success(Settings::stored(Sorveglianza::KEY) === null ? 'Salvato.' : 'Salvato. La chiave resta quella di prima.', self::COMANDI_PAGE);
         }
 
         Sorveglianza::salva($chiave, $userId);

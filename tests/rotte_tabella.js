@@ -68,6 +68,8 @@ const RIGHE = [
     ['GET',  '/profilo/password',                                           '/profilo/password',                                                'L', 'S', 'S', 'S', 'S', 'S'],
     ['POST', '/profilo/password',                                           '/profilo/password',                                                'L', '-', '-', '-', '-', '-'],
     ['GET',  '/privacy',                                                    '/privacy',                                                         'S', 'S', 'S', 'S', 'S', 'S'],
+    // Pistacchio risponde? Pubblica, per bin/sorveglia (23/11).
+    ['GET',  '/salute',                                                     '/salute',                                                          'S', 'S', 'S', 'S', 'S', 'S'],
     ['POST', '/privacy/avviso',                                             '/privacy/avviso',                                                  'L', '-', '-', '-', '-', '-'],
     ['GET',  '/profilo/cancellazione',                                      '/profilo/cancellazione',                                           'L', 'S', '403', '403', '403', '403'],
     ['POST', '/profilo/cancellazione',                                      '/profilo/cancellazione',                                           'L', '-', '403', '403', '403', '403'],

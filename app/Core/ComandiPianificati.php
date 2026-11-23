@@ -34,7 +34,7 @@ final class ComandiPianificati
     public const MAI = 'mai';
 
     /**
-     * @var list<array{chiave: string, nome: string, file: string, cosa: string, frequenza: string, soglia: int}>
+     * @var list<array{chiave: string, nome: string, file: string, cosa: string, frequenza: string, soglia: int, solo_con_sorveglianza?: bool}>
      */
     public const COMANDI = [
         [
@@ -61,6 +61,18 @@ final class ComandiPianificati
             'frequenza' => 'ogni giorno',
             'soglia' => 2 * 24 * 60 * 60,
         ],
+        // Solo con la sorveglianza esterna attiva (23/11): senza chiave il
+        // comando non fa niente, e su un'installazione che non la usa non
+        // deve risultare «mai partito».
+        [
+            'chiave' => 'SORVEGLIA_LAST_RUN_AT',
+            'nome' => 'Sorveglianza',
+            'file' => 'bin/sorveglia',
+            'cosa' => 'Il controllo del sito e dello spazio, per la sorveglianza esterna',
+            'frequenza' => 'ogni 5 minuti',
+            'soglia' => 30 * 60,
+            'solo_con_sorveglianza' => true,
+        ],
     ];
 
     /**
@@ -85,11 +97,15 @@ final class ComandiPianificati
      * @param callable(string): ?string $leggi legge una chiave delle impostazioni
      * @return list<array<string, mixed>>
      */
-    public static function elenco(callable $leggi, int $adesso): array
+    public static function elenco(callable $leggi, int $adesso, bool $conSorveglianza = false): array
     {
         $elenco = [];
 
         foreach (self::COMANDI as $comando) {
+            if (!empty($comando['solo_con_sorveglianza']) && !$conSorveglianza) {
+                continue;
+            }
+
             $ultima = $leggi($comando['chiave']);
             $elenco[] = $comando + [
                 'ultima' => self::istante($ultima) === null ? null : $ultima,
@@ -105,10 +121,10 @@ final class ComandiPianificati
      *
      * @param callable(string): ?string $leggi
      */
-    public static function daControllare(callable $leggi, int $adesso): int
+    public static function daControllare(callable $leggi, int $adesso, bool $conSorveglianza = false): int
     {
         return count(array_filter(
-            self::elenco($leggi, $adesso),
+            self::elenco($leggi, $adesso, $conSorveglianza),
             static fn (array $c): bool => $c['stato'] !== self::REGOLARE
         ));
     }

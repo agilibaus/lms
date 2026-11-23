@@ -16,7 +16,9 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config/config.php';
 
+use App\Core\ComandiPianificati;
 use App\Core\Database;
+use App\Core\Salute;
 use App\Core\Settings;
 use App\Core\Sorveglianza;
 use App\Core\Url;
@@ -53,7 +55,7 @@ usleep(400000);
 
 $db = Database::connection();
 $prima = [];
-foreach ([Sorveglianza::KEY, Sorveglianza::KEY_URL] as $k) {
+foreach ([Sorveglianza::KEY, Sorveglianza::KEY_URL, Sorveglianza::KEY_SPAZIO, 'SORVEGLIA_LAST_RUN_AT'] as $k) {
     $prima[$k] = Settings::stored($k);
 }
 
@@ -77,6 +79,7 @@ register_shutdown_function(static function () use ($servizio, $prima, $db, $regi
     proc_terminate($servizio);
     @unlink($registro);
     @unlink($sconosciuti);
+    @unlink(sys_get_temp_dir() . '/sorveglia_prova.json');
 });
 
 echo 'La chiave' . PHP_EOL;
@@ -202,6 +205,99 @@ if ($inAttesa === 0) {
 } else {
     echo "  --   ci sono $inAttesa inviti in attesa: il giro vero di bin/invita-utenti qui non si fa" . PHP_EOL;
 }
+
+echo PHP_EOL . '/salute' . PHP_EOL;
+check('il database risponde: vero', Salute::risponde());
+$inizio = microtime(true);
+check('un database che non c\'e\': falso, senza fermarsi, in pochi secondi',
+    Salute::risponde(['host' => '127.0.0.1', 'port' => 1]) === false && microtime(true) - $inizio < 4);
+$ch = curl_init(Url::base() . '/salute');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$corpo = (string) curl_exec($ch);
+$codice = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+check('la pagina risponde 200 «ok»', $codice === 200 && $corpo === 'ok', "{$codice} «{$corpo}»");
+
+echo PHP_EOL . 'Il sito, per bin/sorveglia' . PHP_EOL;
+$stato = sys_get_temp_dir() . '/sorveglia_prova.json';
+@unlink($stato);
+$finto = "http://127.0.0.1:$porta";
+$azzera();
+$e = Sorveglianza::giroSito("$finto/salute", $stato);
+$c = $chiamate();
+check('risposta buona: «tutto bene» a pistacchio-sito',
+    $e === 'bene' && count($c) === 2 && $c[1]['uri'] === '/' . CHIAVE . '/pistacchio-sito', json_encode($c));
+$azzera();
+$primo = Sorveglianza::giroSito("$finto/giu/salute", $stato);
+$dopoIlPrimo = $chiamate();
+$secondo = Sorveglianza::giroSito("$finto/giu/salute", $stato);
+$c = array_values(array_filter($chiamate(), static fn (array $x): bool => str_contains($x['uri'], CHIAVE)));
+check('un controllo fallito non segnala niente; il secondo di seguito sì, con il codice',
+    $primo === 'primo' && array_filter($dopoIlPrimo, static fn (array $x): bool => str_contains($x['uri'], CHIAVE)) === []
+        && $secondo === 'giu' && count($c) === 1 && $c[0]['uri'] === '/' . CHIAVE . '/pistacchio-sito/fail'
+        && $c[0]['corpo'] === 'la pagina /salute risponde 503', json_encode($c));
+Sorveglianza::giroSito("$finto/salute", $stato);
+$azzera();
+check('tornato a posto, il conto riparte: un fallimento solo non segnala',
+    Sorveglianza::giroSito("$finto/giu/salute", $stato) === 'primo'
+        && array_filter($chiamate(), static fn (array $x): bool => str_contains($x['uri'], CHIAVE)) === []);
+Sorveglianza::giroSito('http://127.0.0.1:8199/salute', $stato);
+$azzera();
+check('un sito che non risponde affatto: «la pagina /salute non risponde»',
+    Sorveglianza::giroSito('http://127.0.0.1:8199/salute', $stato) === 'giu' && ($chiamate()[0]['corpo'] ?? '') === 'la pagina /salute non risponde',
+    json_encode($chiamate()));
+
+echo PHP_EOL . 'Lo spazio, per bin/sorveglia' . PHP_EOL;
+@unlink($stato);
+Settings::set(Sorveglianza::KEY_SPAZIO, null);
+$azzera();
+check('senza lo spazio del piano: non si misura e non si segnala', Sorveglianza::giroDisco($stato, time()) === 'spento' && $chiamate() === []);
+$usati = Sorveglianza::spazioUsato();
+check('lo spazio usato conta i file di storage/ e il database', $usati > 0, (string) $usati);
+Settings::set(Sorveglianza::KEY_SPAZIO, (string) ($usati / (0.5 * 1024 ** 3)));
+$azzera();
+$adesso = time();
+$e = Sorveglianza::giroDisco($stato, $adesso);
+$c = $chiamate();
+check('sotto l\'80%: «tutto bene» a pistacchio-disco, con la parte usata',
+    $e === 'misurato' && count($c) === 1 && $c[0]['uri'] === '/' . CHIAVE . '/pistacchio-disco' && str_starts_with($c[0]['corpo'], 'uso 50% di '),
+    json_encode($c));
+$azzera();
+check('meno di un\'ora dopo non si misura di nuovo', Sorveglianza::giroDisco($stato, $adesso + 3000) === 'presto' && $chiamate() === []);
+Settings::set(Sorveglianza::KEY_SPAZIO, (string) ($usati / (0.9 * 1024 ** 3)));
+$azzera();
+$e = Sorveglianza::giroDisco($stato, $adesso + 3601);
+$c = $chiamate();
+check('passata l\'ora, oltre l\'80%: «qualcosa non va»',
+    $e === 'misurato' && count($c) === 1 && $c[0]['uri'] === '/' . CHIAVE . '/pistacchio-disco/fail' && str_starts_with($c[0]['corpo'], 'uso 90% di '),
+    json_encode($c));
+check('«uso 82% di 10 GB»', Sorveglianza::descriviSpazio((int) (0.82 * 10 * 1024 ** 3), 10.0) === 'uso 82% di 10 GB'
+    && Sorveglianza::descriviSpazio((int) (0.3 * 2.5 * 1024 ** 3), 2.5) === 'uso 30% di 2.5 GB');
+Settings::set(Sorveglianza::KEY_SPAZIO, null);
+
+echo PHP_EOL . 'bin/sorveglia e la tabella dei comandi' . PHP_EOL;
+@unlink(__DIR__ . '/../storage/sorveglia.json');
+$azzera();
+exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/../bin/sorveglia') . ' 2>&1', $uscita, $codiceUscita);
+$c = $chiamate();
+Settings::forget();
+check('un giro vero: il sito risponde, «tutto bene» a pistacchio-sito, e lascia detto di aver girato',
+    $codiceUscita === 0 && count($c) === 1 && $c[0]['uri'] === '/' . CHIAVE . '/pistacchio-sito'
+        && Settings::stored('SORVEGLIA_LAST_RUN_AT') !== null, json_encode($c) . ' ' . implode(' ', $uscita));
+@unlink(__DIR__ . '/../storage/sorveglia.json');
+Sorveglianza::cancella(null);
+$azzera();
+$uscita = [];
+exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/../bin/sorveglia') . ' 2>&1', $uscita, $codiceUscita);
+check('senza chiave non apre niente e non manda niente', $codiceUscita === 0 && $chiamate() === [] && str_contains(implode(' ', $uscita), 'spenta'),
+    implode(' ', $uscita));
+$leggi = static fn (string $k): ?string => null;
+$nomi = static fn (array $elenco): array => array_column($elenco, 'file');
+check('bin/sorveglia nella tabella dei comandi solo con la sorveglianza attiva',
+    !in_array('bin/sorveglia', $nomi(ComandiPianificati::elenco($leggi, time())), true)
+        && in_array('bin/sorveglia', $nomi(ComandiPianificati::elenco($leggi, time(), true)), true)
+        && ComandiPianificati::daControllare($leggi, time()) === 3 && ComandiPianificati::daControllare($leggi, time(), true) === 4);
+Sorveglianza::salva(CHIAVE, null);
 
 echo PHP_EOL . "Totale: $ok superati, $fail falliti" . PHP_EOL;
 exit($fail > 0 ? 1 : 0);

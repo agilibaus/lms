@@ -1,0 +1,75 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * La sorveglianza del sito e dello spazio (23/11, la proposta «Avvisi via
+ * SMS»). Vedi `App\Core\Sorveglianza`.
+ *
+ * Esecuzione da cron, ogni cinque minuti:
+ *
+ *   *\/5 * * * *  cd /percorso/lms && php bin/sorveglia >> storage/logs/sorveglia.log 2>&1
+ *
+ * (nel file di crontab vero la barra rovesciata non va: e' qui solo perche'
+ * questo e' un commento PHP.)
+ *
+ * A ogni giro apre `APP_URL/salute` dall'indirizzo pubblico, come un
+ * visitatore, e manda il segnale a pistacchio-sito: «tutto bene» con una
+ * risposta buona, «qualcosa non va» al secondo controllo fallito di
+ * seguito. Una volta all'ora misura lo spazio (storage/ e database) e manda
+ * il segnale a pistacchio-disco, se lo spazio del piano e' scritto nel
+ * pannello. Se il server e' spento del tutto, il comando non gira e il
+ * segnale manca: Healthchecks.io avvisa lo stesso.
+ *
+ * Senza la chiave della sorveglianza non apre niente e non manda niente.
+ * Lascia detto di aver girato nella chiave SORVEGLIA_LAST_RUN_AT.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit("Questo comando si esegue dal terminale.\n");
+}
+
+require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../config/config.php';
+
+use App\Core\Env;
+use App\Core\Settings;
+use App\Core\Sorveglianza;
+use App\Core\Url;
+
+// Senza APP_URL si aprirebbe localhost, che risponde anche quando il sito
+// visto da fuori e' giu': la stessa difesa degli altri comandi.
+if (trim((string) Env::get('APP_URL', '')) === '') {
+    fwrite(STDERR, "APP_URL non e' configurato: non so quale indirizzo aprire.\n");
+    exit(2);
+}
+
+Settings::recordSystem('SORVEGLIA_LAST_RUN_AT', date('Y-m-d H:i:s'));
+
+if (Sorveglianza::stato() !== Sorveglianza::ATTIVA) {
+    echo date('Y-m-d H:i:s') . " — sorveglianza spenta su questo indirizzo: niente da controllare.\n";
+    exit(0);
+}
+
+// Il conto dei controlli falliti e l'ora dell'ultima misura dello spazio.
+$fileStato = __DIR__ . '/../storage/sorveglia.json';
+
+$sito = Sorveglianza::giroSito(Url::base() . '/salute', $fileStato);
+$disco = Sorveglianza::giroDisco($fileStato, time());
+
+$parole = [
+    'bene' => 'risponde',
+    'primo' => 'non risponde (primo controllo fallito: si riprova al prossimo giro)',
+    'giu' => 'non risponde: segnalato',
+];
+$spazio = [
+    'spento' => 'non controllato (spazio del piano non scritto)',
+    'presto' => 'misurato meno di un\'ora fa',
+    'misurato' => 'misurato',
+];
+
+echo date('Y-m-d H:i:s') . ' — sito: ' . $parole[$sito] . '; spazio: ' . $spazio[$disco] . PHP_EOL;
+
+exit($sito === 'bene' ? 0 : 1);

@@ -12,7 +12,8 @@ declare(strict_types=1);
  * Ogni richiesta finisce in una riga JSON di HC_FINTO_REGISTRO (metodo,
  * indirizzo, corpo). Risponde «OK» con 200; «not found» con 404 ai nomi
  * scritti in HC_FINTO_SCONOSCIUTI (uno per riga); aspetta 8 secondi
- * sugli indirizzi che contengono «lento».
+ * sugli indirizzi che contengono «lento»; 503 su quelli che contengono
+ * «/giu» (un sito che non sta bene, per `bin/sorveglia`).
  */
 
 $registro = getenv('HC_FINTO_REGISTRO') ?: sys_get_temp_dir() . '/hc_finto.log';
@@ -27,6 +28,12 @@ file_put_contents($registro, json_encode([
 
 if (str_contains($uri, 'lento')) {
     sleep(8);
+}
+
+if (str_contains($uri, '/giu')) {
+    http_response_code(503);
+    echo 'non disponibile';
+    return true;
 }
 
 $nomi = is_file($sconosciuti) ? array_filter(array_map('trim', file($sconosciuti) ?: [])) : [];

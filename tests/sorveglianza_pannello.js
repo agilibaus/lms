@@ -5,7 +5,9 @@
  * Lo stato accanto al titolo («Spenta», «Attiva»), l'indirizzo per cui e'
  * stata salvata la chiave, la chiave che non torna mai al browser, il
  * segnale di prova e la protezione dell'indirizzo: una chiave salvata per
- * un altro sito resta spenta.
+ * un altro sito resta spenta. Con la 0420: i sei check, lo spazio del piano,
+ * la riga di cron di bin/sorveglia, e la sua riga nella tabella dei comandi
+ * solo a sorveglianza attiva.
  *
  * Esecuzione:  node tests/sorveglianza_pannello.js   (database di sviluppo acceso)
  *
@@ -55,7 +57,9 @@ const chiamate = () => (fs.existsSync(REGISTRO) ? fs.readFileSync(REGISTRO, 'utf
 
 (async () => {
     const prima = { chiave: uno("SELECT setting_value FROM settings WHERE setting_key = 'HEALTHCHECKS_PING_KEY'"),
-        per: uno("SELECT setting_value FROM settings WHERE setting_key = 'HEALTHCHECKS_PER_URL'") };
+        per: uno("SELECT setting_value FROM settings WHERE setting_key = 'HEALTHCHECKS_PER_URL'"),
+        spazio: uno("SELECT setting_value FROM settings WHERE setting_key = 'SPAZIO_PIANO_GB'") };
+    imposta('SPAZIO_PIANO_GB', '\x00');
     imposta('HEALTHCHECKS_PING_KEY', '\x00');
     imposta('HEALTHCHECKS_PER_URL', '\x00');
     fs.rmSync(REGISTRO, { force: true });
@@ -79,6 +83,8 @@ const chiamate = () => (fs.existsSync(REGISTRO) ? fs.readFileSync(REGISTRO, 'utf
             prova: f.querySelector('button[formaction="/admin/settings/comandi/prova"]') !== null,
             cancella: f.querySelector('input[name="cancella_chiave"]') !== null,
             avviso: document.querySelector('.alert-success, .alert-danger, .alert-error')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
+            spazio: f.querySelector('#SPAZIO_PIANO_GB')?.value ?? null,
+            sorvegliaInTabella: [...document.querySelectorAll('table.comandi-pianificati code')].some((c) => c.textContent === 'bin/sorveglia'),
         };
     });
     const salva = async (chiave, cancella = false) => {
@@ -98,6 +104,23 @@ const chiamate = () => (fs.existsSync(REGISTRO) ? fs.readFileSync(REGISTRO, 'utf
         let r = await riquadro();
         check('senza chiave: «Spenta» accanto al titolo, e niente segnale di prova',
             r.stato === 'Spenta' && r.accanto && r.testo.includes('Nessuna chiave') && !r.prova && !r.cancella, [JSON.stringify(r)]);
+        check('i check da creare sono sei, e bin/sorveglia non è fra i comandi della tabella',
+            r.testo.includes('pistacchio-avvisi, pistacchio-inviti, pistacchio-rilascio, pistacchio-posta, pistacchio-sito e pistacchio-disco')
+                && !r.sorvegliaInTabella, [JSON.stringify(r)]);
+
+        // Il browser lo fermerebbe da solo (`min`): lo si toglie, come in un
+        // invio costruito a mano, per provare il controllo del server.
+        await page.evaluate(() => document.getElementById('SPAZIO_PIANO_GB').removeAttribute('min'));
+        await page.fill('#SPAZIO_PIANO_GB', '-3');
+        await salva(null);
+        r = await riquadro();
+        check('uno spazio del piano negativo si rifiuta', r.avviso.startsWith('Lo spazio del piano va scritto in GB')
+            && uno("SELECT COUNT(*) FROM settings WHERE setting_key = 'SPAZIO_PIANO_GB'") === '0', [r.avviso]);
+        await page.fill('#SPAZIO_PIANO_GB', '2.5');
+        await salva(null);
+        r = await riquadro();
+        check('lo spazio del piano si salva e si rilegge', r.spazio === '2.5' && uno("SELECT setting_value FROM settings WHERE setting_key = 'SPAZIO_PIANO_GB'") === '2.5'
+            && r.avviso === 'Salvato.', [JSON.stringify(r)]);
 
         await salva('https://hc-ping.com/' + CHIAVE);
         r = await riquadro();
@@ -109,6 +132,9 @@ const chiamate = () => (fs.existsSync(REGISTRO) ? fs.readFileSync(REGISTRO, 'utf
         const html = await page.content();
         check('salvata: «Attiva», con l\'indirizzo per cui è stata salvata',
             r.stato === 'Attiva' && r.accanto && r.testo.includes('Chiave salvata per http://127.0.0.1:8123') && r.prova && r.cancella, [JSON.stringify(r)]);
+        check('a sorveglianza attiva: la riga di cron di bin/sorveglia, e il comando nella tabella',
+            r.testo.includes('*/5 * * * * cd /percorso/del/sito && php bin/sorveglia >> storage/logs/sorveglia.log 2>&1')
+                && r.sorvegliaInTabella && r.spazio === '2.5', [JSON.stringify(r)]);
         check('la chiave non torna al browser', !html.includes(CHIAVE));
 
         await salva('');
@@ -121,14 +147,14 @@ const chiamate = () => (fs.existsSync(REGISTRO) ? fs.readFileSync(REGISTRO, 'utf
         await Promise.all([page.waitForNavigation(), page.click('button[formaction="/admin/settings/comandi/prova"]')]);
         r = await riquadro();
         const c = chiamate().map((x) => x.uri);
-        check('il segnale di prova va a tutti e quattro i check, e dice quale non c\'è',
-            c.length === 4 && c.every((u) => u.startsWith('/' + CHIAVE + '/pistacchio-'))
-                && r.avviso.includes('arrivato a pistacchio-avvisi, pistacchio-inviti, pistacchio-posta')
+        check('il segnale di prova va a tutti e sei i check, e dice quale non c\'è',
+            c.length === 6 && c.every((u) => u.startsWith('/' + CHIAVE + '/pistacchio-'))
+                && r.avviso.includes('arrivato a pistacchio-avvisi, pistacchio-inviti, pistacchio-posta, pistacchio-sito, pistacchio-disco')
                 && r.avviso.includes('nessun check trovato per pistacchio-rilascio'), [JSON.stringify(c), r.avviso]);
         fs.writeFileSync(SCONOSCIUTI, '');
         await Promise.all([page.waitForNavigation(), page.click('button[formaction="/admin/settings/comandi/prova"]')]);
         r = await riquadro();
-        check('con tutti i check a posto: arrivato a tutti e 4', r.avviso.startsWith('Segnale di prova arrivato a tutti e 4 i check'), [r.avviso]);
+        check('con tutti i check a posto: arrivato a tutti e 6', r.avviso.startsWith('Segnale di prova arrivato a tutti e 6 i check'), [r.avviso]);
 
         imposta('HEALTHCHECKS_PER_URL', 'https://lms.movimente.it');
         fs.rmSync(REGISTRO, { force: true });
@@ -158,6 +184,7 @@ const chiamate = () => (fs.existsSync(REGISTRO) ? fs.readFileSync(REGISTRO, 'utf
         sito.kill();
         imposta('HEALTHCHECKS_PING_KEY', prima.chiave);
         imposta('HEALTHCHECKS_PER_URL', prima.per);
+        imposta('SPAZIO_PIANO_GB', prima.spazio);
         fs.rmSync(REGISTRO, { force: true });
         fs.rmSync(SCONOSCIUTI, { force: true });
     }
