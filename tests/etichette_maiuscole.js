@@ -8,9 +8,12 @@
  * lettera e' maiuscola. I numeri («3») e le date restano come sono.
  *
  * E poi (23/11, Alessandro), sulle stesse pagine:
- *   - nessuna etichetta dentro un titolo h1: «Lezione completata» stava
- *     nell'h1 della lezione, e il lettore di schermo la leggeva come parte
- *     del titolo. Lo studente ha la lezione del mondo A completata (la
+ *   - nessuna etichetta dentro un titolo, di qualunque livello: «Lezione
+ *     completata» stava nell'h1 della lezione, «In corso» e «Dal 23/12»
+ *     nell'h2 del modulo, e il lettore di schermo li leggeva come parte
+ *     del titolo (23/11, Alessandro: «voglio che Pistacchio sia conforme
+ *     per i lettori di schermo»). Un numero da solo («In coda 18») e' un
+ *     conteggio che fa parte del titolo, non uno stato, e resta. Lo studente ha la lezione del mondo A completata (la
  *     semina con `--lezioni-fatte`, rifatta qui), quindi l'etichetta c'e';
  *   - nel catalogo «Iscrizione su richiesta» ha il suo sfondo, come
  *     «Iscrizione gratuita»;
@@ -124,7 +127,7 @@ async function giro(browser, email) {
                 righe: [...document.querySelectorAll('.modulo-riga-stato')].map((e) => testo(e) + (e.querySelector('.badge') ? '' : ' (senza etichetta)')),
                 domande: vecchie.filter((e) => e.matches('.qa-stato')).map((e) => [testo(e), e.classList.contains('badge')]),
                 testi: badge.map(testo),
-                neiTitoli: badge.filter((b) => b.closest('h1')).map(testo),
+                neiTitoli: badge.filter((b) => b.closest('h1, h2, h3, h4, h5, h6') && !/^\d+$/.test(testo(b))).map((b) => b.closest('h1, h2, h3, h4, h5, h6').tagName.toLowerCase() + ' ' + testo(b)),
                 completate: badge.filter((b) => testo(b) === 'Lezione completata').length,
                 sfondi: location.pathname === '/catalogo'
                     ? badge.filter((b) => b.closest('.catalog-card')).map((b) => [testo(b), getComputedStyle(b).backgroundColor])
@@ -155,7 +158,7 @@ async function giro(browser, email) {
             const r = await giro(browser, email);
             console.log(`  --   ${ruolo}: ${r.pagine} pagine, ${r.etichette} etichette`);
             check(`${ruolo}: ogni etichetta comincia con la maiuscola`, r.minuscole.length === 0, r.minuscole);
-            check(`${ruolo}: nessuna etichetta dentro un titolo h1`, r.neiTitoli.length === 0, r.neiTitoli);
+            check(`${ruolo}: nessuna etichetta dentro un titolo (h1…h6)`, r.neiTitoli.length === 0, r.neiTitoli);
             check(`${ruolo}: ogni etichetta ha la forma di tutte e uno dei tre colori`, r.fuori.length === 0, r.fuori);
             const frasi = r.righe.filter((t) => /complet|si apre|si sblocca/.test(t) && !/^(Completato|Dal \d|Bloccato) · /.test(t));
             check(`${ruolo}: nelle righe chiuse dei moduli lo stato e' un'etichetta`, frasi.length === 0, frasi);

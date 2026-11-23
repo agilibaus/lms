@@ -1414,7 +1414,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     const c = document.getElementById('modulo-' + id);
                     const prima = c && c.previousElementSibling;
                     return c && {
-                        etichetta: [...c.querySelectorAll('h2 .badge')].map((b) => b.textContent.trim()),
+                        etichetta: [...c.querySelectorAll('.modulo-titolo .badge')].map((b) => b.textContent.trim()),
                         lezione: !!c.querySelector('a[href$="/lessons/create"]'),
                         frecce: [...c.querySelectorAll('button[title^="Sposta il modulo"]')].map((b) => b.disabled),
                         giuPrima: prima ? (prima.querySelector('button[title="Sposta il modulo giù"]') || {}).disabled : null,

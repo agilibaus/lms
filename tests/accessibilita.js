@@ -2625,13 +2625,13 @@ async function giroBenvenuto(browser) {
                 comando: barra && barra.querySelector('.moduli-comando') ? barra.querySelector('.moduli-comando').textContent.trim() : null,
                 carte: carte.length,
                 inCorso: carte[0] ? carte[0].classList.contains('modulo-in-corso')
-                    && carte[0].querySelector('h2 .etichetta-modulo').textContent.trim() === 'In corso' : false,
+                    && carte[0].querySelector('.modulo-titolo .etichetta-modulo').textContent.trim() === 'In corso' : false,
                 conto: conto ? conto.textContent.replace(/\s+/g, ' ').trim() : null,
                 daQui: daQui ? (daQui.querySelector('a.da-qui-comando') || {}).textContent : null,
                 daQuiVa: daQui ? daQui.querySelector('a.da-qui-comando').getAttribute('href')
                     === daQui.querySelector('a:not(.da-qui-comando)').getAttribute('href') : false,
                 riquadro: document.querySelectorAll('.riprendi').length,
-                prossimo: carte[1] ? carte[1].querySelector('h2 .etichetta-modulo').textContent.trim() : null,
+                prossimo: carte[1] ? carte[1].querySelector('.modulo-titolo .etichetta-modulo').textContent.trim() : null,
                 prossimoChiuso: carte[1] ? carte[1].classList.contains('module-locked') : false,
                 riga: riga ? riga.querySelector('.modulo-riga-stato').textContent.trim() : null,
                 rigaComando: riga ? riga.querySelector('.obiettivo-comando').innerText.trim() : null,

@@ -216,8 +216,13 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             <?php else: ?>
             <section class="module-card <?= $isLocked ? 'module-locked' : '' ?> <?= $stato === Percorso::IN_CORSO ? 'modulo-in-corso' : '' ?>" id="modulo-<?= $moduleId ?>">
                 <div class="module-card-header">
-                    <h2>
-                        <?= htmlspecialchars($module['title']) ?>
+                    <?php /* Le etichette fuori dal titolo (23/11, Alessandro: «voglio
+                             che Pistacchio sia conforme per i lettori di schermo»):
+                             dentro l'h2 si leggevano come parte del nome del modulo
+                             («Seconda tappa In corso»). Il titolo e' l'h2 da solo;
+                             la riga che li contiene li mostra come prima. */ ?>
+                    <div class="modulo-titolo">
+                        <h2><?= htmlspecialchars($module['title']) ?></h2>
                         <?php if ($stato === Percorso::IN_CORSO): ?>
                             <span class="badge badge-success etichetta-modulo">In corso</span>
                         <?php elseif ($stato === Percorso::PROSSIMO): ?>
@@ -239,7 +244,7 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                         <?php if ($isStaff && !empty($module['is_final'])): ?>
                             <span class="badge">Verifica finale</span>
                         <?php endif; ?>
-                    </h2>
+                    </div>
                     <?php if ($isStaff): ?>
                         <div class="module-card-actions">
                             <?php /* Le frecce stanno per prime: sono l'azione che si

@@ -2362,6 +2362,23 @@ form.form + form {
     font-size: var(--fs-sottotitolo);
 }
 
+/* Il titolo e le sue etichette (23/11): l'h2 contiene solo il nome del
+   modulo, le etichette gli stanno accanto. La riga prende dall'h2 misura,
+   peso, spaziatura e margine, e l'h2 le scorre dentro come testo: tutto
+   resta dov'era, al pixel. */
+.modulo-titolo {
+    margin: 0 0 0.4em;
+    font-size: var(--fs-sottotitolo);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.modulo-titolo > h2 {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+}
+
 .module-card-header {
     display: flex;
     align-items: baseline;
