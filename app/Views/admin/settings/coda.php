@@ -46,7 +46,7 @@ $tabella = static function (array $righe, bool $finite) use ($e, $quando, $tenta
     $html = '<div class="tabella-larga coda-email-tabella"><table class="data-table coda-email"><thead><tr>'
         . '<th scope="col">Quando</th><th scope="col">A chi</th><th scope="col">Oggetto</th>'
         . '<th scope="col">Tentativi</th><th scope="col">Ultimo errore</th>'
-        . '<th scope="col"><span class="sr-only">Comandi</span></th></tr></thead><tbody>';
+        . '<th scope="col" class="col-azioni"><span class="sr-only">Comandi</span></th></tr></thead><tbody>';
 
     foreach ($righe as $r) {
         $id = (int) $r['id'];
@@ -56,7 +56,7 @@ $tabella = static function (array $righe, bool $finite) use ($e, $quando, $tenta
             . '<td>' . $e((string) $r['subject']) . '</td>'
             . '<td class="coda-email-tentativi">' . $e($finite ? CodaEmail::ORE_DI_TENTATIVI . ' ore di tentativi' : $tentativi((int) $r['attempts'])) . '</td>'
             . '<td>' . $e((string) ($r['last_error'] ?? '')) . '</td>'
-            . '<td><div class="coda-email-comandi">'
+            . '<td class="col-azioni"><div class="coda-email-comandi">'
             . '<form action="/admin/settings/posta/coda/' . $id . '/riprova" method="post">' . Csrf::field()
             . '<button type="submit" class="link-btn comando-con-icona">' . Icona::svg('send') . 'Riprova</button></form>'
             . '<form action="/admin/settings/posta/coda/' . $id . '/rimuovi" method="post"'

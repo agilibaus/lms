@@ -53,7 +53,7 @@ $groups = $ordine->applica($groups);
             <?= $ordine->th('Gruppo', 'gruppo') ?>
             <?= $ordine->th('Tutor', 'tutor') ?>
             <?= $ordine->th('Membri', 'membri') ?>
-            <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+            <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>
         <tbody role="rowgroup">
@@ -75,7 +75,7 @@ $groups = $ordine->applica($groups);
                 </td>
                 <td role="cell" data-label="Tutor"><?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?></td>
                 <td role="cell" data-label="Membri"><?= (int) $group['member_count'] ?></td>
-                <td role="cell" class="row-actions">
+                <td role="cell" class="row-actions col-azioni">
                     <?php /* La pagina del gruppo, quella che vedono i partecipanti
                              (12/10): il tutor e l'admin non ne sono membri, e
                              da qui e' l'unica strada per arrivarci. */ ?>

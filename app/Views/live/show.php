@@ -177,7 +177,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
                     <?= $ordine->th('Ingresso', 'ingresso') ?>
                     <?= $ordine->th('Origine', 'origine') ?>
                     <?php if ($canManage): ?>
-                        <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                        <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
                     <?php endif; ?>
                 </tr>
                 </thead>
@@ -209,7 +209,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
                             <?php endif; ?>
                         </td>
                         <?php if ($canManage): ?>
-                        <td role="cell" class="row-actions">
+                        <td role="cell" class="row-actions col-azioni">
                             <form action="/live/<?= $id ?>/attendance/<?= (int) $participant['id'] ?>" method="post">
                                 <?= Csrf::field() ?>
                                 <input type="hidden" name="present" value="<?= $present ? '0' : '1' ?>">

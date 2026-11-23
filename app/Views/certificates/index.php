@@ -73,7 +73,7 @@ $certificates = $ordine->applica($certificates);
             <?= $ordine->th('Codice', 'codice') ?>
             <?= $ordine->th('Emesso il', 'emesso') ?>
             <?= $ordine->th('Stato', 'stato') ?>
-            <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+            <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>
         <tbody role="rowgroup">
@@ -93,7 +93,7 @@ $certificates = $ordine->applica($certificates);
                         <span class="badge badge-success">Valido</span>
                     <?php endif; ?>
                 </td>
-                <td role="cell" class="row-actions">
+                <td role="cell" class="row-actions col-azioni">
                     <?php if (!$revoked): ?>
                         <a href="/certificates/<?= (int) $certificate['id'] ?>/download" class="comando-con-icona"><?= Icona::svg('file-earmark-pdf') ?>PDF</a>
                     <?php endif; ?>

@@ -77,7 +77,7 @@ $courses = $ordine->applica($courses);
     <div class="tabella-schede card">
     <table class="data-table" role="table">
         <thead role="rowgroup">
-        <tr role="row"><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th></tr>
+        <tr role="row"><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th></tr>
         </thead>
         <tbody role="rowgroup">
         <?php foreach ($courses as $course): ?>
@@ -111,7 +111,7 @@ $courses = $ordine->applica($courses);
                         <?= htmlspecialchars(CourseModel::enrollmentLabel($mode)) ?>
                     </span>
                 </td>
-                <td role="cell" class="row-actions">
+                <td role="cell" class="row-actions col-azioni">
                     <a href="<?= htmlspecialchars(Ritorno::link('/courses/' . (int) $course['id'], 'gestione-corsi', 0, $_GET)) ?>">Contenuti</a>
                     <?php if (!$supervisore && (int) $course['is_published'] === 0): ?>
                         <?php /* Una bozza non ha iscritti, e il suo report e' sempre

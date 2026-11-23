@@ -155,7 +155,7 @@ $members = $ordineMembri->applica($members);
                 <?= $ordineMembri->th('Email', 'email') ?>
                 <?= $ordineMembri->th('Nel gruppo dal', 'dal') ?>
                 <?php if ($gestisceMembri): ?>
-                    <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                    <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
                 <?php endif; ?>
             </tr>
             </thead>
@@ -166,7 +166,7 @@ $members = $ordineMembri->applica($members);
                     <td role="cell" data-label="Email"><?= htmlspecialchars((string) $member['email']) ?></td>
                     <td role="cell" data-label="Nel gruppo dal"><?= htmlspecialchars(Quando::dataOra((string) $member['joined_at'])) ?></td>
                     <?php if ($gestisceMembri): ?>
-                    <td role="cell" class="row-actions">
+                    <td role="cell" class="row-actions col-azioni">
                         <form action="/admin/groups/<?= $groupId ?>/members/<?= (int) $member['id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere questo membro dal gruppo? Le iscrizioni ai corsi restano attive.');">
                             <?= Csrf::field() ?>

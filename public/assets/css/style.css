@@ -2774,11 +2774,21 @@ form.form + form {
 /* Lo stato della lezione accanto al titolo: allineato al testo, non alla
    riga, così su titoli lunghi che vanno a capo resta accanto all'ultima
    parola invece di volare in alto. */
-.lesson-title {
+/* Fuori dal titolo (23/11, Alessandro): dentro l'h1 un lettore di schermo
+   leggeva «Cosa faremo Lezione completata» come titolo della pagina. Il
+   titolo e l'etichetta stanno in una riga che li affianca come prima. */
+.lesson-title-riga {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.6rem;
+}
+
+/* Il margine sotto il titolo, dentro una riga flessibile, non si fonde piu'
+   con quello di `.page-header` e si sommerebbe: 10 px in piu' sopra la
+   lezione. Senza, la distanza resta quella di prima. */
+.lesson-title-riga > .lesson-title {
+    margin-bottom: 0;
 }
 
 .lesson-done {
@@ -4628,7 +4638,9 @@ fieldset.checkbox-group legend {
 }
 
 /* I comandi nell'ultima colonna, a destra, in ogni tabella dei report
-   (23/11). Su una riga sola solo negli elenchi qui sopra: nelle tabelle di
+   (23/11), e poi in tutte le tabelle di Pistacchio (23/11, Alessandro):
+   certificati, corsi, gruppi, presenze, membri, iscritti, tentativi, posta
+   in coda. `tests/comandi_a_destra.js` le misura tutte. Su una riga sola solo negli elenchi qui sopra: nelle tabelle di
    dettaglio, piu' affollate, vanno a capo quando manca spazio, invece di
    toglierlo al testo accanto. */
 .data-table .col-azioni {
@@ -10000,6 +10012,11 @@ details[open] > summary .obiettivo-se-aperto {
 
 .coda-email-comandi form {
     margin: 0;
+}
+
+/* A destra, come i comandi nell'ultima colonna di ogni tabella (23/11). */
+.col-azioni .coda-email-comandi {
+    justify-content: flex-end;
 }
 
 /* I due gruppi sono h2 (sotto il titolo della pagina, senza salti di

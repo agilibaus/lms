@@ -129,7 +129,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                 <?= $ordineRichieste->th('Studente', 'richiedente') ?>
                 <th scope="col" role="columnheader">Messaggio</th>
                 <?= $ordineRichieste->th('Richiesta del', 'richiesta') ?>
-                <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
             </tr>
             </thead>
             <tbody role="rowgroup">
@@ -141,7 +141,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                     </td>
                     <td role="cell" data-label="Messaggio"><?= $request['message'] !== null ? nl2br(htmlspecialchars((string) $request['message'])) : '—' ?></td>
                     <td role="cell" data-label="Richiesta del"><?= htmlspecialchars(Quando::dataOra((string) $request['requested_at'])) ?></td>
-                    <td role="cell" class="row-actions">
+                    <td role="cell" class="row-actions col-azioni">
                         <form action="/admin/requests/<?= (int) $request['id'] ?>" method="post">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="decision" value="approve">
@@ -189,7 +189,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                 <?= $ordineIscritti->th('Iscritto il', 'iscritto') ?>
                 <?= $ordineIscritti->th('Progresso', 'progresso') ?>
                 <?php if (!$tutor): ?>
-                    <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                    <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
                 <?php endif; ?>
             </tr>
             </thead>
@@ -213,7 +213,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
                         <?php endif; ?>
                     </td>
                     <?php if (!$tutor): ?>
-                    <td role="cell" class="row-actions">
+                    <td role="cell" class="row-actions col-azioni">
                         <form action="/admin/courses/<?= $courseId ?>/enrollments/<?= (int) $row['user_id'] ?>/delete" method="post"
                               onsubmit="return confirm('Rimuovere l’iscrizione? Progresso, tentativi dei questionari e certificato di questo corso verranno eliminati.');">
                             <?= Csrf::field() ?>

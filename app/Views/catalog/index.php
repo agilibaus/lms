@@ -50,7 +50,8 @@ use App\Models\EnrollmentRequestModel;
                 <div class="card-head">
                     <h2><?= htmlspecialchars((string) $course['title']) ?></h2>
                     <?php if (!$pagato): ?>
-                        <span class="badge <?= $course['enrollment_mode'] === 'open' ? 'badge-success' : '' ?>">
+                        <?php /* Con il suo sfondo anche «Iscrizione su richiesta» (23/11, Alessandro). */ ?>
+                        <span class="badge <?= $course['enrollment_mode'] === 'open' ? 'badge-success' : 'badge-muted' ?>">
                             <?= htmlspecialchars(CourseModel::enrollmentLabel($course['enrollment_mode'])) ?>
                         </span>
                     <?php endif; ?>

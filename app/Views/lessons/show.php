@@ -35,17 +35,18 @@ $minutoSecondo = static function (int $secondi): string {
         <?php /* Solo il titolo del corso, la pagina a cui torna (17/11). */ ?>
         <span class="back-link-testo"><?= htmlspecialchars($course['title']) ?></span>
     </a>
-    <h1 class="lesson-title">
-        <?= htmlspecialchars($lesson['title']) ?>
+    <div class="lesson-title-riga">
+        <h1 class="lesson-title"><?= htmlspecialchars($lesson['title']) ?></h1>
         <?php /* Lo stato sta accanto al titolo, dove si guarda per prima cosa;
                  il pulsante per segnarla resta in fondo, perche' e' un'azione
-                 che si compie dopo aver letto o guardato. */ ?>
+                 che si compie dopo aver letto o guardato. Fuori dall'h1
+                 (23/11): non e' parte del titolo. */ ?>
         <?php if (Auth::hasRole('studente') && $completed): ?>
             <span class="badge badge-muted lesson-done">
                 <?= Icona::svg('check-circle-fill', 'lesson-done-check') ?> Lezione completata
             </span>
         <?php endif; ?>
-    </h1>
+    </div>
 </div>
 
 <?php if (CourseRights::canEdit((int) $course['id'])): ?>
