@@ -36,6 +36,7 @@ use App\Core\Avvisi;
 use App\Core\Env;
 use App\Core\Mail\CodaEmail;
 use App\Core\Settings;
+use App\Core\Sorveglianza;
 
 // Senza APP_URL le email uscirebbero con un collegamento a localhost: la
 // stessa difesa degli altri due comandi.
@@ -77,5 +78,10 @@ $fallite = array_merge($conferme['fallite'], $promemoria['fallite'], $giro['fall
 if ($fallite !== []) {
     echo 'non partite: ' . implode(', ', $fallite) . PHP_EOL;
 }
+
+// La sorveglianza esterna (23/11): il giro e' finito, e lo stato della
+// posta. Senza chiave non fa niente; non ferma mai il comando.
+Sorveglianza::segnala(Sorveglianza::AVVISI);
+Sorveglianza::segnalaPosta();
 
 exit($fallite === [] ? 0 : 1);

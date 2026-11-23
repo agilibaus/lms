@@ -23,6 +23,7 @@ use App\Core\Mail\Mailer;
 use App\Core\Mail\Message;
 use App\Core\Mail\Modelli;
 use App\Core\Settings;
+use App\Core\Sorveglianza;
 use App\Core\Welcome;
 use App\Core\Theme;
 use App\Core\Versione;
@@ -110,7 +111,93 @@ class SettingsController extends AdminController
             'pageTitle' => 'Comandi pianificati',
             'comandi' => ComandiPianificati::elenco(static fn (string $k): ?string => Settings::get($k), $adesso),
             'adesso' => $adesso,
+            'sorveglianza' => Sorveglianza::stato(),
+            'sorveglianzaPer' => Sorveglianza::salvataPer(),
+            'chiaveNelFile' => Settings::source(Sorveglianza::KEY) === 'file',
+            'chiaveSalvata' => Settings::stored(Sorveglianza::KEY) !== null,
         ]);
+    }
+
+    private const COMANDI_PAGE = '/admin/settings/comandi';
+
+    /**
+     * La chiave della sorveglianza esterna (23/11). Come quella di Bunny:
+     * vuota lascia quella di prima, e non torna mai al browser. Si salva con
+     * l'indirizzo del sito in cui la si scrive (`Sorveglianza`).
+     */
+    public function updateComandi(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        $userId = Auth::id();
+
+        if (!empty($_POST['cancella_chiave'])) {
+            Sorveglianza::cancella($userId);
+            $this->success('Chiave cancellata: la sorveglianza esterna è spenta.', self::COMANDI_PAGE);
+        }
+
+        $chiave = trim((string) ($_POST[Sorveglianza::KEY] ?? ''));
+
+        if ($chiave === '') {
+            $this->success('Niente da cambiare: la chiave resta quella di prima.', self::COMANDI_PAGE);
+        }
+
+        if (!Sorveglianza::chiaveValida($chiave)) {
+            $this->fail(
+                'Questa non sembra una chiave dei segnali: va incollata solo la «Ping key» del progetto, '
+                . 'lettere e cifre senza spazi, non l\'indirizzo intero.',
+                self::COMANDI_PAGE
+            );
+        }
+
+        Sorveglianza::salva($chiave, $userId);
+        $this->success('Chiave salvata per ' . Url::base() . ': la sorveglianza esterna è attiva. '
+            . 'Prova con «Manda un segnale di prova».', self::COMANDI_PAGE);
+    }
+
+    /** «Manda un segnale di prova»: un segnale a ogni check, e che cosa ha risposto. */
+    public function testComandi(array $params = []): void
+    {
+        Auth::requirePermission('settings.manage');
+
+        if (Sorveglianza::stato() !== Sorveglianza::ATTIVA) {
+            $this->fail('La sorveglianza esterna è spenta su questo indirizzo: non parte nessun segnale.', self::COMANDI_PAGE);
+        }
+
+        $arrivati = [];
+        $sconosciuti = [];
+        $senzaRisposta = [];
+
+        foreach (Sorveglianza::prova() as $check => $stato) {
+            if ($stato === 200) {
+                $arrivati[] = $check;
+            } elseif ($stato === 404) {
+                $sconosciuti[] = $check;
+            } else {
+                $senzaRisposta[] = $check;
+            }
+        }
+
+        if ($sconosciuti === [] && $senzaRisposta === []) {
+            $this->success('Segnale di prova arrivato a tutti e ' . count($arrivati) . ' i check: ' . implode(', ', $arrivati) . '.', self::COMANDI_PAGE);
+        }
+
+        $parti = [];
+        if ($arrivati !== []) {
+            $parti[] = 'arrivato a ' . implode(', ', $arrivati);
+        }
+        if ($sconosciuti !== []) {
+            // Healthchecks.io risponde 404 sia a un nome che non c'e' sia a
+            // una chiave sbagliata.
+            $parti[] = 'nessun check trovato per ' . implode(', ', $sconosciuti)
+                . ' (controlla il nome del check su Healthchecks.io e la chiave)';
+        }
+        if ($senzaRisposta !== []) {
+            $parti[] = 'nessuna risposta per ' . implode(', ', $senzaRisposta)
+                . ' (il server non riesce a raggiungere Healthchecks.io)';
+        }
+
+        $this->fail('Segnale di prova: ' . implode('; ', $parti) . '.', self::COMANDI_PAGE);
     }
 
     /**

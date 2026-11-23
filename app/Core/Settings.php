@@ -122,9 +122,19 @@ class Settings
         'STRIPE_WEBHOOK_SECRET',
     ];
 
+    /**
+     * La sorveglianza esterna con Healthchecks.io (23/11): la chiave dei
+     * segnali e l'indirizzo per cui e' stata salvata (`App\Core\Sorveglianza`).
+     */
+    public const MONITORING_KEYS = [
+        'HEALTHCHECKS_PING_KEY',
+        'HEALTHCHECKS_PER_URL',
+    ];
+
     public static function isWritable(string $key): bool
     {
         return in_array($key, self::MAIL_KEYS, true)
+            || in_array($key, self::MONITORING_KEYS, true)
             || in_array($key, self::GOOGLE_KEYS, true)
             || in_array($key, self::LIVE_MAIL_KEYS, true)
             || in_array($key, self::APPEARANCE_KEYS, true)

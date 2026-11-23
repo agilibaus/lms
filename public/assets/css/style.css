@@ -791,6 +791,33 @@ h3 { font-size: var(--fs-sottotitolo); }
     display: none;
 }
 
+/* La sorveglianza esterna in «Comandi pianificati» (23/11): lo stato
+   accanto al titolo, i comandi in fila sotto il modulo. */
+.sorveglianza-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+/* Due classi: `.card h2` mette un margine sotto, e il badge restava piu'
+   in basso del titolo. */
+.card .sorveglianza-testa h2 {
+    margin: 0;
+}
+
+.sorveglianza-stato {
+    margin: 0 0 0.3rem;
+}
+
+.sorveglianza-comandi {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
 /* «Mostra tutte» in fondo alle sessioni concluse di chi partecipa
    (22/11). */
 .agenda-mostra-tutte {

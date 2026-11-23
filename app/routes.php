@@ -306,6 +306,9 @@ $router->get('/admin/settings', [SettingsController::class, 'index']);
 $router->get('/admin/settings/informazioni', [SettingsController::class, 'informazioni']);
 // Quando hanno girato i comandi pianificati (17/11): solo l'Amministratore.
 $router->get('/admin/settings/comandi', [SettingsController::class, 'comandi']);
+// La sorveglianza esterna (23/11): la chiave e il segnale di prova.
+$router->post('/admin/settings/comandi', [SettingsController::class, 'updateComandi']);
+$router->post('/admin/settings/comandi/prova', [SettingsController::class, 'testComandi']);
 $router->get('/admin/settings/privacy', [AdminPrivacyController::class, 'index']);
 $router->post('/admin/settings/privacy', [AdminPrivacyController::class, 'salva']);
 $router->post('/admin/settings/privacy/{id}/cancella', [AdminPrivacyController::class, 'cancella']);

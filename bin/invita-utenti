@@ -38,6 +38,7 @@ require __DIR__ . '/../config/config.php';
 
 use App\Core\Env;
 use App\Core\Invites;
+use App\Core\Sorveglianza;
 
 // Senza APP_URL le email uscirebbero con un collegamento a localhost, cioe'
 // inutili per chi le riceve. Meglio non partire: e' la stessa difesa del
@@ -60,6 +61,8 @@ $esito = Invites::mandaScaglione($quanti);
 // Un altro giro e' ancora in corso (29/10): questo non manda niente.
 if ($esito['occupato']) {
     echo date('Y-m-d H:i:s') . ' — un altro invio è in corso: questo giro non manda niente.' . PHP_EOL;
+    // Il comando ha girato: e' l'altro giro, ancora in corso, che lavora.
+    Sorveglianza::segnala(Sorveglianza::INVITI);
     exit(0);
 }
 
@@ -73,5 +76,9 @@ if ($esito['falliti'] !== []) {
 }
 
 echo implode(PHP_EOL, $righe) . PHP_EOL;
+
+// La sorveglianza esterna (23/11): il giro e' finito. Gli inviti non
+// partiti restano in coda e si vedono nella pagina Utenti.
+Sorveglianza::segnala(Sorveglianza::INVITI);
 
 exit($esito['falliti'] === [] ? 0 : 1);

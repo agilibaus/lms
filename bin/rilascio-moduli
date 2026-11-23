@@ -43,6 +43,7 @@ use App\Core\CourseAccess;
 use App\Core\Mail\CodaEmail;
 use App\Core\Mail\Mailer;
 use App\Core\Settings;
+use App\Core\Sorveglianza;
 use App\Core\Url;
 use App\Models\ModuleUnlockModel;
 
@@ -64,6 +65,8 @@ if ($inSospeso === []) {
     echo date('c') . " nessun modulo da annunciare.\n";
     if (!$prova) {
         Settings::recordSystem('DRIP_LAST_RUN_AT', date('Y-m-d H:i:s'));
+        // La sorveglianza esterna (23/11): il giro e' finito, anche vuoto.
+        Sorveglianza::segnala(Sorveglianza::RILASCIO);
     }
     exit(0);
 }
@@ -132,5 +135,8 @@ $giro = CodaEmail::svuota();
 
 echo date('c') . " messe in coda {$mandate}, non messe {$fallite}, gia' prese da altri {$saltate}, "
     . "chiuse da un questionario {$chiusi}; dalla coda partite {$giro['mandate']}, non partite " . count($giro['fallite']) . ".\n";
+
+// La sorveglianza esterna (23/11): il giro e' finito.
+Sorveglianza::segnala(Sorveglianza::RILASCIO);
 
 exit($fallite > 0 || $giro['fallite'] !== [] ? 1 : 0);

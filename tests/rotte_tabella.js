@@ -221,6 +221,9 @@ const RIGHE = [
     ['GET',  '/admin/settings',                                             '/admin/settings',                                                  'L', '403', '403', '403', 'S', 'S'],
     ['GET',  '/admin/settings/informazioni',                                '/admin/settings/informazioni',                                     'L', '403', '403', '403', 'S', 'S'],
     ['GET',  '/admin/settings/comandi',                                     '/admin/settings/comandi',                                          'L', '403', '403', '403', '403', 'S'],
+    // La sorveglianza esterna (23/11): la chiave e il segnale di prova.
+    ['POST', '/admin/settings/comandi',                                     '/admin/settings/comandi',                                          'L', '403', '403', '403', '403', '-'],
+    ['POST', '/admin/settings/comandi/prova',                               '/admin/settings/comandi/prova',                                    'L', '403', '403', '403', '403', '-'],
     ['GET',  '/admin/settings/privacy',                                     '/admin/settings/privacy',                                          'L', '403', '403', '403', '403', 'S'],
     ['POST', '/admin/settings/privacy',                                     '/admin/settings/privacy',                                          'L', '403', '403', '403', '403', '-'],
     ['POST', '/admin/settings/privacy/{id}/cancella',                       '/admin/settings/privacy/{x.studente}/cancella',                    'L', '403', '403', '403', '403', '-'],

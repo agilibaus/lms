@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use App\Core\ComandiPianificati;
+use App\Core\Csrf;
+use App\Core\Icona;
 use App\Core\Quando;
+use App\Core\Sorveglianza;
+use App\Core\Url;
 
 /**
  * «Comandi pianificati» (17/11, Alessandro): una riga per comando, con la
@@ -12,6 +16,10 @@ use App\Core\Quando;
  *
  * @var list<array<string, mixed>> $comandi
  * @var int $adesso
+ * @var string $sorveglianza Sorveglianza::SPENTA, ATTIVA o ALTROVE
+ * @var string|null $sorveglianzaPer l'indirizzo per cui la chiave e' stata salvata
+ * @var bool $chiaveNelFile la chiave viene dal `.env`
+ * @var bool $chiaveSalvata c'e' una chiave scritta dal pannello
  */
 
 $etichette = [
@@ -25,6 +33,8 @@ $etichette = [
     <h1>Comandi pianificati</h1>
     <p class="page-subtitle">I tre comandi che il server lancia da solo. Se uno smette di girare, Pistacchio non se ne accorge: lo si vede qui.</p>
 </div>
+
+<?php require __DIR__ . '/../_flash.php'; ?>
 
 <section class="card">
     <?php /* Cinque colonne: sotto i 50 rem di spazio le righe diventano schede. */ ?>
@@ -68,4 +78,72 @@ $etichette = [
         </tbody>
     </table>
     </div>
+</section>
+
+<?php /* La sorveglianza esterna (23/11, Alessandro, mockup): lo stato
+         accanto al titolo, l'indirizzo per cui e' stata salvata la chiave,
+         il campo della chiave come quello di Bunny e il segnale di prova. */ ?>
+<section class="card">
+    <form action="/admin/settings/comandi" method="post" class="form sorveglianza">
+        <?= Csrf::field() ?>
+        <div class="sorveglianza-testa">
+            <h2>Sorveglianza esterna</h2>
+            <?php if ($sorveglianza === Sorveglianza::ATTIVA): ?>
+                <span class="badge badge-success">Attiva</span>
+            <?php else: ?>
+                <span class="badge badge-muted">Spenta</span>
+            <?php endif; ?>
+        </div>
+
+        <?php $nomi = implode(', ', array_map(static fn (string $c): string => '<code>' . $c . '</code>', array_slice(Sorveglianza::CHECK, 0, -1)))
+            . ' e <code>' . Sorveglianza::CHECK[count(Sorveglianza::CHECK) - 1] . '</code>'; ?>
+        <?php if ($sorveglianza === Sorveglianza::ATTIVA): ?>
+            <p class="sorveglianza-stato">
+                <?= $chiaveNelFile
+                    ? 'Chiave scritta nel file <code>.env</code>.'
+                    : 'Chiave salvata per <code>' . htmlspecialchars((string) $sorveglianzaPer) . '</code>.' ?>
+            </p>
+            <p class="form-hint">A ogni giro i comandi mandano un segnale a Healthchecks.io. I check devono chiamarsi <?= $nomi ?>.</p>
+        <?php elseif ($sorveglianza === Sorveglianza::ALTROVE): ?>
+            <p class="alert alert-warning" role="note">
+                Chiave salvata per <code><?= htmlspecialchars((string) $sorveglianzaPer) ?></code>: su questo indirizzo
+                (<code><?= htmlspecialchars(Url::base()) ?></code>) la sorveglianza è spenta, perché il database viene da
+                un'altra installazione. Per usarla qui, salva una chiave nuova.
+            </p>
+        <?php else: ?>
+            <p class="sorveglianza-stato">Nessuna chiave: i comandi girano, ma non avvisano nessuno se si fermano.</p>
+            <p class="form-hint">
+                Con la chiave, a ogni giro i comandi mandano un segnale a Healthchecks.io, che ti avvisa per SMS o
+                email quando un segnale non arriva o dice che qualcosa non va. I check devono chiamarsi <?= $nomi ?>.
+            </p>
+        <?php endif; ?>
+
+        <?php if (!$chiaveNelFile): ?>
+            <label for="<?= Sorveglianza::KEY ?>">Chiave dei segnali (ping key)</label>
+            <input type="password" id="<?= Sorveglianza::KEY ?>" name="<?= Sorveglianza::KEY ?>" autocomplete="off"
+                   placeholder="<?= $sorveglianza === Sorveglianza::ALTROVE ? 'salvata per un altro indirizzo'
+                       : ($chiaveSalvata ? 'impostata — scrivi qui per sostituirla' : 'nessuna chiave impostata') ?>">
+            <p class="form-hint">
+                Si copia da Healthchecks.io, nel progetto «Pistacchio LMS»: Settings › Ping key. Non viene mai
+                rimandata al browser: se lasci il campo vuoto resta quella di prima.
+            </p>
+
+            <?php if ($chiaveSalvata): ?>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="cancella_chiave" value="1">
+                    <span>Cancella la chiave salvata (la sorveglianza si spegne)</span>
+                </label>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <div class="sorveglianza-comandi">
+            <?php if (!$chiaveNelFile): ?>
+                <button type="submit" class="btn btn-primary">Salva</button>
+                <a href="/admin/settings" class="btn btn-secondary">Annulla</a>
+            <?php endif; ?>
+            <?php if ($sorveglianza === Sorveglianza::ATTIVA): ?>
+                <button type="submit" formaction="/admin/settings/comandi/prova" class="btn btn-secondary btn-con-icona"><?= Icona::svg('send') ?>Manda un segnale di prova</button>
+            <?php endif; ?>
+        </div>
+    </form>
 </section>
