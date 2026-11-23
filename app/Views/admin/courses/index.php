@@ -100,7 +100,8 @@ $courses = $ordine->applica($courses);
                     <?php $mode = $course['enrollment_mode'] ?? 'closed'; ?>
                     <?php /* «a pagamento» (06/11): finche' il pagamento con Stripe non c'e',
                              il corso non compare nel catalogo e lo iscrive l'admin. */ ?>
-                    <span class="badge"
+                    <?php /* «Iscrizione gratuita» in verde, come nel catalogo (23/11). */ ?>
+                    <span class="badge<?= $mode === 'open' ? ' badge-success' : '' ?>"
                           title="<?= match ($mode) {
                               'closed' => 'Non compare nel catalogo: iscrive solo lo staff, o l\'assegnazione a un gruppo',
                               'paid' => \App\Core\CorsiAPagamento::attivi()

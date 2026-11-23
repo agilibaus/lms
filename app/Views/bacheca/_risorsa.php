@@ -28,7 +28,7 @@ $torna = '<input type="hidden" name="torna" value="' . htmlspecialchars($qui, EN
         <h2 class="bacheca-titolo"><?= htmlspecialchars((string) $r['title']) ?></h2>
         <span class="badge badge-muted"><?= htmlspecialchars(Bacheca::TIPI[(string) $r['kind']] ?? 'Altro') ?></span>
         <?php if ((int) $r['featured'] === 1): ?>
-            <span class="badge bacheca-ev">In evidenza</span>
+            <span class="badge badge-success">In evidenza</span>
         <?php endif; ?>
         <?php if ($conCategoria): ?>
             <span class="bacheca-cat"><?= htmlspecialchars((string) $r['category_name']) ?></span>

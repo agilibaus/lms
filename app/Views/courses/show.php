@@ -217,11 +217,11 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
                     <h2>
                         <?= htmlspecialchars($module['title']) ?>
                         <?php if ($stato === Percorso::IN_CORSO): ?>
-                            <span class="etichetta-modulo">In corso</span>
+                            <span class="badge badge-success etichetta-modulo">In corso</span>
                         <?php elseif ($stato === Percorso::PROSSIMO): ?>
-                            <span class="etichetta-modulo etichetta-modulo-quieta">Prossimo</span>
+                            <span class="badge badge-muted etichetta-modulo">Prossimo</span>
                         <?php elseif ($stato === Percorso::COMPLETATO): ?>
-                            <span class="etichetta-modulo etichetta-modulo-quieta etichetta-con-icona"><?= Icona::svg('check-circle-fill') ?> Completato</span>
+                            <span class="badge badge-success etichetta-modulo etichetta-con-icona"><?= Icona::svg('check-circle-fill') ?> Completato</span>
                         <?php endif; ?>
                         <?php if ($lockedByDate): ?>
                             <span class="badge badge-muted">

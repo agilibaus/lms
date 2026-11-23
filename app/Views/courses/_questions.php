@@ -41,9 +41,9 @@ $aperta = $respinta || !empty($_SESSION['domande_aperte']) || isset($_GET['chied
 unset($_SESSION['domande_aperte']);
 
 $stati = [
-    QuestionModel::PENDING => ['In attesa', 'qa-stato-attesa'],
-    QuestionModel::PUBLISHED => ['Pubblicata', 'qa-stato-pubblicata'],
-    QuestionModel::DISCARDED => ['Non pubblicata', 'qa-stato-scartata'],
+    QuestionModel::PENDING => ['In attesa', 'badge-muted'],
+    QuestionModel::PUBLISHED => ['Pubblicata', 'badge-success'],
+    QuestionModel::DISCARDED => ['Non pubblicata', 'badge-danger'],
 ];
 ?>
 <section class="qa" id="domande" aria-labelledby="qa-titolo">
@@ -112,7 +112,7 @@ $stati = [
                     <?php [$etichetta, $classe] = $stati[(string) $q['status']] ?? $stati[QuestionModel::PENDING]; ?>
                     <li>
                         <span class="qa-mie-testo"><?= htmlspecialchars((string) $q['question']) ?></span>
-                        <span class="qa-stato <?= $classe ?>"><?= $etichetta ?></span>
+                        <span class="badge qa-stato <?= $classe ?>"><?= $etichetta ?></span>
                     </li>
                 <?php endforeach; ?>
             </ul>

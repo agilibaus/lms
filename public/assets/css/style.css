@@ -1426,6 +1426,14 @@ h3 { font-size: var(--fs-sottotitolo); }
     padding: 0.15rem 0.5rem;
     border-radius: 999px;
     margin-top: 0.5rem;
+    /* Le etichette, una forma e tre colori (23/11, Alessandro): verde per
+       gli stati positivi o attivi (`badge-success`), rosso per quelli
+       negativi (`badge-danger`), grigio per le informazioni neutre e per
+       cio' che e' in attesa o deve ancora venire. Il grigio e' quello di
+       partenza: un'etichetta senza colore non resta piu' senza sfondo.
+       `tests/etichette_maiuscole.js` lo misura su tutte le pagine. */
+    background: var(--color-border);
+    color: #5A554F;
 }
 
 /* Il grigio dei testi secondari su questo fondo dava 3.82:1, sotto il
@@ -8306,23 +8314,20 @@ details[open] > summary .obiettivo-se-aperto {
     box-shadow: 0 2px 10px color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 
+/* Lo stato del modulo accanto al titolo: un'etichetta come le altre
+   (23/11): «In corso» e «Completato» in verde, «Prossimo» in grigio. Qui
+   resta solo la distanza dal titolo. */
 .etichetta-modulo {
-    display: inline-block;
     margin-left: 0.4rem;
-    padding: 0.1rem 0.55rem;
-    border-radius: 999px;
-    font-size: var(--fs-piccolo);
-    font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
-    vertical-align: middle;
-    background: var(--color-primary);
-    color: #fff;
 }
 
-.etichetta-modulo-quieta {
-    background: transparent;
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
-    font-weight: 600;
+/* Le etichette accanto al titolo del modulo («Dal 23/12», «Questionario
+   obbligatorio») sulla stessa linea dello stato: il margine sopra di
+   `.badge` le abbassava. */
+.etichetta-modulo,
+.etichetta-modulo ~ .badge {
+    margin-top: 0;
+    vertical-align: middle;
 }
 
 /* Dove riprendere, nel modulo in corso (13/10, variante C): il conto delle
@@ -8802,27 +8807,13 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 /* Lo stato dice la parola, il colore la accompagna. */
+/* Lo stato della domanda: un'etichetta come le altre (23/11), «In attesa»
+   in grigio, «Pubblicata» in verde, «Non pubblicata» in rosso. Qui resta
+   solo cio' che serve nella riga. */
 .qa-stato {
     flex-shrink: 0;
-    border-radius: 999px;
-    padding: 0.1rem 0.6rem;
-    font-size: var(--fs-piccolo);
+    margin-top: 0;
     white-space: nowrap;
-}
-
-.qa-stato-attesa {
-    background: #f3efe2;
-    color: #5c4d17;
-}
-
-.qa-stato-pubblicata {
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
-}
-
-.qa-stato-scartata {
-    background: #f1e4e4;
-    color: #7f2828;
 }
 
 /* Nella pagina «Domande»: «Pubblica» e «Scarta» sulla stessa riga. */
@@ -9320,11 +9311,6 @@ details[open] > summary .obiettivo-se-aperto {
     margin: 0;
     font-size: var(--fs-testo);
     font-weight: 600;
-}
-
-.bacheca-ev {
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
 }
 
 .bacheca-cat {
