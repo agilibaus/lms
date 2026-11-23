@@ -191,23 +191,25 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
             ?>
             <?php if (!$aperto): ?>
                 <?php
-                if ($stato === Percorso::COMPLETATO) {
-                    $statoRiga = 'completato · ' . Percorso::contenuto($nLezioni, $quiz !== null);
-                } elseif ($lockedByDate) {
-                    $statoRiga = 'si apre il ' . date('d/m/Y', strtotime((string) $lock['available_from']));
-                } elseif ($isLocked) {
-                    $statoRiga = 'si sblocca con il questionario del modulo precedente';
-                } else {
-                    $statoRiga = Percorso::contenuto($nLezioni, $quiz !== null);
-                }
+                // Lo stato con le etichette del riquadro aperto (23/11,
+                // Alessandro): «Completato» con la spunta, «Dal 23/12/2026»,
+                // «Bloccato»; poi il contenuto, in grigio. Prima era una frase
+                // («completato · 1 lezione», «si apre il 23/12/2026»), e lo
+                // stesso modulo aperto o chiuso si leggeva in due modi.
+                $etichettaRiga = match (true) {
+                    $stato === Percorso::COMPLETATO => ['badge-success etichetta-con-icona', Icona::svg('check-circle-fill') . ' Completato'],
+                    $lockedByDate => ['badge-muted', 'Dal ' . htmlspecialchars(date('d/m/Y', strtotime((string) $lock['available_from'])))],
+                    $isLocked => ['badge-danger', 'Bloccato'],
+                    default => null,
+                };
+                $statoRiga = Percorso::contenuto($nLezioni, $quiz !== null);
                 ?>
                 <details class="modulo-riga <?= $stato === Percorso::COMPLETATO ? 'modulo-riga-completato' : '' ?>" id="modulo-<?= $moduleId ?>">
                     <summary>
-                        <?php if ($stato === Percorso::COMPLETATO): ?>
-                            <span class="modulo-riga-spunta" aria-hidden="true"><?= Icona::svg('check-circle-fill') ?></span>
-                        <?php endif; ?>
+                        <?php /* La spunta sta nell'etichetta «Completato», come nel
+                                 riquadro aperto: non piu' anche a sinistra del titolo. */ ?>
                         <h2 class="modulo-riga-titolo"><?= htmlspecialchars($module['title']) ?></h2>
-                        <span class="modulo-riga-stato"><?= htmlspecialchars($statoRiga) ?></span>
+                        <span class="modulo-riga-stato"><?php if ($etichettaRiga !== null): ?><span class="badge <?= $etichettaRiga[0] ?>"><?= $etichettaRiga[1] ?></span> · <?php endif; ?><?= htmlspecialchars($statoRiga) ?></span>
                         <span class="obiettivo-comando"><span class="obiettivo-se-chiuso">Mostra</span><span class="obiettivo-se-aperto">Nascondi</span></span>
                     </summary>
                     <div class="modulo-riga-corpo <?= $isLocked ? 'module-locked' : '' ?>">

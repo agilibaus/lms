@@ -21,7 +21,11 @@
  *     stile, non si scrivono qui. Fa eccezione il cerchio di «Oggi»
  *     nell'Agenda, che segna il giorno e non e' uno stato. Lo stato dei
  *     moduli e quello delle domande all'esperto, che avevano uno stile
- *     loro, devono esserci e essere etichette.
+ *     loro, devono esserci e essere etichette;
+ *   - nelle righe chiuse dei moduli lo stato e' un'etichetta come nel
+ *     riquadro aperto («Completato» con la spunta, «Dal 23/12/2026»,
+ *     «Bloccato»), non piu' una frase («completato · 1 lezione», «si apre
+ *     il…», «si sblocca…»).
  *
  * Esecuzione:  node tests/etichette_maiuscole.js   (server di sviluppo acceso)
  */
@@ -68,6 +72,7 @@ async function giro(browser, email) {
     const fuori = [];
     const moduli = [];
     const domande = [];
+    const righe = [];
     let completate = 0;
     let etichette = 0;
 
@@ -116,6 +121,7 @@ async function giro(browser, email) {
             return {
                 fuori,
                 moduli: vecchie.filter((e) => e.matches('.etichetta-modulo')).map((e) => [testo(e), e.classList.contains('badge')]),
+                righe: [...document.querySelectorAll('.modulo-riga-stato')].map((e) => testo(e) + (e.querySelector('.badge') ? '' : ' (senza etichetta)')),
                 domande: vecchie.filter((e) => e.matches('.qa-stato')).map((e) => [testo(e), e.classList.contains('badge')]),
                 testi: badge.map(testo),
                 neiTitoli: badge.filter((b) => b.closest('h1')).map(testo),
@@ -133,12 +139,13 @@ async function giro(browser, email) {
         r.fuori.forEach((t) => fuori.push(`${forma(u)}: ${t}`));
         moduli.push(...r.moduli);
         domande.push(...r.domande);
+        r.righe.forEach((t) => righe.push(`${forma(u)}: «${t}»`));
         sfondi.push(...r.sfondi);
         r.link.filter((l) => !NON_SEGUIRE.test(l)).forEach((l) => coda.push(l));
     }
     await page.close();
 
-    return { pagine: viste.size, etichette, minuscole: [...new Set(minuscole)], neiTitoli: [...new Set(neiTitoli)], completate, sfondi, fuori: [...new Set(fuori)], moduli, domande };
+    return { pagine: viste.size, etichette, minuscole: [...new Set(minuscole)], neiTitoli: [...new Set(neiTitoli)], completate, sfondi, fuori: [...new Set(fuori)], moduli, domande, righe: [...new Set(righe)] };
 }
 
 (async () => {
@@ -150,10 +157,14 @@ async function giro(browser, email) {
             check(`${ruolo}: ogni etichetta comincia con la maiuscola`, r.minuscole.length === 0, r.minuscole);
             check(`${ruolo}: nessuna etichetta dentro un titolo h1`, r.neiTitoli.length === 0, r.neiTitoli);
             check(`${ruolo}: ogni etichetta ha la forma di tutte e uno dei tre colori`, r.fuori.length === 0, r.fuori);
+            const frasi = r.righe.filter((t) => /complet|si apre|si sblocca/.test(t) && !/^(Completato|Dal \d|Bloccato) · /.test(t));
+            check(`${ruolo}: nelle righe chiuse dei moduli lo stato e' un'etichetta`, frasi.length === 0, frasi);
             if (ruolo === 'studente') {
                 check('studente: «Lezione completata» si vede (la lezione del mondo A e\' fatta)', r.completate > 0);
                 const nomi = (l) => [...new Set(l.map(([t, b]) => t + (b ? '' : ' (non e\' un\'etichetta)')))];
                 check('studente: lo stato dei moduli si vede ed e\' un\'etichetta', r.moduli.length > 0 && r.moduli.every(([, b]) => b), nomi(r.moduli));
+                check('studente: c\'e\' una riga chiusa di un modulo con lo stato (il modulo con la data del gruppo)',
+                    r.righe.some((t) => !t.endsWith('(senza etichetta)»')), r.righe);
                 check('studente: lo stato delle sue domande all\'esperto si vede ed e\' un\'etichetta', r.domande.length > 0 && r.domande.every(([, b]) => b), nomi(r.domande));
                 const richiesta = r.sfondi.filter(([t]) => t === 'Iscrizione su richiesta');
                 check('studente: nel catalogo «Iscrizione su richiesta» ha il suo sfondo',

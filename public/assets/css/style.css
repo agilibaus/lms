@@ -8463,17 +8463,16 @@ details[open] > summary .obiettivo-se-aperto {
     color: var(--color-text-muted);
 }
 
-.modulo-riga-spunta {
-    grid-area: spunta;
-    margin-right: 0.6rem;
-    color: var(--color-primary);
-    font-weight: 700;
-}
-
 .modulo-riga-stato {
     grid-area: stato;
     font-size: var(--fs-secondario);
     color: var(--color-text-muted);
+}
+
+/* L'etichetta sulla riga del testo che la segue, senza il margine sopra. */
+.modulo-riga-stato .badge {
+    margin-top: 0;
+    vertical-align: 0.05em;
 }
 
 /* Aperta, la riga mostra il corpo del modulo sotto, nello stesso riquadro. */
@@ -10033,12 +10032,6 @@ details[open] > summary .obiettivo-se-aperto {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-}
-
-/* La spunta piena: lezione e modulo completati, la risorsa che ci si tiene,
-   la risposta corretta nell'anteprima del questionario. */
-.modulo-riga-spunta .icona {
-    vertical-align: -0.2em;
 }
 
 .etichetta-con-icona .icona {
