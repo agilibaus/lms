@@ -104,11 +104,11 @@ $materiali = $ordineMateriali->applica(array_map(
         <thead role="rowgroup">
         <tr role="row">
             <?= $ordine->th('Studente', 'studente') ?>
-            <?= $ordine->th('Progresso', 'progresso') ?>
-            <?= $ordine->th('Lezioni', 'lezioni') ?>
-            <?= $ordine->th('Questionari superati', 'quiz') ?>
+            <?= $ordine->th('Progresso', 'progresso', 'col-numero') ?>
+            <?= $ordine->th('Lezioni', 'lezioni', 'col-numero') ?>
+            <?= $ordine->th('Questionari superati', 'quiz', 'col-numero') ?>
             <?= $ordine->th('Certificato', 'certificato') ?>
-            <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+            <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
         </tr>
         </thead>
         <tbody role="rowgroup">
@@ -123,14 +123,16 @@ $materiali = $ordineMateriali->applica(array_map(
                         <span class="cell-sub"><?= htmlspecialchars($exStudente) ?></span>
                     <?php endif; ?>
                 </td>
-                <td role="cell" data-label="Progresso">
-                    <?= number_format((float) $row['progress_pct'], 0) ?>%
+                <?php /* L'etichetta prima del numero: a destra, le cifre
+                         restano incolonnate (23/11). */ ?>
+                <td role="cell" data-label="Progresso" class="col-numero">
                     <?php if ($row['completed_at'] !== null): ?>
                         <span class="badge badge-success">completato</span>
                     <?php endif; ?>
+                    <?= number_format((float) $row['progress_pct'], 0) ?>%
                 </td>
-                <td role="cell" data-label="Lezioni"><?= (int) $row['lessons_completed'] ?>/<?= (int) $totals['lessons'] ?></td>
-                <td role="cell" data-label="Questionari superati"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $totals['quizzes'] ?></td>
+                <td role="cell" data-label="Lezioni" class="col-numero"><?= (int) $row['lessons_completed'] ?>/<?= (int) $totals['lessons'] ?></td>
+                <td role="cell" data-label="Questionari superati" class="col-numero"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $totals['quizzes'] ?></td>
                 <td role="cell" data-label="Certificato">
                     <?php if (empty($row['certificate_code'])): ?>
                         —
@@ -140,7 +142,7 @@ $materiali = $ordineMateriali->applica(array_map(
                         <code><?= htmlspecialchars((string) $row['certificate_code']) ?></code>
                     <?php endif; ?>
                 </td>
-                <td role="cell" class="row-actions">
+                <td role="cell" class="col-azioni row-actions">
                     <?php /* Solo a uno studente (13/11): a chi e' diventato staff no. */ ?>
                     <?php if (Auth::can('certificate.issue') && empty($row['certificate_code']) && $exStudente === null): ?>
                         <form action="/certificates/issue" method="post">
@@ -173,7 +175,7 @@ $materiali = $ordineMateriali->applica(array_map(
             <tr role="row">
                 <?= $ordineMateriali->th('Materiale', 'materiale') ?>
                 <?= $ordineMateriali->th('Lezione', 'lezione') ?>
-                <?= $ordineMateriali->th('Scaricato da', 'scaricato') ?>
+                <?= $ordineMateriali->th('Scaricato da', 'scaricato', 'col-numero') ?>
                 <th scope="col" role="columnheader">Nomi</th>
             </tr>
             </thead>
@@ -182,7 +184,7 @@ $materiali = $ordineMateriali->applica(array_map(
                 <tr role="row">
                     <td role="cell" data-label="Materiale"><?= htmlspecialchars((string) $materiale['file_name']) ?></td>
                     <td role="cell" data-label="Lezione"><?= htmlspecialchars((string) $materiale['lesson_title']) ?></td>
-                    <td role="cell" data-label="Scaricato da"><?= (int) $materiale['quanti'] ?> su <?= (int) $materiale['su'] ?></td>
+                    <td role="cell" data-label="Scaricato da" class="col-numero"><?= (int) $materiale['quanti'] ?> su <?= (int) $materiale['su'] ?></td>
                     <td role="cell" data-label="Nomi">
                         <?php if ($materiale['scaricati'] === []): ?>
                             <span class="valore-assente">—</span>

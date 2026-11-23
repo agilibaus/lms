@@ -216,8 +216,8 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                     <tr role="row">
                         <?= $ordineQuiz->th('Questionario', 'quiz') ?>
                         <?= $ordineQuiz->th('Modulo', 'modulo') ?>
-                        <?= $ordineQuiz->th('Tentativi', 'tentativi') ?>
-                        <?= $ordineQuiz->th('Miglior punteggio', 'punteggio') ?>
+                        <?= $ordineQuiz->th('Tentativi', 'tentativi', 'col-numero') ?>
+                        <?= $ordineQuiz->th('Miglior punteggio', 'punteggio', 'col-numero') ?>
                         <?= $ordineQuiz->th('Esito', 'esito') ?>
                         <?= $ordineQuiz->th('Ultimo tentativo', 'ultimo') ?>
                     </tr>
@@ -227,8 +227,8 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                         <tr role="row">
                             <td role="cell" data-label="Questionario"><?= htmlspecialchars((string) $quiz['quiz_title']) ?></td>
                             <td role="cell" data-label="Modulo"><?= htmlspecialchars((string) $quiz['module_title']) ?></td>
-                            <td role="cell" data-label="Tentativi"><?= (int) $quiz['attempts'] ?></td>
-                            <td role="cell" data-label="Miglior punteggio"><?= $quiz['best_score_pct'] === null ? '—' : number_format((float) $quiz['best_score_pct'], 0) . '%' ?></td>
+                            <td role="cell" data-label="Tentativi" class="col-numero"><?= (int) $quiz['attempts'] ?></td>
+                            <td role="cell" data-label="Miglior punteggio" class="col-numero"><?= $quiz['best_score_pct'] === null ? '—' : number_format((float) $quiz['best_score_pct'], 0) . '%' ?></td>
                             <td role="cell" data-label="Esito">
                                 <?php $esito = (string) $quiz['esito_etichetta']; ?>
                                 <span class="badge<?= $esito === 'superato' ? ' badge-success' : ($esito === 'non superato' ? ' badge-danger' : '') ?>"><?= htmlspecialchars($esito) ?></span>
@@ -319,7 +319,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                 <?php endif; ?>
                 <?= $ordineIncontri->th('Presenza', 'presenza') ?>
                 <?= $ordineIncontri->th('Ingresso', 'ingresso') ?>
-                <th scope="col" role="columnheader">Ritardo</th>
+                <th scope="col" role="columnheader" class="col-numero">Ritardo</th>
             </tr>
             </thead>
             <tbody role="rowgroup">
@@ -342,7 +342,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                         <?php endif; ?>
                     </td>
                     <td role="cell" data-label="Ingresso"><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($incontro['joined_at'])) : '—' ?></td>
-                    <td role="cell" data-label="Ritardo">
+                    <td role="cell" data-label="Ritardo" class="col-numero">
                         <?= $presente && $ritardo !== '' && $ritardo !== '0'
                             ? htmlspecialchars($ritardo) . ' min'
                             : ($presente ? 'in orario' : '—') ?>

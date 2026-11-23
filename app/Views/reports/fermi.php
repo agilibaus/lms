@@ -97,12 +97,12 @@ $legenda = [
                         <?= $ordine->th('Studente', 'studente') ?>
                         <?= $ordine->th('Corso', 'corso') ?>
                         <?= $ordine->th('Gruppo', 'gruppo') ?>
-                        <?= $ordine->th('Iscritto da', 'iscritto') ?>
+                        <?= $ordine->th('Iscritto da', 'iscritto', 'col-numero') ?>
                         <?= $ordine->th('Ultima attività', 'attivita') ?>
                         <?= $ordine->th('Ultima visita', 'visita') ?>
                         <?= $ordine->th('Stato', 'stato') ?>
                         <?= $ordine->th('Avanzamento', 'avanzamento', 'col-numero') ?>
-                        <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
+                        <th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th>
                     </tr>
                 </thead>
                 <tbody role="rowgroup">
@@ -116,7 +116,7 @@ $legenda = [
                                          dire niente in piu'. */ ?>
                                 <?= $r['gruppi'] === [] ? '<span class="valore-assente">—</span>' : $esc(implode(', ', $r['gruppi'])) ?>
                             </td>
-                            <td role="cell" data-label="Iscritto da"><?= (int) $r['iscritto_giorni'] ?> <?= (int) $r['iscritto_giorni'] === 1 ? 'giorno' : 'giorni' ?></td>
+                            <td role="cell" data-label="Iscritto da" class="col-numero"><?= (int) $r['iscritto_giorni'] ?> <?= (int) $r['iscritto_giorni'] === 1 ? 'giorno' : 'giorni' ?></td>
                             <td role="cell" data-label="Ultima attività">
                                 <?php if ($r['ultima_at'] === null): ?>
                                     <span class="valore-assente">—</span>
@@ -139,7 +139,7 @@ $legenda = [
                                 <span class="sr-only"><?= $esc($etichetta) ?></span>
                             </td>
                             <td role="cell" data-label="Avanzamento" class="col-numero"><?= (int) round((float) $r['progress_pct']) ?>%</td>
-                            <td role="cell" class="row-actions">
+                            <td role="cell" class="col-azioni row-actions">
                                 <a href="<?= $esc(ContestoStudente::link((int) $r['user_id'], 'fermi', (int) $r['course_id'], $_GET)) ?>">Dettaglio</a>
                                 <?php /* L'email gia' indirizzata, con il corso nell'oggetto:
                                          il resto lo scrive il tutor. */ ?>

@@ -136,9 +136,9 @@ $quando = static function (?string $data): string {
         <thead role="rowgroup">
             <tr role="row">
                 <?= $ordine->th('Studente', 'studente') ?>
-                <?= $ordine->th('Vista', 'vista') ?>
-                <?= $ordine->th('Tempo guardato (secondi)', 'tempo') ?>
-                <?= $ordine->th('Ultima posizione', 'posizione') ?>
+                <?= $ordine->th('Vista', 'vista', 'col-numero') ?>
+                <?= $ordine->th('Tempo guardato (secondi)', 'tempo', 'col-numero') ?>
+                <?= $ordine->th('Ultima posizione', 'posizione', 'col-numero') ?>
                 <?= $ordine->th('Ultima visita', 'visita') ?>
                 <?= $ordine->th('Completata', 'completata') ?>
             </tr>
@@ -150,7 +150,7 @@ $quando = static function (?string $data): string {
                         <?= htmlspecialchars((string) $riga['full_name']) ?>
                         <span class="riga-secondaria"><?= htmlspecialchars((string) $riga['email']) ?></span>
                     </td>
-                    <td role="cell" data-label="Vista">
+                    <td role="cell" data-label="Vista" class="col-numero">
                         <?php if ($riga['percentage'] === null): ?>
                             <span class="valore-assente" title="Durata del video sconosciuta">—</span>
                         <?php else: ?>
@@ -163,8 +163,8 @@ $quando = static function (?string $data): string {
                             <?= (int) $riga['percentage'] ?>%
                         <?php endif; ?>
                     </td>
-                    <td role="cell" data-label="Tempo guardato (secondi)"><?= VideoProgressController::secondi((int) $riga['watched_seconds']) ?></td>
-                    <td role="cell" data-label="Ultima posizione"><?= htmlspecialchars($minutoSecondo(
+                    <td role="cell" data-label="Tempo guardato (secondi)" class="col-numero"><?= VideoProgressController::secondi((int) $riga['watched_seconds']) ?></td>
+                    <td role="cell" data-label="Ultima posizione" class="col-numero"><?= htmlspecialchars($minutoSecondo(
                         $riga['position_seconds'] === null ? null : (int) $riga['position_seconds']
                     )) ?></td>
                     <td role="cell" data-label="Ultima visita"><?= htmlspecialchars($quando(

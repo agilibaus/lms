@@ -109,7 +109,7 @@ $rows = $ordine->applica($rows);
                 <?= $ordine->th('Partecipante', 'partecipante') ?>
                 <?= $ordine->th('Presenza', 'presenza') ?>
                 <?= $ordine->th('Ingresso', 'ingresso') ?>
-                <?= $ordine->th('Ritardo', 'ritardo') ?>
+                <?= $ordine->th('Ritardo', 'ritardo', 'col-numero') ?>
                 <?= $ordine->th('Origine', 'origine') ?>
             </tr>
             </thead>
@@ -129,7 +129,7 @@ $rows = $ordine->applica($rows);
                         <?php endif; ?>
                     </td>
                     <td role="cell" data-label="Ingresso"><?= $presente ? htmlspecialchars(ReportController::dateTimeLabel($row['joined_at'])) : '—' ?></td>
-                    <td role="cell" data-label="Ritardo">
+                    <td role="cell" data-label="Ritardo" class="col-numero">
                         <?php $ritardo = ReportController::delayLabel($row); ?>
                         <?= $presente && $ritardo !== '' && $ritardo !== '0'
                             ? htmlspecialchars($ritardo) . ' min'

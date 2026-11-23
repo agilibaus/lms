@@ -71,7 +71,7 @@ $righe = $ordine->applica($righe);
                 <tr>
                     <?= $ordine->th('Studente', 'studente') ?>
                     <?php foreach ($lezioni as $lezione): ?>
-                        <th scope="col">
+                        <th scope="col" class="col-numero">
                             <?php if ($dettaglioApribile): ?>
                                 <a href="<?= htmlspecialchars(Ritorno::link('/lessons/' . (int) $lezione['id'] . '/fruizione', 'report-fruizione', (int) $course['id'], $_GET)) ?>">
                                     <?= htmlspecialchars($lezione['title']) ?>
@@ -82,8 +82,8 @@ $righe = $ordine->applica($righe);
                             <span class="riga-secondaria"><?= htmlspecialchars($lezione['module_title']) ?></span>
                         </th>
                     <?php endforeach; ?>
-                    <?= $ordine->th('Media', 'media') ?>
-                    <?= $ordine->th('Tempo totale (secondi)', 'tempo') ?>
+                    <?= $ordine->th('Media', 'media', 'col-numero') ?>
+                    <?= $ordine->th('Tempo totale (secondi)', 'tempo', 'col-numero') ?>
                 </tr>
             </thead>
             <tbody>
@@ -95,7 +95,7 @@ $righe = $ordine->applica($righe);
                         </th>
                         <?php foreach ($lezioni as $lezione): ?>
                             <?php $cella = $riga['per_lezione'][$lezione['id']] ?? null; ?>
-                            <td>
+                            <td class="col-numero">
                                 <?php if ($cella === null || $cella['percentuale'] === null): ?>
                                     <span class="valore-assente" title="Durata del video sconosciuta">—</span>
                                 <?php else: ?>
@@ -103,12 +103,12 @@ $righe = $ordine->applica($righe);
                                 <?php endif; ?>
                             </td>
                         <?php endforeach; ?>
-                        <td>
+                        <td class="col-numero">
                             <?= $riga['percentuale_media'] === null
                                 ? '<span class="valore-assente">—</span>'
                                 : (int) $riga['percentuale_media'] . '%' ?>
                         </td>
-                        <td><?= VideoProgressController::secondi((int) $riga['secondi_totali']) ?></td>
+                        <td class="col-numero"><?= VideoProgressController::secondi((int) $riga['secondi_totali']) ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

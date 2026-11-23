@@ -4593,6 +4593,14 @@ fieldset.checkbox-group legend {
     text-align: right;
 }
 
+/* I comandi nell'ultima colonna, a destra, in ogni tabella dei report
+   (23/11). Su una riga sola solo negli elenchi qui sopra: nelle tabelle di
+   dettaglio, piu' affollate, vanno a capo quando manca spazio, invece di
+   toglierlo al testo accanto. */
+.data-table .col-azioni {
+    text-align: right;
+}
+
 /* ---------- Le colonne numeriche dei report ----------
 
    Il disordine principale della pagina Report, misurato il 04/10: i
@@ -4612,13 +4620,30 @@ fieldset.checkbox-group legend {
    - **una larghezza uguale per tutte le colonne numeriche di tutte le
      pagine**, cosi' passando da un elenco all'altro le colonne cadono dove
      ci si aspetta. `width: 1%` farebbe stringere ognuna sul proprio
-     contenuto, che e' il contrario di quello che serve qui. */
+     contenuto, che e' il contrario di quello che serve qui.
 
-.reports-elenco .col-numero {
-    width: 7.5rem;
+   IN TUTTI I REPORT (23/11, Alessandro): fino ad allora queste regole
+   valevano solo nelle cinque pagine «Elenco», e nelle pagine di dettaglio
+   (corso, gruppo, studente, incontro, fruizione, studenti fermi) i numeri
+   erano a sinistra e i comandi a volte a sinistra. Ora valgono per ogni
+   tabella: numeri (conteggi, frazioni come 0/4, percentuali, durate) a
+   destra con l'intestazione sopra, testo e date a sinistra, comandi
+   nell'ultima colonna a destra. La griglia del corso fa eccezione: e' una
+   mappa di stati, centrata. `tests/report_colonne.js` misura ogni colonna. */
+
+.data-table .col-numero {
     text-align: right;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+/* La larghezza uguale serve fra i cinque elenchi, che hanno colonne dello
+   stesso genere. Nelle tabelle di dettaglio, piu' affollate, sette o otto
+   colonne a 7,5 rem toglievano spazio al testo («Mindfulnes|s per
+   Genitori» spezzato negli studenti fermi, 23/11): li' la colonna di numeri
+   si stringe sul suo contenuto, sempre a destra. */
+.reports-elenco .col-numero {
+    width: 7.5rem;
 }
 
 /* L'intestazione sta sopra ai numeri che descrive: allinearla a sinistra
@@ -4630,7 +4655,7 @@ fieldset.checkbox-group legend {
    la colonna a 189 px invece di 120, e quella tabella perdeva
    l'allineamento con le altre quattro — cioe' proprio la cosa per cui
    queste regole esistono. Misurato. */
-.reports-elenco .data-table th.col-numero {
+.data-table th.col-numero {
     text-align: right;
     white-space: normal;
 }
@@ -4638,8 +4663,8 @@ fieldset.checkbox-group legend {
 /* Sotto i 50 rem le righe diventano schede: li' non ci sono piu' colonne da
    allineare, e una larghezza fissa spezzerebbe la scheda. */
 @container tabella (max-width: 50rem) {
-    .reports-elenco .col-numero,
-    .reports-elenco .col-azioni {
+    .data-table .col-numero,
+    .data-table .col-azioni {
         width: auto;
         text-align: left;
     }

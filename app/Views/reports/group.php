@@ -75,8 +75,8 @@ $rows = $ordine->applica($rows);
         <tr role="row">
             <?= $ordine->th('Studente', 'studente') ?>
             <?= $ordine->th('Corso', 'corso') ?>
-            <?= $ordine->th('Progresso', 'progresso') ?>
-            <?= $ordine->th('Questionari superati', 'quiz') ?>
+            <?= $ordine->th('Progresso', 'progresso', 'col-numero') ?>
+            <?= $ordine->th('Questionari superati', 'quiz', 'col-numero') ?>
             <?= $ordine->th('Certificato', 'certificato') ?>
         </tr>
         </thead>
@@ -88,17 +88,19 @@ $rows = $ordine->applica($rows);
                     <span class="cell-sub"><?= htmlspecialchars((string) $row['email']) ?></span>
                 </td>
                 <td role="cell" data-label="Corso"><?= htmlspecialchars((string) $row['course_title']) ?></td>
-                <td role="cell" data-label="Progresso">
+                <td role="cell" data-label="Progresso" class="col-numero">
                     <?php if ($row['progress_pct'] === null): ?>
                         <span class="badge">non iscritto</span>
                     <?php else: ?>
-                        <?= number_format((float) $row['progress_pct'], 0) ?>%
+                        <?php /* L'etichetta prima del numero: a destra, le
+                                 cifre restano incolonnate (23/11). */ ?>
                         <?php if ($row['completed_at'] !== null): ?>
                             <span class="badge badge-success">completato</span>
                         <?php endif; ?>
+                        <?= number_format((float) $row['progress_pct'], 0) ?>%
                     <?php endif; ?>
                 </td>
-                <td role="cell" data-label="Questionari superati"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $row['quizzes_total'] ?></td>
+                <td role="cell" data-label="Questionari superati" class="col-numero"><?= (int) $row['quizzes_passed'] ?>/<?= (int) $row['quizzes_total'] ?></td>
                 <td role="cell" data-label="Certificato">
                     <?php if (empty($row['certificate_code'])): ?>
                         —
