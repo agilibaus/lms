@@ -82,9 +82,12 @@ function check(nome, condizione, dettagli = []) {
  * - «Stato» di «Studenti fermi» (21/10): si ordina per gravita', mai →
  *   entra → esce (`StudentiFermi::ordineStato`); in ordine alfabetico «non
  *   entra piu'» verrebbe prima di «non ha mai iniziato», mischiando i casi.
+ * - «Stato» delle sessioni live (24/11, Alessandro): per significato, «In
+ *   corso», «In programma», «Conclusa»; lo prova `sessioni_live_tabella.js`.
  */
 const NON_ALFABETICHE = {
     'Studenti fermi': ['Stato'],
+    'Sessioni live': ['Stato'],
 };
 
 const PAGINE = [

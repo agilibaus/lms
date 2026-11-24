@@ -12,11 +12,18 @@ use App\Core\Icona;
 
 $now = new DateTimeImmutable('now');
 
-// «Destinatari» non si ordina: la cella mostra il corso **oppure** il
-// gruppo, e sono due campi diversi. Ordinare su uno metterebbe in fondo
-// tutte le righe dell'altro, con l'aria di un difetto.
+// «Stato» si ordina (24/11, Alessandro): per significato, «In corso»,
+// «In programma», «Conclusa», e nello stesso stato per data. Lo stato si
+// calcola qui, come nella cella: in corso dalla query
+// (`LiveSessionModel::FINESTRA_SELECT`), concluse quelle finite.
+foreach ($sessions as $i => $s) {
+    $sessions[$i]['stato_ordine'] = (bool) ($s['started'] ?? false) ? 0
+        : (new DateTimeImmutable((string) $s['ends_at']) < $now ? 2 : 1);
+}
+
 $ordine = Ordinamento::daRichiesta([
     'quando' => ['starts_at', Ordinamento::DATA],
+    'stato' => ['stato_ordine', Ordinamento::NUMERO, 'starts_at'],
     'sessione' => ['title', Ordinamento::TESTO],
 ]);
 $sessions = $ordine->applica($sessions);
@@ -64,9 +71,14 @@ $sessions = $ordine->applica($sessions);
             <?php /* Le parole delle schede del telefono anche qui (30/10,
                      Alessandro, forma 1): «Stato» in una colonna sua, che
                      non va mai a capo, e «Link Meet» per intero. */ ?>
-            <th scope="col" role="columnheader">Stato</th>
+            <?= $ordine->th('Stato', 'stato') ?>
             <?= $ordine->th('Sessione', 'sessione') ?>
-            <th scope="col" role="columnheader">Destinatari</th>
+            <?php /* «Corso» e «Gruppo» in due colonne (24/11, Alessandro): era
+                     «Destinatari», con le due cose nella stessa cella. Una
+                     sessione e' di un modulo oppure di un gruppo: dove manca,
+                     il trattino grigio. */ ?>
+            <th scope="col" role="columnheader">Corso</th>
+            <th scope="col" role="columnheader">Gruppo</th>
             <th scope="col" role="columnheader">Link Meet</th>
             <th scope="col" role="columnheader">Accesso</th>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
@@ -85,20 +97,26 @@ $sessions = $ordine->applica($sessions);
             $isPast = $endsAt < $now;
             ?>
             <tr role="row" class="<?= $isPast ? 'row-past' : '' ?>">
-                <td role="cell" data-label="Quando">
-                    <?= htmlspecialchars($startsAt->format('d/m/Y H:i')) ?>–<?= htmlspecialchars($endsAt->format('H:i')) ?>
+                <?php /* La data sopra e l'orario sotto (24/11): la colonna si stringe. */ ?>
+                <td role="cell" data-label="Quando" class="live-quando">
+                    <span class="cell-line"><?= htmlspecialchars($startsAt->format('d/m/Y')) ?></span>
+                    <span class="cell-line"><?= htmlspecialchars($startsAt->format('H:i')) ?>–<?= htmlspecialchars($endsAt->format('H:i')) ?></span>
                 </td>
                 <td role="cell" data-label="Stato" class="live-stato">
                     <?= $isLive ? '<strong class="live-in-corso">In corso</strong>' : ($isPast ? 'Conclusa' : 'In programma') ?>
                 </td>
                 <td role="cell" data-label="Sessione"><a href="/live/<?= (int) $session['id'] ?>"><?= htmlspecialchars((string) $session['title']) ?></a></td>
-                <td role="cell" data-label="Destinatari">
+                <?php /* Il corso sopra e il modulo sotto (24/11). */ ?>
+                <td role="cell" data-label="Corso">
                     <?php if (!empty($session['course_title'])): ?>
-                        <span class="cell-line"><?= htmlspecialchars((string) $session['course_title']) ?> · <?= htmlspecialchars((string) $session['module_title']) ?></span>
+                        <span class="cell-line"><?= htmlspecialchars((string) $session['course_title']) ?></span>
+                        <span class="cell-line"><?= htmlspecialchars((string) $session['module_title']) ?></span>
+                    <?php else: ?>
+                        <span class="valore-assente">—</span>
                     <?php endif; ?>
-                    <?php if (!empty($session['group_name'])): ?>
-                        <span class="cell-line">Gruppo: <?= htmlspecialchars((string) $session['group_name']) ?></span>
-                    <?php endif; ?>
+                </td>
+                <td role="cell" data-label="Gruppo">
+                    <?= !empty($session['group_name']) ? htmlspecialchars((string) $session['group_name']) : '<span class="valore-assente">—</span>' ?>
                 </td>
                 <td role="cell" data-label="Link Meet">
                     <?php if (!empty($session['meet_link'])): ?>
@@ -173,19 +191,20 @@ $sessions = $ordine->applica($sessions);
         $stato = $isLive ? '<strong class="live-in-corso">In corso</strong>' : ($isPast ? 'Conclusa' : 'In programma');
         $link = !$conLink ? '<span class="live-assente">Assente</span>'
             : (!empty($session['google_event_id']) ? 'Creato da Google Calendar' : 'Inserito a mano');
-        $destinatari = '';
-        if (!empty($session['course_title'])) {
-            $destinatari .= '<span class="cell-line">' . $e((string) $session['course_title']) . ' · ' . $e((string) $session['module_title']) . '</span>';
-        }
-        if (!empty($session['group_name'])) {
-            $destinatari .= '<span class="cell-line">Gruppo: ' . $e((string) $session['group_name']) . '</span>';
-        }
+        // Come nella tabella (24/11): corso e modulo su due righe, il gruppo
+        // nella sua voce, il trattino dove manca.
+        $assente = '<span class="valore-assente">—</span>';
+        $corso = !empty($session['course_title'])
+            ? '<span class="cell-line">' . $e((string) $session['course_title']) . '</span><span class="cell-line">' . $e((string) $session['module_title']) . '</span>'
+            : $assente;
+        $gruppo = !empty($session['group_name']) ? $e((string) $session['group_name']) : $assente;
 
         $html = '<tr role="row" class="' . ($isPast ? 'row-past' : '') . '">'
-            . '<td role="cell" data-label="Quando">' . $e($startsAt->format('d/m/Y H:i')) . '–' . $e($endsAt->format('H:i')) . '</td>'
+            . '<td role="cell" data-label="Quando" class="live-quando"><span class="cell-line">' . $e($startsAt->format('d/m/Y')) . '</span><span class="cell-line">' . $e($startsAt->format('H:i')) . '–' . $e($endsAt->format('H:i')) . '</span></td>'
             . '<td role="cell" data-label="Stato">' . $stato . '</td>'
             . '<td role="cell" data-label="Sessione"><a href="/live/' . $id . '">' . $e((string) $session['title']) . '</a></td>'
-            . '<td role="cell" data-label="Destinatari">' . $destinatari . '</td>'
+            . '<td role="cell" data-label="Corso">' . $corso . '</td>'
+            . '<td role="cell" data-label="Gruppo">' . $gruppo . '</td>'
             . '<td role="cell" data-label="Link Meet">' . $link . '</td>';
 
         if (!$isPast) {
@@ -210,7 +229,7 @@ $sessions = $ordine->applica($sessions);
     $tabellaSchede = static function (array $elenco) use ($scheda): string {
         return '<div class="tabella-schede schede-senza-titolo"><table class="data-table" role="table"><thead role="rowgroup"><tr role="row">'
             . '<th scope="col" role="columnheader">Quando</th><th scope="col" role="columnheader">Stato</th>'
-            . '<th scope="col" role="columnheader">Sessione</th><th scope="col" role="columnheader">Destinatari</th>'
+            . '<th scope="col" role="columnheader">Sessione</th><th scope="col" role="columnheader">Corso</th><th scope="col" role="columnheader">Gruppo</th>'
             . '<th scope="col" role="columnheader">Link Meet</th><th scope="col" role="columnheader">Accesso</th>'
             . '<th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th></tr></thead>'
             . '<tbody role="rowgroup">' . implode('', array_map($scheda, $elenco)) . '</tbody></table></div>';

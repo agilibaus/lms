@@ -5231,6 +5231,11 @@ fieldset.checkbox-group legend {
     overflow-wrap: normal;
 }
 
+/* La data e l'orario, ciascuno sulla sua riga senza spezzarsi (24/11). */
+.live-quando .cell-line {
+    white-space: nowrap;
+}
+
 /* «In corso» nel verde del bollino che c'era prima; «Assente» in rosso. */
 .live-in-corso {
     color: var(--color-primary-hover);
