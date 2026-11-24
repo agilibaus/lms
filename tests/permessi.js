@@ -4715,6 +4715,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     ['/certificates/' + A.certificato + '/download', 'il certificato'],
                     ['/attempts/' + A.tentativo, 'il tentativo'],
                     ['/live/' + A.incontro_imminente, 'l\'incontro'],
+                    // Anche l'elenco (24/11): prima, dall'indirizzo, diceva «Nessuna sessione in programma».
+                    ['/live', 'l\'elenco delle sessioni live'],
                 ]) {
                     const r = await esitoGet(page, url);
                     check('spenti gli interruttori dell\'assistente → ' + url + ': negato', r.esito === 'negato', r.esito === 'negato' ? [] : [perche + ': ' + r.come]);

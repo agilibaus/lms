@@ -37,6 +37,15 @@ class LiveSessionController
     {
         Auth::requireLogin();
 
+        // L'assistente con «Incontri» spento (Impostazioni › Ruoli): accesso
+        // negato, come i Report con il loro interruttore spento (24/11,
+        // Alessandro). Prima la pagina, aperta dall'indirizzo, diceva
+        // «Nessuna sessione in programma», come se non ce ne fossero.
+        if (Auth::hasRole('assistente') && !Auth::can('live.view_assigned')) {
+            Errore::pagina(403, 'Accesso negato: non hai i permessi per consultare le sessioni live.');
+            exit;
+        }
+
         $isStaff = $this->canManage();
 
         View::render('live/index', [
