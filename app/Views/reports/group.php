@@ -38,7 +38,9 @@ $rows = $ordine->applica($rows);
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
         Tutor: <?= htmlspecialchars((string) ($group['tutor_name'] ?? '—')) ?> ·
-        <?= count($members) ?> membri · <?= count($courses) ?> corsi assegnati
+        <?php /* Al singolare con uno (24/11), come nella scheda del gruppo. */ ?>
+        <?= count($members) === 1 ? '1 membro' : count($members) . ' membri' ?> ·
+        <?= count($courses) === 1 ? '1 corso assegnato' : count($courses) . ' corsi assegnati' ?>
     </p>
     <?php /* Stessa tendina dell'elenco dei report: XLSX prima perche' si apre
              con un doppio clic, CSV per chi deve darlo in pasto a un programma.

@@ -45,7 +45,9 @@ $members = $ordineMembri->applica($members);
     <a href="<?= htmlspecialchars($indietro[0]) ?>" class="back-link"><span class="back-link-testo"><?= htmlspecialchars($indietro[1]) ?></span></a>
     <h1><?= htmlspecialchars((string) $group['name']) ?></h1>
     <p class="page-subtitle">
-        <?= count($members) ?> membri · <?= count($courses) ?> corsi assegnati ·
+        <?php /* Al singolare con uno (24/11): «1 corso assegnato», non «1 corsi assegnati». */ ?>
+        <?= count($members) === 1 ? '1 membro' : count($members) . ' membri' ?> ·
+        <?= count($courses) === 1 ? '1 corso assegnato' : count($courses) . ' corsi assegnati' ?> ·
         <?php if ($paginaApribile ?? true): ?>
             <a href="<?= htmlspecialchars(Ritorno::link('/gruppi/' . $groupId, 'scheda-gruppo', $groupId)) ?>">vai al gruppo</a> ·
         <?php endif; ?>
