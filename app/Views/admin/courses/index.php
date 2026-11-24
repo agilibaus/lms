@@ -30,7 +30,10 @@ $ordine = Ordinamento::daRichiesta([
     // Dal 14/11 gli stati sono tre, e l'ordine e' quello delle parole
     // mostrate: «Bozza presso Amministratore», «Bozza presso supervisore»,
     // «Pubblicato». Le bozze restano raggruppate da una parte.
-    'stato' => ['stato_etichetta', Ordinamento::TESTO, 'modalita_etichetta'],
+    // Dal 24/11 (Alessandro) stato e iscrizione stanno in due colonne, e
+    // ognuna si ordina per conto suo; a parita', il titolo.
+    'stato' => ['stato_etichetta', Ordinamento::TESTO, 'title'],
+    'iscrizione' => ['modalita_etichetta', Ordinamento::TESTO, 'title'],
 ]);
 $courses = array_map(
     static fn (array $c): array => $c + [
@@ -72,12 +75,14 @@ $courses = $ordine->applica($courses);
     <p class="empty-state">Nessun corso.</p>
 <?php else: ?>
     <?php /* Sotto i 50 rem diventa un elenco di schede, come i gruppi: a 320 px
-             titolo, due etichette e tre comandi non stanno in tre colonne. */ ?>
+             titolo, due etichette e tre comandi non stanno in quattro colonne. */ ?>
     <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
     <div class="tabella-schede card">
     <table class="data-table" role="table">
         <thead role="rowgroup">
-        <tr role="row"><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th></tr>
+        <?php /* «Stato» e «Iscrizione» in due colonne (24/11, Alessandro): erano
+                 due etichette nella stessa cella, «Stato». */ ?>
+        <tr role="row"><?= $ordine->th('Titolo', 'titolo') ?><?= $ordine->th('Stato', 'stato') ?><?= $ordine->th('Iscrizione', 'iscrizione') ?><th scope="col" role="columnheader" class="col-azioni"><span class="sr-only">Azioni</span></th></tr>
         </thead>
         <tbody role="rowgroup">
         <?php foreach ($courses as $course): ?>
@@ -93,6 +98,8 @@ $courses = $ordine->applica($courses);
                     <?php /* Tre stati dal 14/11 (Alessandro): pubblicato, o bozza
                              presso chi la modifica. */ ?>
                     <span class="badge<?= (int) $course['is_published'] === 1 ? ' badge-success' : '' ?>"><?= htmlspecialchars(Etichetta::maiuscola((string) $course['stato_etichetta'])) ?></span>
+                </td>
+                <td role="cell" data-label="Iscrizione">
                     <?php /* Anche l'iscrizione chiusa ha la sua etichetta: prima la
                              riga taceva, e un corso pubblicato ma chiuso sembrava
                              disponibile agli studenti mentre nel catalogo non
