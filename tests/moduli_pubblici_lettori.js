@@ -17,7 +17,11 @@
  *      dicono l'avviso; senza errori niente;
  *   4. «Nuova password»: la regola sulla nuova password; con la password
  *      corta l'errore va alla nuova password, con le due diverse alla
- *      conferma, e il cursore su quel campo.
+ *      conferma, e il cursore su quel campo;
+ *   5. dopo un accesso sbagliato l'email scritta resta nel campo, e il
+ *      cursore va sulla password;
+ *   6. anche dopo l'accesso, in «Cambia password» del profilo e nel
+ *      «Primo accesso», la nuova password dice la regola.
  *
  * Esecuzione:  node tests/moduli_pubblici_lettori.js   (server di sviluppo
  * acceso, posta su file: MAIL_TRANSPORT=log)
@@ -33,6 +37,7 @@ const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const RADICE = path.join(__dirname, '..');
 const POSTA = path.join(RADICE, 'storage', 'mail');
 const EMAIL = 'lettori@prova-lettori.invalid';
+const PRIMO = 'primo@prova-lettori.invalid';
 const REGOLA = 'Minimo 8 caratteri, con almeno una lettera e una cifra.';
 
 let ok = 0;
@@ -49,14 +54,18 @@ function check(etichetta, condizione, dettagli = []) {
 function sql(azione) {
     const codice = 'require "vendor/autoload.php"; require "config/config.php";'
         + ' $pdo = App\\Core\\Database::connection();'
-        + ' $pdo->prepare("DELETE FROM users WHERE email = ?")->execute([$argv[1]]);'
+        + ' $pdo->prepare("DELETE FROM users WHERE email IN (?, ?)")->execute([$argv[1], $argv[3]]);'
         + ' $pdo->exec("DELETE FROM login_failures WHERE email LIKE \'%@prova-lettori.invalid\'");'
-        + ' if ($argv[2] === "crea") { $pdo->prepare("INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at, name_display) VALUES (?, ?, \'Prova\', \'Lettori\', \'studente\', 1, NOW(), NOW(), \'full\')")->execute([$argv[1], password_hash("Vecchia1!", PASSWORD_DEFAULT)]); }';
-    execFileSync('php', ['-r', codice, '--', EMAIL, azione], { cwd: RADICE, encoding: 'utf8' });
+        + ' if ($argv[2] === "crea") { $pdo->prepare("INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at, name_display) VALUES (?, ?, \'Prova\', \'Lettori\', \'studente\', 1, NOW(), NOW(), \'full\')")->execute([$argv[1], password_hash("Vecchia1!", PASSWORD_DEFAULT)]);'
+        // Chi deve scegliere la password al primo accesso.
+        + ' $pdo->prepare("INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified_at, welcome_seen_at, must_change_password) VALUES (?, ?, \'Primo\', \'Accesso\', \'studente\', 1, NOW(), NOW(), 1)")->execute([$argv[3], password_hash("Vecchia1!", PASSWORD_DEFAULT)]); }';
+    execFileSync('php', ['-r', codice, '--', EMAIL, azione, PRIMO], { cwd: RADICE, encoding: 'utf8' });
 }
 
 /** Che cosa annuncia ogni campo: nome → [non valido?, descrizione]. Gli id che mancano si segnalano. */
 async function annunci(page) {
+    // `autofocus` si applica poco dopo il caricamento: lo si aspetta un poco.
+    await page.waitForFunction(() => document.activeElement && document.activeElement.matches('input'), null, { timeout: 2000 }).catch(() => {});
     return page.evaluate(() => {
         const r = { campi: {}, idMancanti: [], cursore: document.activeElement ? document.activeElement.name || null : null };
         for (const i of document.querySelectorAll('form input:not([type=hidden])')) {
@@ -117,6 +126,9 @@ const mostra = (a) => Object.entries(a.campi).map(([n, [inv, d]]) => n + (inv ? 
         a = await annunci(page);
         check('email o password sbagliate: i due campi sono segnati e dicono l\'avviso',
             ['email', 'password'].every((n) => a.campi[n][0] && a.campi[n][1] === 'Email o password non corretti.') && a.idMancanti.length === 0, mostra(a));
+        const scritta = await page.inputValue('input[name="email"]');
+        check('l\'email scritta resta nel campo, e il cursore va sulla password', scritta === 'nessuno@prova-lettori.invalid' && a.cursore === 'password',
+            ['email: «' + scritta + '»', 'cursore: ' + a.cursore]);
 
         console.log('\nNuova password');
         const inizio = Date.now() - 1000;
@@ -149,6 +161,26 @@ const mostra = (a) => Object.entries(a.campi).map(([n, [inv, d]]) => n + (inv ? 
                 a.campi.password_confirm[0] && a.campi.password_confirm[1] === 'Le due password non coincidono.'
                 && !a.campi.password[0] && a.campi.password[1] === REGOLA && a.cursore === 'password_confirm' && a.idMancanti.length === 0, mostra(a));
         }
+
+        console.log('\nDopo l\'accesso');
+        const entra = async (email) => {
+            const p = await (await browser.newContext()).newPage();
+            await p.goto(BASE + '/login');
+            await p.fill('input[name="email"]', email);
+            await p.fill('input[name="password"]', 'Vecchia1!');
+            await Promise.all([p.waitForNavigation(), p.click('form.auth-form button[type="submit"]')]);
+            return p;
+        };
+        // La password di EMAIL e' cambiata sopra solo se il recupero e' andato
+        // fino in fondo: qui non lo e' (gli invii erano sbagliati).
+        const profilo = await entra(EMAIL);
+        await profilo.goto(BASE + '/profilo/password');
+        a = await annunci(profilo);
+        check('«Cambia password»: la nuova password dice la regola', a.campi.new_password && a.campi.new_password[1] === REGOLA && a.idMancanti.length === 0, mostra(a));
+        const primo = await entra(PRIMO);
+        a = await annunci(primo);
+        check('«Primo accesso»: la nuova password dice la regola',
+            new URL(primo.url()).pathname === '/primo-accesso' && a.campi.new_password && a.campi.new_password[1] === REGOLA && a.idMancanti.length === 0, [primo.url(), ...mostra(a)]);
     } finally {
         await browser.close();
         sql('togli');

@@ -9,6 +9,7 @@ use App\Core\Privacy;
 /** @var string|null $notice */
 /** @var bool $unverified */
 /** @var bool $credenziali  email o password sbagliate: i campi sono da correggere */
+/** @var string $emailScritta  l'email del tentativo andato male, che resta nel campo */
 
 ob_start();
 ?>
@@ -36,10 +37,12 @@ $collega = !empty($error) ? ' aria-describedby="errore-accesso"' . (!empty($cred
     <?= Csrf::field() ?>
 
     <label for="email">Email</label>
-    <input type="email" id="email" name="email" required autofocus autocomplete="username"<?= $collega ?>>
+    <?php /* Con l'email gia' scritta il cursore va sulla password (24/11). */ ?>
+    <input type="email" id="email" name="email" required autocomplete="username"<?= $collega ?>
+           value="<?= htmlspecialchars($emailScritta ?? '') ?>"<?= ($emailScritta ?? '') === '' ? ' autofocus' : '' ?>>
 
     <label for="password">Password</label>
-    <input type="password" id="password" name="password" required autocomplete="current-password"<?= $collega ?>>
+    <input type="password" id="password" name="password" required autocomplete="current-password"<?= $collega ?><?= ($emailScritta ?? '') !== '' ? ' autofocus' : '' ?>>
 
     <button type="submit" class="btn btn-primary btn-block">Accedi</button>
 </form>

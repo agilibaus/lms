@@ -23,7 +23,8 @@ class AuthController
         $notice = $_SESSION['login_notice'] ?? null;
         $unverified = ($_SESSION['login_unverified'] ?? false) === true;
         $credenziali = ($_SESSION['login_credenziali'] ?? false) === true;
-        unset($_SESSION['login_error'], $_SESSION['login_notice'], $_SESSION['login_unverified'], $_SESSION['login_credenziali']);
+        $emailScritta = (string) ($_SESSION['login_email'] ?? '');
+        unset($_SESSION['login_error'], $_SESSION['login_notice'], $_SESSION['login_unverified'], $_SESSION['login_credenziali'], $_SESSION['login_email']);
 
         // Chi arriva qui perche' la sua sessione e' stata chiusa non puo'
         // essere avvisato con un messaggio in sessione: la sessione non c'e'
@@ -45,6 +46,7 @@ class AuthController
             'notice' => $notice,
             'unverified' => $unverified,
             'credenziali' => $credenziali,
+            'emailScritta' => $emailScritta,
         ], withShell: false);
     }
 
@@ -62,6 +64,7 @@ class AuthController
         if ($blocco !== null) {
             $_SESSION['login_error'] = TentativiAccesso::messaggio($blocco);
             $_SESSION['login_unverified'] = false;
+            $_SESSION['login_email'] = mb_substr($email, 0, 190);
 
             header('Location: /login');
             exit;
@@ -96,6 +99,9 @@ class AuthController
 
             $_SESSION['login_error'] = $message;
             $_SESSION['login_unverified'] = $unverified;
+            // L'email scritta resta nel campo (24/11): dopo una password
+            // sbagliata si riscrive solo quella.
+            $_SESSION['login_email'] = mb_substr($email, 0, 190);
             // Email o password sbagliate (24/11): i due campi si segnano come
             // non validi per i lettori di schermo. Gli altri motivi (account
             // da confermare, disattivato) non dicono che i campi siano sbagliati.

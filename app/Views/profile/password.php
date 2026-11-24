@@ -49,9 +49,10 @@ ob_start();
 
     <label for="new_password">Nuova password</label>
     <input type="password" id="new_password" name="new_password" required
-           minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+           minlength="<?= (int) $minPassword ?>" autocomplete="new-password" aria-describedby="regola-password">
     <?php /* La regola subito sotto il campo (24/11); quella sulle sessioni resta sotto i pulsanti. */ ?>
-    <p class="form-hint regola-password"><?= htmlspecialchars($passwordHint) ?></p>
+    <?php /* Collegata al campo per i lettori di schermo (24/11), come nelle pagine pubbliche. */ ?>
+    <p class="form-hint regola-password" id="regola-password"><?= htmlspecialchars($passwordHint) ?></p>
 
     <label for="confirm_password">Ripeti la nuova password</label>
     <input type="password" id="confirm_password" name="confirm_password" required
