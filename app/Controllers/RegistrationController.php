@@ -39,13 +39,13 @@ class RegistrationController
 
         View::render('auth/register', [
             'pageTitle' => 'Registrati',
-            'error' => $this->takeFlash('register_error'),
+            'errori' => $_SESSION['register_errors'] ?? [],
             'old' => $_SESSION['register_old'] ?? [],
             'minPassword' => PasswordPolicy::MIN_LENGTH,
             'passwordHint' => PasswordPolicy::HINT,
         ], false);
 
-        unset($_SESSION['register_old']);
+        unset($_SESSION['register_old'], $_SESSION['register_errors']);
     }
 
     public function register(array $params = []): void
@@ -62,33 +62,47 @@ class RegistrationController
 
         $_SESSION['register_old'] = ['first_name' => $firstName, 'last_name' => $lastName, 'email' => $email];
 
+        // Tutti gli errori insieme, ciascuno sotto il suo campo (24/11,
+        // Alessandro): prima se ne vedeva uno per volta, e chi aveva sbagliato
+        // email e password lo scopriva in due giri.
+        $errori = [];
+
         // Nome e cognome separati (07/10): servono a mostrare agli altri
         // studenti solo il nome o le iniziali, se lo studente lo sceglie.
-        try {
-            [$firstName, $lastName] = PersonName::clean($firstName, $lastName);
-        } catch (\InvalidArgumentException $e) {
-            $this->fail($e->getMessage());
+        $problemiNome = PersonName::problemi($firstName, $lastName);
+
+        if (isset($problemiNome['nome'])) {
+            $errori['first_name'] = $problemiNome['nome'];
         }
 
-        $fullName = $firstName . ' ' . $lastName;
+        if (isset($problemiNome['cognome'])) {
+            $errori['last_name'] = $problemiNome['cognome'];
+        }
 
         if ($email === '') {
-            $this->fail('L\'email è obbligatoria.');
-        }
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->fail('Indirizzo email non valido.');
+            $errori['email'] = 'L\'email è obbligatoria.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errori['email'] = 'Indirizzo email non valido.';
         }
 
         $problema = PasswordPolicy::problem($password);
 
         if ($problema !== null) {
-            $this->fail($problema);
+            $errori['password'] = $problema;
         }
 
         if ($password !== $confirm) {
-            $this->fail('Le due password non coincidono.');
+            $errori['password_confirm'] = 'Le due password non coincidono.';
         }
+
+        if ($errori !== []) {
+            $_SESSION['register_errors'] = $errori;
+
+            $this->redirect('/register');
+        }
+
+        [$firstName, $lastName] = PersonName::clean($firstName, $lastName);
+        $fullName = $firstName . ' ' . $lastName;
 
         // Se l'indirizzo è già registrato non lo diciamo: la pagina di esito è
         // identica in entrambi i casi, così non si può usare la registrazione
@@ -211,13 +225,6 @@ class RegistrationController
                 ? 'Invio email non riuscito (' . $e->getMessage() . '). Link di verifica: ' . $link
                 : 'Non siamo riusciti a inviare l\'email di conferma. Riprova più tardi o contatta chi gestisce la piattaforma.';
         }
-    }
-
-    private function fail(string $message): never
-    {
-        $_SESSION['register_error'] = $message;
-
-        $this->redirect('/register');
     }
 
     private function takeFlash(string $key): ?string

@@ -61,22 +61,42 @@ final class PersonName
      */
     public static function clean(string $nome, string $cognome): array
     {
-        $nome = trim((string) preg_replace('/\s+/u', ' ', $nome));
-        $cognome = trim((string) preg_replace('/\s+/u', ' ', $cognome));
+        $problemi = self::problemi($nome, $cognome);
 
-        if ($nome === '') {
-            throw new \InvalidArgumentException('Il nome è obbligatorio.');
+        if ($problemi !== []) {
+            throw new \InvalidArgumentException((string) reset($problemi));
         }
 
-        if ($cognome === '') {
-            throw new \InvalidArgumentException('Il cognome è obbligatorio.');
+        return [self::ripulisci($nome), self::ripulisci($cognome)];
+    }
+
+    /**
+     * Che cosa non va in nome e cognome, campo per campo (24/11): la
+     * registrazione mostra ogni errore sotto il suo campo, tutti insieme.
+     * E' la stessa regola di `clean()`, che da qui prende il primo.
+     *
+     * @return array{nome?: string, cognome?: string}
+     */
+    public static function problemi(string $nome, string $cognome): array
+    {
+        $problemi = [];
+
+        foreach (['nome' => [$nome, 'Il nome è obbligatorio.', 'Il nome'], 'cognome' => [$cognome, 'Il cognome è obbligatorio.', 'Il cognome']] as $campo => [$valore, $vuoto, $soggetto]) {
+            $pulito = self::ripulisci($valore);
+
+            if ($pulito === '') {
+                $problemi[$campo] = $vuoto;
+            } elseif (mb_strlen($pulito) > self::MAX_CHARS) {
+                $problemi[$campo] = $soggetto . ' può essere lungo al massimo ' . self::MAX_CHARS . ' caratteri.';
+            }
         }
 
-        if (mb_strlen($nome) > self::MAX_CHARS || mb_strlen($cognome) > self::MAX_CHARS) {
-            throw new \InvalidArgumentException('Nome e cognome possono essere lunghi al massimo ' . self::MAX_CHARS . ' caratteri.');
-        }
+        return $problemi;
+    }
 
-        return [$nome, $cognome];
+    private static function ripulisci(string $valore): string
+    {
+        return trim((string) preg_replace('/\s+/u', ' ', $valore));
     }
 
     public static function display(string $scelta): string

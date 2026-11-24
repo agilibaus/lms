@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Core\Csrf;
 use App\Core\Privacy;
 
-/** @var string|null $error */
+/** @var array<string, string> $errori  campo => frase, sotto il campo (24/11) */
 /** @var array $old */
 /** @var int $minPassword */
 /** @var string $passwordHint */
@@ -13,10 +13,15 @@ use App\Core\Privacy;
 ob_start();
 ?>
 <p class="auth-subtitle">Crea il tuo account studente</p>
-
-<?php if (!empty($error)): ?>
-    <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
-<?php endif; ?>
+<?php
+// L'errore di un campo, subito sotto il campo (24/11, Alessandro): tutti
+// insieme, brevi, piccoli e rossi.
+$errore = static function (string $campo) use ($errori): string {
+    return isset($errori[$campo])
+        ? '<p class="campo-errore" id="errore-' . $campo . '">' . htmlspecialchars($errori[$campo]) . '</p>'
+        : '';
+};
+?>
 
 <form action="/register" method="post" class="auth-form">
     <?= Csrf::field() ?>
@@ -31,28 +36,34 @@ ob_start();
             <input type="text" id="first_name" name="first_name" required maxlength="100" autofocus
                    autocomplete="given-name"
                    value="<?= htmlspecialchars((string) ($old['first_name'] ?? '')) ?>">
+            <?= $errore('first_name') ?>
         </div>
         <div>
             <label for="last_name">Cognome</label>
             <input type="text" id="last_name" name="last_name" required maxlength="100"
                    autocomplete="family-name"
                    value="<?= htmlspecialchars((string) ($old['last_name'] ?? '')) ?>">
+            <?= $errore('last_name') ?>
         </div>
     </div>
 
     <label for="email">Email</label>
     <input type="email" id="email" name="email" required maxlength="190" autocomplete="email"
            value="<?= htmlspecialchars((string) ($old['email'] ?? '')) ?>">
+    <?= $errore('email') ?>
 
     <label for="password">Password</label>
     <input type="password" id="password" name="password" required
            minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
     <?php /* La regola subito sotto il campo a cui si riferisce (24/11). */ ?>
     <p class="form-hint regola-password"><?= htmlspecialchars($passwordHint) ?></p>
+    <?php /* L'errore dopo la regola, che resta subito sotto il campo. */ ?>
+    <?= $errore('password') ?>
 
     <label for="password_confirm">Conferma password</label>
     <input type="password" id="password_confirm" name="password_confirm" required
            minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+    <?= $errore('password_confirm') ?>
 
     <button type="submit" class="btn btn-primary btn-block">Registrati</button>
 

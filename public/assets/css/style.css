@@ -3740,6 +3740,16 @@ body.has-focus-video {
     margin-top: 0.5rem;
 }
 
+/* L'errore di un campo, sotto il campo (24/11, Alessandro: «brevi,
+   sufficientemente piccoli ma leggibili, di colore rosso»): la misura delle
+   note piccole e il rosso degli errori, 6,5:1 sul bianco. */
+/* Lo spazio dal campo lo da' la colonna del modulo (`gap`). */
+.campo-errore {
+    margin: 0;
+    font-size: var(--fs-piccolo);
+    color: var(--color-danger);
+}
+
 /* La regola della password subito sotto il suo campo (24/11): vicina al
    campo, e dal campo dopo alla stessa distanza che separa gli altri. */
 .form-hint.regola-password {
