@@ -766,13 +766,15 @@ class ReportController
 
         if ($sessions !== []) {
             $rows[] = [];
-            $rows[] = ['Incontro dal vivo', 'Quando', 'Corso o gruppo', 'Presenza', 'Ingresso', 'Ritardo (minuti)'];
+            // «Corso» e «Gruppo» in due colonne (24/11), come nella pagina.
+            $rows[] = ['Incontro dal vivo', 'Quando', 'Corso', 'Gruppo', 'Presenza', 'Ingresso', 'Ritardo (minuti)'];
 
             foreach ($sessions as $session) {
                 $rows[] = [
                     $session['title'],
                     $session['starts_at'],
-                    $session['course_title'] ?? $session['group_name'] ?? '',
+                    $session['course_title'] ?? '',
+                    $session['group_name'] ?? '',
                     $session['joined_at'] === null ? 'assente' : 'presente',
                     $session['joined_at'] ?? '',
                     self::delayLabel($session),

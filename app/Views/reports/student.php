@@ -51,6 +51,10 @@ $ordineIncontri = Ordinamento::daRichiesta([
     'quando' => ['starts_at', Ordinamento::DATA],
     'presenza' => ['presenza', Ordinamento::NUMERO],
     'ingresso' => ['joined_at', Ordinamento::DATA],
+    // «Corso» e «Gruppo» in due colonne ordinabili (24/11), come nell'elenco
+    // degli incontri: il trattino, dove manca, in fondo nei due versi.
+    'corso' => ['course_title', Ordinamento::TESTO],
+    'gruppo' => ['group_name', Ordinamento::TESTO],
 ]);
 
 $liveSessions = $ordineIncontri->applica(array_map(
@@ -78,10 +82,12 @@ if ($courses === [] && $liveSessions !== []) {
 $tuttoInColonna = $contesto !== null;
 $titoloCorso = $contesto !== null && $contesto['tipo'] === 'corso' ? 'Avanzamento' : null;
 
-// La colonna «Corso o gruppo» solo dove distingue qualcosa: nella scheda
-// completa e da un gruppo con piu' corsi. Dal corso, o da un gruppo con un
-// corso solo, gli incontri sono tutti di quello.
-$corsoOGruppo = static fn (array $s): string => (string) ($s['course_title'] ?? $s['group_name'] ?? '—');
+// Le colonne «Corso» e «Gruppo» (24/11: erano «Corso o gruppo», una sola)
+// solo dove distinguono qualcosa: nella scheda completa e da un gruppo con
+// piu' corsi. Dal corso, o da un gruppo con un corso solo, gli incontri
+// sono tutti di quello.
+$valoreOTrattino = static fn (?string $v): string => ($v ?? '') !== ''
+    ? htmlspecialchars($v) : '<span class="valore-assente">—</span>';
 $conColonnaCorso = $contesto === null || ($contesto['tipo'] === 'gruppo' && count($courses) > 1);
 
 /** Le date come in tutta la piattaforma: «16/09/2026 18:00» (06/11). */
@@ -316,7 +322,8 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                 <?= $ordineIncontri->th('Incontro', 'incontro') ?>
                 <?= $ordineIncontri->th('Quando', 'quando') ?>
                 <?php if ($conColonnaCorso): ?>
-                    <th scope="col" role="columnheader">Corso o gruppo</th>
+                    <?= $ordineIncontri->th('Corso', 'corso') ?>
+                    <?= $ordineIncontri->th('Gruppo', 'gruppo') ?>
                 <?php endif; ?>
                 <?= $ordineIncontri->th('Presenza', 'presenza') ?>
                 <?= $ordineIncontri->th('Ingresso', 'ingresso') ?>
@@ -333,7 +340,8 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                     <td role="cell" data-label="Incontro"><a href="<?= htmlspecialchars(Ritorno::link('/reports/live/' . (int) $incontro['id'], 'report-studente', (int) $student['id'], $_GET)) ?>"><?= htmlspecialchars((string) $incontro['title']) ?></a></td>
                     <td role="cell" data-label="Quando"><?= htmlspecialchars(ReportController::dateTimeLabel((string) $incontro['starts_at'])) ?></td>
                     <?php if ($conColonnaCorso): ?>
-                        <td role="cell" data-label="Corso o gruppo"><?= htmlspecialchars($corsoOGruppo($incontro)) ?></td>
+                        <td role="cell" data-label="Corso"><?= $valoreOTrattino($incontro['course_title'] ?? null) ?></td>
+                        <td role="cell" data-label="Gruppo"><?= $valoreOTrattino($incontro['group_name'] ?? null) ?></td>
                     <?php endif; ?>
                     <td role="cell" data-label="Presenza">
                         <?php if ($presente): ?>

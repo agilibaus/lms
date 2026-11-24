@@ -89,7 +89,8 @@ async function leggi(page) {
             schede: document.querySelector('nav.schede-pagina') !== null,
             corsi: [...document.querySelectorAll('section.report-studente-corso h2')].map((h) => h.textContent.trim()),
             incontriTitolo: (document.querySelector('section.report-studente-incontri h2:not(.sr-only)') || {}).textContent || null,
-            colonnaCorso: [...document.querySelectorAll('section.report-studente-incontri th')].some((t) => t.textContent.includes('Corso o gruppo')),
+            // «Corso» e «Gruppo» (24/11): ci sono tutte e due o nessuna.
+            colonnaCorso: ['Corso', 'Gruppo'].every((n) => [...document.querySelectorAll('section.report-studente-incontri th')].some((t) => new RegExp('^' + n + '\\b').test(t.textContent.trim()))),
             testo: document.body.innerText,
             scarica,
         };
@@ -132,7 +133,7 @@ async function giro(page, nome, partenza, studente) {
         C.modulo, INCONTRO_C, d.utenti.admin);
 
     // Un incontro del gruppo A senza corso: dal corso A c'e' (il gruppo ha
-    // il corso), e la colonna «Corso o gruppo» non deve comparire lo stesso.
+    // il corso), e le colonne «Corso» e «Gruppo» (fino al 24/11 «Corso o gruppo») non devono comparire lo stesso.
     php('$pdo->prepare("INSERT INTO live_sessions (module_id, group_id, title, starts_at, ends_at, created_by)'
         + ' VALUES (NULL, ?, ?, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY + INTERVAL 1 HOUR, ?)")->execute([$argv[1], $argv[2], $argv[3]]);',
         A.gruppo, INCONTRO_GRUPPO, d.utenti.admin);
@@ -169,7 +170,7 @@ async function giro(page, nome, partenza, studente) {
                 && !v.testo.includes(corsoC) && !v.testo.includes(INCONTRO_C)
                 && /presente a \d+ su \d+/.test(v.incontriTitolo || '') && !v.colonnaCorso
                 && !v.testo.includes('Sessioni live seguite') && v.testo.includes(INCONTRO_GRUPPO);
-            check(nome + ': solo il corso A, un riquadro «Avanzamento», gli incontri (anche quello del gruppo) con le presenze nel titolo, senza la colonna «Corso o gruppo»', bene,
+            check(nome + ': solo il corso A, un riquadro «Avanzamento», gli incontri (anche quello del gruppo) con le presenze nel titolo, senza le colonne «Corso» e «Gruppo»', bene,
                 [JSON.stringify({ ...v, testo: undefined })]);
             const fileOk = v.scarica.length > 0 && v.scarica.every((h) => h.endsWith('?corso=' + A.corso));
             check(nome + ': «Scarica» porta il corso', fileOk, v.scarica);
@@ -200,7 +201,7 @@ async function giro(page, nome, partenza, studente) {
             const bene = v.etichetta === gruppoA && !v.schede && v.corsi.length === 1 && v.corsi[0] === corsoA
                 && !v.testo.includes(corsoC) && !v.testo.includes(INCONTRO_C)
                 && /presente a \d+ su \d+/.test(v.incontriTitolo || '') && !v.colonnaCorso;
-            check(nome + ': solo i corsi del gruppo, col loro nome, e i suoi incontri, senza la colonna «Corso o gruppo» (un corso solo)', bene, [JSON.stringify({ ...v, testo: undefined })]);
+            check(nome + ': solo i corsi del gruppo, col loro nome, e i suoi incontri, senza le colonne «Corso» e «Gruppo» (un corso solo)', bene, [JSON.stringify({ ...v, testo: undefined })]);
             const fileOk = v.scarica.length > 0 && v.scarica.every((h) => h.endsWith('?gruppo=' + A.gruppo));
             check(nome + ': «Scarica» porta il gruppo', fileOk, v.scarica);
         }
@@ -223,7 +224,7 @@ async function giro(page, nome, partenza, studente) {
             [JSON.stringify({ ...v, testo: undefined })]);
         await page.goto(BASE + '/reports/students/' + studente + '?scheda=incontri');
         v = await leggi(page);
-        check('controprova: e fra gli incontri c\'e\' quello del corso C, con la colonna «Corso o gruppo»', v.testo.includes(INCONTRO_C) && v.colonnaCorso);
+        check('controprova: e fra gli incontri c\'e\' quello del corso C, con le colonne «Corso» e «Gruppo»', v.testo.includes(INCONTRO_C) && v.colonnaCorso);
         const tuttoCsv = await csv('/reports/students/' + studente + '/csv');
         check('controprova: e anche nel CSV', tuttoCsv.includes(corsoC) && tuttoCsv.includes(INCONTRO_C));
 
