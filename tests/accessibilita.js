@@ -3076,11 +3076,11 @@ async function giroBenvenuto(browser) {
                     return dopo ? dopo.className + ' «' + dopo.textContent.trim() + '»' : null;
                 });
                 check(email + ': la regola della password subito sotto «Nuova password»',
-                    sotto === 'form-hint regola-password «Minimo 8 caratteri, con almeno una lettera e una cifra.»', [String(sotto)]);
+                    sotto === 'form-hint regola-password «Minimo 8 caratteri, almeno una lettera e una cifra.»', [String(sotto)]);
             }
             check(email + ': le frasi corte',
                 modulo.aiuti.includes('Tutor e Amministratore vedono sempre nome e cognome. Scelta modificabile dal profilo.')
-                && (!conPassword || modulo.aiuti.includes('Minimo 8 caratteri, con almeno una lettera e una cifra.')),
+                && (!conPassword || modulo.aiuti.includes('Minimo 8 caratteri, almeno una lettera e una cifra.')),
                 [JSON.stringify(modulo.aiuti)]);
             await pp.goto(BASE + '/profilo');
             check(email + ': le altre pagine riportano al primo accesso', dove() === '/primo-accesso', ['pagina: ' + dove()]);

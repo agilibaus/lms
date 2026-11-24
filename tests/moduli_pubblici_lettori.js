@@ -38,7 +38,7 @@ const RADICE = path.join(__dirname, '..');
 const POSTA = path.join(RADICE, 'storage', 'mail');
 const EMAIL = 'lettori@prova-lettori.invalid';
 const PRIMO = 'primo@prova-lettori.invalid';
-const REGOLA = 'Minimo 8 caratteri, con almeno una lettera e una cifra.';
+const REGOLA = 'Minimo 8 caratteri, almeno una lettera e una cifra.';
 
 let ok = 0;
 let fail = 0;

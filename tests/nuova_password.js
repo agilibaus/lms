@@ -34,7 +34,7 @@ const RADICE = path.join(__dirname, '..');
 const POSTA = path.join(RADICE, 'storage', 'mail');
 const EMAIL = 'nuova.password@prova-recupero.invalid';
 
-const REGOLA = 'Minimo 8 caratteri, con almeno una lettera e una cifra.';
+const REGOLA = 'Minimo 8 caratteri, almeno una lettera e una cifra.';
 
 let ok = 0;
 let fail = 0;
@@ -85,6 +85,21 @@ function linkDalla(dopo) {
         await page.goto(BASE + '/register');
         const registrazione = await sottoIlCampo(page, 'password');
         check('registrazione: la regola subito sotto «Password»', registrazione === REGOLA, [String(registrazione)]);
+
+        // Senza «con» (24/11, Alessandro) la regola sta in una riga dai 390 px
+        // in su, anche nella colonna stretta del modulo di registrazione.
+        for (const larghezza of [390, 1280]) {
+            const stretta = await (await browser.newContext({ viewport: { width: larghezza, height: 800 } })).newPage();
+            await stretta.goto(BASE + '/register');
+            const righe = await stretta.evaluate(() => {
+                const e = document.querySelector('.regola-password');
+                const c = getComputedStyle(e);
+                const riga = parseFloat(c.lineHeight) || parseFloat(c.fontSize) * 1.2; // «normal»: circa 1,2 volte la misura
+                return Math.round(e.getBoundingClientRect().height / riga);
+            });
+            check('registrazione a ' + larghezza + ' px: la regola sta in una riga', righe === 1, ['righe: ' + righe]);
+            await stretta.close();
+        }
 
         await page.goto(BASE + '/password/dimenticata');
         await page.fill('input[name="email"]', EMAIL);

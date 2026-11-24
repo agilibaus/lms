@@ -100,9 +100,9 @@ check('i simboli restano ammessi in piu\'', PasswordPolicy::problem('Abcde12!@#'
 check('vuota non basta', PasswordPolicy::problem('') !== null);
 
 // La frase mostrata e la regola applicata devono restare la stessa cosa.
-// «Minimo 8 caratteri, con almeno una lettera e una cifra.» (24/11): non
+// «Minimo 8 caratteri, almeno una lettera e una cifra.» (24/11): non
 // piu' «alfanumerici», che faceva pensare vietati i simboli.
-check('la frase mostrata e\' quella decisa', PasswordPolicy::HINT === 'Minimo 8 caratteri, con almeno una lettera e una cifra.');
+check('la frase mostrata e\' quella decisa', PasswordPolicy::HINT === 'Minimo 8 caratteri, almeno una lettera e una cifra.');
 check('la frase mostrata non dice «alfanumerici»: i simboli sono ammessi', !str_contains(PasswordPolicy::HINT, 'alfanumerici'));
 check('la frase mostrata dice la lunghezza minima', str_contains(PasswordPolicy::HINT, (string) PasswordPolicy::MIN_LENGTH));
 

@@ -33,8 +33,9 @@ class PasswordPolicy
      * «Cambia password» e «Primo accesso». Dice esattamente cio' che
      * `problem()` verifica. Prima diceva «caratteri alfanumerici», come se i
      * simboli fossero vietati, e il primo accesso ne aveva una sua, breve.
+     * Senza «con» (24/11, Alessandro): cosi' su molti schermi sta in una riga.
      */
-    public const HINT = 'Minimo ' . self::MIN_LENGTH . ' caratteri, con almeno una lettera e una cifra.';
+    public const HINT = 'Minimo ' . self::MIN_LENGTH . ' caratteri, almeno una lettera e una cifra.';
 
     /**
      * Il motivo per cui la password non va bene, oppure null se va bene.
