@@ -22,7 +22,8 @@ class AuthController
         $error = $_SESSION['login_error'] ?? null;
         $notice = $_SESSION['login_notice'] ?? null;
         $unverified = ($_SESSION['login_unverified'] ?? false) === true;
-        unset($_SESSION['login_error'], $_SESSION['login_notice'], $_SESSION['login_unverified']);
+        $credenziali = ($_SESSION['login_credenziali'] ?? false) === true;
+        unset($_SESSION['login_error'], $_SESSION['login_notice'], $_SESSION['login_unverified'], $_SESSION['login_credenziali']);
 
         // Chi arriva qui perche' la sua sessione e' stata chiusa non puo'
         // essere avvisato con un messaggio in sessione: la sessione non c'e'
@@ -43,6 +44,7 @@ class AuthController
             'error' => $error,
             'notice' => $notice,
             'unverified' => $unverified,
+            'credenziali' => $credenziali,
         ], withShell: false);
     }
 
@@ -94,6 +96,10 @@ class AuthController
 
             $_SESSION['login_error'] = $message;
             $_SESSION['login_unverified'] = $unverified;
+            // Email o password sbagliate (24/11): i due campi si segnano come
+            // non validi per i lettori di schermo. Gli altri motivi (account
+            // da confermare, disattivato) non dicono che i campi siano sbagliati.
+            $_SESSION['login_credenziali'] = !in_array(Auth::failureReason(), [Auth::FAILURE_UNVERIFIED, Auth::FAILURE_INACTIVE, Auth::FAILURE_CANCELLAZIONE], true);
 
             header('Location: /login');
             exit;

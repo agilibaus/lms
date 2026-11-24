@@ -21,6 +21,19 @@ $errore = static function (string $campo) use ($errori): string {
         ? '<p class="campo-errore" id="errore-' . $campo . '">' . htmlspecialchars($errori[$campo]) . '</p>'
         : '';
 };
+// E collegato al campo per i lettori di schermo (24/11): il campo si segna
+// come non valido e dice il suo errore (la password anche la regola). Il
+// cursore va sul primo campo da correggere, invece che sempre sul nome.
+$primoErrore = array_key_first($errori);
+$attributi = static function (string $campo, array $descrizioni = []) use ($errori, $primoErrore): string {
+    if (isset($errori[$campo])) {
+        $descrizioni[] = 'errore-' . $campo;
+    }
+
+    return ($descrizioni !== [] ? ' aria-describedby="' . implode(' ', $descrizioni) . '"' : '')
+        . (isset($errori[$campo]) ? ' aria-invalid="true"' : '')
+        . (($primoErrore ?? 'first_name') === $campo ? ' autofocus' : '');
+};
 ?>
 
 <form action="/register" method="post" class="auth-form">
@@ -33,36 +46,36 @@ $errore = static function (string $campo) use ($errori): string {
     <div class="campi-affiancati">
         <div>
             <label for="first_name">Nome</label>
-            <input type="text" id="first_name" name="first_name" required maxlength="100" autofocus
-                   autocomplete="given-name"
+            <input type="text" id="first_name" name="first_name" required maxlength="100"
+                   autocomplete="given-name"<?= $attributi('first_name') ?>
                    value="<?= htmlspecialchars((string) ($old['first_name'] ?? '')) ?>">
             <?= $errore('first_name') ?>
         </div>
         <div>
             <label for="last_name">Cognome</label>
             <input type="text" id="last_name" name="last_name" required maxlength="100"
-                   autocomplete="family-name"
+                   autocomplete="family-name"<?= $attributi('last_name') ?>
                    value="<?= htmlspecialchars((string) ($old['last_name'] ?? '')) ?>">
             <?= $errore('last_name') ?>
         </div>
     </div>
 
     <label for="email">Email</label>
-    <input type="email" id="email" name="email" required maxlength="190" autocomplete="email"
+    <input type="email" id="email" name="email" required maxlength="190" autocomplete="email"<?= $attributi('email') ?>
            value="<?= htmlspecialchars((string) ($old['email'] ?? '')) ?>">
     <?= $errore('email') ?>
 
     <label for="password">Password</label>
     <input type="password" id="password" name="password" required
-           minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+           minlength="<?= (int) $minPassword ?>" autocomplete="new-password"<?= $attributi('password', ['regola-password']) ?>>
     <?php /* La regola subito sotto il campo a cui si riferisce (24/11). */ ?>
-    <p class="form-hint regola-password"><?= htmlspecialchars($passwordHint) ?></p>
+    <p class="form-hint regola-password" id="regola-password"><?= htmlspecialchars($passwordHint) ?></p>
     <?php /* L'errore dopo la regola, che resta subito sotto il campo. */ ?>
     <?= $errore('password') ?>
 
     <label for="password_confirm">Conferma password</label>
     <input type="password" id="password_confirm" name="password_confirm" required
-           minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+           minlength="<?= (int) $minPassword ?>" autocomplete="new-password"<?= $attributi('password_confirm') ?>>
     <?= $errore('password_confirm') ?>
 
     <button type="submit" class="btn btn-primary btn-block">Registrati</button>

@@ -79,6 +79,7 @@ class PasswordResetController
             'token' => $token,
             'valid' => UserTokenModel::findValid($token, UserTokenModel::PURPOSE_RESET) !== null,
             'error' => $this->takeFlash('reset_error'),
+            'erroreCampo' => $this->takeFlash('reset_error_campo'),
             'minPassword' => PasswordPolicy::MIN_LENGTH,
             'passwordHint' => PasswordPolicy::HINT,
         ], false);
@@ -101,11 +102,11 @@ class PasswordResetController
         $problema = PasswordPolicy::problem($password);
 
         if ($problema !== null) {
-            $this->failReset($problema, $token);
+            $this->failReset($problema, $token, 'password');
         }
 
         if ($password !== $confirm) {
-            $this->failReset('Le due password non coincidono.', $token);
+            $this->failReset('Le due password non coincidono.', $token, 'password_confirm');
         }
 
         UserModel::updatePassword((int) $row['user_id'], $password);
@@ -141,9 +142,11 @@ class PasswordResetController
 
     // ---------------------------------------------------------------
 
-    private function failReset(string $message, string $token): never
+    /** @param string $campo il campo da correggere, a cui l'errore si collega (24/11) */
+    private function failReset(string $message, string $token, string $campo): never
     {
         $_SESSION['reset_error'] = $message;
+        $_SESSION['reset_error_campo'] = $campo;
 
         $this->redirect('/password/reimposta/' . $token);
     }
