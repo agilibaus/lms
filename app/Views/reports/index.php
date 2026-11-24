@@ -21,9 +21,12 @@ use App\Core\StudentiFermi;
 ?>
 <div class="page-header">
     <h1>Report</h1>
+    <?php /* Parole di tutti (24/11, Alessandro): era «Gli studenti da
+             contattare e cinque tagli degli stessi dati, dal contenitore più
+             grande al più piccolo…». */ ?>
     <p class="page-subtitle">
-        Gli studenti da contattare e cinque tagli degli stessi dati, dal contenitore più grande al più
-        piccolo; i tagli si aprono, si cercano e si scaricano in XLSX o in CSV.
+        Nei riquadri qui sotto puoi vedere chi è fermo e va contattato, oppure l'andamento per corso,
+        gruppo, studente, sessione live o video. Ogni elenco si può cercare e scaricare in XLSX o CSV.
     </p>
     <?php if ($restricted): ?>
         <p class="page-subtitle">
