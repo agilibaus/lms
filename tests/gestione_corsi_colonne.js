@@ -8,7 +8,8 @@
  *
  *   1. le colonne: Titolo, Stato, Iscrizione;
  *   2. in «Stato» una sola etichetta, Pubblicato o Bozza presso…; in
- *      «Iscrizione» una sola, la modalita' d'iscrizione;
+ *      «Iscrizione» una sola, la modalita' senza la parola «Iscrizione»:
+ *      Gratuita, Su richiesta, A pagamento, Chiusa;
  *   3. «Stato» e «Iscrizione» si ordinano (l'ordine lo controlla
  *      `ordinamento_pagine.js`).
  *
@@ -45,7 +46,8 @@ function supervisore(azione) {
     '--', SUPERVISORE, azione, PASSWORD], { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
 }
 
-const MODALITA = ['Iscrizione gratuita', 'Iscrizione su richiesta', 'A pagamento', 'Iscrizione chiusa'];
+// Senza «Iscrizione», che sta nell'intestazione (24/11).
+const MODALITA = ['Gratuita', 'Su richiesta', 'A pagamento', 'Chiusa'];
 
 (async () => {
     supervisore('crea');

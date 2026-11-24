@@ -37,7 +37,8 @@ $ordine = Ordinamento::daRichiesta([
 ]);
 $courses = array_map(
     static fn (array $c): array => $c + [
-        'modalita_etichetta' => CourseModel::enrollmentLabel($c['enrollment_mode'] ?? 'closed'),
+        // Senza «Iscrizione», che sta nell'intestazione della colonna (24/11).
+        'modalita_etichetta' => CourseModel::enrollmentLabelBreve($c['enrollment_mode'] ?? 'closed'),
         'stato_etichetta' => (int) $c['is_published'] === 1
             ? 'Pubblicato'
             : (($c['presso'] ?? '') === 'supervisore' ? 'Bozza presso supervisore' : 'Bozza presso Amministratore'),
@@ -116,7 +117,7 @@ $courses = $ordine->applica($courses);
                                   : 'Non compare nel catalogo: i corsi a pagamento sono spenti in Impostazioni › Pagamenti',
                               default => 'Compare nel catalogo degli studenti',
                           } ?>">
-                        <?= htmlspecialchars(CourseModel::enrollmentLabel($mode)) ?>
+                        <?= htmlspecialchars((string) $course['modalita_etichetta']) ?>
                     </span>
                 </td>
                 <td role="cell" class="row-actions col-azioni">

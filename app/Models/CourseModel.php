@@ -459,4 +459,20 @@ class CourseModel
         };
     }
 
+    /**
+     * La stessa modalita' senza «Iscrizione», per la colonna «Iscrizione» di
+     * «Gestione corsi» (24/11, Alessandro): li' la parola sta gia'
+     * nell'intestazione. Altrove, dove l'etichetta e' da sola, resta quella
+     * intera di `enrollmentLabel()`.
+     */
+    public static function enrollmentLabelBreve(?string $mode): string
+    {
+        return match ($mode) {
+            'open' => 'Gratuita',
+            'request' => 'Su richiesta',
+            'paid' => 'A pagamento',
+            default => 'Chiusa',
+        };
+    }
+
 }
