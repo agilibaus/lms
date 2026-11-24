@@ -30,11 +30,8 @@ use App\Core\StudentiFermi;
     </p>
     <?php if ($restricted): ?>
         <p class="page-subtitle">
-            <?php /* Al tutor «che segui», all'assistente «del tuo tutor» (26/10):
-                     prima il tutor leggeva la frase dell'assistente. */ ?>
-            <?= \App\Auth\Auth::hasRole('assistente')
-                ? 'Stai vedendo solo gli studenti dei gruppi seguiti dal tuo tutor di riferimento.'
-                : 'Stai vedendo solo gli studenti dei gruppi che segui.' ?>
+            <?php /* Al tutor «che segui», all'assistente «del tuo tutor» (26/10, 24/11). */ ?>
+            <?= htmlspecialchars(\App\Core\ReportSections::frasePerimetro()) ?>
         </p>
     <?php endif; ?>
 </div>

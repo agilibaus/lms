@@ -166,7 +166,7 @@ $suggerimenti = [
     'courses' => 'corso…',
     'groups' => 'gruppo, tutor…',
     'students' => 'studente, email…',
-    'live' => 'incontro, corso o gruppo…',
+    'live' => 'incontro, corso, gruppo…',
     'fruizione' => 'corso…',
 ];
 
@@ -180,12 +180,22 @@ foreach ($suggerimenti as $chiave => $atteso) {
     );
 }
 
-// Negli incontri due campi diversi stanno sotto la stessa colonna: il
-// suggerimento la nomina una volta, altrimenti direbbe «corso o gruppo,
-// corso o gruppo».
+// Due campi sotto la stessa colonna si nominano una volta sola: la regola
+// resta in `suggerimento()`, provata qui con un caso finto (dal 24/11 negli
+// incontri corso e gruppo hanno una colonna ciascuno).
 check(
     'un suggerimento non ripete due volte la stessa colonna',
-    substr_count(ReportSections::suggerimento($sezioni['live']['cerca']), 'corso o gruppo') === 1
+    ReportSections::suggerimento(['a' => 'Corso o gruppo', 'b' => 'Corso o gruppo']) === 'corso o gruppo…'
+);
+
+// Negli incontri «Corso» e «Gruppo» sono due colonne, e si ordinano tutte e
+// due (24/11, Alessandro): prima «Corso o gruppo», una colonna sola e ferma.
+$perEtichetta = array_column($colonne['live'], 'chiave', 'etichetta');
+check(
+    'negli incontri «Corso» e «Gruppo» sono due colonne ordinabili, senza «Corso o gruppo»',
+    ($perEtichetta['Corso'] ?? null) === 'corso' && ($perEtichetta['Gruppo'] ?? null) === 'gruppo'
+        && !array_key_exists('Corso o gruppo', $perEtichetta),
+    'colonne: ' . json_encode($perEtichetta)
 );
 
 // Il legame fra i due file: le intestazioni citate nel suggerimento devono

@@ -116,7 +116,7 @@ $casella = static function (array $c) use ($esc): string {
         <?= $plurale(count($studenti), 'iscritto', 'iscritti') ?>
     </p>
     <?php if ($restricted): ?>
-        <p class="page-subtitle">Stai vedendo solo gli studenti dei gruppi che segui.</p>
+        <p class="page-subtitle"><?= htmlspecialchars(\App\Core\ReportSections::frasePerimetro()) ?></p>
     <?php endif; ?>
     <?php /* Il file ha sempre tutte le attivita' in colonna, qualunque modulo
              sia aperto: nel foglio si filtra meglio che a schermo. */ ?>

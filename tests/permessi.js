@@ -2603,7 +2603,7 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     await page.goto(BASE + '/reports');
                     const avviso = await page.locator('.page-header').innerText();
                     check('tutor → in Report l\'avviso dice «dei gruppi che segui»',
-                        avviso.includes('dei gruppi che segui') && !avviso.includes('tutor di riferimento'), [avviso]);
+                        avviso.includes('dei gruppi che segui') && !avviso.includes('dal tuo tutor'), [avviso]);
                 }
                 if (email === 'tutor1@test.it') {
                     await page.goto(BASE + '/reports/students/' + d.utenti.studenteA);
@@ -2619,7 +2619,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
             const { ctx, page } = await entra(browser, 'assist@test.it');
             await page.goto(BASE + '/reports');
             const avviso = await page.locator('.page-header').innerText();
-            check('assistente → in Report l\'avviso dice «dal tuo tutor di riferimento»', avviso.includes('tutor di riferimento'), [avviso]);
+            // «…dei gruppi seguiti dal tuo tutor.» (24/11): tutte le pagine le prova report_perimetro.js.
+            check('assistente → in Report l\'avviso dice «seguiti dal tuo tutor»', avviso.includes('dei gruppi seguiti dal tuo tutor.'), [avviso]);
             await ctx.close();
         }
 

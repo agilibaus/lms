@@ -95,12 +95,11 @@ class ReportSections
                 'base' => '/reports/live',
                 'vuoto' => 'Nessun incontro.',
                 'occhiello' => 'Le presenze, con l’origine del dato.',
-                // Due campi diversi, una colonna sola: il suggerimento la
-                // nomina una volta (ci pensa `suggerimento()`).
+                // Corso e gruppo in due colonne (24/11).
                 'cerca' => [
                     'title' => 'Incontro',
-                    'course_title' => 'Corso o gruppo',
-                    'group_name' => 'Corso o gruppo',
+                    'course_title' => 'Corso',
+                    'group_name' => 'Gruppo',
                 ],
             ],
             'fruizione' => [
@@ -115,6 +114,21 @@ class ReportSections
                 'cerca' => ['title' => 'Corso'],
             ],
         ];
+    }
+
+    /**
+     * La frase sotto il titolo dei report per chi vede solo una parte degli
+     * studenti (24/11, Alessandro): parla dei dati, non di cio' che c'e' in
+     * tabella, perche' «Corsi», «Gruppi», «Sessioni live» e «Video» elencano
+     * corsi, gruppi, incontri e video, e solo i loro numeri sono degli
+     * studenti. Una frase sola per le sette pagine: prima «Studenti fermi» e
+     * la Griglia davano all'assistente quella del tutor.
+     */
+    public static function frasePerimetro(): string
+    {
+        return \App\Auth\Auth::hasRole('assistente')
+            ? 'Questi dati riguardano solo gli studenti dei gruppi seguiti dal tuo tutor.'
+            : 'Questi dati riguardano solo gli studenti dei gruppi che segui.';
     }
 
     /**

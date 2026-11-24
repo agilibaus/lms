@@ -51,7 +51,7 @@ $legenda = [
         Esclusi i corsi completati.
     </p>
     <?php if ($restricted): ?>
-        <p class="page-subtitle">Stai vedendo solo gli studenti dei gruppi che segui.</p>
+        <p class="page-subtitle"><?= htmlspecialchars(\App\Core\ReportSections::frasePerimetro()) ?></p>
     <?php endif; ?>
     <?php /* Come nel report del corso: XLSX per aprirlo con un doppio clic,
              CSV per un altro programma. Con la soglia e l'ordine scelti. */ ?>

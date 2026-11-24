@@ -132,11 +132,14 @@ return [
 
             return $inizio === false ? '—' : $esc(date('d/m/Y H:i', $inizio));
         }, 'quando', 'starts_at'),
-        // Non si ordina: la cella mostra il corso **oppure** il gruppo, e
-        // sono due campi diversi. Ordinare su uno dei due metterebbe in
-        // fondo tutte le righe dell'altro, con l'aria di un difetto.
-        $colonna('Corso o gruppo', 'testo', static fn (array $r): string
-            => $esc((string) ($r['course_title'] ?? $r['group_name'] ?? '—'))),
+        // «Corso» e «Gruppo» in due colonne, tutte e due ordinabili (24/11,
+        // Alessandro): era «Corso o gruppo», una cella con l'uno **oppure**
+        // l'altro, che non si poteva ordinare. Dove il dato manca il
+        // trattino grigio, e nell'ordine sta in fondo nei due versi.
+        $colonna('Corso', 'testo', static fn (array $r): string
+            => ($r['course_title'] ?? '') !== '' ? $esc((string) $r['course_title']) : '<span class="valore-assente">—</span>', 'corso', 'course_title'),
+        $colonna('Gruppo', 'testo', static fn (array $r): string
+            => ($r['group_name'] ?? '') !== '' ? $esc((string) $r['group_name']) : '<span class="valore-assente">—</span>', 'gruppo', 'group_name'),
         // Numero anche se porta una barra: «3/12» va letto confrontandolo
         // con quello della riga sopra, come ogni altro conteggio.
         $colonna('Presenti', 'numero', static fn (array $r): string
