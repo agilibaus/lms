@@ -4024,54 +4024,10 @@ body.has-focus-video {
     color: var(--color-danger);
 }
 
-/* ---------- Verifica pubblica certificato ---------- */
+/* ---------- Verifica pubblica certificato ----------
 
-.centered-page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: var(--color-bg);
-    padding: 1.5rem;
-}
-
-.verify-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 2rem;
-    max-width: 460px;
-    width: 100%;
-}
-
-.verify-brand {
-    color: var(--color-primary);
-    font-size: var(--fs-piccolo);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin: 0;
-}
-
-.verify-card h1 {
-    font-size: var(--fs-pagina);
-    margin: 0.3rem 0 1rem;
-}
-
-.verify-status {
-    font-weight: 600;
-    padding: 0.55rem 0.8rem;
-    border-radius: var(--radius-sm);
-}
-
-.verify-valid {
-    background: var(--color-primary-soft);
-    color: var(--color-primary-hover);
-}
-
-.verify-invalid {
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
-}
+   Dal 24/11 nella cornice delle pagine pubbliche (`auth/_card.php`, il
+   riquadro centrato): qui restano solo i dati del certificato. */
 
 .verify-details {
     margin: 1.2rem 0 0;
@@ -4088,12 +4044,6 @@ body.has-focus-video {
 
 .verify-details dd {
     margin: 0.15rem 0 0;
-}
-
-.verify-code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: var(--color-text-muted);
-    margin-top: 0.8rem;
 }
 
 /* =====================================================

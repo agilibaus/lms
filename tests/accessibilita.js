@@ -496,6 +496,10 @@ const PAGINE_PUBBLICHE = [
     ['/register/rinvia', 'Rinvia il link di conferma'],
     // L'informativa privacy (18/11): pubblica, con la barra ferma in cima.
     ['/privacy?da=registrazione', 'Informativa sulla privacy'],
+    // La verifica di un certificato (24/11), nella cornice delle pagine
+    // pubbliche: qui con un codice che non esiste, i certificati veri li
+    // prova `verifica_certificato.js`.
+    ['/verify/NON-ESISTE-123', 'Verifica certificato'],
     /*
      * La pagina della nuova password si apre da un collegamento ricevuto per
      * email, quindi spesso dal telefono. Il token qui sotto e' un dato di

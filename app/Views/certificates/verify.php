@@ -2,62 +2,55 @@
 
 declare(strict_types=1);
 
+use App\Core\AuthLayout;
 use App\Core\Quando;
 
 /**
  * Pagina pubblica di verifica: nessun login richiesto, nessun dato di contatto.
  *
+ * Nella cornice delle pagine pubbliche (24/11, Alessandro, variante B del
+ * mockup): sempre il riquadro centrato, qualunque sia l'aspetto scelto in
+ * Impostazioni › Aspetto. La apre quasi sempre un estraneo (chi controlla
+ * un attestato): la presentazione affiancata non gli serve, e il risultato
+ * si vede subito, anche sul telefono. L'esito negli avvisi verde e rosso
+ * delle altre pagine pubbliche.
+ *
  * @var string $code
  * @var array|null $certificate
  */
 $valid = $certificate !== null && $certificate['revoked_at'] === null;
-?>
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifica certificato · Pistacchio LMS</title>
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" href="/assets/img/pistacchio-32.png" sizes="32x32">
-    <link rel="apple-touch-icon" href="/assets/img/pistacchio-180.png">
-    <link rel="stylesheet" href="/assets/css/style.css">
-<?php /* I colori scelti dal pannello, DOPO il foglio di stile: l'ultima
-         dichiarazione vince, e cosi' `style.css` non viene mai riscritto —
-         le patch future non ci vanno in conflitto (§8.5). Niente quando non
-         c'e' niente da cambiare. */ ?>
-<?php $coloriTema = App\Core\Theme::bloccoFont() . App\Core\Theme::blocco(); ?>
-<?php if ($coloriTema !== ''): ?>
-    <style><?= $coloriTema ?></style>
-<?php endif; ?>
-</head>
-<body class="centered-page">
-<main class="verify-card">
-    <p class="verify-brand">Pistacchio LMS</p>
-    <h1>Verifica certificato</h1>
+$pageTitle = 'Verifica certificato';
+$aspettoForzato = AuthLayout::GUSCIO;
 
-    <?php if ($certificate === null): ?>
-        <p class="verify-status verify-invalid">Nessun certificato corrisponde al codice indicato.</p>
-        <p class="verify-code"><?= htmlspecialchars($code) ?></p>
-    <?php else: ?>
-        <p class="verify-status <?= $valid ? 'verify-valid' : 'verify-invalid' ?>">
-            <?= $valid ? 'Certificato valido' : 'Certificato revocato' ?>
-        </p>
-        <dl class="verify-details">
-            <dt>Intestatario</dt>
-            <dd><?= htmlspecialchars((string) $certificate['full_name']) ?></dd>
-            <dt>Corso</dt>
-            <dd><?= htmlspecialchars((string) $certificate['course_title']) ?></dd>
-            <dt>Data di rilascio</dt>
-            <dd><?= htmlspecialchars(Quando::dataOra((string) $certificate['issued_at'])) ?></dd>
-            <?php if (!$valid): ?>
-                <dt>Revocato il</dt>
-                <dd><?= htmlspecialchars(Quando::dataOra((string) $certificate['revoked_at'])) ?></dd>
-            <?php endif; ?>
-            <dt>Codice</dt>
-            <dd><code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code></dd>
-        </dl>
-    <?php endif; ?>
-</main>
-</body>
-</html>
+ob_start();
+?>
+<p class="auth-subtitle">Controllo di un attestato di frequenza</p>
+
+<?php if ($certificate === null): ?>
+    <div class="alert alert-error">Nessun certificato corrisponde al codice indicato.</div>
+    <dl class="verify-details">
+        <dt>Codice cercato</dt>
+        <dd><code><?= htmlspecialchars($code) ?></code></dd>
+    </dl>
+<?php else: ?>
+    <div class="alert <?= $valid ? 'alert-success' : 'alert-error' ?>">
+        <?= $valid ? 'Certificato valido.' : 'Certificato revocato: non è più valido.' ?>
+    </div>
+    <dl class="verify-details">
+        <dt>Intestatario</dt>
+        <dd><?= htmlspecialchars((string) $certificate['full_name']) ?></dd>
+        <dt>Corso</dt>
+        <dd><?= htmlspecialchars((string) $certificate['course_title']) ?></dd>
+        <dt>Data di rilascio</dt>
+        <dd><?= htmlspecialchars(Quando::dataOra((string) $certificate['issued_at'])) ?></dd>
+        <?php if (!$valid): ?>
+            <dt>Revocato il</dt>
+            <dd><?= htmlspecialchars(Quando::dataOra((string) $certificate['revoked_at'])) ?></dd>
+        <?php endif; ?>
+        <dt>Codice</dt>
+        <dd><code><?= htmlspecialchars((string) $certificate['certificate_code']) ?></code></dd>
+    </dl>
+<?php endif; ?>
+<?php
+$cardContent = ob_get_clean();
+require __DIR__ . '/../auth/_card.php';

@@ -15,9 +15,13 @@ use App\Core\AuthLayout;
  *
  * @var string $pageTitle
  * @var string $cardContent
+ * @var string|null $aspettoForzato  `AuthLayout::GUSCIO` per avere sempre il riquadro centrato
  */
 
-$aspetto = AuthLayout::current();
+// Una pagina puo' chiedere sempre il riquadro centrato (24/11): la verifica
+// di un certificato, aperta quasi sempre da un estraneo, a cui la
+// presentazione affiancata non serve.
+$aspetto = $aspettoForzato ?? AuthLayout::current();
 ?>
 <!DOCTYPE html>
 <html lang="it">
