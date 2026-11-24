@@ -11,7 +11,10 @@
  *   3. «Quando»: la data su una riga e l'orario sotto;
  *   4. «Corso»: il corso su una riga e il modulo sotto; «Gruppo»: il nome
  *      del gruppo, senza «Gruppo:»; dove manca, il trattino grigio;
- *   5. sul telefono le schede hanno le stesse voci, «Corso» e «Gruppo».
+ *   5. sul telefono le schede hanno le stesse voci, «Corso» e «Gruppo»;
+ *   6. «Corso» si ordina per corso e poi per modulo, «Gruppo» per nome; le
+ *      sessioni senza quel dato (il trattino) in fondo, in tutti e due i
+ *      versi (24/11).
  *
  * Esecuzione:  node tests/sessioni_live_tabella.js   (server di sviluppo
  * acceso, semina dei permessi fatta)
@@ -97,6 +100,23 @@ const istante = (r) => { const [g = '', m = '', a = ''] = (r.quando[0] || '').sp
             const intest = await page.evaluate(() => ([...document.querySelectorAll('.live-tabella thead th')].find((x) => x.textContent.includes('Stato')) || { getAttribute: () => null }).getAttribute('aria-sort'));
             check('«Stato» ' + (verso === 'asc' ? 'crescente: In corso, In programma, Conclusa' : 'decrescente: al contrario') + ', nello stesso stato per data',
                 storte.length === 0 && intest === (verso === 'asc' ? 'ascending' : 'descending'), [...storte, 'aria-sort: ' + intest]);
+        }
+
+        const confronta = (x, y) => x.localeCompare(y, 'it', { sensitivity: 'base' });
+        for (const [colonna, valore] of [['corso', (r) => r.corso === '—' ? null : r.corso.join(' / ')], ['gruppo', (r) => r.gruppo === '—' ? null : r.gruppo]]) {
+            for (const verso of ['asc', 'desc']) {
+                await page.goto(BASE + '/live?ordina=' + colonna + '&verso=' + verso);
+                t = await righe(page);
+                const valori = t.righe.map(valore);
+                const pieni = valori.filter((v) => v !== null);
+                const primoVuoto = valori.indexOf(null);
+                const inFondo = primoVuoto === -1 || valori.slice(primoVuoto).every((v) => v === null);
+                const inOrdine = pieni.every((v, i) => i === 0 || (verso === 'asc' ? 1 : -1) * confronta(pieni[i - 1], v) <= 0);
+                const intest = await page.evaluate((c) => ([...document.querySelectorAll('.live-tabella thead th')].find((x) => x.textContent.trim().startsWith(c)) || { getAttribute: () => null }).getAttribute('aria-sort'), colonna === 'corso' ? 'Corso' : 'Gruppo');
+                check('«' + (colonna === 'corso' ? 'Corso' : 'Gruppo') + '» ' + (verso === 'asc' ? 'crescente' : 'decrescente') + ', con il trattino in fondo',
+                    inOrdine && inFondo && pieni.length >= 2 && intest === (verso === 'asc' ? 'ascending' : 'descending'),
+                    [...valori.map((v) => v ?? '—'), 'aria-sort: ' + intest]);
+            }
         }
 
         const tel = await (await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await page.context().storageState() })).newPage();

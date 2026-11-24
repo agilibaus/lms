@@ -25,6 +25,11 @@ $ordine = Ordinamento::daRichiesta([
     'quando' => ['starts_at', Ordinamento::DATA],
     'stato' => ['stato_ordine', Ordinamento::NUMERO, 'starts_at'],
     'sessione' => ['title', Ordinamento::TESTO],
+    // «Corso» (per corso e poi per modulo) e «Gruppo» ordinabili (24/11):
+    // in due colonne non mischiano piu' due campi diversi. Le sessioni
+    // senza quel dato, col trattino, stanno in fondo in tutti e due i versi.
+    'corso' => ['course_title', Ordinamento::TESTO, 'module_title'],
+    'gruppo' => ['group_name', Ordinamento::TESTO],
 ]);
 $sessions = $ordine->applica($sessions);
 ?>
@@ -77,8 +82,8 @@ $sessions = $ordine->applica($sessions);
                      «Destinatari», con le due cose nella stessa cella. Una
                      sessione e' di un modulo oppure di un gruppo: dove manca,
                      il trattino grigio. */ ?>
-            <th scope="col" role="columnheader">Corso</th>
-            <th scope="col" role="columnheader">Gruppo</th>
+            <?= $ordine->th('Corso', 'corso') ?>
+            <?= $ordine->th('Gruppo', 'gruppo') ?>
             <th scope="col" role="columnheader">Link Meet</th>
             <th scope="col" role="columnheader">Accesso</th>
             <th scope="col" role="columnheader"><span class="sr-only">Azioni</span></th>
