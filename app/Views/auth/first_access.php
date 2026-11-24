@@ -52,12 +52,12 @@ ob_start();
         <label for="new_password">Nuova password</label>
         <input type="password" id="new_password" name="new_password" required
                minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+        <?php /* La regola subito sotto il campo, la stessa frase delle altre pagine (24/11). */ ?>
+        <p class="form-hint regola-password"><?= htmlspecialchars($passwordHint) ?></p>
 
         <label for="confirm_password">Conferma la nuova password</label>
         <input type="password" id="confirm_password" name="confirm_password" required
                minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
-
-        <p class="form-hint"><?= htmlspecialchars($passwordHint) ?></p>
     <?php endif; ?>
 
     <fieldset class="primo-accesso-scelta">

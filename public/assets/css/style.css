@@ -3740,6 +3740,12 @@ body.has-focus-video {
     margin-top: 0.5rem;
 }
 
+/* La regola della password subito sotto il suo campo (24/11): vicina al
+   campo, e dal campo dopo alla stessa distanza che separa gli altri. */
+.form-hint.regola-password {
+    margin: 0.35rem 0 0;
+}
+
 .checkbox-label {
     display: flex;
     gap: 0.5rem;

@@ -50,6 +50,8 @@ ob_start();
     <label for="new_password">Nuova password</label>
     <input type="password" id="new_password" name="new_password" required
            minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+    <?php /* La regola subito sotto il campo (24/11); quella sulle sessioni resta sotto i pulsanti. */ ?>
+    <p class="form-hint regola-password"><?= htmlspecialchars($passwordHint) ?></p>
 
     <label for="confirm_password">Ripeti la nuova password</label>
     <input type="password" id="confirm_password" name="confirm_password" required
@@ -66,7 +68,6 @@ ob_start();
 </form>
 
 <p class="form-hint">
-    <?= htmlspecialchars($passwordHint) ?>
     Cambiando la password, le altre sessioni aperte con quella precedente vengono chiuse;
     questo browser resta collegato.
 </p>

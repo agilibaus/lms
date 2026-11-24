@@ -28,6 +28,8 @@ ob_start();
         <label for="password">Nuova password</label>
         <input type="password" id="password" name="password" required minlength="<?= (int) $minPassword ?>"
                autofocus autocomplete="new-password">
+        <?php /* La regola subito sotto il campo, non sotto i pulsanti (24/11). */ ?>
+        <p class="form-hint regola-password"><?= htmlspecialchars($passwordHint) ?></p>
 
         <label for="password_confirm">Conferma password</label>
         <input type="password" id="password_confirm" name="password_confirm" required
@@ -39,8 +41,6 @@ ob_start();
         <?php /* «Annulla» (14/10): non cambia la password e torna all'accesso. */ ?>
         <a href="/login" class="btn btn-secondary btn-block">Annulla</a>
     </form>
-
-    <p class="form-hint"><?= htmlspecialchars($passwordHint) ?></p>
 <?php endif; ?>
 <?php
 $cardContent = ob_get_clean();

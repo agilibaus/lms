@@ -27,17 +27,14 @@ class PasswordPolicy
 {
     public const MIN_LENGTH = 8;
 
-    /** La frase da mostrare accanto ai campi. Dice esattamente cio' che `problem()` verifica. */
-    public const HINT = 'Almeno ' . self::MIN_LENGTH . ' caratteri alfanumerici: '
-        . 'servono almeno una lettera e almeno una cifra.';
-
     /**
-     * La stessa regola, in breve, per la pagina «Primo accesso» (08/10,
-     * Elena: il modulo era troppo alto). Sta qui, accanto alla frase lunga e
-     * al controllo, perche' le frasi non dicano una cosa diversa dalla
-     * regola: chi la cambia, le cambia insieme.
+     * La frase da mostrare sotto il campo della password, una sola in tutta
+     * Pistacchio (24/11, Alessandro): registrazione, «Nuova password»,
+     * «Cambia password» e «Primo accesso». Dice esattamente cio' che
+     * `problem()` verifica. Prima diceva «caratteri alfanumerici», come se i
+     * simboli fossero vietati, e il primo accesso ne aveva una sua, breve.
      */
-    public const HINT_BREVE = 'Minimo ' . self::MIN_LENGTH . ' caratteri: almeno una lettera e un numero.';
+    public const HINT = 'Minimo ' . self::MIN_LENGTH . ' caratteri, con almeno una lettera e una cifra.';
 
     /**
      * Il motivo per cui la password non va bene, oppure null se va bene.

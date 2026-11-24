@@ -3065,9 +3065,18 @@ async function giroBenvenuto(browser) {
             check(email + ': le tre opzioni sono vicine: pallini non più alti di 20 px, spazi non più di 8',
                 modulo.pallini.length === 3 && modulo.pallini.every((h) => h <= 20) && modulo.spazi.every((s) => s <= 8),
                 [JSON.stringify({ pallini: modulo.pallini, spazi: modulo.spazi })]);
+            if (conPassword) {
+                // La regola subito sotto «Nuova password» (24/11).
+                const sotto = await pp.evaluate(() => {
+                    const dopo = document.querySelector('input[name="new_password"]')?.nextElementSibling;
+                    return dopo ? dopo.className + ' «' + dopo.textContent.trim() + '»' : null;
+                });
+                check(email + ': la regola della password subito sotto «Nuova password»',
+                    sotto === 'form-hint regola-password «Minimo 8 caratteri, con almeno una lettera e una cifra.»', [String(sotto)]);
+            }
             check(email + ': le frasi corte',
                 modulo.aiuti.includes('Tutor e Amministratore vedono sempre nome e cognome. Scelta modificabile dal profilo.')
-                && (!conPassword || modulo.aiuti.includes('Minimo 8 caratteri: almeno una lettera e un numero.')),
+                && (!conPassword || modulo.aiuti.includes('Minimo 8 caratteri, con almeno una lettera e una cifra.')),
                 [JSON.stringify(modulo.aiuti)]);
             await pp.goto(BASE + '/profilo');
             check(email + ': le altre pagine riportano al primo accesso', dove() === '/primo-accesso', ['pagina: ' + dove()]);

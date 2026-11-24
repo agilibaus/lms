@@ -47,11 +47,12 @@ ob_start();
     <label for="password">Password</label>
     <input type="password" id="password" name="password" required
            minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
+    <?php /* La regola subito sotto il campo a cui si riferisce (24/11). */ ?>
+    <p class="form-hint regola-password"><?= htmlspecialchars($passwordHint) ?></p>
 
     <label for="password_confirm">Conferma password</label>
     <input type="password" id="password_confirm" name="password_confirm" required
            minlength="<?= (int) $minPassword ?>" autocomplete="new-password">
-    <p class="form-hint"><?= htmlspecialchars($passwordHint) ?></p>
 
     <button type="submit" class="btn btn-primary btn-block">Registrati</button>
 

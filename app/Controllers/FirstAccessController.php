@@ -47,7 +47,7 @@ class FirstAccessController
             'conPassword' => Auth::mustChangePassword(),
             'scelta' => PersonName::display((string) ($vecchio ?? PersonName::PRESELEZIONATA)),
             'minPassword' => PasswordPolicy::MIN_LENGTH,
-            'passwordHint' => PasswordPolicy::HINT_BREVE,
+            'passwordHint' => PasswordPolicy::HINT,
             'error' => $this->prendi('flash_error'),
         ], false);
     }
