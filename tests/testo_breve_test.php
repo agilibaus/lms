@@ -149,6 +149,26 @@ check('riproposto oltre il limite, il contatore dice quanti in più, in evidenza
     str_contains($oltre, '37 caratteri in più') && str_contains($oltre, 'quiz-open-count-basso'), $oltre);
 
 // ---------------------------------------------------------------
+echo PHP_EOL . 'Il capolettera scritto a mano (25/11)' . PHP_EOL;
+
+$conCapo = '<p class="capolettera">Primo paragrafo.</p><p class="evidenza">Secondo.</p>';
+uguale('nella pagina del corso resta solo class="capolettera"',
+    '<p class="capolettera">Primo paragrafo.</p><p>Secondo.</p>', TestoBreve::html($conCapo, true));
+uguale('altrove la classe si toglie (schede, obiettivi)',
+    '<p>Primo paragrafo.</p><p>Secondo.</p>', TestoBreve::html($conCapo));
+uguale('con altre classi insieme resta solo «capolettera»',
+    '<p class="capolettera">Testo.</p>', TestoBreve::html('<p class="grande capolettera">Testo.</p>', true));
+uguale('nessun capolettera da solo: un paragrafo senza classe resta senza',
+    '<p>Testo.</p>', TestoBreve::html('Testo.', true));
+uguale('la classe non tocca gli altri tag', '<p>Uno <strong>due</strong></p>',
+    TestoBreve::html('<p>Uno <strong class="capolettera">due</strong></p>', true));
+uguale('il testo semplice non cambia', 'Primo paragrafo. Secondo.', TestoBreve::testo($conCapo));
+$descrizione = TestoBreve::campo('description', 'Descrizione', 'description', 2000, '', 4, capolettera: true);
+check('fra i tag consentiti della «Descrizione» c\'e\' <p class="capolettera">',
+    str_contains($descrizione, '&lt;a href="…"&gt;, &lt;p class="capolettera"&gt;.</span>'), $descrizione);
+check('fra quelli dell\'obiettivo no', !str_contains($campo, 'capolettera'), $campo);
+
+// ---------------------------------------------------------------
 echo PHP_EOL . 'Il testo semplice e gli estratti' . PHP_EOL;
 
 uguale('niente tag, a capo e paragrafi diventano spazi', 'Intro: uno due forte Dopo &',

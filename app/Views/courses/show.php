@@ -84,7 +84,8 @@ $isStaff = CourseRights::canEdit((int) $course['id']);
 <?php if (!empty($course['description'])): ?>
     <?php /* Qualche tag HTML ammesso dall'11/10: `TestoBreve::html()` ripulisce
              e trasforma gli a capo in paragrafi e righe, come si vedevano. */ ?>
-    <div class="course-description testo-breve"><?= TestoBreve::html((string) $course['description']) ?></div>
+    <?php /* Il capolettera solo dove chi scrive lo chiede, `<p class="capolettera">` (25/11). */ ?>
+    <div class="course-description testo-breve"><?= TestoBreve::html((string) $course['description'], capolettera: true) ?></div>
 <?php endif; ?>
 
 <?php if ($obiettivoCorso !== null): ?>

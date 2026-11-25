@@ -1543,7 +1543,9 @@ const EXTRA = {
             await comando.click();
             const richiuso = await leggi();
             if (chiuso.visibile || !chiuso.vicino || !chiuso.misura || !aperto.visibile || !aperto.stessaRiga || !aperto.subitoDopo || richiuso.visibile
-                || aperto.testo !== 'Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">.') {
+                // La «Descrizione» del corso ha anche il capolettera (25/11).
+                || aperto.testo !== 'Tag HTML consentiti: <strong>, <em>, <u>, <ul>, <ol>, <li>, <a href="…">'
+                    + (aperto.chi === 'description-aiuto' ? ', <p class="capolettera">' : '') + '.') {
                 tagStorti.push(JSON.stringify({ chiuso, aperto, richiuso }));
             }
         }
@@ -1794,7 +1796,9 @@ EXTRA['Corso con obiettivi, da staff (semina)'] = async (page, nome) => {
     // dell'obiettivo. Il primo paragrafo deve contenerla: alto almeno tre
     // righe, e il riquadro dopo comincia sotto.
     const cap = await page.evaluate(() => {
-        const p = document.querySelector('.course-description > p:first-child');
+        // Dal 25/11 il capolettera lo mette chi scrive: la semina lo scrive
+        // nella descrizione del corso A.
+        const p = document.querySelector('.course-description > p.capolettera');
         const ob = document.querySelector('section.obiettivo-corso');
         if (!p || !ob) {
             return null;
@@ -2861,9 +2865,9 @@ async function giroBenvenuto(browser) {
                 const righe = s.getPropertyValue('initial-letter') || s.getPropertyValue('-webkit-initial-letter');
                 return { verde: s.color === rgbVerde, tre: righe.trim().startsWith('3') || s.float === 'left' };
             };
-            // Dall'11/10 la descrizione e' divisa in paragrafi: il capolettera
-            // sta sul primo, se comincia con un paragrafo.
-            const descr = document.querySelector('.course-description > p:first-child');
+            // Dal 25/11 il capolettera sta sul paragrafo che chi scrive segna
+            // con `class="capolettera"` (la semina lo fa nel corso A).
+            const descr = document.querySelector('.course-description > p.capolettera');
             const modulo = document.querySelector('.module-card');
             const paragrafi = document.querySelectorAll('.lesson-content > p');
             return {
@@ -2877,8 +2881,20 @@ async function giroBenvenuto(browser) {
         const nelCorso = await capo();
         check('l\'introduzione del corso è larga quanto i moduli',
             nelCorso.larghezza !== null && Math.abs(nelCorso.larghezza[0] - nelCorso.larghezza[1]) <= 1, [JSON.stringify(nelCorso)]);
-        check('la descrizione del corso comincia con il capolettera verde, alto tre righe',
+        check('la descrizione con <p class="capolettera"> comincia con il capolettera verde, alto tre righe',
             nelCorso.descrizione !== null && nelCorso.descrizione.verde && nelCorso.descrizione.tre, [JSON.stringify(nelCorso)]);
+        // E senza la classe niente capolettera (25/11): non e' piu'
+        // automatico. Il corso senza gruppi della semina ha una descrizione
+        // semplice, di un paragrafo.
+        await page.goto(BASE + '/courses/' + seme.C.corso);
+        const senza = await page.evaluate(() => {
+            const p = document.querySelector('.course-description > p');
+            if (!p) return null;
+            const s = getComputedStyle(p, '::first-letter');
+            return { classe: p.className, float: s.float, righe: (s.getPropertyValue('initial-letter') || s.getPropertyValue('-webkit-initial-letter')).trim(), misura: s.fontSize === getComputedStyle(p).fontSize };
+        });
+        check('una descrizione senza class="capolettera" non ha il capolettera',
+            senza !== null && senza.classe === '' && senza.float === 'none' && !senza.righe.startsWith('3') && senza.misura, [JSON.stringify(senza)]);
         await page.goto(BASE + '/lessons/' + seme.A.lezione);
         const nellaLezione = await capo();
         check('il testo della lezione non comincia con il capolettera',

@@ -37,7 +37,8 @@ final class TestoBreve
 {
     /** Tag ammessi, con i loro attributi. */
     public const TAG = [
-        'p' => [], 'br' => [],
+        // `class` solo per «capolettera», e solo dove si chiede (`html()`).
+        'p' => ['class'], 'br' => [],
         'strong' => [], 'b' => [], 'em' => [], 'i' => [], 'u' => [],
         'ul' => [], 'ol' => [], 'li' => [],
         'a' => ['href', 'title', 'target', 'rel'],
@@ -49,6 +50,15 @@ final class TestoBreve
      * con un uso dei tag fuori misura.
      */
     public const MAX_BYTE = 65535;
+
+    /**
+     * Il capolettera scritto a mano (25/11, Alessandro): `<p
+     * class="capolettera">` nella descrizione del corso. Dal 09/10 era
+     * automatico all'inizio di ogni descrizione; ora lo mette chi scrive, sul
+     * paragrafo che vuole. E' l'unica classe ammessa, e conta solo dove
+     * `html()` la chiede (la pagina del corso): altrove si toglie.
+     */
+    public const CAPOLETTERA = 'capolettera';
 
     /** Elementi che vanno a capo da soli: attorno a loro gli a capo non contano. */
     private const BLOCCHI = ['p', 'ul', 'ol', 'li'];
@@ -102,8 +112,12 @@ final class TestoBreve
     /**
      * L'HTML da mostrare: ripulito con i soli tag ammessi, e con gli a capo
      * trasformati in paragrafi e righe. Stringa vuota per un testo vuoto.
+     *
+     * Con `$capolettera` resta `class="capolettera"` sui paragrafi che la
+     * hanno (la descrizione nella pagina del corso); senza, e per ogni altra
+     * classe, l'attributo si toglie.
      */
-    public static function html(?string $valore): string
+    public static function html(?string $valore, bool $capolettera = false): string
     {
         $pulito = HtmlSanitizer::clean(self::normalizza((string) $valore), self::TAG);
 
@@ -178,6 +192,21 @@ final class TestoBreve
             self::aCapoDentro($blocco);
         }
 
+        foreach (iterator_to_array($contenitore->getElementsByTagName('p')) as $p) {
+            /** @var DOMElement $p */
+            if (!$p->hasAttribute('class')) {
+                continue;
+            }
+
+            $classi = preg_split('/\s+/', trim($p->getAttribute('class'))) ?: [];
+
+            if ($capolettera && in_array(self::CAPOLETTERA, $classi, true)) {
+                $p->setAttribute('class', self::CAPOLETTERA);
+            } else {
+                $p->removeAttribute('class');
+            }
+        }
+
         $html = '';
 
         foreach (iterator_to_array($contenitore->childNodes) as $blocco) {
@@ -208,7 +237,7 @@ final class TestoBreve
      * un secondo clic lo richiude (11/10, Alessandro). E' un `details`, quindi
      * funziona senza JavaScript; l'aspetto sta in `.tag-consentiti`.
      */
-    public static function campo(string $id, string $etichetta, string $nome, int $massimo, string $valore, int $righe): string
+    public static function campo(string $id, string $etichetta, string $nome, int $massimo, string $valore, int $righe, bool $capolettera = false): string
     {
         $restano = $massimo - self::caratteri($valore);
         $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -225,7 +254,10 @@ final class TestoBreve
             . '</div>'
             . '<div class="form-hint tag-consentiti" id="' . $e($id) . '-aiuto">'
             . '<details><summary class="tag-consentiti-comando">Tag HTML consentiti</summary>'
-            . '<span>: &lt;strong&gt;, &lt;em&gt;, &lt;u&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a href="…"&gt;.</span>'
+            . '<span>: &lt;strong&gt;, &lt;em&gt;, &lt;u&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a href="…"&gt;'
+            // Solo nella descrizione del corso (25/11).
+            . ($capolettera ? ', &lt;p class="' . self::CAPOLETTERA . '"&gt;' : '')
+            . '.</span>'
             . '</details></div>';
     }
 

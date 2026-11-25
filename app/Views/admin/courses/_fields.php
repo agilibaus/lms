@@ -31,8 +31,9 @@ use App\Core\TestoBreve;
 <?= TestoBreve::campo('objective', 'Obiettivo del corso', 'objective', CourseController::MAX_OBJECTIVE_CHARS,
     (string) ($course['objective'] ?? ''), 3) ?>
 
+<?php /* Solo qui, fra i tag consentiti, anche il capolettera (25/11). */ ?>
 <?= TestoBreve::campo('description', 'Descrizione', 'description', CourseController::MAX_DESCRIPTION_CHARS,
-    (string) ($course['description'] ?? ''), 4) ?>
+    (string) ($course['description'] ?? ''), 4, capolettera: true) ?>
 <script src="/assets/js/quiz-open-count.js"></script>
 
 <?php /* Il supervisore non pubblica (30/10): la casella c'e', spenta, con la

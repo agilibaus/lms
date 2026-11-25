@@ -493,7 +493,8 @@ imagefill($img, 0, 0, imagecolorallocate($img, 79, 114, 86));
 imagejpeg($img, __DIR__ . '/../storage/' . $copertina, 80);
 imagedestroy($img);
 $pdo->prepare('UPDATE courses SET cover_image = :c, description = :d WHERE id = :id')
-    ->execute(['c' => $copertina, 'd' => 'Il corso di prova del mondo A, con una descrizione di una riga.', 'id' => $a['corso']]);
+    // Con il capolettera scritto a mano (25/11): accessibilita.js lo misura.
+    ->execute(['c' => $copertina, 'd' => '<p class="capolettera">Il corso di prova del mondo A, con una descrizione di una riga.</p>', 'id' => $a['corso']]);
 // Gli obiettivi (11/10): nel corso del mondo A quello del corso, con un
 // elenco, e quello di tutti e due i moduli. Lo studente di A non ha fatto
 // niente, quindi il modulo in corso e' il primo: li' l'obiettivo e' completo,

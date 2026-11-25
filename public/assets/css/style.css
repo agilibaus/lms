@@ -6001,12 +6001,12 @@ fieldset.checkbox-group legend {
     color: var(--color-danger);
 }
 
-/* Il primo paragrafo della descrizione del corso contiene il suo
-   capolettera, qualunque cosa venga dopo (dove c'e' `initial-letter` la
-   lettera non e' un float, e `clear` da solo non basta): con una
-   descrizione di una riga la lettera, alta tre, finiva sopra il riquadro
-   dell'obiettivo (06/11). */
-.course-description > p:first-child {
+/* Il paragrafo con il capolettera lo contiene, qualunque cosa venga dopo
+   (dove c'e' `initial-letter` la lettera non e' un float, e `clear` da solo
+   non basta): con una descrizione di una riga la lettera, alta tre, finiva
+   sopra il riquadro dell'obiettivo (06/11). Dal 25/11 il capolettera lo
+   mette chi scrive, `<p class="capolettera">`. */
+.course-description > p.capolettera {
     display: flow-root;
 }
 
@@ -9093,10 +9093,11 @@ details[open] > summary .obiettivo-se-aperto {
    Il capolettera (09/10)
    ==========================================================
 
-   All'inizio della descrizione del corso (Elena), alto tre righe, nel
-   verde del progetto. Solo all'inizio del blocco intero, non di ogni
-   paragrafo; e solo se il blocco comincia con un paragrafo: su un titolo,
-   un'immagine o un elenco non va.
+   Nella descrizione del corso, alto tre righe, nel colore principale.
+   Dal 09/10 (Elena) era automatico all'inizio di ogni descrizione; dal
+   25/11 (Alessandro) lo mette chi scrive, sul paragrafo che vuole:
+   `<p class="capolettera">`, fra i tag consentiti della «Descrizione»
+   (`TestoBreve::CAPOLETTERA`). Altrove la classe si toglie.
 
    Non piu' nel testo delle lezioni (20/11, Alessandro): con la
    formattazione libera dell'editor chi scrive decide come comincia il
@@ -9111,7 +9112,7 @@ details[open] > summary .obiettivo-se-aperto {
    la lettera scorre a sinistra e il testo le gira intorno, con misure
    calcolate per tre righe di 1,6 di interlinea: la lettera e' alta 3 x 1,6
    = 4,8 volte il testo, meno lo spazio sopra le maiuscole. */
-.course-description > p:first-child::first-letter {
+.course-description p.capolettera::first-letter {
     float: left;
     margin: 0.06em 0.08em 0 0;
     font-size: 4.1em;
@@ -9121,7 +9122,7 @@ details[open] > summary .obiettivo-se-aperto {
 }
 
 @supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
-    .course-description > p:first-child::first-letter {
+    .course-description p.capolettera::first-letter {
         float: none;
         /* Con initial-letter il margine e' lo spazio fra la lettera e il
            testo che le gira intorno: a 0,12 la «U» toccava la «n». */
