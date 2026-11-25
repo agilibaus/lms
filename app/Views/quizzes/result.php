@@ -81,7 +81,7 @@ $soloAperte = $scoredCount === 0 && !$h5p;
 <?php if ($openAnswers !== []): ?>
     <section class="card">
         <h2>Le risposte aperte</h2>
-        <p class="form-hint">
+        <p class="riquadro-intro">
             Non fanno punteggio: sono state registrate e le legge il tutor.
         </p>
         <dl class="risposte-aperte">

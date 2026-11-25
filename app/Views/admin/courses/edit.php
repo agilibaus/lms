@@ -117,7 +117,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
 <?php if ($requests !== [] && !$supervisore): ?>
     <section class="card">
         <h2>Richieste di iscrizione <span class="badge badge-danger"><?= count($requests) ?></span></h2>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             Approvando, lo studente viene iscritto e riceve un'email; rifiutando, riceve un avviso.
         </p>
 
@@ -165,7 +165,7 @@ $enrollments = $ordineIscritti->applica($enrollments);
 <?php if (!$supervisore): ?>
 <section class="card">
     <h2>Iscritti</h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         <?php if ($tutor): ?>
             I tuoi studenti in questo corso: si iscrivono dai tuoi gruppi. Le altre iscrizioni e le richieste dal
             catalogo le gestisce l’Amministratore.

@@ -307,7 +307,7 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
                      lettore di schermo, come titolo di sezione nascosto. */ ?>
             <h2 class="sr-only">Incontri dal vivo</h2>
         <?php endif; ?>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             Gli incontri a cui questo studente era atteso. L’ingresso è quello registrato quando
             ha aperto la riunione da Pistacchio; quanto sia rimasto in riunione non lo sappiamo,
             perché l’uscita avviene dentro Google Meet.

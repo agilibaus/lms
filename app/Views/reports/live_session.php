@@ -84,7 +84,7 @@ $rows = $ordine->applica($rows);
 
 <section class="card">
     <h2>Presenze: <?= $presenti ?> su <?= count($rows) ?> attesi</h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         L’ingresso viene registrato quando qualcuno apre la riunione da Pistacchio, dalla pagina
         dell’incontro o dalla lezione. Quanto ciascuno sia poi rimasto in riunione non lo sappiamo:
         l’uscita avviene dentro Google Meet, che non ce lo comunica.

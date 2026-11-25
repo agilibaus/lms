@@ -252,7 +252,7 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
 
 <section class="card">
     <h2>Password</h2>
-    <p class="form-hint" style="margin-top: 0;">
+    <p class="riquadro-intro">
         Per cambiarla ti verrà chiesta quella attuale. Le altre sessioni aperte con la
         password precedente vengono chiuse.
     </p>
@@ -280,7 +280,7 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
     <section class="card">
         <h2>Privacy</h2>
         <?php if (Privacy::inVigore() !== null): ?>
-            <p class="form-hint">Come trattiamo i tuoi dati lo spiega l’<a href="<?= htmlspecialchars(Privacy::link('profilo')) ?>">Informativa sulla privacy</a>.</p>
+            <p class="riquadro-intro">Come trattiamo i tuoi dati lo spiega l’<a href="<?= htmlspecialchars(Privacy::link('profilo')) ?>">Informativa sulla privacy</a>.</p>
         <?php endif; ?>
         <?php if (Xlsx::disponibile()): ?>
             <p><a href="/profilo/i-tuoi-dati" class="btn btn-secondary btn-con-icona"><?= Icona::svg('download') ?>Scarica i tuoi dati</a></p>

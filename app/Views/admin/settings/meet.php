@@ -109,7 +109,7 @@ use App\Core\Icona;
 
 <section class="card">
     <h2>Prova di connessione</h2>
-    <p class="form-hint">
+    <p class="riquadro-intro">
         Legge il calendario configurato senza creare né modificare niente. Verifica in un colpo solo
         le credenziali, la delega e il fatto che quel calendario sia visibile all'utente impersonato.
     </p>

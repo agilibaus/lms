@@ -89,7 +89,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
     <h2>Collegamento</h2>
 
     <?php if (!empty($session['meet_link'])): ?>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             <?= !empty($session['google_event_id'])
                 ? 'Link creato da Google Calendar insieme all’evento.'
                 : 'Link inserito manualmente: questa sessione non è sincronizzata con Google Calendar.' ?>
@@ -128,7 +128,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
 <?php if ($canManage && !empty($session['meet_link']) && !$isPast): ?>
     <section class="card">
         <h2>Inviti</h2>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             Manda ai partecipanti attesi<?= $participants !== [] ? ' (' . count($participants) . ')' : '' ?>
             un’email con data, ora e collegamento, e il file da aggiungere al calendario.
             Puoi ripetere l’invio più tardi, per esempio dopo nuove iscrizioni:
@@ -156,7 +156,7 @@ $apribile = (bool) ($session['joinable'] ?? false);
 <?php if ($vedePresenze): ?>
     <section class="card">
         <h2>Presenze</h2>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             <?php if ($canManage): ?>
                 L’ingresso viene registrato quando lo studente apre il Meet da questa piattaforma; qui puoi
                 correggerlo o segnare le presenze a mano, anche a sessione conclusa.

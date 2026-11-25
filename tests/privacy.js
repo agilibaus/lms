@@ -186,8 +186,8 @@ function ripristina() {
             && await sezione.locator('a[href^="/privacy"]').count() === 0);
         const stili = await st.page.evaluate(() => {
             const s = (e) => { const c = getComputedStyle(e); return [c.fontSize, c.color, c.fontFamily].join(' / '); };
-            const nota = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Password').querySelector('p.form-hint');
-            const privacy = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Privacy').querySelector('p.form-hint');
+            const nota = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Password').querySelector('p.riquadro-intro');
+            const privacy = [...document.querySelectorAll('section.card')].find((c) => c.querySelector('h2')?.textContent.trim() === 'Privacy').querySelector('p.riquadro-intro, p.form-hint');
             return [s(nota), s(privacy)];
         });
         check('il testo del riquadro Privacy come le note degli altri riquadri', stili[0] === stili[1], stili);

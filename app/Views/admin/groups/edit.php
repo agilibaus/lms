@@ -82,7 +82,7 @@ $members = $ordineMembri->applica($members);
 
 <section class="card">
     <h2>Corsi assegnati</h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         <?php if ($gestisceTutto): ?>
             Assegnare un corso iscrive tutti i membri del gruppo; chi entra dopo viene iscritto automaticamente.
             Un corso in bozza li iscrive quando viene pubblicato.
@@ -137,7 +137,7 @@ $members = $ordineMembri->applica($members);
 <section class="card">
     <h2>Membri</h2>
     <?php if (!$gestisceMembri): ?>
-        <p class="card-meta">I membri del gruppo li gestisce l’Amministratore.</p>
+        <p class="riquadro-intro">I membri del gruppo li gestisce l’Amministratore.</p>
     <?php endif; ?>
 
     <?php if ($members === []): ?>

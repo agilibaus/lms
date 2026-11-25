@@ -23,7 +23,7 @@ $solaLettura ??= false;
 ?>
 <section class="card">
     <h2>Copertina</h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         Compare nell'elenco dei corsi, nel catalogo e in cima a questa pagina.
         Viene ritagliata al centro in formato 16:9: scegli un'immagine dove
         quello che conta non sta sui bordi.

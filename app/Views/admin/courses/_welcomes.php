@@ -29,7 +29,7 @@ $tutti = Auth::can('course.welcome');
 ?>
 <section class="card" id="benvenuti">
     <h2><?= $tutti ? 'Benvenuto dei tutor' : 'Il tuo benvenuto' ?></h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         La foto del profilo del tutor e un breve audio in cima alla pagina del corso, con l'email per
         gli studenti e il link al gruppo WhatsApp. Ogni studente vede il tutor del proprio gruppo. Ogni
         corso deve averne uno. Completo nelle prime <?= TutorWelcome::VISITE_COMPLETE ?> visite, poi

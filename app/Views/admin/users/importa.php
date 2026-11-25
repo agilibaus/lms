@@ -31,7 +31,7 @@ use App\Core\UserImport;
 
 <section class="card">
     <h2>Com'è fatto il file</h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         La prima riga contiene i nomi delle colonne. L'ordine non conta, le maiuscole
         nemmeno. Separatore virgola o punto e virgola: li riconosce da sé, come riconosce
         i file salvati da Excel su Windows.
@@ -115,7 +115,7 @@ use App\Core\UserImport;
 
 <section class="card">
     <h2>Le password</h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         Nessuno sceglie le password, nemmeno tu: le genera Pistacchio nel momento in cui
         manda l'email, e chi entra deve cambiarla subito. Gli inviti non partono tutti
         insieme ma a scaglioni di <?= Invites::PER_SCAGLIONE ?>, ogni quarto d'ora, perché

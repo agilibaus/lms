@@ -3452,11 +3452,24 @@ body.has-focus-video {
     margin: 0.2rem 0 0.9rem;
 }
 
+/* Il testo che apre un riquadro, sotto il suo titolo (25/11, Alessandro):
+   una misura sola per tutti, quella dei testi secondari, e righe meno
+   strette. Prima era la nota piccola (`.card-meta`) in quattordici riquadri
+   e l'aiuto dei campi (`.form-hint`) in altri sei; su due righe il blocco
+   sembrava schiacciato. */
+.riquadro-intro {
+    color: var(--color-text-muted);
+    font-size: var(--fs-secondario);
+    line-height: 1.45;
+    margin: 0.2rem 0 0.9rem;
+}
+
 /* Un percorso o un indirizzo di servizio e' una parola sola lunga anche
    ottanta caratteri, e il browser non ha dove mandarla a capo: nella pagina
    di Google Meet il percorso della chiave sforava di 533 px a 320. Sono
    identificativi, quindi si possono spezzare in qualunque punto. */
-.card-meta code {
+.card-meta code,
+.riquadro-intro code {
     overflow-wrap: anywhere;
 }
 

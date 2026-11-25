@@ -104,7 +104,7 @@ use App\Core\Icona;
 
 <section class="card">
     <h2>Prova di invio</h2>
-    <p class="form-hint">
+    <p class="riquadro-intro">
         Manda un messaggio al tuo indirizzo<?= $myEmail !== null && $myEmail !== '' ? ' (' . htmlspecialchars($myEmail) . ')' : '' ?>,
         usando le impostazioni salvate. Salva prima di provare.
     </p>

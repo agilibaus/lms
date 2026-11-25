@@ -160,9 +160,9 @@ $scollegati = OrphanFiles::summary();
     <h2>File sul server non collegati a nessuna lezione o questionario</h2>
 
     <?php if ($scollegati['total']['count'] === 0): ?>
-        <p class="card-meta">Nessuno: ogni file caricato è usato da una lezione o da un questionario.</p>
+        <p class="riquadro-intro">Nessuno: ogni file caricato è usato da una lezione o da un questionario.</p>
     <?php else: ?>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             Restano <strong><?= (int) $scollegati['total']['count'] ?></strong> file per
             <strong><?= htmlspecialchars(OrphanFiles::humanSize($scollegati['total']['bytes'])) ?></strong>.
             Nascono togliendo dalla lezione un video (senza eliminarlo) o un contenuto H5P, sostituendone

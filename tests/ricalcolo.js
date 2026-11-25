@@ -126,7 +126,7 @@ const testo = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/g, (
         // --- 1. la pagina del questionario --------------------------------
         await page.goto(BASE + pagina);
         const vista = await page.evaluate(() => ({
-            frase: [...document.querySelectorAll('section.card p.form-hint')].map((p) => p.textContent.replace(/\s+/g, ' ').trim()).find((t) => t.startsWith('Il questionario ha')) || '',
+            frase: [...document.querySelectorAll('section.card p.riquadro-intro')].map((p) => p.textContent.replace(/\s+/g, ' ').trim()).find((t) => t.startsWith('Il questionario ha')) || '',
             nuova: !!document.querySelector('form[action$="/questions"]'),
             elimina: document.querySelectorAll('form[action*="/questions/"][action$="/delete"]').length,
             spenti: document.querySelectorAll('.question-item-actions .comando-spento').length,

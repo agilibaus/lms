@@ -128,7 +128,7 @@ $minimeGiuste = $valutate > 0 ? (int) ceil($soglia / 100 * $valutate) : 0;
     <h2>Domande</h2>
 
     <?php if ($bloccato): ?>
-        <p class="form-hint" style="margin-top: 0;">
+        <p class="riquadro-intro">
             Il questionario ha <?= $tentativi === 1 ? '1 tentativo' : $tentativi . ' tentativi' ?>
             di <?= $studenti === 1 ? '1 studente' : $studenti . ' studenti' ?>: non è possibile aggiungere o
             eliminare domande, né cambiare il loro tipo. Puoi modificare i testi e cambiare le risposte

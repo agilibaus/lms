@@ -163,7 +163,7 @@ $haFoto = !empty($user['avatar_path']);
 <?php if ($isEdit && ($gruppiPerLui || $groups !== [])): ?>
     <section class="card">
         <h2>Gruppi</h2>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             I gruppi a cui l'utente partecipa. Entrando in un gruppo viene iscritto ai suoi corsi;
             uscendo, le iscrizioni già create restano attive.
         </p>
@@ -220,7 +220,7 @@ $haFoto = !empty($user['avatar_path']);
 
     <section class="card">
         <h2>Password temporanea</h2>
-        <p class="form-hint" style="margin-top: 0;">
+        <p class="riquadro-intro">
             La password la genera la piattaforma e la manda per email all'utente: non compare
             qui e non la conosce nessun altro. Le sue sessioni aperte vengono chiuse, e al
             primo accesso dovrà sceglierne una sua.

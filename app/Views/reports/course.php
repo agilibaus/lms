@@ -168,7 +168,7 @@ $materiali = $ordineMateriali->applica(array_map(
              scaricato non si elenca: lo dice il conteggio. */ ?>
     <section class="card">
         <h2>Materiali (<?= count($materiali) ?>)</h2>
-        <p class="card-meta">Chi ha scaricato i materiali delle lezioni, e quando la prima volta. Si contano solo gli studenti.</p>
+        <p class="riquadro-intro">Chi ha scaricato i materiali delle lezioni, e quando la prima volta. Si contano solo gli studenti.</p>
         <div class="tabella-schede">
         <table class="data-table report-materiali" role="table">
             <thead role="rowgroup">

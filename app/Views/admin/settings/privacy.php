@@ -69,7 +69,7 @@ use App\Core\Quando;
 
 <section class="card">
     <h2>Informativa</h2>
-    <p class="form-hint">
+    <p class="riquadro-intro">
         <?php if ($inVigore !== null): ?>
             Versione in vigore: <strong><?= htmlspecialchars(Quando::data($inVigore['published_at'])) ?></strong> ·
             <a href="<?= Privacy::PAGINA ?>">vedi la pagina pubblica</a>.

@@ -71,7 +71,7 @@ $campiCategoria = static function (string $p, array $c) use ($temi): string {
 ?>
 <section class="card" id="bacheca">
     <h2><?= htmlspecialchars($titoloRiquadro ?? 'Bacheca') ?></h2>
-    <p class="card-meta">
+    <p class="riquadro-intro">
         Le categorie della <a href="/bacheca?corso=<?= $courseId ?>">bacheca del corso</a>: gli iscritti le vedono come
         riquadri colorati, in quest'ordine. Il tutor sceglie fra queste quando pubblica una risorsa. Una categoria
         con delle risorse non si può eliminare.
