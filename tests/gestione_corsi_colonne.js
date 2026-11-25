@@ -11,7 +11,9 @@
  *      «Iscrizione» una sola, la modalita' senza la parola «Iscrizione»:
  *      Gratuita, Su richiesta, A pagamento, Chiusa;
  *   3. «Stato» e «Iscrizione» si ordinano (l'ordine lo controlla
- *      `ordinamento_pagine.js`).
+ *      `ordinamento_pagine.js`);
+ *   4. a 320 px nessuna etichetta esce dallo schermo, anche «Bozza presso
+ *      supervisore» (25/11).
  *
  * Esecuzione:  node tests/gestione_corsi_colonne.js   (server di sviluppo acceso)
  */
@@ -81,6 +83,18 @@ const MODALITA = ['Gratuita', 'Su richiesta', 'A pagamento', 'Chiusa'];
                 t.righe.length > 0 && t.righe.every((x) => x.stato.length === 1 && /^(Pubblicato|Bozza presso )/.test(x.stato[0])
                     && x.iscrizione.length === 1 && MODALITA.includes(x.iscrizione[0])), t.righe.map((x) => JSON.stringify(x)));
             check(nome + ': «Stato» e «Iscrizione» si ordinano', t.ordinabili.includes('Stato') && t.ordinabili.includes('Iscrizione'), [JSON.stringify(t.ordinabili)]);
+
+            // A 320 px nessuna etichetta esce dalla scheda (25/11): «Bozza
+            // presso supervisore», la piu' lunga, usciva di 12 px. La bozza
+            // di prova e' presso il supervisore: la vedono lui e l'Amministratore.
+            const tel = await (await browser.newContext({ viewport: { width: 320, height: 700 }, storageState: await page.context().storageState() })).newPage();
+            await tel.goto(BASE + '/admin/courses');
+            const fuori = await tel.evaluate(() => {
+                const W = document.documentElement.clientWidth;
+                return { sfora: document.documentElement.scrollWidth - W, etichette: [...document.querySelectorAll('.badge')].filter((b) => b.getBoundingClientRect().right > W).map((b) => b.textContent.trim()) };
+            });
+            check(nome + ': a 320 px nessuna etichetta esce dallo schermo', fuori.sfora <= 0 && fuori.etichette.length === 0, [JSON.stringify(fuori)]);
+            await tel.close();
             await page.close();
         }
     } finally {

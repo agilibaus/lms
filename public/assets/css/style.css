@@ -4946,9 +4946,14 @@ fieldset.checkbox-group legend {
         line-height: 1.25;
     }
 
+    /* Della loro misura, ma non oltre la scheda (25/11): «Bozza presso
+       supervisore» a 320 px usciva di 12 px. Un'etichetta lunga va a capo
+       invece di uscire, le altre restano su una riga. */
     .tabella-schede .data-table td .badge {
         justify-self: start;
-        width: max-content;
+        width: fit-content;
+        max-width: 100%;
+        white-space: normal;
     }
 
     .tabella-schede .data-table td.row-actions {
