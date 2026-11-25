@@ -19,13 +19,36 @@
 -- quante volte lo si riguarda, perche' sarebbe un registro di abitudini di
 -- una persona che nessuno ha chiesto (stessa regola del calendario, §8).
 --
--- Rieseguirla non fa danni: la colonna esiste gia' e `ADD COLUMN` fallisce,
--- quindi la si applica una volta sola.
+-- RIESEGUIRLA NON FA NIENTE (25/11). Prima la seconda istruzione si
+-- fermava solo perche' `ADD COLUMN` falliva, con un errore, su una colonna
+-- che c'era gia'; eseguita con `--force`, o in un giro di tutte le
+-- migrazioni che va avanti dopo un errore, segnava come «gia' visto» chi
+-- non l'aveva ancora visto, e quello studente il benvenuto non lo vedeva
+-- piu'. Ora la colonna si aggiunge solo se manca, come nelle altre
+-- migrazioni (MySQL 8 non ha `ADD COLUMN IF NOT EXISTS`), e gli utenti si
+-- segnano **solo in quel momento**.
 
-ALTER TABLE users
-    ADD COLUMN welcome_seen_at DATETIME NULL DEFAULT NULL AFTER must_change_password;
+SET @colonna := (
+    SELECT COLUMN_NAME FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND COLUMN_NAME = 'welcome_seen_at'
+);
 
 -- Gli utenti che c'erano prima: gia' visto, cosi' non vengono interrotti.
 -- `NOW()` e non una data scritta a mano: l'ora la mette il database, che e'
 -- l'orologio con cui tutto il resto confronta le date (trappola §5).
-UPDATE users SET welcome_seen_at = NOW() WHERE welcome_seen_at IS NULL;
+-- Le due istruzioni solo se la colonna non c'era: dopo, `DO 0`.
+SET @sql := IF(
+    @colonna IS NULL,
+    'ALTER TABLE users ADD COLUMN welcome_seen_at DATETIME NULL DEFAULT NULL AFTER must_change_password',
+    'DO 0'
+);
+PREPARE passo FROM @sql; EXECUTE passo; DEALLOCATE PREPARE passo;
+
+SET @sql := IF(
+    @colonna IS NULL,
+    'UPDATE users SET welcome_seen_at = NOW() WHERE welcome_seen_at IS NULL',
+    'DO 0'
+);
+PREPARE passo FROM @sql; EXECUTE passo; DEALLOCATE PREPARE passo;

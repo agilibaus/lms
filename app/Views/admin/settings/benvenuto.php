@@ -30,18 +30,15 @@ use App\Core\Welcome;
         propri corsi.
     </div>
 <?php else: ?>
+    <?php /* La frase di Alessandro (25/11). Tolto anche l'avviso «Chi è già
+             iscritto non lo vedrà»: valeva per gli account che c'erano il
+             05/10, e in produzione, con un'installazione nuova, gli studenti
+             nascono tutti dopo. */ ?>
     <div class="alert alert-info">
-        Nessun video configurato: la pagina di benvenuto non compare a nessuno. Si accende
-        scegliendo un provider e indicando l'identificativo del video qui sotto.
+        Nessun video configurato: la pagina di benvenuto compare dopo aver scelto un provider e
+        inserito l'identificativo del video qui sotto.
     </div>
 <?php endif; ?>
-
-<div class="alert alert-info">
-    <strong>Chi è già iscritto non lo vedrà.</strong> Il benvenuto compare solo agli account
-    creati dopo l'aggiornamento che ha introdotto questa funzione: gli altri risultano averlo
-    già visto, e non vengono interrotti da una schermata nuova. Per farlo rivedere a una
-    persona bisogna svuotare a mano la sua casella <code>welcome_seen_at</code>.
-</div>
 
 <form action="/admin/settings/benvenuto" method="post" class="form">
     <?= Csrf::field() ?>
