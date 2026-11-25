@@ -3467,9 +3467,13 @@ body.has-focus-video {
 /* Un percorso o un indirizzo di servizio e' una parola sola lunga anche
    ottanta caratteri, e il browser non ha dove mandarla a capo: nella pagina
    di Google Meet il percorso della chiave sforava di 533 px a 320. Sono
-   identificativi, quindi si possono spezzare in qualunque punto. */
+   identificativi, quindi si possono spezzare in qualunque punto. Cosi'
+   anche il file del video caricato sul server, nel testo di aiuto della
+   lezione (25/11): «videos/2/b3746806….mp4» allargava il riquadro «Video»
+   a 452 px su un telefono di 375. */
 .card-meta code,
-.riquadro-intro code {
+.riquadro-intro code,
+.hint code {
     overflow-wrap: anywhere;
 }
 
@@ -6052,7 +6056,10 @@ fieldset.checkbox-group legend {
 
 /* In Modifica lezione, e nei materiali di una lezione nuova (20/11). Un
    fieldset e' largo almeno quanto il suo contenuto, e un campo file e' piu'
-   largo di un telefono: senza, a 320 px il riquadro sforava di 72 px. */
+   largo di un telefono: senza, a 320 px il riquadro sforava di 72 px.
+   Cosi' anche il riquadro «Video» (25/11), con il campo per caricare il
+   video sul server: a 375 px arrivava a 392. */
+.video-fieldset,
 .h5p-lezione-fieldset,
 .materiali-nuovi-fieldset {
     min-width: 0;
