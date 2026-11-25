@@ -25,7 +25,7 @@ $sezioni = [
     [
         'titolo' => 'Messaggi email',
         'href' => '/admin/settings/email',
-        'testo' => 'Il nome dell’organizzazione, il mittente, la chiusura e il testo di ogni email che la piattaforma manda.',
+        'testo' => 'Nome dell’organizzazione, mittente e testo di ogni email inviata dalla piattaforma.',
         'visibile' => $canSettings,
     ],
     [

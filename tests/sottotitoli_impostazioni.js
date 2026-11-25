@@ -1,7 +1,7 @@
 /**
- * I sottotitoli delle pagine delle Impostazioni, decisi da Alessandro nel
- * ripasso dell'Amministratore (dal 25/11). Una riga per pagina: chi cambia
- * una frase cambia anche la riga.
+ * I sottotitoli delle pagine delle Impostazioni e i testi dei loro riquadri
+ * nell'indice, decisi da Alessandro nel ripasso dell'Amministratore (dal
+ * 25/11). Una riga per testo: chi cambia una frase cambia anche la riga.
  *
  * Esecuzione:  node tests/sottotitoli_impostazioni.js   (server di sviluppo acceso)
  */
@@ -14,6 +14,12 @@ const PASSWORD = process.env.LMS_PASS || 'Password1!';
 
 const ATTESI = [
     ['/admin/settings/posta', 'Quello che salvi qui ha la precedenza sul file .env; se lasci un campo vuoto torna a valere il valore scritto nel file.'],
+    ['/admin/settings/email', 'Un campo lasciato vuoto usa il testo predefinito in grigio. Come partono le email si imposta in Server di posta elettronica.'],
+];
+
+// Il testo dei riquadri nella pagina delle Impostazioni: [indirizzo del riquadro, testo].
+const RIQUADRI = [
+    ['/admin/settings/email', 'Nome dell’organizzazione, mittente e testo di ogni email inviata dalla piattaforma.'],
 ];
 
 let ok = 0;
@@ -40,6 +46,13 @@ function check(etichetta, condizione, dettagli = []) {
             await page.goto(BASE + indirizzo);
             const frase = await page.evaluate(() => (document.querySelector('.page-header .page-subtitle')?.textContent || '').replace(/\s+/g, ' ').trim());
             check(indirizzo + ': il sottotitolo', frase === attesa, [frase]);
+        }
+
+        await page.goto(BASE + '/admin/settings');
+        for (const [indirizzo, attesa] of RIQUADRI) {
+            const testo = await page.evaluate((h) => (document.querySelector('a.settings-card[href="' + h + '"] .settings-card-text')?.textContent || '')
+                .replace(/\s+/g, ' ').trim(), indirizzo);
+            check('Impostazioni: il testo del riquadro ' + indirizzo, testo === attesa, [testo]);
         }
     } finally {
         await browser.close();
