@@ -18,8 +18,7 @@ use App\Core\Icona;
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Server di posta elettronica</h1>
     <p class="page-subtitle">
-        Come la piattaforma invia le sue email: verifiche dell'indirizzo, recuperi password, avvisi.
-        Quello che salvi qui ha la precedenza sul file <code>.env</code>; lasciando un campo vuoto
+        Quello che salvi qui ha la precedenza sul file <code>.env</code>; se lasci un campo vuoto
         torna a valere il valore scritto nel file.
     </p>
 </div>
