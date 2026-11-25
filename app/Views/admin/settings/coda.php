@@ -29,16 +29,9 @@ $giro = static function (?string $data): string {
         return 'Il giro della posta non è ancora partito: bin/avvisi va pianificato sul server, ogni quarto d’ora.';
     }
 
-    $giorno = date('Y-m-d', $t);
-    $come = match ($giorno) {
-        date('Y-m-d') => 'oggi',
-        date('Y-m-d', strtotime('-1 day')) => 'ieri',
-        default => null,
-    };
-
-    // «oggi alle 10:15», «ieri alle 10:15»; piu' indietro la data come in
-    // tutta la piattaforma, «16/09/2026 10:15» (06/11).
-    return 'Ultimo giro: ' . ($come === null ? date('d/m/Y H:i', $t) : $come . ' alle ' . date('H:i', $t)) . '.';
+    // La data come in tutta la piattaforma, «16/09/2026 10:15» (25/11,
+    // Alessandro): prima, per oggi e ieri, «oggi alle 10:15».
+    return 'Ultimo giro: ' . date('d/m/Y H:i', $t) . '.';
 };
 $tentativi = static fn (int $n): string => $n === 0 ? '—' : ($n === 1 ? '1 tentativo' : $n . ' tentativi');
 

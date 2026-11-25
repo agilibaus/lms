@@ -6,11 +6,11 @@ use App\Core\Etichetta;
 use App\Core\ReportSections;
 use App\Core\Ritorno;
 use App\Auth\Auth;
-use App\Core\StudentiFermi;
 use App\Controllers\ReportController;
 use App\Core\Ordinamento;
 use App\Core\Icona;
 use App\Core\ContestoStudente;
+use App\Core\Quando;
 
 /** @var array $student */
 /** @var array $courses */
@@ -113,9 +113,9 @@ $quando = static fn (?string $d): string => ReportController::dateTimeLabel($d);
         <?php if (empty($student['last_seen_at'])): ?>
             non ancora registrato
         <?php else: ?>
-            <?php $giorniAccesso = StudentiFermi::giorni((string) $student['last_seen_at'], new DateTimeImmutable('now')); ?>
-            <?= htmlspecialchars(StudentiFermi::quando($giorniAccesso)) ?>
-            (<?= htmlspecialchars(date('d/m/Y H:i', (int) strtotime((string) $student['last_seen_at']))) ?>)
+            <?php /* Data e ora come in tutta la piattaforma (25/11, Alessandro):
+                     prima anche «ieri» o «3 giorni fa», con la data fra parentesi. */ ?>
+            <?= htmlspecialchars(Quando::dataOra((string) $student['last_seen_at'])) ?>
         <?php endif; ?>
     </p>
     <?php /* Dal corso o dal gruppo le presenze stanno nel titolo del
