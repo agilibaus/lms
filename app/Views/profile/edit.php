@@ -33,6 +33,26 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
 
 <?php require __DIR__ . '/../admin/_flash.php'; ?>
 
+<?php /* Chi carica la foto deve sapere prima dove andra' a finire (06/10,
+         Elena): la frase dice il perimetro di `GroupPeers`, che e' la regola
+         che lo fa rispettare; se cambia una, va cambiata l'altra. Prima del
+         riquadro «Immagine» (25/11, Alessandro): vale per la foto e per la
+         presentazione, che sta in «Dati personali». Solo al tutor e allo
+         studente: lo staff non e' mai membro di un gruppo, e la frase per lui
+         non era vera. */ ?>
+<?php if ($fotoObbligatoria): ?>
+    <p class="form-hint profilo-nota">
+        La foto è obbligatoria, e si può sostituire ma non togliere: compare nella pagina dei tuoi
+        gruppi e nel tuo benvenuto in cima ai corsi, dove la vedono i tuoi studenti e l'Amministratore.
+        La presentazione è facoltativa.
+    </p>
+<?php elseif ($user['role'] === 'studente'): ?>
+    <p class="form-hint profilo-nota">
+        La foto e la presentazione sono facoltative. Compariranno nella pagina dei tuoi gruppi, dove le
+        vedono i compagni di gruppo, il tutor e l'Amministratore.
+    </p>
+<?php endif; ?>
+
 <section class="card">
     <h2>Immagine</h2>
 
@@ -57,26 +77,6 @@ $fotoObbligatoria = AvatarImage::obbligatoria((string) $user['role']);
                 JPG, PNG, GIF o WebP fino a <?= $maxAvatarMb ?>&nbsp;MB. Viene ritagliata quadrata al centro
                 e ridotta: non serve prepararla prima.
             </p>
-            <?php /* Chiesto da Elena il 06/10: chi carica la foto deve sapere
-                     prima dove andra' a finire. La frase dice esattamente il
-                     perimetro di `GroupPeers`, che e' la regola che lo fa
-                     rispettare: se cambia una, va cambiata l'altra. */ ?>
-            <?php if ($fotoObbligatoria): ?>
-                <?php /* Per il tutor la frase dice lo stesso perimetro di `GroupPeers`
-                         visto dalla sua parte: i compagni dei suoi gruppi sono i suoi
-                         studenti, e il benvenuto lo vedono solo loro. */ ?>
-                <p class="form-hint">
-                    Per un tutor la foto è obbligatoria, e si può sostituire ma non togliere: è la
-                    stessa nella pagina dei tuoi gruppi e nel tuo benvenuto in cima ai corsi, dove la
-                    vedono i tuoi studenti e l'Amministratore. La presentazione è facoltativa.
-                </p>
-            <?php else: ?>
-                <p class="form-hint">
-                    La foto e la presentazione sono facoltative. Se le inserisci, compariranno nella pagina
-                    dei tuoi gruppi, dove le vedono i compagni di gruppo, il tutor e l'Amministratore.
-                </p>
-            <?php endif; ?>
-
             <?php if ($hasAvatar && !$fotoObbligatoria): ?>
                 <form action="/profilo/immagine/elimina" method="post"
                       onsubmit="return confirm('Rimuovere l’immagine del profilo?');">

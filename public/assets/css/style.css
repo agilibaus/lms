@@ -3751,6 +3751,12 @@ body.has-focus-video {
     margin-top: 0.5rem;
 }
 
+/* La frase su chi vede la foto, prima del riquadro «Immagine» del profilo
+   (25/11): staccata dal riquadro come i riquadri fra loro. */
+.form-hint.profilo-nota {
+    margin: 0 0 1rem;
+}
+
 /* L'errore di un campo, sotto il campo (24/11, Alessandro: «brevi,
    sufficientemente piccoli ma leggibili, di colore rosso»): la misura delle
    note piccole e il rosso degli errori, 6,5:1 sul bianco. */
