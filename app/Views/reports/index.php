@@ -38,14 +38,14 @@ use App\Core\StudentiFermi;
 
 <div class="report-scelta">
     <?php /* «Studenti fermi» per primo (20/10): e' il report da cui si agisce,
-             gli altri si consultano. Il numero e' quello a 14 giorni, la
+             gli altri si consultano. Il numero e' quello a 7 giorni (25/11; prima 14), la
              soglia con cui la pagina si apre. */ ?>
     <a class="report-taglio" href="/reports/fermi">
         <span class="report-taglio-titolo">
             Studenti fermi
             <span class="report-taglio-numero">(<?= (int) $fermi ?>)</span>
         </span>
-        <span class="report-taglio-nota">Chi non avanza da <?= StudentiFermi::SOGLIA_INIZIALE ?> giorni o non ha mai iniziato: da contattare per primi.</span>
+        <span class="report-taglio-nota">Chi non avanza da almeno <?= StudentiFermi::SOGLIA_INIZIALE ?> giorni o non ha mai iniziato: da contattare per primi.</span>
     </a>
     <?php foreach ($sezioni as $chiave => $s): ?>
         <?php $quanti = $conteggi[$chiave] ?? 0; ?>

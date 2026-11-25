@@ -28,7 +28,9 @@ namespace App\Core;
 final class StudentiFermi
 {
     public const SOGLIE = [7, 14, 30];
-    public const SOGLIA_INIZIALE = 14;
+    // La soglia con cui si apre la pagina e si conta il numero nel riquadro
+    // dell'indice: 7 giorni dal 25/11 (Alessandro), prima 14.
+    public const SOGLIA_INIZIALE = 7;
 
     public const MAI = 'mai';
     public const ENTRA = 'entra';

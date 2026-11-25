@@ -74,7 +74,7 @@ class ReportSections
                 'articolo' => 'i',
                 'base' => '/reports/groups',
                 'vuoto' => 'Nessun gruppo visibile.',
-                'occhiello' => 'I membri di ogni gruppo incrociati con i corsi assegnati.',
+                'occhiello' => 'I membri di ogni gruppo con i corrispondenti corsi assegnati.',
                 'cerca' => ['name' => 'Gruppo', 'tutor_name' => 'Tutor'],
             ],
             'students' => [
@@ -84,7 +84,7 @@ class ReportSections
                 'articolo' => 'gli',
                 'base' => '/reports/students',
                 'vuoto' => 'Nessuno studente visibile.',
-                'occhiello' => 'Tutti i corsi di uno studente, con tentativi e punteggi.',
+                'occhiello' => 'Per ogni studente: stato di avanzamento nei suoi corsi, i questionari e le presenze agli incontri.',
                 'cerca' => ['full_name' => 'Studente', 'email' => 'Email'],
             ],
             'live' => [
@@ -94,7 +94,7 @@ class ReportSections
                 'articolo' => 'gli',
                 'base' => '/reports/live',
                 'vuoto' => 'Nessun incontro.',
-                'occhiello' => 'Le presenze, con l’origine del dato.',
+                'occhiello' => 'Chi era presente agli incontri, suddivisi per corsi e gruppi.',
                 // Corso e gruppo in due colonne (24/11).
                 'cerca' => [
                     'title' => 'Incontro',
@@ -109,8 +109,7 @@ class ReportSections
                 'articolo' => 'i',
                 'base' => '/reports/fruizione',
                 'vuoto' => 'Nessun corso ha lezioni con video.',
-                'occhiello' => 'Quanta parte di ogni video hanno guardato gli studenti. '
-                    . 'È il dato da rendicontare: si scarica per corso, con una colonna per lezione.',
+                'occhiello' => 'Chi ha guardato e per quanto tempo ciascun video, suddiviso per corso e lezione.',
                 'cerca' => ['title' => 'Corso'],
             ],
         ];

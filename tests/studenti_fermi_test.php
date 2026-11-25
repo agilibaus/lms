@@ -47,10 +47,11 @@ $adesso = new DateTimeImmutable('2026-10-20 10:00:00');
 echo PHP_EOL . 'La soglia' . PHP_EOL;
 
 check('7, 14 e 30 sono accettati', StudentiFermi::soglia('7') === 7 && StudentiFermi::soglia('14') === 14 && StudentiFermi::soglia(30) === 30);
-check('niente soglia vuol dire 14', StudentiFermi::soglia(null) === 14);
-check('0 torna a 14', StudentiFermi::soglia('0') === 14, 'con 0 sarebbero fermi tutti');
-check('un numero non previsto torna a 14', StudentiFermi::soglia('15') === 14 && StudentiFermi::soglia('-7') === 14);
-check('il testo torna a 14', StudentiFermi::soglia('tanti') === 14);
+// La soglia iniziale e' 7 dal 25/11 (Alessandro), prima 14.
+check('niente soglia vuol dire 7', StudentiFermi::soglia(null) === 7);
+check('0 torna a 7', StudentiFermi::soglia('0') === 7, 'con 0 sarebbero fermi tutti');
+check('un numero non previsto torna a 7', StudentiFermi::soglia('15') === 7 && StudentiFermi::soglia('-14') === 7);
+check('il testo torna a 7', StudentiFermi::soglia('tanti') === 7);
 
 echo PHP_EOL . 'I giorni' . PHP_EOL;
 

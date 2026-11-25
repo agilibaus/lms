@@ -69,6 +69,19 @@ foreach ($sezioni as $chiave => $s) {
     check("«{$chiave}» esiste", ReportSections::esiste($chiave));
 }
 
+// I testi dei riquadri, decisi da Alessandro il 25/11.
+$occhielli = [
+    'courses' => 'Iscritti, completamenti e certificati di ogni corso.',
+    'groups' => 'I membri di ogni gruppo con i corrispondenti corsi assegnati.',
+    'students' => 'Per ogni studente: stato di avanzamento nei suoi corsi, i questionari e le presenze agli incontri.',
+    'live' => 'Chi era presente agli incontri, suddivisi per corsi e gruppi.',
+    'fruizione' => 'Chi ha guardato e per quanto tempo ciascun video, suddiviso per corso e lezione.',
+];
+
+foreach ($occhielli as $chiave => $testo) {
+    check("«{$chiave}»: il testo del riquadro è quello deciso", ($sezioni[$chiave]['occhiello'] ?? null) === $testo, (string) ($sezioni[$chiave]['occhiello'] ?? ''));
+}
+
 check('una chiave inventata non esiste', !ReportSections::esiste('../etc/passwd'));
 check('la chiave vuota non esiste', !ReportSections::esiste(''));
 
