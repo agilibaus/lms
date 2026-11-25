@@ -84,7 +84,7 @@ class ReportSections
                 'articolo' => 'gli',
                 'base' => '/reports/students',
                 'vuoto' => 'Nessuno studente visibile.',
-                'occhiello' => 'Per ogni studente: stato di avanzamento nei suoi corsi, i questionari e le presenze agli incontri.',
+                'occhiello' => 'Per ogni studente: stato di avanzamento nei corsi, questionari e presenze agli incontri.',
                 'cerca' => ['full_name' => 'Studente', 'email' => 'Email'],
             ],
             'live' => [

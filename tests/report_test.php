@@ -73,7 +73,7 @@ foreach ($sezioni as $chiave => $s) {
 $occhielli = [
     'courses' => 'Iscritti, completamenti e certificati di ogni corso.',
     'groups' => 'I membri di ogni gruppo con i corrispondenti corsi assegnati.',
-    'students' => 'Per ogni studente: stato di avanzamento nei suoi corsi, i questionari e le presenze agli incontri.',
+    'students' => 'Per ogni studente: stato di avanzamento nei corsi, questionari e presenze agli incontri.',
     'live' => 'Chi era presente agli incontri, suddivisi per corsi e gruppi.',
     'fruizione' => 'Chi ha guardato e per quanto tempo ciascun video, suddiviso per corso e lezione.',
 ];
