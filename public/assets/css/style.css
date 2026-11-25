@@ -1,5 +1,5 @@
 /* ==========================================================
-   Vivere Mindfulness LMS — stylesheet
+   Pistacchio LMS — stylesheet
    Design asciutto, moderno, ispirato a Frappe LMS. Mobile-first.
    ========================================================== */
 
@@ -14,8 +14,8 @@
     --fs-secondario: 0.92rem;
     --fs-piccolo: 0.8rem;
     --color-bg: #fafaf9;
-    /* Sfondo caldo delle pagine pubbliche (accesso, registrazione, password),
-       ripreso dal sito Mindfulness in Voce: crema con tre cerchi traslucidi */
+    /* Sfondo caldo delle pagine pubbliche (accesso, registrazione, password):
+       crema con tre cerchi traslucidi */
     --color-auth-bg: #f6f1eb;
     --color-auth-orb-sage: rgba(122, 140, 110, 0.08);
     --color-auth-orb-terracotta: rgba(217, 166, 121, 0.10);
