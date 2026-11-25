@@ -24,7 +24,7 @@ $groups = $ordine->applica($groups);
     <h1>Gruppi</h1>
     <p class="page-subtitle">
         <?= $canManageAll
-            ? 'Classi e coorti: membri e corsi assegnati all’intero gruppo. Clicca sul nome del gruppo per visualizzare i dettagli.'
+            ? 'Gli studenti divisi in gruppi, ognuno con il suo tutor. Un corso assegnato a un gruppo iscrive tutti i suoi membri. Clicca sul nome del gruppo per visualizzare i dettagli.'
             : 'I gruppi di cui sei tutor. Clicca sul nome del gruppo per visualizzare i dettagli.' ?>
     </p>
     <?php /* Crea i gruppi chi li gestisce tutti: l'admin e, dal 06/11, il

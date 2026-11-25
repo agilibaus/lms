@@ -126,6 +126,13 @@ const persona = (nome, email, ruolo, attivo = true) => [
         // Il sottotitolo (25/11, Alessandro).
         check('supervisore: il sottotitolo di «Utenti»',
             elenco.sottotitolo === 'Gli studenti: data di creazione, informazioni di contatto, gruppi e password.', [String(elenco.sottotitolo)]);
+        // Il sottotitolo di «Gruppi», per il supervisore e l'Amministratore (25/11, Alessandro): non piu' «Classi e coorti».
+        for (const [chi, pagina] of [['supervisore', sup.page], ['amministratore', adm.page]]) {
+            await pagina.goto(BASE + '/admin/groups');
+            const frase = await pagina.evaluate(() => document.querySelector('.page-header .page-subtitle')?.textContent.replace(/\s+/g, ' ').trim());
+            check(chi + ': il sottotitolo di «Gruppi»', frase === 'Gli studenti divisi in gruppi, ognuno con il suo tutor. Un corso assegnato a un gruppo iscrive tutti i suoi membri. '
+                + 'Clicca sul nome del gruppo per visualizzare i dettagli.', [String(frase)]);
+        }
         check('supervisore: l’elenco non si scarica, né CSV né XLSX (403)',
             await statoGet(sup.page, '/admin/users/csv') === 403 && await statoGet(sup.page, '/admin/users/xlsx') === 403);
 
