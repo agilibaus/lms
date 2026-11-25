@@ -54,9 +54,10 @@ use App\Core\TestoBreve;
     <input type="checkbox" name="three_words" value="1" aria-describedby="three-words-hint" <?= !empty($course['three_words_since']) ? 'checked' : '' ?>>
     Chiedi tre parole alla fine di ogni modulo
 </label>
+<?php /* La frase di Alessandro (25/11). */ ?>
 <p class="form-hint" id="three-words-hint">
-    Lo studente scrive le prime tre parole che gli vengono; le leggono il tutor del gruppo e l'Amministratore,
-    in «Tre parole». Si chiedono per i moduli completati da quando è attiva.
+    Lo studente scrive le prime tre parole che gli vengono in mente collegate al modulo completato;
+    le leggono il tutor del gruppo e l'Amministratore.
 </p>
 
 <label for="enrollment_mode">Come ci si iscrive</label>
