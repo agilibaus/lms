@@ -38,7 +38,7 @@ function check(etichetta, condizione, dettagli = []) {
             return a ? a.textContent.replace(/\s+/g, ' ').trim() : null;
         });
         check('Impostazioni: il riquadro «Video di benvenuto» senza «una volta sola»',
-            riquadro !== null && riquadro.includes('Il video che uno studente vede al primo accesso.') && !riquadro.includes('una volta sola'),
+            riquadro !== null && riquadro.includes('Il video che uno studente vede al primo accesso alla piattaforma.') && !riquadro.includes('una volta sola'),
             [String(riquadro)]);
 
         await page.goto(BASE + '/admin/settings/benvenuto');

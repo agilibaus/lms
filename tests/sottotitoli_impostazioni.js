@@ -20,6 +20,7 @@ const ATTESI = [
 // Il testo dei riquadri nella pagina delle Impostazioni: [indirizzo del riquadro, testo].
 const RIQUADRI = [
     ['/admin/settings/email', 'Nome dell’organizzazione, mittente e testo di ogni email inviata dalla piattaforma.'],
+    ['/admin/settings/benvenuto', 'Il video che uno studente vede al primo accesso alla piattaforma.'],
 ];
 
 let ok = 0;

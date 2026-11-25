@@ -31,7 +31,7 @@ $sezioni = [
     [
         'titolo' => 'Video di benvenuto',
         'href' => '/admin/settings/benvenuto',
-        'testo' => 'Il video che uno studente vede al primo accesso.',
+        'testo' => 'Il video che uno studente vede al primo accesso alla piattaforma.',
         'visibile' => $canWelcome ?? $canSettings,
     ],
     [
