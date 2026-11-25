@@ -52,10 +52,10 @@ use App\Core\Welcome;
             </option>
         <?php endforeach; ?>
     </select>
+    <?php /* La frase di Alessandro (25/11). */ ?>
     <p class="form-hint">
         Gli stessi provider delle lezioni, meno il video caricato sul nostro server: quello
-        viene servito passando dall'identificativo di una lezione, e il benvenuto non è una
-        lezione.
+        utilizza l'identificativo di una lezione, e il benvenuto non è una lezione.
     </p>
 
     <label for="welcome-ref">Identificativo del video</label>
