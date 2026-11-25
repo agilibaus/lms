@@ -17,8 +17,8 @@ use App\Core\Welcome;
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Video di benvenuto</h1>
     <p class="page-subtitle">
-        Il video che uno studente vede al primo accesso, una volta sola. Lo si può
-        rivedere dal proprio profilo.
+        Il video che uno studente vede al primo accesso. Lo si può rivedere dal
+        proprio profilo.
     </p>
 </div>
 
