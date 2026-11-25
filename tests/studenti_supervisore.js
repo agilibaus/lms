@@ -123,6 +123,9 @@ const persona = (nome, email, ruolo, attivo = true) => [
         check('supervisore: «Utenti» nel menu, la pagina si apre, e ci sono solo studenti',
             r === 200 && elenco.menu.includes('Utenti') && elenco.ruoli.join() === 'Studente', [JSON.stringify(elenco)]);
         check('supervisore: «Importa da file» sì, «Scarica dati» no', elenco.importa && !elenco.scarica, [JSON.stringify(elenco)]);
+        // Il sottotitolo (25/11, Alessandro).
+        check('supervisore: il sottotitolo di «Utenti»',
+            elenco.sottotitolo === 'Gli studenti: data di creazione, informazioni di contatto, gruppi e password.', [String(elenco.sottotitolo)]);
         check('supervisore: l’elenco non si scarica, né CSV né XLSX (403)',
             await statoGet(sup.page, '/admin/users/csv') === 403 && await statoGet(sup.page, '/admin/users/xlsx') === 403);
 

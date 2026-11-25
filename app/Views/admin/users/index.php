@@ -47,7 +47,7 @@ $quantiScaricati = count($users) === 1 ? '1 utente' : count($users) . ' utenti';
     <p class="page-subtitle">
         <?= $canManageAll
             ? 'Creazione utenti, ruoli, tutor di riferimento e password.'
-            : 'Gli studenti: creazione, dati, gruppi e password.' ?>
+            : 'Gli studenti: data di creazione, informazioni di contatto, gruppi e password.' ?>
     </p>
     <div class="page-actions">
         <a href="/admin/users/create" class="btn btn-primary btn-con-icona"><?= Icona::svg('plus-lg') ?>Nuovo utente</a>
