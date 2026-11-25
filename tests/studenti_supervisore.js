@@ -2,7 +2,7 @@
  * Il supervisore gestisce gli studenti (15/11, Alessandro).
  *
  * Con `student.manage` entra in «Utenti» e vede solo gli studenti. Li crea
- * (il ruolo e' fisso: «Ruolo: Studente», senza menu), anche da un file; ne
+ * (il ruolo e' fisso: il campo «Ruolo» in sola lettura con «Studente», senza menu), anche da un file; ne
  * modifica nome, cognome, email e stato; li mette nei gruppi dalla scheda;
  * manda la password temporanea; rimanda gli inviti; li elimina. Lo staff non
  * lo vede e non lo tocca, nessun ruolo cambia per mano sua, e l'elenco degli
@@ -130,10 +130,15 @@ const persona = (nome, email, ruolo, attivo = true) => [
         await sup.page.goto(BASE + '/admin/users/create');
         const modulo = await sup.page.evaluate(() => ({
             menu: !!document.querySelector('select[name="role"]'),
-            fisso: [...document.querySelectorAll('form[data-user-form] p')].map((p) => p.textContent.trim()).find((t) => t.startsWith('Ruolo:')) || '',
+            // Come gli altri campi (26/11): l'etichetta «Ruolo» sopra e il
+            // valore in un campo in sola lettura, come «Registrato il».
+            fisso: (() => {
+                const c = document.querySelector('form[data-user-form] input#role[readonly]');
+                return c && c.labels && c.labels[0] ? c.labels[0].textContent.trim() + ': ' + c.value : '';
+            })(),
             foto: !!document.querySelector('input[name="avatar"]'),
         }));
-        check('il modulo: «Ruolo: Studente», senza menu e senza foto', !modulo.menu && modulo.fisso === 'Ruolo: Studente' && !modulo.foto, [JSON.stringify(modulo)]);
+        check('il modulo: il campo «Ruolo» in sola lettura con «Studente», senza menu e senza foto', !modulo.menu && modulo.fisso === 'Ruolo: Studente' && !modulo.foto, [JSON.stringify(modulo)]);
         await posta(sup.page, '/admin/users', persona('Uno', 'uno' + DOMINIO, 'studente'), '/admin/users/create');
         let u = utente('uno' + DOMINIO);
         check('crea uno studente', u !== null && u.role === 'studente' && Number(u.is_active) === 1, [JSON.stringify(u)]);

@@ -53,8 +53,12 @@ $haFoto = !empty($user['avatar_path']);
     <?php if (count($roles) === 1): ?>
         <?php /* Un ruolo solo da scegliere (il supervisore, 15/11: solo
                  studenti): un menu con una voce sarebbe un comando che non
-                 fa niente. Si scrive, e il server lo impone comunque. */ ?>
-        <p><strong>Ruolo:</strong> <?= htmlspecialchars(Auth::roleLabel($roles[0])) ?></p>
+                 fa niente. Si scrive, e il server lo impone comunque.
+                 Come gli altri campi, con l'etichetta sopra (26/11,
+                 Alessandro): un campo in sola lettura, come «Registrato il».
+                 Senza `name`: il ruolo viaggia nel campo nascosto. */ ?>
+        <label for="role">Ruolo</label>
+        <input type="text" id="role" value="<?= htmlspecialchars(Auth::roleLabel($roles[0])) ?>" readonly>
         <input type="hidden" name="role" value="<?= htmlspecialchars($roles[0]) ?>">
     <?php else: ?>
         <label for="role">Ruolo</label>
