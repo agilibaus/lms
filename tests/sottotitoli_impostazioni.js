@@ -128,6 +128,18 @@ function check(etichetta, condizione, dettagli = []) {
             .flatMap((e) => [...e.querySelectorAll('strong, b')].map((b) => b.textContent.replace(/\s+/g, ' ').trim())));
         check('/admin/settings/aspetto: nessun grassetto nei testi', grassetti.length === 0, grassetti);
 
+        // Comandi pianificati (26/11): la frase di stato della sorveglianza come il testo che apre un riquadro.
+        await page.goto(BASE + '/admin/settings/comandi');
+        const statoSorveglianza = await page.evaluate(() => {
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const p = document.querySelector('.sorveglianza-stato');
+            const aiuto = document.querySelector('.sorveglianza .form-hint');
+            if (!p || !aiuto) return null;
+            const s = getComputedStyle(p);
+            return [Math.round(parseFloat(s.fontSize) / rem * 100) / 100, s.color === getComputedStyle(aiuto).color, Math.round(parseFloat(s.lineHeight) / parseFloat(s.fontSize) * 100) / 100].join(' ');
+        });
+        check('/admin/settings/comandi: la frase di stato a 0,92 rem, grigia, interlinea 1,45', statoSorveglianza === '0.92 true 1.45', [String(statoSorveglianza)]);
+
         // Ruoli (26/11, variante C): l'elenco di che cosa fa sempre un ruolo come i
         // testi che spiegano, e «Amministratore» invece di «Admin».
         await page.goto(BASE + '/admin/permissions');

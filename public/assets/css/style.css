@@ -816,8 +816,19 @@ h3 { font-size: var(--fs-sottotitolo); }
     margin: 0;
 }
 
+/* La frase che dice in che stato e' la sorveglianza (26/11, Alessandro):
+   come il testo che apre un riquadro, 0,92 rem, grigia, righe a 1,45. Era
+   nera a 16 px e sembrava piu' importante del resto; lo stato si legge
+   gia' nell'etichetta accanto al titolo. */
 .sorveglianza-stato {
     margin: 0 0 0.3rem;
+    font-size: var(--fs-secondario);
+    line-height: 1.45;
+    color: var(--color-text-muted);
+}
+
+.sorveglianza-stato code {
+    overflow-wrap: anywhere;
 }
 
 .sorveglianza-comandi {
