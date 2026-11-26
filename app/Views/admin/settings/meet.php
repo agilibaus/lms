@@ -20,9 +20,9 @@ use App\Core\Icona;
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Google Meet</h1>
     <p class="page-subtitle">
-        Serve a creare il link Meet insieme all'evento di calendario quando programmi una sessione live.
-        Senza questa configurazione le sessioni restano gestibili incollando a mano un link.
-        Quello che salvi qui ha la precedenza sul file <code>.env</code>.
+        Serve a creare il link Meet e il corrispondente evento di calendario quando programmi una
+        sessione live. Le sessioni restano comunque gestibili incollando a mano un link. Ha la
+        precedenza sul file <code>.env</code>.
     </p>
 </div>
 
@@ -30,18 +30,22 @@ use App\Core\Icona;
 
 <section class="card">
     <h2>Stato</h2>
+    <?php /* Una misura sola, quella del testo che apre un riquadro (26/11,
+             Alessandro): prima la frase era nera a 16 px con la
+             configurazione e centrata come una lista vuota senza, e la riga
+             dell'account a 12,8 px. */ ?>
     <?php if ($configured): ?>
-        <p>Credenziali presenti: la piattaforma può creare eventi con link Meet.</p>
+        <p class="riquadro-intro">Credenziali presenti: la piattaforma può creare eventi con link Meet.</p>
     <?php else: ?>
-        <p class="empty-state">
+        <p class="riquadro-intro">
             Configurazione incompleta: i link Meet vanno inseriti a mano nelle sessioni live.
         </p>
     <?php endif; ?>
 
     <?php if ($keyAccount !== null): ?>
-        <p class="card-meta">Account di servizio: <code><?= htmlspecialchars($keyAccount) ?></code></p>
+        <p class="riquadro-intro">Account di servizio: <code><?= htmlspecialchars($keyAccount) ?></code></p>
     <?php elseif ($keyPath !== '' && !$keyPresent): ?>
-        <p class="card-meta">
+        <p class="riquadro-intro">
             Il percorso configurato non corrisponde a nessun file: <code><?= htmlspecialchars($keyPath) ?></code>
         </p>
     <?php endif; ?>
@@ -57,8 +61,7 @@ use App\Core\Icona;
         <input type="file" id="key" name="key" accept="application/json,.json">
         <p class="form-hint">
             Il file JSON scaricato da Google Cloud quando crei l'account di servizio. Viene salvato in
-            <code>storage/google</code>, fuori dalle cartelle raggiungibili dal web, e in tabella resta
-            solo il nome del file. Contiene una chiave privata: trattalo come una password.
+            <code>storage/google</code>. Contiene una chiave privata: trattalo come una password.
         </p>
 
         <label for="GOOGLE_IMPERSONATE_EMAIL">Indirizzo da impersonare</label>
@@ -110,8 +113,8 @@ use App\Core\Icona;
 <section class="card">
     <h2>Prova di connessione</h2>
     <p class="riquadro-intro">
-        Legge il calendario configurato senza creare né modificare niente. Verifica in un colpo solo
-        le credenziali, la delega e il fatto che quel calendario sia visibile all'utente impersonato.
+        Verifica le credenziali, la delega e il fatto che quel calendario sia visibile all'utente
+        impersonato.
     </p>
 
     <form action="/admin/settings/meet/prova" method="post">

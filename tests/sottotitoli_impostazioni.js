@@ -15,6 +15,7 @@ const PASSWORD = process.env.LMS_PASS || 'Password1!';
 const ATTESI = [
     ['/admin/settings/posta', 'Quello che salvi qui ha la precedenza sul file .env; se lasci un campo vuoto torna a valere il valore scritto nel file.'],
     ['/admin/settings/email', 'Un campo lasciato vuoto usa il testo predefinito in grigio. Come partono le email si imposta in Server di posta elettronica.'],
+    ['/admin/settings/meet', 'Serve a creare il link Meet e il corrispondente evento di calendario quando programmi una sessione live. Le sessioni restano comunque gestibili incollando a mano un link. Ha la precedenza sul file .env.'],
     ['/admin/settings/bunny', 'Dove stanno i video dei corsi. La firma impedisce che un indirizzo copiato dagli strumenti per sviluppatori funzioni anche per chi non è iscritto.'],
 ];
 
@@ -24,6 +25,13 @@ const CAMPI = [
         'Si copia dalle impostazioni della libreria su Bunny. Non viene mai rimandata al browser: se lasci il campo vuoto resta quella di prima.'],
     ['/admin/settings/bunny', 'BUNNY_TOKEN_TTL_HOURS', 'Durata del token (ore)',
         'Da 1 a 168 ore; il valore predefinito è 12. Non limita lo studente: il token nasce nuovo a ogni apertura della lezione, quindi si può riprendere un video anche giorni dopo.'],
+    ['/admin/settings/meet', 'key', null,
+        'Il file JSON scaricato da Google Cloud quando crei l\'account di servizio. Viene salvato in storage/google. Contiene una chiave privata: trattalo come una password.'],
+];
+
+// Il testo che apre un riquadro di una pagina: [indirizzo, titolo del riquadro, testo].
+const INTRO = [
+    ['/admin/settings/meet', 'Prova di connessione', 'Verifica le credenziali, la delega e il fatto che quel calendario sia visibile all\'utente impersonato.'],
 ];
 
 // Il testo dei riquadri nella pagina delle Impostazioni: [indirizzo del riquadro, testo].
@@ -72,6 +80,28 @@ function check(etichetta, condizione, dettagli = []) {
             }
             check(indirizzo + ': l\'aiuto sotto ' + id, r.aiuto === aiuto, [r.aiuto]);
         }
+
+        for (const [indirizzo, titolo, attesa] of INTRO) {
+            await page.goto(BASE + indirizzo);
+            const testo = await page.evaluate((t) => {
+                const c = [...document.querySelectorAll('section.card')].find((s) => s.querySelector('h2')?.textContent.trim() === t);
+                return (c?.querySelector(':scope > h2 + p')?.textContent || '').replace(/\s+/g, ' ').trim();
+            }, titolo);
+            check(indirizzo + ': il testo che apre «' + titolo + '»', testo === attesa, [testo]);
+        }
+
+        // Google Meet, riquadro «Stato» (26/11): tutte le frasi alla misura del testo che apre un riquadro.
+        await page.goto(BASE + '/admin/settings/meet');
+        const stato = await page.evaluate(() => {
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const c = [...document.querySelectorAll('section.card')].find((s) => s.querySelector('h2')?.textContent.trim() === 'Stato');
+            return [...(c?.querySelectorAll('p') || [])].map((p) => {
+                const s = getComputedStyle(p);
+                return { misura: Math.round(parseFloat(s.fontSize) / rem * 100) / 100, allineamento: s.textAlign };
+            });
+        });
+        check('/admin/settings/meet: nel riquadro «Stato» ogni frase a 0,92 rem, allineata a sinistra',
+            stato.length > 0 && stato.every((x) => x.misura === 0.92 && ['start', 'left'].includes(x.allineamento)), [JSON.stringify(stato)]);
 
         await page.goto(BASE + '/admin/settings');
         for (const [indirizzo, attesa] of RIQUADRI) {
