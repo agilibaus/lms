@@ -113,7 +113,7 @@ foreach ($pubblicate as $q) {
     <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
     <section class="qa-pubblicate card" aria-labelledby="pubblicate-titolo">
         <h2 id="pubblicate-titolo">Pubblicate</h2>
-        <p class="qa-intro">Apri una domanda per correggerla, o per non pubblicarla più: non comparirà più in «L’esperto risponde» del corso.</p>
+        <p class="qa-intro">Apri una domanda per correggerla, o per nasconderla: non comparirà più in «L’esperto risponde».</p>
 
         <?php foreach ($perCorso as $corso): ?>
             <h3 class="qa-modulo"><?= htmlspecialchars($corso['titolo']) ?></h3>

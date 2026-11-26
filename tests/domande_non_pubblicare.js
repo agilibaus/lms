@@ -70,7 +70,7 @@ function domanda(azione) {
                 archivio: /archivio/i.test(document.querySelector('.qa-pubblicate')?.innerText || ''),
             };
         }, id);
-        check('la frase sopra l\'elenco', r.intro === 'Apri una domanda per correggerla, o per non pubblicarla più: non comparirà più in «L’esperto risponde» del corso.', [r.intro]);
+        check('la frase sopra l\'elenco', r.intro === 'Apri una domanda per correggerla, o per nasconderla: non comparirà più in «L’esperto risponde».', [r.intro]);
         check('il comando si chiama «Non pubblicare più», con l\'icona', r.comando === 'Non pubblicare più' && r.icona, [JSON.stringify(r)]);
         check('la conferma dice che non si cancella', r.conferma.includes('Non pubblicare più questa domanda?') && r.conferma.includes('Non si cancella'), [r.conferma]);
         check('nelle pubblicate la parola «archivio» non c\'è più', !r.archivio);
