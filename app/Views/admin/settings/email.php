@@ -200,7 +200,7 @@ $attuale = static fn (string $voce): string => $voce === $corrente ? ' aria-curr
                             <td>
                                 <?= $e($spiegazione) ?>
                                 <?php if (in_array($segnaposto, $voce['obbligatori'], true)): ?>
-                                    — <strong>non può mancare nel testo</strong>
+                                    — non può mancare nel testo
                                 <?php endif; ?>
                             </td>
                         </tr>

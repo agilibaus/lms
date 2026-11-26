@@ -7,6 +7,8 @@
  */
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
 const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
 
 const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
@@ -33,6 +35,9 @@ const CAMPI = [
 const INTRO = [
     ['/admin/settings/meet', 'Prova di connessione', 'Verifica le credenziali, la delega e il fatto che quel calendario sia visibile all\'utente impersonato.'],
 ];
+
+// Le pagine in cui i testi non hanno grassetti (26/11, Alessandro): quelle ripassate.
+const SENZA_GRASSETTI = ['mail.php', 'coda.php', 'email.php', 'benvenuto.php', 'bunny.php', 'meet.php', 'aspetto.php'];
 
 // Il testo dei riquadri nella pagina delle Impostazioni: [indirizzo del riquadro, testo].
 const RIQUADRI = [
@@ -89,6 +94,16 @@ function check(etichetta, condizione, dettagli = []) {
             }, titolo);
             check(indirizzo + ': il testo che apre «' + titolo + '»', testo === attesa, [testo]);
         }
+
+        // Nessun grassetto nei testi che spiegano le impostazioni (26/11): i titoli
+        // sono in grassetto per il foglio di stile, non con <strong>. Si guarda il
+        // sorgente, perche' alcune frasi compaiono solo in certe condizioni
+        // («Adesso arriva dal file.» in Bunny Stream).
+        const grassettiNelleViste = SENZA_GRASSETTI.flatMap((f) => {
+            const testo = fs.readFileSync(path.join(__dirname, '..', 'app', 'Views', 'admin', 'settings', f), 'utf8');
+            return (testo.match(/<(strong|b)[\s>][\s\S]*?<\/\1>/g) || []).map((m) => f + ': ' + m.replace(/\s+/g, ' ').slice(0, 80));
+        });
+        check('nessun grassetto nei testi di ' + SENZA_GRASSETTI.join(', '), grassettiNelleViste.length === 0, grassettiNelleViste);
 
         // Aspetto (26/11): nessun grassetto nei testi che descrivono.
         await page.goto(BASE + '/admin/settings/aspetto');

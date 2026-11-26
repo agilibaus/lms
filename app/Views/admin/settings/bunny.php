@@ -33,7 +33,7 @@ use App\Core\Csrf;
     </div>
 <?php else: ?>
     <div class="alert alert-info">
-        La firma degli indirizzi <strong>non</strong> è attiva: gli iframe partono senza token.
+        La firma degli indirizzi non è attiva: gli iframe partono senza token.
         Serve la chiave di sicurezza qui sotto, <em>e</em> la Token Authentication accesa nelle
         impostazioni della libreria su Bunny. Fai le due cose in quest'ordine: prima la chiave
         qui, poi l'interruttore su Bunny. Al contrario i video smetterebbero di funzionare
@@ -54,7 +54,7 @@ use App\Core\Csrf;
             Il numero della Video Library su Bunny. Lasciandolo vuoto vale quello del file
             <code>.env</code>, se c'è.
             <?php if (($sources['BUNNY_LIBRARY_ID'] ?? '') === 'file'): ?>
-                <strong>Adesso arriva dal file.</strong>
+                Adesso arriva dal file.
             <?php endif; ?>
         </p>
     </section>
