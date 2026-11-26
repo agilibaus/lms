@@ -44,6 +44,7 @@ const RIQUADRI = [
     ['/admin/settings/email', 'Nome dell’organizzazione, mittente e testo di ogni email inviata dalla piattaforma.'],
     ['/admin/settings/benvenuto', 'Il video che uno studente vede al primo accesso alla piattaforma.'],
     ['/admin/permissions', 'Che cosa fa ogni ruolo, e i cinque interruttori che decide l’Amministratore.'],
+    ['/admin/settings/pagamenti', 'I corsi a pagamento con Stripe: come crearli, e i pagamenti ricevuti.'],
 ];
 
 let ok = 0;

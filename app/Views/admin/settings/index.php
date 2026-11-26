@@ -61,7 +61,7 @@ $sezioni = [
     [
         'titolo' => 'Pagamenti',
         'href' => '/admin/settings/pagamenti',
-        'testo' => 'I corsi a pagamento con Stripe: se si possono creare, e i pagamenti ricevuti.',
+        'testo' => 'I corsi a pagamento con Stripe: come crearli, e i pagamenti ricevuti.',
         'visibile' => $canSettings,
     ],
     [
