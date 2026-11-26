@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\CorsiAPagamento;
 use App\Core\Csrf;
+use App\Core\Ordinamento;
 
 /**
  * Impostazioni › Pagamenti (06/11, variante A dei due mockup): l'interruttore
@@ -110,13 +111,30 @@ use App\Core\Csrf;
     </p>
 <?php endif; ?>
 
-<section class="card pagamenti-ricevuti">
+<?php
+// Le colonne «Studente» ed «Email» si ordinano (26/11, Alessandro): per
+// nome, con l'email come spareggio fra omonimi, e per email.
+// Senza un ordine scelto restano dal piu' recente, come arrivano.
+$pagamenti = array_map(static fn (array $p): array => $p + ['email_mostrata' => (string) ($p['user_email'] ?? $p['email'] ?? '')], $pagamenti);
+// Dopo il clic la pagina riparte dalla tabella (26/11), che sta in fondo.
+$ordine = Ordinamento::daRichiesta([
+    'studente' => ['full_name', Ordinamento::TESTO, 'email_mostrata'],
+    'email' => ['email_mostrata', Ordinamento::TESTO],
+])->ancora('pagamenti-ricevuti');
+$pagamenti = $ordine->applica($pagamenti);
+?>
+<section class="card pagamenti-ricevuti" id="pagamenti-ricevuti">
     <h2>Pagamenti ricevuti</h2>
 
     <?php if ($corsiPagati !== []): ?>
         <?php /* Il filtro per corso (06/11, Alessandro): un modulo GET, funziona
                  senza JavaScript. */ ?>
-        <form method="get" action="/admin/settings/pagamenti" class="form form-inline">
+        <form method="get" action="/admin/settings/pagamenti#pagamenti-ricevuti" class="form form-inline">
+            <?php /* L'ordine scelto resta filtrando per corso. */ ?>
+            <?php if ($ordine->chiave() !== null): ?>
+                <input type="hidden" name="ordina" value="<?= htmlspecialchars((string) $ordine->chiave()) ?>">
+                <input type="hidden" name="verso" value="<?= htmlspecialchars($ordine->verso()) ?>">
+            <?php endif; ?>
             <select name="corso" aria-label="Corso">
                 <option value="0">Tutti i corsi</option>
                 <?php foreach ($corsiPagati as $c): ?>
@@ -135,7 +153,8 @@ use App\Core\Csrf;
             <thead role="rowgroup">
             <tr role="row">
                 <th scope="col" role="columnheader">Data</th>
-                <th scope="col" role="columnheader">Studente</th>
+                <?= $ordine->th('Studente', 'studente') ?>
+                <?= $ordine->th('Email', 'email') ?>
                 <th scope="col" role="columnheader">Corso</th>
                 <th scope="col" role="columnheader">Importo</th>
                 <th scope="col" role="columnheader">Esito</th>
@@ -145,13 +164,9 @@ use App\Core\Csrf;
             <?php foreach ($pagamenti as $p): ?>
                 <tr role="row">
                     <td role="cell" data-label="Data"><?= htmlspecialchars(date('d/m/Y H:i', (int) strtotime((string) $p['received_at']))) ?></td>
-                    <td role="cell" data-label="Studente">
-                        <?= $p['full_name'] !== null ? htmlspecialchars((string) $p['full_name']) : '—' ?>
-                        <?php $email = $p['user_email'] ?? $p['email']; ?>
-                        <?php if ($email !== null && $email !== ''): ?>
-                            <span class="cell-sub"><?= htmlspecialchars((string) $email) ?></span>
-                        <?php endif; ?>
-                    </td>
+                    <td role="cell" data-label="Studente"><?= $p['full_name'] !== null ? htmlspecialchars((string) $p['full_name']) : '—' ?></td>
+                    <?php /* L'email in una colonna sua (26/11, Alessandro): era sotto il nome. */ ?>
+                    <td role="cell" data-label="Email"><?= $p['email_mostrata'] !== '' ? htmlspecialchars($p['email_mostrata']) : '—' ?></td>
                     <td role="cell" data-label="Corso"><?= $p['course_title'] !== null ? htmlspecialchars((string) $p['course_title']) : '—' ?></td>
                     <td role="cell" data-label="Importo">
                         <?= htmlspecialchars(CorsiAPagamento::prezzo((int) $p['amount_total'])) ?>

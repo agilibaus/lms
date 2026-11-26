@@ -73,6 +73,9 @@ class Ordinamento
     /** @var array<string, string> gli altri parametri da tenere nei collegamenti */
     private array $altriParametri;
 
+    /** Dove riparte la pagina dopo il clic, o null per l'inizio. */
+    private ?string $ancora = null;
+
     /**
      * @param array<string, array{0: string, 1: string, 2?: string}> $colonne
      * @param array<string, mixed> $parametri di solito `$_GET`
@@ -114,6 +117,20 @@ class Ordinamento
     public static function daRichiesta(array $colonne, ?array $parametri = null): self
     {
         return new self($colonne, $parametri ?? $_GET);
+    }
+
+    /**
+     * Fa ripartire la pagina dalla tabella dopo il clic (26/11, Alessandro):
+     * per le tabelle che stanno in fondo a una pagina, come «Pagamenti
+     * ricevuti» sotto le impostazioni, dove dopo la ricarica bisognava
+     * scorrere di nuovo fino alla tabella. L'identificativo lo scrive la
+     * vista; si accettano solo lettere minuscole, cifre e trattini.
+     */
+    public function ancora(string $id): self
+    {
+        $this->ancora = preg_match('/^[a-z0-9-]+$/', $id) === 1 ? $id : null;
+
+        return $this;
     }
 
     /** La chiave su cui si sta ordinando, o null se nessuna. */
@@ -242,7 +259,8 @@ class Ordinamento
 
         $percorso = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
 
-        return ($percorso === '' ? '/' : $percorso) . '?' . http_build_query($q);
+        return ($percorso === '' ? '/' : $percorso) . '?' . http_build_query($q)
+            . ($this->ancora !== null ? '#' . $this->ancora : '');
     }
 
     private static function manca(mixed $v): bool

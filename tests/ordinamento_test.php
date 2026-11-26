@@ -319,6 +319,14 @@ check(
 );
 check('l\'ordine chiesto c\'e', str_contains($link, 'ordina=punti') && str_contains($link, 'verso=asc'));
 
+// L'ancora (26/11): la pagina riparte dalla tabella.
+$_SERVER['REQUEST_URI'] = '/admin/settings/pagamenti?corso=3';
+$conAncora = $con(['corso' => '3'])->ancora('pagamenti-ricevuti')->indirizzo('nome', 'asc');
+check('con l\'ancora il collegamento finisce con #pagamenti-ricevuti', str_ends_with($conAncora, '#pagamenti-ricevuti') && str_contains($conAncora, 'corso=3'), 'ottenuto: ' . $conAncora);
+check('senza ancora il collegamento non ha #', !str_contains($link, '#'));
+$ancoraOstile = $con([])->ancora('"><b>')->indirizzo('nome', 'asc');
+check('un\'ancora con caratteri strani si ignora', !str_contains($ancoraOstile, '#'), 'ottenuto: ' . $ancoraOstile);
+
 $_SERVER['REQUEST_URI'] = '/admin/users';
 $ostile = Ordinamento::daRichiesta($COLONNE, ['ordina' => 'nome', 'cerca' => '"><script>'])
     ->indirizzo('nome', 'desc');
