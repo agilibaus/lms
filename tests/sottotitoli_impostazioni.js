@@ -27,6 +27,8 @@ const CAMPI = [
         'Si copia dalle impostazioni della libreria su Bunny. Non viene mai rimandata al browser: se lasci il campo vuoto resta quella di prima.'],
     ['/admin/settings/bunny', 'BUNNY_TOKEN_TTL_HOURS', 'Durata del token (ore)',
         'Da 1 a 168 ore; il valore predefinito è 12. Non limita lo studente: il token nasce nuovo a ogni apertura della lezione, quindi si può riprendere un video anche giorni dopo.'],
+    ['/admin/settings/pagamenti', 'stripe-chiave', null,
+        'Comincia con «whsec_». Si copia da Stripe, nella pagina dell’endpoint degli avvisi. Se lasci il campo vuoto resta quella di prima.'],
     ['/admin/settings/meet', 'key', null,
         'Il file JSON scaricato da Google Cloud quando crei l\'account di servizio. Viene salvato in storage/google. Contiene una chiave privata: trattalo come una password.'],
 ];

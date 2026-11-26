@@ -57,8 +57,8 @@ use App\Core\Csrf;
                aria-describedby="stripe-chiave-aiuto"
                placeholder="<?= $haChiave ? 'impostata — scrivi qui per sostituirla' : 'nessuna chiave impostata' ?>">
         <p class="form-hint" id="stripe-chiave-aiuto">
-            Comincia con «whsec_». Si copia da Stripe, nella pagina dell’endpoint degli avvisi. Non viene mai
-            rimandata al browser: se lasci il campo vuoto resta quella di prima.
+            Comincia con «whsec_». Si copia da Stripe, nella pagina dell’endpoint degli avvisi. Se lasci il
+            campo vuoto resta quella di prima.
         </p>
         <?php if ($haChiave): ?>
             <label class="checkbox-label">
