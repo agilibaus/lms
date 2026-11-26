@@ -29,6 +29,8 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
   **Tre parole** alla fine di ogni modulo, che il tutor rilegge per gruppo in una nuvola di parole.
 - **Report** per corso, gruppo, studente, incontro e video, «Studenti fermi» e «Griglia del
   corso», con chi ha scaricato i materiali, scaricabili in CSV e XLSX.
+- **Utenti** creati dal pannello o importati da un file CSV, con gli inviti mandati a
+  scaglioni; l'elenco mostra i gruppi di ciascuno, si filtra per gruppo e per tutor e si scarica.
 - **Cinque ruoli**: l'Amministratore (uno solo), il supervisore che costruisce i corsi in bozza
   e li passa all'Amministratore, legge i pubblicati, gestisce gli studenti e report, gruppi e
   Bacheca di tutti i corsi, il tutor, l'assistente e lo studente. Ai corsi e ai gruppi
@@ -40,11 +42,21 @@ Il manuale completo, con il funzionamento di ogni parte e le scelte fatte, è in
   vengono iscritti i membri dei gruppi a cui è assegnato.
 - **Email** con testi modificabili dal pannello, e una coda che ritenta quelle non partite.
   Una pagina mostra se i comandi pianificati girano, con un avviso quando uno è fermo.
+- **Sorveglianza esterna**, facoltativa, con Healthchecks.io: comandi pianificati, posta, sito
+  (`/salute`) e spazio del piano di hosting mandano un segnale, e quando qualcosa si ferma arriva
+  un avviso per SMS o email.
+- **Aspetto** dal pannello: otto tavolozze, il colore principale, la dimensione del testo e i
+  caratteri del catalogo Google, scaricati una volta sul server e provati in un'anteprima; il
+  testo delle lezioni si formatta liberamente e, dove non lo si formatta, segue l'aspetto scelto.
 - **Privacy**: l'informativa scritta dal pannello, con le sue versioni e un avviso quando cambia;
   dal profilo lo studente scarica i suoi dati in un file Excel e può chiederne la cancellazione.
-- **Accessibile e responsive**: ogni pagina è controllata automaticamente a tre larghezze, per
-  contrasto, etichette, uso da tastiera e permessi di ogni ruolo; i testi seguono una sola scala
-  di sette misure, e nessun collegamento porta a una pagina che chi lo vede non può aprire.
+- **Accessibile e responsive**: progettato secondo le WCAG 2.2, livello AA, e verificato con
+  controlli automatici. Ogni pagina è controllata a tre larghezze, per contrasto, etichette, uso
+  da tastiera e permessi di ogni ruolo; nelle pagine di accesso e registrazione gli errori sono
+  collegati ai loro campi; i testi seguono una sola scala di sette misure e un'interlinea sola
+  (1,5 per il testo che si legge); nessun collegamento porta a una pagina che chi lo vede non
+  può aprire, e gli errori (pagina inesistente, accesso negato…) hanno una pagina vera, con la
+  strada per tornare.
 
 ## Requisiti
 
@@ -93,10 +105,14 @@ L'installazione si completa dal browser, con una procedura guidata.
    ```
    `bin/avvisi` manda anche le email in coda: senza, molte email non partono. Su Windows con
    Laragon vedi [I lavori periodici su Windows](manuale.md#i-lavori-periodici-su-windows-laragon).
+   Con la sorveglianza esterna (Impostazioni › «Comandi pianificati») si aggiunge anche:
+   ```cron
+   */5 * * * *   cd /percorso/lms && php bin/sorveglia >> storage/logs/sorveglia.log 2>&1
+   ```
 
-Le impostazioni di Google Meet, Bunny Stream, della posta e dei pagamenti con Stripe si completano
-poi dal pannello, in «Impostazioni». I dettagli sono nel manuale, per esempio in
-[Sessioni live](manuale.md#sessioni-live-google-meet) e in
+Le impostazioni di Google Meet, Bunny Stream, della posta, dei pagamenti con Stripe e della
+sorveglianza esterna si completano poi dal pannello, in «Impostazioni». I dettagli sono nel
+manuale, per esempio in [Sessioni live](manuale.md#sessioni-live-google-meet) e in
 [Corsi a pagamento](manuale.md#corsi-a-pagamento-stripe).
 
 ## Aggiornare un'installazione
