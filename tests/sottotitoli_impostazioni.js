@@ -53,6 +53,7 @@ const RIQUADRI = [
     ['/admin/settings/benvenuto', 'Il video che uno studente vede al primo accesso alla piattaforma.'],
     ['/admin/permissions', 'Che cosa fa ogni ruolo, e i cinque interruttori che decide l’Amministratore.'],
     ['/admin/settings/pagamenti', 'I corsi a pagamento con Stripe: come crearli, e i pagamenti ricevuti.'],
+    ['/admin/settings/comandi', 'Quando hanno girato l’ultima volta avvisi, inviti e rilascio dei moduli.'],
 ];
 
 let ok = 0;

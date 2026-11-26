@@ -75,7 +75,7 @@ $sezioni = [
     [
         'titolo' => 'Comandi pianificati',
         'href' => '/admin/settings/comandi',
-        'testo' => 'Quando hanno girato l’ultima volta i comandi che il server lancia da solo: avvisi, inviti, rilascio dei moduli.',
+        'testo' => 'Quando hanno girato l’ultima volta avvisi, inviti e rilascio dei moduli.',
         'visibile' => $canSettings,
         // Un punto esclamativo se qualcuno e' fermo o mai partito (17/11).
         'avviso' => ($comandiDaControllare ?? 0) > 0,
