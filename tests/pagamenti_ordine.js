@@ -5,8 +5,9 @@
  * due i versi; filtrando per corso l'ordine resta. L'email sta in una
  * colonna sua accanto a «Studente», e si ordina anche lei; dopo il clic (o
  * il filtro) la pagina riparte dalla tabella, che sta in fondo. «Esito» e'
- * largo quanto la sua etichetta e la causale va a capo sotto; nelle schede
- * del telefono la cella resta larga.
+ * largo quanto la sua etichetta; la causale di un pagamento non riuscito e'
+ * in un fumetto che si apre con il mouse o con Tab e si chiude con Esc, e
+ * nelle schede del telefono resta scritta sotto l'etichetta.
  *
  * La prova registra quattro pagamenti finti (tre studenti, uno senza
  * utente) e alla fine li toglie.
@@ -113,24 +114,42 @@ function pagamenti(azione) {
             check('in decrescente: dalla Z alla A, chi non ha un utente sempre in fondo',
                 JSON.stringify(giu.filter((n) => n !== '—')) === JSON.stringify([...ordinati].reverse()) && giu[giu.length - 1] === '—', giu);
 
-            // «Esito» largo quanto l'etichetta, la causale a capo (26/11); nelle schede la cella resta larga.
-            for (const larghezza of [1280, 375]) {
-                await page.setViewportSize({ width: larghezza, height: 800 });
-                await page.goto(BASE + '/admin/settings/pagamenti');
-                const esito = await page.evaluate(() => {
-                    const td = [...document.querySelectorAll('.pagamenti-ricevuti td[data-label="Esito"]')].find((c) => c.querySelector('.cell-sub'));
-                    const badge = td.querySelector('.badge').getBoundingClientRect();
-                    const causale = td.querySelector('.cell-sub');
-                    const riga = parseFloat(getComputedStyle(causale).lineHeight) || parseFloat(getComputedStyle(causale).fontSize) * 1.3;
-                    return { cella: Math.round(td.getBoundingClientRect().width), etichetta: Math.round(badge.width), righe: Math.round(causale.getBoundingClientRect().height / riga) };
-                });
-                if (larghezza === 1280) {
-                    check('1280 px: «Esito» largo quanto l\'etichetta, e la causale va a capo',
-                        esito.cella <= esito.etichetta + 40 && esito.righe >= 2, [JSON.stringify(esito)]);
-                } else {
-                    check('375 px: nella scheda la cella «Esito» resta larga', esito.cella >= 150, [JSON.stringify(esito)]);
-                }
-            }
+            // «Esito» largo quanto l'etichetta e la causale in un fumetto (26/11);
+            // nelle schede del telefono la causale resta scritta e la cella larga.
+            const fumetto = () => page.evaluate(() => {
+                const td = [...document.querySelectorAll('.pagamenti-ricevuti td[data-label="Esito"]')].find((c) => c.querySelector('.suggerimento'));
+                if (!td) return { cella: 0, etichetta: 0, visibile: false, descrizione: 'nessun fumetto' };
+                const etichetta = td.querySelector('.suggerimento-etichetta');
+                const testo = document.getElementById(etichetta.getAttribute('aria-describedby') || '');
+                return {
+                    cella: Math.round(td.getBoundingClientRect().width),
+                    etichetta: Math.round(etichetta.getBoundingClientRect().width),
+                    visibile: !!testo && getComputedStyle(testo).visibility === 'visible',
+                    descrizione: testo ? testo.textContent.trim() : null,
+                };
+            });
+            const CAUSALE = 'Studente non riconosciuto: il pagamento non è partito da Pistacchio LMS.';
+            await page.setViewportSize({ width: 1280, height: 800 });
+            await page.goto(BASE + '/admin/settings/pagamenti');
+            let f = await fumetto();
+            check('1280 px: «Esito» largo quanto l\'etichetta, la causale chiusa e collegata all\'etichetta',
+                f.cella <= f.etichetta + 40 && !f.visibile && f.descrizione === CAUSALE, [JSON.stringify(f)]);
+            await page.hover('.pagamenti-ricevuti .suggerimento-etichetta, .pagamenti-ricevuti .badge-danger');
+            f = await fumetto();
+            check('1280 px: con il mouse sopra la causale si vede', f.visibile, [JSON.stringify(f)]);
+            await page.keyboard.press('Escape');
+            f = await fumetto();
+            check('1280 px: Esc la chiude', !f.visibile, [JSON.stringify(f)]);
+            await page.mouse.move(1, 1);
+            await page.focus('.pagamenti-ricevuti .suggerimento-etichetta, .pagamenti-ricevuti .badge-danger');
+            f = await fumetto();
+            check('1280 px: arrivandoci con Tab la causale si vede', f.visibile, [JSON.stringify(f)]);
+
+            await page.setViewportSize({ width: 375, height: 800 });
+            await page.goto(BASE + '/admin/settings/pagamenti');
+            f = await fumetto();
+            check('375 px: nella scheda la causale è scritta sotto l\'etichetta e la cella resta larga',
+                f.visibile && f.cella >= 150, [JSON.stringify(f)]);
             await page.setViewportSize({ width: 1280, height: 800 });
 
             // «Email» si ordina anche lei, nei due versi.

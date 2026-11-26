@@ -181,8 +181,17 @@ $pagamenti = $ordine->applica($pagamenti);
                         <?php if ($p['esito'] === 'iscritto'): ?>
                             <span class="badge badge-success">Iscrizione completata</span>
                         <?php else: ?>
-                            <span class="badge badge-danger">Iscrizione non riuscita</span>
-                            <span class="cell-sub"><?= htmlspecialchars((string) $p['motivo']) ?></span>
+                            <?php /* La causale (26/11, Alessandro): su computer in un
+                                     fumetto che si apre passando con il mouse o
+                                     arrivando con Tab sull'etichetta, e si chiude con
+                                     Esc; il lettore di schermo la legge con
+                                     l'etichetta. Nelle schede del telefono resta
+                                     scritta sotto. */ ?>
+                            <span class="suggerimento">
+                                <span class="badge badge-danger suggerimento-etichetta" tabindex="0"
+                                      aria-describedby="causale-<?= (int) $p['id'] ?>">Iscrizione non riuscita<span class="suggerimento-segno" aria-hidden="true">ⓘ</span></span>
+                                <span class="suggerimento-testo" id="causale-<?= (int) $p['id'] ?>" role="tooltip"><?= htmlspecialchars((string) $p['motivo']) ?></span>
+                            </span>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -192,3 +201,5 @@ $pagamenti = $ordine->applica($pagamenti);
         </div>
     <?php endif; ?>
 </section>
+
+<script src="/assets/js/suggerimento.js" defer></script>
