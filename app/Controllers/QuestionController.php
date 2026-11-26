@@ -268,14 +268,15 @@ class QuestionController
     }
 
     /**
-     * Toglie una domanda dall'archivio (08/10): torna «Non pubblicata», e lo
-     * studente la vede ancora fra le sue con quello stato (Elena).
+     * «Non pubblicare più» (08/10; il nome dal 26/11): la domanda sparisce da
+     * «L'esperto risponde» e torna «Non pubblicata», e lo studente la vede
+     * ancora fra le sue con quello stato (Elena). Non si cancella.
      */
     public function withdraw(array $params): void
     {
         $domanda = $this->daGestire((int) $params['id']);
         $fatto = QuestionModel::withdraw((int) $domanda['id']);
-        $this->torna('/domande', $fatto ? 'Domanda tolta dall\'archivio.' : 'Questa domanda non è più pubblicata.', $fatto);
+        $this->torna('/domande', $fatto ? 'La domanda non è più pubblicata: non compare più in «L’esperto risponde».' : 'Questa domanda non era più pubblicata.', $fatto);
     }
 
     /**

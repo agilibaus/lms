@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\CampoContato;
 use App\Core\Csrf;
+use App\Core\Icona;
 use App\Models\QuestionModel;
 
 /**
@@ -93,9 +94,11 @@ $quante = count($domande);
 /*
  * Le domande pubblicate, da correggere o da togliere dall'archivio (08/10).
  * Divise per corso; ogni domanda e' un `details` chiuso, che si apre per
- * modificarla. Quella su cui si arriva dal «Modifica» dell'archivio del
- * corso (`?apri=`) e' gia' aperta. «Togli dall'archivio» la riporta a «Non
- * pubblicata»: lo studente la vede ancora fra le sue (Elena).
+ * modificarla. Quella su cui si arriva dal «Modifica» di «L'esperto
+ * risponde» (`?apri=`) e' gia' aperta. «Non pubblicare più» la toglie da
+ * «L'esperto risponde» e la riporta a «Non pubblicata»: lo studente la vede
+ * ancora fra le sue, e non si cancella (Elena; il nome dal 26/11,
+ * Alessandro: era «Togli dall'archivio», parola che fuori da qui non c'e').
  *
  * @var list<array<string, mixed>> $pubblicate
  * @var int $apri
@@ -110,7 +113,7 @@ foreach ($pubblicate as $q) {
     <?php /* Nel riquadro bianco, come i report (30/10, Alessandro): ogni elenco sta in un riquadro. */ ?>
     <section class="qa-pubblicate card" aria-labelledby="pubblicate-titolo">
         <h2 id="pubblicate-titolo">Pubblicate</h2>
-        <p class="qa-intro">Apri una domanda per correggerla, o per toglierla dall'archivio del corso.</p>
+        <p class="qa-intro">Apri una domanda per correggerla, o per non pubblicarla più: non comparirà più in «L’esperto risponde» del corso.</p>
 
         <?php foreach ($perCorso as $corso): ?>
             <h3 class="qa-modulo"><?= htmlspecialchars($corso['titolo']) ?></h3>
@@ -148,12 +151,12 @@ foreach ($pubblicate as $q) {
                                     <div class="form-actions qa-azioni">
                                         <button type="submit" class="btn btn-primary">Salva</button>
                                         <button type="reset" class="btn btn-secondary" data-annulla-chiude>Annulla</button>
-                                        <button type="submit" form="pubblicata-<?= $qid ?>-togli" class="link-btn link-btn-danger">Togli dall'archivio</button>
+                                        <button type="submit" form="pubblicata-<?= $qid ?>-togli" class="link-btn link-btn-danger comando-con-icona"><?= Icona::svg('x-lg') ?>Non pubblicare più</button>
                                     </div>
                                 </form>
 
                                 <form id="pubblicata-<?= $qid ?>-togli" action="/domande/<?= $qid ?>/togli" method="post" class="qa-scarta"
-                                      onsubmit="return confirm('Togliere questa domanda dall\'archivio? Lo studente la vedrà come «Non pubblicata».');">
+                                      onsubmit="return confirm('Non pubblicare più questa domanda? Non comparirà più in «L’esperto risponde». Non si cancella: lo studente che l’ha fatta la vedrà fra le sue come «Non pubblicata».');">
                                     <?= Csrf::field() ?>
                                 </form>
                             </div>
