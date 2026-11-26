@@ -44,7 +44,7 @@ use App\Core\Csrf;
                    aria-describedby="pagamenti-attivi-cosa" <?= $attivi ? 'checked' : '' ?>>
             <span>
                 <span class="ruoli-interruttore-nome">Corsi a pagamento</span>
-                <span class="ruoli-interruttore-cosa" id="pagamenti-attivi-cosa">Accesa, fra i modi di iscrizione di un corso compare «A pagamento», e i corsi a pagamento pubblicati compaiono nel catalogo con il prezzo. Spenta, i corsi a pagamento non compaiono nel catalogo e non si comprano da Pistacchio LMS; un pagamento che arriva lo stesso iscrive comunque chi ha pagato.</span>
+                <span class="ruoli-interruttore-cosa" id="pagamenti-attivi-cosa">Accesa, i corsi a pagamento pubblicati compaiono nel catalogo con il prezzo. Spenta, i corsi a pagamento non compaiono nel catalogo.</span>
             </span>
         </label>
     </section>

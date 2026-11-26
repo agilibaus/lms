@@ -31,6 +31,12 @@ const CAMPI = [
         'Il file JSON scaricato da Google Cloud quando crei l\'account di servizio. Viene salvato in storage/google. Contiene una chiave privata: trattalo come una password.'],
 ];
 
+// La spiegazione di un interruttore: [indirizzo, id dell'elemento che la contiene, testo].
+const INTERRUTTORI = [
+    ['/admin/settings/pagamenti', 'pagamenti-attivi-cosa',
+        'Accesa, i corsi a pagamento pubblicati compaiono nel catalogo con il prezzo. Spenta, i corsi a pagamento non compaiono nel catalogo.'],
+];
+
 // Il testo che apre un riquadro di una pagina: [indirizzo, titolo del riquadro, testo].
 const INTRO = [
     ['/admin/settings/meet', 'Prova di connessione', 'Verifica le credenziali, la delega e il fatto che quel calendario sia visibile all\'utente impersonato.'],
@@ -86,6 +92,12 @@ function check(etichetta, condizione, dettagli = []) {
                 check(indirizzo + ': l\'etichetta di ' + id, r.etichetta === etichetta, [r.etichetta]);
             }
             check(indirizzo + ': l\'aiuto sotto ' + id, r.aiuto === aiuto, [r.aiuto]);
+        }
+
+        for (const [indirizzo, id, attesa] of INTERRUTTORI) {
+            await page.goto(BASE + indirizzo);
+            const testo = await page.evaluate((id) => (document.getElementById(id)?.textContent || '').replace(/\s+/g, ' ').trim(), id);
+            check(indirizzo + ': la spiegazione dell\'interruttore ' + id, testo === attesa, [testo]);
         }
 
         for (const [indirizzo, titolo, attesa] of INTRO) {
