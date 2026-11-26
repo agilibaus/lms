@@ -135,7 +135,7 @@ async function giroCompleto(browser) {
                     // L'anteprima dei caratteri e le voci di «Sul server» in
                     // Aspetto sono scritte apposta in un altro carattere (21/11).
                     if (c.fontFamily !== pagina && !e.closest('.carattere-anteprima, .caratteri-voce')) out.caratteri.push(nome + ' «' + t + '» in ' + c.fontFamily.split(',')[0]);
-                    if (/^h[123]$/.test(e.tagName.toLowerCase()) && c.fontWeight !== '600' && !contesto.includes('tp-sottotitolo')) out.pesi.push(nome + ' «' + t + '» ' + c.fontWeight);
+                    if (/^h[123]$/.test(e.tagName.toLowerCase()) && c.fontWeight !== '600') out.pesi.push(nome + ' «' + t + '» ' + c.fontWeight);
                     if (e.tagName === 'LABEL' && !e.closest('.campo-contato-testa, .tp-scelta, .checkbox-label') && !e.classList.contains('checkbox-label') && c.fontWeight !== '500') out.pesi.push(nome + ' «' + t + '» ' + c.fontWeight);
                 }
                 return out;

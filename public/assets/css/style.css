@@ -6339,15 +6339,6 @@ fieldset.checkbox-group legend {
     color: var(--color-text-muted);
 }
 
-/* Le etichette senza grassetto (30/10, Alessandro): sono indicazioni, non
-   titoli da leggere per primi. */
-.tp-sottotitolo {
-    margin: 0 0 0.6rem;
-    font-size: var(--fs-secondario);
-    font-weight: 400;
-    color: var(--color-text-muted);
-}
-
 /* Gruppo e modulo in due menu, sulla riga della «Vista» (30/10). */
 .tp-filtri {
     display: flex;

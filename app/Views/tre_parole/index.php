@@ -53,7 +53,7 @@ $attivo = !empty($corso['three_words_since']);
 <div class="page-header">
     <a href="/courses/<?= $corsoId ?>" class="back-link"><span class="back-link-testo"><?= $esc((string) $corso['title']) ?></span></a>
     <h1>Tre parole</h1>
-    <p class="page-subtitle">Le parole degli studenti alla fine di ogni modulo: spunti per l’incontro che segue.</p>
+    <p class="page-subtitle">Le parole degli studenti alla fine di ogni modulo. Le più grandi sono le più scritte.</p>
     <?php if (!$attivo): ?>
         <p class="page-subtitle">
             Il corso non chiede le tre parole: si attivano in
@@ -156,7 +156,8 @@ $attivo = !empty($corso['three_words_since']);
                 $quantita = array_values(array_unique(array_map(static fn (array $r): int => min($r['volte'], 6), $ricorrenti)));
                 sort($quantita);
                 ?>
-                <h3 class="tp-sottotitolo">Le parole del gruppo, più grandi le più scritte</h3>
+                <?php /* Senza sottotitolo (26/11, Alessandro): che le piu' grandi sono
+                         le piu' scritte lo dice il sottotitolo della pagina. */ ?>
                 <ul class="tp-nuvola" role="list">
                     <?php foreach ($nuvola as $i => $r): ?>
                         <li class="tp-n<?= min($r['volte'], 6) ?> <?= $sfalsa[$i % 6] ?>"><?= $esc($r['parola']) ?><span class="tp-volte">×<?= $r['volte'] ?><span class="sr-only"> <?= $r['volte'] === 1 ? 'volta' : 'volte' ?></span></span></li>
@@ -168,7 +169,7 @@ $attivo = !empty($corso['three_words_since']);
                     <?php endforeach; ?>
                 </p>
             <?php else: ?>
-                <h3 class="tp-sottotitolo">Chi le ha scritte</h3>
+                <?php /* Senza titoletto anche qui (26/11): la tabella dice da sola chi le ha scritte. */ ?>
                 <div class="tabella-schede">
                     <table class="data-table" role="table">
                         <thead role="rowgroup">
