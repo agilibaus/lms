@@ -1,6 +1,6 @@
 /**
- * I sottotitoli delle pagine delle Impostazioni e i testi dei loro riquadri
- * nell'indice, decisi da Alessandro nel ripasso dell'Amministratore (dal
+ * I sottotitoli delle pagine delle Impostazioni, i testi dei loro riquadri
+ * nell'indice e le etichette e gli aiuti dei campi, decisi da Alessandro nel ripasso dell'Amministratore (dal
  * 25/11). Una riga per testo: chi cambia una frase cambia anche la riga.
  *
  * Esecuzione:  node tests/sottotitoli_impostazioni.js   (server di sviluppo acceso)
@@ -15,6 +15,14 @@ const PASSWORD = process.env.LMS_PASS || 'Password1!';
 const ATTESI = [
     ['/admin/settings/posta', 'Quello che salvi qui ha la precedenza sul file .env; se lasci un campo vuoto torna a valere il valore scritto nel file.'],
     ['/admin/settings/email', 'Un campo lasciato vuoto usa il testo predefinito in grigio. Come partono le email si imposta in Server di posta elettronica.'],
+];
+
+// Le etichette e gli aiuti dei campi: [indirizzo, id del campo, etichetta, aiuto sotto il campo].
+const CAMPI = [
+    ['/admin/settings/bunny', 'BUNNY_TOKEN_KEY', null,
+        'Si copia dalle impostazioni della libreria su Bunny. Non viene mai rimandata al browser: se lasci il campo vuoto resta quella di prima.'],
+    ['/admin/settings/bunny', 'BUNNY_TOKEN_TTL_HOURS', 'Durata del token (ore)',
+        'Da 1 a 168 ore; il valore predefinito è 12. Non limita lo studente: il token nasce nuovo a ogni apertura della lezione, quindi si può riprendere un video anche giorni dopo.'],
 ];
 
 // Il testo dei riquadri nella pagina delle Impostazioni: [indirizzo del riquadro, testo].
@@ -47,6 +55,21 @@ function check(etichetta, condizione, dettagli = []) {
             await page.goto(BASE + indirizzo);
             const frase = await page.evaluate(() => (document.querySelector('.page-header .page-subtitle')?.textContent || '').replace(/\s+/g, ' ').trim());
             check(indirizzo + ': il sottotitolo', frase === attesa, [frase]);
+        }
+
+        for (const [indirizzo, id, etichetta, aiuto] of CAMPI) {
+            await page.goto(BASE + indirizzo);
+            const r = await page.evaluate((id) => {
+                const testo = (e) => (e?.textContent || '').replace(/\s+/g, ' ').trim();
+                const campo = document.getElementById(id);
+                let p = campo?.nextElementSibling;
+                while (p && !p.matches('.form-hint')) p = p.nextElementSibling;
+                return { etichetta: testo(document.querySelector('label[for="' + id + '"]')), aiuto: testo(p) };
+            }, id);
+            if (etichetta !== null) {
+                check(indirizzo + ': l\'etichetta di ' + id, r.etichetta === etichetta, [r.etichetta]);
+            }
+            check(indirizzo + ': l\'aiuto sotto ' + id, r.aiuto === aiuto, [r.aiuto]);
         }
 
         await page.goto(BASE + '/admin/settings');

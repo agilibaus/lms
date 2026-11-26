@@ -67,9 +67,7 @@ use App\Core\Csrf;
                placeholder="<?= $hasKey ? 'impostata — scrivi qui per sostituirla' : 'nessuna chiave impostata' ?>">
         <p class="form-hint">
             Si copia dalle impostazioni della libreria su Bunny. Non viene mai rimandata al
-            browser: se lasci il campo vuoto resta quella di prima. Resta sul server anche
-            quando i video vengono mostrati — al browser arriva solo il risultato del calcolo,
-            da cui la chiave non si ricava.
+            browser: se lasci il campo vuoto resta quella di prima.
         </p>
 
         <?php if ($hasKey): ?>
@@ -80,15 +78,13 @@ use App\Core\Csrf;
             </label>
         <?php endif; ?>
 
-        <label for="BUNNY_TOKEN_TTL_HOURS">Durata del token, in ore</label>
+        <label for="BUNNY_TOKEN_TTL_HOURS">Durata del token (ore)</label>
         <input type="number" id="BUNNY_TOKEN_TTL_HOURS" name="BUNNY_TOKEN_TTL_HOURS"
                value="<?= (int) $ttlHours ?>" min="<?= (int) $minTtl ?>" max="<?= (int) $maxTtl ?>" step="1">
         <p class="form-hint">
-            Da <?= (int) $minTtl ?> a <?= (int) $maxTtl ?> ore; il valore predefinito è 12.
-            <strong>Non limita lo studente</strong>: il token nasce nuovo a ogni apertura della
-            lezione, quindi si può riprendere un video anche giorni dopo. Limita due cose sole:
-            per quanto resta valido un indirizzo copiato e passato ad altri, e dopo quanto una
-            pagina lasciata aperta va ricaricata.
+            Da <?= (int) $minTtl ?> a <?= (int) $maxTtl ?> ore; il valore predefinito è <?= (int) \App\Core\BunnyToken::DEFAULT_TTL_HOURS ?>.
+            Non limita lo studente: il token nasce nuovo a ogni apertura della lezione, quindi si
+            può riprendere un video anche giorni dopo.
         </p>
     </section>
 
