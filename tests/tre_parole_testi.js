@@ -47,8 +47,12 @@ function check(etichetta, condizione, dettagli = []) {
         const n = await page.evaluate(() => ({
             tabella: !!document.querySelector('main .data-table'),
             titoletto: /Chi le ha scritte/.test(document.querySelector('main')?.innerText || ''),
+            colonne: [...document.querySelectorAll('main .data-table thead th')].map((t) => t.textContent.trim()),
+            etichette: [...new Set([...document.querySelectorAll('main .data-table tbody td')].map((t) => t.getAttribute('data-label')))],
         }));
         check('vista «Nominative»: c\'è la tabella, senza «Chi le ha scritte»', n.tabella && !n.titoletto, [JSON.stringify(n)]);
+        check('vista «Nominative»: le colonne Studente, Tre parole, Data, anche nelle schede del telefono',
+            n.colonne.join('|') === 'Studente|Tre parole|Data' && n.etichette.join('|') === 'Studente|Tre parole|Data', [JSON.stringify(n)]);
     } finally {
         await browser.close();
     }
