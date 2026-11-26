@@ -4633,6 +4633,18 @@ fieldset.checkbox-group legend {
     white-space: nowrap;
 }
 
+/* «Pagamenti ricevuti» (26/11, Alessandro): «Esito» largo quanto la sua
+   etichetta, e la causale di un'iscrizione non riuscita va a capo sotto;
+   lo spazio che avanza passa a «Email» e «Corso». `width: 1%` chiede alla
+   tabella il minimo, cioe' l'etichetta, che non va a capo. Solo finche'
+   e' una tabella: nelle schede del telefono la cella stretta all'1%
+   metteva una lettera per riga. */
+@container tabella (width > 50rem) {
+    .pagamenti-ricevuti .data-table .col-esito {
+        width: 1%;
+    }
+}
+
 .data-table th.cella-studente .riga-secondaria {
     text-transform: none;
     letter-spacing: normal;

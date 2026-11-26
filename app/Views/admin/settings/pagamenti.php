@@ -157,7 +157,7 @@ $pagamenti = $ordine->applica($pagamenti);
                 <?= $ordine->th('Email', 'email') ?>
                 <th scope="col" role="columnheader">Corso</th>
                 <th scope="col" role="columnheader">Importo</th>
-                <th scope="col" role="columnheader">Esito</th>
+                <th scope="col" role="columnheader" class="col-esito">Esito</th>
             </tr>
             </thead>
             <tbody role="rowgroup">
@@ -177,7 +177,7 @@ $pagamenti = $ordine->applica($pagamenti);
                             <span class="cell-sub">di prova</span>
                         <?php endif; ?>
                     </td>
-                    <td role="cell" data-label="Esito">
+                    <td role="cell" data-label="Esito" class="col-esito">
                         <?php if ($p['esito'] === 'iscritto'): ?>
                             <span class="badge badge-success">Iscrizione completata</span>
                         <?php else: ?>

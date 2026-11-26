@@ -4,7 +4,9 @@
  * spareggio; chi non ha piu' un utente (nome «—») sta in fondo in tutti e
  * due i versi; filtrando per corso l'ordine resta. L'email sta in una
  * colonna sua accanto a «Studente», e si ordina anche lei; dopo il clic (o
- * il filtro) la pagina riparte dalla tabella, che sta in fondo.
+ * il filtro) la pagina riparte dalla tabella, che sta in fondo. «Esito» e'
+ * largo quanto la sua etichetta e la causale va a capo sotto; nelle schede
+ * del telefono la cella resta larga.
  *
  * La prova registra quattro pagamenti finti (tre studenti, uno senza
  * utente) e alla fine li toglie.
@@ -41,8 +43,9 @@ function pagamenti(azione) {
         + '  $corso = (int) $pdo->query("SELECT id FROM courses ORDER BY id LIMIT 1")->fetchColumn();'
         + '  $u = $pdo->query("SELECT id FROM users WHERE role = \'studente\' AND full_name <> \'\' ORDER BY full_name DESC LIMIT 3")->fetchAll(PDO::FETCH_COLUMN);'
         + '  $u[] = null;'
-        + '  $st = $pdo->prepare("INSERT INTO payments (stripe_event_id, stripe_session_id, course_id, user_id, email, amount_total, amount_subtotal, currency, esito, received_at) VALUES (?, ?, ?, ?, ?, 1000, 1000, \'eur\', \'iscritto\', ?)");'
-        + '  foreach ($u as $i => $id) { $st->execute(["prova-ordine-$i", "prova-ordine-s$i", $corso, $id, $id === null ? "senza-utente@prova.test" : null, date("Y-m-d H:i:s", time() - $i * 3600)]); }'
+        + '  $st = $pdo->prepare("INSERT INTO payments (stripe_event_id, stripe_session_id, course_id, user_id, email, amount_total, amount_subtotal, currency, esito, motivo, received_at) VALUES (?, ?, ?, ?, ?, 1000, 1000, \'eur\', ?, ?, ?)");'
+        + '  foreach ($u as $i => $id) { $st->execute(["prova-ordine-$i", "prova-ordine-s$i", $corso, $id, $id === null ? "senza-utente@prova.test" : null,'
+        + '    $id === null ? "non_riuscito" : "iscritto", $id === null ? "Studente non riconosciuto: il pagamento non è partito da Pistacchio LMS." : null, date("Y-m-d H:i:s", time() - $i * 3600)]); }'
         + '  echo $corso;'
         + '}';
     return execFileSync('php', ['-r', codice, azione], { cwd: RADICE }).toString().trim();
@@ -109,6 +112,26 @@ function pagamenti(azione) {
             const giu = finti(await leggi());
             check('in decrescente: dalla Z alla A, chi non ha un utente sempre in fondo',
                 JSON.stringify(giu.filter((n) => n !== '—')) === JSON.stringify([...ordinati].reverse()) && giu[giu.length - 1] === '—', giu);
+
+            // «Esito» largo quanto l'etichetta, la causale a capo (26/11); nelle schede la cella resta larga.
+            for (const larghezza of [1280, 375]) {
+                await page.setViewportSize({ width: larghezza, height: 800 });
+                await page.goto(BASE + '/admin/settings/pagamenti');
+                const esito = await page.evaluate(() => {
+                    const td = [...document.querySelectorAll('.pagamenti-ricevuti td[data-label="Esito"]')].find((c) => c.querySelector('.cell-sub'));
+                    const badge = td.querySelector('.badge').getBoundingClientRect();
+                    const causale = td.querySelector('.cell-sub');
+                    const riga = parseFloat(getComputedStyle(causale).lineHeight) || parseFloat(getComputedStyle(causale).fontSize) * 1.3;
+                    return { cella: Math.round(td.getBoundingClientRect().width), etichetta: Math.round(badge.width), righe: Math.round(causale.getBoundingClientRect().height / riga) };
+                });
+                if (larghezza === 1280) {
+                    check('1280 px: «Esito» largo quanto l\'etichetta, e la causale va a capo',
+                        esito.cella <= esito.etichetta + 40 && esito.righe >= 2, [JSON.stringify(esito)]);
+                } else {
+                    check('375 px: nella scheda la cella «Esito» resta larga', esito.cella >= 150, [JSON.stringify(esito)]);
+                }
+            }
+            await page.setViewportSize({ width: 1280, height: 800 });
 
             // «Email» si ordina anche lei, nei due versi.
             check('«Email» è un\'intestazione che ordina', testa.linkEmail !== null && testa.linkEmail.endsWith('#pagamenti-ricevuti'), [String(testa.linkEmail)]);
