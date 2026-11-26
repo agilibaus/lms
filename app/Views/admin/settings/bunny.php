@@ -19,8 +19,8 @@ use App\Core\Csrf;
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Bunny Stream</h1>
     <p class="page-subtitle">
-        Dove stanno i video dei corsi, e come si impedisce che un indirizzo copiato dagli
-        strumenti per sviluppatori funzioni anche per chi non è iscritto.
+        Dove stanno i video dei corsi. La firma impedisce che un indirizzo copiato dagli strumenti
+        per sviluppatori funzioni anche per chi non è iscritto.
     </p>
 </div>
 

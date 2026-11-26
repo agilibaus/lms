@@ -15,6 +15,7 @@ const PASSWORD = process.env.LMS_PASS || 'Password1!';
 const ATTESI = [
     ['/admin/settings/posta', 'Quello che salvi qui ha la precedenza sul file .env; se lasci un campo vuoto torna a valere il valore scritto nel file.'],
     ['/admin/settings/email', 'Un campo lasciato vuoto usa il testo predefinito in grigio. Come partono le email si imposta in Server di posta elettronica.'],
+    ['/admin/settings/bunny', 'Dove stanno i video dei corsi. La firma impedisce che un indirizzo copiato dagli strumenti per sviluppatori funzioni anche per chi non è iscritto.'],
 ];
 
 // Le etichette e gli aiuti dei campi: [indirizzo, id del campo, etichetta, aiuto sotto il campo].
