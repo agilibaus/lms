@@ -43,6 +43,7 @@ const SENZA_GRASSETTI = ['mail.php', 'coda.php', 'email.php', 'benvenuto.php', '
 const RIQUADRI = [
     ['/admin/settings/email', 'Nome dell’organizzazione, mittente e testo di ogni email inviata dalla piattaforma.'],
     ['/admin/settings/benvenuto', 'Il video che uno studente vede al primo accesso alla piattaforma.'],
+    ['/admin/permissions', 'Che cosa fa ogni ruolo, e i cinque interruttori che decide l’Amministratore.'],
 ];
 
 let ok = 0;
@@ -110,6 +111,22 @@ function check(etichetta, condizione, dettagli = []) {
         const grassetti = await page.evaluate(() => [...document.querySelectorAll('main p, main li, main .form-hint, main .riquadro-intro, main .page-subtitle')]
             .flatMap((e) => [...e.querySelectorAll('strong, b')].map((b) => b.textContent.replace(/\s+/g, ' ').trim())));
         check('/admin/settings/aspetto: nessun grassetto nei testi', grassetti.length === 0, grassetti);
+
+        // Ruoli (26/11, variante C): l'elenco di che cosa fa sempre un ruolo come i
+        // testi che spiegano, e «Amministratore» invece di «Admin».
+        await page.goto(BASE + '/admin/permissions');
+        const ruoli = await page.evaluate(() => {
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const nota = getComputedStyle(document.querySelector('.ruoli-interruttore-cosa'));
+            const voci = [...document.querySelectorAll('.ruoli-sempre li')].map((li) => {
+                const s = getComputedStyle(li);
+                return [Math.round(parseFloat(s.fontSize) / rem * 100) / 100, s.color === nota.color, Math.round(parseFloat(s.lineHeight) / parseFloat(s.fontSize) * 100) / 100].join(' ');
+            });
+            return { primo: document.querySelector('.ruoli > .card > h2')?.textContent.trim(), voci: [...new Set(voci)] };
+        });
+        check('/admin/permissions: il primo riquadro si chiama «Amministratore»', ruoli.primo === 'Amministratore', [String(ruoli.primo)]);
+        check('/admin/permissions: ogni voce a 0,92 rem, grigia come la spiegazione degli interruttori, interlinea 1,45',
+            ruoli.voci.length === 1 && ruoli.voci[0] === '0.92 true 1.45', ruoli.voci);
 
         // Google Meet, riquadro «Stato» (26/11): tutte le frasi alla misura del testo che apre un riquadro.
         await page.goto(BASE + '/admin/settings/meet');

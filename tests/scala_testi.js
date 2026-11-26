@@ -64,7 +64,7 @@ const RUOLI = [
     // Il nome di un elemento nei ritocchi di Aspetto (22/11, Alessandro).
     ['nome di un ritocco', '.ritocco-nome', 1, '600', null],
     ['etichetta', 'main label:not(.checkbox-label), .ruoli-interruttore-nome, .tavolozza-nome', 0.92, '500', null],
-    ['nota', 'main .form-hint, .gruppo-nota, .ruoli-interruttore-cosa', 0.92, '400', 'grigio'],
+    ['nota', 'main .form-hint, .gruppo-nota, .ruoli-interruttore-cosa, .ruoli-sempre li', 0.92, '400', 'grigio'],
     // Il testo che apre un riquadro (25/11, Alessandro).
     ['testo introduttivo di un riquadro', '.riquadro-intro', 0.92, '400', 'grigio'],
     ['messaggio «nessun…»', '.empty-state, .empty-state-small', 0.92, '400', 'grigio'],

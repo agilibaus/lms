@@ -16,7 +16,8 @@ use App\Core\Csrf;
  */
 
 $ruoli = [
-    'Admin' => [
+    // «Amministratore» come in tutta la piattaforma (26/11): era «Admin».
+    'Amministratore' => [
         'sempre' => [
             'Tutto: corsi e contenuti, gruppi e loro corsi, utenti e iscrizioni, impostazioni.',
             'Le bozze create dal supervisore le legge soltanto, finché il supervisore non gliele invia o lui non le riprende con «Riprendi il corso».',

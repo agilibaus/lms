@@ -4141,9 +4141,17 @@ body.has-focus-video {
     font-size: var(--fs-riquadro);
 }
 
+/* Che cosa fa sempre un ruolo (26/11, Alessandro, variante C): come i testi
+   che spiegano nelle altre Impostazioni, 0,92 rem e grigio, e come la
+   spiegazione dell'interruttore che sta sotto; righe a 1,45 come il testo
+   che apre un riquadro. Era a 16 px, quasi nero, con le righe strette: in
+   mezzo alle altre pagine sembrava in grassetto. */
 .ruoli-sempre {
     margin: 0 0 0.5rem;
     padding-left: 1.25rem;
+    font-size: var(--fs-secondario);
+    line-height: 1.45;
+    color: var(--color-text-muted);
 }
 
 .ruoli-sempre li + li {
