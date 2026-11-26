@@ -175,7 +175,7 @@ $attivo = !empty($corso['three_words_since']);
                         <thead role="rowgroup">
                             <tr role="row">
                                 <th scope="col" role="columnheader">Studente</th>
-                                <th scope="col" role="columnheader">Tre parole</th>
+                                <th scope="col" role="columnheader">Parole</th>
                                 <th scope="col" role="columnheader">Data</th>
                             </tr>
                         </thead>
@@ -183,14 +183,14 @@ $attivo = !empty($corso['three_words_since']);
                             <?php foreach ($righe as $r): ?>
                                 <tr role="row">
                                     <td role="cell" data-label="Studente"><?= $esc((string) $r['full_name']) ?></td>
-                                    <td role="cell" data-label="Tre parole"><?= $esc($r['word1']) ?> · <?= $esc($r['word2']) ?> · <?= $esc($r['word3']) ?></td>
+                                    <td role="cell" data-label="Parole"><?= $esc($r['word1']) ?> · <?= $esc($r['word2']) ?> · <?= $esc($r['word3']) ?></td>
                                     <td role="cell" data-label="Data"><?= $esc(date('d/m/Y', (int) strtotime((string) $r['created_at']))) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             <?php foreach ($mancano as $s): ?>
                                 <tr role="row" class="tp-manca">
                                     <td role="cell" data-label="Studente"><?= $esc($s['full_name']) ?></td>
-                                    <td role="cell" data-label="Tre parole">non ha ancora risposto</td>
+                                    <td role="cell" data-label="Parole">non ha ancora risposto</td>
                                     <td role="cell" data-label="Data"><span class="valore-assente">—</span></td>
                                 </tr>
                             <?php endforeach; ?>

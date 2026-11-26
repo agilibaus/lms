@@ -51,8 +51,8 @@ function check(etichetta, condizione, dettagli = []) {
             etichette: [...new Set([...document.querySelectorAll('main .data-table tbody td')].map((t) => t.getAttribute('data-label')))],
         }));
         check('vista «Nominative»: c\'è la tabella, senza «Chi le ha scritte»', n.tabella && !n.titoletto, [JSON.stringify(n)]);
-        check('vista «Nominative»: le colonne Studente, Tre parole, Data, anche nelle schede del telefono',
-            n.colonne.join('|') === 'Studente|Tre parole|Data' && n.etichette.join('|') === 'Studente|Tre parole|Data', [JSON.stringify(n)]);
+        check('vista «Nominative»: le colonne Studente, Parole, Data, anche nelle schede del telefono',
+            n.colonne.join('|') === 'Studente|Parole|Data' && n.etichette.join('|') === 'Studente|Parole|Data', [JSON.stringify(n)]);
     } finally {
         await browser.close();
     }
