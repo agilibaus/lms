@@ -114,12 +114,42 @@
     box-sizing: border-box;
 }
 
+/* L'interlinea (26/11, Alessandro): una sola per tutto il testo che si
+   legge, 1,5 come il riferimento delle WCAG (1.4.12), una per i titoli e
+   una per le tabelle. Prima erano quindici valori in cinquanta punti, da
+   1,2 (quella del browser, dove nessuno l'aveva scritta) a 1,6: due frasi
+   una sotto l'altra potevano avere righe diverse senza nessun motivo.
+   I titoli e i comandi (pulsanti, etichette colorate, voci del menu) sono
+   righe brevi: 1,2, cosi' tengono l'altezza che avevano. Altrove restano
+   solo i componenti che hanno bisogno di una misura esatta (icone,
+   etichette nelle tabelle, numeri: 1) e le altezze fisse. */
 body {
     margin: 0;
     font-family: var(--font-sans);
+    line-height: 1.5;
     background: var(--color-bg);
     color: var(--color-text);
     -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6,
+.btn,
+.link-btn,
+.badge,
+.nav-link,
+.user-name,
+.tavolozza-nome,
+.gruppi-riga-titolo,
+.persona-nome,
+.bacheca-riquadro .bacheca-riquadro-titolo,
+.bacheca-colore-anteprima-titolo,
+.nav-corso .nav-corso-nome,
+.agenda-pillola {
+    line-height: 1.2;
+}
+
+th, td {
+    line-height: 1.3;
 }
 
 a {
@@ -718,7 +748,6 @@ h3 { font-size: var(--fs-sottotitolo); }
     display: block;
     /* Una misura della scala (`--fs-*`): 1,15 rem non lo era. */
     font-size: var(--fs-riquadro);
-    line-height: 1.35;
 }
 
 .carattere-anteprima-avviso {
@@ -817,13 +846,12 @@ h3 { font-size: var(--fs-sottotitolo); }
 }
 
 /* La frase che dice in che stato e' la sorveglianza (26/11, Alessandro):
-   come il testo che apre un riquadro, 0,92 rem, grigia, righe a 1,45. Era
+   come il testo che apre un riquadro, 0,92 rem e grigia. Era
    nera a 16 px e sembrava piu' importante del resto; lo stato si legge
    gia' nell'etichetta accanto al titolo. */
 .sorveglianza-stato {
     margin: 0 0 0.3rem;
     font-size: var(--fs-secondario);
-    line-height: 1.45;
     color: var(--color-text-muted);
 }
 
@@ -1355,7 +1383,6 @@ h3 { font-size: var(--fs-sottotitolo); }
     font-size: var(--fs-secondario);
     color: var(--color-text-muted);
     margin: 0.25rem 0 0.6rem;
-    line-height: 1.4;
 }
 
 /* Un testo breve con qualche tag (obiettivo e descrizione del corso, 11/10):
@@ -1389,7 +1416,6 @@ h3 { font-size: var(--fs-sottotitolo); }
 
 .course-description {
     color: var(--color-text-muted);
-    line-height: 1.55;
     /* Larga quanto gli altri blocchi della pagina (09/10, Elena). Fino alla
        0162 restava a 62 caratteri per la comodita' delle righe, una scelta
        mia mai discussa: l'introduzione sembrava dimenticata indietro. */
@@ -1428,7 +1454,6 @@ h3 { font-size: var(--fs-sottotitolo); }
     padding-left: 0.6rem;
     border-left: 2px solid var(--color-border);
     font-size: var(--fs-piccolo);
-    line-height: 1.35;
     color: var(--color-text-muted);
 }
 
@@ -1644,7 +1669,6 @@ h3 { font-size: var(--fs-sottotitolo); }
     margin: 0 0 0.9rem;
     max-width: 44rem;
     font-size: var(--fs-secondario);
-    line-height: 1.45;
     color: var(--color-text-muted);
 }
 
@@ -1804,7 +1828,6 @@ h3 { font-size: var(--fs-sottotitolo); }
     /* Il nome di un'opzione: un'etichetta (18/11). */
     font-size: var(--fs-secondario);
     font-weight: 500;
-    line-height: 1.25;
     text-align: center;
 }
 
@@ -1894,7 +1917,6 @@ h3 { font-size: var(--fs-sottotitolo); }
 
 .settings-card-text {
     font-size: var(--fs-secondario);
-    line-height: 1.5;
     color: var(--color-text-muted);
 }
 
@@ -1969,7 +1991,6 @@ h3 { font-size: var(--fs-sottotitolo); }
 .scene-claim h2 {
     margin: 0 0 0.9rem;
     font-size: var(--scene-title-size);
-    line-height: 1.25;
     font-weight: 700;
     color: var(--color-scene-title);
 }
@@ -1977,7 +1998,6 @@ h3 { font-size: var(--fs-sottotitolo); }
 .scene-claim p {
     margin: 0;
     font-size: var(--scene-text-size);
-    line-height: 1.6;
     color: var(--color-scene-text);
 }
 
@@ -2962,7 +2982,6 @@ form.form + form {
 .gruppi-riga-titolo {
     display: block;
     font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
-    line-height: 1.3;
     color: var(--color-primary);
     text-decoration: underline;
     text-decoration-thickness: 1px;
@@ -3246,7 +3265,6 @@ body.has-focus-video {
    sembrava troncato con mezza pagina vuota accanto. La colonna resta quella
    di tutte le pagine (`.main-content`, al massimo 1080 px). */
 .lesson-content {
-    line-height: 1.6;
     margin-bottom: 1.5rem;
 }
 
@@ -3471,7 +3489,6 @@ body.has-focus-video {
 .riquadro-intro {
     color: var(--color-text-muted);
     font-size: var(--fs-secondario);
-    line-height: 1.45;
     margin: 0.2rem 0 0.9rem;
 }
 
@@ -3812,7 +3829,6 @@ body.has-focus-video {
     min-height: var(--tap-target);
     margin: 0.9rem 0;
     font-size: var(--fs-secondario);
-    line-height: 1.4;
 }
 
 .checkbox-label input {
@@ -4154,14 +4170,12 @@ body.has-focus-video {
 
 /* Che cosa fa sempre un ruolo (26/11, Alessandro, variante C): come i testi
    che spiegano nelle altre Impostazioni, 0,92 rem e grigio, e come la
-   spiegazione dell'interruttore che sta sotto; righe a 1,45 come il testo
-   che apre un riquadro. Era a 16 px, quasi nero, con le righe strette: in
+   spiegazione dell'interruttore che sta sotto. Era a 16 px, quasi nero, con le righe strette: in
    mezzo alle altre pagine sembrava in grassetto. */
 .ruoli-sempre {
     margin: 0 0 0.5rem;
     padding-left: 1.25rem;
     font-size: var(--fs-secondario);
-    line-height: 1.45;
     color: var(--color-text-muted);
 }
 
@@ -4713,7 +4727,6 @@ fieldset.checkbox-group legend {
         border-radius: var(--radius-sm);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
         color: var(--color-text);
-        line-height: 1.45;
         white-space: normal;
         visibility: hidden;
     }
@@ -4892,7 +4905,7 @@ fieldset.checkbox-group legend {
 .report-taglio-numero {
     font-size: var(--fs-testo);
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
     color: var(--color-primary);
 }
@@ -4913,7 +4926,6 @@ fieldset.checkbox-group legend {
    sfondo del passaggio. Un tono in piu' invece di due. */
 .report-taglio-nota {
     font-size: var(--fs-secondario);
-    line-height: 1.4;
     color: #5A554F;
 }
 
@@ -5053,7 +5065,7 @@ fieldset.checkbox-group legend {
         margin-bottom: 0.3rem;
         font-size: var(--fs-testo);
         font-weight: 600; /* la scala dei testi: i titoli a 600 (18/11) */
-        line-height: 1.3;
+        line-height: 1.2;
     }
 
     .tabella-schede:not(.schede-senza-titolo) .data-table tbody tr > :first-child::before {
@@ -5075,7 +5087,6 @@ fieldset.checkbox-group legend {
     .tabella-schede .data-table tbody tr td::before,
     .tabella-schede .data-table tbody tr th::before {
         font-size: var(--fs-piccolo);
-        line-height: 1.25;
     }
 
     /* Della loro misura, ma non oltre la scheda (25/11): «Bozza presso
@@ -5400,7 +5411,6 @@ fieldset.checkbox-group legend {
     min-height: 0;
     padding: 0.25rem 0.75rem;
     gap: 0.4rem;
-    line-height: 1.4;
     justify-self: start;
     width: max-content;
 }
@@ -6417,7 +6427,7 @@ fieldset.checkbox-group legend {
 }
 
 .tp-nuvola li {
-    line-height: 1.05;
+    line-height: 1;
     white-space: nowrap;
 }
 
@@ -6578,7 +6588,6 @@ fieldset.checkbox-group legend {
     white-space: normal;
     font-size: var(--fs-piccolo);
     font-weight: 600;
-    line-height: 1.3;
     color: var(--color-text-muted);
 }
 
@@ -6939,7 +6948,6 @@ fieldset.checkbox-group legend {
     margin-bottom: 0.15rem;
     border-radius: var(--radius-sm);
     font-size: var(--fs-piccolo);
-    line-height: 1.25;
     text-decoration: none;
     overflow-wrap: anywhere;
 }
@@ -7329,7 +7337,6 @@ fieldset.checkbox-group legend {
 /* 16 px, la misura del testo (09/10, Elena: a 14,4 li trovava piccoli). */
 .persona-nome {
     font-size: var(--fs-testo);
-    line-height: 1.3;
     overflow-wrap: anywhere;
 }
 
@@ -7627,7 +7634,6 @@ fieldset.checkbox-group legend {
        alla prima riga, e a destra quella che chiude, accanto all'ultima. Il
        testo non le tocca mai. */
     padding: 0.2rem 3.4rem 0.3rem 3.6rem;
-    line-height: 1.55;
     overflow-wrap: anywhere;
     /* In corsivo, chiesto da Elena il 07/10: fra le virgolette e' la
        persona che parla di se', e il corsivo lo fa leggere come un racconto
@@ -7914,7 +7920,6 @@ fieldset.checkbox-group legend {
 .giro .giro-domanda {
     margin: 0.7rem 0 0.2rem;
     font-size: var(--fs-riquadro);
-    line-height: 1.35;
     overflow-wrap: anywhere;
 }
 
@@ -7997,7 +8002,6 @@ fieldset.checkbox-group legend {
 
 .giro-risposta-testo {
     margin: 0.15rem 0 0;
-    line-height: 1.5;
     overflow-wrap: anywhere;
 }
 
@@ -8161,7 +8165,6 @@ fieldset.checkbox-group legend {
 .tutor-benvenuto-trascrizione p {
     margin: 0.5rem 0 0;
     font-style: italic;
-    line-height: 1.55;
     overflow-wrap: anywhere;
 }
 
@@ -8265,7 +8268,6 @@ fieldset.checkbox-group legend {
 }
 
 .obiettivo-corso .testo-breve {
-    line-height: 1.55;
 }
 
 /* Il segno dei riquadri «in piu'» della pagina del corso (23/10): l'icona
@@ -8366,7 +8368,6 @@ fieldset.checkbox-group legend {
     border-left: 3px solid var(--color-primary);
     background: var(--color-bg);
     font-size: var(--fs-secondario);
-    line-height: 1.5;
 }
 
 .obiettivo-modulo-etichetta {
@@ -8895,7 +8896,6 @@ details[open] > summary .obiettivo-se-aperto {
 .qa-risposta p {
     margin: 0 0 0.4rem;
     font-size: var(--fs-secondario);
-    line-height: 1.55;
     overflow-wrap: anywhere;
 }
 
@@ -9245,12 +9245,13 @@ details[open] > summary .obiettivo-se-aperto {
    Due modi. Dove c'e' `initial-letter` (Chrome, Edge, Safari) il browser
    allinea la lettera esattamente su tre righe. Altrove (Firefox, al 09/10)
    la lettera scorre a sinistra e il testo le gira intorno, con misure
-   calcolate per tre righe di 1,6 di interlinea: la lettera e' alta 3 x 1,6
-   = 4,8 volte il testo, meno lo spazio sopra le maiuscole. */
+   calcolate per tre righe di 1,5 di interlinea (26/11; erano 1,6): la
+   lettera e' alta 3 x 1,5 = 4,5 volte il testo, meno lo spazio sopra le
+   maiuscole. */
 .course-description p.capolettera::first-letter {
     float: left;
     margin: 0.06em 0.08em 0 0;
-    font-size: 4.1em;
+    font-size: 3.85em;
     line-height: 0.82;
     font-weight: 700;
     color: var(--color-primary);
@@ -9353,7 +9354,6 @@ details[open] > summary .obiettivo-se-aperto {
     color: var(--cat-titolo, var(--cat));
     font-size: var(--fs-riquadro);
     font-weight: 600;
-    line-height: 1.3;
     letter-spacing: normal;
 }
 
@@ -9838,7 +9838,6 @@ details[open] > summary .obiettivo-se-aperto {
     color: var(--cat-titolo, var(--cat));
     font-size: var(--fs-sottotitolo);
     font-weight: 600;
-    line-height: 1.3;
 }
 
 .bacheca-colore-anteprima-testo {
@@ -9883,7 +9882,6 @@ details[open] > summary .obiettivo-se-aperto {
     padding-top: 0.45rem;
     padding-bottom: 0.2rem;
     font-weight: 600;
-    line-height: 1.3;
 }
 
 /* Sulla scheda del corso, per chi modera: le proposte della bacheca che
@@ -9899,7 +9897,6 @@ details[open] > summary .obiettivo-se-aperto {
     color: var(--color-primary);
     font-size: var(--fs-piccolo);
     font-weight: 600;
-    line-height: 1.35;
 }
 
 /* L'avviso sotto il campo file della bacheca (17/10): vuoto non occupa
@@ -10385,12 +10382,10 @@ input[type="file"] {
     max-width: 46rem;
     margin: 0 auto;
     padding: 1.75rem 1.25rem 4rem;
-    line-height: 1.6;
 }
 
 .privacy-testo h1 {
     font-size: var(--fs-pagina);
-    line-height: 1.25;
     margin: 0 0 0.3rem;
 }
 
@@ -10463,7 +10458,6 @@ input[type="file"] {
 .privacy-elenco {
     margin: 0.5rem 0 1.25rem;
     padding-left: 1.2rem;
-    line-height: 1.6;
 }
 
 .privacy-azioni {

@@ -138,7 +138,7 @@ function check(etichetta, condizione, dettagli = []) {
             const s = getComputedStyle(p);
             return [Math.round(parseFloat(s.fontSize) / rem * 100) / 100, s.color === getComputedStyle(aiuto).color, Math.round(parseFloat(s.lineHeight) / parseFloat(s.fontSize) * 100) / 100].join(' ');
         });
-        check('/admin/settings/comandi: la frase di stato a 0,92 rem, grigia, interlinea 1,45', statoSorveglianza === '0.92 true 1.45', [String(statoSorveglianza)]);
+        check('/admin/settings/comandi: la frase di stato a 0,92 rem, grigia, interlinea 1,5', statoSorveglianza === '0.92 true 1.5', [String(statoSorveglianza)]);
 
         // Ruoli (26/11, variante C): l'elenco di che cosa fa sempre un ruolo come i
         // testi che spiegano, e «Amministratore» invece di «Admin».
@@ -153,8 +153,8 @@ function check(etichetta, condizione, dettagli = []) {
             return { primo: document.querySelector('.ruoli > .card > h2')?.textContent.trim(), voci: [...new Set(voci)] };
         });
         check('/admin/permissions: il primo riquadro si chiama «Amministratore»', ruoli.primo === 'Amministratore', [String(ruoli.primo)]);
-        check('/admin/permissions: ogni voce a 0,92 rem, grigia come la spiegazione degli interruttori, interlinea 1,45',
-            ruoli.voci.length === 1 && ruoli.voci[0] === '0.92 true 1.45', ruoli.voci);
+        check('/admin/permissions: ogni voce a 0,92 rem, grigia come la spiegazione degli interruttori, interlinea 1,5',
+            ruoli.voci.length === 1 && ruoli.voci[0] === '0.92 true 1.5', ruoli.voci);
 
         // Google Meet, riquadro «Stato» (26/11): tutte le frasi alla misura del testo che apre un riquadro.
         await page.goto(BASE + '/admin/settings/meet');

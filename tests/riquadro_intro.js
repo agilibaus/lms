@@ -84,8 +84,8 @@ function viste(dir) {
                 const fs = parseFloat(s.fontSize);
                 return { classe: p.className, misura: Math.round(fs / rem * 100) / 100, interlinea: s.lineHeight === 'normal' ? 0 : Math.round(parseFloat(s.lineHeight) / fs * 100) / 100 };
             }, titolo);
-            check(u + ': il testo sotto il titolo è a 0,92 rem con interlinea 1,45',
-                r !== null && r.misura === 0.92 && r.interlinea === 1.45, [JSON.stringify(r)]);
+            check(u + ': il testo sotto il titolo è a 0,92 rem con interlinea 1,5',
+                r !== null && r.misura === 0.92 && r.interlinea === 1.5, [JSON.stringify(r)]);
         }
     } finally {
         await browser.close();
