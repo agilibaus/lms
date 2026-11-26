@@ -86,7 +86,8 @@ function cartella(file) {
             };
         });
     };
-    const NOTA = 'Su molti hosting condivisi, il server non può uscire su internet per raggiungere Google. In quel caso '
+    // La frase di Alessandro del 26/11.
+    const NOTA = 'Se il server non può uscire su internet per raggiungere Google, '
         + 'il carattere va messo a mano nella directory storage/fonts/, in formato .woff2 e con il nome della famiglia '
         + 'in minuscolo, con i trattini al posto degli spazi: Playfair Display diventa playfair-display.woff2.';
 

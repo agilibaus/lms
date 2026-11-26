@@ -90,6 +90,12 @@ function check(etichetta, condizione, dettagli = []) {
             check(indirizzo + ': il testo che apre «' + titolo + '»', testo === attesa, [testo]);
         }
 
+        // Aspetto (26/11): nessun grassetto nei testi che descrivono.
+        await page.goto(BASE + '/admin/settings/aspetto');
+        const grassetti = await page.evaluate(() => [...document.querySelectorAll('main p, main li, main .form-hint, main .riquadro-intro, main .page-subtitle')]
+            .flatMap((e) => [...e.querySelectorAll('strong, b')].map((b) => b.textContent.replace(/\s+/g, ' ').trim())));
+        check('/admin/settings/aspetto: nessun grassetto nei testi', grassetti.length === 0, grassetti);
+
         // Google Meet, riquadro «Stato» (26/11): tutte le frasi alla misura del testo che apre un riquadro.
         await page.goto(BASE + '/admin/settings/meet');
         const stato = await page.evaluate(() => {

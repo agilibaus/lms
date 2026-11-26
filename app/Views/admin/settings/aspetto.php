@@ -42,7 +42,7 @@ use App\Core\Icona;
     <a href="/admin/settings" class="back-link"><span class="back-link-testo">Impostazioni</span></a>
     <h1>Aspetto</h1>
     <p class="page-subtitle">
-        Le impostazioni sono divise per <strong>dove fanno effetto</strong>: prima quelle
+        Le impostazioni sono divise per dove fanno effetto: prima quelle
         che valgono su tutte le pagine, poi quelle che riguardano solo le cinque pagine
         pubbliche — accesso, registrazione, recupero password, nuova password e cambio
         password obbligato.
@@ -65,7 +65,7 @@ use App\Core\Icona;
     <details class="card aspetto-sezione" open>
         <summary class="aspetto-sommario"><h3>Colori</h3></summary>
         <p class="form-hint" style="margin-top: 0;">
-            Valgono su <strong>tutte</strong> le pagine, non solo su quelle pubbliche.
+            Valgono su tutte le pagine, non solo su quelle pubbliche.
             Le otto tavolozze sono state verificate sui contrasti prima di essere offerte:
             qualunque si scelga, i testi restano leggibili.
         </p>
@@ -124,11 +124,11 @@ use App\Core\Icona;
                inputmode="text" spellcheck="false"
                aria-describedby="primario_aiuto">
         <p class="form-hint" id="primario_aiuto">
-            <strong>Sostituisce il colore principale di qualunque tavolozza</strong>, e da lui
+            Sostituisce il colore principale di qualunque tavolozza, e da lui
             vengono anche le sue sfumature. Si scrive come <code>#rrggbb</code>, per esempio
             per avvicinarlo al colore di un marchio. Con il campo vuoto vale quello della
             tavolozza, che è <code><?= htmlspecialchars($primarioInVigore) ?></code>.
-            Un colore troppo chiaro viene <strong>rifiutato al salvataggio</strong>, con
+            Un colore troppo chiaro viene rifiutato al salvataggio, con
             l’indicazione di quanto manca: sotto 4,5:1 di contrasto la scritta bianca sui
             pulsanti non si leggerebbe più.
         </p>
@@ -140,10 +140,10 @@ use App\Core\Icona;
                inputmode="text" spellcheck="false"
                aria-describedby="testo_aiuto">
         <p class="form-hint" id="testo_aiuto">
-            <strong>Sostituisce il colore del testo di qualunque tavolozza</strong>: per
+            Sostituisce il colore del testo di qualunque tavolozza: per
             esempio un grigio molto scuro al posto del quasi-nero predefinito, che è
             <code><?= htmlspecialchars($coloreTestoInVigore) ?></code>.
-            Il grigio dei testi secondari <strong>non si imposta</strong>: viene ricavato da
+            Il grigio dei testi secondari non si imposta: viene ricavato da
             questo, schiarito fin dove resta leggibile. Due campi che devono stare in
             rapporto fra loro sono due modi di sbagliare invece di uno.
             Il controllo è fatto su tutti i fondi su cui il testo finisce, <em>comprese le
@@ -242,8 +242,8 @@ use App\Core\Icona;
                 </ul>
             <?php endif; ?>
             <p class="form-hint">
-                Su molti hosting condivisi, il server non può uscire su internet per raggiungere Google. In quel
-                caso il carattere va messo a mano nella directory <code>storage/fonts/</code>, in formato
+                Se il server non può uscire su internet per raggiungere Google, il carattere va messo a mano
+                nella directory <code>storage/fonts/</code>, in formato
                 <code>.woff2</code> e con il nome della famiglia in minuscolo, con i trattini al posto degli spazi:
                 Playfair Display diventa <code>playfair-display.woff2</code>.
             </p>
@@ -284,7 +284,7 @@ use App\Core\Icona;
             <?php endforeach; ?>
         </select>
         <p class="form-hint" id="misura_aiuto">
-            <strong>Scala tutta l'interfaccia, non solo le lettere</strong>: nel foglio di
+            Scala tutta l'interfaccia, non solo le lettere: nel foglio di
             stile quasi ogni misura è relativa a questa, quindi crescono insieme testo,
             riempimenti e spazi, e le proporzioni restano quelle. Non si scende sotto i
             15&nbsp;px. Chi ha bisogno di testo più grande può comunque ingrandire dal proprio
@@ -389,7 +389,7 @@ use App\Core\Icona;
             <?php endforeach; ?>
         </select>
         <p class="form-hint" id="scena_aiuto">
-            Riguarda <strong>solo queste due righe</strong>, non il resto della piattaforma:
+            Riguarda solo queste due righe, non il resto della piattaforma:
             è indipendente dalla «Dimensione del testo» qui sopra, perché qui il titolo è un
             elemento grafico e ingrandirlo è una scelta di presentazione, non di leggibilità.
             Titolo e testo crescono insieme, per non rompere il rapporto fra i due.
