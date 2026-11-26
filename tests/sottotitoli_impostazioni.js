@@ -29,6 +29,8 @@ const CAMPI = [
         'Da 1 a 168 ore; il valore predefinito è 12. Non limita lo studente: il token nasce nuovo a ogni apertura della lezione, quindi si può riprendere un video anche giorni dopo.'],
     ['/admin/settings/pagamenti', 'stripe-chiave', null,
         'Comincia con «whsec_». Si copia da Stripe, nella pagina dell’endpoint degli avvisi. Se lasci il campo vuoto resta quella di prima.'],
+    ['/admin/settings/comandi', 'HEALTHCHECKS_PING_KEY', null,
+        'Si copia da Healthchecks.io, nel progetto «Pistacchio LMS»: Settings › Ping key. Se lasci il campo vuoto resta quella di prima.'],
     ['/admin/settings/meet', 'key', null,
         'Il file JSON scaricato da Google Cloud quando crei l\'account di servizio. Viene salvato in storage/google. Contiene una chiave privata: trattalo come una password.'],
 ];
@@ -138,6 +140,8 @@ function check(etichetta, condizione, dettagli = []) {
             const s = getComputedStyle(p);
             return [Math.round(parseFloat(s.fontSize) / rem * 100) / 100, s.color === getComputedStyle(aiuto).color, Math.round(parseFloat(s.lineHeight) / parseFloat(s.fontSize) * 100) / 100].join(' ');
         });
+        const spiegazione = await page.evaluate(() => (document.querySelector('.sorveglianza-stato + .form-hint')?.textContent || '').replace(/\s+/g, ' ').trim());
+        check('/admin/settings/comandi: la spiegazione sotto la frase di stato', spiegazione.startsWith('Con la chiave, a ogni giro i comandi mandano un segnale a Healthchecks.io, che ti avvisa per SMS o email quando un segnale non arriva. I check devono chiamarsi '), [spiegazione]);
         check('/admin/settings/comandi: la frase di stato a 0,92 rem, grigia, interlinea 1,5', statoSorveglianza === '0.92 true 1.5', [String(statoSorveglianza)]);
 
         // Ruoli (26/11, variante C): l'elenco di che cosa fa sempre un ruolo come i

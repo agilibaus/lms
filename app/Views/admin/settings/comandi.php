@@ -119,7 +119,7 @@ $etichette = [
             <p class="sorveglianza-stato">Nessuna chiave: i comandi girano, ma non avvisano nessuno se si fermano.</p>
             <p class="form-hint">
                 Con la chiave, a ogni giro i comandi mandano un segnale a Healthchecks.io, che ti avvisa per SMS o
-                email quando un segnale non arriva o dice che qualcosa non va. I check devono chiamarsi <?= $nomi ?>.
+                email quando un segnale non arriva. I check devono chiamarsi <?= $nomi ?>.
             </p>
         <?php endif; ?>
 
@@ -129,8 +129,8 @@ $etichette = [
                    placeholder="<?= $sorveglianza === Sorveglianza::ALTROVE ? 'salvata per un altro indirizzo'
                        : ($chiaveSalvata ? 'impostata — scrivi qui per sostituirla' : 'nessuna chiave impostata') ?>">
             <p class="form-hint">
-                Si copia da Healthchecks.io, nel progetto «Pistacchio LMS»: Settings › Ping key. Non viene mai
-                rimandata al browser: se lasci il campo vuoto resta quella di prima.
+                Si copia da Healthchecks.io, nel progetto «Pistacchio LMS»: Settings › Ping key. Se lasci il campo
+                vuoto resta quella di prima.
             </p>
 
             <?php if ($chiaveSalvata): ?>
