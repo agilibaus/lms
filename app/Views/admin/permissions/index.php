@@ -65,8 +65,8 @@ $ruoli = [
                 'Report di corso, studente e gruppo, Griglia, Studenti fermi, fruizione dei video, report degli incontri e certificati degli studenti dei suoi tutor. Spento: nessuno di questi, e il menu «Report» sparisce.'],
             'ROLE_ASSISTENTE_TENTATIVI' => ['Tentativi dei questionari',
                 'Apre i tentativi degli studenti dei suoi tutor, con tutte le risposte, anche quelle aperte. Vale solo con «Report» acceso. Spento: nei report vede i punteggi, non il tentativo.'],
-            'ROLE_ASSISTENTE_INCONTRI' => ['Incontri',
-                'Vede in «Sessioni live», in Agenda e nel calendario gli incontri dei gruppi dei suoi tutor, ci entra senza risultare presente, e ne legge le presenze se «Report» è acceso. Spento: non li vede.'],
+            'ROLE_ASSISTENTE_INCONTRI' => ['Incontri e aperture moduli',
+                'Vede in «Sessioni live», in Agenda e nel calendario gli incontri dei gruppi dei suoi tutor, ci entra senza risultare presente, e ne legge le presenze se «Report» è acceso. In Agenda e nel calendario vede anche le aperture dei moduli di quei gruppi. Spento: non vede né gli incontri né le aperture.'],
         ],
     ],
     'Studente' => [

@@ -89,11 +89,25 @@ class AgendaModel
      *
      * `passata` la calcola il database, con il suo orologio (§5).
      *
+     * CON `$gruppi` (27/11, Alessandro): solo le aperture di quei gruppi, per
+     * il tutor (i suoi) e l'assistente (quelli dei suoi tutor). Gli iscritti
+     * senza gruppo li' non ci sono: non sono di nessun tutor.
+     *
+     * @param list<int>|null $gruppi
      * @return list<array{id: int, title: string, course_id: int, course_title: string,
      *                    pubblicato: bool, available_from: string, passata: bool, per: string}>
      */
-    public static function apertureTutte(): array
+    public static function apertureTutte(?array $gruppi = null): array
     {
+        if ($gruppi === []) {
+            return [];
+        }
+
+        // Numeri soli, scritti nella query: vengono dal database, non da fuori.
+        $soloGruppi = $gruppi === null ? ''
+            : ' AND g.id IN (' . implode(',', array_map('intval', $gruppi)) . ')';
+        $senzaGruppo = $gruppi === null ? '' : ' AND FALSE';
+
         $righe = Database::connection()->query(
             "SELECT m.id, m.title, m.course_id, c.title AS course_title, c.is_published,
                     g.name AS gruppo,
@@ -104,13 +118,13 @@ class AgendaModel
                INNER JOIN group_course_access gca ON gca.course_id = m.course_id
                INNER JOIN `groups` g ON g.id = gca.group_id
                LEFT JOIN group_module_dates gmd ON gmd.module_id = m.id AND gmd.group_id = g.id
-              WHERE COALESCE(gmd.available_from, m.available_from) IS NOT NULL
+              WHERE COALESCE(gmd.available_from, m.available_from) IS NOT NULL{$soloGruppi}
              UNION ALL
              SELECT m.id, m.title, m.course_id, c.title, c.is_published,
                     NULL, m.available_from, m.available_from < NOW()
                FROM modules m
                INNER JOIN courses c ON c.id = m.course_id
-              WHERE m.available_from IS NOT NULL
+              WHERE m.available_from IS NOT NULL{$senzaGruppo}
                 AND EXISTS (
                     SELECT 1 FROM enrollments e
                     INNER JOIN users u ON u.id = e.user_id AND u.role = 'studente'

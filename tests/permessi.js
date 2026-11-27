@@ -4723,9 +4723,10 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 }
                 await page.goto(BASE + '/');
                 const menu = await page.$$eval('.sidebar-nav a.nav-link', (a) => a.map((x) => x.getAttribute('href')));
-                check('spenti → nel menu dell\'assistente né «Report» né «Sessioni live»', !menu.includes('/reports') && !menu.includes('/live'), [JSON.stringify(menu)]);
+                check('spenti → nel menu dell\'assistente né «Report» né «Sessioni live» né «Agenda»', !menu.includes('/reports') && !menu.includes('/live') && !menu.includes('/agenda'), [JSON.stringify(menu)]);
                 await page.goto(BASE + '/agenda');
-                check('spento «Incontri» → nell\'Agenda dell\'assistente nessun incontro', !(await page.content()).includes('/live/' + A.incontro_imminente), []);
+                check('spento «Incontri e aperture moduli» → nell\'Agenda dell\'assistente nessun incontro', !(await page.content()).includes('/live/' + A.incontro_imminente), []);
+                check('spento «Incontri e aperture moduli» → nell\'Agenda dell\'assistente nessuna apertura', await page.locator('.agenda-voce.agenda-apertura').count() === 0, []);
                 await ctx.close();
             }
             {
@@ -4770,6 +4771,13 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
         {
             const r = await vede('assist@test.it', '/attempts/' + A.tentativo);
             check('controprova: riaccesi, l\'assistente riapre il tentativo', r.esito === 'consentito', [r.esito]);
+        }
+        {
+            // «Incontri e aperture moduli» acceso (27/11): l'Agenda nel menu, con le aperture dei gruppi del suo tutor.
+            const r = await vede('assist@test.it', '/agenda');
+            check('controprova: riacceso, l\'Agenda dell\'assistente nel menu e con le aperture del mondo A',
+                r.esito === 'consentito' && r.html.includes('href="/agenda"') && r.html.includes('agenda-voce agenda-apertura')
+                    && r.html.includes('/courses/' + A.corso + '?'), [r.esito]);
         }
     } finally {
         await browser.close();

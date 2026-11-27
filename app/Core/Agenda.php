@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Auth\Ruoli;
 use App\Models\AgendaModel;
+use App\Models\GroupModel;
 use App\Models\LiveSessionModel;
 use App\Models\UserModel;
 
@@ -28,13 +30,13 @@ use App\Models\UserModel;
  *   apribile   solo gli incontri: si puo' entrare adesso
  *   in_corso   solo gli incontri: e' gia' cominciato e non e' finito
  *   bozza      l'incontro o l'apertura e' di un corso in bozza (27/11)
- *   per        solo le aperture dell'Amministratore: per chi vale la data
- *              («Gruppo Giallo»); null altrove
+ *   per        solo le aperture dello staff (Amministratore, tutor,
+ *              assistente): per chi vale la data («Gruppo Giallo»); null
+ *              per lo studente
  *
- * LE BOZZE (27/11, Alessandro). Chi vede gli incontri di un corso in bozza
- * (l'Amministratore, il tutor e l'assistente dei gruppi dell'incontro) e
- * l'Amministratore, che vede tutte le aperture, li trovano in agenda
- * segnati come bozza: si attivano quando il corso viene pubblicato, e da
+ * LE BOZZE (27/11, Alessandro). Chi vede incontri e aperture di un corso in
+ * bozza (l'Amministratore tutti; il tutor e l'assistente quelli dei loro
+ * gruppi) li trova in agenda segnati come bozza: si attivano quando il corso viene pubblicato, e da
  * li' tornano voci come le altre senza che nessuno debba fare niente. Delle
  * bozze si mostra solo quello che deve ancora venire: un'apertura o un
  * incontro di una bozza gia' passati non sono successi per nessuno.
@@ -99,11 +101,29 @@ class Agenda
             ];
         }
 
-        // L'Amministratore vede tutte le aperture, e per chi (27/11): il ruolo
-        // si legge dal database, perche' il calendario sottoscritto non ha una
-        // sessione (`LiveScope::elencoDiUtente`, lo stesso motivo).
-        if ((string) (UserModel::find($userId)['role'] ?? '') === 'admin') {
-            foreach (AgendaModel::apertureTutte() as $modulo) {
+        // L'Amministratore vede tutte le aperture, e per chi; il tutor quelle
+        // dei suoi gruppi, l'assistente quelle dei gruppi dei suoi tutor, solo
+        // con l'interruttore «Incontri e aperture moduli» acceso (27/11). Il
+        // ruolo si legge dal database, perche' il calendario sottoscritto non
+        // ha una sessione (`LiveScope::elencoDiUtente`, lo stesso motivo).
+        $ruolo = (string) (UserModel::find($userId)['role'] ?? '');
+
+        if (in_array($ruolo, ['admin', 'tutor', 'assistente'], true)) {
+            $gruppi = null;
+
+            if ($ruolo !== 'admin') {
+                $tutor = $ruolo === 'tutor' ? [$userId]
+                    : (Ruoli::acceso('ROLE_ASSISTENTE_INCONTRI') ? UserModel::tutorIdsForAssistant($userId) : []);
+                $gruppi = [];
+
+                foreach ($tutor as $t) {
+                    foreach (GroupModel::forTutor((int) $t) as $g) {
+                        $gruppi[] = (int) $g['id'];
+                    }
+                }
+            }
+
+            foreach (AgendaModel::apertureTutte($gruppi) as $modulo) {
                 $inizio = self::momento($modulo['available_from']);
 
                 if ($inizio === null || (!$modulo['pubblicato'] && $modulo['passata'])) {

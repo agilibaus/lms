@@ -197,7 +197,9 @@ use App\Core\Csrf;
                      Restano due voci: «Sessioni live» e' il posto dove lo
                      staff le crea e le modifica, l'agenda e' il posto dove
                      si guardano. */ ?>
-            <?php if (!$supervisore): ?>
+            <?php /* All'assistente solo con l'interruttore «Incontri e aperture
+                     moduli» acceso (27/11, Alessandro): spento, l'Agenda e' vuota. */ ?>
+            <?php if (!$supervisore && (!Auth::hasRole('assistente') || Auth::can('live.view_assigned'))): ?>
                 <a href="/agenda" class="nav-link<?= $voce('/agenda') ?>">Agenda</a>
             <?php endif; ?>
             <?php /* All'assistente solo con l'interruttore «Incontri» acceso (26/10). */ ?>

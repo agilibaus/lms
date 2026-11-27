@@ -5,7 +5,7 @@
  *    per data, con i gruppi («Gruppo …», «Gruppi …, …») e gli «iscritti
  *    senza gruppo».
  *  - Incontri e aperture di un corso in bozza compaiono a chi li vede
- *    (l'Amministratore; il tutor per gli incontri dei suoi gruppi) sbiaditi,
+ *    (l'Amministratore; il tutor e l'assistente per i loro gruppi) sbiaditi,
  *    con il bordo tratteggiato: nell'elenco con l'etichetta «Bozza» fuori
  *    dal titolo, nel mese con «In bozza» nella legenda, nel calendario
  *    piccolo del telefono con un cerchietto vuoto, nel calendario del
@@ -13,6 +13,9 @@
  *    deve ancora venire.
  *  - Lo studente non vede niente delle bozze, e le sue aperture non cambiano.
  *  - Pubblicato il corso, tutto torna come le altre voci.
+ *  - Il tutor vede le aperture dei suoi gruppi, l'assistente quelle dei
+ *    gruppi dei suoi tutor solo con «Incontri e aperture moduli» acceso;
+ *    spento, l'assistente non ha la voce «Agenda» nel menu.
  *  - Il sottotitolo della pagina per l'Amministratore dice che vede tutto,
  *    anche le bozze; per gli altri resta quello di prima.
  *
@@ -60,6 +63,8 @@ const voci = (page) => page.evaluate(() => [...document.querySelectorAll('.agend
 
 const sottotitolo = (page) => page.evaluate(() => (document.querySelector('.page-header .page-subtitle')?.textContent || '').replace(/\s+/g, ' ').trim());
 const SOTTOTITOLO_ADMIN = 'Tutti gli incontri dal vivo e tutte le aperture dei moduli, anche dei corsi in bozza, con i gruppi a cui si riferiscono.';
+const SOTTOTITOLO_TUTOR = 'Gli incontri dal vivo e le aperture dei moduli dei tuoi gruppi, anche dei corsi in bozza.';
+const SOTTOTITOLO_ASSISTENTE = 'Gli incontri dal vivo e le aperture dei moduli dei gruppi dei tuoi tutor, anche dei corsi in bozza.';
 const SOTTOTITOLO_ALTRI = 'Gli incontri dal vivo dei tuoi corsi e dei tuoi gruppi, e le date in cui si aprono i moduli a rilascio programmato.';
 
 const ggmmaaaa = (d) => d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4);
@@ -150,12 +155,45 @@ const ggmmaaaa = (d) => d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 
                 && titoli.filter((t) => t === 'Si apre: [agenda-bozze] modulo pubblicato').length === 2, titoli);
         check('una voce per data, ciascuna con il suo identificativo', uid.length === eventi.length && new Set(uid).size === uid.length, uid);
 
+        // Il tutor e l'assistente vedono le stesse voci: quelle del gruppo Alfa.
+        const delGruppoAlfa = (v) => v.length === 3
+            && v.some((x) => x.titolo === '[agenda-bozze] incontro in bozza' && x.bozza && x.etichetta === 'Bozza')
+            && v.some((x) => x.titolo === '[agenda-bozze] modulo in bozza' && x.bozza && x.etichetta === 'Bozza'
+                && x.contesto === '[agenda-bozze] bozza · Gruppo [agenda-bozze] Alfa')
+            && v.some((x) => x.titolo === '[agenda-bozze] modulo pubblicato' && !x.bozza && x.giorno === ggmmaaaa(dati.data_alfa)
+                && x.contesto === '[agenda-bozze] pubblicato · Gruppo [agenda-bozze] Alfa');
+
         console.log('--- il tutor');
         const tutor = await entra('tutor1@test.it');
         await tutor.goto(BASE + '/agenda');
+        check('il sottotitolo del tutor', await sottotitolo(tutor) === SOTTOTITOLO_TUTOR, [await sottotitolo(tutor)]);
         v = await voci(tutor);
-        check('il tutor: l\'incontro in bozza del suo gruppo, segnato; niente aperture, niente passato',
-            v.length === 1 && v[0].titolo === '[agenda-bozze] incontro in bozza' && v[0].bozza && v[0].etichetta === 'Bozza', [JSON.stringify(v)]);
+        check('il tutor: le aperture e gli incontri del suo gruppo, le bozze segnate; niente degli altri gruppi, niente passato delle bozze',
+            delGruppoAlfa(v), [JSON.stringify(v)]);
+
+        console.log('--- l\'assistente');
+        const menuAgenda = async (page) => (await page.$$eval('.sidebar-nav a.nav-link', (a) => a.map((x) => x.getAttribute('href')))).includes('/agenda');
+        const assistente = await entra('assist@test.it');
+        await assistente.goto(BASE + '/agenda');
+        check('il sottotitolo dell\'assistente', await sottotitolo(assistente) === SOTTOTITOLO_ASSISTENTE, [await sottotitolo(assistente)]);
+        v = await voci(assistente);
+        check('l\'assistente, con «Incontri e aperture moduli» acceso: le voci dei gruppi del suo tutor, come il tutor', delGruppoAlfa(v), [JSON.stringify(v)]);
+        check('acceso: «Agenda» nel menu dell\'assistente', await menuAgenda(assistente));
+        const prima = php('echo json_encode($pdo->query("SELECT setting_value FROM settings WHERE setting_key = \'ROLE_ASSISTENTE_INCONTRI\'")->fetchColumn());');
+        php('$pdo->exec("INSERT INTO settings (setting_key, setting_value) VALUES (\'ROLE_ASSISTENTE_INCONTRI\', \'0\') ON DUPLICATE KEY UPDATE setting_value = \'0\'");');
+        try {
+            await assistente.goto(BASE + '/agenda');
+            v = await voci(assistente);
+            check('spento: l\'assistente non vede né incontri né aperture', v.length === 0, [JSON.stringify(v)]);
+            check('spento: niente «Agenda» nel menu dell\'assistente', !(await menuAgenda(assistente)));
+        } finally {
+            const p = JSON.parse(prima);
+            if (p === false) {
+                php('$pdo->exec("DELETE FROM settings WHERE setting_key = \'ROLE_ASSISTENTE_INCONTRI\'");');
+            } else {
+                php('$pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = \'ROLE_ASSISTENTE_INCONTRI\'")->execute([$argv[1]]);', String(p));
+            }
+        }
 
         console.log('--- lo studente');
         const studente = await entra('agenda-bozze-studente@test.it');

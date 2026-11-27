@@ -136,10 +136,15 @@ $titoliGruppi = [
 <div class="page-header">
     <h1>Agenda</h1>
     <p class="page-subtitle">
-        <?php /* L'Amministratore vede tutto, anche le bozze (27/11, Alessandro). */ ?>
+        <?php /* Per ruolo (27/11, Alessandro): l'Amministratore vede tutto, il
+                 tutor e l'assistente i loro gruppi, anche le bozze. */ ?>
         <?php if (Auth::hasRole('admin')): ?>
             Tutti gli incontri dal vivo e tutte le aperture dei moduli, anche dei corsi in bozza, con i
             gruppi a cui si riferiscono.
+        <?php elseif (Auth::hasRole('tutor')): ?>
+            Gli incontri dal vivo e le aperture dei moduli dei tuoi gruppi, anche dei corsi in bozza.
+        <?php elseif (Auth::hasRole('assistente')): ?>
+            Gli incontri dal vivo e le aperture dei moduli dei gruppi dei tuoi tutor, anche dei corsi in bozza.
         <?php else: ?>
             Gli incontri dal vivo dei tuoi corsi e dei tuoi gruppi, e le date in cui si aprono
             i moduli a rilascio programmato.
