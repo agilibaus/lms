@@ -132,7 +132,7 @@ function pulisci() {
         await Promise.all([page.waitForLoadState('networkidle'), page.click('form[action="/live/' + futuro2 + '/delete"] button[type="submit"]')]);
         await page.goto(BASE + '/admin/groups/' + gruppo + '/edit');
         r = await riquadro();
-        const attesa = 'Verranno rimosse 1 sessione live conclusa, con relative presenze, e 1 domanda del giro del cerchio. Gli studenti restano iscritti ai corsi.';
+        const attesa = 'Rimuove 1 sessione live conclusa, con relative presenze, e 1 domanda del giro del cerchio. Gli studenti restano iscritti ai corsi.';
         check('il comando torna rosso, con il cestino, e accanto che cosa sparisce', r !== null && r.comandoRosso && !r.spento && r.icona && r.frase === attesa, [JSON.stringify(r)]);
         check('la conferma dice la stessa cosa, con il nome del gruppo', r !== null && r.conferma.includes('Eliminare il gruppo «' + NOME + '»? ' + attesa), [r ? r.conferma : '']);
 

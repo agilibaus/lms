@@ -317,10 +317,9 @@ class GroupModel
                 : $eliminazione['domande'] . ' domande del giro del cerchio';
         }
 
-        // Il verbo va al plurale se le voci sono due o se l'unica e' plurale.
-        $plurale = count($voci) > 1
-            || ($voci !== [] && ($eliminazione['conclusi'] > 1 || $eliminazione['domande'] > 1));
-        $frase = $voci === [] ? '' : ($plurale ? 'Verranno rimosse ' : 'Verrà rimossa ') . implode(', e ', $voci) . '. ';
+        // «Rimuove …» (27/11, Alessandro): il soggetto e' il comando accanto,
+        // «Elimina gruppo», e il verbo non cambia con il numero delle voci.
+        $frase = $voci === [] ? '' : 'Rimuove ' . implode(', e ', $voci) . '. ';
 
         return $frase . 'Gli studenti restano iscritti ai corsi.';
     }

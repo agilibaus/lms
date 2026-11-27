@@ -84,10 +84,10 @@ $members = $ordineMembri->applica($members);
     <h2>Corsi assegnati</h2>
     <p class="riquadro-intro">
         <?php if ($gestisceTutto): ?>
-            Assegnare un corso iscrive tutti i membri del gruppo; chi entra dopo viene iscritto automaticamente.
-            Un corso in bozza li iscrive quando viene pubblicato.
-            Rimuovendo il corso le iscrizioni già create restano attive. Ogni corso ha le date di apertura dei
-            moduli; con «Date dei moduli» questo gruppo può avere le sue.
+            Assegnare un corso a un gruppo iscrive tutti i membri del gruppo e chi entra dopo viene iscritto
+            automaticamente. Un corso in bozza li iscrive quando viene pubblicato.
+            Rimuovendo il corso le iscrizioni già create restano attive. Ciascun gruppo può avere le proprie
+            date di apertura dei moduli.
         <?php else: ?>
             I corsi del gruppo li assegna l’Amministratore. Con «Date dei moduli» questo gruppo può avere le sue
             date di apertura.
