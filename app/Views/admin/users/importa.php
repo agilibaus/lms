@@ -116,11 +116,10 @@ use App\Core\UserImport;
 <section class="card">
     <h2>Le password</h2>
     <p class="riquadro-intro">
-        Nessuno sceglie le password, nemmeno tu: le genera Pistacchio nel momento in cui
-        manda l'email, e chi entra deve cambiarla subito. Gli inviti non partono tutti
-        insieme ma a scaglioni di <?= Invites::PER_SCAGLIONE ?>, ogni quarto d'ora, perché
-        duecento email identiche in mezz'ora sono il modo più rapido di finire nello spam di
-        tutti. Fino a quando l'invito non parte, quella persona non ha una password e non può
-        entrare: il conteggio in fondo alla pagina Utenti dice quanti ne mancano.
+        Le password le genera Pistacchio nel momento in cui manda l'email, e chi accede deve
+        cambiarla subito. Gli inviti non partono tutti insieme ma a scaglioni di
+        <?= Invites::PER_SCAGLIONE ?>, ogni quarto d'ora. Fino a quando l'invito non parte,
+        l'utente non ha una password e non può entrare: il conteggio in fondo alla pagina
+        Utenti dice quanti ne mancano.
     </p>
 </section>
