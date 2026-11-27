@@ -1,6 +1,7 @@
 /**
  * «Modifica gruppo» (27/11, Alessandro): il testo del riquadro «Corsi
- * assegnati» per l'Amministratore, e la frase accanto a «Elimina gruppo»,
+ * assegnati» per l'Amministratore e per il tutor, che i corsi non li assegna,
+ * e la frase accanto a «Elimina gruppo»,
  * «Rimuove …», con il verbo che non cambia con il numero delle voci.
  *
  * La frase di «Elimina gruppo» si prova in tutte le combinazioni chiedendola a
@@ -8,7 +9,8 @@
  * pagina e conferma, la prova tests/elimina_gruppo.js.
  *
  * Esecuzione:  node tests/gruppo_modifica_testi.js   (server di sviluppo acceso;
- * nel database un gruppo, che il test cerca e non crea)
+ * nel database un gruppo e un gruppo di tutor1@test.it, che il test cerca e
+ * non crea)
  */
 'use strict';
 
@@ -23,6 +25,8 @@ const RADICE = path.join(__dirname, '..');
 const CORSI_ASSEGNATI = 'Assegnare un corso a un gruppo iscrive tutti i membri del gruppo e chi entra dopo viene '
     + 'iscritto automaticamente. Un corso in bozza li iscrive quando viene pubblicato. Rimuovendo il corso le '
     + 'iscrizioni già create restano attive. Ciascun gruppo può avere le proprie date di apertura dei moduli.';
+
+const CORSI_ASSEGNATI_TUTOR = 'I corsi del gruppo li assegna l’Amministratore. Questo gruppo può avere le sue date di apertura.';
 
 const RESTANO = 'Gli studenti restano iscritti ai corsi.';
 const FRASI = [
@@ -57,19 +61,34 @@ function php(codice, ...argomenti) {
     }
 
     const gruppo = php('echo (int) \\App\\Core\\Database::connection()->query("SELECT id FROM `groups` ORDER BY id LIMIT 1")->fetchColumn();');
+    const delTutor = php('echo (int) \\App\\Core\\Database::connection()->query("SELECT g.id FROM `groups` g JOIN users u ON u.id = g.tutor_id '
+        + 'WHERE u.email = \'tutor1@test.it\' ORDER BY g.id LIMIT 1")->fetchColumn();');
+    const corsiAssegnati = (page) => page.evaluate(() => [...document.querySelectorAll('main section.card')]
+        .filter((s) => (s.querySelector('h2')?.textContent || '').trim() === 'Corsi assegnati')
+        .map((s) => (s.querySelector('.riquadro-intro')?.textContent || '').replace(/\s+/g, ' ').trim()));
     const browser = await chromium.launch();
-    try {
+    const entra = async (email) => {
         const page = await (await browser.newContext()).newPage();
         await page.goto(BASE + '/login');
-        await page.fill('input[name="email"]', 'admin@test.it');
+        await page.fill('input[name="email"]', email);
         await page.fill('input[name="password"]', PASSWORD);
         await Promise.all([page.waitForNavigation(), page.click('form.auth-form button[type="submit"]')]);
-
-        await page.goto(BASE + '/admin/groups/' + gruppo + '/edit');
-        const testi = await page.evaluate(() => [...document.querySelectorAll('main section.card')]
-            .filter((s) => (s.querySelector('h2')?.textContent || '').trim() === 'Corsi assegnati')
-            .map((s) => (s.querySelector('.riquadro-intro')?.textContent || '').replace(/\s+/g, ' ').trim()));
+        return page;
+    };
+    try {
+        const admin = await entra('admin@test.it');
+        await admin.goto(BASE + '/admin/groups/' + gruppo + '/edit');
+        const testi = await corsiAssegnati(admin);
         check('«Corsi assegnati»: il testo del riquadro', testi.length === 1 && testi[0] === CORSI_ASSEGNATI, testi);
+
+        if (Number(delTutor) > 0) {
+            const tutor = await entra('tutor1@test.it');
+            await tutor.goto(BASE + '/admin/groups/' + delTutor + '/edit');
+            const perTutor = await corsiAssegnati(tutor);
+            check('«Corsi assegnati», per il tutor: il testo del riquadro', perTutor.length === 1 && perTutor[0] === CORSI_ASSEGNATI_TUTOR, perTutor);
+        } else {
+            check('«Corsi assegnati», per il tutor: nel database c\'è un gruppo di tutor1@test.it', false);
+        }
     } finally {
         await browser.close();
     }

@@ -89,8 +89,7 @@ $members = $ordineMembri->applica($members);
             Rimuovendo il corso le iscrizioni già create restano attive. Ciascun gruppo può avere le proprie
             date di apertura dei moduli.
         <?php else: ?>
-            I corsi del gruppo li assegna l’Amministratore. Con «Date dei moduli» questo gruppo può avere le sue
-            date di apertura.
+            I corsi del gruppo li assegna l’Amministratore. Questo gruppo può avere le sue date di apertura.
         <?php endif; ?>
     </p>
 
