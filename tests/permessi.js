@@ -4717,6 +4717,9 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                     ['/live/' + A.incontro_imminente, 'l\'incontro'],
                     // Anche l'elenco (24/11): prima, dall'indirizzo, diceva «Nessuna sessione in programma».
                     ['/live', 'l\'elenco delle sessioni live'],
+                    // E l'Agenda (27/11), come «Sessioni live».
+                    ['/agenda', 'l\'agenda'],
+                    ['/agenda/evento/' + A.incontro_imminente + '.ics', 'l\'incontro in .ics'],
                 ]) {
                     const r = await esitoGet(page, url);
                     check('spenti gli interruttori dell\'assistente → ' + url + ': negato', r.esito === 'negato', r.esito === 'negato' ? [] : [perche + ': ' + r.come]);
@@ -4724,9 +4727,8 @@ async function esitoPost(page, url, campi, paginaToken = '/profilo') {
                 await page.goto(BASE + '/');
                 const menu = await page.$$eval('.sidebar-nav a.nav-link', (a) => a.map((x) => x.getAttribute('href')));
                 check('spenti → nel menu dell\'assistente né «Report» né «Sessioni live» né «Agenda»', !menu.includes('/reports') && !menu.includes('/live') && !menu.includes('/agenda'), [JSON.stringify(menu)]);
-                await page.goto(BASE + '/agenda');
-                check('spento «Incontri e aperture moduli» → nell\'Agenda dell\'assistente nessun incontro', !(await page.content()).includes('/live/' + A.incontro_imminente), []);
-                check('spento «Incontri e aperture moduli» → nell\'Agenda dell\'assistente nessuna apertura', await page.locator('.agenda-voce.agenda-apertura').count() === 0, []);
+                const cal = await esitoPost(page, '/agenda/calendario', []);
+                check('spento «Incontri e aperture moduli» → POST dell\'indirizzo del calendario: negato', cal.esito === 'negato', [cal.come]);
                 await ctx.close();
             }
             {

@@ -37,6 +37,7 @@ class AgendaController
     public function index(array $params = []): void
     {
         Auth::requireLogin();
+        $this->negaAssistenteSpento();
 
         $userId = (int) Auth::id();
         $eventi = Agenda::eventiDi($userId);
@@ -68,6 +69,7 @@ class AgendaController
         // arrivare qui: non si ricontrolla, altrimenti diventano due posti
         // in cui ricordarsi di farlo.
         Auth::requireLogin();
+        $this->negaAssistenteSpento();
 
         AgendaModel::rigeneraToken((int) Auth::id());
 
@@ -80,6 +82,7 @@ class AgendaController
     public function dimentica(array $params = []): void
     {
         Auth::requireLogin();
+        $this->negaAssistenteSpento();
 
         AgendaModel::dimenticaToken((int) Auth::id());
 
@@ -97,6 +100,7 @@ class AgendaController
     public function evento(array $params): void
     {
         Auth::requireLogin();
+        $this->negaAssistenteSpento();
 
         $id = (int) ($params['id'] ?? 0);
         $eventi = Agenda::eventiDi((int) Auth::id());
@@ -163,6 +167,22 @@ class AgendaController
     }
 
     // ---------------------------------------------------------------
+
+    /**
+     * L'assistente con «Incontri e aperture moduli» spento (Impostazioni ›
+     * Ruoli): accesso negato, come «Sessioni live» (27/11, Alessandro). La
+     * voce «Agenda» nel menu non c'e', e dall'indirizzo la pagina non si apre
+     * vuota come se non ci fosse niente. Il calendario sottoscritto, che non
+     * ha una sessione, risponde senza incontri ne' aperture
+     * (`LiveScope::elencoDiUtente`, `Agenda::eventiDi`).
+     */
+    private function negaAssistenteSpento(): void
+    {
+        if (Auth::hasRole('assistente') && !Auth::can('live.view_assigned')) {
+            Errore::pagina(403, 'Accesso negato: non hai i permessi per consultare l\'agenda.');
+            exit;
+        }
+    }
 
     /**
      * Un evento dell'agenda nella forma che vuole `Ics::publish`.

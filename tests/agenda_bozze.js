@@ -15,7 +15,8 @@
  *  - Pubblicato il corso, tutto torna come le altre voci.
  *  - Il tutor vede le aperture dei suoi gruppi, l'assistente quelle dei
  *    gruppi dei suoi tutor solo con «Incontri e aperture moduli» acceso;
- *    spento, l'assistente non ha la voce «Agenda» nel menu.
+ *    spento, l'assistente non ha la voce «Agenda» nel menu, e la pagina gli
+ *    risponde «accesso negato», come «Sessioni live».
  *  - Il sottotitolo della pagina per l'Amministratore dice che vede tutto,
  *    anche le bozze; per gli altri resta quello di prima.
  *
@@ -182,10 +183,13 @@ const ggmmaaaa = (d) => d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 
         const prima = php('echo json_encode($pdo->query("SELECT setting_value FROM settings WHERE setting_key = \'ROLE_ASSISTENTE_INCONTRI\'")->fetchColumn());');
         php('$pdo->exec("INSERT INTO settings (setting_key, setting_value) VALUES (\'ROLE_ASSISTENTE_INCONTRI\', \'0\') ON DUPLICATE KEY UPDATE setting_value = \'0\'");');
         try {
-            await assistente.goto(BASE + '/agenda');
+            const risposta = await assistente.goto(BASE + '/agenda');
             v = await voci(assistente);
-            check('spento: l\'assistente non vede né incontri né aperture', v.length === 0, [JSON.stringify(v)]);
+            check('spento: l\'Agenda dell\'assistente risponde «accesso negato», come «Sessioni live»',
+                risposta.status() === 403 && v.length === 0, [String(risposta.status()), JSON.stringify(v)]);
             check('spento: niente «Agenda» nel menu dell\'assistente', !(await menuAgenda(assistente)));
+            const ics = await assistente.context().request.get(BASE + '/agenda/evento/' + dati.incontro_bozza + '.ics');
+            check('spento: anche l\'incontro in .ics è negato', ics.status() === 403, [String(ics.status())]);
         } finally {
             const p = JSON.parse(prima);
             if (p === false) {
