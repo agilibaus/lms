@@ -38,12 +38,12 @@ use App\Core\GroupLogo;
 <?php /* Il link compare agli studenti del gruppo nel benvenuto del tutor, in
          cima ai corsi (07/10). E' una chiave d'accesso al gruppo WhatsApp:
          non compare in nessun altro posto. */ ?>
-<label for="whatsapp_url">Link di invito in WhatsApp</label>
+<label for="whatsapp_url">Link di invito in WhatsApp (facoltativo)</label>
 <input type="url" id="whatsapp_url" name="whatsapp_url" maxlength="255" inputmode="url"
        placeholder="https://chat.whatsapp.com/…"
        value="<?= htmlspecialchars((string) ($group['whatsapp_url'] ?? '')) ?>">
 <p class="form-hint">
-    Facoltativo. In WhatsApp, nel gruppo: «Invita tramite link», poi copia il link. Gli studenti del
+    In WhatsApp, nel gruppo: «Invita tramite link», poi copia il link. Gli studenti del
     gruppo lo trovano nel benvenuto del tutor, in cima a ogni corso.
 </p>
 

@@ -82,7 +82,7 @@ $soglia = (int) $quiz['passing_score_pct'];
         <label for="h5p">Sostituisci con un altro file .h5p</label>
         <input type="file" id="h5p" name="h5p" accept=".h5p" aria-describedby="h5p-aiuto" <?= $h5pDisponibile ? '' : 'disabled' ?>>
         <p class="form-hint" id="h5p-aiuto">
-            Facoltativo. I tentativi già svolti restano<?= $tentativi > 0 ? ' (' . $tentativi . ')' : '' ?>,
+            I tentativi già svolti restano<?= $tentativi > 0 ? ' (' . $tentativi . ')' : '' ?>,
             con il punteggio che avevano.
         </p>
 
