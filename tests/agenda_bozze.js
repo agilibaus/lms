@@ -13,6 +13,8 @@
  *    deve ancora venire.
  *  - Lo studente non vede niente delle bozze, e le sue aperture non cambiano.
  *  - Pubblicato il corso, tutto torna come le altre voci.
+ *  - Il sottotitolo della pagina per l'Amministratore dice che vede tutto,
+ *    anche le bozze; per gli altri resta quello di prima.
  *
  * Esecuzione:  node tests/agenda_bozze.js   (server di sviluppo acceso; crea
  * i dati con tests/agenda_bozze_semina.php e li toglie alla fine, e rimette
@@ -56,6 +58,10 @@ const voci = (page) => page.evaluate(() => [...document.querySelectorAll('.agend
         bordo: getComputedStyle(li).borderTopStyle,
     })));
 
+const sottotitolo = (page) => page.evaluate(() => (document.querySelector('.page-header .page-subtitle')?.textContent || '').replace(/\s+/g, ' ').trim());
+const SOTTOTITOLO_ADMIN = 'Tutti gli incontri dal vivo e tutte le aperture dei moduli, anche dei corsi in bozza, con i gruppi a cui si riferiscono.';
+const SOTTOTITOLO_ALTRI = 'Gli incontri dal vivo dei tuoi corsi e dei tuoi gruppi, e le date in cui si aprono i moduli a rilascio programmato.';
+
 const ggmmaaaa = (d) => d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4);
 
 (async () => {
@@ -76,6 +82,7 @@ const ggmmaaaa = (d) => d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 
 
         console.log('--- l\'Amministratore, nell\'elenco');
         await admin.goto(BASE + '/agenda');
+        check('il sottotitolo dell\'Amministratore', await sottotitolo(admin) === SOTTOTITOLO_ADMIN, [await sottotitolo(admin)]);
         let v = await voci(admin);
         const pubblicate = v.filter((x) => x.titolo === '[agenda-bozze] modulo pubblicato');
         check('il modulo pubblicato: una voce per data, con per chi',
@@ -153,6 +160,7 @@ const ggmmaaaa = (d) => d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 
         console.log('--- lo studente');
         const studente = await entra('agenda-bozze-studente@test.it');
         await studente.goto(BASE + '/agenda');
+        check('il sottotitolo dello studente resta quello di prima', await sottotitolo(studente) === SOTTOTITOLO_ALTRI, [await sottotitolo(studente)]);
         v = await voci(studente);
         check('lo studente: la sua apertura, come prima, e niente delle bozze',
             v.length === 1 && v[0].titolo === '[agenda-bozze] modulo pubblicato' && v[0].giorno === ggmmaaaa(dati.data_modulo)

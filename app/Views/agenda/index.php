@@ -7,6 +7,7 @@ use App\Core\Agenda;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\Icona;
+use App\Auth\Auth;
 
 /**
  * L'agenda: elenco e mese.
@@ -135,8 +136,14 @@ $titoliGruppi = [
 <div class="page-header">
     <h1>Agenda</h1>
     <p class="page-subtitle">
-        Gli incontri dal vivo dei tuoi corsi e dei tuoi gruppi, e le date in cui si aprono
-        i moduli a rilascio programmato.
+        <?php /* L'Amministratore vede tutto, anche le bozze (27/11, Alessandro). */ ?>
+        <?php if (Auth::hasRole('admin')): ?>
+            Tutti gli incontri dal vivo e tutte le aperture dei moduli, anche dei corsi in bozza, con i
+            gruppi a cui si riferiscono.
+        <?php else: ?>
+            Gli incontri dal vivo dei tuoi corsi e dei tuoi gruppi, e le date in cui si aprono
+            i moduli a rilascio programmato.
+        <?php endif; ?>
     </p>
 </div>
 
