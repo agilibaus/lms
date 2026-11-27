@@ -5934,6 +5934,32 @@ fieldset.checkbox-group legend {
     background: var(--color-primary-soft);
 }
 
+/* Le voci di un corso in bozza (27/11, Alessandro, variante A): sbiadite e
+   con il bordo tratteggiato, piu' l'etichetta grigia «Bozza» accanto al
+   titolo. Si attivano quando il corso viene pubblicato. */
+.agenda-voce.agenda-bozza {
+    border-style: dashed;
+    background: #fbfbfa;
+}
+
+.agenda-titolo-riga {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.5rem;
+}
+
+.agenda-titolo-riga > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    font-weight: 600;
+}
+
+.agenda-titolo-riga .badge {
+    margin-top: 0;
+}
+
 /* Data e ora su una riga sola (06/11, Alessandro): in 6,5 rem
    «16/11 10:13–11:13» andava a capo, nell'Elenco dell'Agenda come in
    «Sessioni live». La colonna resta larga uguale per tutte le voci, cosi'
@@ -6953,6 +6979,33 @@ fieldset.checkbox-group legend {
     color: #5A4420;
 }
 
+/* Per chi si apre un modulo, nell'agenda dell'Amministratore (27/11). */
+.agenda-pillola-per {
+    display: block;
+    font-weight: 400;
+}
+
+/* In bozza (27/11, variante A): lo stesso colore, sbiadito, e il bordo
+   tratteggiato; il testo resta sopra 4,5:1. Vale anche per il segno della
+   legenda. */
+.agenda-pillola.agenda-bozza,
+.agenda-segno.agenda-bozza {
+    border: 1px dashed currentColor;
+}
+
+.agenda-pillola.agenda-incontro.agenda-bozza,
+.agenda-segno.agenda-incontro.agenda-bozza {
+    background: #fff;
+    background: color-mix(in srgb, var(--color-primary-soft) 45%, #fff);
+    color: #3d5a44;
+}
+
+.agenda-pillola.agenda-apertura.agenda-bozza,
+.agenda-segno.agenda-apertura.agenda-bozza {
+    background: #faf6ee;
+    color: #6b5530;
+}
+
 .agenda-pillola-ora {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -7142,6 +7195,21 @@ fieldset.checkbox-group legend {
 
     .agenda-punto.agenda-apertura {
         background: #9A6B1F;
+    }
+
+    /* In bozza (27/11): un cerchietto vuoto invece del pallino pieno. */
+    .agenda-punto.agenda-bozza {
+        background: transparent;
+        border: 1.5px solid;
+        box-sizing: border-box;
+    }
+
+    .agenda-punto.agenda-incontro.agenda-bozza {
+        border-color: var(--color-primary);
+    }
+
+    .agenda-punto.agenda-apertura.agenda-bozza {
+        border-color: #9A6B1F;
     }
 
     .agenda-giorni {

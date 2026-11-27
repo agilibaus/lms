@@ -58,11 +58,17 @@ $voce = static function (array $e) use ($esc, $adesso, $urlEvento): string {
     $ora = $e['inizio']->format('H:i');
     $ora .= $incontro && $e['fine'] !== null ? '–' . $e['fine']->format('H:i') : '';
 
-    $html = '<li class="agenda-voce agenda-' . $esc($e['tipo']) . ($inCorso ? ' agenda-in-corso' : '') . '">'
+    // Una voce di un corso in bozza (27/11, Alessandro): sbiadita, con il
+    // bordo tratteggiato e l'etichetta grigia «Bozza» accanto al titolo,
+    // fuori dal collegamento.
+    $bozza = (bool) ($e['bozza'] ?? false);
+    $titolo = '<a href="' . $esc($urlEvento($e)) . '">' . $esc((string) $e['titolo']) . '</a>';
+
+    $html = '<li class="agenda-voce agenda-' . $esc($e['tipo']) . ($inCorso ? ' agenda-in-corso' : '') . ($bozza ? ' agenda-bozza' : '') . '">'
         . '<span class="agenda-quando"><span class="agenda-giorno">'
         . $esc($e['inizio']->format('d/m/Y')) . '</span> <span class="agenda-ora">' . $esc($ora) . '</span></span>'
         . '<span class="agenda-cosa">'
-        . '<a href="' . $esc($urlEvento($e)) . '">' . $esc((string) $e['titolo']) . '</a>'
+        . ($bozza ? '<span class="agenda-titolo-riga">' . $titolo . '<span class="badge">Bozza</span></span>' : $titolo)
         . '<span class="agenda-tipo">' . $esc(Agenda::etichettaTipo((string) $e['tipo'])) . '</span>'
         . ($e['contesto'] === '' ? '' : '<span class="agenda-contesto">' . $esc((string) $e['contesto']) . '</span>')
         . '</span>'
@@ -94,6 +100,19 @@ $voce = static function (array $e) use ($esc, $adesso, $urlEvento): string {
     }
 
     return $html . '</span></li>';
+};
+
+/**
+ * Il contenuto di una pillola del mese: l'ora, il titolo e, per le aperture
+ * dell'Amministratore, per chi (27/11, Alessandro: «quando si apre un modulo e
+ * per chi», a colpo d'occhio). Il tipo e la bozza per i lettori di schermo.
+ */
+$pillola = static function (array $e) use ($esc): string {
+    return '<span class="agenda-pillola-ora">' . $esc($e['inizio']->format('H:i')) . '</span> '
+        . $esc((string) $e['titolo'])
+        . (($e['per'] ?? null) !== null ? '<span class="agenda-pillola-per">' . $esc((string) $e['per']) . '</span>' : '')
+        . '<span class="sr-only"> — ' . $esc(Agenda::etichettaTipo((string) $e['tipo']))
+        . (($e['bozza'] ?? false) ? ', in bozza' : '') . '</span>';
 };
 
 /** L'indirizzo di questa pagina con una vista o un mese diversi. */
@@ -235,14 +254,10 @@ $titoliGruppi = [
                                              da tastiera ne' col dito: per quelli ci sono la
                                              legenda qui sotto e il testo nascosto nel
                                              collegamento. */ ?>
-                                    <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?>"
-                                       title="<?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?>"
+                                    <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?><?= ($e['bozza'] ?? false) ? ' agenda-bozza' : '' ?>"
+                                       title="<?= $esc(Agenda::etichettaTipo((string) $e['tipo']) . (($e['bozza'] ?? false) ? ' · In bozza' : '')) ?>"
                                        href="<?= $esc($urlEvento($e)) ?>">
-                                        <span class="agenda-pillola-ora"><?= $esc($e['inizio']->format('H:i')) ?></span>
-                                        <?= $esc((string) $e['titolo']) ?>
-                                        <span class="sr-only">
-                                            — <?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?>
-                                        </span>
+                                        <?= $pillola($e) ?>
                                     </a>
                                 <?php endforeach; ?>
                             </td>
@@ -294,7 +309,7 @@ $titoliGruppi = [
                                     <a class="agenda-mini-giorno" href="#giorno-<?= $esc($chiave) ?>">
                                         <span class="agenda-mini-numero" aria-hidden="true"><?= $numero ?></span>
                                         <span class="agenda-punti" aria-hidden="true">
-                                            <?php foreach (array_slice($casella['eventi'], 0, 3) as $e): ?><span class="agenda-punto agenda-<?= $esc((string) $e['tipo']) ?>"></span><?php endforeach; ?>
+                                            <?php foreach (array_slice($casella['eventi'], 0, 3) as $e): ?><span class="agenda-punto agenda-<?= $esc((string) $e['tipo']) ?><?= ($e['bozza'] ?? false) ? ' agenda-bozza' : '' ?>"></span><?php endforeach; ?>
                                         </span>
                                         <span class="sr-only"><?= $esc(Agenda::dataEstesa($g)) ?><?= $oggi ? ', oggi' : '' ?>: <?= $quanti === 0 ? 'nessun impegno' : ($quanti === 1 ? '1 impegno' : $quanti . ' impegni') ?></span>
                                     </a>
@@ -320,10 +335,8 @@ $titoliGruppi = [
                         <p class="empty-state-small">Nessun impegno.</p>
                     <?php endif; ?>
                     <?php foreach ($casella['eventi'] as $e): ?>
-                        <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?>" href="<?= $esc($urlEvento($e)) ?>">
-                            <span class="agenda-pillola-ora"><?= $esc($e['inizio']->format('H:i')) ?></span>
-                            <?= $esc((string) $e['titolo']) ?>
-                            <span class="sr-only">— <?= $esc(Agenda::etichettaTipo((string) $e['tipo'])) ?></span>
+                        <a class="agenda-pillola agenda-<?= $esc((string) $e['tipo']) ?><?= ($e['bozza'] ?? false) ? ' agenda-bozza' : '' ?>" href="<?= $esc($urlEvento($e)) ?>">
+                            <?= $pillola($e) ?>
                         </a>
                     <?php endforeach; ?>
                 </section>
@@ -344,6 +357,20 @@ $titoliGruppi = [
              che il criterio 1.4.1 delle WCAG chiede di non fare. Il
              quadratino e' `aria-hidden`: a chi legge con un lettore di
              schermo non dice niente, e il testo accanto dice tutto. */ ?>
+    <?php
+    // «In bozza» (27/11, Alessandro) solo nei mesi che ne hanno, con il segno
+    // di ciascun tipo che compare in bozza.
+    $tipiInBozza = [];
+    foreach ($settimane as $settimana) {
+        foreach ($settimana as $casella) {
+            foreach ($casella['eventi'] as $e) {
+                if (!$casella['fuori'] && ($e['bozza'] ?? false)) {
+                    $tipiInBozza[(string) $e['tipo']] = true;
+                }
+            }
+        }
+    }
+    ?>
     <ul class="agenda-legenda">
         <?php foreach ([Agenda::INCONTRO, Agenda::APERTURA] as $tipo): ?>
             <li>
@@ -351,6 +378,16 @@ $titoliGruppi = [
                 <?= $esc(Agenda::etichettaTipo($tipo)) ?>
             </li>
         <?php endforeach; ?>
+        <?php if ($tipiInBozza !== []): ?>
+            <li class="agenda-legenda-bozza">
+                <?php foreach ([Agenda::INCONTRO, Agenda::APERTURA] as $tipo): ?>
+                    <?php if (isset($tipiInBozza[$tipo])): ?>
+                        <span class="agenda-segno agenda-<?= $esc($tipo) ?> agenda-bozza" aria-hidden="true"></span>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                In bozza
+            </li>
+        <?php endif; ?>
     </ul>
 <?php endif; ?>
 

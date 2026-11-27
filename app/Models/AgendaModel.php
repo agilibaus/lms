@@ -75,6 +75,122 @@ class AgendaModel
     }
 
     /**
+     * Tutte le aperture dei moduli, per l'Amministratore (27/11, Alessandro):
+     * quando si apre ogni modulo e **per chi**, anche nei corsi in bozza.
+     *
+     * Lo studente ha una data sola per modulo (`ModuleModel::dataPer`): quella
+     * del suo gruppo, se il gruppo ne ha una, altrimenti quella del modulo.
+     * Qui la stessa regola si guarda dalla parte dei gruppi: per ogni gruppo a
+     * cui il corso e' assegnato, la sua data o quella del modulo; e per gli
+     * studenti iscritti che non stanno in nessun gruppo del corso, la data del
+     * modulo. Le righe con la stessa data diventano una voce sola, con i nomi
+     * di tutti quelli per cui vale. Una data che non vale per nessuno non
+     * compare: senza gruppi e senza iscritti senza gruppo non c'e' riga.
+     *
+     * `passata` la calcola il database, con il suo orologio (§5).
+     *
+     * @return list<array{id: int, title: string, course_id: int, course_title: string,
+     *                    pubblicato: bool, available_from: string, passata: bool, per: string}>
+     */
+    public static function apertureTutte(): array
+    {
+        $righe = Database::connection()->query(
+            "SELECT m.id, m.title, m.course_id, c.title AS course_title, c.is_published,
+                    g.name AS gruppo,
+                    COALESCE(gmd.available_from, m.available_from) AS data,
+                    COALESCE(gmd.available_from, m.available_from) < NOW() AS passata
+               FROM modules m
+               INNER JOIN courses c ON c.id = m.course_id
+               INNER JOIN group_course_access gca ON gca.course_id = m.course_id
+               INNER JOIN `groups` g ON g.id = gca.group_id
+               LEFT JOIN group_module_dates gmd ON gmd.module_id = m.id AND gmd.group_id = g.id
+              WHERE COALESCE(gmd.available_from, m.available_from) IS NOT NULL
+             UNION ALL
+             SELECT m.id, m.title, m.course_id, c.title, c.is_published,
+                    NULL, m.available_from, m.available_from < NOW()
+               FROM modules m
+               INNER JOIN courses c ON c.id = m.course_id
+              WHERE m.available_from IS NOT NULL
+                AND EXISTS (
+                    SELECT 1 FROM enrollments e
+                    INNER JOIN users u ON u.id = e.user_id AND u.role = 'studente'
+                     WHERE e.course_id = m.course_id
+                       AND NOT EXISTS (
+                           SELECT 1 FROM group_members gm
+                           INNER JOIN group_course_access gca_s
+                                   ON gca_s.group_id = gm.group_id AND gca_s.course_id = m.course_id
+                            WHERE gm.user_id = e.user_id))"
+        )->fetchAll();
+
+        $voci = [];
+
+        foreach ($righe as $r) {
+            $chiave = $r['id'] . '|' . $r['data'];
+            $voci[$chiave] ??= [
+                'id' => (int) $r['id'],
+                'title' => (string) $r['title'],
+                'course_id' => (int) $r['course_id'],
+                'course_title' => (string) $r['course_title'],
+                'pubblicato' => (int) $r['is_published'] === 1,
+                'available_from' => (string) $r['data'],
+                'passata' => (int) $r['passata'] === 1,
+                'gruppi' => [],
+                'senza_gruppo' => false,
+            ];
+
+            if ($r['gruppo'] === null) {
+                $voci[$chiave]['senza_gruppo'] = true;
+            } else {
+                $voci[$chiave]['gruppi'][] = (string) $r['gruppo'];
+            }
+        }
+
+        $risultato = [];
+
+        foreach ($voci as $v) {
+            $gruppi = array_values(array_unique($v['gruppi']));
+            sort($gruppi, SORT_NATURAL | SORT_FLAG_CASE);
+            $per = self::perChi($gruppi, $v['senza_gruppo']);
+            unset($v['gruppi'], $v['senza_gruppo']);
+            $v['per'] = $per;
+            $risultato[] = $v;
+        }
+
+        return $risultato;
+    }
+
+    /**
+     * «Gruppo Giallo», «Gruppi Giallo, Verde», «Gruppo Verde, iscritti senza
+     * gruppo», «Iscritti senza gruppo» (27/11, Alessandro): per chi vale una
+     * data, con i nomi.
+     *
+     * @param list<string> $gruppi
+     */
+    public static function perChi(array $gruppi, bool $senzaGruppo): string
+    {
+        $parti = [];
+
+        if ($gruppi !== []) {
+            $parti[] = (count($gruppi) === 1 ? 'Gruppo ' : 'Gruppi ') . implode(', ', $gruppi);
+        }
+
+        if ($senzaGruppo) {
+            $parti[] = $parti === [] ? 'Iscritti senza gruppo' : 'iscritti senza gruppo';
+        }
+
+        return implode(', ', $parti);
+    }
+
+    /**
+     * L'ora del database, per i confronti che l'agenda fa sulle righe che ha
+     * gia' letto: con l'orologio del database, non con quello di PHP (§5).
+     */
+    public static function adesso(): string
+    {
+        return (string) Database::connection()->query('SELECT NOW()')->fetchColumn();
+    }
+
+    /**
      * L'indirizzo personale del calendario e le sue due date.
      *
      * Le date non sono un dettaglio: un indirizzo che vale come una

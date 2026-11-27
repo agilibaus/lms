@@ -178,8 +178,20 @@ class AgendaController
             ? 'Si apre: ' . $evento['titolo']
             : $evento['titolo'];
 
+        // Nel calendario del telefono l'aspetto lo decide l'app: la bozza
+        // si dice nel titolo, in coda (27/11, Alessandro).
+        if ($evento['bozza'] ?? false) {
+            $titolo .= ' (Bozza)';
+        }
+
+        // Un modulo puo' aprirsi in giorni diversi per gruppi diversi
+        // (l'agenda dell'Amministratore, 27/11): una voce per data, e ognuna
+        // con il suo identificativo, o il calendario ne terrebbe una sola.
+        $uid = $evento['tipo'] . '-' . $evento['id']
+            . ($evento['tipo'] === Agenda::APERTURA && ($evento['per'] ?? null) !== null ? '-' . $evento['inizio']->format('YmdHi') : '');
+
         return [
-            'uid' => $evento['tipo'] . '-' . $evento['id'] . '@pistacchio',
+            'uid' => $uid . '@pistacchio',
             'titolo' => $titolo,
             'inizio' => $evento['inizio'],
             'fine' => $evento['fine'],

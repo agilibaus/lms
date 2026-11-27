@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Models\AgendaModel;
+use App\Models\LiveSessionModel;
+use App\Models\UserModel;
 
 /**
  * L'agenda di una persona: le cose con una data, messe in fila.
@@ -25,6 +27,17 @@ use App\Models\AgendaModel;
  *   id         per l'indirizzo del singolo .ics
  *   apribile   solo gli incontri: si puo' entrare adesso
  *   in_corso   solo gli incontri: e' gia' cominciato e non e' finito
+ *   bozza      l'incontro o l'apertura e' di un corso in bozza (27/11)
+ *   per        solo le aperture dell'Amministratore: per chi vale la data
+ *              («Gruppo Giallo»); null altrove
+ *
+ * LE BOZZE (27/11, Alessandro). Chi vede gli incontri di un corso in bozza
+ * (l'Amministratore, il tutor e l'assistente dei gruppi dell'incontro) e
+ * l'Amministratore, che vede tutte le aperture, li trovano in agenda
+ * segnati come bozza: si attivano quando il corso viene pubblicato, e da
+ * li' tornano voci come le altre senza che nessuno debba fare niente. Delle
+ * bozze si mostra solo quello che deve ancora venire: un'apertura o un
+ * incontro di una bozza gia' passati non sono successi per nessuno.
  *
  * Un terzo tipo di evento — una scadenza dei quiz, il giorno che non
  * esiste ancora — si aggiunge qui e compare in tutte e due le viste e nel
@@ -51,11 +64,19 @@ class Agenda
     public static function eventiDi(int $userId): array
     {
         $eventi = [];
+        // L'ora del database, con cui si scartano le cose passate delle bozze.
+        $adesso = AgendaModel::adesso();
 
         foreach (AgendaModel::incontriDi($userId) as $incontro) {
             $inizio = self::momento((string) $incontro['starts_at']);
 
             if ($inizio === null) {
+                continue;
+            }
+
+            $bozza = LiveSessionModel::inBozza($incontro);
+
+            if ($bozza && (string) $incontro['ends_at'] < $adesso) {
                 continue;
             }
 
@@ -73,7 +94,38 @@ class Agenda
                 'in_corso' => (bool) ($incontro['started'] ?? false),
                 'contesto' => (string) ($incontro['course_title'] ?? $incontro['group_name'] ?? ''),
                 'url' => '/live/' . (int) $incontro['id'],
+                'bozza' => $bozza,
+                'per' => null,
             ];
+        }
+
+        // L'Amministratore vede tutte le aperture, e per chi (27/11): il ruolo
+        // si legge dal database, perche' il calendario sottoscritto non ha una
+        // sessione (`LiveScope::elencoDiUtente`, lo stesso motivo).
+        if ((string) (UserModel::find($userId)['role'] ?? '') === 'admin') {
+            foreach (AgendaModel::apertureTutte() as $modulo) {
+                $inizio = self::momento($modulo['available_from']);
+
+                if ($inizio === null || (!$modulo['pubblicato'] && $modulo['passata'])) {
+                    continue;
+                }
+
+                $eventi[] = [
+                    'tipo' => self::APERTURA,
+                    'id' => $modulo['id'],
+                    'titolo' => $modulo['title'],
+                    'inizio' => $inizio,
+                    'fine' => null,
+                    'contesto' => $modulo['course_title'] . ' · ' . $modulo['per'],
+                    'url' => '/courses/' . $modulo['course_id'],
+                    'bozza' => !$modulo['pubblicato'],
+                    'per' => $modulo['per'],
+                ];
+            }
+
+            usort($eventi, static fn (array $a, array $b): int => $a['inizio'] <=> $b['inizio']);
+
+            return $eventi;
         }
 
         foreach (AgendaModel::apertureDi($userId) as $modulo) {
@@ -94,6 +146,9 @@ class Agenda
                 // risponderebbe 403, e un collegamento che si sa gia' che
                 // sara' rifiutato e' peggio di nessun collegamento.
                 'url' => '/courses/' . (int) $modulo['course_id'],
+                // Lo studente e' iscritto solo a corsi pubblicati.
+                'bozza' => false,
+                'per' => null,
             ];
         }
 
