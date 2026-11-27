@@ -144,9 +144,8 @@ $haFoto = !empty($user['avatar_path']);
 
     <?php if (!$isEdit): ?>
         <p class="form-hint">
-            La password iniziale la genera la piattaforma e la manda per email all'utente:
-            non la scegli tu e non la conosce nessun altro. Al primo accesso dovrà
-            sceglierne una sua.
+            La password iniziale la genera la piattaforma e la invia per email all'utente.
+            Al primo accesso dovrà sceglierne una sua.
         </p>
     <?php endif; ?>
 
