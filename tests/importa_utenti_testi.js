@@ -1,5 +1,6 @@
 /**
- * «Importa utenti» (27/11, Alessandro): il testo del riquadro «Le password».
+ * «Importa utenti» (27/11, Alessandro): i testi dei riquadri «Com'e' fatto il
+ * file» e «Le password».
  *
  * Esecuzione:  node tests/importa_utenti_testi.js   (server di sviluppo acceso)
  */
@@ -9,6 +10,9 @@ const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwrig
 
 const BASE = process.env.LMS_URL || 'http://127.0.0.1:8123';
 const PASSWORD = process.env.LMS_PASS || 'Password1!';
+
+const FILE = 'La prima riga contiene i nomi delle colonne. L\'ordine non conta, le maiuscole nemmeno. '
+    + 'Il separatore può essere virgola o punto e virgola.';
 
 const LE_PASSWORD = 'Le password le genera Pistacchio nel momento in cui manda l\'email, e chi accede deve '
     + 'cambiarla subito. Gli inviti non partono tutti insieme ma a scaglioni di 20, ogni quarto d\'ora. '
@@ -36,9 +40,12 @@ function check(etichetta, condizione, dettagli = []) {
         await Promise.all([page.waitForNavigation(), page.click('form.auth-form button[type="submit"]')]);
 
         await page.goto(BASE + '/admin/users/importa');
-        const testi = await page.evaluate(() => [...document.querySelectorAll('main section.card')]
-            .filter((s) => (s.querySelector('h2')?.textContent || '').trim() === 'Le password')
-            .map((s) => (s.querySelector('.riquadro-intro')?.textContent || '').replace(/\s+/g, ' ').trim()));
+        const testo = (titolo) => page.evaluate((t) => [...document.querySelectorAll('main section.card')]
+            .filter((s) => (s.querySelector('h2')?.textContent || '').trim() === t)
+            .map((s) => (s.querySelector('.riquadro-intro')?.textContent || '').replace(/\s+/g, ' ').trim()), titolo);
+        const file = await testo('Com\'è fatto il file');
+        check('«Com\'è fatto il file»: il testo del riquadro', file.length === 1 && file[0] === FILE, file);
+        const testi = await testo('Le password');
         check('«Le password»: il testo del riquadro', testi.length === 1 && testi[0] === LE_PASSWORD, testi);
     } finally {
         await browser.close();

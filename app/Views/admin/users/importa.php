@@ -33,8 +33,7 @@ use App\Core\UserImport;
     <h2>Com'è fatto il file</h2>
     <p class="riquadro-intro">
         La prima riga contiene i nomi delle colonne. L'ordine non conta, le maiuscole
-        nemmeno. Separatore virgola o punto e virgola: li riconosce da sé, come riconosce
-        i file salvati da Excel su Windows.
+        nemmeno. Il separatore può essere virgola o punto e virgola.
     </p>
 
     <table class="data-table">
