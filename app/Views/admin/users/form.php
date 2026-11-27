@@ -220,10 +220,10 @@ $haFoto = !empty($user['avatar_path']);
     <section class="card">
         <h2>Password temporanea</h2>
         <p class="riquadro-intro">
-            La password la genera la piattaforma e la manda per email all'utente: non compare
-            qui e non la conosce nessun altro. Le sue sessioni aperte vengono chiuse, e al
+            La password la genera la piattaforma e la invia per email all'utente: non compare
+            qui e non la conosce nessun altro. Le eventuali sessioni aperte vengono chiuse, e al
             primo accesso dovrà sceglierne una sua.
-            Se l'invio dell'email non riesce, la password attuale resta valida.
+            Se l'invio dell'email fallisce, la password attuale resta valida.
         </p>
         <form action="/admin/users/<?= $userId ?>/password" method="post" class="form">
             <?= Csrf::field() ?>
