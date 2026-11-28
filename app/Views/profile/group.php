@@ -32,6 +32,16 @@ use App\Core\Icona;
 
 $quanti = count($people);
 $posizioni = GroupCircle::posizioni($quanti);
+// Oltre 20 partecipanti, due o tre anelli finche' ci stanno (27/11): null
+// vuol dire la griglia.
+$anelli = GroupCircle::anelli($quanti);
+$rem = static fn (float $v): string => sprintf('%.3Frem', $v);
+$comeTiVedono = null;
+foreach ($people as $chi) {
+    if (!empty($chi['come_ti_vedono'])) {
+        $comeTiVedono = (string) $chi['come_ti_vedono'];
+    }
+}
 
 /*
  * La foto, o le iniziali quando manca. `alt` vuoto perche' il nome e' scritto
@@ -192,8 +202,10 @@ $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
      * partecipanti in ordine di nome. E' la griglia del telefono; su un
      * computer, con spazio a sufficienza e non piu' di
      * GroupCircle::MASSIMO partecipanti, il CSS dispone le stesse voci in
-     * cerchio usando le coordinate scritte qui sotto. Senza query di
-     * contenitore resta la griglia, che e' il ripiego.
+     * cerchio usando le coordinate scritte qui sotto. Oltre, fino a 50, in
+     * due o tre anelli attorno al tutor (`GroupCircle::anelli`, 27/11), con
+     * le coordinate in rem di ciascuno. Senza query di contenitore, o senza
+     * lo spazio, resta la griglia, che e' il ripiego.
      *
      * `role="list"` perche' togliere i pallini a un elenco ne fa perdere la
      * semantica in Safari.
@@ -203,9 +215,19 @@ $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
      * Giallo» in cima alla pagina dice gia' chi sono.
      */ ?>
     <div class="card gruppo-persone">
-        <ul class="gruppo-cerchio<?= GroupCircle::usaCerchio($quanti) ? ' usa-cerchio' : '' ?>" role="list">
+        <?php /* Come lo vedono gli altri, solo allo studente che guarda (08/10,
+                 Elena: e' l'unico modo di verificare la propria scelta). Dal
+                 27/11 (Alessandro, variante A1) in una riga in cima al riquadro
+                 e non piu' sotto il proprio nome: con gli anelli finiva sulla
+                 foto del compagno sotto. In tutte e tre le forme, cerchio,
+                 anelli e griglia. */ ?>
+        <?php if ($comeTiVedono !== null): ?>
+            <p class="riquadro-intro gruppo-come-ti-vedono">Gli altri ti vedono come «<?= htmlspecialchars($comeTiVedono) ?>».</p>
+        <?php endif; ?>
+        <ul class="gruppo-cerchio<?= GroupCircle::usaCerchio($quanti) ? ' usa-cerchio' : '' ?><?= $anelli !== null ? ' usa-anelli anelli-' . $anelli['anelli'] : '' ?>" role="list"<?php if ($anelli !== null): ?>
+            style="--anelli-larghezza: <?= $rem($anelli['larghezza']) ?>; --anelli-altezza: <?= $rem($anelli['altezza']) ?>; --anelli-foto: <?= $rem($anelli['foto']) ?>; --anelli-nome: <?= $rem($anelli['nome']) ?>;"<?php endif; ?>>
             <?php if ($tutor !== null): ?>
-                <li class="persona persona-tutor">
+                <li class="persona persona-tutor"<?php if ($anelli !== null): ?> style="--ax: <?= $rem($anelli['tutor']['x']) ?>; --ay: <?= $rem($anelli['tutor']['y']) ?>;"<?php endif; ?>>
                     <?= $voce($tutor, '<span class="persona-nome">'
                         . htmlspecialchars((string) $tutor['full_name'])
                         . ($haPresentazione($tutor) ? '<span class="sr-only">, leggi la presentazione</span>' : '')
@@ -216,18 +238,10 @@ $ramo = isset($corso) && $corso !== null ? '?corso=' . (int) $corso['id'] : '';
             <?php foreach ($people as $i => $persona): ?>
                 <?php $pos = $posizioni[$i]; ?>
                 <li class="persona persona-lato-<?= $pos['lato'] ?>"
-                    style="--x: <?= sprintf('%.2F', $pos['x']) ?>; --y: <?= sprintf('%.2F', $pos['y']) ?>;">
+                    style="--x: <?= sprintf('%.2F', $pos['x']) ?>; --y: <?= sprintf('%.2F', $pos['y']) ?>;<?php if ($anelli !== null): ?> --ax: <?= $rem($anelli['posizioni'][$i]['x']) ?>; --ay: <?= $rem($anelli['posizioni'][$i]['y']) ?>;<?php endif; ?>">
                     <?= $voce($persona, '<span class="persona-nome">'
                         . htmlspecialchars((string) $persona['full_name'])
                         . ($haPresentazione($persona) ? '<span class="sr-only">, leggi la presentazione</span>' : '')
-                        // Solo sotto il proprio nome (08/10): come lo vedono gli
-                        // altri. Testo e non un collegamento: il nome puo' stare
-                        // dentro il pulsante della presentazione, e un
-                        // collegamento dentro un pulsante non si raggiunge.
-                        . (!empty($persona['come_ti_vedono'])
-                            ? '<span class="persona-come-ti-vedono">Gli altri ti vedono come «'
-                                . htmlspecialchars((string) $persona['come_ti_vedono']) . '»</span>'
-                            : '')
                         . '</span>') ?>
                 </li>
             <?php endforeach; ?>

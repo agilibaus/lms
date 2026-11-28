@@ -7399,12 +7399,12 @@ fieldset.checkbox-group legend {
     overflow-wrap: anywhere;
 }
 
-/* Sotto il proprio nome, solo per se', come lo vedono gli altri (08/10):
-   piccola, come il ruolo del tutor, ma senza maiuscolo. */
-.persona-come-ti-vedono {
-    display: block;
-    font-size: var(--fs-piccolo);
-    color: var(--color-text-muted);
+/* Come lo vedono gli altri, solo allo studente che guarda, in cima al
+   riquadro delle persone (27/11, Alessandro, variante A1): prima stava sotto
+   il proprio nome, e con gli anelli finiva sulla foto del compagno sotto. Il
+   testo che apre un riquadro, centrato come il cerchio. */
+.gruppo-come-ti-vedono {
+    text-align: center;
 }
 
 .persona-ruolo {
@@ -7416,35 +7416,6 @@ fieldset.checkbox-group legend {
 }
 
 @container gruppo (min-width: 52rem) {
-    /* Nel cerchio «Gli altri ti vedono come …» sta su una riga sola (Elena,
-       09/10): accanto alla foto c'e' spazio. Nella griglia del telefono e del
-       tablet le colonne sono strette (110 px) e la riga va a capo: su una
-       riga sola sconfinava sulla persona accanto e, a 320 px, faceva scorrere
-       la pagina di lato. */
-    .gruppo-cerchio.usa-cerchio .persona-come-ti-vedono {
-        display: flex;
-        white-space: nowrap;
-    }
-
-    /* Su una riga sola la frase puo' essere piu' larga dello spazio del nome:
-       deve sporgere verso l'esterno del cerchio, non verso la foto. Come
-       elemento flessibile, con l'allineamento del suo lato, sporge dalla parte
-       giusta (a sinistra per chi sta a sinistra, da tutte e due le parti per
-       chi sta sopra o sotto). Senza, sporgeva sempre a destra, e a sinistra
-       finiva sotto la foto (09/10, visto nella fotografia). */
-    .gruppo-cerchio.usa-cerchio .persona-lato-sinistra .persona-come-ti-vedono {
-        justify-content: flex-end;
-    }
-
-    .gruppo-cerchio.usa-cerchio .persona-lato-destra .persona-come-ti-vedono {
-        justify-content: flex-start;
-    }
-
-    .gruppo-cerchio.usa-cerchio .persona-lato-sopra .persona-come-ti-vedono,
-    .gruppo-cerchio.usa-cerchio .persona-lato-sotto .persona-come-ti-vedono {
-        justify-content: center;
-    }
-
     /* Nel cerchio le foto sono piu' grandi del 10% (16/10, Alessandro,
        variante B del mockup): studenti 70 px invece di 64, tutor 114 invece
        di 104, e il cerchio 33 rem invece di 30, cosi' le distanze fra le
@@ -7638,6 +7609,125 @@ fieldset.checkbox-group legend {
         display: block;
         width: 100%;
         height: 100%;
+    }
+}
+
+/* ---------- Gli anelli: gruppi da 21 a 50 persone ----------
+
+   27/11, Alessandro, variante A del mockup: oltre 20 partecipanti, due o tre
+   anelli concentrici attorno al tutor invece della griglia. Le posizioni le
+   calcola `GroupCircle::anelli()` e la vista le scrive in rem (`--ax`,
+   `--ay`), con le misure del riquadro, delle foto (58 px con due anelli, 48
+   con tre) e dei nomi; i nomi a 0,92 rem, sempre sotto la foto, perche'
+   verso l'esterno c'e' un altro anello.
+
+   Due anelli si accendono da 52 rem di spazio, come il cerchio; tre da 58,6
+   rem (`GroupCircle::ANELLI`). Le regole sono le stesse e stanno scritte
+   due volte, una per soglia: una query di contenitore non legge una
+   variabile. Sotto la soglia, e senza query di contenitore, resta la
+   griglia. */
+
+@container gruppo (min-width: 52rem) {
+    .gruppo-cerchio.usa-anelli.anelli-2 {
+        --foto-tutor: 104px;
+        display: block;
+        position: relative;
+        width: var(--anelli-larghezza);
+        height: var(--anelli-altezza);
+        margin: 1rem auto 0;
+    }
+
+    .anelli-2 .persona {
+        position: absolute;
+        left: var(--ax);
+        top: var(--ay);
+        width: var(--anelli-foto);
+        height: var(--anelli-foto);
+        display: block;
+        transform: translate(-50%, -50%);
+    }
+
+    .anelli-2 .persona-tutor {
+        width: var(--foto-tutor);
+        height: var(--foto-tutor);
+    }
+
+    .anelli-2 .persona:not(.persona-tutor) .persona-foto {
+        width: var(--anelli-foto);
+        height: var(--anelli-foto);
+        font-size: calc(var(--anelli-foto) * 0.32);
+    }
+
+    .anelli-2 .persona-apri {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .anelli-2 .persona-nome {
+        position: absolute;
+        top: calc(100% + 0.25rem);
+        left: 50%;
+        width: var(--anelli-nome);
+        transform: translateX(-50%);
+        text-align: center;
+        font-size: var(--fs-secondario);
+    }
+
+    .anelli-2 .persona-tutor .persona-nome {
+        width: 7rem;
+    }
+}
+
+@container gruppo (min-width: 58.6rem) {
+    .gruppo-cerchio.usa-anelli.anelli-3 {
+        --foto-tutor: 104px;
+        display: block;
+        position: relative;
+        width: var(--anelli-larghezza);
+        height: var(--anelli-altezza);
+        margin: 1rem auto 0;
+    }
+
+    .anelli-3 .persona {
+        position: absolute;
+        left: var(--ax);
+        top: var(--ay);
+        width: var(--anelli-foto);
+        height: var(--anelli-foto);
+        display: block;
+        transform: translate(-50%, -50%);
+    }
+
+    .anelli-3 .persona-tutor {
+        width: var(--foto-tutor);
+        height: var(--foto-tutor);
+    }
+
+    .anelli-3 .persona:not(.persona-tutor) .persona-foto {
+        width: var(--anelli-foto);
+        height: var(--anelli-foto);
+        font-size: calc(var(--anelli-foto) * 0.32);
+    }
+
+    .anelli-3 .persona-apri {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .anelli-3 .persona-nome {
+        position: absolute;
+        top: calc(100% + 0.25rem);
+        left: 50%;
+        width: var(--anelli-nome);
+        transform: translateX(-50%);
+        text-align: center;
+        font-size: var(--fs-secondario);
+    }
+
+    .anelli-3 .persona-tutor .persona-nome {
+        width: 7rem;
     }
 }
 
